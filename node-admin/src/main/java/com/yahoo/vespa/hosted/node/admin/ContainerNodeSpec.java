@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -16,7 +16,7 @@ public class ContainerNodeSpec {
     public final HostName hostname;
     public final Optional<DockerImage> wantedDockerImage;
     public final ContainerName containerName;
-    public final NodeState nodeState;
+    public final Node.State nodeState;
     public final Optional<Long> wantedRestartGeneration;
     public final Optional<Long> currentRestartGeneration;
     public final Optional<Double> minCpuCores;
@@ -27,7 +27,7 @@ public class ContainerNodeSpec {
             final HostName hostname,
             final Optional<DockerImage> wantedDockerImage,
             final ContainerName containerName,
-            final NodeState nodeState,
+            final Node.State nodeState,
             final Optional<Long> wantedRestartGeneration,
             final Optional<Long> currentRestartGeneration,
             final Optional<Double> minCpuCores,

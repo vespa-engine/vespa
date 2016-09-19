@@ -2,18 +2,15 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -38,12 +35,7 @@ public class NodeAgentImplTest {
     private static final Optional<Double> MIN_MAIN_MEMORY_AVAILABLE_GB = Optional.of(1.0);
     private static final Optional<Double> MIN_DISK_AVAILABLE_GB = Optional.of(1.0);
 
-    private static final Optional<Container> NO_CONTAINER = Optional.empty();
-
-    private static final ProcessResult NODE_PROGRAM_DOESNT_EXIST = new ProcessResult(1, "", "");
-
     private final HostName hostName = new HostName("hostname");
-    private final Docker docker = mock(Docker.class); // TODO: Remove: Use dockerOperations only
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
@@ -60,7 +52,7 @@ public class NodeAgentImplTest {
                 hostName,
                 Optional.of(dockerImage),
                 containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(restartGeneration),
                 Optional.of(restartGeneration),
                 MIN_CPU_CORES,
@@ -102,13 +94,12 @@ public class NodeAgentImplTest {
                 hostName,
                 Optional.of(dockerImage),
                 containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(restartGeneration),
                 Optional.of(restartGeneration),
                 MIN_CPU_CORES,
                 MIN_MAIN_MEMORY_AVAILABLE_GB,
                 MIN_DISK_AVAILABLE_GB);
-        final boolean isRunning = true;
         final String vespaVersion = "7.8.9";
 
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
@@ -143,7 +134,7 @@ public class NodeAgentImplTest {
                 hostName,
                 Optional.of(newDockerImage),
                 containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(wantedRestartGeneration),
                 Optional.of(currentRestartGeneration),
                 MIN_CPU_CORES,
@@ -175,7 +166,7 @@ public class NodeAgentImplTest {
                 hostName,
                 Optional.of(dockerImage),
                 containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(wantedRestartGeneration),
                 Optional.of(currentRestartGeneration),
                 MIN_CPU_CORES,
@@ -206,7 +197,7 @@ public class NodeAgentImplTest {
                 hostName,
                 Optional.of(dockerImage),
                 containerName,
-                NodeState.FAILED,
+                Node.State.failed,
                 Optional.of(restartGeneration),
                 Optional.of(restartGeneration),
                 MIN_CPU_CORES,
@@ -231,7 +222,7 @@ public class NodeAgentImplTest {
                 hostName,
                 Optional.of(dockerImage),
                 containerName,
-                NodeState.INACTIVE,
+                Node.State.inactive,
                 Optional.of(restartGeneration),
                 Optional.of(restartGeneration),
                 MIN_CPU_CORES,
@@ -250,7 +241,7 @@ public class NodeAgentImplTest {
         verify(nodeRepository, never()).updateNodeAttributes(any(HostName.class), any(NodeAttributes.class));
     }
 
-    private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState nodeState, Optional<Long> wantedRestartGeneration)
+    private void nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State nodeState, Optional<Long> wantedRestartGeneration)
             throws Exception {
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
@@ -284,17 +275,17 @@ public class NodeAgentImplTest {
 
     @Test
     public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycled() throws Exception {
-        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.DIRTY, Optional.of(1L));
+        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State.dirty, Optional.of(1L));
     }
 
     @Test
     public void dirtyNodeRunningContainerIsTakenDownAndCleanedAndRecycledNoRestartGeneration() throws Exception {
-        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.DIRTY, Optional.empty());
+        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State.dirty, Optional.empty());
     }
 
     @Test
     public void provisionedNodeWithNoContainerIsCleanedAndRecycled() throws Exception {
-        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(NodeState.PROVISIONED, Optional.of(1L));
+        nodeRunningContainerIsTakenDownAndCleanedAndRecycled(Node.State.provisioned, Optional.of(1L));
     }
 
     @Test
@@ -307,7 +298,7 @@ public class NodeAgentImplTest {
                 hostName,
                 Optional.of(wantedDockerImage),
                 containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(restartGeneration),
                 Optional.of(restartGeneration),
                 MIN_CPU_CORES,

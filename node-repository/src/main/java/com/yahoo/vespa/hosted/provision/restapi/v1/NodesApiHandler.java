@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 /**
- * The implementation of the /state/v1 API.
+ * The implementation of the /nodes/v1 API.
  * This dumps the content of the node repository on request, possibly with a host filter to return just the single
  * matching node.
  *

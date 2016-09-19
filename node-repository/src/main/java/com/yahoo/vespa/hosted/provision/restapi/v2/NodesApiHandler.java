@@ -34,7 +34,7 @@ import java.util.logging.Level;
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
 /**
- * The implementation of the /state/v2 API.
+ * The implementation of the /nodes/v2 API.
  * See RestApiTest for documentation.
  *
  * @author bratseth

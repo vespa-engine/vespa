@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -54,7 +54,7 @@ public class ResumeTest {
                 new HostName("host1"),
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(1L),
                 Optional.of(1L),
                 Optional.of(1d),
