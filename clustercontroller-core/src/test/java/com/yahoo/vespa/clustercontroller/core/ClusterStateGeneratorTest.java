@@ -840,7 +840,4 @@ public class ClusterStateGeneratorTest {
 
     // TODO test that group down feature doesn't rustle the feathers of maintenance nodes et al
 
-    // TODO deal with isRpcAddressOutdated() for implicit -> Down transitions? outdated RPC already sets Down
-    // in timer event handling function, so might not be needed.
-
 }

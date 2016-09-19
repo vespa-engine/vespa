@@ -415,11 +415,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         stateGatherer.setNodeStateRequestTimeout(options.nodeStateRequestTimeoutMS);
 
         // TODO: remove as many temporal parameter dependencies as possible here. Don't want state duplication.
-        stateChangeHandler.setMaxPrematureCrashes(options.maxPrematureCrashes);
-        stateChangeHandler.setStableStateTimePeriod(options.stableStateTimePeriod);
-        stateChangeHandler.setMaxInitProgressTime(options.maxInitProgressTime);
-        stateChangeHandler.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
-        stateChangeHandler.setMaxTransitionTime(options.maxTransitionTime);
+        stateChangeHandler.reconfigureFromOptions(options);
         stateChangeHandler.setStateChangedFlag(); // Always trigger state recomputation after reconfig
 
         masterElectionHandler.setFleetControllerCount(options.fleetControllerCount);
@@ -614,7 +610,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
             context.cluster = cluster;
             //context.currentState = stateChangeHandler.getConsolidatedClusterState();
-            context.currentState = stateVersionTracker.getVersionedClusterState();
+            context.currentState = stateVersionTracker.getVersionedClusterState(); // FIXME must show most current state..!
             context.masterInfo = masterElectionHandler;
             context.nodeStateOrHostInfoChangeHandler = this;
             context.nodeAddedOrRemovedListener = this;

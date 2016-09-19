@@ -249,6 +249,14 @@ public class StateChangeHandler {
         hostnames.put(node.getNodeIndex(), address.host());
     }
 
+    void reconfigureFromOptions(FleetControllerOptions options) {
+        setMaxPrematureCrashes(options.maxPrematureCrashes);
+        setStableStateTimePeriod(options.stableStateTimePeriod);
+        setMaxInitProgressTime(options.maxInitProgressTime);
+        setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
+        setMaxTransitionTime(options.maxTransitionTime);
+    }
+
     private void removeHostName(NodeInfo node) {
         hostnames.remove(node.getNodeIndex());
     }
