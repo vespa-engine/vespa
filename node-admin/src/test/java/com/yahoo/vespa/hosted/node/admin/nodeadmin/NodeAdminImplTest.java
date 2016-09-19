@@ -11,7 +11,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -66,7 +66,7 @@ public class NodeAdminImplTest {
                 hostName,
                 Optional.of(dockerImage),
                 containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(1L),
                 Optional.of(1L),
                 MIN_CPU_CORES,

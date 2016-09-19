@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +64,7 @@ public class NodeStateTest {
                 new HostName("host1"),
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(1L),
                 Optional.of(1L),
                 Optional.of(1d),
@@ -98,7 +98,7 @@ public class NodeStateTest {
                 initialContainerNodeSpec.hostname,
                 initialContainerNodeSpec.wantedDockerImage,
                 initialContainerNodeSpec.containerName,
-                NodeState.DIRTY,
+                Node.State.dirty,
                 initialContainerNodeSpec.wantedRestartGeneration,
                 initialContainerNodeSpec.currentRestartGeneration,
                 initialContainerNodeSpec.minCpuCores,
@@ -108,11 +108,11 @@ public class NodeStateTest {
         // Wait until it is marked ready
         Optional<ContainerNodeSpec> containerNodeSpec;
         while ((containerNodeSpec = nodeRepositoryMock.getContainerNodeSpec(initialContainerNodeSpec.hostname)).isPresent()
-                && containerNodeSpec.get().nodeState != NodeState.READY) {
+                && containerNodeSpec.get().nodeState != Node.State.ready) {
             Thread.sleep(10);
         }
 
-        assertThat(nodeRepositoryMock.getContainerNodeSpec(initialContainerNodeSpec.hostname).get().nodeState, is(NodeState.READY));
+        assertThat(nodeRepositoryMock.getContainerNodeSpec(initialContainerNodeSpec.hostname).get().nodeState, is(Node.State.ready));
 
         assertTrue("Node set to dirty, but no stop/delete call received", callOrder.verifyInOrder(1000,
                 "stopContainer with ContainerName: ContainerName { name=container }",
@@ -128,7 +128,7 @@ public class NodeStateTest {
                 initialContainerNodeSpec.hostname,
                 newDockerImage,
                 initialContainerNodeSpec.containerName,
-                NodeState.INACTIVE,
+                Node.State.inactive,
                 initialContainerNodeSpec.wantedRestartGeneration,
                 initialContainerNodeSpec.currentRestartGeneration,
                 initialContainerNodeSpec.minCpuCores,
@@ -145,7 +145,7 @@ public class NodeStateTest {
                 initialContainerNodeSpec.hostname,
                 newDockerImage,
                 initialContainerNodeSpec.containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
                 initialContainerNodeSpec.wantedRestartGeneration,
                 initialContainerNodeSpec.currentRestartGeneration,
                 initialContainerNodeSpec.minCpuCores,

@@ -12,8 +12,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +57,7 @@ public class DockerFailTest {
                 new HostName("hostName"),
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(1L),
                 Optional.of(1L),
                 Optional.of(1d),

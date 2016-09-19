@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
 
 import org.junit.After;
@@ -90,7 +91,7 @@ public class NodeRepositoryImplTest {
         assertThat(nodeSpec.hostname, is(new HostName("host4.yahoo.com")));
         assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("image-123")));
         assertThat(nodeSpec.containerName, is(new ContainerName("host4")));
-        assertThat(nodeSpec.nodeState, is(NodeState.RESERVED));
+        assertThat(nodeSpec.nodeState, is(Node.State.reserved));
         assertThat(nodeSpec.wantedRestartGeneration.get(), is(0L));
         assertThat(nodeSpec.currentRestartGeneration.get(), is(0L));
         assertThat(nodeSpec.minCpuCores.get(), is(2.0));

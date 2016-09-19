@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ public class NodeRepoMock implements NodeRepository {
         synchronized (monitor) {
             if (cns.isPresent()) {
                 updateContainerNodeSpec(cns.get().hostname,
-                        cns.get().wantedDockerImage, cns.get().containerName, NodeState.READY,
+                        cns.get().wantedDockerImage, cns.get().containerName, Node.State.ready,
                         cns.get().wantedRestartGeneration, cns.get().currentRestartGeneration,
                         cns.get().minCpuCores, cns.get().minMainMemoryAvailableGb, cns.get().minDiskAvailableGb);
             }
@@ -71,7 +71,7 @@ public class NodeRepoMock implements NodeRepository {
     public void updateContainerNodeSpec(HostName hostName,
                                                Optional<DockerImage> wantedDockerImage,
                                                ContainerName containerName,
-                                               NodeState nodeState,
+                                               Node.State nodeState,
                                                Optional<Long> wantedRestartGeneration,
                                                Optional<Long> currentRestartGeneration,
                                                Optional<Double> minCpuCores,

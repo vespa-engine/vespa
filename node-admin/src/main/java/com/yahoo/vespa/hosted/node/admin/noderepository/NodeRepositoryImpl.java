@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttri
 import com.yahoo.vespa.hosted.node.admin.noderepository.bindings.UpdateNodeAttributesResponse;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,8 +85,8 @@ public class NodeRepositoryImpl implements NodeRepository {
     private static ContainerNodeSpec createContainerNodeSpec(GetNodesResponse.Node node)
             throws IllegalArgumentException, NullPointerException {
         Objects.requireNonNull(node.nodeState, "Unknown node state");
-        NodeState nodeState = NodeState.valueOf(node.nodeState.toUpperCase());
-        if (nodeState == NodeState.ACTIVE) {
+        Node.State nodeState = Node.State.valueOf(node.nodeState);
+        if (nodeState == Node.State.active) {
             Objects.requireNonNull(node.wantedDockerImage, "Unknown docker image for active node");
             Objects.requireNonNull(node.wantedRestartGeneration, "Unknown wantedRestartGeneration for active node");
             Objects.requireNonNull(node.currentRestartGeneration, "Unknown currentRestartGeneration for active node");

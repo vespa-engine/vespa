@@ -12,12 +12,12 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
@@ -138,7 +138,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
-        if (nodeSpec.nodeState != NodeState.ACTIVE) {
+        if (nodeSpec.nodeState != Node.State.active) {
             return Optional.of("Node no longer active");
         }
         if (!nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
@@ -318,7 +318,7 @@ public class DockerOperationsImpl implements DockerOperations {
         if (existingContainer.isRunning) {
             // If we're stopping the node only to upgrade or restart the node or similar, we need to suspend
             // the services.
-            if (nodeSpec.nodeState == NodeState.ACTIVE) {
+            if (nodeSpec.nodeState == Node.State.active) {
                 // TODO: Also skip orchestration if we're downgrading in test/staging
                 // How to implement:
                 //  - test/staging: We need to figure out whether we're in test/staging, by asking Chef!? Or,

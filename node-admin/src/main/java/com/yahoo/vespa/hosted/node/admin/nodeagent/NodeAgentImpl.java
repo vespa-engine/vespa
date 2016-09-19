@@ -297,13 +297,13 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         switch (nodeSpec.nodeState) {
-            case READY:
+            case ready:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
-            case RESERVED:
+            case reserved:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
-            case ACTIVE:
+            case active:
                 maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
@@ -328,19 +328,20 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
                 break;
-            case INACTIVE:
+            case inactive:
                 maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
-            case PROVISIONED:
-            case DIRTY:
+            case provisioned:
+            case dirty:
                 maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);
                 updateNodeRepoAndMarkNodeAsReady(nodeSpec);
                 break;
-            case FAILED:
+            case parked:
+            case failed:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             default:

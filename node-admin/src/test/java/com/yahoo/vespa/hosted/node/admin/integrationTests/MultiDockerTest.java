@@ -12,8 +12,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +73,7 @@ public class MultiDockerTest {
                 containerNodeSpec2.hostname,
                 containerNodeSpec2.wantedDockerImage,
                 containerNodeSpec2.containerName,
-                NodeState.DIRTY,
+                Node.State.dirty,
                 containerNodeSpec2.wantedRestartGeneration,
                 containerNodeSpec2.currentRestartGeneration,
                 containerNodeSpec2.minCpuCores,
@@ -83,7 +83,7 @@ public class MultiDockerTest {
         // Wait until it is marked ready
         Optional<ContainerNodeSpec> tempContainerNodeSpec;
         while ((tempContainerNodeSpec = nodeRepositoryMock.getContainerNodeSpec(containerNodeSpec2.hostname)).isPresent()
-                && tempContainerNodeSpec.get().nodeState != NodeState.READY) {
+                && tempContainerNodeSpec.get().nodeState != Node.State.ready) {
             Thread.sleep(10);
         }
 
@@ -121,7 +121,7 @@ public class MultiDockerTest {
                 hostName,
                 dockerImage,
                 containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
                 Optional.of(1L),
                 Optional.of(1L),
                 Optional.of(1d),

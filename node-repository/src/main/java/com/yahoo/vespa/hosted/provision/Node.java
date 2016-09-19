@@ -93,7 +93,7 @@ public final class Node {
     /** Returns the flavor of this node */
     public Flavor flavor() { return flavor; }
 
-    /** Returns the known information about the nodes ephemeral status */
+    /** Returns the known information about the node's ephemeral status */
     public Status status() { return status; }
 
     /** Returns the current state of this node (in the node state machine) */
@@ -130,7 +130,7 @@ public final class Node {
         return with(allocation.get().unretire());
     }
 
-    /** Returns a copy of this with the current generation set to generation */
+    /** Returns a copy of this with the current restart generation set to generation */
     public Node withRestart(Generation generation) {
         final Optional<Allocation> allocation = this.allocation;
         if ( ! allocation.isPresent())
@@ -154,7 +154,7 @@ public final class Node {
         return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
-    /** Returns a copy of this with the current generation set to generation */
+    /** Returns a copy of this with the current reboot generation set to generation */
     public Node withReboot(Generation generation) {
         return new Node(openStackId, hostname, parentHostname, flavor, status.withReboot(generation), state,
                         allocation, history, type);
@@ -217,7 +217,7 @@ public final class Node {
 
     public enum State {
 
-        /** This node has been requested (from OpenStack) but is not yet read for use */
+        /** This node has been requested (from OpenStack) but is not yet ready for use */
         provisioned,
 
         /** This node is free and ready for use */
