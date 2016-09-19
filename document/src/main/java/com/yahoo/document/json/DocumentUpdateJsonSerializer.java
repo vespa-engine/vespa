@@ -105,11 +105,9 @@ public class DocumentUpdateJsonSerializer
                 for (ValueUpdate valueUpdate : fieldUpdate.getValueUpdates()) {
                     if (valueUpdate instanceof RemoveValueUpdate) {
                         removeValueUpdates.add(valueUpdate);
-                    }
-                    else if (valueUpdate instanceof AddValueUpdate) {
+                    } else if (valueUpdate instanceof AddValueUpdate) {
                         addValueUpdates.add(valueUpdate);
-                    }
-                    else {
+                    } else {
                         valueUpdate.serialize(this, dataType);
                     }
                 }
