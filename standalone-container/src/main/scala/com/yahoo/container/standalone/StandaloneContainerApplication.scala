@@ -166,7 +166,7 @@ object StandaloneContainerApplication {
                            networkingOption: Networking,
                            configModelRepo: ConfigModelRepo = new ConfigModelRepo): (MockRoot, Container) = {
     val logger = new BaseDeployLogger
-    val rawApplicationPackage = new FilesApplicationPackage.Builder(applicationPath.toFile).preprocessedDir(preprocessedApplicationDir).build()
+    val rawApplicationPackage = new FilesApplicationPackage.Builder(applicationPath.toFile).includeSourceFiles(true).preprocessedDir(preprocessedApplicationDir).build()
     // TODO: Needed until we get rid of semantic rules
     val applicationPackage = rawApplicationPackage.preprocess(Zone.defaultZone(), new RuleConfigDeriver {
       override def derive(ruleBaseDir: String, outputDir: String): Unit = {}
