@@ -2,7 +2,6 @@
 #pragma once
 
 #include <string>
-#include <boost/filesystem/path.hpp>
 #include <vespa/filedistribution/model/filedbmodel.h>
 
 namespace filedistribution {

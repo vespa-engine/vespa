@@ -3,12 +3,7 @@
 
 #include <vector>
 #include <mutex>
-#include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/indexed_by.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
 
 #include <libtorrent/session.hpp>
 

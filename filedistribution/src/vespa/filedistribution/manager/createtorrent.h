@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vector>
-#include <boost/filesystem/path.hpp>
 #include <libtorrent/create_torrent.hpp>
 
 #include <vespa/filedistribution/common/buffer.h>

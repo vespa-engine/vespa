@@ -3,8 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <mutex>
-#include <boost/signals2.hpp>
 
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exception.h>

@@ -6,7 +6,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/exception/diagnostic_information.hpp>
-#include <boost/scope_exit.hpp>
 
 #include <vespa/fastos/app.h>
 #include <vespa/config-zookeepers.h>
