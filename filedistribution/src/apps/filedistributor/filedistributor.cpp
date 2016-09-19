@@ -57,7 +57,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
         const std::shared_ptr<StateServerImpl> _stateServer;
 
     private:
-        std::thread _downloaderEventLoopThread;
+        std::unique_ptr<std::thread> _downloaderEventLoopThread;
         config::ConfigFetcher _configFetcher;
 
         template <class T>
@@ -86,10 +86,10 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
              _manager(track(new FileDownloaderManager(_downloader, _model))),
              _rpcHandler(track(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
-             _downloaderEventLoopThread([downloader=_downloader] () { downloader->runEventLoop(); }),
+             _downloaderEventLoopThread(),
              _configFetcher(configUri.getContext())
-
         {
+             _downloaderEventLoopThread = std::make_unique<std::thread>([downloader=_downloader] () { downloader->runEventLoop(); });
             _manager->start();
             _rpcHandler->start();
 
@@ -110,7 +110,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
             _zk->disableRetries();
 
             _downloader->close();
-            _downloaderEventLoopThread.join();
+            _downloaderEventLoopThread->join();
         }
 
     };
