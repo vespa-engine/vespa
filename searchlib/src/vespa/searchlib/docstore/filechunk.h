@@ -66,14 +66,15 @@ typedef std::vector<LidInfoWithLid> LidInfoWithLidV;
 class ISetLid
 {
 public:
+    using LockGuard = vespalib::LockGuard;
     virtual ~ISetLid() { }
-    virtual void setLid(uint32_t lid, const LidInfo & lm) = 0;
+    virtual void setLid(const LockGuard & guard, uint32_t lid, const LidInfo & lm) = 0;
 };
 
 class IGetLid
 {
 public:
-    typedef vespalib::GenerationHandler::Guard Guard;
+    using Guard = vespalib::GenerationHandler::Guard;
     virtual ~IGetLid() { }
 
     virtual LidInfo getLid(Guard & guard, uint32_t lid) const = 0;
@@ -185,6 +186,7 @@ private:
 class FileChunk
 {
 public:
+    using LockGuard = vespalib::LockGuard;
     class NameId {
     public:
         explicit NameId(size_t id) : _id(id) { }
@@ -220,7 +222,7 @@ public:
     FileChunk(FileId fileId, NameId nameId, const vespalib::string & baseName, const TuneFileSummary & tune, const IBucketizer * bucketizer, bool skipCrcOnRead);
     virtual ~FileChunk();
 
-    virtual size_t updateLidMap(ISetLid & lidMap, uint64_t serialNum);
+    virtual size_t updateLidMap(const LockGuard & guard, ISetLid & lidMap, uint64_t serialNum);
     virtual ssize_t read(uint32_t lid, SubChunkId chunk, vespalib::DataBuffer & buffer) const;
     virtual void read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const;
     void remove(uint32_t lid, uint32_t size);

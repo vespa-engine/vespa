@@ -90,8 +90,9 @@ void
 LogDataStore::updateLidMap()
 {
     uint64_t lastSerialNum(0);
+    LockGuard guard(_updateLock);
     for (FileChunk::UP & fc : _fileChunks) {
-        fc->updateLidMap(*this, lastSerialNum);
+        fc->updateLidMap(guard, *this, lastSerialNum);
         lastSerialNum = fc->getLastPersistedSerialNum();
     }
 }
@@ -166,7 +167,7 @@ LogDataStore::write(LockGuard guard, WriteableFileChunk & destination,
                     uint64_t serialNum, uint32_t lid, const void * buffer, size_t len)
 {
     LidInfo lm = destination.append(serialNum, lid, buffer, len);
-    setLid(lid, lm);
+    setLid(guard, lid, lm);
     if (destination.getFileId() == getActiveFileId(guard)) {
         requireSpace(guard, destination);
     }
@@ -466,13 +467,22 @@ void LogDataStore::compactFile(FileId fileId)
     }
 
     std::this_thread::sleep_for(10s);
+    uint64_t currentGeneration;
+    {
+        LockGuard guard(_updateLock);
+        currentGeneration = _genHandler.getCurrentGeneration();
+        _genHandler.incGeneration();
+    }
     
     FileChunk::UP toDie;
     for (;;) {
         LockGuard guard(_updateLock);
-        if (_holdFileChunks[fc->getFileId().getId()] == 0u) {
-            toDie = std::move(fc);
-            break;
+        _genHandler.updateFirstUsedGeneration();
+        if (currentGeneration < _genHandler.getFirstUsedGeneration()) {
+            if (_holdFileChunks[fc->getFileId().getId()] == 0u) {
+                toDie = std::move(fc);
+                break;
+            }
         }
         guard.unlock();
         /*
@@ -848,8 +858,9 @@ LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffi
 }
 
 void
-LogDataStore::setLid(uint32_t lid, const LidInfo & meta)
+LogDataStore::setLid(const LockGuard & guard, uint32_t lid, const LidInfo & meta)
 {
+    (void) guard;
     if (lid < _lidInfo.size()) {
         _genHandler.updateFirstUsedGeneration();
         _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());
