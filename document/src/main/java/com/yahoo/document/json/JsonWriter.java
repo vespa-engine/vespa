@@ -300,7 +300,6 @@ public class JsonWriter implements DocumentWriter {
     public Serializer put(FieldBase field, ByteBuffer value) {
         serializeByteBuffer(generator, value);
         return this;
-
     }
 
     @Override

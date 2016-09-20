@@ -326,7 +326,6 @@ public class DocumentUpdateJsonSerializer
         public Serializer put(FieldBase field, ByteBuffer value) {
             serializeByteBuffer(generator, value);
             return this;
-
         }
 
         @Override
