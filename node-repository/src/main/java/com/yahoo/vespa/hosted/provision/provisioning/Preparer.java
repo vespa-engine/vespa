@@ -40,20 +40,15 @@ class Preparer {
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, int nodes, Flavor flavor, int wantedGroups) {
-        if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
-        if (nodes > 0 && nodes % wantedGroups != 0)
-            throw new IllegalArgumentException("Requested " + nodes + " nodes in " + wantedGroups + " groups, " +
-                                               "which doesn't allow the nodes to be divided evenly into groups");
-
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
         List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
 
         MutableInteger highestIndex = new MutableInteger(findHighestIndex(application, cluster));
         List<Node> acceptedNodes = new ArrayList<>();
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             ClusterSpec clusterGroup = cluster.changeGroup(Optional.of(ClusterSpec.Group.from(groupIndex)));
-            List<Node> accepted = groupPreparer.prepare(application, clusterGroup, nodes/wantedGroups, 
-                                                        flavor, surplusNodes, highestIndex);
+            List<Node> accepted = groupPreparer.prepare(application, clusterGroup, 
+                                                        requestedNodes.fraction(wantedGroups), surplusNodes, highestIndex);
             replace(acceptedNodes, accepted);
         }
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());

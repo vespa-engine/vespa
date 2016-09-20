@@ -47,8 +47,7 @@ class GroupPreparer {
      *
      * @param application the application we are allocating to
      * @param cluster the cluster and group we are allocating to
-     * @param nodeCount the desired number of nodes to return
-     * @param flavor the desired flavor of those nodes
+     * @param requestedNodes a specification of the requested nodes
      * @param surplusActiveNodes currently active nodes which are available to be assigned to this group.
      *        This method will remove from this list if it finds it needs additional nodes
      * @param highestIndex the current highest node index among all active nodes in this cluster.
@@ -58,9 +57,10 @@ class GroupPreparer {
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, Flavor flavor, List<Node> surplusActiveNodes, MutableInteger highestIndex) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, 
+                              List<Node> surplusActiveNodes, MutableInteger highestIndex) {
         try (Mutex lock = nodeRepository.lock(application)) {
-            NodeList nodeList = new NodeList(application, cluster, nodeCount, flavor, highestIndex);
+            NodeList nodeList = new NodeList(application, cluster, requestedNodes, highestIndex);
 
             // Use active nodes
             nodeList.offer(nodeRepository.getNodes(application, Node.State.active), !canChangeGroup);
@@ -86,20 +86,18 @@ class GroupPreparer {
                 accepted = nodeList.offer(stripeOverHosts(sortNodeListByCost(readyNodes)), !canChangeGroup);
                 nodeList.update(nodeRepository.reserve(accepted));
             }
-            if (nodeList.sufficient()) return nodeList.finalNodes(surplusActiveNodes);
 
-            if (nodeList.whatAboutUsingRetiredNodes()) {
-                throw new OutOfCapacityException("Could not satisfy request for " + nodeCount +
-                                                 " nodes of " + flavor + " for " + cluster +
+            if (nodeList.fullfilled()) return nodeList.finalNodes(surplusActiveNodes);
+
+            // Could not be fulfilled
+            if (nodeList.wouldBeFulfilledWithRetiredNodes())
+                throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
                                                  " because we want to retire existing nodes.");
-            }
-            if (nodeList.whatAboutUsingVMs()) {
-                throw new OutOfCapacityException("Could not satisfy request for " + nodeCount +
-                                                 " nodes of " + flavor + " for " + cluster +
+            else if (nodeList.wouldBeFulfilledWithClashingParentHost())
+                throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
                                                  " because too many have same parentHost.");
-            }
-            throw new OutOfCapacityException("Could not satisfy request for " + nodeCount +
-                                             " nodes of " + flavor + " for " + cluster + ".");
+            else
+                throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster + ".");
         }
     }
 
@@ -160,11 +158,8 @@ class GroupPreparer {
         /** The cluster this list is for */
         private final ClusterSpec cluster;
 
-        /** The requested capacity of the list */
-        private final int requestedNodes;
-
-        /** The requested node flavor */
-        private final Flavor requestedFlavor;
+        /** The requested nodes of this list */
+        private final NodeSpec requestedNodes;
 
         /** The nodes this has accepted so far */
         private final Set<Node> nodes = new LinkedHashSet<>();
@@ -184,11 +179,10 @@ class GroupPreparer {
         /** The next membership index to assign to a new node */
         private MutableInteger highestIndex;
 
-        public NodeList(ApplicationId application, ClusterSpec cluster, int requestedNodes, Flavor requestedFlavor, MutableInteger highestIndex) {
+        public NodeList(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, MutableInteger highestIndex) {
             this.application = application;
             this.cluster = cluster;
             this.requestedNodes = requestedNodes;
-            this.requestedFlavor = requestedFlavor;
             this.highestIndex = highestIndex;
         }
 
@@ -269,7 +263,7 @@ class GroupPreparer {
         }
 
         private boolean hasCompatibleFlavor(Node node) {
-            return node.flavor().satisfies(requestedFlavor);
+            return requestedNodes.isCompatible(node.flavor());
         }
 
         /** Updates the state of some existing nodes in this list by replacing them by id with the given instances. */
@@ -308,20 +302,20 @@ class GroupPreparer {
 
         /** Returns true if no more nodes are needed in this list */
         public boolean saturated() {
-            return acceptedOfRequestedFlavor >= requestedNodes;
+            return requestedNodes.saturatedBy(acceptedOfRequestedFlavor);
         }
 
         /** Returns true if the content of this list is sufficient to meet the request */
-        public boolean sufficient() {
-            return saturated();
+        public boolean fullfilled() {
+            return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor);
         }
 
-        public boolean whatAboutUsingRetiredNodes() {
-            return acceptedOfRequestedFlavor + wasRetiredJustNow >= requestedNodes;
+        public boolean wouldBeFulfilledWithRetiredNodes() {
+            return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor + wasRetiredJustNow);
         }
 
-        public boolean whatAboutUsingVMs() {
-            return acceptedOfRequestedFlavor + rejectedWithClashingParentHost >= requestedNodes;
+        public boolean wouldBeFulfilledWithClashingParentHost() {
+            return requestedNodes.fulfilledBy(acceptedOfRequestedFlavor + rejectedWithClashingParentHost);
         }
 
         /**
@@ -335,7 +329,7 @@ class GroupPreparer {
          */
         public List<Node> finalNodes(List<Node> surplusNodes) {
             long currentRetired = nodes.stream().filter(node -> node.allocation().get().membership().retired()).count();
-            long surplus = nodes.size() - requestedNodes - currentRetired;
+            long surplus = requestedNodes.surplusGiven(nodes.size()) - currentRetired;
 
             List<Node> changedNodes = new ArrayList<>();
             if (surplus > 0) { // retire until surplus is 0, prefer to retire higher indexes to minimize redistribution

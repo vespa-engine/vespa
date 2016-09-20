@@ -28,7 +28,7 @@ public class MockDeployer implements Deployer {
     public int redeployments = 0;
 
     /**
-     * Create a mock deployer which contains a substitute for an application repository, sufficient to
+     * Create a mock deployer which contains a substitute for an application repository, fullfilled to
      * be able to call provision with the right parameters.
      */
     public MockDeployer(NodeRepositoryProvisioner provisioner, Map<ApplicationId, ApplicationContext> applications) {
