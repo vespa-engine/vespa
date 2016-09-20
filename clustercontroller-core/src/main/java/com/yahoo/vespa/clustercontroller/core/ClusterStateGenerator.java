@@ -370,7 +370,7 @@ public class ClusterStateGenerator {
      *  - max init progress time (reported init -> generated down)
      *  - slobrok disconnect grace period (reported down -> generated down)
      *  - reported init progress (current code implies this causes new state versions; why should it do that?)
-     *  - reverse init progress(?)
+     *  - DONE - reverse init progress(?) <-- implicit; handled in StateChangeHandler
      *  - DONE - mark "listing buckets" stage as down, since node can't receive load yet at that point
      *  - DONE interaction with ClusterStateView
      *

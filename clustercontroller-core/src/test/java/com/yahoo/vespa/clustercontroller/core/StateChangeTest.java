@@ -111,13 +111,13 @@ public class StateChangeTest extends FleetControllerTest {
         // Now, fleet controller should have generated a new cluster state.
         ctrl.tick();
 
-        // FIXME: test does NOT test last published state; this is WIP state!
-        // Is this intentional or just a byproduct of non-TDD testing of legacy code?
+        // Regular init progress does not update the cluster state until the node is done initializing (or goes down,
+        // whichever comes first).
         assertEquals("version:6 distributor:10 .0.s:i .0.i:0.0 .1.s:i .1.i:0.0 .2.s:i .2.i:0.0 .3.s:i .3.i:0.0 " +
                         ".4.s:i .4.i:0.0 .5.s:i .5.i:0.0 .6.s:i .6.i:0.0 .7.s:i .7.i:0.0 .8.s:i .8.i:0.0 " +
-                        ".9.s:i .9.i:0.0 storage:10 .0.s:i .0.i:0.9 .1.s:i .1.i:0.9 .2.s:i .2.i:0.9 .3.s:i .3.i:0.9 " +
-                        ".4.s:i .4.i:0.9 .5.s:i .5.i:0.9 .6.s:i .6.i:0.9 .7.s:i .7.i:0.9 .8.s:i .8.i:0.9 .9.s:i .9.i:0.9",
-                     ctrl.getSystemState().toString());
+                        ".9.s:i .9.i:0.0 storage:10 .0.s:i .0.i:0.1 .1.s:i .1.i:0.1 .2.s:i .2.i:0.1 .3.s:i .3.i:0.1 " +
+                        ".4.s:i .4.i:0.1 .5.s:i .5.i:0.1 .6.s:i .6.i:0.1 .7.s:i .7.i:0.1 .8.s:i .8.i:0.1 .9.s:i .9.i:0.1",
+                ctrl.consolidatedClusterState().toString());
 
         timer.advanceTime(options.maxInitProgressTime / 20);
         ctrl.tick();
@@ -138,24 +138,23 @@ public class StateChangeTest extends FleetControllerTest {
 
         assertEquals("version:8 distributor:10 storage:10", ctrl.getSystemState().toString());
 
-
         verifyNodeEvents(new Node(NodeType.DISTRIBUTOR, 0),
                 "Event: distributor.0: Now reporting state U\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: distributor.0: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: distributor.0: Now reporting state I, i 0.00\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'U' to 'I, i 0.00'.\n" +
+                "Event: distributor.0: Altered node state in cluster state from 'U' to 'I, i 0.00'\n" +
                 "Event: distributor.0: Now reporting state U\n" +
-                "Event: distributor.0: Altered node state in cluster state from 'I, i 0.00' to 'U'.\n");
+                "Event: distributor.0: Altered node state in cluster state from 'I, i 0.00' to 'U'\n");
 
         verifyNodeEvents(new Node(NodeType.STORAGE, 0),
                 "Event: storage.0: Now reporting state U\n" +
-                "Event: storage.0: Altered node state in cluster state from 'D' to 'U'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.0: Now reporting state I, i 0.00 (ls)\n" +
-                "Event: storage.0: Altered node state in cluster state from 'U' to 'D: Listing buckets. Progress 0.0 %.'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'U' to 'D'\n" +
                 "Event: storage.0: Now reporting state I, i 0.100 (read)\n" +
-                "Event: storage.0: Altered node state in cluster state from 'D: Listing buckets. Progress 0.0 %.' to 'I, i 0.100 (read)'.\n" +
+                "Event: storage.0: Altered node state in cluster state from 'D' to 'I, i 0.100 (read)'\n" +
                 "Event: storage.0: Now reporting state U\n" +
-                "Event: storage.0: Altered node state in cluster state from 'I, i 0.900 (read)' to 'U'.\n");
+                "Event: storage.0: Altered node state in cluster state from 'I, i 0.100 (read)' to 'U'\n");
     }
 
     @Test
