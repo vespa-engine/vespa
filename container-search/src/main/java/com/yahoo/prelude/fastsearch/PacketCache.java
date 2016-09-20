@@ -19,9 +19,6 @@ import com.yahoo.log.LogLevel;
  */
 public class PacketCache extends LinkedHashMap<CacheKey, PacketWrapper> {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = -7403077211906108356L;
 
     /** The <i>current</i> number of bytes of packets in this cache */
