@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class ProvisionTest {
+public class ProvisioningTest {
 
     @Test
     public void application_deployment_constant_application_size() {
@@ -494,10 +495,10 @@ public class ProvisionTest {
         ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), Optional.empty());
         ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), Optional.empty());
 
-        Set<HostSpec> container0 = new HashSet<>(tester.prepare(application, containerCluster0, container0Size, 1, flavor));
-        Set<HostSpec> container1 = new HashSet<>(tester.prepare(application, containerCluster1, container1Size, 1, flavor));
-        Set<HostSpec> content0 = new HashSet<>(tester.prepare(application, contentCluster0, content0Size, 1, flavor));
-        Set<HostSpec> content1 = new HashSet<>(tester.prepare(application, contentCluster1, content1Size, 1, flavor));
+        Set<HostSpec> container0 = prepare(application, containerCluster0, container0Size, 1, flavor, tester);
+        Set<HostSpec> container1 = prepare(application, containerCluster1, container1Size, 1, flavor, tester);
+        Set<HostSpec> content0 = prepare(application, contentCluster0, content0Size, 1, flavor, tester);
+        Set<HostSpec> content1 = prepare(application, contentCluster1, content1Size, 1, flavor, tester);
 
         Set<HostSpec> allHosts = new HashSet<>();
         allHosts.addAll(container0);
@@ -527,6 +528,11 @@ public class ProvisionTest {
         return new SystemState(allHosts, container0, container1, content0, content1);
     }
 
+    private Set<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, int nodeCount, int groups, String flavor, ProvisioningTester tester) {
+        if (nodeCount == 0) return Collections.emptySet(); // this is a shady practice
+        return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, flavor));
+    }
+    
     private static class SystemState {
 
         private Set<HostSpec> allHosts;

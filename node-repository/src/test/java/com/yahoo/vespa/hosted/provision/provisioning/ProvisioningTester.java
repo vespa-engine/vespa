@@ -121,7 +121,6 @@ public class ProvisioningTester implements AutoCloseable {
         return prepare(application, cluster, Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor)), groups);
     }
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {
-        if (capacity.nodeCount() == 0) return Collections.emptyList();
         Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));
         // prepare twice to ensure idempotence
@@ -201,13 +200,17 @@ public class ProvisioningTester implements AutoCloseable {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor) {
+        return makeReadyNodes(n, flavor, NodeType.tenant);
+    }
+
+    public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
         List<Node> nodes = new ArrayList<>(n);
         for (int i = 0; i < n; i++)
             nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(),
                                                 UUID.randomUUID().toString(),
                                                 Optional.empty(),
                                                 nodeFlavors.getFlavorOrThrow(flavor),
-                                                NodeType.tenant));
+                                                type));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
         return nodes;

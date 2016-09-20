@@ -29,10 +29,10 @@ import static org.junit.Assert.assertNotNull;
  * @author mpolden
  */
 public class VirtualNodeProvisioningTest {
+
     private static final String flavor = "v-4-8-100";
     private static final ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
     private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
-
 
     private ProvisioningTester tester;
     private ApplicationId applicationId;
@@ -166,7 +166,6 @@ public class VirtualNodeProvisioningTest {
     }
 
     @Test(expected = OutOfCapacityException.class)
-    // TODO Should fail with something else than OutOfCapacityException
     public void fail_when_too_few_distinct_parent_hosts() {
         tester.makeReadyVirtualNodes(2, flavor, "parentHost1");
         tester.makeReadyVirtualNodes(1, flavor, "parentHost2");

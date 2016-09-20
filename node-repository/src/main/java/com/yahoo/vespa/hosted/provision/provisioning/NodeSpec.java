@@ -14,6 +14,9 @@ import java.util.Objects;
  */
 public interface NodeSpec {
 
+    /** The node type this requests */
+    NodeType type();
+    
     /** Returns whether the given flavor is compatible with this spec */
     boolean isCompatible(Flavor flavor);
     
@@ -50,6 +53,9 @@ public interface NodeSpec {
         }
 
         @Override
+        public NodeType type() { return NodeType.tenant; }
+
+        @Override
         public boolean isCompatible(Flavor flavor) { return flavor.satisfies(this.flavor); }
 
         @Override
@@ -77,6 +83,9 @@ public interface NodeSpec {
         public TypeNodeSpec(NodeType type) {
             this.type = type;
         }
+
+        @Override
+        public NodeType type() { return type; }
 
         @Override
         public boolean isCompatible(Flavor flavor) { return true; }

@@ -82,7 +82,7 @@ class GroupPreparer {
 
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
-                List<Node> readyNodes = nodeRepository.getNodes(NodeType.tenant, Node.State.ready);
+                List<Node> readyNodes = nodeRepository.getNodes(requestedNodes.type(), Node.State.ready);
                 accepted = nodeList.offer(stripeOverHosts(sortNodeListByCost(readyNodes)), !canChangeGroup);
                 nodeList.update(nodeRepository.reserve(accepted));
             }

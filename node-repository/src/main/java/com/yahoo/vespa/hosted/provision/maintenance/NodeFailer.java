@@ -96,7 +96,7 @@ public class NodeFailer extends Maintainer {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
         try (Mutex lock = nodeRepository().lockUnallocated()) {
-            for (Node node : nodeRepository().getNodes(NodeType.tenant, Node.State.ready)) {
+            for (Node node : nodeRepository().getNodes(Node.State.ready)) {
                 Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
                 if ( ! lastLocalRequest.isPresent()) continue;
 
@@ -119,7 +119,7 @@ public class NodeFailer extends Maintainer {
         // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
         Instant oldestAcceptableRequestTime = clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
         
-        return nodeRepository().getNodes(NodeType.tenant, Node.State.ready).stream()
+        return nodeRepository().getNodes(Node.State.ready).stream()
                 .filter(node -> wasMadeReadyBefore(oldestAcceptableRequestTime, node))
                 .filter(node -> ! hasRecordedRequestAfter(oldestAcceptableRequestTime, node))
                 .collect(Collectors.toList());
@@ -138,7 +138,7 @@ public class NodeFailer extends Maintainer {
     }
 
     private List<Node> readyNodesWithHardwareFailure() {
-        return nodeRepository().getNodes(NodeType.tenant, Node.State.ready).stream()
+        return nodeRepository().getNodes(Node.State.ready).stream()
                 .filter(node -> node.status().hardwareFailure().isPresent())
                 .collect(Collectors.toList());
     }
