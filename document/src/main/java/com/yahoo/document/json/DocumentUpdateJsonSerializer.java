@@ -150,8 +150,8 @@ public class DocumentUpdateJsonSerializer
 
         @Override
         public void write(ArithmeticValueUpdate update) {
-            ArithmeticValueUpdate.Operator operator = update.getOperator();
-            String operationKey;
+            final ArithmeticValueUpdate.Operator operator = update.getOperator();
+            final String operationKey;
 
             switch (operator) {
                 case ADD:
