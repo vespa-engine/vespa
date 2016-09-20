@@ -12,21 +12,13 @@ import org.junit.Test;
 import java.util.List;
 
 import static com.yahoo.vespa.clustercontroller.core.matchers.HasStateReasonForNode.hasStateReasonForNode;
+import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 public class ClusterStateGeneratorTest {
-
-    // TODO de-dupe!
-    private static Node storageNode(int index) {
-        return new Node(NodeType.STORAGE, index);
-    }
-
-    private static Node distributorNode(int index) {
-        return new Node(NodeType.DISTRIBUTOR, index);
-    }
 
     private static AnnotatedClusterState generateFromFixtureWithDefaultParams(ClusterFixture fixture) {
         final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();

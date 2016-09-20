@@ -204,4 +204,12 @@ class ClusterFixture {
     ContentCluster cluster() {
         return this.cluster;
     }
+
+    static Node storageNode(int index) {
+        return new Node(NodeType.STORAGE, index);
+    }
+
+    static Node distributorNode(int index) {
+        return new Node(NodeType.DISTRIBUTOR, index);
+    }
 }
