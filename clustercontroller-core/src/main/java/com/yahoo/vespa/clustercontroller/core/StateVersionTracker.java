@@ -29,7 +29,8 @@ public class StateVersionTracker {
     private int lowestObservedDistributionBits = 16;
 
     private ClusterState currentUnversionedState = ClusterStateUtil.emptyState();
-    private AnnotatedClusterState currentClusterState = AnnotatedClusterState.emptyState();
+    private AnnotatedClusterState latestCandidateState = AnnotatedClusterState.emptyState();
+    private AnnotatedClusterState currentClusterState = latestCandidateState;
 
     private final MetricUpdater metricUpdater;
     private ClusterStateView clusterStateView;
@@ -78,19 +79,32 @@ public class StateVersionTracker {
         return currentClusterState.getClusterState();
     }
 
+    public void updateLatestCandidateState(final AnnotatedClusterState candidate) {
+        assert(latestCandidateState.getClusterState().getVersion() == 0);
+        latestCandidateState = candidate;
+    }
+
+    /**
+     * Returns the last state provided to updateLatestCandidateState, which _may or may not_ be
+     * a published state. Primary use case for this function is a caller which is interested in
+     * changes that may not be reflected in the published state. The best example of this would
+     * be node state changes when a cluster is marked as Down.
+     */
+    public AnnotatedClusterState getLatestCandidateState() {
+        return latestCandidateState;
+    }
+
     public List<ClusterStateHistoryEntry> getClusterStateHistory() {
         return Collections.unmodifiableList(clusterStateHistory);
     }
 
-    boolean changedEnoughFromCurrentToWarrantBroadcast(final AnnotatedClusterState candidate) {
-        return !currentUnversionedState.similarTo(candidate.getClusterState());
+    boolean candidateChangedEnoughFromCurrentToWarrantPublish() {
+        return !currentUnversionedState.similarTo(latestCandidateState.getClusterState());
     }
 
-    void applyAndVersionNewState(final AnnotatedClusterState newState, final long currentTimeMs) {
-        assert newState.getClusterState().getVersion() == 0; // Should not be explicitly set
-
+    void promoteCandidateToVersionedState(final long currentTimeMs) {
         final int newVersion = currentVersion + 1;
-        updateStatesForNewVersion(newState, newVersion);
+        updateStatesForNewVersion(latestCandidateState, newVersion);
         currentVersion = newVersion;
 
         recordCurrentStateInHistoryAtTime(currentTimeMs);
@@ -102,7 +116,7 @@ public class StateVersionTracker {
                 newState.getClusterStateReason(),
                 newState.getNodeStateReasons());
         currentClusterState.getClusterState().setVersion(newVersion);
-        currentUnversionedState = newState.getClusterState();
+        currentUnversionedState = newState.getClusterState().clone();
         lowestObservedDistributionBits = Math.min(
                 lowestObservedDistributionBits,
                 newState.getClusterState().getDistributionBitCount());

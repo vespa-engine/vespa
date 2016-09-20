@@ -266,6 +266,10 @@ public class StateChangeHandler {
     }
 
     // TODO refactor like a boss
+    // TODO too many hidden behavior dependencies between this and the actually
+    // generated cluster state. Still a bit of a mine field...
+    // TODO remove all node state mutation from this function entirely in favor of ClusterStateGenerator!
+    //  `--> this will require adding more event edges and premature crash handling to it. Which is fine.
     public boolean watchTimers(final ContentCluster cluster,
                                final ClusterState currentClusterState,
                                final NodeStateOrHostInfoChangeHandler nodeListener)
@@ -289,9 +293,12 @@ public class StateChangeHandler {
             }
 
             if (nodeInitProgressHasTimedOut(currentTime, node, currentStateInSystem, lastReportedState)) {
-                eventLog.add(new NodeEvent(node, (currentTime - node.getInitProgressTime()) + " milliseconds "
-                        + "without initialize progress. Marking node down."
-                        + " Premature crash count is now " + (node.getPrematureCrashCount() + 1) + ".", NodeEvent.Type.CURRENT, currentTime), isMaster);
+                eventLog.add(new NodeEvent(node, String.format(
+                            "%d milliseconds without initialize progress. Marking node down. " +
+                                "Premature crash count is now %d.",
+                            currentTime - node.getInitProgressTime(),
+                            node.getPrematureCrashCount() + 1),
+                        NodeEvent.Type.CURRENT, currentTime), isMaster);
                 handlePrematureCrash(node, nodeListener);
                 triggeredAnyTimers = true;
             }
@@ -403,7 +410,7 @@ public class StateChangeHandler {
         if (nodeUpToDownEdge(node, currentState, reportedState)) {
             node.setTransitionTime(timeNow);
             if (node.getUpStableStateTime() + stableStateTimePeriod > timeNow && !isControlledShutdown(reportedState)) {
-                log.log(LogLevel.INFO, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
+                log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
                 eventLog.add(new NodeEvent(node,
                         "Stopped or possibly crashed after " + (timeNow - node.getUpStableStateTime())
                         + " ms, which is before stable state time period."

@@ -247,7 +247,7 @@ public class StateChangeTest extends FleetControllerTest {
 
     @Test
     public void testNodeGoingDownAndUpNotifying() throws Exception {
-        // Same test as above, but node manage to notify why it is going down first.
+        // Same test as above, but node manages to notify why it is going down first.
         FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
         options.nodeStateRequestTimeoutMS = 60 * 60 * 1000;
         options.maxSlobrokDisconnectGracePeriod = 100000;
@@ -1175,6 +1175,42 @@ public class StateChangeTest extends FleetControllerTest {
         // NOTE: _same_ version, different node state content. Overall cluster down-state is still the same.
         assertThat(ctrl.consolidatedClusterState().toString(),
                    equalTo("version:4 cluster:d distributor:10 storage:10 .2.s:d .5.s:d"));
+    }
+
+    // Related to the above test, watchTimer invocations must receive the _current_ state and not the
+    // published state. Failure to ensure this would cause events to be fired non-stop, as the effect
+    // of previous timer invocations (with subsequent state generation) would not be visible.
+    @Test
+    public void timer_events_during_cluster_down_observe_most_recent_node_changes() throws Exception {
+        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        options.maxTransitionTime.put(NodeType.STORAGE, 1000);
+        options.minStorageNodesUp = 10;
+        options.minDistributorNodesUp = 10;
+        initialize(options);
+
+        ctrl.tick();
+        communicator.setNodeState(new Node(NodeType.STORAGE, 2), State.DOWN, "foo");
+        timer.advanceTime(500);
+        ctrl.tick();
+        communicator.setNodeState(new Node(NodeType.STORAGE, 3), State.DOWN, "foo");
+        ctrl.tick();
+        assertThat(ctrl.consolidatedClusterState().toString(), equalTo("version:4 cluster:d distributor:10 storage:10 .2.s:m .3.s:m"));
+
+        // Subsequent timer tick should _not_ trigger additional events. Providing published state
+        // only would result in "Marking node down" events for node 2 emitted per tick.
+        for (int i = 0; i < 3; ++i) {
+            timer.advanceTime(5000);
+            ctrl.tick();
+        }
+
+        verifyNodeEvents(new Node(NodeType.STORAGE, 2),
+                "Event: storage.2: Now reporting state U\n" +
+                "Event: storage.2: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
+                "Event: storage.2: Failed to get node state: D: foo\n" +
+                "Event: storage.2: Stopped or possibly crashed after 500 ms, which is before stable state time period. Premature crash count is now 1.\n" +
+                "Event: storage.2: Altered node state in cluster state from 'U' to 'M: foo'\n" +
+                "Event: storage.2: 5000 milliseconds without contact. Marking node down.\n");
+
     }
 
 }
