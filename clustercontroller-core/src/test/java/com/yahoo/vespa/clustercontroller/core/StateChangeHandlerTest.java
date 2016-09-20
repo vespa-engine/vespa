@@ -16,34 +16,16 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-// TODO rename once StateChangeHandler has been renamed
 public class StateChangeHandlerTest extends TestCase {
     private static final Logger log = Logger.getLogger(StateChangeHandlerTest.class.getName());
-    class Config {
+    private class Config {
         int nodeCount = 3;
         int stableStateTime = 1000 * 60000;
         int maxSlobrokDisconnectPeriod = 60000;
         int maxPrematureCrashes = 3;
     }
-    class TestSystemStateListener implements SystemStateListener {
-        LinkedList<ClusterState> states = new LinkedList<>();
 
-        @Override
-        public void handleNewSystemState(ClusterState state) {
-            states.add(state);
-        }
-
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("States(");
-            for (ClusterState state : states) sb.append('\n').append(state.toString());
-            sb.append(")");
-            return sb.toString();
-        }
-
-    }
-
-    class TestNodeStateOrHostInfoChangeHandler implements NodeStateOrHostInfoChangeHandler {
+    private class TestNodeStateOrHostInfoChangeHandler implements NodeStateOrHostInfoChangeHandler {
 
         LinkedList<String> events = new LinkedList<>();
 

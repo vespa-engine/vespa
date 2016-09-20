@@ -10,9 +10,11 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.hasItem;
 
+import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
+import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.distributorNode;
+
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
-import com.yahoo.vdslib.state.NodeType;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -21,24 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 public class EventDiffCalculatorTest {
-
-    // TODO de-dupe this functionality; used in several places both with and without state string input
-    private static ClusterState clusterState(String stateStr) {
-        try {
-            return new ClusterState(stateStr);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // TODO de-dupe
-    private static Node storageNode(int index) {
-        return new Node(NodeType.STORAGE, index);
-    }
-
-    private static Node distributorNode(int index) {
-        return new Node(NodeType.DISTRIBUTOR, index);
-    }
 
     private static ClusterStateReason emptyClusterStateReason() {
         return null; // FIXME likely to change this, null is bull
@@ -64,11 +48,11 @@ public class EventDiffCalculatorTest {
         }
 
         EventFixture clusterStateBefore(String stateStr) {
-            clusterStateBefore = clusterState(stateStr);
+            clusterStateBefore = ClusterStateUtil.stateFromString(stateStr);
             return this;
         }
         EventFixture clusterStateAfter(String stateStr) {
-            clusterStateAfter = clusterState(stateStr);
+            clusterStateAfter = ClusterStateUtil.stateFromString(stateStr);
             return this;
         }
         EventFixture storageNodeReasonBefore(int index, NodeStateReason reason) {
@@ -291,7 +275,7 @@ public class EventDiffCalculatorTest {
 
         final List<Event> events = fixture.computeEventDiff();
         assertThat(events.size(), equalTo(1));
-        // TODO these messages currently don't include the current configured limits
+        // TODO(?) these messages currently don't include the current configured limits
         assertThat(events, hasItem(
                 clusterEventWithDescription("Too few storage nodes available in cluster. Setting cluster state down")));
     }
@@ -322,7 +306,6 @@ public class EventDiffCalculatorTest {
                 clusterEventWithDescription("Too low ratio of available storage nodes. Setting cluster state down")));
     }
 
-    // TODO de-dupe very similar tests for cluster down edge with reason
     @Test
     public void too_low_distributor_node_ratio_cluster_down_reason_emits_corresponding_event() {
         final EventFixture fixture = EventFixture.createForNodes(3)
@@ -335,7 +318,5 @@ public class EventDiffCalculatorTest {
         assertThat(events, hasItem(
                 clusterEventWithDescription("Too low ratio of available distributor nodes. Setting cluster state down")));
     }
-
-    // TODO figure out what to do with events that today are emitted in StateChangeHandler.watchTimer
 
 }
