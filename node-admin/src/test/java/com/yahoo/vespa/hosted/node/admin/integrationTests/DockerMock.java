@@ -53,6 +53,11 @@ public class DockerMock implements Docker {
     }
 
     @Override
+    public void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath) {
+
+    }
+
+    @Override
     public ContainerInfo inspectContainer(ContainerName containerName) {
         return () -> Optional.of(2);
     }

@@ -152,6 +152,12 @@ public class DockerImpl implements Docker {
                 .exec();
     }
 
+    @Override
+    public void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath) {
+        dockerClient.copyArchiveToContainerCmd(destinationContainer.asString())
+                .withHostResource(sourcePath).withRemotePath(destinationPath).exec();
+    }
+
 
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(final DockerImage image) {
