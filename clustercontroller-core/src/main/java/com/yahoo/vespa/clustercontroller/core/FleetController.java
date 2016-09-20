@@ -415,7 +415,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         stateGatherer.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
         stateGatherer.setNodeStateRequestTimeout(options.nodeStateRequestTimeoutMS);
 
-        // TODO: remove as many temporal parameter dependencies as possible here. Don't want state duplication.
+        // TODO: remove as many temporal parameter dependencies as possible here. Currently duplication of state.
         stateChangeHandler.reconfigureFromOptions(options);
         stateChangeHandler.setStateChangedFlag(); // Always trigger state recomputation after reconfig
 
@@ -684,9 +684,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if (stateVersionTracker.candidateChangedEnoughFromCurrentToWarrantPublish()
                     || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()) {
                 final long timeNowMs = timer.getCurrentTimeInMillis();
-                final AnnotatedClusterState before = stateVersionTracker.getAnnotatedClusterState();
+                final AnnotatedClusterState before = stateVersionTracker.getAnnotatedVersionedClusterState();
                 stateVersionTracker.promoteCandidateToVersionedState(timeNowMs);
-                emitEventsForAlteredStateEdges(before, stateVersionTracker.getAnnotatedClusterState(), timeNowMs);
+                emitEventsForAlteredStateEdges(before, stateVersionTracker.getAnnotatedVersionedClusterState(), timeNowMs);
                 handleNewSystemState(stateVersionTracker.getVersionedClusterState());
                 return true;
             }

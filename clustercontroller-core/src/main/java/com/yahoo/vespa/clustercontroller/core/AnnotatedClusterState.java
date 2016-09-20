@@ -49,4 +49,25 @@ public class AnnotatedClusterState {
     public String toString(boolean verbose) {
         return clusterState.toString(verbose);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AnnotatedClusterState that = (AnnotatedClusterState) o;
+
+        if (!clusterState.equals(that.clusterState)) return false;
+        if (!nodeStateReasons.equals(that.nodeStateReasons)) return false;
+        return clusterStateReason == that.clusterStateReason;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = clusterState.hashCode();
+        result = 31 * result + nodeStateReasons.hashCode();
+        result = 31 * result + clusterStateReason.hashCode();
+        return result;
+    }
 }

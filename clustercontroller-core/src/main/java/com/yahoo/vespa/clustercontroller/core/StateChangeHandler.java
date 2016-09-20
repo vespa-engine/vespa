@@ -138,21 +138,21 @@ public class StateChangeHandler {
             return;
         }
 
-        final NodeState alteredState = decideNodeStateGivenReportedState(node, currentState, reportedState, nodeListener);
-        if (alteredState != null) {
-            // TODO figure out what to do with init progress vs. new states.
-            // TODO .. simply don't include init progress in generated states? are they used anywhere? it's already in reported state
-            if (alteredState.getMinUsedBits() != currentState.getMinUsedBits()) {
-                log.log(LogLevel.DEBUG, "Altering node state to reflect that min distribution bit count has changed from "
-                                        + currentState.getMinUsedBits() + " to " + alteredState.getMinUsedBits());
-                int oldCount = currentState.getMinUsedBits();
-                eventLog.add(new NodeEvent(node, "Altered min distribution bit count from " + oldCount
-                                        + " to " + alteredState.getMinUsedBits(), NodeEvent.Type.CURRENT, currentTime), isMaster);
-                stateMayHaveChanged = true;
-            } else {
-                log.log(LogLevel.DEBUG, "Not altering state of " + node + " in cluster state because new state is too similar: "
-                        + currentState.getTextualDifference(alteredState));
-            }
+        // TODO rename, refactor, rejoice
+        decideNodeStateGivenReportedState(node, currentState, reportedState, nodeListener);
+
+        if (reportedState.getMinUsedBits() != currentState.getMinUsedBits()) {
+            final int oldCount = currentState.getMinUsedBits();
+            final int newCount = reportedState.getMinUsedBits();
+            log.log(LogLevel.DEBUG,
+                    String.format("Altering node state to reflect that min distribution bit count has changed from %d to %d",
+                            oldCount, newCount));
+            eventLog.add(new NodeEvent(node, String.format("Altered min distribution bit count from %d to %d", oldCount, newCount),
+                         NodeEvent.Type.CURRENT, currentTime), isMaster);
+            stateMayHaveChanged = true;
+        } else if (log.isLoggable(LogLevel.DEBUG)) {
+            log.log(LogLevel.DEBUG, String.format("Not altering state of %s in cluster state because new state is too similar: %s",
+                    node, currentState.getTextualDifference(reportedState)));
         }
     }
 

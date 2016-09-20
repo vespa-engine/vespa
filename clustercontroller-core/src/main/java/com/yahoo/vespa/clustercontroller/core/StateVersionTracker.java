@@ -53,7 +53,7 @@ public class StateVersionTracker {
      * the list exceeds this limit, the oldest state is repeatedly removed until the limit
      * is no longer exceeded.
      *
-     * Takes effect upon the next invocation of applyAndVersionNewState().
+     * Takes effect upon the next invocation of promoteCandidateToVersionedState().
      */
     void setMaxHistoryEntryCount(final int maxHistoryEntryCount) {
         this.maxHistoryEntryCount = maxHistoryEntryCount;
@@ -71,7 +71,7 @@ public class StateVersionTracker {
         return lowestObservedDistributionBits;
     }
 
-    AnnotatedClusterState getAnnotatedClusterState() {
+    AnnotatedClusterState getAnnotatedVersionedClusterState() {
         return currentClusterState;
     }
 
@@ -120,6 +120,7 @@ public class StateVersionTracker {
         lowestObservedDistributionBits = Math.min(
                 lowestObservedDistributionBits,
                 newState.getClusterState().getDistributionBitCount());
+        // TODO should this take place in updateLatestCandidateState instead? I.e. does it require a consolidated state?
         clusterStateView = ClusterStateView.create(currentClusterState.getClusterState(), metricUpdater);
     }
 

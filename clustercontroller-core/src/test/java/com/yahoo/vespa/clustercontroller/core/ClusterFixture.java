@@ -117,7 +117,6 @@ class ClusterFixture {
         return proposeStorageNodeWantedState(index, state, "mockdesc");
     }
 
-    // TODO de-dupe
     ClusterFixture proposeDistributorWantedState(final int index, State state) {
         final ClusterState stateBefore = rawGeneratedClusterState();
         final Node node = new Node(NodeType.DISTRIBUTOR, index);

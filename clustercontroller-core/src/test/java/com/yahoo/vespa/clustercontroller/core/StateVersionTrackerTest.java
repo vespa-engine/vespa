@@ -85,7 +85,7 @@ public class StateVersionTrackerTest {
     public void exposed_states_are_empty_upon_construction() {
         final StateVersionTracker versionTracker = createWithMockedMetrics();
         assertThat(versionTracker.getVersionedClusterState().toString(), equalTo(""));
-        assertThat(versionTracker.getAnnotatedClusterState().getClusterState().toString(), equalTo(""));
+        assertThat(versionTracker.getAnnotatedVersionedClusterState().getClusterState().toString(), equalTo(""));
     }
 
     @Test
@@ -210,6 +210,19 @@ public class StateVersionTrackerTest {
                 equalTo(Arrays.asList(
                         historyEntry("version:5 distributor:5 storage:5", 400),
                         historyEntry("version:4 distributor:4 storage:4", 300))));
+    }
+
+    @Test
+    public void can_get_latest_non_published_candidate_state() {
+        final StateVersionTracker versionTracker = createWithMockedMetrics();
+
+        AnnotatedClusterState candidate = stateWithoutAnnotations("distributor:2 storage:2");
+        versionTracker.updateLatestCandidateState(candidate);
+        assertThat(versionTracker.getLatestCandidateState(), equalTo(candidate));
+
+        candidate = stateWithoutAnnotations("distributor:3 storage:3");
+        versionTracker.updateLatestCandidateState(candidate);
+        assertThat(versionTracker.getLatestCandidateState(), equalTo(candidate));
     }
 
 }
