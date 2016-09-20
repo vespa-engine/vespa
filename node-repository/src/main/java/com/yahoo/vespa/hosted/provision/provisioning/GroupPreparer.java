@@ -64,21 +64,21 @@ class GroupPreparer {
 
             // Use active nodes
             nodeList.offer(nodeRepository.getNodes(application, Node.State.active), !canChangeGroup);
-            if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
+            if (nodeList.saturated()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use active nodes from other groups that will otherwise be retired
             List<Node> accepted = nodeList.offer(sortNodeListByCost(surplusActiveNodes), canChangeGroup);
             surplusActiveNodes.removeAll(accepted);
-            if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
+            if (nodeList.saturated()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use previously reserved nodes
             nodeList.offer(nodeRepository.getNodes(application, Node.State.reserved), !canChangeGroup);
-            if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
+            if (nodeList.saturated()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use inactive nodes
             accepted = nodeList.offer(sortNodeListByCost(nodeRepository.getNodes(application, Node.State.inactive)), !canChangeGroup);
             nodeList.update(nodeRepository.reserve(accepted));
-            if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
+            if (nodeList.saturated()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
@@ -86,7 +86,7 @@ class GroupPreparer {
                 accepted = nodeList.offer(stripeOverHosts(sortNodeListByCost(readyNodes)), !canChangeGroup);
                 nodeList.update(nodeRepository.reserve(accepted));
             }
-            if (nodeList.satisfied()) return nodeList.finalNodes(surplusActiveNodes);
+            if (nodeList.sufficient()) return nodeList.finalNodes(surplusActiveNodes);
 
             if (nodeList.whatAboutUsingRetiredNodes()) {
                 throw new OutOfCapacityException("Could not satisfy request for " + nodeCount +
@@ -211,7 +211,7 @@ class GroupPreparer {
                     ClusterMembership membership = offered.allocation().get().membership();
                     if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
                     if ( ! membership.cluster().equalsIgnoringGroup(cluster)) continue; // wrong cluster id/type
-                    if ( (! canChangeGroup || satisfied()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
+                    if ((! canChangeGroup || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
                     if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
                     if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
@@ -219,10 +219,10 @@ class GroupPreparer {
                     if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) wantToRetireNode = true;
                     if ( !hasCompatibleFlavor(offered)) wantToRetireNode = true;
 
-                    if ( ( !satisfied() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) )
+                    if ((!saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered) )
                         accepted.add(acceptNode(offered, wantToRetireNode));
                 }
-                else if (! satisfied() && hasCompatibleFlavor(offered)) {
+                else if (! saturated() && hasCompatibleFlavor(offered)) {
                     if ( offeredNodeHasParentHostnameAlreadyAccepted(this.nodes, offered)) {
                         ++rejectedWithClashingParentHost;
                         continue;
@@ -306,9 +306,14 @@ class GroupPreparer {
             return node.with(node.allocation().get().with(membership));
         }
 
-        /** Returns true if we have accepted at least the requested number of nodes of the requested flavor */
-        public boolean satisfied() {
+        /** Returns true if no more nodes are needed in this list */
+        public boolean saturated() {
             return acceptedOfRequestedFlavor >= requestedNodes;
+        }
+
+        /** Returns true if the content of this list is sufficient to meet the request */
+        public boolean sufficient() {
+            return saturated();
         }
 
         public boolean whatAboutUsingRetiredNodes() {
