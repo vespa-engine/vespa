@@ -491,8 +491,8 @@ public class ProvisionTest {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups
         ClusterSpec containerCluster0 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container0"), Optional.empty());
         ClusterSpec containerCluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container1"), Optional.empty());
-        ClusterSpec contentCluster0 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), ClusterSpec.Group.from(0), Optional.empty());
-        ClusterSpec contentCluster1 = ClusterSpec.from(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), ClusterSpec.Group.from(0), Optional.empty());
+        ClusterSpec contentCluster0 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content0"), Optional.empty());
+        ClusterSpec contentCluster1 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1"), Optional.empty());
 
         Set<HostSpec> container0 = new HashSet<>(tester.prepare(application, containerCluster0, container0Size, 1, flavor));
         Set<HostSpec> container1 = new HashSet<>(tester.prepare(application, containerCluster1, container1Size, 1, flavor));
