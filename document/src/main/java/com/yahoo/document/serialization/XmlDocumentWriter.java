@@ -1,20 +1,35 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.serialization;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.Map;
-
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReference;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.CollectionFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.StructuredFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.vespa.objects.Serializer;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.Map;
 
 // TODO: Just inline all use of XmlSerializationHelper when the toXml methods in FieldValue subclasses are to be removed
 // TODO: More cleanup, the put() methods generate a lot of superfluous objects (write should call put, not the other way around)

@@ -1,33 +1,42 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import com.yahoo.document.datatypes.*;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
-import org.apache.commons.codec.binary.Base64;
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.PositionDataType;
 import com.yahoo.document.annotation.AnnotationReference;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.CollectionFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.StructuredFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentWriter;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.vespa.objects.Serializer;
-
 import edu.umd.cs.findbugs.annotations.NonNull;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.Map;
+
+import static com.yahoo.document.json.JsonSerializationHelper.*;
 
 /**
  * Serialize Document and other FieldValue instances as JSON.
@@ -38,7 +47,6 @@ public class JsonWriter implements DocumentWriter {
 
     private static final JsonFactory jsonFactory = new JsonFactory();
     private final JsonGenerator generator;
-    private final Base64 base64Encoder = new Base64();
 
     // I really hate exception unsafe constructors, but the alternative
     // requires generator to not be a final
@@ -85,22 +93,23 @@ public class JsonWriter implements DocumentWriter {
      */
     @Override
     public void write(FieldBase field, FieldValue value) {
-        throw new UnsupportedOperationException("Serializing "
-                + value.getClass().getName() + " is not supported.");
+        throw new UnsupportedOperationException("Serializing " + value.getClass().getName() + " is not supported.");
     }
 
     @Override
     public void write(FieldBase field, Document value) {
         try {
-            fieldNameIfNotNull(field);
+            fieldNameIfNotNull(generator, field);
             generator.writeStartObject();
+
             // this makes it impossible to refeed directly, not sure what's correct
             // perhaps just change to "put"?
             generator.writeStringField("id", value.getId().toString());
             generator.writeObjectFieldStart(JsonReader.FIELDS);
-            for (Iterator<Entry<Field, FieldValue>> i = value.iterator(); i
-                    .hasNext();) {
-                Entry<Field, FieldValue> entry = i.next();
+
+            Iterator<Map.Entry<Field, FieldValue>> i = value.iterator();
+            while (i.hasNext()) {
+                Map.Entry<Field, FieldValue> entry = i.next();
                 entry.getValue().serialize(entry.getKey(), this);
             }
             generator.writeEndObject();
@@ -113,309 +122,83 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public <T extends FieldValue> void write(FieldBase field, Array<T> value) {
-        try {
-            fieldNameIfNotNull(field);
-            generator.writeStartArray();
-            for (Iterator<T> i = value.iterator(); i.hasNext();) {
-                i.next().serialize(null, this);
-            }
-            generator.writeEndArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    private void fieldNameIfNotNull(FieldBase field) {
-        if (field != null) {
-            try {
-                generator.writeFieldName(field.getName());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        serializeArrayField(this, generator, field, value);
     }
 
     @Override
-    public <K extends FieldValue, V extends FieldValue> void write(
-            FieldBase field, MapFieldValue<K, V> map) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeStartArray();
-            for (Map.Entry<K, V> entry : map.entrySet()) {
-                generator.writeStartObject();
-                generator.writeFieldName(JsonReader.MAP_KEY);
-                entry.getKey().serialize(null, this);
-                generator.writeFieldName(JsonReader.MAP_VALUE);
-                entry.getValue().serialize(null, this);
-                generator.writeEndObject();
-            }
-            generator.writeEndArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public <K extends FieldValue, V extends FieldValue> void write(FieldBase field, MapFieldValue<K, V> map) {
+        serializeMapField(this, generator, field, map);
     }
 
     @Override
     public void write(FieldBase field, ByteFieldValue value) {
-        putByte(field, value.getByte());
+        serializeByteField(generator, field, value);
     }
 
     @Override
-    public <T extends FieldValue> void write(FieldBase field,
-            CollectionFieldValue<T> value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeStartArray();
-            for (Iterator<T> i = value.iterator(); i.hasNext();) {
-                i.next().serialize(null, this);
-            }
-            generator.writeEndArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public <T extends FieldValue> void write(FieldBase field, CollectionFieldValue<T> value) {
+        serializeCollectionField(this, generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, DoubleFieldValue value) {
-        putDouble(field, value.getDouble());
+        serializeDoubleField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, FloatFieldValue value) {
-        putFloat(field, value.getFloat());
+        serializeFloatField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, IntegerFieldValue value) {
-        putInt(field, value.getInteger());
+        serializeIntField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, LongFieldValue value) {
-        putLong(field, value.getLong());
+        serializeLongField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, Raw value) {
-        put(field, value.getByteBuffer());
+        serializeRawField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, PredicateFieldValue value) {
-        put(field, value.toString());
+        serializePredicateField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, StringFieldValue value) {
-        put(field, value.getString());
+        serializeStringField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
-        try {
-            fieldNameIfNotNull(field);
-            generator.writeStartObject();
-            if (value.getTensor().isPresent()) {
-                Tensor tensor = value.getTensor().get();
-                writeTensorDimensions(tensor.dimensions());
-                writeTensorCells(tensor.cells());
-            }
-            generator.writeEndObject();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void writeTensorDimensions(Set<String> dimensions) throws IOException {
-        generator.writeArrayFieldStart(JsonReader.TENSOR_DIMENSIONS);
-        for (String dimension : dimensions) {
-            generator.writeString(dimension);
-        }
-        generator.writeEndArray();
-    }
-
-    private void writeTensorCells(Map<TensorAddress, Double> cells) throws IOException {
-        generator.writeArrayFieldStart(JsonReader.TENSOR_CELLS);
-        for (Map.Entry<TensorAddress, Double> cell : cells.entrySet()) {
-            generator.writeStartObject();
-            writeTensorAddress(cell.getKey());
-            generator.writeNumberField(JsonReader.TENSOR_VALUE, cell.getValue());
-            generator.writeEndObject();
-        }
-        generator.writeEndArray();
-    }
-
-    private void writeTensorAddress(TensorAddress address) throws IOException {
-        generator.writeObjectFieldStart(JsonReader.TENSOR_ADDRESS);
-        for (TensorAddress.Element element : address.elements()) {
-            generator.writeStringField(element.dimension(), element.label());
-        }
-        generator.writeEndObject();
+        serializeTensorField(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, Struct value) {
-        if (value.getDataType() == PositionDataType.INSTANCE) {
-            put(field, PositionDataType.renderAsString(value));
-            return;
-        }
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeStartObject();
-            for (Iterator<Entry<Field, FieldValue>> i = value.iterator(); i
-                    .hasNext();) {
-                Entry<Field, FieldValue> entry = i.next();
-                entry.getValue().serialize(entry.getKey(), this);
-            }
-            generator.writeEndObject();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        serializeStructField(this, generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, StructuredFieldValue value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeStartObject();
-            for (Iterator<Entry<Field, FieldValue>> i = value.iterator(); i
-                    .hasNext();) {
-                Entry<Field, FieldValue> entry = i.next();
-                entry.getValue().serialize(entry.getKey(), this);
-            }
-            generator.writeEndObject();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        serializeStructuredField(this, generator, field, value);
     }
 
     @Override
-    public <T extends FieldValue> void write(FieldBase field,
-            WeightedSet<T> value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeStartObject();
-            // entrySet() is deprecated and there is no entry iterator
-            for (T key : value.keySet()) {
-                Integer weight = value.get(key);
-                // key.toString() is according to spec
-                generator.writeNumberField(key.toString(), weight);
-            }
-            generator.writeEndObject();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public <T extends FieldValue> void write(FieldBase field, WeightedSet<T> value) {
+        serializeWeightedSet(generator, field, value);
     }
 
     @Override
     public void write(FieldBase field, AnnotationReference value) {
         // not yet implemented, it's not available in XML either
         // TODO implement
-    }
-
-    @Override
-    public Serializer putByte(FieldBase field, byte value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeNumber(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    @Override
-    public Serializer putShort(FieldBase field, short value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeNumber(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    @Override
-    public Serializer putInt(FieldBase field, int value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeNumber(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    @Override
-    public Serializer putLong(FieldBase field, long value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeNumber(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    @Override
-    public Serializer putFloat(FieldBase field, float value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeNumber(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    @Override
-    public Serializer putDouble(FieldBase field, double value) {
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeNumber(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    @Override
-    public Serializer put(FieldBase field, byte[] value) {
-        return put(field, ByteBuffer.wrap(value));
-    }
-
-    @Override
-    public Serializer put(FieldBase field, ByteBuffer raw) {
-        final byte[] data = new byte[raw.remaining()];
-        final int origPosition = raw.position();
-
-        fieldNameIfNotNull(field);
-        // base64encoder has no encode methods with offset and
-        // limit, so no use trying to get at the backing array if
-        // available anyway
-        raw.get(data);
-        raw.position(origPosition);
-        try {
-            generator.writeString(base64Encoder.encodeToString(data));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
-    }
-
-    @Override
-    public Serializer put(FieldBase field, String value) {
-        if (value.length() == 0) {
-            return this;
-        }
-        fieldNameIfNotNull(field);
-        try {
-            generator.writeString(value);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return this;
     }
 
     @Override
@@ -469,5 +252,59 @@ public class JsonWriter implements DocumentWriter {
             throw new RuntimeException(e);
         }
         return out.toByteArray();
+    }
+
+    @Override
+    public Serializer putByte(FieldBase field, byte value) {
+        serializeByte(generator, field, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putShort(FieldBase field, short value) {
+        serializeShort(generator, field, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putInt(FieldBase field, int value) {
+        serializeInt(generator, field, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putLong(FieldBase field, long value) {
+        serializeLong(generator, field, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putFloat(FieldBase field, float value) {
+        serializeFloat(generator, field, value);
+        return this;
+    }
+
+    @Override
+    public Serializer putDouble(FieldBase field, double value) {
+        serializeDouble(generator, field, value);
+        return this;
+    }
+
+    @Override
+    public Serializer put(FieldBase field, byte[] value) {
+        serializeByteArray(generator, field, value);
+        return this;
+    }
+
+    @Override
+    public Serializer put(FieldBase field, ByteBuffer value) {
+        serializeByteBuffer(generator, field, value);
+        return this;
+    }
+
+    @Override
+    public Serializer put(FieldBase field, String value) {
+        serializeString(generator, field, value);
+        return this;
     }
 }
