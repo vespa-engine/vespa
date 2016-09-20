@@ -27,6 +27,7 @@ using std::runtime_error;
 using document::BucketId;
 using docstore::StoreByBucket;
 using docstore::BucketCompacter;
+using namespace std::literals;
 
 LogDataStore::LogDataStore(vespalib::ThreadStackExecutorBase &executor,
                            const vespalib::string &dirName,
@@ -464,7 +465,8 @@ void LogDataStore::compactFile(FileId fileId)
         compactTo.freeze();
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));;
+    std::this_thread::sleep_for(10s);
+    
     FileChunk::UP toDie;
     for (;;) {
         LockGuard guard(_updateLock);
@@ -477,7 +479,7 @@ void LogDataStore::compactFile(FileId fileId)
          * Wait for requireSpace() and flush() methods to leave chunk
          * alone.
          */
-        std::this_thread::sleep_for(std::chrono::seconds(1));;
+        std::this_thread::sleep_for(1s);;
     }
     toDie->erase();
     LockGuard guard(_updateLock);
