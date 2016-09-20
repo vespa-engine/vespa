@@ -29,6 +29,11 @@ public class GetNodesResponse {
         public final String wantedDockerImage;
         public final String currentDockerImage;
         public final String nodeState;
+        public final String nodeType;
+        public final String nodeFlavor;
+        public final String vespaVersion;
+        public final Owner owner;
+        public final Membership membership;
         public final Long wantedRestartGeneration;
         public final Long currentRestartGeneration;
         public final Double minCpuCores;
@@ -40,6 +45,11 @@ public class GetNodesResponse {
                     @JsonProperty("wantedDockerImage") String wantedDockerImage,
                     @JsonProperty("currentDockerImage") String currentDockerImage,
                     @JsonProperty("state") String nodeState,
+                    @JsonProperty("type") String nodeType,
+                    @JsonProperty("flavor") String nodeFlavor,
+                    @JsonProperty("vespaVersion") String vespaVersion,
+                    @JsonProperty("owner") Owner owner,
+                    @JsonProperty("membership") Membership membership,
                     @JsonProperty("restartGeneration") Long wantedRestartGeneration,
                     @JsonProperty("currentRestartGeneration") Long currentRestartGeneration,
                     @JsonProperty("minCpuCores") Double minCpuCores,
@@ -49,6 +59,11 @@ public class GetNodesResponse {
             this.wantedDockerImage = wantedDockerImage;
             this.currentDockerImage = currentDockerImage;
             this.nodeState = nodeState;
+            this.nodeType = nodeType;
+            this.nodeFlavor = nodeFlavor;
+            this.vespaVersion = vespaVersion;
+            this.owner = owner;
+            this.membership = membership;
             this.wantedRestartGeneration = wantedRestartGeneration;
             this.currentRestartGeneration = currentRestartGeneration;
             this.minCpuCores = minCpuCores;
@@ -62,12 +77,73 @@ public class GetNodesResponse {
                     + " wantedDockerImage = " + wantedDockerImage
                     + " currentDockerImage = " + currentDockerImage
                     + " nodeState = " + nodeState
+                    + " nodeType = " + nodeType
+                    + " nodeFlavor = " + nodeFlavor
+                    + " vespaVersion = " + vespaVersion
+                    + " owner = " + owner
+                    + " membership = " + membership
                     + " wantedRestartGeneration = " + wantedRestartGeneration
                     + " currentRestartGeneration = " + currentRestartGeneration
                     + " minCpuCores = " + minCpuCores
                     + " minMainMemoryAvailableGb = " + minMainMemoryAvailableGb
                     + " minDiskAvailableGb = " + minDiskAvailableGb
                     + " }";
+        }
+
+
+        public static class Owner {
+            public final String tenant;
+            public final String application;
+            public final String instance;
+
+            public Owner(
+                    @JsonProperty("tenant") String tenant,
+                    @JsonProperty("application") String application,
+                    @JsonProperty("instance") String instance) {
+                this.tenant = tenant;
+                this.application = application;
+                this.instance = instance;
+            }
+
+            public String toString() {
+                return "Owner {" +
+                        " tenant = " + tenant +
+                        " application = " + application +
+                        " instance = " + instance +
+                        " }";
+            }
+        }
+
+        public static class Membership {
+            public final String clusterType;
+            public final String clusterId;
+            public final String group;
+            public final int index;
+            public final boolean retired;
+
+            public Membership(
+                    @JsonProperty("clustertype") String clusterType,
+                    @JsonProperty("clusterid") String clusterId,
+                    @JsonProperty("group") String group,
+                    @JsonProperty("index") int index,
+                    @JsonProperty("retired") boolean retired) {
+                this.clusterType = clusterType;
+                this.clusterId = clusterId;
+                this.group = group;
+                this.index = index;
+                this.retired = retired;
+            }
+
+            @Override
+            public String toString() {
+                return "Membership {" +
+                        " clusterType = " + clusterType +
+                        " clusterId = " + clusterId +
+                        " group = " + group +
+                        " index = " + index +
+                        " retired = " + retired +
+                        " }";
+            }
         }
     }
 }
