@@ -128,9 +128,9 @@ WriteableFileChunk::~WriteableFileChunk()
 }
 
 size_t
-WriteableFileChunk::updateLidMap(ISetLid & ds, uint64_t serialNum)
+WriteableFileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNum)
 {
-    size_t sz = FileChunk::updateLidMap(ds, serialNum);
+    size_t sz = FileChunk::updateLidMap(guard, ds, serialNum);
     _nextChunkId = _chunkInfo.size();
     _active.reset( new Chunk(_nextChunkId++, Chunk::Config(_config.getMaxChunkBytes(), _config.getMaxChunkEntries())));
     _serialNum = getLastPersistedSerialNum();
