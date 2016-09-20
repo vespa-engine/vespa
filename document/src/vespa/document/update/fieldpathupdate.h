@@ -2,8 +2,6 @@
 #pragma once
 
 #include <boost/operators.hpp>
-
-#include <boost/operators.hpp>
 #include <vespa/vespalib/objects/cloneable.h>
 
 #include <vespa/document/datatype/datatype.h>
