@@ -3,12 +3,7 @@
 
 #include <vector>
 #include <mutex>
-#include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/indexed_by.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
 
 #include <libtorrent/session.hpp>
 
@@ -20,16 +15,7 @@
 
 namespace filedistribution {
 
-struct NoSuchTorrentException : public Exception {};
-
-struct FailedListeningException : public Exception {
-    FailedListeningException(const std::string& hostName, int port, const std::string & message) {
-        *this << errorinfo::HostName(hostName) << errorinfo::Port(port) << errorinfo::TorrentMessage(message);
-    }
-    FailedListeningException(const std::string& hostName, int port) {
-        *this <<errorinfo::HostName(hostName) << errorinfo::Port(port);
-    }
-};
+VESPA_DEFINE_EXCEPTION(NoSuchTorrentException, vespalib::Exception);
 
 class FileDownloader
 {
@@ -38,7 +24,7 @@ class FileDownloader
         ~LogSessionDeconstructed();
     };
 
-    size_t _outstanding_SRD_requests;
+    std::atomic<size_t> _outstanding_SRD_requests;
     std::shared_ptr<FileDistributionTracker> _tracker;
 
     std::mutex _modifyTorrentsDownloadingMutex;
@@ -49,7 +35,7 @@ class FileDownloader
     libtorrent::session _session;
     std::atomic<bool> _closed;
 
-    const boost::filesystem::path _dbPath;
+    const Path _dbPath;
     typedef std::vector<char> ResumeDataBuffer;
     boost::optional<ResumeDataBuffer> getResumeData(const std::string& fileReference);
 
@@ -57,6 +43,8 @@ class FileDownloader
 
     void deleteTorrentData(const libtorrent::torrent_handle& torrent, LockGuard&);
     void listen();
+    bool closed() const;
+    void drain();
 public:
     // accounting of save-resume-data requests:
     void didRequestSRD() { ++_outstanding_SRD_requests; }
@@ -67,14 +55,14 @@ public:
 
     FileDownloader(const std::shared_ptr<FileDistributionTracker>& tracker,
                    const std::string& hostName, int port,
-                   const boost::filesystem::path& dbPath);
+                   const Path& dbPath);
     ~FileDownloader();
     DirectoryGuard::UP getGuard() { return std::make_unique<DirectoryGuard>(_dbPath); }
 
     void runEventLoop();
     void addTorrent(const std::string& fileReference, const Buffer& buffer);
     bool hasTorrent(const std::string& fileReference) const;
-    boost::optional<boost::filesystem::path> pathToCompletedFile(const std::string& fileReference) const;
+    boost::optional<Path> pathToCompletedFile(const std::string& fileReference) const;
     void removeAllTorrentsBut(const std::set<std::string> & filesToRetain);
 
     void signalIfFinishedDownloading(const std::string& fileReference);
@@ -83,7 +71,7 @@ public:
     void setMaxDownloadSpeed(double MBPerSec);
     void setMaxUploadSpeed(double MBPerSec);
     void close();
-    bool closed() const;
+    bool drained() const { return _outstanding_SRD_requests == 0; }
 
     const std::string _hostName;
     const int _port;

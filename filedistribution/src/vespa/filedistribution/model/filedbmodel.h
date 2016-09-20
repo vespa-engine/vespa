@@ -11,23 +11,17 @@ namespace filedistribution {
 class DirectoryGuard {
 public:
     typedef std::unique_ptr<DirectoryGuard> UP;
-    DirectoryGuard(boost::filesystem::path path);
+    DirectoryGuard(Path path);
     ~DirectoryGuard();
 private:
     int _fd;
 };
 
-struct InvalidProgressException : public Exception {
-    const char* what() const throw() {
-        return "Invalid progress information reported by one of the filedistributors";
-    }
-};
-
-struct FileDoesNotExistException : public Exception {};
+VESPA_DEFINE_EXCEPTION(InvalidProgressException, vespalib::Exception);
+VESPA_DEFINE_EXCEPTION(InvalidHostStatusException, vespalib::Exception);
 
 class FileDBModel {
 public:
-    class InvalidHostStatusException : public Exception {};
     struct HostStatus {
         enum State { finished, inProgress, notStarted };
 
@@ -43,7 +37,7 @@ public:
 
     virtual bool hasFile(const std::string& fileReference) = 0;
     virtual void addFile(const std::string& fileReference, const Buffer& buffer) = 0;
-    virtual Move<Buffer> getFile(const std::string& fileReference) = 0;
+    virtual Buffer getFile(const std::string& fileReference) = 0;
     virtual void cleanFiles(const std::vector<std::string>& filesToPreserve) = 0;
 
     virtual void setDeployedFilesToDownload(const std::string& hostName,

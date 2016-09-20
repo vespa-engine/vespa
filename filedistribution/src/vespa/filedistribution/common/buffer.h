@@ -5,37 +5,6 @@
 
 namespace filedistribution {
 
-struct USED_FOR_MOVING {};
-
-template <class T>
-class Move {
-    mutable T _holder;
-public:
-    Move(T& toMove)
-        :_holder(USED_FOR_MOVING())
-    {
-        _holder.swap(toMove);
-    }
-
-    Move(const Move& other)
-        :_holder(USED_FOR_MOVING())
-    {
-        _holder.swap(other._holder);
-    }
-
-    void swap(T& t) const {
-        _holder.swap(t);
-    }
-
-private:
-    Move& operator=(const Move&);
-};
-
-template <class T>
-inline Move<T> move(T& t) {
-    return Move<T>(t);
-}
-
 class Buffer {
     size_t _capacity;
     char* _buf;
@@ -54,13 +23,15 @@ public:
          _size(0)
     {}
 
-    Buffer(const Move<Buffer>& buffer);
-
-    explicit Buffer(USED_FOR_MOVING)
-        :_capacity(0),
-         _buf(0),
-         _size(0)
-    {}
+    Buffer(Buffer && rhs) :
+        _capacity(rhs._capacity),
+        _buf(rhs._buf),
+        _size(rhs._size)
+    {
+        rhs._capacity = 0;
+        rhs._size = 0;
+        rhs._buf = nullptr;
+    }
 
     template <typename ITER>
     Buffer(ITER beginIter, ITER endIter)
@@ -75,13 +46,8 @@ public:
         delete[] _buf;
     }
 
-    size_t capacity() const {
-        return _capacity;
-    }
-
-    size_t size() const {
-        return _size;
-    }
+    size_t capacity() const { return _capacity; }
+    size_t size() const { return _size; }
 
     //might expose uninitialized memory
     void resize(size_t newSize) {
@@ -114,38 +80,13 @@ public:
         _buf[_size++] = c;
     }
 
-    iterator begin() {
-        return _buf;
-    }
-
-    iterator end() {
-        return _buf + _size;
-    }
-
-    const_iterator begin() const {
-        return _buf;
-    }
-
-    const_iterator end() const {
-        return _buf + _size;
-    }
-
-    char operator[](size_t i) const {
-        return _buf[i];
-    }
-
-    char& operator[](size_t i) {
-        return _buf[i];
-    }
+    iterator begin() { return _buf; }
+    iterator end() { return _buf + _size; }
+    const_iterator begin() const { return _buf; }
+    const_iterator end() const { return _buf + _size; }
+    char operator[](size_t i) const { return _buf[i]; }
+    char& operator[](size_t i) { return _buf[i]; }
 };
-
-inline Buffer::Buffer(const Move<Buffer>& buffer)
-    :_capacity(0),
-     _buf(0),
-     _size(0)
-{
-    buffer.swap(*this);
-}
 
 } //namespace filedistribution
 

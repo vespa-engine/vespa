@@ -30,7 +30,7 @@ class FileDistributionModelImpl : public FileDistributionModel,
     bool /*changed*/
     updateActiveFileReferences(const std::vector<vespalib::string>& fileReferences);
 
-    ZKFacade::Path getPeerEntryPath(const std::string& fileReference);
+    Path getPeerEntryPath(const std::string& fileReference);
 public:
     FileDistributionModelImpl(const std::string& hostName, int port, const std::shared_ptr<ZKFacade>& zk)
         :_hostName(hostName),

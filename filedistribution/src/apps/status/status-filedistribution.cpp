@@ -112,7 +112,7 @@ printStatusRetryIfZKProblem(const std::string& zkservers, const std::string& zkL
         try {
             return printStatus(zkservers);
         } catch (ZKNodeDoesNotExistsException& e) {
-            LOG(debug, "Node does not exists, assuming concurrent update. %s", boost::diagnostic_information(e).c_str());
+            LOG(debug, "Node does not exists, assuming concurrent update. %s", e.what());
 
         } catch (ZKSessionExpired& e) {
             LOG(debug, "Session expired.");

@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <sstream>
 #include <thread>
-#include <boost/throw_exception.hpp>
 #include <boost/function_output_iterator.hpp>
 
 #include <zookeeper/zookeeper.h>
@@ -21,13 +20,11 @@
 typedef std::unique_lock<std::mutex> UniqueLock;
 
 using filedistribution::ZKFacade;
-using filedistribution::Move;
 using filedistribution::Buffer;
 using filedistribution::ZKGenericException;
 using filedistribution::ZKException;
 using filedistribution::ZKLogging;
-
-typedef ZKFacade::Path Path;
+using filedistribution::Path;
 
 namespace {
 
@@ -333,7 +330,7 @@ ZKFacade::getString(const Path& path) {
     return std::string(buffer.begin(), buffer.end());
 }
 
-const Move<Buffer>
+Buffer
 ZKFacade::getData(const Path& path) {
     RetryController retryController(this);
     Buffer buffer(_maxDataSize);
@@ -349,34 +346,30 @@ ZKFacade::getData(const Path& path) {
 
     retryController.throwIfError(path);
     buffer.resize(bufferSize);
-    return move(buffer);
+    return buffer;
 }
 
-const Move<Buffer>
+Buffer
 ZKFacade::getData(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
     RetryController retryController(this);
 
-    try {
-        Buffer buffer(_maxDataSize);
-        int bufferSize = _maxDataSize;
+    Buffer buffer(_maxDataSize);
+    int bufferSize = _maxDataSize;
 
-        do {
-            Stat stat;
-            bufferSize = _maxDataSize;
+    do {
+        Stat stat;
+        bufferSize = _maxDataSize;
 
-            retryController( zoo_wget(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &*buffer.begin(), &bufferSize, &stat));
-        } while(retryController.shouldRetry());
+        retryController( zoo_wget(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &*buffer.begin(), &bufferSize, &stat));
+    } while (retryController.shouldRetry());
 
-        retryController.throwIfError(path);
+    retryController.throwIfError(path);
 
-        buffer.resize(bufferSize);
-        return move(buffer);
-
-    } catch (const ZKException & e) {
-        unregisterWatcher(watcherContext);
-        throw;
-    }
+    buffer.resize(bufferSize);
+    unregisterGuard.release();
+    return buffer;
 }
 
 void
@@ -427,33 +420,31 @@ ZKFacade::hasNode(const Path& path) {
 
 bool
 ZKFacade::hasNode(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
-    try {
-        RetryController retryController(this);
-        do {
-            Stat stat;
-            retryController(
-                    zoo_wexists(_zhandle, path.string().c_str(),
-                            &ZKWatcher::watcherFn, watcherContext,
-                            &stat));
-        } while(retryController.shouldRetry());
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
+    RetryController retryController(this);
+    do {
+        Stat stat;
+        retryController(zoo_wexists(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &stat));
+    } while (retryController.shouldRetry());
 
-        switch(retryController._lastStatus) {
-          case ZNONODE:
-            return false;
-          case ZOK:
-            return true;
-          default:
-            retryController.throwIfError(path);
-            //this should never happen:
-            assert(false);
-            return false;
-        }
-
-    } catch (const ZKException &e) {
-        unregisterWatcher(watcherContext);
-        throw;
+    bool retval(false);
+    switch(retryController._lastStatus) {
+      case ZNONODE:
+        retval = false;
+        break;
+      case ZOK:
+        retval = true;
+        break;
+      default:
+        retryController.throwIfError(path);
+        //this should never happen:
+        assert(false);
+        retval =  false;
+        break;
     }
+    unregisterGuard.release();
+    return retval;
 }
 
 void
@@ -534,30 +525,27 @@ ZKFacade::getChildren(const Path& path) {
 
 std::vector< std::string >
 ZKFacade::getChildren(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
 
-    try {
-        RetryController retryController(this);
-        String_vector children;
-        do {
-            retryController( zoo_wget_children(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &children));
-        } while(retryController.shouldRetry());
+    RetryController retryController(this);
+    String_vector children;
+    do {
+        retryController( zoo_wget_children(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &children));
+    } while (retryController.shouldRetry());
 
-        retryController.throwIfError(path);
+    retryController.throwIfError(path);
 
-        DeallocateZKStringVectorGuard deallocateGuard(children);
+    DeallocateZKStringVectorGuard deallocateGuard(children);
 
-        typedef std::vector<std::string> ResultType;
-        ResultType result;
-        result.reserve(children.count);
+    typedef std::vector<std::string> ResultType;
+    ResultType result;
+    result.reserve(children.count);
 
-        std::copy(children.data, children.data + children.count, std::back_inserter(result));
+    std::copy(children.data, children.data + children.count, std::back_inserter(result));
 
-        return result;
-    } catch (const ZKException & e) {
-        unregisterWatcher(watcherContext);
-        throw;
-    }
+    unregisterGuard.release();
+    return result;
 }
 
 
@@ -588,17 +576,4 @@ ZKLogging::~ZKLogging()
         std::fclose(_file);
         _file = nullptr;
     }
-}
-
-const std::string
-filedistribution::diagnosticUserLevelMessage(const ZKException& exception) {
-    const char* indent = "    ";
-    std::ostringstream message;
-    message <<exception.what();
-
-    const errorinfo::Path::value_type* path = boost::get_error_info<errorinfo::Path>(exception);
-    if (path) {
-        message <<std::endl <<indent <<"Path: " <<*path;
-    }
-    return message.str();
 }

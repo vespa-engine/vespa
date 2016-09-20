@@ -36,7 +36,7 @@ struct Watcher : public ZKFacade::NodeChangedWatcher {
 struct Fixture {
     ComponentsDeleter _componentsDeleter;
     std::shared_ptr<ZKFacade> zk;
-    ZKFacade::Path testNode;
+    Path testNode;
 
     Fixture() {
         zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(createSequenceNode)
 {
     zk->setData(testNode, "", 0);
 
-    ZKFacade::Path prefix = testNode / "prefix";
+    Path prefix = testNode / "prefix";
     zk->createSequenceNode(prefix, "test", 4);
     zk->createSequenceNode(prefix, "test", 4);
     zk->createSequenceNode(prefix, "test", 4);
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(retainOnly)
 
 BOOST_AUTO_TEST_CASE(addEphemeralNode)
 {
-    ZKFacade::Path ephemeralNode = "/test-ephemeral-node";
+    Path ephemeralNode = "/test-ephemeral-node";
     zk->removeIfExists(ephemeralNode);
 
     //Checked deleter is ok here since we're not installing any watchers

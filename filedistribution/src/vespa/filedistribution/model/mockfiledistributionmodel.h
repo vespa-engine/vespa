@@ -21,15 +21,14 @@ public:
         _fileReferences.push_back(fileReference);
     }
 
-    Move<Buffer> getFile(const std::string& fileReference) {
+    Buffer getFile(const std::string& fileReference) override {
         (void)fileReference;
         const char* resultStr = "result";
         Buffer result(resultStr, resultStr + strlen(resultStr));
-        return move(result);
+        return result;
     }
 
-    virtual void cleanFiles(
-            const std::vector<std::string> &) {}
+    virtual void cleanFiles(const std::vector<std::string> &) {}
 
 
     virtual void setDeployedFilesToDownload(const std::string&,
@@ -50,8 +49,7 @@ public:
         return HostStatus();
     }
 
-    Progress getProgress(const std::string&,
-                         const std::vector<std::string>&) {
+    Progress getProgress(const std::string&, const std::vector<std::string>&) {
         return Progress();
     }
 };

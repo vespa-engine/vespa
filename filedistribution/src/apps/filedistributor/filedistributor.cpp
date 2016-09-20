@@ -6,7 +6,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/exception/diagnostic_information.hpp>
-#include <boost/scope_exit.hpp>
 
 #include <vespa/fastos/app.h>
 #include <vespa/config-zookeepers.h>
@@ -57,7 +56,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
         const std::shared_ptr<StateServerImpl> _stateServer;
 
     private:
-        std::thread _downloaderEventLoopThread;
+        std::unique_ptr<std::thread> _downloaderEventLoopThread;
         config::ConfigFetcher _configFetcher;
 
         template <class T>
@@ -86,10 +85,10 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
              _manager(track(new FileDownloaderManager(_downloader, _model))),
              _rpcHandler(track(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
-             _downloaderEventLoopThread([downloader=_downloader] () { downloader->runEventLoop(); }),
+             _downloaderEventLoopThread(),
              _configFetcher(configUri.getContext())
-
         {
+             _downloaderEventLoopThread = std::make_unique<std::thread>([downloader=_downloader] () { downloader->runEventLoop(); });
             _manager->start();
             _rpcHandler->start();
 
@@ -110,7 +109,11 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
             _zk->disableRetries();
 
             _downloader->close();
-            _downloaderEventLoopThread.join();
+            _downloaderEventLoopThread->join();
+            if ( !_downloader->drained() ) {
+                LOG(error, "The filedownloader did not drain fully. We will just exit quickly and let a restart repair it for us.");
+                std::quick_exit(67);
+            }
         }
 
     };
@@ -289,35 +292,18 @@ FileDistributorApplication::Main() {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
         return 4;
-    } catch(const FailedListeningException & e) {
+    } catch(const vespalib::PortListenException & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
         return 5;
+    } catch(const ZKConnectionLossException & e) {
+        std::string s = boost::diagnostic_information(e);
+        EV_STOPPING(programName, s.c_str());
+        return 6;
     } catch(const ZKGenericException & e) {
         std::string s = boost::diagnostic_information(e);
         EV_STOPPING(programName, s.c_str());
         return 99;
-    } catch(const boost::unknown_exception & e) {
-        std::string s = boost::diagnostic_information(e);
-        LOG(warning, "Caught '%s'", s.c_str());
-        EV_STOPPING(programName, s.c_str());
-        return 255;
-#if 0
-    /*
-     These are kept hanging around for reference as to how it was when we just held our ears
-     singing "na, na, na, na..." no matter if the sun was shining or if the world imploded.
-    */
-    } catch(const boost::exception& e) {
-        std::string s = boost::diagnostic_information(e);
-        LOG(error, "Caught '%s'", s.c_str());
-        EV_STOPPING(programName, s.c_str());
-        return -1;
-    } catch(const std::string& msg) {
-        std::string s = "Error: " + msg;
-        LOG(error, "Caught '%s'", s.c_str());
-        EV_STOPPING(programName, s.c_str());
-        return -1;
-#endif
     }
 }
 

@@ -61,19 +61,19 @@ fileReferenceToString(const libtorrent::sha1_hash& fileReference) {
 
 filedistribution::
 CreateTorrent::
-CreateTorrent(const boost::filesystem::path& path)
+CreateTorrent(const Path& path)
     :_path(path),
      _entry(createEntry(_path))
 {}
 
-const filedistribution::Move<filedistribution::Buffer>
+filedistribution::Buffer
 filedistribution::
 CreateTorrent::
 bencode() const
 {
     Buffer buffer(static_cast<int>(targetTorrentSize));
     libtorrent::bencode(std::back_inserter(buffer), _entry);
-    return move(buffer);
+    return buffer;
 }
 
 const std::string

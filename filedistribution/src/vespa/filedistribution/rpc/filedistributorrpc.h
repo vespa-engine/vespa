@@ -2,7 +2,6 @@
 #pragma once
 
 #include <memory>
-#include <boost/enable_shared_from_this.hpp>
 
 #include "fileprovider.h"
 

@@ -4,9 +4,6 @@
 #include <libtorrent/session.hpp>
 #include <libtorrent/torrent.hpp>
 
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/deadline_timer.hpp>
-
 #include <vespa/filedistribution/model/filedistributionmodel.h>
 #include "scheduler.h"
 #include <mutex>
@@ -26,7 +23,7 @@ class FileDistributorTrackerImpl : public FileDistributionTracker  {
 
     //Use separate worker thread to avoid potential deadlock
     //between tracker requests and files to download changed requests.
-    boost::scoped_ptr<Scheduler> _scheduler;
+    std::unique_ptr<Scheduler> _scheduler;
 public:
     FileDistributorTrackerImpl(const std::shared_ptr<FileDistributionModel>& model);
 
