@@ -74,8 +74,7 @@ public class DockerOperationsImplTest {
                 "    vespaVersion: 6.13.37\n" +
                 "    flavor: docker\n" +
                 "    role: tenant\n" +
-                "    state: active\n" +
-                "    zone: test.us-west-5\n", expectedSecretAgentSchedule);
+                "    state: active\n", expectedSecretAgentSchedule);
     }
 
     @Test
