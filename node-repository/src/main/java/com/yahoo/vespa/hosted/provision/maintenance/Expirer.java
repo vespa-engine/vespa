@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -47,7 +48,7 @@ public abstract class Expirer extends Maintainer {
     @Override
     protected void maintain() {
         List<Node> expired = new ArrayList<>();
-        for (Node node : nodeRepository().getNodes(Node.Type.tenant, fromState)) {
+        for (Node node : nodeRepository().getNodes(NodeType.tenant, fromState)) {
             Optional<History.Event> event = node.history().event(eventType);
             if (event.isPresent() && event.get().at().plus(expiryTime).isBefore(clock.instant()))
                 expired.add(node);

@@ -95,7 +95,7 @@ public class PopulateClient {
                 Node.State.active,
                 Optional.empty() /* Allocation */,
                 History.empty(),
-                Node.Type.tenant)                                                                   // History
+                NodeType.tenant)                                                                   // History
 
                 .allocate(
                         ApplicationId.from(

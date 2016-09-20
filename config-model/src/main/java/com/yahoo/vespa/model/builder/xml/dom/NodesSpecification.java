@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A common utility class to represent a requirement for some nodes during model building.
- * Such a requirement is commonly specified as a <code>nodes</code> element.
+ * A common utility class to represent a requirement for nodes during model building.
+ * Such a requirement is commonly specified in services.xml as a <code>nodes</code> element.
  *
  * @author bratseth
  */

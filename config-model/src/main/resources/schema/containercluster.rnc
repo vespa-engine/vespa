@@ -189,6 +189,8 @@ NodesOfContainerCluster = element nodes {
     (
       attribute of { xsd:string }
       |
+      attribute type { xsd:string }
+      |
       (
         attribute count { xsd:positiveInteger } &
         attribute flavor { xsd:string }? &

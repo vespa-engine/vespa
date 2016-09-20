@@ -5,6 +5,7 @@ import com.google.common.collect.ComparisonChain;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
@@ -81,7 +82,7 @@ class GroupPreparer {
 
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
-                List<Node> readyNodes = nodeRepository.getNodes(Node.Type.tenant, Node.State.ready);
+                List<Node> readyNodes = nodeRepository.getNodes(NodeType.tenant, Node.State.ready);
                 accepted = nodeList.offer(stripeOverHosts(sortNodeListByCost(readyNodes)), !canChangeGroup);
                 nodeList.update(nodeRepository.reserve(accepted));
             }

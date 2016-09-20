@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -279,15 +280,15 @@ public class NodeSerializer {
         throw new IllegalArgumentException("Serialized form of '" + agent + "' not defined");
     }
 
-    private Node.Type nodeTypeFromString(String typeString) {
+    private NodeType nodeTypeFromString(String typeString) {
         switch (typeString) {
-            case "tenant" : return Node.Type.tenant;
-            case "host" : return Node.Type.host;
-            case "proxy" : return Node.Type.proxy;
+            case "tenant" : return NodeType.tenant;
+            case "host" : return NodeType.host;
+            case "proxy" : return NodeType.proxy;
             default : throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
         }
     }
-    private String toString(Node.Type type) {
+    private String toString(NodeType type) {
         switch (type) {
             case tenant: return "tenant";
             case host: return "host";

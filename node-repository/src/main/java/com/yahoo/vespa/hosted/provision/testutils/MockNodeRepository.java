@@ -8,6 +8,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
@@ -47,22 +48,22 @@ public class MockNodeRepository extends NodeRepository {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this, flavors, Zone.defaultZone());
 
         List<Node> nodes = new ArrayList<>();
-        nodes.add(createNode("node1", "host1.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
-        nodes.add(createNode("node2", "host2.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
-        nodes.add(createNode("node3", "host3.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("expensive"), Node.Type.tenant));
+        nodes.add(createNode("node1", "host1.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
+        nodes.add(createNode("node2", "host2.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
+        nodes.add(createNode("node3", "host3.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("expensive"), NodeType.tenant));
 
         // TODO: Use docker flavor
-        Node node4 = createNode("node4", "host4.yahoo.com", Optional.of("dockerhost4"), flavors.getFlavorOrThrow("default"), Node.Type.tenant);
+        Node node4 = createNode("node4", "host4.yahoo.com", Optional.of("dockerhost4"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         node4 = node4.with(node4.status().withDockerImage("image-12"));
         nodes.add(node4);
 
-        Node node5 = createNode("node5", "host5.yahoo.com", Optional.of("dockerhost"), flavors.getFlavorOrThrow("default"), Node.Type.tenant);
+        Node node5 = createNode("node5", "host5.yahoo.com", Optional.of("dockerhost"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodes.add(node5.with(node5.status().withDockerImage("image-123").withVespaVersion(new Version("1.2.3"))));
 
-        nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
-        nodes.add(createNode("node7", "host7.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
+        nodes.add(createNode("node6", "host6.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
+        nodes.add(createNode("node7", "host7.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
         // 8 and 9 are added by web service calls
-        Node node10 = createNode("node10", "host10.yahoo.com", Optional.of("parent.yahoo.com"), flavors.getFlavorOrThrow("default"), Node.Type.tenant);
+        Node node10 = createNode("node10", "host10.yahoo.com", Optional.of("parent.yahoo.com"), flavors.getFlavorOrThrow("default"), NodeType.tenant);
         Status node10newStatus = node10.status();
         node10newStatus = node10newStatus
                 .withVespaVersion(Version.fromString("5.104.142"))
@@ -71,8 +72,8 @@ public class MockNodeRepository extends NodeRepository {
         node10 = node10.with(node10newStatus);
         nodes.add(node10);
 
-        nodes.add(createNode("node55", "host55.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.tenant));
-        nodes.add(createNode("parent1", "parent1.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), Node.Type.host));
+        nodes.add(createNode("node55", "host55.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.tenant));
+        nodes.add(createNode("parent1", "parent1.yahoo.com", Optional.empty(), flavors.getFlavorOrThrow("default"), NodeType.host));
 
         nodes = addNodes(nodes);
         nodes.remove(6);

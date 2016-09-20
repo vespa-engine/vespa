@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -35,7 +35,7 @@ public class ApplicationMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         Set<ApplicationId> applications =
-            nodeRepository().getNodes(Node.Type.tenant, Node.State.active).stream().map(node -> node.allocation().get().owner()).collect(Collectors.toSet());
+            nodeRepository().getNodes(NodeType.tenant, Node.State.active).stream().map(node -> node.allocation().get().owner()).collect(Collectors.toSet());
 
         for (ApplicationId application : applications) {
             try {

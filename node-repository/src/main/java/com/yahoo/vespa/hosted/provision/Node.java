@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -29,7 +30,7 @@ public final class Node {
     private final Flavor flavor;
     private final Status status;
     private final State state;
-    private final Type type;
+    private final NodeType type;
 
     /** Record of the last event of each type happening to this node */
     private final History history;
@@ -38,20 +39,20 @@ public final class Node {
     private Optional<Allocation> allocation;
 
     /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor, Type type) {
+    public static Node create(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
         return new Node(openStackId, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
                         Optional.empty(), History.empty(), type);
     }
 
     /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
     public Node(String openStackId, String hostname, Optional<String> parentHostname,
-                Flavor flavor, Status status, State state, Allocation allocation, History history, Type type) {
+                Flavor flavor, Status status, State state, Allocation allocation, History history, NodeType type) {
         this(openStackId, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
     }
 
     public Node(String openStackId, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation,
-                History history, Type type) {
+                History history, NodeType type) {
         Objects.requireNonNull(openStackId, "A node must have an openstack id");
         Objects.requireNonNull(hostname, "A node must have a hostname");
         Objects.requireNonNull(parentHostname, "A null parentHostname is not permitted.");
@@ -100,7 +101,7 @@ public final class Node {
     public State state() { return state; }
 
     /** Returns the type of this node */
-    public Type type() { return type; }
+    public NodeType type() { return type; }
 
     /** Returns the current allocation of this, if any */
     public Optional<Allocation> allocation() { return allocation; }
@@ -145,7 +146,7 @@ public final class Node {
     }
 
     /** Returns a node with the type assigned to the given value */
-    public Node with(Type type) {
+    public Node with(NodeType type) {
         return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
@@ -249,19 +250,6 @@ public final class Node {
         public boolean isAllocated() {
             return this == reserved || this == active || this == inactive || this == failed || this == parked;
         }
-    }
-
-    public enum Type {
-        
-        /** A host of a set of (docker) tenant nodes */
-        host,
-        
-        /** Nodes running the shared proxy layer */
-        proxy,
-
-        /** A node to be assigned to a tenant to run application workloads */
-        tenant
-
     }
 
 }

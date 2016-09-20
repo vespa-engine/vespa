@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v1;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -79,7 +80,7 @@ public class
 
         private void toSlime(Node.State state, Cursor object) {
             Cursor nodeArray = null; // create if there are nodes
-            for (Node.Type type : Node.Type.values()) {
+            for (NodeType type : NodeType.values()) {
                 List<Node> nodes = nodeRepository.getNodes(type, state);
                 for (Node node : nodes) {
                     if (hostnameFilter.isPresent() && !node.hostname().equals(hostnameFilter.get())) continue;

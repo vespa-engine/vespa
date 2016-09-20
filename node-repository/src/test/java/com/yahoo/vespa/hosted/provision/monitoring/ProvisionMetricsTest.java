@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.monitoring;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -27,9 +28,9 @@ public class ProvisionMetricsTest {
         final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         final Curator curator = new MockCurator();
         final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator);
-        final Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant);
+        final Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
-        final Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host);
+        final Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
         nodeRepository.addNodes(Collections.singletonList(hostNode));
 
         final Map<String, Number> expectedMetrics = new HashMap<>();
