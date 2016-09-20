@@ -11,7 +11,6 @@
  */
 #pragma once
 
-#include <boost/operators.hpp>
 #include <map>
 #include <vector>
 #include <vespa/vespalib/objects/floatingpointtype.h>
@@ -26,7 +25,7 @@ namespace lib {
 class IdealGroup;
 class SystemState;
 
-class Group : public document::Printable, public boost::operators<Group>
+class Group : public document::Printable
 {
 public:
     typedef std::unique_ptr<Group> UP;
