@@ -33,4 +33,17 @@ TEST("require that PortListenException with cause retains relevant information")
     }
 }
 
+TEST("test that OOMException carries message forward.") {
+    const char * M = "This is the simple message.";
+    bool caught(false);
+    try {
+        throw OOMException(M);
+        ASSERT_TRUE(false);
+    } catch (OOMException & e) {
+        EXPECT_EQUAL(0, strcmp(M, e.what()));
+        caught = true;
+    }
+    EXPECT_TRUE(caught);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

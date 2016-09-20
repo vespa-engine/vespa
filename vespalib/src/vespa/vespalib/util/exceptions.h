@@ -71,6 +71,7 @@ public:
     ExceptionWithPayload(vespalib::stringref msg) : std::exception(), _msg(msg), _payload() { }
     ExceptionWithPayload(vespalib::stringref msg, Anything::UP payload) : std::exception(), _msg(msg), _payload(std::move(payload)) { }
     void setPayload(Anything::UP payload) { _payload = std::move(payload); }
+    const char * what() const noexcept override;
 private:
     vespalib::string _msg;
     Anything::UP     _payload;
