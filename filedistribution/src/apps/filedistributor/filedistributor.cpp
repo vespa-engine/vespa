@@ -110,6 +110,10 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
 
             _downloader->close();
             _downloaderEventLoopThread->join();
+            if ( !_downloader->drained() ) {
+                LOG(error, "The filedownloader did not drain fully. We will just exit quickly and let a restart repair it for us.");
+                std::quick_exit(67);
+            }
         }
 
     };

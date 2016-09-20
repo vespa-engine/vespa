@@ -232,18 +232,29 @@ FileDownloader::FileDownloader(const std::shared_ptr<FileDistributionTracker>& t
 
 }
 
-FileDownloader::~FileDownloader() {
+void
+FileDownloader::drain() {
     EventHandler eventHandler(this);
     size_t cnt = 0;
+    size_t waitCount = 0;
     do {
-        LOG(debug, "destructor waiting for %zu SRD alerts", _outstanding_SRD_requests);
+        LOG(debug, "destructor waiting for %zu SRD alerts", _outstanding_SRD_requests.load());
         while (_session.wait_for_alert(libtorrent::milliseconds(20))) {
             std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
             eventHandler.handle(std::move(alert));
             ++cnt;
         }
-    } while (_outstanding_SRD_requests > 0);
-    LOG(debug, "handled %zu alerts in destructor", cnt);
+        waitCount++;
+    } while (!drained() && (waitCount < 1000));
+    LOG(debug, "handled %zu alerts during draining.", cnt);
+    if (!drained()) {
+        LOG(error, "handled %zu alerts during draining. But there are still %zu left.", cnt, _outstanding_SRD_requests.load());
+        LOG(error, "We have been waiting for stuff that did not happen.");
+    }
+}
+
+FileDownloader::~FileDownloader() {
+    assert(drained());
 }
 
 void
@@ -305,6 +316,7 @@ FileDownloader::hasTorrent(const std::string& fileReference) const {
 
 void
 FileDownloader::addTorrent(const std::string& fileReference, const Buffer& buffer) {
+    if (closed()) { return; }
     LockGuard guard(_modifyTorrentsDownloadingMutex);
 
     boost::optional<ResumeDataBuffer> resumeData = getResumeData(fileReference);
@@ -314,8 +326,7 @@ FileDownloader::addTorrent(const std::string& fileReference, const Buffer& buffe
 
     libtorrent::lazy_entry entry;
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    libtorrent::lazy_bdecode(&*buffer.begin(), &*buffer.end(),
-            entry); //out
+    libtorrent::lazy_bdecode(&*buffer.begin(), &*buffer.end(), entry); //out
 #pragma GCC diagnostic pop
 
     libtorrent::add_torrent_params torrentParams;
@@ -325,8 +336,9 @@ FileDownloader::addTorrent(const std::string& fileReference, const Buffer& buffe
     torrentParams.auto_managed = false;
     torrentParams.paused = false;
 
-    if (resumeData)
+    if (resumeData) {
         torrentParams.resume_data = *resumeData; //vector will be swapped
+    }
 
     libtorrent::torrent_handle torrentHandle = _session.add_torrent(torrentParams);
 
@@ -354,6 +366,7 @@ FileDownloader::deleteTorrentData(const libtorrent::torrent_handle& torrent, Loc
 
 void
 FileDownloader::removeAllTorrentsBut(const std::set<std::string> & filesToRetain) {
+    if (closed()) { return; }
     LockGuard guard(_modifyTorrentsDownloadingMutex);
 
     std::set<std::string> currentFiles;
@@ -380,7 +393,7 @@ void FileDownloader::runEventLoop() {
     EventHandler eventHandler(this);
     while ( ! closed() ) {
         try {
-            if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
+            while (_session.wait_for_alert(libtorrent::milliseconds(100))) {
                 std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
                 eventHandler.handle(std::move(alert));
             }
@@ -388,6 +401,7 @@ void FileDownloader::runEventLoop() {
             LOG(info, "Connection loss in downloader event loop, resuming. %s", e.what());
         }
     }
+    drain();
 }
 
 bool

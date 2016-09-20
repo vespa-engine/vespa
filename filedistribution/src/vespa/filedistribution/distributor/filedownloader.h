@@ -24,7 +24,7 @@ class FileDownloader
         ~LogSessionDeconstructed();
     };
 
-    size_t _outstanding_SRD_requests;
+    std::atomic<size_t> _outstanding_SRD_requests;
     std::shared_ptr<FileDistributionTracker> _tracker;
 
     std::mutex _modifyTorrentsDownloadingMutex;
@@ -43,6 +43,8 @@ class FileDownloader
 
     void deleteTorrentData(const libtorrent::torrent_handle& torrent, LockGuard&);
     void listen();
+    bool closed() const;
+    void drain();
 public:
     // accounting of save-resume-data requests:
     void didRequestSRD() { ++_outstanding_SRD_requests; }
@@ -69,7 +71,7 @@ public:
     void setMaxDownloadSpeed(double MBPerSec);
     void setMaxUploadSpeed(double MBPerSec);
     void close();
-    bool closed() const;
+    bool drained() const { return _outstanding_SRD_requests == 0; }
 
     const std::string _hostName;
     const int _port;
