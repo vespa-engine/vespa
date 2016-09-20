@@ -24,13 +24,13 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
+import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.RequestHandler;
-import com.yahoo.vespa.config.server.SuperModelController;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdaterFactory;
 import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
@@ -79,7 +79,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     private final HostRegistry<TenantName> hostRegistry;
     private final Map<TenantName, TenantHandlerProvider> tenantProviders = new ConcurrentHashMap<>();
-    private final SuperModelController superModelController;
+    private final SuperModelRequestHandler superModelRequestHandler;
     private final MetricUpdater metrics;
     private final MetricUpdaterFactory metricUpdaterFactory;
     private final HostLivenessTracker hostLivenessTracker;
@@ -93,9 +93,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      * @param config The config to use for setting up this server
      */
     @Inject
-    public RpcServer(ConfigserverConfig config, SuperModelController superModelController, MetricUpdaterFactory metrics, 
+    public RpcServer(ConfigserverConfig config, SuperModelRequestHandler superModelRequestHandler, MetricUpdaterFactory metrics,
                      HostRegistries hostRegistries, HostLivenessTracker hostLivenessTracker) {
-        this.superModelController = superModelController;
+        this.superModelRequestHandler = superModelRequestHandler;
         this.metricUpdaterFactory = metrics;
         this.supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
@@ -188,13 +188,13 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      */
     @Override
     public void configReloaded(TenantName tenant, ApplicationSet applicationSet) {
-        final ApplicationId applicationId = applicationSet.getId();
+        ApplicationId applicationId = applicationSet.getId();
         configReloaded(delayedConfigResponses.drainQueue(applicationId), Tenants.logPre(applicationId));
         reloadSuperModel(tenant, applicationSet);
     }
 
     private void reloadSuperModel(TenantName tenant, ApplicationSet applicationSet) {
-        superModelController.reloadConfig(tenant, applicationSet);
+        superModelRequestHandler.reloadConfig(tenant, applicationSet);
         configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), Tenants.logPre(ApplicationId.global()));
     }
 
@@ -253,7 +253,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void applicationRemoved(ApplicationId applicationId) {
-        superModelController.removeApplication(applicationId);
+        superModelRequestHandler.removeApplication(applicationId);
         configReloaded(delayedConfigResponses.drainQueue(applicationId), Tenants.logPre(applicationId));
         configReloaded(delayedConfigResponses.drainQueue(ApplicationId.global()), Tenants.logPre(ApplicationId.global()));
     }
@@ -286,12 +286,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     public ConfigResponse resolveConfig(JRTServerConfigRequest request, GetConfigContext context, Optional<Version> vespaVersion) {
-        Trace trace = context.trace();
-        if (trace.shouldTrace(TRACELEVEL)) {
-            trace.trace(TRACELEVEL, "RpcServer.resolveConfig()");
-        }
-        RequestHandler handler = context.requestHandler();
-        return handler.resolveConfig(context.applicationId(), request, vespaVersion);
+        context.trace().trace(TRACELEVEL, "RpcServer.resolveConfig()");
+        return context.requestHandler().resolveConfig(context.applicationId(), request, vespaVersion);
     }
 
     protected Supervisor getSupervisor() {
@@ -338,7 +334,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      */
     public GetConfigContext createGetConfigContext(Optional<TenantName> optionalTenant, JRTServerConfigRequest request, Trace trace) {
         if ("*".equals(request.getConfigKey().getConfigId())) {
-            return GetConfigContext.create(ApplicationId.global(), superModelController, trace);
+            return GetConfigContext.create(ApplicationId.global(), superModelRequestHandler, trace);
         }
         TenantName tenant = optionalTenant.orElse(TenantName.defaultName()); // perhaps needed for non-hosted?
         if ( ! hasRequestHandler(tenant)) {
@@ -383,7 +379,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Override
     public void onTenantsLoaded() {
         allTenantsLoaded = true;
-        superModelController.enable();
+        superModelRequestHandler.enable();
     }
 
     @Override

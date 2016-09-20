@@ -17,7 +17,7 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * A config model that spans across all applications of all tenants in the config server.
+ * A config model that provides config containing information from all known tenants and applications.
  * 
  * @author vegardh
  * @since 5.9
@@ -28,8 +28,8 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
     private final LbServicesProducer lbProd;
     private final RoutingProducer zoneProd;
     
-    public SuperModel(Map<TenantName, Map<ApplicationId, Application>> newModels, Zone zone) {
-        this.models = newModels;
+    public SuperModel(Map<TenantName, Map<ApplicationId, Application>> models, Zone zone) {
+        this.models = models;
         this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(models), zone);
         this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(models));
     }
@@ -49,9 +49,7 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
         }
     }
 
-    public Map<TenantName, Map<ApplicationId, Application>> getCurrentModels() {
-        return models;
-    }
+    public Map<TenantName, Map<ApplicationId, Application>> applicationModels() { return models; }
 
     @Override
     public void getConfig(LbServicesConfig.Builder builder) {
@@ -63,7 +61,8 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
         zoneProd.getConfig(builder);
     }
     
-    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, ApplicationId applicationId, String configId) throws IOException {
+    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, 
+                                                                    ApplicationId applicationId, String configId) throws IOException {
         TenantName tenant = applicationId.tenant();
         if (!models.containsKey(tenant)) {
             throw new IllegalArgumentException("Tenant " + tenant + " not found");
@@ -77,4 +76,5 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
         ConfigPayload payload = application.getModel().getConfig(key, (ConfigDefinition)null, null);
         return payload.toInstance(configClass, configId);
     }
+
 }
