@@ -393,7 +393,7 @@ void FileDownloader::runEventLoop() {
     EventHandler eventHandler(this);
     while ( ! closed() ) {
         try {
-            while (_session.wait_for_alert(libtorrent::milliseconds(100))) {
+            if (_session.wait_for_alert(libtorrent::milliseconds(100))) {
                 std::unique_ptr<libtorrent::alert> alert = _session.pop_alert();
                 eventHandler.handle(std::move(alert));
             }
