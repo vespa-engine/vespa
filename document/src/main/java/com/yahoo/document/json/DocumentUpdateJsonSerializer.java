@@ -191,7 +191,7 @@ public class DocumentUpdateJsonSerializer
 
         @Override
         public void write(ClearValueUpdate clearValueUpdate, DataType superType) {
-            throw new JsonSerializationException("Serialization of ClearValueUpdate is not supported (use AssignValueUpdate with value null instead)");
+            wrapIOException(() -> generator.writeNullField("assign"));
         }
 
         @Override

@@ -322,4 +322,21 @@ public class DocumentUpdateJsonSerializerTest {
                 "}"
         ));
     }
+
+    @Test
+    public void testClearField() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'fields': {",
+                "        'int_field': {",
+                "            'assign': null",
+                "        },",
+                "        'string_field': {",
+                "            'assign': null",
+                "        }",
+                "    }",
+                "}"
+        ));
+    }
 }
