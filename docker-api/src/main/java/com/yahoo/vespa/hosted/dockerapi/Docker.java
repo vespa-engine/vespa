@@ -44,6 +44,8 @@ public interface Docker {
 
     void connectContainerToNetwork(ContainerName containerName, String networkName);
 
+    void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath);
+
     List<Container> getAllManagedContainers();
 
     Optional<Container> getContainer(HostName hostname);

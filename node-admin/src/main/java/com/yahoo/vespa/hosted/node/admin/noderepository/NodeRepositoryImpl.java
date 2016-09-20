@@ -94,11 +94,27 @@ public class NodeRepositoryImpl implements NodeRepository {
 
         String hostName = Objects.requireNonNull(node.hostname, "hostname is null");
 
+        ContainerNodeSpec.Owner owner = null;
+        if (node.owner != null) {
+            owner = new ContainerNodeSpec.Owner(node.owner.tenant, node.owner.application, node.owner.instance);
+        }
+
+        ContainerNodeSpec.Membership membership = null;
+        if (node.membership != null) {
+            membership = new ContainerNodeSpec.Membership(node.membership.clusterType, node.membership.clusterId,
+                    node.membership.group, node.membership.index, node.membership.retired);
+        }
+
         return new ContainerNodeSpec(
                 new HostName(hostName),
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
                 containerNameFromHostName(hostName),
                 nodeState,
+                node.nodeType,
+                node.nodeFlavor,
+                Optional.ofNullable(node.vespaVersion),
+                Optional.ofNullable(owner),
+                Optional.ofNullable(membership),
                 Optional.ofNullable(node.wantedRestartGeneration),
                 Optional.ofNullable(node.currentRestartGeneration),
                 Optional.ofNullable(node.minCpuCores),
