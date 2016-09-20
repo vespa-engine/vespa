@@ -46,11 +46,10 @@ public class SuperModelRequestHandler implements RequestHandler {
 
     /**
      * Creates a supermodel controller
-     * 
-     * @param generationCounter this will be the SuperModelGenerationCounter in production
      */
     @Inject
-    public SuperModelRequestHandler(GenerationCounter generationCounter, ConfigDefinitionRepo configDefinitionRepo, ConfigserverConfig configserverConfig) {
+    public SuperModelRequestHandler(GenerationCounter generationCounter, ConfigDefinitionRepo configDefinitionRepo, 
+                                    ConfigserverConfig configserverConfig) {
         this.generationCounter = generationCounter;
         this.configDefinitionRepo = configDefinitionRepo;
         this.masterGeneration = configserverConfig.masterGeneration();
