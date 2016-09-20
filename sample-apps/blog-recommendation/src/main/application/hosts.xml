@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<hosts>
+  <host name="localhost">
+    <alias>node1</alias>
+  </host>
+</hosts>
+
