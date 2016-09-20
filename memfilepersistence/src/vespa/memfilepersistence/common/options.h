@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <boost/operators.hpp>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/fastos/types.h> // For uint32_t on linux
 #include <string>
@@ -29,8 +28,7 @@ namespace storage {
 
 namespace memfile {
 
-struct Options : public vespalib::Printable,
-                 public boost::operators<Options>
+struct Options : public vespalib::Printable
 {
     // Parameters from def file. See config file for comments.
 
