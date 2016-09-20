@@ -13,7 +13,7 @@ import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
-import java.util.Collections;   
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -88,6 +88,11 @@ public class NodeAdminStateUpdaterTest {
                 Optional.empty(),
                 new ContainerName("containername"),
                 Node.State.active,
+                "tenant",
+                "docker",
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
