@@ -2,8 +2,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
-#include <boost/cast.hpp>
-#include <boost/lexical_cast.hpp>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/log/log.h>
