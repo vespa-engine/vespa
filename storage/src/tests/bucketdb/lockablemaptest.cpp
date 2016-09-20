@@ -158,48 +158,36 @@ LockableMapTest::testComparison() {
 
         // Check empty state is correct
     CPPUNIT_ASSERT_EQUAL(map1, map2);
-    CPPUNIT_ASSERT(map1 <= map2);
-    CPPUNIT_ASSERT(map1 >= map2);
     CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(!(map1 > map2));
     CPPUNIT_ASSERT(!(map1 != map2));
 
         // Check that different lengths are oki
     map1.insert(4, A(1, 2, 3), "foo", preExisted);
     CPPUNIT_ASSERT(!(map1 == map2));
-    CPPUNIT_ASSERT(!(map1 <= map2));
     CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(map1 >= map2);
-    CPPUNIT_ASSERT(map1 > map2);
+    CPPUNIT_ASSERT(map2 < map1);
     CPPUNIT_ASSERT(map1 != map2);
 
         // Check that equal elements are oki
     map2.insert(4, A(1, 2, 3), "foo", preExisted);
     CPPUNIT_ASSERT_EQUAL(map1, map2);
-    CPPUNIT_ASSERT(map1 <= map2);
-    CPPUNIT_ASSERT(map1 >= map2);
     CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(!(map1 > map2));
     CPPUNIT_ASSERT(!(map1 != map2));
 
         // Check that non-equal values are oki
     map1.insert(6, A(1, 2, 6), "foo", preExisted);
     map2.insert(6, A(1, 2, 3), "foo", preExisted);
     CPPUNIT_ASSERT(!(map1 == map2));
-    CPPUNIT_ASSERT(!(map1 <= map2));
     CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(map1 >= map2);
-    CPPUNIT_ASSERT(map1 > map2);
+    CPPUNIT_ASSERT(map2 < map1);
     CPPUNIT_ASSERT(map1 != map2);
 
         // Check that non-equal keys are oki
     map1.erase(6, "foo");
     map1.insert(7, A(1, 2, 3), "foo", preExisted);
     CPPUNIT_ASSERT(!(map1 == map2));
-    CPPUNIT_ASSERT(!(map1 <= map2));
     CPPUNIT_ASSERT(!(map1 < map2));
-    CPPUNIT_ASSERT(map1 >= map2);
-    CPPUNIT_ASSERT(map1 > map2);
+    CPPUNIT_ASSERT(map2 < map1);
     CPPUNIT_ASSERT(map1 != map2);
 }
 

@@ -95,14 +95,16 @@ public:
     virtual void print(std::ostream& out, bool verbose,
                        const std::string& indent) const;
 
-    class ConstIterator : public vespalib::Printable,
-                          public boost::operators<ConstIterator>
+    class ConstIterator : public vespalib::Printable
     {
     public:
         ConstIterator& operator--() { --_iterator; return *this; }
         ConstIterator& operator++() { ++_iterator; return *this; }
 
-        bool operator==(const ConstIterator &cp) const; // != provided by boost
+        bool operator==(const ConstIterator &cp) const;
+        bool operator!=(const ConstIterator &cp) const {
+            return ! (*this == cp);
+        }
         value_type operator*() const;
 
         inline bool end() const { return _iterator.end(); }
@@ -129,8 +131,7 @@ public:
         mutable std::pair<key_type, mapped_type> _pair;
     };
 
-    class Iterator : public ConstIterator,
-                     public boost::operators<Iterator>
+    class Iterator : public ConstIterator
     {
     public:
         Iterator& operator--()

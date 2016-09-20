@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <boost/operators.hpp>
 #include <vespa/memfilepersistence/common/types.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
@@ -97,7 +96,7 @@ public:
  * implementation in order to be able to return iterators by value, as one is
  * acustomed to in the standard library.
  */
-class IteratorWrapper : public boost::operators<IteratorWrapper> {
+class IteratorWrapper {
     SlotIterator::CUP _it;
 
 public:
@@ -116,6 +115,9 @@ public:
         const MemSlot* slot2(o._it.get() == 0 ? 0 : o._it->getCurrent());
         return (slot == slot2);
     }
+    bool operator!=(const IteratorWrapper& o) const {
+        return ! (*this == o);
+    } 
 
     const MemSlot& operator*() const { return *_it->getCurrent(); }
     const MemSlot* operator->() const { return _it->getCurrent(); }
