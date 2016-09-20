@@ -286,55 +286,55 @@ public class DocumentUpdateJsonSerializer
 
         @Override
         public Serializer putByte(FieldBase field, byte value) {
-            serializeByte(generator, value);
+            serializeByte(generator, field, value);
             return this;
         }
 
         @Override
         public Serializer putShort(FieldBase field, short value) {
-            serializeShort(generator, value);
+            serializeShort(generator, field, value);
             return this;
         }
 
         @Override
         public Serializer putInt(FieldBase field, int value) {
-            serializeInt(generator, value);
+            serializeInt(generator, field, value);
             return this;
         }
 
         @Override
         public Serializer putLong(FieldBase field, long value) {
-            serializeLong(generator, value);
+            serializeLong(generator, field, value);
             return this;
         }
 
         @Override
         public Serializer putFloat(FieldBase field, float value) {
-            serializeFloat(generator, value);
+            serializeFloat(generator, field, value);
             return this;
         }
 
         @Override
         public Serializer putDouble(FieldBase field, double value) {
-            serializeDouble(generator, value);
+            serializeDouble(generator, field, value);
             return this;
         }
 
         @Override
         public Serializer put(FieldBase field, byte[] value) {
-            serializeByteArray(generator, value);
+            serializeByteArray(generator, field, value);
             return this;
         }
 
         @Override
         public Serializer put(FieldBase field, ByteBuffer value) {
-            serializeByteBuffer(generator, value);
+            serializeByteBuffer(generator, field, value);
             return this;
         }
 
         @Override
         public Serializer put(FieldBase field, String value) {
-            serializeString(generator, value);
+            serializeString(generator, field, value);
             return this;
         }
     }
