@@ -509,9 +509,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             didWork |= processAnyPendingStatusPageRequest();
 
             if (rpcServer != null) {
-                // TODO consolidatedClusterState() instead?
-                //didWork |= rpcServer.handleRpcRequests(cluster, stateChangeHandler.getClusterState(), this, this);
-                didWork |= rpcServer.handleRpcRequests(cluster, stateVersionTracker.getVersionedClusterState(), this, this);
+                didWork |= rpcServer.handleRpcRequests(cluster, consolidatedClusterState(), this, this);
             }
 
             processAllQueuedRemoteTasks();
@@ -636,7 +634,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if (publishedState.getClusterState() == State.UP) {
             return publishedState; // Short-circuit; already represents latest node state
         }
-        final ClusterState current = computeCurrentAnnotatedState().getClusterState();
+        // Latest candidate state contains the most up to date state information, even if it may not
+        // have been published yet.
+        final ClusterState current = stateVersionTracker.getLatestCandidateState().getClusterState().clone();
         current.setVersion(publishedState.getVersion());
         return current;
     }
@@ -659,8 +659,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
         // Send getNodeState requests to zero or more nodes.
         didWork |= stateGatherer.sendMessages(cluster, communicator, this);
-        // TODO: have any semantics changed from us going from nextClusterStateView -> tracked state?
-        didWork |= stateChangeHandler.watchTimers(cluster, stateVersionTracker.getVersionedClusterState(), this);
+        // Important: timer events must use a consolidated state, or they might trigger edge events multiple times.
+        didWork |= stateChangeHandler.watchTimers(cluster, consolidatedClusterState(), this);
 
         didWork |= recomputeClusterStateIfRequired();
 
@@ -679,12 +679,13 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if (mustRecomputeCandidateClusterState()) {
             stateChangeHandler.unsetStateChangedFlag();
             final AnnotatedClusterState candidate = computeCurrentAnnotatedState();
+            stateVersionTracker.updateLatestCandidateState(candidate);
 
-            if (stateVersionTracker.changedEnoughFromCurrentToWarrantBroadcast(candidate)
+            if (stateVersionTracker.candidateChangedEnoughFromCurrentToWarrantPublish()
                     || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()) {
                 final long timeNowMs = timer.getCurrentTimeInMillis();
                 final AnnotatedClusterState before = stateVersionTracker.getAnnotatedClusterState();
-                stateVersionTracker.applyAndVersionNewState(candidate, timeNowMs);
+                stateVersionTracker.promoteCandidateToVersionedState(timeNowMs);
                 emitEventsForAlteredStateEdges(before, stateVersionTracker.getAnnotatedClusterState(), timeNowMs);
                 handleNewSystemState(stateVersionTracker.getVersionedClusterState());
                 return true;
@@ -701,7 +702,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         return ClusterStateGenerator.generatedStateFrom(params);
     }
 
-    // FIXME potentially dangerous implicit requirement that this is called before applyAndVersionNewState
     private void emitEventsForAlteredStateEdges(final AnnotatedClusterState fromState,
                                                 final AnnotatedClusterState toState,
                                                 final long timeNowMs) {
