@@ -3,7 +3,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/idealnodecalculator.h>
-#include <boost/assign.hpp>
 #include <vespa/config/helper/configfetcher.h>
 #include <cmath>
 #include <chrono>
@@ -1453,38 +1452,28 @@ DistributionTest::testActivePerGroup()
 void
 DistributionTest::testHierarchicalDistributeLessThanRedundancy()
 {
-    using namespace boost::assign;
-    Distribution distr("redundancy 4\n"
-                       "active_per_leaf_group true\n" + groupConfig);
+    Distribution distr("redundancy 4\nactive_per_leaf_group true\n" + groupConfig);
     ClusterState state("storage:6");
     std::vector<uint16_t> actual;
 
     {
-        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, 0),
-                            actual, "uim", 4);
-        std::vector<uint16_t> expected;
-        expected += 3, 5, 1, 2;
+        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, 0), actual, "uim", 4);
+        std::vector<uint16_t> expected({3, 5, 1, 2});
         CPPUNIT_ASSERT_EQUAL(expected, actual);
     }
     {
-        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, 0),
-                            actual, "uim", 3);
-        std::vector<uint16_t> expected;
-        expected += 3, 5, 1;
+        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, 0), actual, "uim", 3);
+        std::vector<uint16_t> expected({3, 5, 1});
         CPPUNIT_ASSERT_EQUAL(expected, actual);
     }
     {
-        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, 0),
-                            actual, "uim", 2);
-        std::vector<uint16_t> expected;
-        expected += 3, 1;
+        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, 0), actual, "uim", 2);
+        std::vector<uint16_t> expected({3, 1});
         CPPUNIT_ASSERT_EQUAL(expected, actual);
     }
     {
-        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, 0),
-                            actual, "uim", 1);
-        std::vector<uint16_t> expected;
-        expected += 3;
+        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, 0), actual, "uim", 1);
+        std::vector<uint16_t> expected({3});
         CPPUNIT_ASSERT_EQUAL(expected, actual);
     }
 }

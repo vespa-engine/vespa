@@ -3,7 +3,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vdslib/distribution/group.h>
 
-#include <boost/assign.hpp>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
