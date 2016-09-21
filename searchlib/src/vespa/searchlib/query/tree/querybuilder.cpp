@@ -2,19 +2,29 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
+#include "querybuilder.h"
+#include "intermediate.h"
+#include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 LOG_SETUP(".querybuilder");
 
-#include "querybuilder.h"
-
-#include "intermediate.h"
-
 using vespalib::string;
+using vespalib::make_string;
+using vespalib::getClassName;
+
 using namespace search::query;
 
-void QueryBuilderBase::reportError(const vespalib::string &msg) {
+void QueryBuilderBase::reportError(const string &msg) {
     if (!hasError()) {
         _error_msg = msg;
     }
+}
+
+
+void QueryBuilderBase::reportError(const string &msg, const Node & incomming, const Node & root) {
+    reportError(make_string("%s: QueryBuilder got invalid node structure. Incomming node is '%s', while root is non-null('%s')",
+                            msg.c_str(), getClassName(incomming).c_str(), getClassName(root).c_str()));
 }
 
 QueryBuilderBase::QueryBuilderBase()
@@ -37,9 +47,9 @@ void QueryBuilderBase::addCompleteNode(Node *n)
     if (_nodes.empty()) {
         if (!_root) {
             _root = std::move(node);
-            return;
+        } else {
+            reportError("QueryBuilderBase::addCompleteNode", *node, *_root);
         }
-        reportError("QueryBuilderBase::addCompleteNode : QueryBuilder got invalid node structure.");
         return;
     }
 
@@ -57,7 +67,7 @@ void QueryBuilderBase::addIntermediateNode(Intermediate *n, int child_count)
     Intermediate::UP node(n);
     if (!hasError()) {
         if (_root) {
-            reportError("QueryBuilderBase::addIntermediateNode: QueryBuilder got invalid node structure.");
+            reportError("QueryBuilderBase::addIntermediateNode", *node, *_root);
         } else {
             node->reserve(child_count);
             WeightOverride weight_override;
@@ -82,11 +92,10 @@ void QueryBuilderBase::setWeightOverride(const Weight &weight) {
 }
 
 Node::UP QueryBuilderBase::build() {
-    if (!_root.get()) {
-        reportError("QueryBuilderBase::build: Trying to build incomplete query tree.");
-    }
     if (!_nodes.empty()) {
-        reportError("QueryBuilderBase::build: QueryBuilder got invalid node structure.");
+        reportError("QueryBuilderBase::build: QueryBuilder got invalid node structure. _nodes are not empty.");
+    } else if (!_root) {
+        reportError("QueryBuilderBase::build: Trying to build incomplete query tree.");
     }
     if (hasError()) {
         return Node::UP();

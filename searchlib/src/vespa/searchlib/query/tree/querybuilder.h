@@ -53,6 +53,7 @@ class QueryBuilderBase
     vespalib::string _error_msg;
 
     void reportError(const vespalib::string &msg);
+    void reportError(const vespalib::string &msg, const Node & incomming, const Node & root);
 
 protected:
     QueryBuilderBase();
