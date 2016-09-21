@@ -2,7 +2,6 @@
 #include <vespa/fastos/fastos.h>
 #include "compare.h"
 
-#include <boost/scoped_array.hpp>
 #include <iomanip>
 #include <vespa/log/log.h>
 #include <sstream>
