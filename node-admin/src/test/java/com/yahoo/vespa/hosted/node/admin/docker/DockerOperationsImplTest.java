@@ -42,7 +42,7 @@ public class DockerOperationsImplTest {
                 Optional.of(new DockerImage("vespa-6.13")),
                 new ContainerName("host4"),
                 Node.State.active,
-                "tenants",
+                "tenant",
                 "docker",
                 Optional.of("6.13.37"),
                 Optional.of(owner),
