@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <boost/lexical_cast.hpp>
 #include <iomanip>
 #include <vespa/storage/bucketmover/bucketmover.h>
 #include <vespa/storage/bucketmover/htmltable.h>
@@ -31,8 +30,7 @@ BucketMover::BucketMover(const config::ConfigUri & configUri,
 {
     if (!configUri.empty()) {
         using vespa::config::content::core::StorBucketmoverConfig;
-        _configFetcher.subscribe<StorBucketmoverConfig>(
-                configUri.getConfigId(), this);
+        _configFetcher.subscribe<StorBucketmoverConfig>(configUri.getConfigId(), this);
         _configFetcher.start();
     }
     _component.registerStatusPage(*this);
@@ -193,8 +191,7 @@ BucketMover::tick()
     {
         vespalib::MonitorGuard monitor(_wait);
 
-        framework::SecondTime currentTime(
-                _component.getClock().getTimeInSeconds());
+        framework::SecondTime currentTime(_component.getClock().getTimeInSeconds());
 
         if (_currentRun.get() == 0) {
             if (currentTime >= _nextRun) {
