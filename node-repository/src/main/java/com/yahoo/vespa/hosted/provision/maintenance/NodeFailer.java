@@ -165,7 +165,7 @@ public class NodeFailer extends Maintainer {
             for (ServiceCluster<ServiceMonitorStatus> cluster : application.serviceClusters()) {
                 for (ServiceInstance<ServiceMonitorStatus> service : cluster.serviceInstances()) {
                     Optional<Node> node = nodeRepository().getNode(service.hostName().s(), Node.State.active);
-                    if ( ! node.isPresent()) continue; // we also get status from infrastructure nodes, which are not in the repo
+                    if ( ! node.isPresent()) continue; // we also get status from infrastructure nodes, which are not in the repo. TODO: remove when proxy nodes are in node repo everywhere
 
                     if (service.serviceStatus().equals(ServiceMonitorStatus.DOWN))
                         downNodes.add(recordAsDown(node.get()));
