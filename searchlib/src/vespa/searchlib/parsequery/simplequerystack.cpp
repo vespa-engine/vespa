@@ -14,6 +14,8 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/parsequery/simplequerystack.h>
 
+LOG_SETUP(".search.simplequerystack");
+
 using vespalib::make_vespa_string;
 
 namespace search {
@@ -319,6 +321,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
         }
 
         default:
+            LOG(error, "Unhandled type %d", type);
             abort();
         }
     }

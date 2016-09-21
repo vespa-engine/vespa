@@ -84,6 +84,9 @@ public:
     SimpleQueryStackDumpIterator(const vespalib::stringref &buf);
     ~SimpleQueryStackDumpIterator();
 
+    vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufLen); }
+    size_t getPosition() const { return _currPos - _buf; }
+
     /**
      * Moves to the next item in the buffer.
      *

@@ -35,11 +35,11 @@ void QueryBuilderBase::addCompleteNode(Node *n)
         return;
     }
     if (_nodes.empty()) {
-        if (!_root.get()) {
+        if (!_root) {
             _root = std::move(node);
             return;
         }
-        reportError("QueryBuilder got invalid node structure.");
+        reportError("QueryBuilderBase::addCompleteNode : QueryBuilder got invalid node structure.");
         return;
     }
 
@@ -56,8 +56,8 @@ void QueryBuilderBase::addIntermediateNode(Intermediate *n, int child_count)
 {
     Intermediate::UP node(n);
     if (!hasError()) {
-        if (_root.get()) {
-            reportError("QueryBuilder got invalid node structure.");
+        if (_root) {
+            reportError("QueryBuilderBase::addIntermediateNode: QueryBuilder got invalid node structure.");
         } else {
             node->reserve(child_count);
             WeightOverride weight_override;
@@ -83,10 +83,10 @@ void QueryBuilderBase::setWeightOverride(const Weight &weight) {
 
 Node::UP QueryBuilderBase::build() {
     if (!_root.get()) {
-        reportError("Trying to build incomplete query tree.");
+        reportError("QueryBuilderBase::build: Trying to build incomplete query tree.");
     }
     if (!_nodes.empty()) {
-        reportError("QueryBuilder got invalid node structure.");
+        reportError("QueryBuilderBase::build: QueryBuilder got invalid node structure.");
     }
     if (hasError()) {
         return Node::UP();

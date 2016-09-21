@@ -615,9 +615,7 @@ TEST("test query parsing error") {
     string stackDump(STACK, 2936);
     SimpleQueryStackDumpIterator iterator(stackDump);
     Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
-    And *and_node = dynamic_cast<And *>(new_node.get());
-    ASSERT_TRUE(and_node);
-    EXPECT_EQUAL(0u, and_node->getChildren().size());
+    EXPECT_FALSE(new_node);
 }
 
 }  // namespace
