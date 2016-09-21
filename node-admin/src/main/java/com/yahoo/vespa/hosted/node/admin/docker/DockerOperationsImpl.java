@@ -180,10 +180,10 @@ public class DockerOperationsImpl implements DockerOperations {
             stringBuilder.append("    vespaVersion: ").append(nodeSpec.vespaVersion.get()).append("\n");
 
         stringBuilder
+                .append("    role: tenants\n")
                 .append("    flavor: ").append(nodeSpec.nodeFlavor).append("\n")
-                .append("    role: ").append(nodeSpec.nodeType).append("\n")
-                .append("    state: ").append(nodeSpec.nodeState).append("\n");
-//                .append("    zone: ").append(environment.getZone()).append("\n");
+                .append("    state: ").append(nodeSpec.nodeState).append("\n")
+                .append("    zone: ").append(environment.getZone()).append("\n");
 
         return stringBuilder.toString();
     }
