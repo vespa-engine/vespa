@@ -4,11 +4,13 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.index_manager_explorer");
 #include "index_manager_explorer.h"
+#include "index_manager_stats.h"
 
 #include <vespa/vespalib/data/slime/cursor.h>
 
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
+using search::SearchableStats;
 
 namespace searchcorespi {
 
@@ -20,9 +22,27 @@ IndexManagerExplorer::IndexManagerExplorer(IIndexManager::SP mgr)
 void
 IndexManagerExplorer::get_state(const Inserter &inserter, bool full) const
 {
-    (void) full;
     Cursor &object = inserter.insertObject();
     object.setLong("lastSerialNum", _mgr->getCurrentSerialNum());
+    if (full) {
+        IndexManagerStats stats(*_mgr);
+        Cursor &diskIndexArrayCursor = object.setArray("diskIndexes");
+        for (const auto &diskIndex : stats.getDiskIndexes()) {
+            Cursor &diskIndexCursor = diskIndexArrayCursor.addObject();
+            const SearchableStats &sstats = diskIndex.getSearchableStats();
+            diskIndexCursor.setLong("serialNum", diskIndex.getSerialNum());
+            diskIndexCursor.setString("indexDir", diskIndex.getIndexdir());
+            diskIndexCursor.setLong("sizeOnDisk", sstats.sizeOnDisk());
+        }
+        Cursor &memoryIndexArrayCursor = object.setArray("memoryIndexes");
+        for (const auto &memoryIndex : stats.getMemoryIndexes()) {
+            Cursor &memoryIndexCursor = memoryIndexArrayCursor.addObject();
+            const SearchableStats &sstats = memoryIndex.getSearchableStats();
+            memoryIndexCursor.setLong("serialNum", memoryIndex.getSerialNum());
+            memoryIndexCursor.setLong("docsInMemory", sstats.docsInMemory());
+            memoryIndexCursor.setLong("memoryUsage", sstats.memoryUsage());
+        }
+    }
 }
 
 } // namespace searchcorespi
