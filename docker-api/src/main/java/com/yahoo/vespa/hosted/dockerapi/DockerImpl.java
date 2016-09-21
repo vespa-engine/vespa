@@ -19,6 +19,7 @@ import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.log.LogLevel;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.defaults.Defaults;
@@ -72,7 +73,8 @@ public class DockerImpl implements Docker {
     }
 
     @Inject
-    public DockerImpl(final DockerConfig config) {
+    public DockerImpl(final DockerConfig config, MetricReceiver metricReceiver) {
+        DockerMetrics.init(metricReceiver);
         JerseyDockerCmdExecFactory dockerFactory =  new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
                 .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
@@ -271,6 +273,7 @@ public class DockerImpl implements Docker {
         if (dockerContainer.isPresent()) {
             try {
                 dockerClient.startContainerCmd(dockerContainer.get().getId()).exec();
+                DockerMetrics.updateNumberRunningContainers(getAllManagedContainers().size());
             } catch (DockerException e) {
                 throw new RuntimeException("Failed to start container", e);
             }
@@ -296,6 +299,7 @@ public class DockerImpl implements Docker {
         if (dockerContainer.isPresent()) {
             try {
                 dockerClient.removeContainerCmd(dockerContainer.get().getId()).exec();
+                DockerMetrics.updateNumberRunningContainers(getAllManagedContainers().size());
             } catch (DockerException e) {
                 throw new RuntimeException("Failed to delete container", e);
             }
