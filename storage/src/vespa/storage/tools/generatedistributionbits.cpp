@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <boost/assign.hpp>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -60,13 +59,10 @@ namespace storage {
         }
 
         void finalize() {
-            using namespace boost::assign;
             if (highRange) {
-                nodeCounts += 16, 20, 32, 48, 64, 100, 128, 160, 200, 256, 350,
-                              500, 800, 1000, 5000;
+                nodeCounts.insert(nodeCounts.begin(), {16, 20, 32, 48, 64, 100, 128, 160, 200, 256, 350, 500, 800, 1000, 5000});
             } else {
-                nodeCounts += 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-                              11, 12, 13, 14, 15;
+                nodeCounts.insert(nodeCounts.begin(), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
             }
             for (uint32_t i=1; i<=maxBit; ++i) {
                 bitCounts.push_back(i);
