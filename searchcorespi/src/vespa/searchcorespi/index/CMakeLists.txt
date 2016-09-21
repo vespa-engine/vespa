@@ -3,11 +3,13 @@ vespa_add_library(searchcorespi_index OBJECT
     SOURCES
     activediskindexes.cpp
     diskindexcleaner.cpp
+    disk_index_stats.cpp
     eventlogger.cpp
     fusionrunner.cpp
     iindexmanager.cpp
     iindexcollection.cpp
     index_manager_explorer.cpp
+    index_manager_stats.cpp
     indexcollection.cpp
     indexdisklayout.cpp
     indexflushtarget.cpp
@@ -18,6 +20,8 @@ vespa_add_library(searchcorespi_index OBJECT
     indexmanagerconfig.cpp
     indexreadutilities.cpp
     indexsearchable.cpp
+    index_searchable_stats.cpp
+    memory_index_stats.cpp
     indexwriteutilities.cpp
     warmupindexcollection.cpp
     isearchableindexcollection.cpp
