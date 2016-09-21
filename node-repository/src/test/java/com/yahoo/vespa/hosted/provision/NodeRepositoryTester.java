@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.provision;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -34,11 +35,11 @@ public class NodeRepositoryTester {
     public NodeRepository nodeRepository() { return nodeRepository; }
     public MockCurator curator() { return curator; }
     
-    public List<Node> getNodes(Node.Type type, Node.State ... inState) {
+    public List<Node> getNodes(NodeType type, Node.State ... inState) {
         return nodeRepository.getNodes(type, inState);
     }
     
-    public Node addNode(String id, String hostname, String flavor, Node.Type type) {
+    public Node addNode(String id, String hostname, String flavor, NodeType type) {
         Node node = nodeRepository.createNode(id, hostname, Optional.empty(), 
                                               nodeFlavors.getFlavorOrThrow(flavor), type);
         return nodeRepository.addNodes(Collections.singletonList(node)).get(0);

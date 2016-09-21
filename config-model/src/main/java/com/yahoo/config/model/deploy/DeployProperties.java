@@ -14,6 +14,7 @@ import java.util.List;
  * @since 5.17
  */
 public class DeployProperties {
+
     private final boolean multitenant;
     private final ApplicationId applicationId;
     private final List<ConfigServerSpec> serverSpecs = new ArrayList<>();
@@ -46,10 +47,6 @@ public class DeployProperties {
         return serverSpecs;
     }
 
-    public Quota quota() {
-        return new Quota(Integer.MAX_VALUE);
-    }
-
     public boolean hostedVespa() {
         return hostedVespa;
     }
@@ -67,7 +64,6 @@ public class DeployProperties {
         private ApplicationId applicationId = ApplicationId.defaultId();
         private boolean multitenant = false;
         private List<ConfigServerSpec> configServerSpecs = new ArrayList<>();
-        private Quota quota = new Quota(Integer.MAX_VALUE);
         private boolean hostedVespa = false;
         private Version vespaVersion = Version.fromIntValues(1, 0, 0);
         private Zone zone = Zone.defaultZone();
@@ -84,11 +80,6 @@ public class DeployProperties {
 
         public Builder configServerSpecs(List<ConfigServerSpec> configServerSpecs) {
             this.configServerSpecs = configServerSpecs;
-            return this;
-        }
-
-        public Builder quota(Quota quota) {
-            this.quota = quota;
             return this;
         }
 

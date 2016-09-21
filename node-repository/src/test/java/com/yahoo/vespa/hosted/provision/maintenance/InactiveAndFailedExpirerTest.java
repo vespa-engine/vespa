@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
@@ -49,13 +50,13 @@ public class InactiveAndFailedExpirerTest {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(2);
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
+        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodeRepository.addNodes(nodes);
 
         List<Node> hostNodes = new ArrayList<>(2);
-        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host));
-        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host));
+        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
+        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodeRepository.addNodes(hostNodes);
 
         // Allocate then deallocate 2 nodes
@@ -66,18 +67,18 @@ public class InactiveAndFailedExpirerTest {
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, asHosts(nodes));
         transaction.commit();
-        assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.active).size());
+        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
         NestedTransaction deactivateTransaction = new NestedTransaction();
         nodeRepository.deactivate(applicationId, deactivateTransaction);
         deactivateTransaction.commit();
-        assertEquals(2, nodeRepository.getNodes(Node.Type.tenant, Node.State.inactive).size());
+        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.inactive).size());
 
         // Inactive times out
         clock.advance(Duration.ofMinutes(14));
         new InactiveExpirer(nodeRepository, clock, Duration.ofMinutes(10)).run();
 
-        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.inactive).size());
-        List<Node> dirty = nodeRepository.getNodes(Node.Type.tenant, Node.State.dirty);
+        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.inactive).size());
+        List<Node> dirty = nodeRepository.getNodes(NodeType.tenant, Node.State.dirty);
         assertEquals(2, dirty.size());
         assertFalse(dirty.get(0).allocation().isPresent());
         assertFalse(dirty.get(1).allocation().isPresent());
@@ -90,8 +91,8 @@ public class InactiveAndFailedExpirerTest {
         // Dirty times out for the other one
         clock.advance(Duration.ofMinutes(14));
         new DirtyExpirer(nodeRepository, clock, Duration.ofMinutes(10)).run();
-        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.dirty).size());
-        List<Node> failed = nodeRepository.getNodes(Node.Type.tenant, Node.State.failed);
+        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
+        List<Node> failed = nodeRepository.getNodes(NodeType.tenant, Node.State.failed);
         assertEquals(1, failed.size());
         assertEquals(1, failed.get(0).status().failCount());
     }

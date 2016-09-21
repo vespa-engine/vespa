@@ -106,8 +106,9 @@ public class SearchHandler extends LoggingRequestHandler {
     private final CompiledQueryProfileRegistry queryProfileRegistry;
 
     private final class MeanConnections implements Callback {
+
         @Override
-        public void run(final Handle h, final boolean firstTime) {
+        public void run(Handle h, boolean firstTime) {
             if (firstTime) {
                 metric.set(SEARCH_CONNECTIONS, 0.0d, null);
                 return;
@@ -193,13 +194,11 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             try {
                 return handleBody(request);
-            } catch (final QueryException e) {
+            } catch (QueryException e) {
                 return (e.getCause() instanceof IllegalArgumentException)
                         ? invalidParameterResponse(request, e)
                         : illegalQueryResponse(request, e);
-            } catch (final RuntimeException e) { // Make sure we generate a valid
-                                                 // XML response even on unexpected
-                                                 // errors
+            } catch (RuntimeException e) { // Make sure we generate a valid XML response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
                 return internalServerErrorResponse(request, e);
             }

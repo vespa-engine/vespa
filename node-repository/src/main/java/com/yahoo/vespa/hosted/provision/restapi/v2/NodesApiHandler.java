@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.HostFilter;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -198,12 +199,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 nodeTypeFromSlime(inspector.field(nodeTypeKey)));
     }
 
-    private Node.Type nodeTypeFromSlime(Inspector object) {
-        if (! object.valid()) return Node.Type.tenant; // default
+    private NodeType nodeTypeFromSlime(Inspector object) {
+        if (! object.valid()) return NodeType.tenant; // default
         switch (object.asString()) {
-            case "tenant" : return Node.Type.tenant;
-            case "host" : return Node.Type.host;
-            case "proxy" : return Node.Type.proxy;
+            case "tenant" : return NodeType.tenant;
+            case "host" : return NodeType.host;
+            case "proxy" : return NodeType.proxy;
             default: throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
         }
     }

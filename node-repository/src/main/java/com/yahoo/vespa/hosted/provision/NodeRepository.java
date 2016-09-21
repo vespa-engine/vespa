@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
@@ -91,13 +92,22 @@ public class NodeRepository extends AbstractComponent {
     }
 
     /**
+     * Returns all nodes in any of the given states.
+     *
+     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
+     * @return the node, or empty if it was not found in any of the given states
+     */
+    public List<Node> getNodes(Node.State ... inState) {
+        return zkClient.getNodes(inState).stream().collect(Collectors.toList());
+    }
+    /**
      * Finds and returns the nodes of the given type in any of the given states.
      *
      * @param type the node type to return
      * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
      * @return the node, or empty if it was not found in any of the given states
      */
-    public List<Node> getNodes(Node.Type type, Node.State ... inState) {
+    public List<Node> getNodes(NodeType type, Node.State ... inState) {
         return zkClient.getNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return zkClient.getNodes(id, inState); }
@@ -114,7 +124,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Creates a new node object, without adding it to the node repo */
     public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, 
-                           Flavor flavor, Node.Type type) {
+                           Flavor flavor, NodeType type) {
         return Node.create(openStackId, hostname, parentHostname, flavor, type);
     }
 

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
@@ -102,7 +103,7 @@ class NodesResponse extends HttpResponse {
     /** Outputs the nodes in the given state to a node array */
     private void nodesToSlime(Node.State state, Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        for (Node.Type type : Node.Type.values())
+        for (NodeType type : NodeType.values())
             toSlime(nodeRepository.getNodes(type, state), nodeArray);
     }
 
@@ -110,7 +111,7 @@ class NodesResponse extends HttpResponse {
     private void nodesToSlime(Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
         for (Node.State state : Node.State.values()) {
-            for (Node.Type type : Node.Type.values())
+            for (NodeType type : NodeType.values())
                 toSlime(nodeRepository.getNodes(type, state), nodeArray);
         }
     }
@@ -175,7 +176,7 @@ class NodesResponse extends HttpResponse {
         toSlime(node.history(), object.setArray("history"));
     }
 
-    private String toString(Node.Type type) {
+    private String toString(NodeType type) {
         switch(type) {
             case tenant: return "tenant";
             case host: return "host";

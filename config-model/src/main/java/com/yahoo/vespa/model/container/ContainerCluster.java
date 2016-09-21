@@ -243,8 +243,7 @@ public final class ContainerCluster
         Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
                 new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(
                         "com.yahoo.container.handler.observability.ApplicationStatusHandler", null), null));
-        statusHandler.addServerBindings("http://*/ApplicationStatus",
-                "https://*/ApplicationStatus");
+        statusHandler.addServerBindings("http://*/ApplicationStatus", "https://*/ApplicationStatus");
         addComponent(statusHandler);
     }
 

@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
@@ -65,7 +66,7 @@ public class SerializationTest {
         node = node.with(node.status().withVespaVersion(Version.fromString("1.2.3")));
         node = node.with(node.status().withIncreasedFailCount().withIncreasedFailCount());
         node = node.with(node.status().withHardwareFailure(Optional.of(Status.HardwareFailureType.memory_mcelog)));
-        node = node.with(Node.Type.tenant);
+        node = node.with(NodeType.tenant);
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
 
         assertEquals(node.id(), copy.id());
@@ -84,7 +85,7 @@ public class SerializationTest {
         assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
         assertEquals(1, copy.history().events().size());
         assertEquals(clock.instant(), copy.history().event(History.Event.Type.reserved).get().at());
-        assertEquals(Node.Type.tenant, copy.type());
+        assertEquals(NodeType.tenant, copy.type());
     }
 
     @Test
@@ -95,7 +96,7 @@ public class SerializationTest {
                 ClusterMembership.from("content/myId/0/0", Optional.empty()),
                 clock.instant());
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
-        assertEquals(Node.Type.host, copy.type());
+        assertEquals(NodeType.host, copy.type());
     }
 
     @Test
@@ -133,7 +134,7 @@ public class SerializationTest {
         assertEquals(3, node.allocation().get().restartGeneration().wanted());
         assertEquals(4, node.allocation().get().restartGeneration().current());
         assertTrue(node.allocation().get().isRemovable());
-        assertEquals(Node.Type.tenant, node.type());
+        assertEquals(NodeType.tenant, node.type());
     }
 
     // TODO: Remove when 6.31 is deployed everywhere
@@ -310,14 +311,14 @@ public class SerializationTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant);
+        Node node = Node.create("myId", "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
     }
 
     private Node createNode() {
-        return Node.create("myId", "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host);
+        return Node.create("myId", "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
     }
 
 }
