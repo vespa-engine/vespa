@@ -2,7 +2,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/memfilepersistence/mapper/bufferedfilewriter.h>
 
-#include <boost/scoped_array.hpp>
 #include <vespa/vespalib/util/guard.h>
 #include <vespa/log/log.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -162,7 +161,7 @@ void BufferedFileWriter::writeGarbage(uint32_t size) {
         ValueGuard<uint32_t> filePositionGuard(_filePosition);
         uint32_t maxBufferSize = 0xFFFF;
         uint32_t bufSize = (size > maxBufferSize ? maxBufferSize : size);
-        boost::scoped_array<char> buf(new char[bufSize]);
+        std::unique_ptr<char[]> buf(new char[bufSize]);
         while (size > 0) {
             uint32_t part = (size > bufSize ? bufSize : size);
             write(&buf[0], part, _filePosition);
