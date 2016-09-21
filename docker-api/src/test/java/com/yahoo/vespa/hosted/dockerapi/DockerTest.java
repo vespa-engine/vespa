@@ -42,7 +42,7 @@ public class DockerTest {
             .clientKeyPath("")
             .uri("unix:///var/run/docker.sock"));
 
-    private static final DockerImpl docker = new DockerImpl(dockerConfig);
+    private static final DockerImpl docker = new DockerImpl(dockerConfig, MetricReceiver.nullImplementation);
     private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
 
 
