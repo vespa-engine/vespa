@@ -8,6 +8,8 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <string>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/searchlib/parsequery/simplequerystack.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <algorithm>
 
 namespace search {
@@ -23,8 +25,12 @@ public:
     {
         QueryBuilder<NodeTypes> builder;
 
+        // Make sure that the life time of what pureTermView refers to exceeds that of pureTermView.
+        // Especially make sure that do not create any stack local objects like vespalib::string
+        // with smaller scope, that you refer with pureTermView.
+        vespalib::stringref pureTermView;
         while (!builder.hasError() && queryStack.next()) {
-            Term *t = createQueryTerm(queryStack, builder);
+            Term *t = createQueryTerm(queryStack, builder, pureTermView);
             if (!builder.hasError() && t) {
                 t->setTermIndex(queryStack.getTermIndex());
                 if (queryStack.getFlags() & ParseItem::IFLAG_NORANK) {
@@ -36,7 +42,14 @@ public:
             }
         }
         if (builder.hasError()) {
-            LOG(error, "Unable to create query tree from stack dump. %s", builder.error().c_str());
+            vespalib::stringref stack = queryStack.getStack();
+            LOG(error, "Unable to create query tree from stack dump. Failed at position %ld out of %ld bytes %s",
+                       queryStack.getPosition(), stack.size(), builder.error().c_str());
+            LOG(error, "Raw QueryStack = %s", vespalib::HexDump(stack.c_str(), stack.size()).toString().c_str());
+            if (LOG_WOULD_LOG(debug)) {
+                vespalib::string query = SimpleQueryStack::StackbufToString(stack);
+                LOG(error, "QueryStack = %s", builder.error().c_str(), query.c_str());
+            }
         }
         return builder.build();
     }
@@ -55,11 +68,7 @@ private:
         return vespalib::stringref(p, len);
     }
 
-    static Term * createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder) {
-        // Make sure that the life time of what pureTermView refers to exceeds that of pureTermView.
-        // Especially make sure that do not create any stack local objects like vespalib::string
-        // with smaller scope, that you refer with pureTermView.
-        vespalib::stringref pureTermView;
+    static Term * createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
         uint32_t arity = queryStack.getArity();
         uint32_t arg1 = queryStack.getArg1();
         double arg2 = queryStack.getArg2();
