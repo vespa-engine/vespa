@@ -6,6 +6,7 @@
 #include "compact_tensor_dimension_sum.h"
 #include "compact_tensor_product.h"
 #include <vespa/vespalib/tensor/join_tensors.h>
+#include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_apply.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
 #include <sstream>
