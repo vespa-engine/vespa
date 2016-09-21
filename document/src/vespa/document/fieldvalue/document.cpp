@@ -26,7 +26,9 @@ LOG_SETUP(".document.fieldvalue.document");
 namespace document {
 namespace {
 
-const std::set<uint16_t> ALLOWED_VERSIONS({6, 7, 8});
+bool isLegalVersion(uint16_t version) {
+    return (6 <= version) && (version <= 8);
+}
 
 void documentTypeError(const vespalib::stringref & name) __attribute__((noinline));
 void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) __attribute__((noinline));
@@ -337,7 +339,7 @@ Document::deserializeDocHeader(ByteBuffer& buffer, DocumentId& id) {
     int32_t len;
     buffer.getShortNetwork(version);
 
-    if (ALLOWED_VERSIONS.find(version) == ALLOWED_VERSIONS.end()) {
+    if ( ! isLegalVersion(version) ) {
         versionError(version);
     } else if (version < 7) {
         int64_t tmpLen = 0;
