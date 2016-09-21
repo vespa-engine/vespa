@@ -7,6 +7,7 @@
 #include "compact_tensor_v2_match.h"
 #include "compact_tensor_v2_product.h"
 #include "join_compact_tensors_v2.h"
+#include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_apply.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
 #include <sstream>

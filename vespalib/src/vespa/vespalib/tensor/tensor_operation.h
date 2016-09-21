@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/tensor/simple/simple_tensor.h>
 #include "direct_tensor_builder.h"
-#include <vespa/vespalib/tensor/simple/direct_simple_tensor_builder.h>
 #include <vespa/vespalib/tensor/compact/direct_compact_tensor_builder.h>
 #include <vespa/vespalib/tensor/compact/direct_compact_tensor_v2_builder.h>
 

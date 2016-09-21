@@ -11,7 +11,6 @@ vespa_add_library(vespalib_vespalib_tensor
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_compact>
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_dense>
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_serialization>
-    $<TARGET_OBJECTS:vespalib_vespalib_tensor_simple>
     INSTALL lib64
     DEPENDS
 )
