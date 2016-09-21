@@ -436,19 +436,6 @@ StatusMetricConsumer::printHtmlMetricsReport(
         std::ostream& out, const metrics::MetricSnapshot& data,
         bool includeNotUsed) const
 {
-    using namespace boost::assign;
-
-    /*
-    std::cerr << "All metrics available:\n";
-    for (MetricSnapshot::const_iterator it = data.begin();
-         it != data.end(); ++it)
-    {
-        std::cerr << "  '" << it->first << "' => '";
-        it->second->printXml(std::cerr);
-        std::cerr << "'.\n";
-    }
-    */
-
     std::map<String, Metric::SP> usedMetrics;
 
     out << "<h2>Metrics report for the last "
