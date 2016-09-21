@@ -28,8 +28,7 @@ namespace memfile {
 
 class MemFile;
 
-class MemSlot : private Types,
-                private boost::operators<MemSlot>
+class MemSlot : private Types
 {
     // Metadata for slot we need to keep.
     Timestamp     _timestamp; //   64 bit -  8 bytes timestamp
@@ -166,6 +165,9 @@ public:
      * Used in unit testing only.
      */
     bool operator==(const MemSlot& other) const;
+    bool operator!=(const MemSlot& other) const {
+        return ! (*this == other);
+    }
 
     // Implement print functions so we can be used similar to as we were
     // a document::Printable (Don't want inheritance in this class)

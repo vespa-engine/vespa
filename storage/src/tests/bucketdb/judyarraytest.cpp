@@ -61,18 +61,6 @@ JudyArrayTest::testIterating()
         foundVals = getJudyArrayContents(array);
     CPPUNIT_ASSERT_EQUAL(values, foundVals);
 
-    {   // Test that both postfix operator work
-        JudyArray::iterator it = array.begin();
-        JudyArray::iterator it2 = it++;
-        CPPUNIT_ASSERT_EQUAL(JudyArray::value_type(values[0]), *it2);
-        CPPUNIT_ASSERT_EQUAL(JudyArray::value_type(values[1]), *it);
-
-        // And that iterator comparisons work
-        CPPUNIT_ASSERT_EQUAL(it2, array.begin());
-        CPPUNIT_ASSERT_EQUAL(it, ++array.begin());
-        CPPUNIT_ASSERT(!(it == it2));
-        CPPUNIT_ASSERT(it != it2);
-    }
     {   // Test that we can alter through non-const iterator
         JudyArray::iterator it = array.begin();
         ++it;
@@ -127,7 +115,7 @@ JudyArrayTest::testDualArrayFunctions()
 
     CPPUNIT_ASSERT_EQUAL(values1, getJudyArrayContents(array1));
     CPPUNIT_ASSERT_EQUAL(values2, getJudyArrayContents(array2));
-    CPPUNIT_ASSERT(array1 > array2);
+    CPPUNIT_ASSERT(array2 < array1);
     CPPUNIT_ASSERT(array1 != array2);
     array1.swap(array2);
     CPPUNIT_ASSERT_EQUAL(values1, getJudyArrayContents(array2));
@@ -142,10 +130,7 @@ JudyArrayTest::testDualArrayFunctions()
     }
     CPPUNIT_ASSERT(array1 != array3);
     CPPUNIT_ASSERT_EQUAL(array2, array3);
-    CPPUNIT_ASSERT(array2 >= array3);
-    CPPUNIT_ASSERT(array2 <= array3);
     CPPUNIT_ASSERT(!(array2 < array3));
-    CPPUNIT_ASSERT(!(array2 > array3));
 }
 
 void

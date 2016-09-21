@@ -135,37 +135,35 @@ JudyMultiMapTest::testIterator()
     MultiMap::Iterator iter = multiMap.begin();
     CPPUNIT_ASSERT_EQUAL((uint64_t)11, (uint64_t)iter.key());
     CPPUNIT_ASSERT_EQUAL(A(4, 6, 0), iter.value());
-    iter++;
+    ++iter;
     CPPUNIT_ASSERT_EQUAL((uint64_t)14, (uint64_t)iter.key());
     CPPUNIT_ASSERT_EQUAL(A(42, 0, 0), iter.value());
-    iter++;
+    ++iter;
     CPPUNIT_ASSERT_EQUAL((uint64_t)16, (uint64_t)iter.key());
     CPPUNIT_ASSERT_EQUAL(A(1, 2, 3), iter.value());
-    iter--;
+    --iter;
     CPPUNIT_ASSERT_EQUAL((uint64_t)14, (uint64_t)iter.key());
     CPPUNIT_ASSERT_EQUAL(A(42, 0, 0), iter.value());
-    iter++;
+    ++iter;
     CPPUNIT_ASSERT_EQUAL((uint64_t)16, (uint64_t)iter.key());
     CPPUNIT_ASSERT_EQUAL(A(1, 2, 3), iter.value());
-    iter--;
-    iter--;
+    --iter;
+    --iter;
     CPPUNIT_ASSERT_EQUAL((uint64_t)11,(uint64_t) iter.key());
     CPPUNIT_ASSERT_EQUAL(A(4, 6, 0), iter.value());
-    iter++;
-    iter++;
-    iter++;
+    ++iter;
+    ++iter;
+    ++iter;
     CPPUNIT_ASSERT_EQUAL(multiMap.end(), iter);
-    iter--;
+    --iter;
     CPPUNIT_ASSERT_EQUAL((uint64_t)16, (uint64_t)iter.key());
     CPPUNIT_ASSERT_EQUAL(A(1, 2, 3), iter.value());
-    iter--;
+    --iter;
     CPPUNIT_ASSERT_EQUAL((uint64_t)14, (uint64_t)iter.key());
     CPPUNIT_ASSERT_EQUAL(A(42, 0, 0), iter.value());
-    iter--;
+    --iter;
     CPPUNIT_ASSERT_EQUAL((uint64_t)11,(uint64_t) iter.key());
     CPPUNIT_ASSERT_EQUAL(A(4, 6, 0), iter.value());
-
-
 }
 
 } // storage

@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/operators.hpp>
-
-#include <boost/operators.hpp>
 #include <vespa/vespalib/objects/cloneable.h>
-
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/util/serializable.h>
 #include <vespa/document/util/xmlserializable.h>
@@ -25,7 +21,6 @@ class BucketIdFactory;
 
 class FieldPathUpdate : public vespalib::Cloneable,
                         public Printable,
-                        public boost::equality_comparable<FieldPathUpdate>,
                         public vespalib::Identifiable
 {
 protected:
@@ -57,6 +52,9 @@ public:
     virtual FieldPathUpdate* clone() const = 0;
 
     virtual bool operator==(const FieldPathUpdate& other) const;
+    bool operator!=(const FieldPathUpdate& other) const {
+        return ! (*this == other);
+    }
 
     const FieldPath& getFieldPath() const { return *_fieldPath; }
     const select::Node& getWhereClause() const { return *_whereClause; }

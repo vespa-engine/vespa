@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <boost/operators.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/fastos/fastos.h>
@@ -25,7 +24,7 @@
 
 namespace storage {
 
-class JudyArray : public vespalib::Printable, public boost::operators<JudyArray>
+class JudyArray : public vespalib::Printable
 {
     JudyArray(const JudyArray&); // Deny copying
     JudyArray& operator=(const JudyArray&);
@@ -49,6 +48,9 @@ public:
     virtual ~JudyArray();
 
     bool operator==(const JudyArray& array) const;
+    bool operator!=(const JudyArray& array) const {
+        return ! (*this == array);
+    }
     bool operator<(const JudyArray& array) const;
 
     /** Warning: Size may be a O(n) function (Unknown implementation in judy) */
@@ -86,14 +88,16 @@ public:
     virtual void print(std::ostream& out, bool verbose,
                        const std::string& indent) const;
 
-    class ConstIterator : public vespalib::Printable,
-                          public boost::operators<ConstIterator>
+    class ConstIterator : public vespalib::Printable
     {
     public:
         ConstIterator& operator--();
-        ConstIterator& operator++(); // Prefix, postfix provided by boost
+        ConstIterator& operator++();
 
-        bool operator==(const ConstIterator &cp) const; // != provided by boost
+        bool operator==(const ConstIterator &cp) const;
+        bool operator!=(const ConstIterator &cp) const {
+            return ! (*this == cp);
+        }
         value_type operator*() const { return value_type(_key, *_data); }
 
         bool end() const { return (_data == 0); }
@@ -115,8 +119,7 @@ public:
         friend class JudyArray;
     };
 
-    class Iterator : public ConstIterator,
-                     public boost::operators<Iterator>
+    class Iterator : public ConstIterator
     {
     public:
         Iterator& operator--()

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <boost/lexical_cast.hpp>
 
 LOG_SETUP(".programoptions");
 

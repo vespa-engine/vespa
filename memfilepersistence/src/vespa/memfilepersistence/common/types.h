@@ -39,7 +39,7 @@ namespace memfile {
  * of zero with a non-zero position is invalid, and used to indicate that this
  * value is not set yet. (Typically when data isn't persisted to disk yet)
  */
-struct DataLocation : public boost::operators<DataLocation> {
+struct DataLocation {
     uint32_t _pos;
     uint32_t _size;
 
@@ -52,8 +52,12 @@ struct DataLocation : public boost::operators<DataLocation> {
 
     bool valid() const { return (_size > 0 || _pos == 0); }
 
-    bool operator==(const DataLocation& other) const
-        { return (_pos == other._pos && _size == other._size); }
+    bool operator==(const DataLocation& other) const {
+        return (_pos == other._pos && _size == other._size);
+    }
+    bool operator!=(const DataLocation& other) const {
+        return ! (*this == other);
+    }
 
     bool operator<(const DataLocation& other) const {
         if (_pos == other._pos) {
