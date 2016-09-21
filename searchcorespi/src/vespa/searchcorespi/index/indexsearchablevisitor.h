@@ -11,6 +11,10 @@ struct IMemoryIndex;
 
 }
 
+/*
+ * Interface for visiting an index searchable containing disk and
+ * memory indexes.
+ */
 class IndexSearchableVisitor
 {
 public:
