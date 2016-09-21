@@ -4,7 +4,6 @@
 #include <vespa/document/fieldvalue/document.h>
 
 #include <memory>
-#include <boost/assign.hpp>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/field.h>
@@ -18,27 +17,28 @@
 #include <vespa/vespalib/objects/nbostream.h>
 
 using vespalib::nbostream;
+using vespalib::make_string;
+using vespalib::IllegalArgumentException;
+using vespalib::IllegalStateException;
 
 LOG_SETUP(".document.fieldvalue.document");
 
 namespace document {
 namespace {
-std::set<uint16_t> getAllowedVersions() {
-    std::set<uint16_t> allowed;
-    using namespace boost::assign;
-    allowed += 6, 7, 8;
-    return allowed;
+
+const std::set<uint16_t> ALLOWED_VERSIONS({6, 7, 8});
+
+void documentTypeError(const vespalib::stringref & name) __attribute__((noinline));
+void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) __attribute__((noinline));
+
+void documentTypeError(const vespalib::stringref & name) {
+    throw IllegalArgumentException(make_string("Cannot generate a document with non-document type %s.", name.c_str()), VESPA_STRLOC);
 }
 
-const std::set<uint16_t> ALLOWED_VERSIONS(getAllowedVersions());
-
-void documentTypeError(const vespalib::stringref & name)
-    __attribute__((noinline));
-void documentTypeError(const vespalib::stringref & name) {
-    throw vespalib::IllegalArgumentException(
-            vespalib::make_string(
-                    "Cannot generate a document with non-document type %s.",
-                    name.c_str()), VESPA_STRLOC);
+void throwTypeMismatch(vespalib::stringref type, vespalib::stringref docidType) {
+    throw IllegalArgumentException(make_string("Trying to create a document with type %s that don't match the id (type %s).",
+                                               type.c_str(), docidType.c_str()),
+                                   VESPA_STRLOC);
 }
 
 const DataType &verifyDocumentType(const DataType *type) {
@@ -78,12 +78,7 @@ Document::Document(const DataType &type, const DocumentId& documentId)
 {
     _fields.setDocumentType(getType());
     if (documentId.hasDocType() && documentId.getDocType() != type.getName()) {
-        throw vespalib::IllegalArgumentException(
-                vespalib::make_string(
-                        "Trying to create a document with type %s that "
-                        "don't match the id (type %s).",
-                        type.getName().c_str(),
-                        documentId.getDocType().c_str()));
+        throwTypeMismatch(type.getName(), documentId.getDocType());
     }
 }
 
@@ -95,23 +90,14 @@ Document::Document(const DataType &type, DocumentId& documentId, bool iWillAllow
 {
     (void) iWillAllowSwap;
     _fields.setDocumentType(getType());
-    if (documentId.hasDocType() && documentId.getDocType() != type.getName()) {
-        throw vespalib::IllegalArgumentException(
-                vespalib::make_string(
-                        "Trying to create a document with type %s that "
-                        "don't match the id (type %s).",
-                        type.getName().c_str(),
-                        documentId.getDocType().c_str()));
+    if (documentId.hasDocType() && (documentId.getDocType() != type.getName())) {
+        throwTypeMismatch(type.getName(), documentId.getDocType());
     }
     _id.swap(documentId);
 }
 
-Document::Document(const DocumentTypeRepo& repo,
-                   ByteBuffer& buffer,
-                   const DataType *anticipatedType)
-    : StructuredFieldValue(anticipatedType ?
-                           verifyDocumentType(anticipatedType) :
-                           *DataType::DOCUMENT),
+Document::Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, const DataType *anticipatedType)
+    : StructuredFieldValue(anticipatedType ?  verifyDocumentType(anticipatedType) : *DataType::DOCUMENT),
       _id(),
       _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
       _lastModified(0)
@@ -124,12 +110,8 @@ void Document::setRepo(const DocumentTypeRepo& repo)
     _fields.setRepo(repo);
 }
 
-Document::Document(const DocumentTypeRepo& repo,
-                   vespalib::nbostream & is,
-                   const DataType *anticipatedType)
-    : StructuredFieldValue(anticipatedType ?
-                           verifyDocumentType(anticipatedType) :
-                           *DataType::DOCUMENT),
+Document::Document(const DocumentTypeRepo& repo, vespalib::nbostream & is, const DataType *anticipatedType)
+    : StructuredFieldValue(anticipatedType ?  verifyDocumentType(anticipatedType) : *DataType::DOCUMENT),
       _id(),
       _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
       _lastModified(0)
@@ -137,21 +119,14 @@ Document::Document(const DocumentTypeRepo& repo,
     deserialize(repo, is);
 }
 
-Document::Document(const DocumentTypeRepo& repo,
-                   ByteBuffer& buffer,
-                   bool includeContent,
-                   const DataType *anticipatedType)
-    : StructuredFieldValue(anticipatedType ?
-                           verifyDocumentType(anticipatedType) :
-                           *DataType::DOCUMENT),
+Document::Document(const DocumentTypeRepo& repo, ByteBuffer& buffer, bool includeContent, const DataType *anticipatedType)
+    : StructuredFieldValue(anticipatedType ?  verifyDocumentType(anticipatedType) : *DataType::DOCUMENT),
       _id(),
       _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
       _lastModified(0)
 {
     if (!includeContent) {
-        const DocumentType *newDocType = deserializeDocHeaderAndType(
-                repo, buffer, _id,
-                static_cast<const DocumentType*>(anticipatedType));
+        const DocumentType *newDocType = deserializeDocHeaderAndType(repo, buffer, _id, static_cast<const DocumentType*>(anticipatedType));
         if (newDocType) {
             setType(*newDocType);
         }
@@ -161,13 +136,8 @@ Document::Document(const DocumentTypeRepo& repo,
 }
 
 
-Document::Document(const DocumentTypeRepo& repo,
-                   ByteBuffer& header,
-                   ByteBuffer& body,
-                   const DataType *anticipatedType)
-    : StructuredFieldValue(anticipatedType ?
-                           verifyDocumentType(anticipatedType) :
-                           *DataType::DOCUMENT),
+Document::Document(const DocumentTypeRepo& repo, ByteBuffer& header, ByteBuffer& body, const DataType *anticipatedType)
+    : StructuredFieldValue(anticipatedType ?  verifyDocumentType(anticipatedType) : *DataType::DOCUMENT),
       _id(),
       _fields(static_cast<const DocumentType &>(getType()).getFieldsType()),
       _lastModified(0)
@@ -225,14 +195,12 @@ Document::getIdFromSerialized(ByteBuffer& buf)
 }
 
 const DocumentType *
-Document::getDocTypeFromSerialized(const DocumentTypeRepo& repo,
-                                   ByteBuffer& buf)
+Document::getDocTypeFromSerialized(const DocumentTypeRepo& repo, ByteBuffer& buf)
 {
     int position = buf.getPos();
     DocumentId retVal;
 
-    const DocumentType *docType(deserializeDocHeaderAndType(
-                    repo, buf, retVal, NULL));
+    const DocumentType *docType(deserializeDocHeaderAndType(repo, buf, retVal, NULL));
     buf.setPos(position);
 
     return docType;
@@ -348,23 +316,17 @@ void mainDocumentError(int64_t len) __attribute__((noinline));
 void notEnoughDocumentError(int32_t len, int64_t remaining) __attribute__((noinline));
 
 void versionError(uint16_t version) {
-    throw DeserializeException(vespalib::make_string(
-            "Unrecognized serialization version %d", version),
-            VESPA_STRLOC);
+    throw DeserializeException(make_string( "Unrecognized serialization version %d", version), VESPA_STRLOC);
 }
 
 void mainDocumentError(int64_t len) {
-    throw DeserializeException(vespalib::make_string(
-            "Document lengths past %i is not supported. Corrupt data "
-            "said length is %" PRId64 " bytes",
+    throw DeserializeException(make_string(
+            "Document lengths past %i is not supported. Corrupt data said length is %" PRId64 " bytes",
             std::numeric_limits<int>::max(), len), VESPA_STRLOC);
 }
 
 void notEnoughDocumentError(int32_t len, int64_t remaining) {
-    throw DeserializeException(vespalib::make_string(
-                "Buffer said document length is %i bytes, but only %li "
-                "bytes remain in buffer",
-                len, remaining));
+    throw DeserializeException(make_string( "Buffer said document length is %i bytes, but only %li bytes remain in buffer", len, remaining));
 }
 
 }
@@ -394,8 +356,7 @@ Document::deserializeDocHeader(ByteBuffer& buffer, DocumentId& id) {
     if (len > (long)buffer.getRemaining()) {
         notEnoughDocumentError(len, buffer.getRemaining());
     } else {
-        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining(),
-                         false);
+        nbostream stream(buffer.getBufferAtPos(), buffer.getRemaining(), false);
         id = DocumentId(stream);
         buffer.incPos(stream.rp());
         unsigned char contentByte;
@@ -425,14 +386,12 @@ void Document::serializeBody(nbostream& stream) const {
     serializer.write(_fields, BodyFields());
 }
 
-void Document::deserialize(const DocumentTypeRepo& repo,
-                           vespalib::nbostream & os) {
+void Document::deserialize(const DocumentTypeRepo& repo, vespalib::nbostream & os) {
     VespaDocumentDeserializer deserializer(repo, os, 0);
     try {
         deserializer.read(*this);
-    } catch (const vespalib::IllegalStateException &e) {
-        throw DeserializeException(
-                std::string("Buffer out of bounds: ") + e.what());
+    } catch (const IllegalStateException &e) {
+        throw DeserializeException(vespalib::string("Buffer out of bounds: ") + e.what());
     }
 }
 
