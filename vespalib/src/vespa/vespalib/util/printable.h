@@ -113,11 +113,8 @@ public:
         vespalib::string indent(uint32_t extraLevels) const;
     };
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-
-    virtual void print(vespalib::asciistream&,
-                       const PrintProperties& = PrintProperties()) const = 0;
+    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const;
+    virtual void print(vespalib::asciistream&, const PrintProperties& = PrintProperties()) const = 0;
 
     vespalib::string toString(const PrintProperties& = PrintProperties()) const;
 };
@@ -127,11 +124,36 @@ inline std::ostream& operator<<(std::ostream& out, const Printable& p) {
     return out;
 }
 
-inline vespalib::asciistream& operator<<(vespalib::asciistream& out,
-                                         const AsciiPrintable& p)
+inline vespalib::asciistream& operator<<(vespalib::asciistream& out, const AsciiPrintable& p)
 {
     p.print(out);
     return out;
 }
+
+template<typename T>
+void print(const std::vector<T> & v, vespalib::asciistream& out, const AsciiPrintable::PrintProperties& p) {
+    if (v.empty()) {
+        out << "[]";
+        return;
+    }
+    vespalib::asciistream ost;
+    ost << v[0];
+    bool newLineBetweenEntries = (ost.str().size() > 15);
+    out << "[";
+    for (size_t i=0; i<v.size(); ++i) {
+        if (i != 0) out << ",";
+        if (newLineBetweenEntries) {
+            out << "\n" << p.indent(1);
+        } else {
+            if (i != 0) { out << " "; }
+        }
+        out << v[i];
+    }
+    if (newLineBetweenEntries) {
+        out << "\n" << p.indent();
+    }
+    out << "]";
+}
+
 
 } // vespalib

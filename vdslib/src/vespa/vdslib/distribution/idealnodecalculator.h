@@ -7,7 +7,6 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/vdslib/container/smallvector.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/nodetype.h>
@@ -20,7 +19,7 @@ namespace lib {
  * unneeded details, and make it easily printable.
  */
 class IdealNodeList : public document::Printable {
-    SmallVector<Node> _idealNodes;
+    std::vector<Node> _idealNodes;
 
 public:
     IdealNodeList() : _idealNodes() {}

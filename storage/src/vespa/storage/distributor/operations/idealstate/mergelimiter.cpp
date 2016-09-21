@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/distributor/operations/idealstate/mergelimiter.h>
-#include <vespa/vdslib/container/smallvector.h>
 
 #include <vespa/log/log.h>
 
@@ -19,7 +18,7 @@ MergeLimiter::MergeLimiter(uint16_t maxNodes)
 namespace {
     class EqualCopies {
         uint32_t _checksum;
-        lib::SmallVector<MergeMetaData> _copies;
+        std::vector<MergeMetaData> _copies;
         uint32_t _trustedCopies;
 
     public:
@@ -47,14 +46,8 @@ namespace {
         }
     };
 
-    vespalib::asciistream& operator<<(vespalib::asciistream& out,
-                                      const EqualCopies& e)
-    {
-        return out << "EqualCopies(" << e.size() << ")";
-    }
-
     class Statistics {
-        lib::SmallVector<EqualCopies> _groups;
+        std::vector<EqualCopies> _groups;
         uint32_t _trustedCopies;
 
     public:
@@ -62,6 +55,7 @@ namespace {
         Statistics(const MergeLimiter::NodeArray& a)
             : _trustedCopies(0)
         {
+            _groups.reserve(a.size());
             for (uint32_t i=0, n=a.size(); i<n; ++i) {
                 add(a[i]);
                 if (a[i].trusted()) {
@@ -87,18 +81,20 @@ namespace {
         uint32_t trustedCount() const { return _trustedCopies; }
 
         Statistics extractGroupsWithTrustedCopies() {
-            lib::SmallVector<EqualCopies> _remaining;
+            std::vector<EqualCopies> remaining;
             Statistics trusted;
+            remaining.reserve(_groups.size());
+            trusted._groups.reserve(_groups.size());
             for (uint32_t i=0, n=_groups.size(); i<n; ++i) {
                 if (_groups[i].hasTrusted()) {
                     trusted._groups.push_back(_groups[i]);
                     trusted._trustedCopies += _groups[i].trustedCount();
                 } else {
-                    _remaining.push_back(_groups[i]);
+                    remaining.push_back(_groups[i]);
                     _trustedCopies -= _groups[i].trustedCount();
                 }
             }
-            swap(_remaining, _groups);
+            swap(remaining, _groups);
             return trusted;
         }
         bool extractNext(MergeMetaData& data, uint32_t& last) {
@@ -112,9 +108,12 @@ namespace {
             return true;
         }
         void removeGroup(uint32_t groupIndex) {
-            lib::SmallVector<EqualCopies> remaining;
+            std::vector<EqualCopies> remaining;
+            remaining.reserve(_groups.size()-1);
             for (uint32_t i=0, n=_groups.size(); i<n; ++i) {
-                if (i != groupIndex) remaining.push_back(_groups[i]);
+                if (i != groupIndex) {
+                    remaining.push_back(_groups[i]);
+                }
             }
             remaining.swap(_groups);
         }
