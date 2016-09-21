@@ -41,7 +41,15 @@ public final class Endpoint {
     private final boolean useSsl;
     private static final int DEFAULT_PORT = 4080;
     private Endpoint(String hostname, int port, boolean useSsl) {
-        this.hostname = hostname;
+        if (hostname.startsWith("https://")) {
+            throw new RuntimeException("Hostname should be name of machine, not prefixed with protocol (https://)");
+        }
+        // A lot of people put http:// before the servername, let us allow that.
+        if (hostname.startsWith("http://")) {
+            this.hostname = hostname.replaceFirst("http://", "");
+        } else {
+            this.hostname = hostname;
+        }
         this.port = port;
         this.useSsl = useSsl;
     }
