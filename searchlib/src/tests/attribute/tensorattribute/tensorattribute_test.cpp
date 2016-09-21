@@ -7,7 +7,6 @@ LOG_SETUP("tensorattribute_test");
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor_builder.h>
 
 using search::attribute::TensorAttribute;
 using search::AttributeGuard;
@@ -17,7 +16,6 @@ using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
 using vespalib::tensor::TensorDimensions;
 using vespalib::tensor::TensorFactory;
-using vespalib::tensor::SimpleTensorBuilder;
 
 namespace vespalib {
 namespace tensor {

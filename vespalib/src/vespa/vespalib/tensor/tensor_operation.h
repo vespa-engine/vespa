@@ -3,7 +3,6 @@
 #pragma once
 
 #include "direct_tensor_builder.h"
-#include <vespa/vespalib/tensor/compact/direct_compact_tensor_builder.h>
 #include <vespa/vespalib/tensor/compact/direct_compact_tensor_v2_builder.h>
 
 namespace vespalib {
