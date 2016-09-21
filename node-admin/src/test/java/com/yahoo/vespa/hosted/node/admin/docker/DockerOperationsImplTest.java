@@ -72,9 +72,10 @@ public class DockerOperationsImplTest {
                 "    clustertype: container\n" +
                 "    clusterid: canary\n" +
                 "    vespaVersion: 6.13.37\n" +
+                "    role: tenants\n" +
                 "    flavor: docker\n" +
-                "    role: tenant\n" +
-                "    state: active\n", expectedSecretAgentSchedule);
+                "    state: active\n" +
+                "    zone: test.us-west-5\n", expectedSecretAgentSchedule);
     }
 
     @Test
