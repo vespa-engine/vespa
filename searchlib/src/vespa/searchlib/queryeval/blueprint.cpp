@@ -2,7 +2,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-LOG_SETUP(".queryeval.blueprint");
 #include "blueprint.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/objects/objectdumper.h>
@@ -10,13 +9,13 @@ LOG_SETUP(".queryeval.blueprint");
 #include "leaf_blueprints.h"
 #include "intermediate_blueprints.h"
 #include "equiv_blueprint.h"
+#include <vespa/vespalib/util/classname.h>
 
 #include <vector>
 #include <set>
 #include <map>
 
-// NB: might need to hide this from non-gcc compilers...
-#include <cxxabi.h>
+LOG_SETUP(".queryeval.blueprint");
 
 namespace search {
 namespace queryeval {
@@ -119,14 +118,7 @@ Blueprint::asString() const
 vespalib::string
 Blueprint::getClassName() const
 {
-    vespalib::string name(typeid(*this).name());
-    int status = 0;
-    size_t size = 0;
-    // NB: might need to hide this from non-gcc compilers...
-    char *unmangled = abi::__cxa_demangle(name.c_str(), 0, &size, &status);
-    vespalib::string result(unmangled);
-    free(unmangled);
-    return result;
+    return vespalib::getClassName(*this);
 }
 
 void

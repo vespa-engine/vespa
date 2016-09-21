@@ -2,16 +2,14 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-LOG_SETUP(".searchbase");
 #include "searchiterator.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/objects/visit.h>
-#include <typeinfo>
+#include <vespa/vespalib/util/classname.h>
 
-// NB: might need to hide this from non-gcc compilers...
-#include <cxxabi.h>
+LOG_SETUP(".searchbase");
 
 namespace search {
 namespace queryeval {
@@ -88,14 +86,7 @@ SearchIterator::asString() const
 vespalib::string
 SearchIterator::getClassName() const
 {
-    vespalib::string name(typeid(*this).name());
-    int status = 0;
-    size_t size = 0;
-    // NB: might need to hide this from non-gcc compilers...
-    char *unmangled = abi::__cxa_demangle(name.c_str(), 0, &size, &status);
-    vespalib::string result(unmangled);
-    free(unmangled);
-    return result;
+    return vespalib::getClassName(*this);
 }
 
 void
