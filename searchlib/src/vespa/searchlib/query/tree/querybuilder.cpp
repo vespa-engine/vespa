@@ -76,8 +76,9 @@ void QueryBuilderBase::addIntermediateNode(Intermediate *n, int child_count)
 }
 
 void QueryBuilderBase::setWeightOverride(const Weight &weight) {
-    assert(!_nodes.empty());
-    _nodes.top().weight_override = WeightOverride(weight);
+    if ( !hasError() ) {
+        _nodes.top().weight_override = WeightOverride(weight);
+    }
 }
 
 Node::UP QueryBuilderBase::build() {
