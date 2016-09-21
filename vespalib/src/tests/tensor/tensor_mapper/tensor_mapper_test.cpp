@@ -2,10 +2,6 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_builder.h>
 #include <vespa/vespalib/tensor/compact/compact_tensor_v2.h>
 #include <vespa/vespalib/tensor/compact/compact_tensor_v2_builder.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
@@ -39,16 +35,6 @@ bool defaultBuilder<DefaultTensor::builder>() { return true; }
 
 template <typename BuilderType>
 struct TensorTFromBuilder;
-
-template <>
-struct TensorTFromBuilder<SimpleTensorBuilder> {
-    using TensorT = SimpleTensor;
-};
-
-template <>
-struct TensorTFromBuilder<CompactTensorBuilder> {
-    using TensorT = CompactTensor;
-};
 
 template <>
 struct TensorTFromBuilder<CompactTensorV2Builder> {
@@ -130,8 +116,6 @@ struct Fixture : public FixtureBase
     }
 };
 
-using SimpleFixture = Fixture<SimpleTensorBuilder>;
-using CompactFixture = Fixture<CompactTensorBuilder>;
 using CompactV2Fixture = Fixture<CompactTensorV2Builder>;
 
 template <typename FixtureType>
@@ -206,16 +190,6 @@ testTensorMapper(FixtureType &f)
                                   {{{"x","10"},{"y","1"}}, 7}
                               },
                               { "x", "y" }));
-}
-
-TEST_F("test tensor mapper for SimpleTensor", SimpleFixture)
-{
-    testTensorMapper(f);
-}
-
-TEST_F("test tensor mapper for CompactTensor", CompactFixture)
-{
-    testTensorMapper(f);
 }
 
 TEST_F("test tensor mapper for CompactTensorV2", CompactV2Fixture)

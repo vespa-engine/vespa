@@ -72,13 +72,10 @@ vespa_define_module(
     src/tests/stllike
     src/tests/stringfmt
     src/tests/sync
-    src/tests/tensor/compact_tensor_builder
     src/tests/tensor/compact_tensor_v2_builder
     src/tests/tensor/dense_tensor_builder
     src/tests/tensor/dense_tensor_operations
     src/tests/tensor/join_tensor_addresses
-    src/tests/tensor/simple_tensor_builder
-    src/tests/tensor/tensor
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_address_element_iterator
     src/tests/tensor/tensor_conformance
@@ -135,7 +132,6 @@ vespa_define_module(
     src/vespa/vespalib/tensor/compact
     src/vespa/vespalib/tensor/dense
     src/vespa/vespalib/tensor/serialization
-    src/vespa/vespalib/tensor/simple
     src/vespa/vespalib/test
     src/vespa/vespalib/testkit
     src/vespa/vespalib/text

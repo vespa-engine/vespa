@@ -5,9 +5,7 @@
 #include "tensor_mapper.h"
 #include "tensor.h"
 #include "tensor_visitor.h"
-#include <vespa/vespalib/tensor/simple/direct_simple_tensor_builder.h>
 #include <vespa/vespalib/tensor/compact/direct_compact_tensor_v2_builder.h>
-#include <vespa/vespalib/tensor/compact/direct_compact_tensor_builder.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include "tensor_address_element_iterator.h"
 #include "default_tensor.h"
@@ -271,16 +269,6 @@ TensorMapper::map(const Tensor &tensor) const
         return std::unique_ptr<Tensor>();
     }
 }
-
-template
-std::unique_ptr<Tensor>
-TensorMapper::mapToSparse<SimpleTensor>(const Tensor &tensor,
-                                        const ValueType &type);
-
-template
-std::unique_ptr<Tensor>
-TensorMapper::mapToSparse<CompactTensor>(const Tensor &tensor,
-                                         const ValueType &type);
 
 template
 std::unique_ptr<Tensor>

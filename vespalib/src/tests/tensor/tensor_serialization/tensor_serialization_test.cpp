@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_builder.h>
 #include <vespa/vespalib/tensor/compact/compact_tensor_v2.h>
 #include <vespa/vespalib/tensor/compact/compact_tensor_v2_builder.h>
 #include <vespa/vespalib/tensor/types.h>
@@ -101,8 +97,6 @@ struct Fixture
     }
 };
 
-using SimpleFixture = Fixture<SimpleTensorBuilder>;
-using CompactFixture = Fixture<CompactTensorBuilder>;
 using CompactV2Fixture = Fixture<CompactTensorV2Builder>;
 
 
@@ -138,16 +132,6 @@ testTensorSerialization(FixtureType &f)
                                         0x01, 0x01, 0x31, 0x00, 0x40, 0x08,
                                         0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
                                { {{{"x","1"}}, 3} }, {"x", "y"}));
-}
-
-TEST_F("test tensor serialization for SimpleTensor", SimpleFixture)
-{
-    testTensorSerialization(f);
-}
-
-TEST_F("test tensor serialization for CompactTensor", CompactFixture)
-{
-    testTensorSerialization(f);
 }
 
 TEST_F("test tensor serialization for CompactTensorV2", CompactV2Fixture)
