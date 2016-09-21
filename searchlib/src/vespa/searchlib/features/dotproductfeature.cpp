@@ -3,8 +3,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".features.dotproduct");
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/fef/properties.h>
 

@@ -4,7 +4,6 @@
 LOG_SETUP("prod_features_test");
 
 #include "prod_features.h"
-#include <boost/tokenizer.hpp>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
