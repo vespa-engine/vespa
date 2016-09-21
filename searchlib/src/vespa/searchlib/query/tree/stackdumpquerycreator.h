@@ -44,7 +44,7 @@ public:
         // Especially make sure that do not create any stack local objects like vespalib::string
         // with smaller scope, that you refer with pureTermView.
         vespalib::stringref pureTermView;
-        while (queryStack.next()) {
+        while (!builder.hasError() && queryStack.next()) {
             uint32_t arity = queryStack.getArity();
             uint32_t arg1 = queryStack.getArg1();
             double arg2 = queryStack.getArg2();
