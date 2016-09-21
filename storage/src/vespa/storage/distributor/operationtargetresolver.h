@@ -7,7 +7,6 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/vdslib/container/smallvector.h>
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vespalib/util/printable.h>
 
@@ -42,7 +41,7 @@ public:
     }
 };
 
-class OperationTargetList : public lib::SmallVector<OperationTarget> {
+class OperationTargetList : public std::vector<OperationTarget> {
 public:
     bool hasAnyNewCopies() const {
         for (size_t i=0; i<size(); ++i) {

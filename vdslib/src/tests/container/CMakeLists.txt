@@ -5,8 +5,6 @@ vespa_add_library(vdslib_containertest
     parameterstest.cpp
     searchresulttest.cpp
     documentsummarytest.cpp
-    smallvectortest.cpp
     lruordertest.cpp
-    indexedcontaineriteratortest.cpp
     DEPENDS
 )
