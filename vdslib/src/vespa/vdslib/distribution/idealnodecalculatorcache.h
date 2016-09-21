@@ -44,20 +44,21 @@ class IdealNodeCalculatorCache : public IdealNodeCalculatorConfigurable {
     public:
         typedef vespalib::LinkedPtr<TypeCache> LP;
 
-        TypeCache(const IdealNodeCalculator& c, const NodeType& t,
-                  UpStates us, uint32_t size)
+        TypeCache(const IdealNodeCalculator& c, const NodeType& t, UpStates us, uint32_t size)
             : _calc(c), _nodeType(t), _upStates(us), _order(size, *this),
-              _hitCount(0), _missCount(0) {}
+              _hitCount(0), _missCount(0)
+        { }
 
         IdealNodeList get(const document::BucketId& bucket) {
             EntryMap::const_iterator it(_entries.find(bucket));
             if (it == _entries.end()) {
                 ++_missCount;
                 Entry& newEntry(_entries[bucket]);
-                newEntry._result = _calc.getIdealNodes(
-                        _nodeType, bucket, _upStates);
-                newEntry._order = _order.add(bucket);
-                return newEntry._result;
+                newEntry._result = _calc.getIdealNodes(_nodeType, bucket, _upStates);
+                LruOrder<BucketId, TypeCache>::EntryRef tmpOrder = _order.add(bucket);
+                Entry& movedEntry(_entries[bucket]); // The entry might very well move after the previous add.
+                movedEntry._order = tmpOrder;
+                return movedEntry._result;
             } else {
                 ++_hitCount;
                 _order.moveToStart(it->second._order);
