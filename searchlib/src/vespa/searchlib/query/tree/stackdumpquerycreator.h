@@ -25,7 +25,7 @@ public:
 
         while (!builder.hasError() && queryStack.next()) {
             Term *t = createQueryTerm(queryStack, builder);
-            if (t) {
+            if (!builder.hasError() && t) {
                 t->setTermIndex(queryStack.getTermIndex());
                 if (queryStack.getFlags() & ParseItem::IFLAG_NORANK) {
                     t->setRanked(false);
