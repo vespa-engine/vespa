@@ -21,7 +21,6 @@ public:
     TensorApply(const TensorImplType &tensor, const CellFunction &func);
 };
 
-extern template class TensorApply<CompactTensor>;
 extern template class TensorApply<CompactTensorV2>;
 
 } // namespace vespalib::tensor

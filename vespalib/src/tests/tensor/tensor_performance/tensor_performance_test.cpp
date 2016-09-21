@@ -3,8 +3,6 @@
 #include <vespa/vespalib/eval/function.h>
 #include <vespa/vespalib/eval/interpreted_function.h>
 #include <vespa/vespalib/eval/tensor_nodes.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_builder.h>
 #include <vespa/vespalib/tensor/compact/compact_tensor_v2.h>
 #include <vespa/vespalib/tensor/compact/compact_tensor_v2_builder.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
@@ -224,11 +222,10 @@ tensor::Tensor::UP make_tensor_impl(const std::vector<DimensionSpec> &dimensions
 
 //-----------------------------------------------------------------------------
 
-enum class BuilderType { DUMMY, COMPACT, COMPACTV2, NUMBERDUMMY,
+enum class BuilderType { DUMMY, COMPACTV2, NUMBERDUMMY,
         DENSE };
 
 const BuilderType DUMMY = BuilderType::DUMMY;
-const BuilderType COMPACT = BuilderType::COMPACT;
 const BuilderType COMPACTV2 = BuilderType::COMPACTV2;
 const BuilderType NUMBERDUMMY = BuilderType::NUMBERDUMMY;
 const BuilderType DENSE = BuilderType::DENSE;
@@ -236,7 +233,6 @@ const BuilderType DENSE = BuilderType::DENSE;
 const char *name(BuilderType type) {
     switch (type) {
     case BuilderType::DUMMY:   return "  dummy";
-    case BuilderType::COMPACT: return "compact";
     case BuilderType::COMPACTV2: return "compactv2";
     case BuilderType::NUMBERDUMMY: return "numberdummy";
     case BuilderType::DENSE: return "dense";
@@ -249,9 +245,6 @@ tensor::Tensor::UP make_tensor(BuilderType type, const std::vector<DimensionSpec
     case BuilderType::DUMMY:
         return make_tensor_impl<DummyBuilder, TensorBuilder, StringBinding>
             (dimensions);
-    case BuilderType::COMPACT:
-        return make_tensor_impl<CompactTensorBuilder, TensorBuilder,
-            StringBinding>(dimensions);
     case BuilderType::COMPACTV2:
         return make_tensor_impl<CompactTensorV2Builder, TensorBuilder,
             StringBinding>(dimensions);
@@ -282,7 +275,7 @@ double benchmark_build_us(BuilderType type, const std::vector<DimensionSpec> &sp
 
 TEST("benchmark create/destroy time for 1d tensors") {
     for (size_t size: {5, 10, 25, 50, 100, 250, 500}) {
-        for (auto type: {COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {COMPACTV2, DENSE}) {
             double time_us = benchmark_build_us(type, {DimensionSpec("x", size)});
             fprintf(stderr, "-- 1d tensor create/destroy (%s) with size %zu: %g us\n", name(type), size, time_us);
         }
@@ -291,7 +284,7 @@ TEST("benchmark create/destroy time for 1d tensors") {
 
 TEST("benchmark create/destroy time for 2d tensors") {
     for (size_t size: {5, 10, 25, 50, 100}) {
-        for (auto type: {COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {COMPACTV2, DENSE}) {
             double time_us = benchmark_build_us(type, {DimensionSpec("x", size), DimensionSpec("y", size)});
             fprintf(stderr, "-- 2d tensor create/destroy (%s) with size %zux%zu: %g us\n", name(type), size, size, time_us);
         }
@@ -302,7 +295,7 @@ TEST("benchmark create/destroy time for 2d tensors") {
 
 TEST("benchmark dot product using match") {
     for (size_t size: {10, 25, 50, 100, 250}) {
-        for (auto type: {COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {COMPACTV2, DENSE}) {
             Params params;
             params.add("query",    make_tensor(type, {DimensionSpec("x", size)}));
             params.add("document", make_tensor(type, {DimensionSpec("x", size)}));
@@ -314,7 +307,7 @@ TEST("benchmark dot product using match") {
 
 TEST("benchmark dot product using multiply") {
     for (size_t size: {10, 25, 50, 100, 250}) {
-        for (auto type: {COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {COMPACTV2, DENSE}) {
             Params params;
             params.add("query",    make_tensor(type, {DimensionSpec("x", size)}));
             params.add("document", make_tensor(type, {DimensionSpec("x", size)}));
@@ -328,7 +321,7 @@ TEST("benchmark model match") {
     for (size_t model_size: {25, 50, 100}) {
         for (size_t vector_size: {5, 10, 25, 50, 100}) {
             if (vector_size <= model_size) {
-                for (auto type: {COMPACT, COMPACTV2}) {
+                for (auto type: {COMPACTV2}) {
                     Params params;
                     params.add("query",    make_tensor(type, {DimensionSpec("x", vector_size)}));
                     params.add("document", make_tensor(type, {DimensionSpec("y", vector_size)}));
@@ -344,7 +337,7 @@ TEST("benchmark model match") {
 TEST("benchmark matrix product") {
     for (size_t vector_size: {5, 10, 25, 50}) {
         size_t matrix_size = vector_size * 2;
-        for (auto type: {COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {COMPACTV2, DENSE}) {
             Params params;
             size_t document_size = vector_size;
             if (type == DENSE) {
