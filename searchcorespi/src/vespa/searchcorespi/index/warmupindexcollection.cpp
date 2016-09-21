@@ -184,6 +184,22 @@ WarmupIndexCollection::getSearchableStats() const
     return _prev->getSearchableStats();
 }
 
+
+search::SerialNum
+WarmupIndexCollection::getSerialNum() const
+{
+    return std::max(_prev->getSerialNum(), _next->getSerialNum());
+}
+
+
+void
+WarmupIndexCollection::accept(IndexSearchableVisitor &visitor) const
+{
+    _prev->accept(visitor);
+    _next->accept(visitor);
+}
+
+
 void
 WarmupIndexCollection::append(uint32_t id, const IndexSearchable::SP &source)
 {

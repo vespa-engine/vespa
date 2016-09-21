@@ -61,7 +61,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
     /**
      * Commits the inserts and removes since the last commit, making them searchable.
      **/
-    virtual void commit(OnWriteDoneType onWriteDone) = 0;
+    virtual void commit(OnWriteDoneType onWriteDone, search::SerialNum serialNum) = 0;
 
     /**
      * Flushes this memory index to disk as a disk index.

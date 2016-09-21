@@ -8,8 +8,11 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/searchlib/common/serialnum.h>
 
 namespace searchcorespi {
+
+class IndexSearchableVisitor;
 
 /**
  * Abstract class extended by components to expose content that can be
@@ -72,6 +75,17 @@ public:
      * Returns the searchable stats for this index searchable.
      */
     virtual search::SearchableStats getSearchableStats() const = 0;
+
+    /*
+     * Returns the serial number for this index searchable.
+     */
+    virtual search::SerialNum getSerialNum() const = 0;
+
+    /*
+     * Calls visitor with properly downcasted argument to differentiate
+     * between different types of indexes (disk index or memory index).
+     */
+    virtual void accept(IndexSearchableVisitor &visitor) const = 0;
 };
 
 } // namespace searchcorespi

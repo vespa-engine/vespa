@@ -37,6 +37,12 @@ public:
     virtual search::SearchableStats getSearchableStats() const {
         return search::SearchableStats();
     }
+
+    virtual search::SerialNum getSerialNum() const override { return 0; }
+    virtual void accept(IndexSearchableVisitor &visitor) const override {
+        (void) visitor;
+    }
+
 };
 
 }  // namespace searchcorespi

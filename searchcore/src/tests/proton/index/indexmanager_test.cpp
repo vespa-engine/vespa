@@ -12,6 +12,7 @@ LOG_SETUP("indexmanager_test");
 #include <vespa/searchcorespi/index/indexcollection.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchcorespi/index/indexfusiontarget.h>
+#include <vespa/searchcorespi/index/index_manager_stats.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/memoryindex/dictionary.h>
@@ -144,6 +145,10 @@ struct Fixture {
                           });
         _writeService.indexFieldWriter().sync();
     }
+    void assertStats(uint32_t expNumDiskIndexes,
+                     uint32_t expNumMemoryIndexes,
+                     SerialNum expLastiskIndexSerialNum,
+                     SerialNum expLastMemoryIndexSerialNum);
 };
 
 void Fixture::flushIndexManager() {
@@ -174,6 +179,32 @@ void Fixture::resetIndexManager() {
                              TuneFileIndexManager(), TuneFileAttributes(),
                              _fileHeaderContext));
 }
+
+
+void Fixture::assertStats(uint32_t expNumDiskIndexes,
+                          uint32_t expNumMemoryIndexes,
+                          SerialNum expLastDiskIndexSerialNum,
+                          SerialNum expLastMemoryIndexSerialNum)
+{
+    searchcorespi::IndexManagerStats stats(*_index_manager);
+    SerialNum lastDiskIndexSerialNum = 0;
+    SerialNum lastMemoryIndexSerialNum = 0;
+    const std::vector<searchcorespi::index::DiskIndexStats> &
+        diskIndexes(stats.getDiskIndexes());
+    const std::vector<searchcorespi::index::MemoryIndexStats> &
+        memoryIndexes(stats.getMemoryIndexes());
+    if (!diskIndexes.empty()) {
+        lastDiskIndexSerialNum = diskIndexes.back().getSerialNum();
+    }
+    if (!memoryIndexes.empty()) {
+        lastMemoryIndexSerialNum = memoryIndexes.back().getSerialNum();
+    }
+    EXPECT_EQUAL(expNumDiskIndexes, diskIndexes.size());
+    EXPECT_EQUAL(expNumMemoryIndexes, memoryIndexes.size());
+    EXPECT_EQUAL(expLastDiskIndexSerialNum, lastDiskIndexSerialNum);
+    EXPECT_EQUAL(expLastMemoryIndexSerialNum, lastMemoryIndexSerialNum);
+}
+
 
 TEST_F("requireThatEmptyMemoryIndexIsNotFlushed", Fixture) {
     IIndexCollection::SP sources = f._index_manager->getMaintainer().getSourceCollection();
@@ -679,6 +710,16 @@ TEST_F("require that wipeHistory updates schema on disk", Fixture) {
     EXPECT_EQUAL(0u, s.getNumIndexFields());
 }
 
+TEST_F("require that indexes manager stats can be generated", Fixture)
+{
+    TEST_DO(f.assertStats(0, 1, 0, 0));
+    f.addDocument(1);
+    TEST_DO(f.assertStats(0, 1, 0, 1));
+    f.flushIndexManager();
+    TEST_DO(f.assertStats(1, 1, 1, 1));
+    f.addDocument(2);
+    TEST_DO(f.assertStats(1, 1, 1, 2));
+}
 
 }  // namespace
 
