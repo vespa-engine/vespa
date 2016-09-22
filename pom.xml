@@ -1113,7 +1113,7 @@
         <curator.version>2.9.1</curator.version>
         <jackson2.version>2.5.3</jackson2.version>
         <jersey2.version>2.10.1</jersey2.version>
-        <jetty.version>9.3.10.v20160621</jetty.version>
+        <jetty.version>9.3.12.v20160915</jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <test.hide>true</test.hide>
     	<doclint>all</doclint>
