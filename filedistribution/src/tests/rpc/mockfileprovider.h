@@ -14,11 +14,11 @@ public:
 
     boost::barrier _queueForeverBarrier;
 
-    boost::optional<boost::filesystem::path> getPath(const std::string& fileReference) {
+    boost::optional<Path> getPath(const std::string& fileReference) {
         if (fileReference == "dd") {
-            return boost::filesystem::path("direct/result/path");
+            return Path("direct/result/path");
         } else {
-            return boost::optional<boost::filesystem::path>();
+            return boost::optional<Path>();
         }
     }
 
