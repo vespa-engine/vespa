@@ -83,7 +83,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class FastS_SortSpec : public FastS_IResultSorter, public vespalib::noncopyable
+class FastS_SortSpec : public FastS_IResultSorter
 {
 private:
     friend class MultilevelSortTest;
@@ -136,6 +136,8 @@ private:
     uint8_t * realloc(uint32_t n, size_t & variableWidth, uint32_t & available, uint32_t & dataSize, uint8_t *mySortData);
 
 public:
+    FastS_SortSpec(const FastS_SortSpec &) = delete;
+    FastS_SortSpec & operator = (const FastS_SortSpec &) = delete;
     FastS_SortSpec(const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method=2);
     virtual ~FastS_SortSpec();
 
@@ -150,8 +152,7 @@ public:
     void copySortData(uint32_t offset, uint32_t n, uint32_t *idx, char *buf);
     void freeSortData();
     bool hasSortData() const;
-    void initWithoutSorting(const search::RankedHit * hits,
-                            uint32_t hitCnt);
+    void initWithoutSorting(const search::RankedHit * hits, uint32_t hitCnt);
     static int Compare(const FastS_SortSpec *self, const SortData &a, const SortData &b);
 };
 

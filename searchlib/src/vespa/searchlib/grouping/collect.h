@@ -7,8 +7,11 @@
 namespace search {
 namespace grouping {
 
-class Collect : public vespalib::noncopyable
+class Collect
 {
+public:
+    Collect(const Collect &) = delete;
+    Collect & operator = (const Collect &) = delete;
 protected:
     Collect(const aggregation::Group & protoType);
     ~Collect();
