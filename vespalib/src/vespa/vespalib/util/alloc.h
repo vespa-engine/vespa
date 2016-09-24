@@ -4,7 +4,6 @@
 #include <sys/types.h>
 #include <algorithm>
 #include <vespa/vespalib/util/linkedptr.h>
-#include <vespa/vespalib/util/noncopyable.hpp>
 #include <vespa/vespalib/util/optimized.h>
 
 namespace vespalib {
@@ -15,7 +14,7 @@ inline size_t roundUp2inN(size_t minimum) {
 /**
  * This is an allocated buffer interface that does not accept virtual inheritance.
 **/
-class Alloc : public noncopyable
+class Alloc
 {
 public:
     size_t size() const { return _sz; }
@@ -23,6 +22,8 @@ public:
     const void * get() const { return _buf; }
     void * operator -> () { return _buf; }
     const void * operator -> () const { return _buf; }
+    Alloc(const Alloc &) = delete;
+    Alloc & operator = (const Alloc &) = delete;
 protected:
     Alloc(Alloc && rhs) :
         _buf(rhs._buf),
