@@ -36,13 +36,15 @@ private:
     static Init _initializer;
 };
 
-class BitVector : protected BitWord, private vespalib::noncopyable
+class BitVector : protected BitWord
 {
 public:
     typedef BitWord::Index Index;
     typedef vespalib::GenerationHolder GenerationHolder;
     typedef vespalib::GenerationHeldBase GenerationHeldBase;
     typedef std::unique_ptr<BitVector> UP;
+    BitVector(const BitVector &) = delete;
+    BitVector& operator = (const BitVector &) = delete;
     virtual ~BitVector() { }
     bool operator == (const BitVector &right) const;
     const void * getStart() const { return _words; }
