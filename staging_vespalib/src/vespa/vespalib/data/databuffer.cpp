@@ -25,10 +25,7 @@ DataBufferT<T>::DataBufferT(size_t len, size_t alignment)
     assert(_alignment > 0);
     if (len > 0) {
         // avoid very small buffers for performance reasons:
-        size_t bufsize = 256;
-        while (bufsize < len + (_alignment - 1)) {
-            bufsize *= 2;
-        }
+        size_t bufsize = std::max(256ul, roundUp2inN(len + (_alignment - 1)));
         T newBuf(bufsize);
         _bufstart = static_cast<char *>(newBuf.get());
         _buffer.swap(newBuf);
@@ -84,7 +81,6 @@ DataBufferT<T>::shrink(size_t newsize)
     T newBuf(newsize);
     if (newsize != 0) {
         newbuf = static_cast<char *>(newBuf.get());
-        assert(newbuf != NULL);
         newdata = newbuf + padbefore(_alignment, newbuf);
         memcpy(newdata, _datapt, getDataLen());
     }
@@ -107,15 +103,9 @@ DataBufferT<T>::pack(size_t needbytes)
     if ((getDeadLen() + getFreeLen()) < needbytes ||
         (getDeadLen() + getFreeLen()) * 4 < dataLen)
     {
-        size_t bufsize = getBufSize() * 2;
-        if (bufsize < 256) {
-            bufsize = 256;
-        }
-        while (bufsize - dataLen < needbytes)
-            bufsize *= 2;
+        size_t bufsize = std::max(256ul, roundUp2inN(needbytes+dataLen));
         T newBuf(bufsize);
         char *newbuf = static_cast<char *>(newBuf.get());
-        assert(newbuf != NULL);
         char *newdata = newbuf + padbefore(_alignment, newbuf);
         memcpy(newdata, _datapt, dataLen);
         _bufstart = newbuf;
