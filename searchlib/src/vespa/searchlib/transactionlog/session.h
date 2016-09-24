@@ -13,14 +13,15 @@ namespace transactionlog {
 class Domain;
 typedef std::shared_ptr<Domain> DomainSP;
 
-class Session : public FRT_IRequestWait,
-                public vespalib::noncopyable
+class Session : public FRT_IRequestWait
 {
 private:
     typedef vespalib::Executor::Task Task;
 
 public:
     typedef std::shared_ptr<Session> SP;
+    Session(const Session &) = delete;
+    Session & operator = (const Session &) = delete;
     Session(int sId, const SerialNumRange & r, const DomainSP & d, FRT_Supervisor & supervisor, FNET_Connection *conn, bool subscriber=false);
     virtual ~Session();
     const SerialNumRange & range() const { return _range; }
