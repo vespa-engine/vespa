@@ -64,10 +64,10 @@ public:
 
     SerialNum begin() const;
     SerialNum end() const;
-    SerialNum getSynced(void) const;
-    void triggerSyncNow(void);
-    bool getMarkedDeleted(void) const { return _markedDeleted; }
-    void markDeleted(void) { _markedDeleted = true; }
+    SerialNum getSynced() const;
+    void triggerSyncNow();
+    bool getMarkedDeleted() const { return _markedDeleted; }
+    void markDeleted() { _markedDeleted = true; }
 
     size_t byteSize() const;
     size_t getNumSessions() const { return _sessions.size(); }
@@ -87,6 +87,9 @@ public:
     }
     uint64_t size() const;
 private:
+    SerialNum begin(const vespalib::LockGuard & guard) const;
+    SerialNum end(const vespalib::LockGuard & guard) const;
+    size_t byteSize(const vespalib::LockGuard & guard) const;
     uint64_t size(const vespalib::LockGuard & guard) const;
     void cleanSessions();
     vespalib::string dir() const { return getDir(_baseDir, _name); }
@@ -94,7 +97,7 @@ private:
 
     typedef std::vector<SerialNum> SerialNumList;
 
-    SerialNumList scanDir(void);
+    SerialNumList scanDir();
 
     typedef std::map<int, Session::SP > SessionList;
     typedef std::map<int64_t, DomainPart::SP > DomainPartList;
@@ -102,7 +105,7 @@ private:
 
     DomainPart::Crc     _defaultCrcType;
     Executor          & _executor;
-    int                 _sessionId;
+    std::atomic<int>    _sessionId;
     const bool          _useFsync;
     vespalib::Monitor   _syncMonitor;
     bool                _pendingSync;

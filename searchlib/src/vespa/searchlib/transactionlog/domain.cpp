@@ -117,7 +117,7 @@ DomainInfo
 Domain::getDomainInfo() const
 {
     LockGuard guard(_lock);
-    DomainInfo info(SerialNumRange(begin(), end()), size(guard), byteSize());
+    DomainInfo info(SerialNumRange(begin(guard), end(guard)), size(guard), byteSize(guard));
     for (const auto &entry: _parts) {
         const DomainPart &part = *entry.second;
         info.parts.emplace_back(PartInfo(part.range(), part.size(),
@@ -126,8 +126,16 @@ Domain::getDomainInfo() const
     return info;
 }
 
-SerialNum Domain::begin() const
+SerialNum
+Domain::begin() const
 {
+    return begin(LockGuard(_lock));
+}
+
+SerialNum
+Domain::begin(const LockGuard & guard) const
+{
+    assert(guard.locks(_lock));
     SerialNum s(0);
     if ( ! _parts.empty() ) {
         s = _parts.begin()->second->range().from();
@@ -135,8 +143,16 @@ SerialNum Domain::begin() const
     return s;
 }
 
-SerialNum Domain::end() const
+SerialNum
+Domain::end() const
 {
+    return end(LockGuard(_lock));
+}
+
+SerialNum
+Domain::end(const LockGuard & guard) const
+{
+    assert(guard.locks(_lock));
     SerialNum s(0);
     if ( ! _parts.empty() ) {
         s = _parts.rbegin()->second->range().to();
@@ -144,8 +160,16 @@ SerialNum Domain::end() const
     return s;
 }
 
-size_t Domain::byteSize() const
+size_t
+Domain::byteSize() const
 {
+    return byteSize(LockGuard(_lock));
+}
+
+size_t
+Domain::byteSize(const LockGuard & guard) const
+{
+    assert(guard.locks(_lock));
     size_t size = 0;
     for (const auto &entry : _parts) {
         const DomainPart &part = *entry.second;
@@ -155,7 +179,7 @@ size_t Domain::byteSize() const
 }
 
 SerialNum
-Domain::getSynced(void) const
+Domain::getSynced() const
 {
     SerialNum s(0);
     LockGuard guard(_lock);
@@ -174,7 +198,7 @@ Domain::getSynced(void) const
 
 
 void
-Domain::triggerSyncNow(void)
+Domain::triggerSyncNow()
 {
     MonitorGuard guard(_syncMonitor);
     if (!_pendingSync) {
@@ -203,13 +227,12 @@ DomainPart::SP Domain::findPart(SerialNum s)
 
 uint64_t Domain::size() const
 {
-    LockGuard guard(_lock);
-    return size(guard);
+    return size(LockGuard(_lock));
 }
 
 uint64_t Domain::size(const LockGuard & guard) const
 {
-    (void) guard;
+    assert(guard.locks(_lock));
     uint64_t sz(0);
     for (const auto & part : _parts) {
         sz += part.second->size();
