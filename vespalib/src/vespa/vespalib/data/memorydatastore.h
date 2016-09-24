@@ -43,7 +43,7 @@ private:
     Lock * _lock;
 };
 
-class VariableSizeVector : public noncopyable
+class VariableSizeVector
 {
 public:
     class Reference {
@@ -96,6 +96,8 @@ public:
         const vespalib::Array<Reference> * _vector;
         size_t _index;
     };
+    VariableSizeVector(const VariableSizeVector &) = delete;
+    VariableSizeVector & operator = (const VariableSizeVector &) = delete;
     VariableSizeVector(size_t initialSize=256);
     ~VariableSizeVector();
     iterator begin() { return iterator(_vector, 0); }
