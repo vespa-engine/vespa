@@ -137,10 +137,6 @@ StackDumpIteratorTest::ShowResult(int testNo,
                                   unsigned int expected)
 {
     unsigned int results = 0;
-    const char *idx_ptr;
-    const char *term_ptr;
-    size_t idx_len;
-    size_t term_len;
 
     int num = 0;
 
@@ -149,16 +145,16 @@ StackDumpIteratorTest::ShowResult(int testNo,
     printf("%03d: ", testNo);
 
     while (actual.next()) {
-        actual.getIndexName(&idx_ptr, &idx_len);
-        actual.getTerm(&term_ptr, &term_len);
+        vespalib::stringref idx = actual.getIndexName();
+        vespalib::stringref term = actual.getTerm();
 
 #if 0
         printf("StackItem #%d: %d %d '%.*s:%.*s'\n",
                actual.getNum(),
                actual.getType(),
                actual.getArity(),
-               idx_len, idx_ptr,
-               term_len, term_ptr);
+               idx.size(), idx.c_str(),
+               term.size(), term.c_str());
 #endif
 
         item = correct.Pop();
@@ -178,12 +174,12 @@ StackDumpIteratorTest::ShowResult(int testNo,
             delete item;
             break;
         }
-        if (strncmp(item->_indexName.c_str(), idx_ptr, idx_len) != 0) {
+        if (strncmp(item->_indexName.c_str(), idx.c_str(), idx.size()) != 0) {
             results |= ITERATOR_ERROR_WRONG_INDEX;
             delete item;
             break;
         }
-        if (strncmp(item->_term.c_str(), term_ptr, term_len) != 0) {
+        if (strncmp(item->_term.c_str(), term.c_str(), term.size()) != 0) {
             results |= ITERATOR_ERROR_WRONG_TERM;
             delete item;
             break;

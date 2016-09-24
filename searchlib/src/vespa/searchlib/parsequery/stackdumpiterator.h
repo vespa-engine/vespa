@@ -152,16 +152,8 @@ public:
     query::PredicateQueryTerm::UP getPredicateQueryTerm()
     { return std::move(_predicate_query_term); }
 
-    /**
-     * Get the type of the current item.
-     * @return the type.
-     */
-    void getIndexName(const char **buf, size_t *buflen) const { *buf = _currIndexName; *buflen = _currIndexNameLen; }
-    /**
-     * Get the type of the current item.
-     * @return the type.
-     */
-    void getTerm(const char **buf, size_t *buflen) const { *buf = _currTerm; *buflen = _currTermLen; }
+    vespalib::stringref getIndexName() const { return vespalib::stringref(_currIndexName, _currIndexNameLen); }
+    vespalib::stringref getTerm() const { return vespalib::stringref(_currTerm, _currTermLen); }
 };
 
 }

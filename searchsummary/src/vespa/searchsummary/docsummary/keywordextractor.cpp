@@ -111,10 +111,9 @@ KeywordExtractor::GetLegalIndexSpec()
 
 
 bool
-KeywordExtractor::IsLegalIndex(const char *idxName, size_t idxNameLen) const
+KeywordExtractor::IsLegalIndex(vespalib::stringref idxS) const
 {
     vespalib::string resolvedIdxName;
-    vespalib::string idxS(idxName, idxNameLen);
 
     if (_env != NULL) {
         resolvedIdxName = _env->lookupIndex(idxS);
@@ -136,10 +135,8 @@ KeywordExtractor::IsLegalIndex(const char *idxName, size_t idxNameLen) const
 
 
 char *
-KeywordExtractor::ExtractKeywords(const vespalib::stringref &buf) const
+KeywordExtractor::ExtractKeywords(vespalib::stringref buf) const
 {
-    const char *str_ptr;
-    size_t str_len;
     search::SimpleQueryStackDumpIterator si(buf);
     char keywordstore[4096]; // Initial storage for keywords buffer
     search::RawBuf keywords(keywordstore, sizeof(keywordstore));
@@ -171,27 +168,28 @@ KeywordExtractor::ExtractKeywords(const vespalib::stringref &buf) const
                     keywords.reset();
                     goto iteratorloopend;
                 } else {
-                    si.getIndexName(&str_ptr, &str_len);
-                    if (!IsLegalIndex(str_ptr, str_len))
+                    if (!IsLegalIndex(si.getIndexName()))
                         continue;
                     // Found a term
-                    si.getTerm(&str_ptr, &str_len);
+                    vespalib::stringref term = si.getTerm();
                     search::ParseItem::ItemCreator term_creator = si.getCreator();
-                    if (str_len > 0 && useful(term_creator)) {
+                    if ( !term.empty() && useful(term_creator)) {
                         // Actual term to add
-                        if (phraseterms_was_added)
+                        if (phraseterms_was_added) {
                             // Not the first term in the phrase
                             keywords += " ";
-                        else
+                        } else {
                             phraseterms_was_added = true;
+                        }
 
-                        keywords.append(str_ptr, str_len);
+                        keywords.append(term.c_str(), term.size());
                     }
                 }
             }
-            if (phraseterms_was_added)
+            if (phraseterms_was_added) {
                 // Terms was added, so 0-terminate the string
                 keywords.append("\0", 1);
+            }
 
             break;
         }
@@ -200,15 +198,16 @@ KeywordExtractor::ExtractKeywords(const vespalib::stringref &buf) const
         case search::ParseItem::ITEM_EXACTSTRINGTERM:
         case search::ParseItem::ITEM_NUMTERM:
         case search::ParseItem::ITEM_TERM:
-            si.getIndexName(&str_ptr, &str_len);
-            if (!IsLegalIndex(str_ptr, str_len))
+            if (!IsLegalIndex(si.getIndexName()))
                 continue;
-            // add a new keyword
-            si.getTerm(&str_ptr, &str_len);
-            if (str_len > 0 && useful(creator)) {
-                // An actual string to add
-                keywords.append(str_ptr, str_len);
-                keywords.append("\0", 1);
+            {
+                // add a new keyword
+                vespalib::stringref term = si.getTerm();
+                if ( !term.empty() && useful(creator)) {
+                    // An actual string to add
+                    keywords.append(term.c_str(), term.size());
+                    keywords.append("\0", 1);
+                }
             }
             break;
 

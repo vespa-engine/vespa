@@ -169,29 +169,27 @@ public:
     virtual const char *Index(const juniper::QueryItem* item, size_t *len) const
     {
         if (item->_si != NULL) {
-            const char *ret;
-            item->_si->getIndexName(&ret, len);
-            return ret;
+            *len = item->_si->getIndexName().size();
+            return item->_si->getIndexName().c_str();
         } else {
+            *len = item->_data->_indexlen;
             return item->_data->_index;
         }
 
     }
     virtual bool UsefulIndex(const juniper::QueryItem* item) const
     {
-        const char *buf;
-        size_t      buflen;
+        vespalib::stringref index;
 
         if (_kwExtractor == NULL)
             return true;
 
         if (item->_si != NULL) {
-            item->_si->getIndexName(&buf, &buflen);
+            index = item->_si->getIndexName();
         } else {
-            buf = item->_data->_index;
-            buflen = item->_data->_indexlen;
+            index = vespalib::stringref(item->_data->_index, item->_data->_indexlen);
         }
-        return _kwExtractor->IsLegalIndex(buf, buflen);
+        return _kwExtractor->IsLegalIndex(index);
     }
 };
 
@@ -203,8 +201,6 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
     bool rc = true;
     search::SimpleQueryStackDumpIterator iterator(_buf);
     juniper::QueryItem item(&iterator);
-    const char *buf;
-    size_t buflen;
 
     if (_highlightTerms->numKeys() > 0) {
         v->VisitAND(&item, 2);
@@ -234,14 +230,15 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
         case search::ParseItem::ITEM_TERM:
         case search::ParseItem::ITEM_EXACTSTRINGTERM:
         case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
-            iterator.getTerm(&buf, &buflen);
-            v->VisitKeyword(&item, buf, buflen, false, isSpecialToken);
+            {
+                vespalib::stringref term = iterator.getTerm();
+                v->VisitKeyword(&item, term.c_str(), term.size(), false, isSpecialToken);
+            }
             break;
         case search::ParseItem::ITEM_NUMTERM:
-            iterator.getTerm(&buf, &buflen);
             {
-                vespalib::string termStr(buf, buflen);
-                queryeval::SplitFloat splitter(termStr);
+                vespalib::string term = iterator.getTerm();
+                queryeval::SplitFloat splitter(term);
                 if (splitter.parts() > 1) {
                     if (v->VisitPHRASE(&item, splitter.parts())) {
                         for (size_t i = 0; i < splitter.parts(); ++i) {
@@ -255,7 +252,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
                                     splitter.getPart(0).c_str(),
                                     splitter.getPart(0).size(), false);
                 } else {
-                    v->VisitKeyword(&item, buf, buflen, false, true);
+                    v->VisitKeyword(&item, term.c_str(), term.size(), false, true);
                 }
             }
             break;
@@ -269,16 +266,14 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             break;
         case search::ParseItem::ITEM_PREFIXTERM:
         case search::ParseItem::ITEM_SUBSTRINGTERM:
-            iterator.getTerm(&buf, &buflen);
-            v->VisitKeyword(&item, buf, buflen, true, isSpecialToken);
+            {
+                vespalib::stringref term = iterator.getTerm();
+                v->VisitKeyword(&item, term.c_str(), term.size(), true, isSpecialToken);
+            }
             break;
         case search::ParseItem::ITEM_ANY:
-#if (JUNIPER_RP_API_MINOR_VERSION >= 1)
             if (!v->VisitANY(&item, iterator.getArity()))
-#else
-                if (!v->VisitOR(&item, iterator.getArity()))
-#endif
-                    rc = SkipItem(&iterator);
+                rc = SkipItem(&iterator);
             break;
         case search::ParseItem::ITEM_NEAR:
             if (!v->VisitNEAR(&item, iterator.getArity(),iterator.getArg1()))

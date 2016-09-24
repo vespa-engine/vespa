@@ -54,19 +54,6 @@ public:
     }
 
 private: 
-    /**
-     * If changing this class note:
-     * Note that this method must return a reference into the existing querystack.
-     * This is necessary to use the non-copying stringref noted in the create method.
-     */
-    static vespalib::stringref readString(SimpleQueryStackDumpIterator &queryStack, void (SimpleQueryStackDumpIterator::*f)(const char **, size_t *) const)
-    {
-        const char *p;
-        size_t len;
-        (queryStack.*f)(&p, &len);
-        return vespalib::stringref(p, len);
-    }
-
     static Term * createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
         uint32_t arity = queryStack.getArity();
         uint32_t arg1 = queryStack.getArg1();
@@ -82,13 +69,13 @@ private:
         } else if (type == ParseItem::ITEM_OR) {
             builder.addOr(arity);
         } else if (type == ParseItem::ITEM_WORD_ALTERNATIVES) {
-            vespalib::stringref view = readString(queryStack, &SimpleQueryStackDumpIterator::getIndexName);
+            vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             builder.addEquiv(arity, id, weight);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEAK_AND) {
-            vespalib::stringref view = readString(queryStack, &SimpleQueryStackDumpIterator::getIndexName);
+            vespalib::stringref view = queryStack.getIndexName();
             builder.addWeakAnd(arity, arg1, view);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_EQUIV) {
@@ -100,25 +87,25 @@ private:
         } else if (type == ParseItem::ITEM_ONEAR) {
             builder.addONear(arity, arg1);
         } else if (type == ParseItem::ITEM_PHRASE) {
-            vespalib::stringref view = readString(queryStack, &SimpleQueryStackDumpIterator::getIndexName);
+            vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             t = &builder.addPhrase(arity, view, id, weight);
             pureTermView = view;
         } else if (type == ParseItem::ITEM_WEIGHTED_SET) {
-            vespalib::stringref view = readString(queryStack, &SimpleQueryStackDumpIterator::getIndexName);
+            vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             t = &builder.addWeightedSetTerm(arity, view, id, weight);
             pureTermView = vespalib::stringref();
         } else if (type == ParseItem::ITEM_DOT_PRODUCT) {
-            vespalib::stringref view = readString(queryStack, &SimpleQueryStackDumpIterator::getIndexName);
+            vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             t = &builder.addDotProduct(arity, view, id, weight);
             pureTermView = vespalib::stringref();
         } else if (type == ParseItem::ITEM_WAND) {
-            vespalib::stringref view = readString(queryStack, &SimpleQueryStackDumpIterator::getIndexName);
+            vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
             t = &builder.addWandTerm(arity, view, id, weight, arg1, arg2, arg3);
@@ -126,8 +113,8 @@ private:
         } else if (type == ParseItem::ITEM_NOT) {
             builder.addAndNot(arity);
         } else {
-            vespalib::stringref term = readString(queryStack, &SimpleQueryStackDumpIterator::getTerm);
-            vespalib::stringref view = readString(queryStack, &SimpleQueryStackDumpIterator::getIndexName);
+            vespalib::stringref term = queryStack.getTerm();
+            vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
 
