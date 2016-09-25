@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -38,7 +37,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public Optional<ContainerNodeSpec> getContainerNodeSpec(HostName hostName) throws IOException {
+    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) throws IOException {
         synchronized (monitor) {
             return containerNodeSpecs.stream()
                     .filter(containerNodeSpec -> containerNodeSpec.hostname.equals(hostName))
@@ -47,14 +46,14 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public void updateNodeAttributes(HostName hostName, NodeAttributes nodeAttributes) throws IOException {
+    public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) throws IOException {
         synchronized (monitor) {
             callOrder.add("updateNodeAttributes with HostName: " + hostName + ", NodeAttributes: " + nodeAttributes);
         }
     }
 
     @Override
-    public void markAsReady(HostName hostName) throws IOException {
+    public void markAsReady(String hostName) throws IOException {
         Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
 
         synchronized (monitor) {
@@ -68,7 +67,7 @@ public class NodeRepoMock implements NodeRepository {
         }
     }
 
-    public void updateContainerNodeSpec(HostName hostName,
+    public void updateContainerNodeSpec(String hostName,
                                                Optional<DockerImage> wantedDockerImage,
                                                ContainerName containerName,
                                                Node.State nodeState,
@@ -97,7 +96,7 @@ public class NodeRepoMock implements NodeRepository {
         }
     }
 
-    public void removeContainerNodeSpec(HostName hostName) {
+    public void removeContainerNodeSpec(String hostName) {
         synchronized (monitor) {
             containerNodeSpecs = containerNodeSpecs.stream()
                     .filter(c -> !c.hostname.equals(hostName))

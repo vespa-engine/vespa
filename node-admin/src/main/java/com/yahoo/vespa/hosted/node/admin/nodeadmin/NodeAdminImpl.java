@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -37,11 +36,11 @@ public class NodeAdminImpl implements NodeAdmin {
     private static final long MIN_AGE_IMAGE_GC_MILLIS = Duration.ofMinutes(15).toMillis();
 
     private final Docker docker;
-    private final Function<HostName, NodeAgent> nodeAgentFactory;
+    private final Function<String, NodeAgent> nodeAgentFactory;
     private final MaintenanceScheduler maintenanceScheduler;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
-    private final Map<HostName, NodeAgent> nodeAgents = new HashMap<>();
+    private final Map<String, NodeAgent> nodeAgents = new HashMap<>();
 
     private Map<DockerImage, Long> firstTimeEligibleForGC = Collections.emptyMap();
 
@@ -51,7 +50,7 @@ public class NodeAdminImpl implements NodeAdmin {
      * @param docker interface to docker daemon and docker-related tasks
      * @param nodeAgentFactory factory for {@link NodeAgent} objects
      */
-    public NodeAdminImpl(final Docker docker, final Function<HostName, NodeAgent> nodeAgentFactory,
+    public NodeAdminImpl(final Docker docker, final Function<String, NodeAgent> nodeAgentFactory,
                          final MaintenanceScheduler maintenanceScheduler, int nodeAgentScanIntervalMillis) {
         this.docker = docker;
         this.nodeAgentFactory = nodeAgentFactory;
@@ -95,7 +94,7 @@ public class NodeAdminImpl implements NodeAdmin {
         this.frozen.set(frozen);
     }
 
-    public Set<HostName> getListOfHosts() {
+    public Set<String> getListOfHosts() {
         return nodeAgents.keySet();
     }
 
@@ -165,10 +164,10 @@ public class NodeAdminImpl implements NodeAdmin {
                 containersToRun.stream(), nodeSpec -> nodeSpec.hostname,
                 existingContainers.stream(), container -> container.hostname);
 
-        final Set<HostName> nodeHostNames = containersToRun.stream()
+        final Set<String> nodeHostNames = containersToRun.stream()
                 .map(spec -> spec.hostname)
                 .collect(Collectors.toSet());
-        final Set<HostName> obsoleteAgentHostNames = diff(nodeAgents.keySet(), nodeHostNames);
+        final Set<String> obsoleteAgentHostNames = diff(nodeAgents.keySet(), nodeHostNames);
         obsoleteAgentHostNames.forEach(hostName -> nodeAgents.remove(hostName).stop());
 
         nodeSpecContainerPairs.forEach(nodeSpecContainerPair -> {

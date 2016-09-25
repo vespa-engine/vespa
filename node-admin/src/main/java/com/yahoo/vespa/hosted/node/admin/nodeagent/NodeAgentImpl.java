@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -41,7 +40,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private DockerImage imageBeingDownloaded = null;
 
-    private final HostName hostname;
+    private final String hostname;
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
@@ -69,7 +68,7 @@ public class NodeAgentImpl implements NodeAgent {
     private ContainerNodeSpec lastNodeSpec = null;
 
     public NodeAgentImpl(
-            final HostName hostName,
+            final String hostName,
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
@@ -80,7 +79,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.dockerOperations = dockerOperations;
         this.maintenanceScheduler = maintenanceScheduler;
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class,
-                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
+                NodeRepositoryImpl.containerNameFromHostName(hostName));
     }
 
     @Override
@@ -190,7 +189,7 @@ public class NodeAgentImpl implements NodeAgent {
         publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
     }
 
-    private void publishStateToNodeRepoIfChanged(HostName hostName, NodeAttributes currentAttributes) throws IOException {
+    private void publishStateToNodeRepoIfChanged(String hostName, NodeAttributes currentAttributes) throws IOException {
         // TODO: We should only update if the new current values do not match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "

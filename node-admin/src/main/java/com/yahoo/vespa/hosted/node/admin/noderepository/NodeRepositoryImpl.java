@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.noderepository;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -30,7 +29,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     private final int port;
     private final ConfigServerHttpRequestExecutor requestExecutor;
 
-    public NodeRepositoryImpl(Set<HostName> configServerHosts, int configPort, String baseHostName) {
+    public NodeRepositoryImpl(Set<String> configServerHosts, int configPort, String baseHostName) {
         this.baseHostName = baseHostName;
         this.port = configPort;
         this.requestExecutor = ConfigServerHttpRequestExecutor.create(configServerHosts);
@@ -66,7 +65,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
 
     @Override
-    public Optional<ContainerNodeSpec> getContainerNodeSpec(HostName hostName) throws IOException {
+    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) throws IOException {
         final GetNodesResponse nodeResponse = requestExecutor.get(
                 "/nodes/v2/node/?hostname=" + hostName + "&recursive=true",
                 port,
@@ -77,7 +76,7 @@ public class NodeRepositoryImpl implements NodeRepository {
             return Optional.empty();
         }
         if (nodeResponse.nodes.size() != 1) {
-            throw new RuntimeException("Did not get data for one node using hostname=" + hostName.toString() + "\n" + nodeResponse.toString());
+            throw new RuntimeException("Did not get data for one node using hostname=" + hostName + "\n" + nodeResponse.toString());
         }
         return Optional.of(createContainerNodeSpec(nodeResponse.nodes.get(0)));
     }
@@ -106,7 +105,7 @@ public class NodeRepositoryImpl implements NodeRepository {
         }
 
         return new ContainerNodeSpec(
-                new HostName(hostName),
+                hostName,
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::new),
                 containerNameFromHostName(hostName),
                 nodeState,
@@ -127,7 +126,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
 
     @Override
-    public void updateNodeAttributes(final HostName hostName, final NodeAttributes nodeAttributes) throws IOException {
+    public void updateNodeAttributes(final String hostName, final NodeAttributes nodeAttributes) throws IOException {
         UpdateNodeAttributesResponse response = requestExecutor.patch(
                 "/nodes/v2/node/" + hostName,
                 port,
@@ -141,7 +140,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
     
     @Override
-    public void markAsReady(final HostName hostName) throws IOException {
+    public void markAsReady(final String hostName) throws IOException {
         NodeReadyResponse response = requestExecutor.put(
                 "/nodes/v2/state/ready/" + hostName,
                 port,

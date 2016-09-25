@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.provider;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceSchedulerImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
@@ -43,13 +42,13 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 .orElseThrow(() -> new IllegalStateException("Environment variable " + ENV_HOSTNAME + " unset"));
 
         Environment environment = new Environment();
-        Set<HostName> configServerHosts = environment.getConfigServerHosts();
+        Set<String> configServerHosts = environment.getConfigServerHosts();
 
         Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, HARDCODED_NODEREPOSITORY_PORT, baseHostName);
         MaintenanceScheduler maintenanceScheduler = new MaintenanceSchedulerImpl();
 
-        final Function<HostName, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
+        final Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
                 orchestrator, new DockerOperationsImpl(docker, environment), maintenanceScheduler);
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, maintenanceScheduler, NODE_AGENT_SCAN_INTERVAL_MILLIS);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(

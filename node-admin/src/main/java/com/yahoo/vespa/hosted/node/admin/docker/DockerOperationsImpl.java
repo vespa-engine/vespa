@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -195,7 +194,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, HostName hostname, Orchestrator orchestrator)
+    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
             throws Exception {
         Optional<Container> existingContainer = docker.getContainer(hostname);
         if (! existingContainer.isPresent()) {
@@ -280,10 +279,10 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Starting container " + nodeSpec.containerName);
         try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname.s());
+            InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
             final boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
-            String configServers = environment.getConfigServerHosts().stream().map(HostName::toString).collect(Collectors.joining(","));
+            String configServers = environment.getConfigServerHosts().stream().collect(Collectors.joining(","));
             Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
                     nodeSpec.containerName,
@@ -323,7 +322,7 @@ public class DockerOperationsImpl implements DockerOperations {
         }
     }
 
-    private void setupContainerNetworkingWithScript(ContainerName containerName, HostName hostName) {
+    private void setupContainerNetworkingWithScript(ContainerName containerName, String hostName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
         Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName);

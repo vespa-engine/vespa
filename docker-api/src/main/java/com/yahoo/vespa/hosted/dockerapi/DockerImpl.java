@@ -20,7 +20,6 @@ import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.log.LogLevel;
 import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -220,7 +219,7 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName name, HostName hostName) {
+    public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName name, String hostName) {
         return new CreateContainerCommandImpl(dockerClient, image, name, hostName)
                 .withLabel(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
     }
@@ -315,7 +314,7 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public Optional<Container> getContainer(HostName hostname) {
+    public Optional<Container> getContainer(String hostname) {
         // TODO Don't rely on getAllManagedContainers
         return getAllManagedContainers().stream()
                 .filter(c -> Objects.equals(hostname, c.hostname))
@@ -326,7 +325,7 @@ public class DockerImpl implements Docker {
         try {
             final InspectContainerResponse response = dockerClient.inspectContainerCmd(dockerClientContainer.getId()).exec();
             return Stream.of(new Container(
-                    new HostName(response.getConfig().getHostName()),
+                    response.getConfig().getHostName(),
                     new DockerImage(dockerClientContainer.getImage()),
                     new ContainerName(decode(response.getName())),
                     response.getState().getRunning()));

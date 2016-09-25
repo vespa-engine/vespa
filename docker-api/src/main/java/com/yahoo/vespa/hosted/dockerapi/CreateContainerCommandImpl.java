@@ -5,7 +5,6 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Bind;
-import com.yahoo.vespa.applicationmodel.HostName;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -22,7 +21,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final DockerClient docker;
     private final DockerImage dockerImage;
     private final ContainerName containerName;
-    private final HostName hostName;
+    private final String hostName;
     private final Map<String, String> labels = new HashMap<>();
     private final List<String> environmentAssignments = new ArrayList<>();
     private final List<String> volumeBindSpecs = new ArrayList<>();
@@ -35,7 +34,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     CreateContainerCommandImpl(DockerClient docker,
                                DockerImage dockerImage,
                                ContainerName containerName,
-                               HostName hostName) {
+                               String hostName) {
         this.docker = docker;
         this.dockerImage = dockerImage;
         this.containerName = containerName;
@@ -100,7 +99,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         CreateContainerCmd containerCmd = docker
                 .createContainerCmd(dockerImage.asString())
                 .withName(containerName.asString())
-                .withHostName(hostName.s())
+                .withHostName(hostName)
                 .withMacAddress(generateRandomMACAddress())
                 .withLabels(labels)
                 .withEnv(environmentAssignments)

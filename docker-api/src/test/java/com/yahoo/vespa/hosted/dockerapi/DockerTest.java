@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
-import com.yahoo.vespa.applicationmodel.HostName;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -67,8 +66,8 @@ public class DockerTest {
     @Ignore
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
-        HostName hostName1 = new HostName("docker10.test.yahoo.com");
-        HostName hostName2 = new HostName("docker11.test.yahoo.com");
+        String hostName1 = "docker10.test.yahoo.com";
+        String hostName2 = "docker11.test.yahoo.com";
         ContainerName containerName1 = new ContainerName("test-container-1");
         ContainerName containerName2 = new ContainerName("test-container-2");
         InetAddress inetAddress1 = Inet6Address.getByName("fe80::10");
