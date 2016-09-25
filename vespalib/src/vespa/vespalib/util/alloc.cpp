@@ -18,21 +18,6 @@ LOG_SETUP(".vespalib.alloc");
 
 namespace vespalib {
 
-void * AlignedHeapAlloc::alloc(size_t sz, size_t alignment)
-{
-    if (!sz) {
-        return 0;
-    }
-    void* ptr;
-    int result = posix_memalign(&ptr, alignment, sz);
-    if (result != 0) {
-        throw IllegalArgumentException(
-                make_string("posix_memalign(%zu, %zu) failed with code %d",
-                            sz, alignment, result));
-    }
-    return ptr;
-}
-
 namespace {
 
 volatile bool _G_hasHugePageFailureJustHappened(false);
@@ -101,7 +86,41 @@ size_t sum(const MMapStore & s)
 
 }
 
-void * MMapAlloc::alloc(size_t sz)
+namespace alloc {
+
+void * HeapAllocator::alloc(size_t sz) {
+    return salloc(sz);
+}
+
+void * HeapAllocator::salloc(size_t sz) {
+    return (sz > 0) ? malloc(sz) : 0;
+}
+
+void HeapAllocator::free(void * p, size_t sz) {
+    sfree(p, sz);
+}
+
+void HeapAllocator::sfree(void * p, size_t sz) {
+    (void) sz; if (p) { ::free(p); }
+}
+
+void * AlignedHeapAllocator::alloc(size_t sz) {
+    if (!sz) { return 0; }
+    void* ptr;
+    int result = posix_memalign(&ptr, _alignment, sz);
+    if (result != 0) {
+        throw IllegalArgumentException(
+                make_string("posix_memalign(%zu, %zu) failed with code %d",
+                            sz, _alignment, result));
+    }
+    return ptr;
+}
+
+void * MMapAllocator::alloc(size_t sz) {
+    return salloc(sz);
+}
+
+void * MMapAllocator::salloc(size_t sz)
 {
     void * buf(nullptr);
     if (sz > 0) {
@@ -152,7 +171,11 @@ void * MMapAlloc::alloc(size_t sz)
     return buf;
 }
 
-void MMapAlloc::free(void * buf, size_t sz)
+void MMapAllocator::free(void * buf, size_t sz) {
+    sfree(buf, sz);
+}
+
+void MMapAllocator::sfree(void * buf, size_t sz)
 {
     if (buf != nullptr) {
         madvise(buf, sz, MADV_DONTNEED);
@@ -167,4 +190,22 @@ void MMapAlloc::free(void * buf, size_t sz)
     }
 }
 
+void * AutoAllocator::alloc(size_t sz) {
+    if (useMMap(sz)) {
+        sz = roundUpToHugePages(sz);
+        return MMapAllocator::salloc(sz);
+    } else {
+        return HeapAllocator::salloc(sz);
+    }
+}
+
+void AutoAllocator::free(void *p, size_t sz) {
+    if (useMMap(sz)) {
+        return MMapAllocator::sfree(p, sz);
+    } else {
+        return HeapAllocator::sfree(p, sz);
+    }
+}
+
+}
 }

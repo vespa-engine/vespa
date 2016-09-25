@@ -8,6 +8,64 @@
 
 namespace vespalib {
 
+namespace alloc {
+
+class MemoryAllocator {
+public:
+    using UP = std::unique_ptr<MemoryAllocator>;
+    MemoryAllocator(const MemoryAllocator &) = delete;
+    MemoryAllocator & operator = (const MemoryAllocator &) = delete;
+    MemoryAllocator() { }
+    virtual ~MemoryAllocator() { }
+    virtual void * alloc(size_t sz) = 0;
+    virtual void free(void * buf, size_t sz) = 0;
+};
+
+class HeapAllocator : public MemoryAllocator {
+public:
+    void * alloc(size_t sz) override;
+    void free(void * buf, size_t sz) override;
+    static void * salloc(size_t sz);
+    static void sfree(void * buf, size_t sz);
+};
+
+class AlignedHeapAllocator : public HeapAllocator {
+public:
+    AlignedHeapAllocator(size_t alignment) : _alignment(alignment) { }
+    void * alloc(size_t sz) override;
+private:
+    size_t _alignment;
+};
+
+class MMapAllocator : public MemoryAllocator {
+public:
+    enum {HUGEPAGE_SIZE=0x200000};
+    void * alloc(size_t sz) override;
+    void free(void * buf, size_t sz) override;
+    static void * salloc(size_t sz);
+    static void sfree(void * buf, size_t sz);
+    static size_t roundUpToHugePages(size_t sz) {
+        return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
+    }
+};
+
+class AutoAllocator : public MemoryAllocator {
+public:
+    AutoAllocator(size_t mmapLimit) : _mmapLimit(mmapLimit) { }
+    void * alloc(size_t sz) override;
+    void free(void * buf, size_t sz) override;
+private:
+    size_t roundUpToHugePages(size_t sz) {
+        return (_mmapLimit >= MMapAllocator::HUGEPAGE_SIZE)
+            ? MMapAllocator::roundUpToHugePages(sz)
+            : sz;
+    }
+    bool useMMap(size_t sz) { return (sz >= _mmapLimit); }
+    size_t _mmapLimit;
+};
+
+}
+
 inline size_t roundUp2inN(size_t minimum) {
     return 2ul << Optimized::msbIdx(minimum - 1);
 }
