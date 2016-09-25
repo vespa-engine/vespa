@@ -89,6 +89,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 } catch (IOException e) {
                     return Optional.of("Failed to get nodes from node repo:" + e.getMessage());
                 }
+                if (nodesInActiveState.size() == 0) return Optional.empty();
                 return orchestrator.suspend(dockerHostHostName, nodesInActiveState);
             } else {
                 nodeAdmin.unfreezeNodeAgents();
