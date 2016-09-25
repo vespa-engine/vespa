@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.util;
 
-import com.yahoo.vespa.applicationmodel.HostName;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -24,16 +22,14 @@ public class Environment {
 
     public enum NetworkType { normal, local, vm }
 
-    public Set<HostName> getConfigServerHosts() {
+    public Set<String> getConfigServerHosts() {
         final String configServerHosts = System.getenv(ENV_CONFIGSERVERS);
         if (configServerHosts == null) {
             return Collections.emptySet();
         }
 
         final List<String> hostNameStrings = Arrays.asList(configServerHosts.split("[,\\s]+"));
-        return hostNameStrings.stream()
-                              .map(HostName::new)
-                              .collect(Collectors.toSet());
+        return hostNameStrings.stream().collect(Collectors.toSet());
     }
 
     public NetworkType networkType() throws IllegalArgumentException {

@@ -11,7 +11,6 @@ import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
-import com.yahoo.vespa.applicationmodel.HostName;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -39,7 +38,7 @@ public class OrchestratorImpl implements Orchestrator {
         this.requestExecutor = requestExecutor;
     }
 
-    public OrchestratorImpl(Set<HostName> configServerHosts) {
+    public OrchestratorImpl(Set<String> configServerHosts) {
         if (configServerHosts.isEmpty()) {
             throw new IllegalStateException("Environment setting for config servers missing or empty.");
         }
@@ -47,9 +46,9 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     @Override
-    public boolean suspend(final HostName hostName) {
+    public boolean suspend(final String hostName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
-                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
+                NodeRepositoryImpl.containerNameFromHostName(hostName));
 
         try {
             final UpdateHostResponse updateHostResponse = requestExecutor.put(
@@ -84,9 +83,9 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     @Override
-    public boolean resume(final HostName hostName) {
+    public boolean resume(final String hostName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(OrchestratorImpl.class,
-                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
+                NodeRepositoryImpl.containerNameFromHostName(hostName));
         try {
             final UpdateHostResponse batchOperationResult = requestExecutor.delete(
                     ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended",

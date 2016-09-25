@@ -5,7 +5,6 @@ package com.yahoo.vespa.hosted.node.admin.noderepository;
 import com.google.common.collect.Sets;
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -37,7 +36,7 @@ import static org.junit.Assert.fail;
 public class NodeRepositoryImplTest {
     private JDisc container;
     private int port;
-    private final Set<HostName> configServerHosts = Sets.newHashSet(new HostName("127.0.0.1"));
+    private final Set<String> configServerHosts = Sets.newHashSet("127.0.0.1");
 
 
     private int findRandomOpenPort() throws IOException {
@@ -62,7 +61,7 @@ public class NodeRepositoryImplTest {
 
     private void waitForJdiscContainerToServe() throws InterruptedException {
         Instant start = Instant.now();
-        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(Sets.newHashSet(new HostName("127.0.0.1")), port, "foobar");
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(Sets.newHashSet("127.0.0.1"), port, "foobar");
         while (Instant.now().minusSeconds(120).isBefore(start)) {
             try {
                 nodeRepositoryApi.getContainersToRun();
@@ -88,7 +87,7 @@ public class NodeRepositoryImplTest {
         final List<ContainerNodeSpec> containersToRun = nodeRepositoryApi.getContainersToRun();
         assertThat(containersToRun.size(), is(1));
         final ContainerNodeSpec nodeSpec = containersToRun.get(0);
-        assertThat(nodeSpec.hostname, is(new HostName("host4.yahoo.com")));
+        assertThat(nodeSpec.hostname, is("host4.yahoo.com"));
         assertThat(nodeSpec.wantedDockerImage.get(), is(new DockerImage("image-123")));
         assertThat(nodeSpec.containerName, is(new ContainerName("host4")));
         assertThat(nodeSpec.nodeState, is(Node.State.reserved));
@@ -103,7 +102,7 @@ public class NodeRepositoryImplTest {
     public void testGetContainers() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
-        HostName hostname = new HostName("host4.yahoo.com");
+        String hostname = "host4.yahoo.com";
         Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
         assertThat(nodeSpec.isPresent(), is(true));
         assertThat(nodeSpec.get().hostname, is(hostname));
@@ -114,7 +113,7 @@ public class NodeRepositoryImplTest {
     public void testUpdateNodeAttributes() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
-        HostName hostname = new HostName("host4.yahoo.com");
+        String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
@@ -127,7 +126,7 @@ public class NodeRepositoryImplTest {
     public void testUpdateNodeAttributesWithBadValue() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
-        HostName hostname = new HostName("host4.yahoo.com");
+        String hostname = "host4.yahoo.com";
         nodeRepositoryApi.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
@@ -141,17 +140,17 @@ public class NodeRepositoryImplTest {
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
         waitForJdiscContainerToServe();
 
-        nodeRepositoryApi.markAsReady(new HostName("host55.yahoo.com"));
+        nodeRepositoryApi.markAsReady("host55.yahoo.com");
 
         try {
-            nodeRepositoryApi.markAsReady(new HostName("host1.yahoo.com"));
+            nodeRepositoryApi.markAsReady("host1.yahoo.com");
             fail("Expected failure because host1 is not registered as provisioned, dirty, failed or parked");
         } catch (RuntimeException ignored) {
             // expected
         }
 
         try {
-            nodeRepositoryApi.markAsReady(new HostName("host101.yahoo.com"));
+            nodeRepositoryApi.markAsReady("host101.yahoo.com");
             fail("Expected failure because host101 does not exist");
         } catch (RuntimeException ignored) {
             // expected

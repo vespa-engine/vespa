@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.util;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.collections.ArraySet;
-import com.yahoo.vespa.applicationmodel.HostName;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -63,9 +62,9 @@ public class ConfigServerHttpRequestExecutorTest {
 
     @Test
     public void testBasicParsingSingleServer() throws Exception {
-        Set<HostName> configServers = new ArraySet<>(2);
-        configServers.add(HostName.apply("host1"));
-        configServers.add(HostName.apply("host2"));
+        Set<String> configServers = new ArraySet<>(2);
+        configServers.add("host1");
+        configServers.add("host2");
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
         TestPojo answer = executor.get("/path", 666, TestPojo.class);
         assertThat(answer.foo, is("bar"));
@@ -74,9 +73,9 @@ public class ConfigServerHttpRequestExecutorTest {
 
     @Test
     public void testBasicFailureWithNoRetries() throws Exception {
-        Set<HostName> configServers = new ArraySet<>(2);
-        configServers.add(HostName.apply("host1"));
-        configServers.add(HostName.apply("host2"));
+        Set<String> configServers = new ArraySet<>(2);
+        configServers.add("host1");
+        configServers.add("host2");
         // Server is returning 400, no retries.
         mockReturnCode = 400;
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
@@ -91,9 +90,9 @@ public class ConfigServerHttpRequestExecutorTest {
 
     @Test
     public void testRetries() throws Exception {
-        Set<HostName> configServers = new ArraySet<>(2);
-        configServers.add(HostName.apply("host1"));
-        configServers.add(HostName.apply("host2"));
+        Set<String> configServers = new ArraySet<>(2);
+        configServers.add("host1");
+        configServers.add("host2");
         // Client is throwing exception, should be retries.
         mockReturnCode = 100000;
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());
@@ -109,9 +108,9 @@ public class ConfigServerHttpRequestExecutorTest {
 
     @Test
     public void testNotFound() throws Exception {
-        Set<HostName> configServers = new ArraySet<>(2);
-        configServers.add(HostName.apply("host1"));
-        configServers.add(HostName.apply("host2"));
+        Set<String> configServers = new ArraySet<>(2);
+        configServers.add("host1");
+        configServers.add("host2");
         // Server is returning 404, special exception is thrown.
         mockReturnCode = 404;
         ConfigServerHttpRequestExecutor executor = new ConfigServerHttpRequestExecutor(configServers, createClientMock());

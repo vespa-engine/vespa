@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
@@ -146,7 +145,6 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                              .stream()
                              .filter(nodespec -> nodespec.nodeState == Node.State.active)
                              .map(nodespec -> nodespec.hostname)
-                             .map(HostName::toString)
                              .collect(Collectors.toList());
     }
 }
