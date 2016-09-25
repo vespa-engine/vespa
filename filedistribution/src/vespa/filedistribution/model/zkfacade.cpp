@@ -237,19 +237,23 @@ struct ZKFacade::ZKWatcher {
 
 void
 ZKFacade::stateWatchingFun(zhandle_t*, int type, int state, const char* path, void* context) {
-    (void)path;
     (void)context;
 
     //The ZKFacade won't expire before zookeeper_close has finished.
-    if (type == ZOO_SESSION_EVENT) {
-        LOGFWD(debug, "Zookeeper session event: %d", state);
-        if (state == ZOO_EXPIRED_SESSION_STATE) {
-            throw ZKSessionExpired(path, VESPA_STRLOC);
-        } else if (state == ZOO_AUTH_FAILED_STATE) {
-            throw ZKGenericException(ZNOAUTH, path, VESPA_STRLOC);
+    try {
+        if (type == ZOO_SESSION_EVENT) {
+            LOGFWD(debug, "Zookeeper session event: %d", state);
+            if (state == ZOO_EXPIRED_SESSION_STATE) {
+                throw ZKSessionExpired(path, VESPA_STRLOC);
+            } else if (state == ZOO_AUTH_FAILED_STATE) {
+                throw ZKGenericException(ZNOAUTH, path, VESPA_STRLOC);
+            }
+        } else {
+            LOGFWD(info, "State watching function: Unexpected event: '%d' -- '%d' ",  type, state);
         }
-    } else {
-        LOGFWD(info, "State watching function: Unexpected event: '%d' -- '%d' ",  type, state);
+    } catch (ZKSessionExpired & e) {
+        LOGFWD(error, "Received ZKSessionExpired exception that I can not handle. Will just exit quietly : %s", e.what());
+        std::quick_exit(11);
     }
 }
 
