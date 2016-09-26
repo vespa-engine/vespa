@@ -61,10 +61,7 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultBa
                 (type == search::ParseItem::ITEM_DOT_PRODUCT) ||
                 (type == search::ParseItem::ITEM_WAND))
             {
-                const char * index;
-                size_t indexLen(0);
-                queryRep.getIndexName(&index, &indexLen);
-                qn->setIndex(vespalib::string(index, indexLen));
+                qn->setIndex(queryRep.getIndexName());
             }
             for (size_t i=0; i < arity; i++) {
                 queryRep.next();
@@ -91,22 +88,15 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultBa
     case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
     case search::ParseItem::ITEM_PURE_WEIGHTED_LONG:
     {
-        const char * index;
-        size_t indexLen(0);
-        queryRep.getIndexName(&index, &indexLen);
-        if (indexLen == 0) {
+        vespalib::stringref index = queryRep.getIndexName();
+        if (index.empty()) {
             if ((type == search::ParseItem::ITEM_PURE_WEIGHTED_STRING) || (type == search::ParseItem::ITEM_PURE_WEIGHTED_LONG)) {
-                const vespalib::string & ref = parent->getIndex();
-                index = ref.c_str();
-                indexLen = ref.size();
+                index = parent->getIndex();
             } else {
-                index = "default";
-                indexLen = strlen(index);
+                index = DEFAULT;
             }
         }
-        const char * term;
-        size_t termLen(0);
-        queryRep.getTerm(&term, &termLen);
+        vespalib::stringref term = queryRep.getTerm();
         QueryTerm::SearchTerm sTerm(QueryTerm::WORD);
         switch (type) {
         case search::ParseItem::ITEM_REGEXP:
@@ -127,8 +117,8 @@ QueryNode::UP QueryNode::Build(const QueryNode * parent, const QueryNodeResultBa
         default:
             break;
         }
-        QueryTerm::string ssTerm(term, termLen);
-        QueryTerm::string ssIndex(index, indexLen);
+        QueryTerm::string ssTerm(term);
+        QueryTerm::string ssIndex(index);
         if (ssIndex == "sddocname") {
             // This is suboptimal as the term should be checked too.
             // But it will do for now as only correct sddocname queries are sent down.

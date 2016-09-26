@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
 
@@ -17,7 +18,9 @@ class HexDump
 {
 public:
     HexDump(const void * buf, size_t sz) : _buf(buf), _sz(sz) { }
+    vespalib::string toString() const;
     friend std::ostream & operator << (std::ostream & os, const HexDump & hd);
+    friend asciistream & operator << (asciistream & os, const HexDump & hd);
 private:
     const void * _buf;
     size_t       _sz;

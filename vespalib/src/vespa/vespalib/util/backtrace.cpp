@@ -3,10 +3,10 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/memory.h>
+#include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/backtrace.h>
-#include <cxxabi.h>
 #include <execinfo.h>
 #include <signal.h>
 
@@ -31,11 +31,8 @@ demangleBacktraceLine(const vespalib::string& line)
         size_t symEnd = line.find_first_of('+', symBegin);
         if (symEnd != vespalib::string::npos) {
             vespalib::string mangled = line.substr(symBegin + 1, symEnd - symBegin - 1);
-            int status;
-            char* demangled = abi::__cxa_demangle(mangled.c_str(), NULL, NULL, &status);
-            vespalib::MallocAutoPtr demangleScoped(demangled);
-
-            if (status == 0 && demangled != NULL) {
+            vespalib::string demangled = vespalib::demangle(mangled.c_str());
+            if ( ! demangled.empty()) {
                 // Create string matching original backtrace line format,
                 // except with demangled function signature
                 vespalib::string ret(line.c_str(), symBegin + 1);
