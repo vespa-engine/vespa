@@ -13,6 +13,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implementation of FeedClient. It is a thin layer on top of multiClusterHandler and multiClusterResultAggregator.
@@ -21,10 +22,13 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class FeedClientImpl implements FeedClient {
 
     private final OperationProcessor operationProcessor;
+    private final long closeTimeoutMs;
+    private final long sleepTimeMs = 500;
 
     public FeedClientImpl(
             SessionParams sessionParams, ResultCallback resultCallback, ScheduledThreadPoolExecutor timeoutExecutor) {
-
+        this.closeTimeoutMs = sessionParams.getFeedParams().getServerTimeout(TimeUnit.MILLISECONDS) +
+                sessionParams.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS);
         this.operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(
                         sessionParams.getThrottlerMinSize(),
@@ -53,13 +57,15 @@ public class FeedClientImpl implements FeedClient {
 
     @Override
     public void close() {
-        Instant startTime = Instant.now();
-        while (operationProcessor.getIncompleteResultQueueSize() > 0 && startTime.plusSeconds(30).isAfter(Instant.now())) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                break;
+        Instant lastResultReceived = Instant.now();
+        long lastNumberOfResults = operationProcessor.getIncompleteResultQueueSize();
+
+        while (waitForOperations(lastResultReceived, lastNumberOfResults, sleepTimeMs, closeTimeoutMs)) {
+            long results = operationProcessor.getIncompleteResultQueueSize();
+            if (results != lastNumberOfResults) {
+                lastResultReceived = Instant.now();
             }
+            lastNumberOfResults = results;
         }
         operationProcessor.close();
     }
@@ -67,5 +73,21 @@ public class FeedClientImpl implements FeedClient {
     @Override
     public String getStatsAsJson() {
         return operationProcessor.getStatsAsJson();
+    }
+
+    // On return value true, wait more. Public for testing.
+    public static boolean waitForOperations(Instant lastResultReceived, long lastNumberOfResults, long sleepTimeMs, long closeTimeoutMs) {
+        if (lastNumberOfResults == 0) {
+            return false;
+        }
+        if (lastResultReceived.plusMillis(closeTimeoutMs).isBefore(Instant.now())) {
+            return false;
+        }
+        try {
+            Thread.sleep(sleepTimeMs);
+        } catch (InterruptedException e) {
+            return false;
+        }
+        return true;
     }
 }
