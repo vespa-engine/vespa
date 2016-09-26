@@ -31,6 +31,10 @@ public:
             }
             return (name < rhs.name);
         }
+        bool operator==(const Label &rhs) const {
+            return (index == rhs.index) &&
+                    (name == rhs.name);
+        }
     };
     using Address = std::map<vespalib::string,Label>;
     using Cells = std::map<Address,double>;
@@ -46,6 +50,8 @@ public:
     const vespalib::string &type() const { return _type; }
     const Cells &cells() const { return _cells; }
 };
+
+std::ostream &operator<<(std::ostream &out, const TensorSpec::Label &label);
 
 } // namespace vespalib::eval
 } // namespace vespalib
