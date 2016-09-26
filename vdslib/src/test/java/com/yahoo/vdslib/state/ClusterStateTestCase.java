@@ -4,6 +4,7 @@ package com.yahoo.vdslib.state;
 import org.junit.Test;
 
 import java.text.ParseException;
+import java.util.function.BiFunction;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -64,6 +65,7 @@ public class ClusterStateTestCase{
             ClusterState state2 = new ClusterState("distributor:3 .1.s:d .2.s:m storage:3 .1.s:i .2.s:m");
             assertFalse(state1.equals(state2));
             assertFalse(state1.similarTo(state2));
+            assertFalse(state1.similarToIgnoringInitProgress(state2));
         }
 
         {
@@ -71,6 +73,7 @@ public class ClusterStateTestCase{
             ClusterState state2 = new ClusterState("cluster:d version:1 bits:20 distributor:1 storage:1 .0.s:d");
             assertFalse(state1.equals(state2));
             assertTrue(state1.similarTo(state2));
+            assertTrue(state1.similarToIgnoringInitProgress(state2));
         }
 
         {
@@ -78,6 +81,7 @@ public class ClusterStateTestCase{
             ClusterState state2 = new ClusterState("distributor:3 storage:3");
             assertFalse(state1.equals(state2));
             assertFalse(state1.similarTo(state2));
+            assertFalse(state1.similarToIgnoringInitProgress(state2));
         }
 
         assertFalse(state.equals("class not instance of ClusterState"));
@@ -95,34 +99,81 @@ public class ClusterStateTestCase{
         }
     }
 
-    @Test
-    public void similarity_check_considers_differing_distributor_node_state_sets() {
+    private void do_test_differing_storage_node_sets(BiFunction<ClusterState, ClusterState, Boolean> cmp) {
+        final ClusterState a = stateFromString("distributor:3 storage:3 .0.s:d");
+        final ClusterState b = stateFromString("distributor:3 storage:3");
+        assertFalse(cmp.apply(a, b));
+        assertFalse(cmp.apply(b, a));
+        assertTrue(cmp.apply(a, a));
+        assertTrue(cmp.apply(b, b));
+    }
+
+    private void do_test_differing_distributor_node_sets(BiFunction<ClusterState, ClusterState, Boolean> cmp) {
         final ClusterState a = stateFromString("distributor:3 .0.s:d storage:3");
         final ClusterState b = stateFromString("distributor:3 storage:3");
-        assertFalse(a.similarTo(b));
-        assertFalse(b.similarTo(a));
+        assertFalse(cmp.apply(a, b));
+        assertFalse(cmp.apply(b, a));
+        assertTrue(cmp.apply(a, a));
+        assertTrue(cmp.apply(b, b));
+    }
+
+    @Test
+    public void similarity_check_considers_differing_distributor_node_state_sets() {
+        do_test_differing_distributor_node_sets((a, b) -> a.similarTo(b));
     }
 
     @Test
     public void similarity_check_considers_differing_storage_node_state_sets() {
-        final ClusterState a = stateFromString("distributor:3 storage:3 .0.s:d");
-        final ClusterState b = stateFromString("distributor:3 storage:3");
-        assertFalse(a.similarTo(b));
-        assertFalse(b.similarTo(a));
+        do_test_differing_storage_node_sets((a, b) -> a.similarTo(b));
     }
 
-    // If we naïvely only look at the NodeState sets in the ClusterState instances to be
+    @Test
+    public void structural_similarity_check_considers_differing_distributor_node_state_sets() {
+        do_test_differing_distributor_node_sets((a, b) -> a.similarToIgnoringInitProgress(b));
+    }
+
+    @Test
+    public void init_progress_ignoring_similarity_check_considers_differing_storage_node_state_sets() {
+        do_test_differing_storage_node_sets((a, b) -> a.similarToIgnoringInitProgress(b));
+    }
+
+    private void do_test_similarity_for_down_cluster_state(BiFunction<ClusterState, ClusterState, Boolean> cmp) {
+        final ClusterState a = stateFromString("cluster:d distributor:3 .0.s:d storage:3 .2:s:d");
+        final ClusterState b = stateFromString("cluster:d distributor:3 storage:3 .1:s:d");
+        assertTrue(cmp.apply(a, b));
+        assertTrue(cmp.apply(b, a));
+    }
+
+    @Test
+    public void similarity_check_considers_differing_down_cluster_states_similar() {
+        do_test_similarity_for_down_cluster_state((a, b) -> a.similarTo(b));
+    }
+
+    @Test
+    public void init_progress_ignoring__similarity_check_considers_differing_down_cluster_states_similar() {
+        do_test_similarity_for_down_cluster_state((a, b) -> a.similarToIgnoringInitProgress(b));
+    }
+
+    // If we naively only look at the NodeState sets in the ClusterState instances to be
     // compared, we might get false positives. If state A has a NodeState(Up, minBits 15)
     // while state B has NodeState(Up, minBits 16), the latter will be pruned away from the
     // NodeState set because it's got a "default" Up state. The two states are still semantically
-    // similar, and should be returned as such. But their state sets differ.
+    // similar, and should be returned as such. But their state sets technically differ.
     @Test
     public void similarity_check_does_not_consider_per_storage_node_min_bits() {
-        ClusterState a = stateFromString("distributor:4 storage:4");
-        ClusterState b = stateFromString("distributor:4 storage:4");
+        final ClusterState a = stateFromString("distributor:4 storage:4");
+        final ClusterState b = stateFromString("distributor:4 storage:4");
         b.setNodeState(new Node(NodeType.STORAGE, 1), new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(15));
         assertTrue(a.similarTo(b));
         assertTrue(b.similarTo(a));
+    }
+
+    @Test
+    public void init_progress_ignoring_similarity_check_does_in_fact_ignore_init_progress() {
+        final ClusterState a = stateFromString("distributor:3 storage:3 .0.i:0.01 .1.i:0.1 .2.i:0.9");
+        final ClusterState b = stateFromString("distributor:3 storage:3 .0.i:0.2 .1.i:0.5 .2.i:0.99");
+        assertTrue(a.similarToIgnoringInitProgress(b));
+        assertTrue(b.similarToIgnoringInitProgress(a));
     }
 
     @Test
