@@ -4,8 +4,8 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/tensor/tensor_address.h>
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_address.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_address_builder.h>
+#include <vespa/vespalib/tensor/sparse/compact_tensor_address.h>
+#include <vespa/vespalib/tensor/sparse/compact_tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_address_element_iterator.h>
 
 using namespace vespalib::tensor;

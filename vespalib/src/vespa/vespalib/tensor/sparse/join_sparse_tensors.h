@@ -11,17 +11,17 @@ namespace tensor {
  */
 template <typename Function>
 Tensor::UP
-joinCompactTensorsV2(const CompactTensorV2 &lhs, const CompactTensorV2 &rhs,
+joinSparseTensors(const SparseTensor &lhs, const SparseTensor &rhs,
                      Function &&func)
 {
-    DirectTensorBuilder<CompactTensorV2> builder(lhs.combineDimensionsWith(rhs),
+    DirectTensorBuilder<SparseTensor> builder(lhs.combineDimensionsWith(rhs),
                                                  lhs.cells(), lhs.dimensions());
     if (builder.dimensions().size() == rhs.dimensions().size()) {
         for (const auto &rhsCell : rhs.cells()) {
             builder.insertCell(rhsCell.first, rhsCell.second, func);
         }
     } else {
-        CompactTensorV2AddressPadder addressPadder(builder.dimensions(),
+        SparseTensorAddressPadder addressPadder(builder.dimensions(),
                                                    rhs.dimensions());
         for (const auto &rhsCell : rhs.cells()) {
             addressPadder.padAddress(rhsCell.first);
@@ -37,18 +37,18 @@ joinCompactTensorsV2(const CompactTensorV2 &lhs, const CompactTensorV2 &rhs,
  */
 template <typename Function>
 Tensor::UP
-joinCompactTensorsV2Negated(const CompactTensorV2 &lhs,
-                            const CompactTensorV2 &rhs,
+joinSparseTensorsNegated(const SparseTensor &lhs,
+                            const SparseTensor &rhs,
                             Function &&func)
 {
-    DirectTensorBuilder<CompactTensorV2> builder(lhs.combineDimensionsWith(rhs),
+    DirectTensorBuilder<SparseTensor> builder(lhs.combineDimensionsWith(rhs),
                                                  lhs.cells(), lhs.dimensions());
     if (builder.dimensions().size() == rhs.dimensions().size()) {
         for (const auto &rhsCell : rhs.cells()) {
             builder.insertCell(rhsCell.first, -rhsCell.second, func);
         }
     } else {
-        CompactTensorV2AddressPadder addressPadder(builder.dimensions(),
+        SparseTensorAddressPadder addressPadder(builder.dimensions(),
                                                    rhs.dimensions());
         for (const auto &rhsCell : rhs.cells()) {
             addressPadder.padAddress(rhsCell.first);

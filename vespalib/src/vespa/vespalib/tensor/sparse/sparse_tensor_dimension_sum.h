@@ -10,15 +10,15 @@ namespace tensor {
 /**
  * Returns a tensor with the given dimension removed and the cell values in that dimension summed.
  */
-class CompactTensorV2DimensionSum : public TensorOperation<CompactTensorV2>
+class SparseTensorDimensionSum : public TensorOperation<SparseTensor>
 {
 public:
-    using TensorImplType = CompactTensorV2;
-    using Parent = TensorOperation<CompactTensorV2>;
+    using TensorImplType = SparseTensor;
+    using Parent = TensorOperation<SparseTensor>;
     using AddressBuilderType = typename Parent::AddressBuilderType;
     using AddressType = typename Parent::AddressType;
     using Parent::_builder;
-    CompactTensorV2DimensionSum(const TensorImplType &tensor,
+    SparseTensorDimensionSum(const TensorImplType &tensor,
                                 const vespalib::string &dimension);
 };
 

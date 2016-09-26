@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2_builder.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
 
 using namespace vespalib::tensor;
 
@@ -9,9 +9,9 @@ using namespace vespalib::tensor;
 void
 assertCellValue(double expValue, const TensorAddress &address,
                 const TensorDimensions &dimensions,
-                const CompactTensorV2::Cells &cells)
+                const SparseTensor::Cells &cells)
 {
-    CompactTensorV2AddressBuilder addressBuilder;
+    SparseTensorAddressBuilder addressBuilder;
     auto dimsItr = dimensions.cbegin();
     auto dimsItrEnd = dimensions.cend();
     for (const auto &element : address.elements()) {
@@ -35,7 +35,7 @@ assertCellValue(double expValue, const TensorAddress &address,
 
 TEST("require that tensor can be constructed")
 {
-    CompactTensorV2Builder builder;
+    SparseTensorBuilder builder;
     builder.define_dimension("c");
     builder.define_dimension("d");
     builder.define_dimension("a");
@@ -45,9 +45,9 @@ TEST("require that tensor can be constructed")
         add_label(builder.define_dimension("c"), "3").
         add_label(builder.define_dimension("d"), "4").add_cell(20);
     Tensor::UP tensor = builder.build();
-    const CompactTensorV2 &compactTensor = dynamic_cast<const CompactTensorV2 &>(*tensor);
-    const TensorDimensions &dimensions = compactTensor.dimensions();
-    const CompactTensorV2::Cells &cells = compactTensor.cells();
+    const SparseTensor &sparseTensor = dynamic_cast<const SparseTensor &>(*tensor);
+    const TensorDimensions &dimensions = sparseTensor.dimensions();
+    const SparseTensor::Cells &cells = sparseTensor.cells();
     EXPECT_EQUAL(2u, cells.size());
     assertCellValue(10, TensorAddress({{"a","1"},{"b","2"}}),
                     dimensions, cells);
@@ -57,7 +57,7 @@ TEST("require that tensor can be constructed")
 
 TEST("require that dimensions are extracted")
 {
-    CompactTensorV2Builder builder;
+    SparseTensorBuilder builder;
     builder.define_dimension("c");
     builder.define_dimension("a");
     builder.define_dimension("b");
@@ -67,13 +67,13 @@ TEST("require that dimensions are extracted")
         add_label(builder.define_dimension("b"), "3").
         add_label(builder.define_dimension("c"), "4").add_cell(20);
     Tensor::UP tensor = builder.build();
-    const CompactTensorV2 &compactTensor = dynamic_cast<const CompactTensorV2 &>(*tensor);
-    const TensorDimensions &dims = compactTensor.dimensions();
+    const SparseTensor &sparseTensor = dynamic_cast<const SparseTensor &>(*tensor);
+    const TensorDimensions &dims = sparseTensor.dimensions();
     EXPECT_EQUAL(3u, dims.size());
     EXPECT_EQUAL("a", dims[0]);
     EXPECT_EQUAL("b", dims[1]);
     EXPECT_EQUAL("c", dims[2]);
-    EXPECT_EQUAL("tensor(a{},b{},c{})", compactTensor.getType().to_spec());
+    EXPECT_EQUAL("tensor(a{},b{},c{})", sparseTensor.getType().to_spec());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include "compact_binary_format.h"
+#include "sparse_binary_format.h"
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/tensor_builder.h>
@@ -40,20 +40,20 @@ writeTensorAddress(nbostream &output,
 
 }
 
-class CompactBinaryFormatSerializer : public TensorVisitor
+class SparseBinaryFormatSerializer : public TensorVisitor
 {
     uint32_t _numCells;
     nbostream _cells;
     eval::ValueType _type;
 
 public:
-    CompactBinaryFormatSerializer();
-    virtual ~CompactBinaryFormatSerializer() override;
+    SparseBinaryFormatSerializer();
+    virtual ~SparseBinaryFormatSerializer() override;
     virtual void visit(const TensorAddress &address, double value) override;
     void serialize(nbostream &stream, const Tensor &tensor);
 };
 
-CompactBinaryFormatSerializer::CompactBinaryFormatSerializer()
+SparseBinaryFormatSerializer::SparseBinaryFormatSerializer()
     : _numCells(0u),
       _cells(),
       _type(eval::ValueType::error_type())
@@ -61,12 +61,12 @@ CompactBinaryFormatSerializer::CompactBinaryFormatSerializer()
 }
 
 
-CompactBinaryFormatSerializer::~CompactBinaryFormatSerializer()
+SparseBinaryFormatSerializer::~SparseBinaryFormatSerializer()
 {
 }
 
 void
-CompactBinaryFormatSerializer::visit(const TensorAddress &address,
+SparseBinaryFormatSerializer::visit(const TensorAddress &address,
                                      double value)
 {
     ++_numCells;
@@ -76,7 +76,7 @@ CompactBinaryFormatSerializer::visit(const TensorAddress &address,
 
 
 void
-CompactBinaryFormatSerializer::serialize(nbostream &stream,
+SparseBinaryFormatSerializer::serialize(nbostream &stream,
                                          const Tensor &tensor)
 {
     _type = tensor.getType();
@@ -91,15 +91,15 @@ CompactBinaryFormatSerializer::serialize(nbostream &stream,
 
 
 void
-CompactBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
+SparseBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
 {
-    CompactBinaryFormatSerializer serializer;
+    SparseBinaryFormatSerializer serializer;
     serializer.serialize(stream, tensor);
 }
 
 
 void
-CompactBinaryFormat::deserialize(nbostream &stream, TensorBuilder &builder)
+SparseBinaryFormat::deserialize(nbostream &stream, TensorBuilder &builder)
 {
     vespalib::string str;
     size_t dimensionsSize = stream.getInt1_4Bytes();

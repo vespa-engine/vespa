@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include "compact_tensor_v2_match.h"
-#include "compact_tensor_v2_address_decoder.h"
+#include "sparse_tensor_match.h"
+#include "sparse_tensor_address_decoder.h"
 
 namespace vespalib {
 namespace tensor {
@@ -44,12 +44,12 @@ buildTransformOps(std::vector<AddressOp> &ops,
 
 
 bool
-transformAddress(CompactTensorV2AddressBuilder &builder,
+transformAddress(SparseTensorAddressBuilder &builder,
                  CompactTensorAddressRef ref,
                  const std::vector<AddressOp> &ops)
 {
     builder.clear();
-    CompactTensorV2AddressDecoder addr(ref);
+    SparseTensorAddressDecoder addr(ref);
     for (auto op : ops) {
         switch (op) {
         case AddressOp::REMOVE:
@@ -75,7 +75,7 @@ transformAddress(CompactTensorV2AddressBuilder &builder,
 
 
 void
-CompactTensorV2Match::fastMatch(const TensorImplType &lhs,
+SparseTensorMatch::fastMatch(const TensorImplType &lhs,
                                 const TensorImplType &rhs)
 {
     for (const auto &lhsCell : lhs.cells()) {
@@ -87,12 +87,12 @@ CompactTensorV2Match::fastMatch(const TensorImplType &lhs,
 }
 
 void
-CompactTensorV2Match::slowMatch(const TensorImplType &lhs,
+SparseTensorMatch::slowMatch(const TensorImplType &lhs,
                                 const TensorImplType &rhs)
 {
     std::vector<AddressOp> ops;
-    CompactTensorV2AddressBuilder addressBuilder;
-    CompactTensorV2AddressPadder addressPadder(_builder.dimensions(),
+    SparseTensorAddressBuilder addressBuilder;
+    SparseTensorAddressPadder addressPadder(_builder.dimensions(),
                                                lhs.dimensions());
     buildTransformOps(ops, lhs.dimensions(), rhs.dimensions());
     for (const auto &lhsCell : lhs.cells()) {
@@ -108,7 +108,7 @@ CompactTensorV2Match::slowMatch(const TensorImplType &lhs,
     }
 }
 
-CompactTensorV2Match::CompactTensorV2Match(const TensorImplType &lhs,
+SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs,
                                            const TensorImplType &rhs)
     : Parent(lhs.combineDimensionsWith(rhs))
 {

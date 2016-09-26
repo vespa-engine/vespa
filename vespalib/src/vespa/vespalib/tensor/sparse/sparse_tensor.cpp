@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include "compact_tensor_v2.h"
-#include "compact_tensor_v2_address_builder.h"
-#include "compact_tensor_v2_dimension_sum.h"
-#include "compact_tensor_v2_match.h"
-#include "compact_tensor_v2_product.h"
-#include "join_compact_tensors_v2.h"
+#include "sparse_tensor.h"
+#include "sparse_tensor_address_builder.h"
+#include "sparse_tensor_dimension_sum.h"
+#include "sparse_tensor_match.h"
+#include "sparse_tensor_product.h"
+#include "join_sparse_tensors.h"
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_apply.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
@@ -18,7 +18,7 @@ namespace tensor {
 
 namespace {
 
-using Cells = CompactTensorV2::Cells;
+using Cells = SparseTensor::Cells;
 
 void
 copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
@@ -32,7 +32,7 @@ copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
 
 }
 
-CompactTensorV2::CompactTensorV2(const Dimensions &dimensions_in,
+SparseTensor::SparseTensor(const Dimensions &dimensions_in,
                                  const Cells &cells_in)
     : _cells(),
       _dimensions(dimensions_in),
@@ -42,7 +42,7 @@ CompactTensorV2::CompactTensorV2(const Dimensions &dimensions_in,
 }
 
 
-CompactTensorV2::CompactTensorV2(Dimensions &&dimensions_in,
+SparseTensor::SparseTensor(Dimensions &&dimensions_in,
                                  Cells &&cells_in, Stash &&stash_in)
     : _cells(std::move(cells_in)),
       _dimensions(std::move(dimensions_in)),
@@ -52,14 +52,14 @@ CompactTensorV2::CompactTensorV2(Dimensions &&dimensions_in,
 
 
 bool
-CompactTensorV2::operator==(const CompactTensorV2 &rhs) const
+SparseTensor::operator==(const SparseTensor &rhs) const
 {
     return _dimensions == rhs._dimensions && _cells == rhs._cells;
 }
 
 
-CompactTensorV2::Dimensions
-CompactTensorV2::combineDimensionsWith(const CompactTensorV2 &rhs) const
+SparseTensor::Dimensions
+SparseTensor::combineDimensionsWith(const SparseTensor &rhs) const
 {
     Dimensions result;
     std::set_union(_dimensions.cbegin(), _dimensions.cend(),
@@ -69,7 +69,7 @@ CompactTensorV2::combineDimensionsWith(const CompactTensorV2 &rhs) const
 }
 
 eval::ValueType
-CompactTensorV2::getType() const
+SparseTensor::getType() const
 {
     if (_dimensions.empty()) {
         return eval::ValueType::double_type();
@@ -80,7 +80,7 @@ CompactTensorV2::getType() const
 }
 
 double
-CompactTensorV2::sum() const
+SparseTensor::sum() const
 {
     double result = 0.0;
     for (const auto &cell : _cells) {
@@ -90,86 +90,86 @@ CompactTensorV2::sum() const
 }
 
 Tensor::UP
-CompactTensorV2::add(const Tensor &arg) const
+SparseTensor::add(const Tensor &arg) const
 {
-    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return Tensor::UP();
     }
-    return joinCompactTensorsV2(*this, *rhs,
+    return joinSparseTensors(*this, *rhs,
             [](double lhsValue, double rhsValue) { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
-CompactTensorV2::subtract(const Tensor &arg) const
+SparseTensor::subtract(const Tensor &arg) const
 {
-    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return Tensor::UP();
     }
     // Note that -rhsCell.second is passed to the lambda function, that is why we do addition.
-    return joinCompactTensorsV2Negated(*this, *rhs,
+    return joinSparseTensorsNegated(*this, *rhs,
             [](double lhsValue, double rhsValue) { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
-CompactTensorV2::multiply(const Tensor &arg) const
+SparseTensor::multiply(const Tensor &arg) const
 {
-    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return Tensor::UP();
     }
-    return CompactTensorV2Product(*this, *rhs).result();
+    return SparseTensorProduct(*this, *rhs).result();
 }
 
 Tensor::UP
-CompactTensorV2::min(const Tensor &arg) const
+SparseTensor::min(const Tensor &arg) const
 {
-    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return Tensor::UP();
     }
-    return joinCompactTensorsV2(*this, *rhs,
+    return joinSparseTensors(*this, *rhs,
             [](double lhsValue, double rhsValue) { return std::min(lhsValue, rhsValue); });
 }
 
 Tensor::UP
-CompactTensorV2::max(const Tensor &arg) const
+SparseTensor::max(const Tensor &arg) const
 {
-    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return Tensor::UP();
     }
-    return joinCompactTensorsV2(*this, *rhs,
+    return joinSparseTensors(*this, *rhs,
             [](double lhsValue, double rhsValue) { return std::max(lhsValue, rhsValue); });
 }
 
 Tensor::UP
-CompactTensorV2::match(const Tensor &arg) const
+SparseTensor::match(const Tensor &arg) const
 {
-    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return Tensor::UP();
     }
-    return CompactTensorV2Match(*this, *rhs).result();
+    return SparseTensorMatch(*this, *rhs).result();
 }
 
 Tensor::UP
-CompactTensorV2::apply(const CellFunction &func) const
+SparseTensor::apply(const CellFunction &func) const
 {
-    return TensorApply<CompactTensorV2>(*this, func).result();
+    return TensorApply<SparseTensor>(*this, func).result();
 }
 
 Tensor::UP
-CompactTensorV2::sum(const vespalib::string &dimension) const
+SparseTensor::sum(const vespalib::string &dimension) const
 {
-    return CompactTensorV2DimensionSum(*this, dimension).result();
+    return SparseTensorDimensionSum(*this, dimension).result();
 }
 
 bool
-CompactTensorV2::equals(const Tensor &arg) const
+SparseTensor::equals(const Tensor &arg) const
 {
-    const CompactTensorV2 *rhs = dynamic_cast<const CompactTensorV2 *>(&arg);
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
     if (!rhs) {
         return false;
     }
@@ -177,7 +177,7 @@ CompactTensorV2::equals(const Tensor &arg) const
 }
 
 vespalib::string
-CompactTensorV2::toString() const
+SparseTensor::toString() const
 {
     std::ostringstream stream;
     stream << *this;
@@ -185,13 +185,13 @@ CompactTensorV2::toString() const
 }
 
 Tensor::UP
-CompactTensorV2::clone() const
+SparseTensor::clone() const
 {
-    return std::make_unique<CompactTensorV2>(_dimensions, _cells);
+    return std::make_unique<SparseTensor>(_dimensions, _cells);
 }
 
 void
-CompactTensorV2::print(std::ostream &out) const
+SparseTensor::print(std::ostream &out) const
 {
     out << "{ ";
     bool first = true;
@@ -208,12 +208,12 @@ CompactTensorV2::print(std::ostream &out) const
 }
 
 void
-CompactTensorV2::accept(TensorVisitor &visitor) const
+SparseTensor::accept(TensorVisitor &visitor) const
 {
     TensorAddressBuilder addrBuilder;
     TensorAddress addr;
     for (const auto &cell : _cells) {
-        CompactTensorV2AddressDecoder decoder(cell.first);
+        SparseTensorAddressDecoder decoder(cell.first);
         addrBuilder.clear();
         for (const auto &dimension : _dimensions) {
             auto label = decoder.decodeLabel();

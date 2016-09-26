@@ -62,8 +62,7 @@ tests/stash
 tests/stllike
 tests/stringfmt
 tests/sync
-tests/tensor/compact_tensor_builder
-tests/tensor/compact_tensor_v2_builder
+tests/tensor/sparse_tensor_builder
 tests/tensor/dense_tensor_builder
 tests/tensor/dense_tensor_operations
 tests/tensor/join_tensor_addresses

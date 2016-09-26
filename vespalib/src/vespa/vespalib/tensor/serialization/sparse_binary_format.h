@@ -14,7 +14,7 @@ class TensorBuilder;
 /**
  * Class for serializing a tensor.
  */
-class CompactBinaryFormat
+class SparseBinaryFormat
 {
 public:
     static void serialize(nbostream &stream, const Tensor &tensor);

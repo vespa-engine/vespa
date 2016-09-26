@@ -10,7 +10,7 @@ namespace vespalib {
 namespace tensor {
 
 class CompactTensorAddressBuilder;
-class CompactTensorV2AddressBuilder;
+class SparseTensorAddressBuilder;
 
 /**
  * A builder that buffers up a tensor address with unsorted
@@ -73,7 +73,7 @@ public:
      * tensor address builder in sorted order.
      */
     void buildTo(CompactTensorAddressBuilder &builder);
-    void buildTo(CompactTensorV2AddressBuilder &builder,
+    void buildTo(SparseTensorAddressBuilder &builder,
                  const TensorDimensions &dimensions);
     void clear() { _elementStrings.clear(); _elements.clear(); }
 };

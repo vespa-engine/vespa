@@ -14,17 +14,17 @@ namespace tensor {
  *
  * If the two tensors have exactly the same dimensions, this is the Hadamard product.
  */
-class CompactTensorV2Match : public TensorOperation<CompactTensorV2>
+class SparseTensorMatch : public TensorOperation<SparseTensor>
 {
 public:
-    using Parent = TensorOperation<CompactTensorV2>;
+    using Parent = TensorOperation<SparseTensor>;
     using typename Parent::TensorImplType;
     using Parent::_builder;
 private:
     void fastMatch(const TensorImplType &lhs, const TensorImplType &rhs);
     void slowMatch(const TensorImplType &lhs, const TensorImplType &rhs);
 public:
-    CompactTensorV2Match(const TensorImplType &lhs, const TensorImplType &rhs);
+    SparseTensorMatch(const TensorImplType &lhs, const TensorImplType &rhs);
 };
 
 } // namespace vespalib::tensor

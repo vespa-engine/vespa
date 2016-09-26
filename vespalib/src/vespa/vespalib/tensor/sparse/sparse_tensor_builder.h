@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "compact_tensor_v2.h"
-#include "compact_tensor_v2_address_builder.h"
+#include "sparse_tensor.h"
+#include "sparse_tensor_address_builder.h"
 #include "compact_tensor_unsorted_address_builder.h"
 #include <vespa/vespalib/tensor/tensor_builder.h>
 #include <vespa/vespalib/tensor/tensor_address.h>
@@ -14,13 +14,13 @@ namespace vespalib {
 namespace tensor {
 
 /**
- * A builder of compact tensors.
+ * A builder of sparse tensors.
  */
-class CompactTensorV2Builder : public TensorBuilder
+class SparseTensorBuilder : public TensorBuilder
 {
     CompactTensorUnsortedAddressBuilder _addressBuilder; // unsorted dimensions
-    CompactTensorV2AddressBuilder _normalizedAddressBuilder; // sorted dimensions
-    CompactTensorV2::Cells _cells;
+    SparseTensorAddressBuilder _normalizedAddressBuilder; // sorted dimensions
+    SparseTensor::Cells _cells;
     Stash _stash;
     vespalib::hash_map<vespalib::string, uint32_t> _dimensionsEnum;
     std::vector<vespalib::string> _dimensions;
@@ -28,8 +28,8 @@ class CompactTensorV2Builder : public TensorBuilder
 
     void makeSortedDimensions();
 public:
-    CompactTensorV2Builder();
-    virtual ~CompactTensorV2Builder();
+    SparseTensorBuilder();
+    virtual ~SparseTensorBuilder();
 
     virtual Dimension
     define_dimension(const vespalib::string &dimension) override;

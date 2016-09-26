@@ -12,14 +12,14 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests for the compact binary format.
+ * Tests for the sparse binary format.
  *
  * TODO: When new formats are added we should refactor this test to test all formats
  *       with the same set of tensor inputs (if feasible).
  *
  * @author geirst
  */
-public class CompactBinaryFormatTestCase {
+public class SparseBinaryFormatTestCase {
 
     private static void assertSerialization(String tensorString) {
         assertSerialization(MapTensor.from(tensorString));

@@ -17,12 +17,12 @@ import com.yahoo.tensor.Tensor;
 @Beta
 public class TypedBinaryFormat {
 
-    private static final int COMPACT_BINARY_FORMAT_TYPE = 1;
+    private static final int SPARSE_BINARY_FORMAT_TYPE = 1;
 
     public static byte[] encode(Tensor tensor) {
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        buffer.putInt1_4Bytes(COMPACT_BINARY_FORMAT_TYPE);
-        new CompactBinaryFormat().encode(buffer, tensor);
+        buffer.putInt1_4Bytes(SPARSE_BINARY_FORMAT_TYPE);
+        new SparseBinaryFormat().encode(buffer, tensor);
         buffer.flip();
         byte[] result = new byte[buffer.remaining()];
         buffer.get(result);
@@ -33,8 +33,8 @@ public class TypedBinaryFormat {
         GrowableByteBuffer buffer = GrowableByteBuffer.wrap(data);
         int formatType = buffer.getInt1_4Bytes();
         switch (formatType) {
-            case COMPACT_BINARY_FORMAT_TYPE:
-                return new CompactBinaryFormat().decode(buffer);
+            case SPARSE_BINARY_FORMAT_TYPE:
+                return new SparseBinaryFormat().decode(buffer);
             default:
                 throw new IllegalArgumentException("Binary format type " + formatType + " is not a known format");
         }
