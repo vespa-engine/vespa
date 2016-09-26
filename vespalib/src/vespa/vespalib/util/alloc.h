@@ -131,8 +131,8 @@ public:
     }
     void swap(HeapAlloc & rhs) { internalSwap(rhs); }
 public:
-    static void * alloc(size_t sz) { return (sz > 0) ? malloc(sz) : 0; }
-    static void free(void * buf, size_t sz) { (void) sz; if (buf) { ::free(buf); } }
+    static void * alloc(size_t sz) { return alloc::HeapAllocator::getDefault().alloc(sz); }
+    static void free(void * buf, size_t sz) { alloc::HeapAllocator::getDefault().free(buf, sz); }
 };
 
 class AlignedHeapAlloc : public Alloc
@@ -151,8 +151,8 @@ public:
     ~AlignedHeapAlloc() { AlignedHeapAlloc::free(get(), size()); }
     void swap(AlignedHeapAlloc & rhs) { internalSwap(rhs); }
 public:
-    static void * alloc(size_t sz, size_t alignment);
-    static void free(void * buf, size_t sz) { (void) sz; if (buf) { ::free(buf); } }
+    static void * alloc(size_t sz, size_t alignment) { return alloc::AlignedHeapAllocator(alignment).alloc(sz); }
+    static void free(void * buf, size_t sz) { return alloc::AlignedHeapAllocator(0).free(buf, sz); }
 };
 
 
@@ -172,8 +172,8 @@ public:
     ~MMapAlloc() { MMapAlloc::free(get(), size()); }
     void swap(MMapAlloc & rhs) { internalSwap(rhs); }
 public:
-    static void * alloc(size_t sz);
-    static void free(void * buf, size_t sz);
+    static void * alloc(size_t sz) { return alloc::MMapAllocator::getDefault().alloc(sz); }
+    static void free(void * buf, size_t sz) { alloc::MMapAllocator::getDefault().free(buf, sz); }
 };
 
 // Alignment requirement is != 0, use posix_memalign
