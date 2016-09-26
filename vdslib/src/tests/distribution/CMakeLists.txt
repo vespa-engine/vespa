@@ -4,6 +4,5 @@ vespa_add_library(vdslib_testdistribution
     distributiontest.cpp
     grouptest.cpp
     idealnodecalculatorimpltest.cpp
-    idealnodecalculatorcachetest.cpp
     DEPENDS
 )

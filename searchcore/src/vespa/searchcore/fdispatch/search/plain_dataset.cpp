@@ -21,9 +21,6 @@
 #include <vespa/searchcore/fdispatch/search/plain_dataset.h>
 #include <vespa/searchcore/fdispatch/search/nodemanager.h>
 
-#include <boost/bind.hpp>
-#include <boost/mem_fn.hpp>
-
 LOG_SETUP(".search.plain_dataset");
 
 //--------------------------------------------------------------------------

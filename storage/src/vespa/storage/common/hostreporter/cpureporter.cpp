@@ -8,8 +8,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include "kernelmetrictool.h"
-
-#include <boost/array.hpp>
+#include <array>
 
 LOG_SETUP(".cpureporter");
 
@@ -30,7 +29,7 @@ const vespalib::string priorityText[proprityLevels] =
 
 struct CpuInfo {
     int _cpuIndex;
-    boost::array<uint64_t, proprityLevels> _usage;
+    std::array<uint64_t, proprityLevels> _usage;
     CpuInfo(int index) : _cpuIndex(index) {}
 
     uint64_t getTotalUsage() const {

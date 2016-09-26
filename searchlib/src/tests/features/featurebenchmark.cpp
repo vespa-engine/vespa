@@ -7,7 +7,6 @@ LOG_SETUP("featurebenchmark");
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <boost/tokenizer.hpp>
 
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
