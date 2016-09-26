@@ -43,12 +43,26 @@ struct Div10 : Sequence {
     double operator[](size_t i) const override { return (seq[i] / 10.0); }
 };
 
+// Sequence of another sequence minus 2
+struct Sub2 : Sequence {
+    const Sequence &seq;
+    Sub2(const Sequence &seq_in) : seq(seq_in) {}
+    double operator[](size_t i) const override { return (seq[i] - 2.0); }
+};
+
 // Sequence of a unary operator applied to a sequence
 struct OpSeq : Sequence {
     const Sequence &seq;
     const UnaryOperation &op;
     OpSeq(const Sequence &seq_in, const UnaryOperation &op_in) : seq(seq_in), op(op_in) {}
     double operator[](size_t i) const override { return op.eval(seq[i]); }
+};
+
+// Sequence of applying sigmoid to another sequence
+struct Sigmoid : Sequence {
+    const Sequence &seq;
+    Sigmoid(const Sequence &seq_in) : seq(seq_in) {}
+    double operator[](size_t i) const override { return operation::Sigmoid().eval(seq[i]); }
 };
 
 // pre-defined sequence of numbers
@@ -78,6 +92,13 @@ struct None : Mask {
     bool operator[](size_t) const override { return false; }
 };
 
+// Mask with false for each Nth index
+struct SkipNth : Mask {
+    size_t n;
+    SkipNth(size_t n_in) : n(n_in) {}
+    bool operator[](size_t i) const override { return (i % n) != 0; }
+};
+
 // pre-defined mask
 struct Bits : Mask {
     std::vector<bool> bits;
@@ -86,6 +107,16 @@ struct Bits : Mask {
         ASSERT_LESS(i, bits.size());
         return bits[i];
     }
+};
+
+// A mask converted to a sequence of two unique values (mapped from true and false)
+struct Mask2Seq : Sequence {
+    const Mask &mask;
+    double true_value;
+    double false_value;
+    Mask2Seq(const Mask &mask_in, double true_value_in = 1.0, double false_value_in = 0.0)
+        : mask(mask_in), true_value(true_value_in), false_value(false_value_in) {}
+    double operator[](size_t i) const override { return mask[i] ? true_value : false_value; }
 };
 
 // custom op1
@@ -248,17 +279,20 @@ struct ImmediateMap : Eval {
     }
 };
 
+const size_t tensor_id = 11;
+const size_t map_operation_id = 22;
+
 // input needed to evaluate a map operation in retained mode
 struct TensorMapInput : TensorFunction::Input {
     TensorValue tensor;
     const UnaryOperation &map_op;
     TensorMapInput(TensorRef in, const UnaryOperation &op) : tensor(in.ref), map_op(op) {}
     const Value &get_tensor(size_t id) const override {
-        ASSERT_EQUAL(id, 11u);
+        ASSERT_EQUAL(id, tensor_id);
         return tensor;
     }
     const UnaryOperation &get_map_operation(size_t id) const {
-        ASSERT_EQUAL(id, 22u);
+        ASSERT_EQUAL(id, map_operation_id);
         return map_op;
     }
 };
@@ -269,7 +303,7 @@ struct RetainedMap : Eval {
     RetainedMap(const UnaryOperation &op_in) : op(op_in) {}
     void verify(const TensorEngine &engine, TensorRef a, TensorRef expect) const override {
         auto a_type = a.ref.engine().type_of(a.ref);
-        auto ir = tensor_function::map(22, tensor_function::inject(a_type, 11));
+        auto ir = tensor_function::map(map_operation_id, tensor_function::inject(a_type, tensor_id));
         auto fun = engine.compile(std::move(ir));
         TensorMapInput input(a, op);
         Stash stash;
@@ -283,6 +317,9 @@ struct RetainedMap : Eval {
 
 // placeholder used for unused values in a sequence
 const double X = 31212.0;
+
+// NaN value
+const double my_nan = std::numeric_limits<double>::quiet_NaN();
 
 // Test wrapper to avoid passing global test parameters around
 struct TestContext {
@@ -405,22 +442,35 @@ struct TestContext {
         }
     }
 
+    void test_map_op(const vespalib::string &expr, const UnaryOperation &op, const Sequence &seq) {
+        TEST_DO(test_map_op(ImmediateMap(op), op, seq));
+        TEST_DO(test_map_op(RetainedMap(op), op, seq));
+        TEST_DO(test_map_op(Expr_T_T(expr), op, seq));
+    }
+
     void test_tensor_map() {
-        TEST_DO(test_map_op(ImmediateMap(operation::Floor()), operation::Floor(), Div10(N())));
-        TEST_DO(test_map_op(RetainedMap(operation::Floor()), operation::Floor(), Div10(N())));
-        TEST_DO(test_map_op(Expr_T_T("floor(a)"), operation::Floor(), Div10(N())));
-        //---------------------------------------------------------------------
-        TEST_DO(test_map_op(ImmediateMap(operation::Ceil()), operation::Ceil(), Div10(N())));
-        TEST_DO(test_map_op(RetainedMap(operation::Ceil()), operation::Ceil(), Div10(N())));
-        TEST_DO(test_map_op(Expr_T_T("ceil(a)"), operation::Ceil(), Div10(N())));
-        //---------------------------------------------------------------------
-        TEST_DO(test_map_op(ImmediateMap(operation::Sqrt()), operation::Sqrt(), Div10(N())));
-        TEST_DO(test_map_op(RetainedMap(operation::Sqrt()), operation::Sqrt(), Div10(N())));
-        TEST_DO(test_map_op(Expr_T_T("sqrt(a)"), operation::Sqrt(), Div10(N())));
-        //---------------------------------------------------------------------
-        TEST_DO(test_map_op(ImmediateMap(MyOp()), MyOp(), Div10(N())));
-        TEST_DO(test_map_op(RetainedMap(MyOp()), MyOp(), Div10(N())));
-        TEST_DO(test_map_op(Expr_T_T("(a+1)*2"), MyOp(), Div10(N())));
+        TEST_DO(test_map_op("-a", operation::Neg(), Sub2(Div10(N()))));
+        TEST_DO(test_map_op("!a", operation::Not(), Mask2Seq(SkipNth(3))));
+        TEST_DO(test_map_op("cos(a)", operation::Cos(), Div10(N())));
+        TEST_DO(test_map_op("sin(a)", operation::Sin(), Div10(N())));
+        TEST_DO(test_map_op("tan(a)", operation::Tan(), Div10(N())));
+        TEST_DO(test_map_op("cosh(a)", operation::Cosh(), Div10(N())));
+        TEST_DO(test_map_op("sinh(a)", operation::Sinh(), Div10(N())));
+        TEST_DO(test_map_op("tanh(a)", operation::Tanh(), Div10(N())));
+        TEST_DO(test_map_op("acos(a)", operation::Acos(), Sigmoid(Div10(N()))));
+        TEST_DO(test_map_op("asin(a)", operation::Asin(), Sigmoid(Div10(N()))));
+        TEST_DO(test_map_op("atan(a)", operation::Atan(), Div10(N())));
+        TEST_DO(test_map_op("exp(a)", operation::Exp(), Div10(N())));
+        TEST_DO(test_map_op("log10(a)", operation::Log10(), Div10(N())));
+        TEST_DO(test_map_op("log(a)", operation::Log(), Div10(N())));
+        TEST_DO(test_map_op("sqrt(a)", operation::Sqrt(), Div10(N())));
+        TEST_DO(test_map_op("ceil(a)", operation::Ceil(), Div10(N())));
+        TEST_DO(test_map_op("fabs(a)", operation::Fabs(), Div10(N())));
+        TEST_DO(test_map_op("floor(a)", operation::Floor(), Div10(N())));
+        TEST_DO(test_map_op("isNan(a)", operation::IsNan(), Mask2Seq(SkipNth(3), 1.0, my_nan)));
+        TEST_DO(test_map_op("relu(a)", operation::Relu(), Sub2(Div10(N()))));
+        TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid(), Sub2(Div10(N()))));
+        TEST_DO(test_map_op("(a+1)*2", MyOp(), Div10(N())));
     }
 
     void run_tests() {
