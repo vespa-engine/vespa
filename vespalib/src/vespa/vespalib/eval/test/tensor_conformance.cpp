@@ -113,7 +113,6 @@ Domain y() { return Domain("y", {}); }
 Domain y(size_t size) { return Domain("y", size); }
 Domain y(const std::vector<vespalib::string> &keys) { return Domain("y", keys); }
 
-Domain z() { return Domain("z", {}); }
 Domain z(size_t size) { return Domain("z", size); }
 Domain z(const std::vector<vespalib::string> &keys) { return Domain("z", keys); }
 
