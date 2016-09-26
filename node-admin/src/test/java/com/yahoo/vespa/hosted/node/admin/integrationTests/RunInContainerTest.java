@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -113,7 +112,7 @@ public class RunInContainerTest {
         assertTrue(ComponentsProviderWithMocks.callOrder.verifyInOrder(1000));
 
         ComponentsProviderWithMocks.nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
-                new HostName("hostName"),
+                "hostName",
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
                 Node.State.active,
