@@ -191,15 +191,15 @@ public class MasterElectionTest extends FleetControllerTest {
         log.log(LogLevel.INFO, "Leaving waitForMaster");
     }
 
-    private static class VersionMonotonicityChecker {
+    private static class StrictlyIncreasingVersionChecker {
         private ClusterState lastState;
 
-        private VersionMonotonicityChecker(ClusterState initialState) {
+        private StrictlyIncreasingVersionChecker(ClusterState initialState) {
             this.lastState = initialState;
         }
 
-        public static VersionMonotonicityChecker bootstrappedWith(ClusterState initialState) {
-            return new VersionMonotonicityChecker(initialState);
+        public static StrictlyIncreasingVersionChecker bootstrappedWith(ClusterState initialState) {
+            return new StrictlyIncreasingVersionChecker(initialState);
         }
 
         public void updateAndVerify(ClusterState currentState) {
@@ -207,7 +207,7 @@ public class MasterElectionTest extends FleetControllerTest {
             lastState = currentState;
             if (currentState.getVersion() <= last.getVersion()) {
                 throw new IllegalStateException(
-                        String.format("Cluster state version monotonicity invariant broken! " +
+                        String.format("Cluster state version strict increase invariant broken! " +
                                       "Old state was '%s', new state is '%s'", last, currentState));
             }
         }
@@ -226,7 +226,8 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForStableSystem();
         waitForMaster(0);
         Arrays.asList(0, 1, 2, 3, 4).stream().forEach(this::waitForCompleteCycle);
-        VersionMonotonicityChecker checker = VersionMonotonicityChecker.bootstrappedWith(fleetControllers.get(0).getClusterState());
+        StrictlyIncreasingVersionChecker checker = StrictlyIncreasingVersionChecker.bootstrappedWith(
+                fleetControllers.get(0).getClusterState());
         fleetControllers.get(0).shutdown();
         waitForMaster(1);
         Arrays.asList(1, 2, 3, 4).stream().forEach(this::waitForCompleteCycle);

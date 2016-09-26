@@ -240,7 +240,7 @@ public class MasterElectionHandler implements MasterInterface {
                   .append(".</p>");
             } else if (masterGoneFromZooKeeperTime + masterZooKeeperCooldownPeriod > timer.getCurrentTimeInMillis()) {
                 long time = timer.getCurrentTimeInMillis() - masterGoneFromZooKeeperTime;
-                sb.append("<p>There is currently no master. Only " + (time / 1000) + " seconds have past since")
+                sb.append("<p>There is currently no master. Only " + (time / 1000) + " seconds have passed since")
                   .append(" old master disappeared. At least " + (masterZooKeeperCooldownPeriod / 1000) + " must pass")
                   .append(" before electing new master unless all possible master candidates are online.</p>");
             }
@@ -249,7 +249,7 @@ public class MasterElectionHandler implements MasterInterface {
             sb.append("<p>As we are number ").append(nextInLineCount)
                     .append(" in line for taking over as master, we're gathering state from nodes.</p>");
             sb.append("<p><font color=\"red\">As we are not the master, we don't know about nodes current system state"
-                    + " or wanted states, so some statistics below are a bit incorrect. Look at status page on master "
+                    + " or wanted states, so some statistics below may be stale. Look at status page on master "
                     + "for updated data.</font></p>");
         }
         if (index * 2 > totalCount) {

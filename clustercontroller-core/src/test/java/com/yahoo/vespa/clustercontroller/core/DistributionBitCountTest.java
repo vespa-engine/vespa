@@ -74,13 +74,14 @@ public class DistributionBitCountTest extends FleetControllerTest {
         nodes.get(3).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(11));
 
         ClusterState startState = waitForState("version:\\d+ bits:11 distributor:10 storage:10");
-        ClusterState state = waitForClusterStateIncludingNodesWithMinUsedBits(11, 2);
 
         nodes.get(1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(12));
-        assertEquals(state + "->" + fleetController.getSystemState(), startState.getVersion(), fleetController.getSystemState().getVersion());
+        assertEquals(startState + "->" + fleetController.getSystemState(),
+                     startState.getVersion(), fleetController.getSystemState().getVersion());
 
         for (int i = 0; i < 10; ++i) {
-            nodes.get(i).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(17));
+            // nodes is array of [distr.0, stor.0, distr.1, stor.1, ...] and we just want the storage nodes
+            nodes.get(i*2 + 1).setNodeState(new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(17));
         }
         assertEquals(startState.getVersion() + 1, waitForState("version:\\d+ bits:17 distributor:10 storage:10").getVersion());
     }
