@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -13,7 +12,7 @@ import java.util.Optional;
  * @author stiankri
  */
 public class ContainerNodeSpec {
-    public final HostName hostname;
+    public final String hostname;
     public final Optional<DockerImage> wantedDockerImage;
     public final ContainerName containerName;
     public final Node.State nodeState;
@@ -29,7 +28,7 @@ public class ContainerNodeSpec {
     public final Optional<Double> minDiskAvailableGb;
 
     public ContainerNodeSpec(
-            final HostName hostname,
+            final String hostname,
             final Optional<DockerImage> wantedDockerImage,
             final ContainerName containerName,
             final Node.State nodeState,

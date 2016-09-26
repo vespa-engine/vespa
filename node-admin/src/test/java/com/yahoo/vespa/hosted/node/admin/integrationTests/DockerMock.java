@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -35,7 +34,7 @@ public class DockerMock implements Docker {
     public CreateContainerCommand createContainerCommand(
             DockerImage dockerImage,
             ContainerName containerName,
-            HostName hostName) {
+            String hostName) {
         synchronized (monitor) {
             callOrder.add("createContainerCommand with DockerImage: " + dockerImage + ", HostName: " + hostName +
                     ", ContainerName: " + containerName);
@@ -98,7 +97,7 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public Optional<Container> getContainer(HostName hostname) {
+    public Optional<Container> getContainer(String hostname) {
         synchronized (monitor) {
             return containers.stream().filter(container -> container.hostname.equals(hostname)).findFirst();
         }

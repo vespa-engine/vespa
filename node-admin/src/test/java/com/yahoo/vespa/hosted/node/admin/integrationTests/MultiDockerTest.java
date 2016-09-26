@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
@@ -52,7 +50,7 @@ public class MultiDockerTest {
         when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
         when(environment.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
 
-        Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
+        Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
         nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
@@ -65,9 +63,9 @@ public class MultiDockerTest {
 
     @Test
     public void test() throws InterruptedException, IOException {
-        addAndWaitForNode(new HostName("host1"), new ContainerName("container1"), Optional.of(new DockerImage("image1")));
+        addAndWaitForNode("host1", new ContainerName("container1"), Optional.of(new DockerImage("image1")));
         ContainerNodeSpec containerNodeSpec2 =
-                addAndWaitForNode(new HostName("host2"), new ContainerName("container2"), Optional.of(new DockerImage("image2")));
+                addAndWaitForNode("host2", new ContainerName("container2"), Optional.of(new DockerImage("image2")));
 
         nodeRepositoryMock.updateContainerNodeSpec(
                 containerNodeSpec2.hostname,
@@ -87,7 +85,7 @@ public class MultiDockerTest {
             Thread.sleep(10);
         }
 
-        addAndWaitForNode(new HostName("host3"), new ContainerName("container3"), Optional.of(new DockerImage("image1")));
+        addAndWaitForNode("host3", new ContainerName("container3"), Optional.of(new DockerImage("image1")));
 
         assertTrue(callOrder.verifyInOrder(1000,
                 "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host1, ContainerName: ContainerName { name=container1 }",
@@ -116,7 +114,7 @@ public class MultiDockerTest {
                 "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}"));
     }
 
-    private ContainerNodeSpec addAndWaitForNode(HostName hostName, ContainerName containerName, Optional<DockerImage> dockerImage) throws InterruptedException {
+    private ContainerNodeSpec addAndWaitForNode(String hostName, ContainerName containerName, Optional<DockerImage> dockerImage) throws InterruptedException {
         ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec(
                 hostName,
                 dockerImage,

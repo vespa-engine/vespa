@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.vespa.applicationmodel.HostName;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -35,10 +34,10 @@ public class ConfigServerHttpRequestExecutor {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient client;
-    private final Set<HostName> configServerHosts;
+    private final Set<String> configServerHosts;
     private final static int MAX_LOOPS = 2;
 
-    public static ConfigServerHttpRequestExecutor create(Set<HostName> configServerHosts) {
+    public static ConfigServerHttpRequestExecutor create(Set<String> configServerHosts) {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
         // Increase max total connections to 200, which should be enough
         cm.setMaxTotal(200);
@@ -46,13 +45,13 @@ public class ConfigServerHttpRequestExecutor {
                 .setConnectionManager(cm).build());
     }
 
-    public ConfigServerHttpRequestExecutor(Set<HostName> configServerHosts, HttpClient client) {
+    public ConfigServerHttpRequestExecutor(Set<String> configServerHosts, HttpClient client) {
         this.configServerHosts = configServerHosts;
         this.client = client;
     }
 
     public interface CreateRequest {
-        HttpUriRequest createRequest(HostName configserver) throws JsonProcessingException, UnsupportedEncodingException;
+        HttpUriRequest createRequest(String configserver) throws JsonProcessingException, UnsupportedEncodingException;
     }
 
     public class NotFoundException extends RuntimeException {
@@ -65,7 +64,7 @@ public class ConfigServerHttpRequestExecutor {
     public <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
-            for (HostName configServer : configServerHosts) {
+            for (String configServer : configServerHosts) {
                 final HttpResponse response;
                 try {
                     response = client.execute(requestFactory.createRequest(configServer));

@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -38,7 +37,7 @@ public class DockerOperationsImplTest {
         ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner("vespa", "canary-docker", "default");
         ContainerNodeSpec.Membership membership = new ContainerNodeSpec.Membership("container", "canary", "0", 123, false);
         ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                new HostName("host4.test.yahoo.com"),
+                "host4.test.yahoo.com",
                 Optional.of(new DockerImage("vespa-6.13")),
                 new ContainerName("host4"),
                 Node.State.active,
