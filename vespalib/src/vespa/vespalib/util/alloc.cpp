@@ -84,9 +84,55 @@ size_t sum(const MMapStore & s)
     return sum;
 }
 
+alloc::HeapAllocator _G_heapAllocatorDefault;
+alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(4096);
+alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
+alloc::MMapAllocator _G_mmapAllocatorDefault;
+alloc::AutoAllocator _G_autoAllocatorDefault(alloc::MMapAllocator::HUGEPAGE_SIZE);
+alloc::AutoAllocator _G_2PautoAllocatorDefault(2 * alloc::MMapAllocator::HUGEPAGE_SIZE);
+alloc::AutoAllocator _G_4PautoAllocatorDefault(4 * alloc::MMapAllocator::HUGEPAGE_SIZE);
+alloc::AutoAllocator _G_8PautoAllocatorDefault(8 * alloc::MMapAllocator::HUGEPAGE_SIZE);
+alloc::AutoAllocator _G_16PautoAllocatorDefault(16 * alloc::MMapAllocator::HUGEPAGE_SIZE);
+
 }
 
 namespace alloc {
+
+MemoryAllocator & HeapAllocator::getDefault() {
+    return _G_heapAllocatorDefault;
+}
+
+MemoryAllocator & AlignedHeapAllocator::get4K() {
+    return _G_4KalignedHeapAllocator;
+}
+
+MemoryAllocator & AlignedHeapAllocator::get512B() {
+    return _G_512BalignedHeapAllocator;
+}
+
+MemoryAllocator & MMapAllocator::getDefault() {
+    return _G_mmapAllocatorDefault;
+}
+
+MemoryAllocator & AutoAllocator::getDefault() {
+    return _G_autoAllocatorDefault;
+}
+
+MemoryAllocator & AutoAllocator::get2P() {
+    return _G_2PautoAllocatorDefault;
+}
+
+MemoryAllocator & AutoAllocator::get4P() {
+    return _G_4PautoAllocatorDefault;
+}
+
+MemoryAllocator & AutoAllocator::get8P() {
+    return _G_8PautoAllocatorDefault;
+}
+
+MemoryAllocator & AutoAllocator::get16P() {
+    return _G_16PautoAllocatorDefault;
+}
 
 void * HeapAllocator::alloc(size_t sz) {
     return salloc(sz);

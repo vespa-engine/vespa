@@ -27,12 +27,15 @@ public:
     void free(void * buf, size_t sz) override;
     static void * salloc(size_t sz);
     static void sfree(void * buf, size_t sz);
+    static MemoryAllocator & getDefault();
 };
 
 class AlignedHeapAllocator : public HeapAllocator {
 public:
     AlignedHeapAllocator(size_t alignment) : _alignment(alignment) { }
     void * alloc(size_t sz) override;
+    static MemoryAllocator & get4K();
+    static MemoryAllocator & get512B();
 private:
     size_t _alignment;
 };
@@ -47,6 +50,7 @@ public:
     static size_t roundUpToHugePages(size_t sz) {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
     }
+    static MemoryAllocator & getDefault();
 };
 
 class AutoAllocator : public MemoryAllocator {
@@ -54,6 +58,11 @@ public:
     AutoAllocator(size_t mmapLimit) : _mmapLimit(mmapLimit) { }
     void * alloc(size_t sz) override;
     void free(void * buf, size_t sz) override;
+    static MemoryAllocator & getDefault();
+    static MemoryAllocator & get2P();
+    static MemoryAllocator & get4P();
+    static MemoryAllocator & get8P();
+    static MemoryAllocator & get16P();
 private:
     size_t roundUpToHugePages(size_t sz) {
         return (_mmapLimit >= MMapAllocator::HUGEPAGE_SIZE)
