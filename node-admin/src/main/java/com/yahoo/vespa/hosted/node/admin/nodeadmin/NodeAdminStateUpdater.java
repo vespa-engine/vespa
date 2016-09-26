@@ -88,6 +88,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 } catch (IOException e) {
                     return Optional.of("Failed to get nodes from node repo:" + e.getMessage());
                 }
+                // Avoids media type issues (HTTP ERROR: 415 Unsupported Media Type), probably related to having empty node list.
                 if (nodesInActiveState.size() == 0) return Optional.empty();
                 return orchestrator.suspend(dockerHostHostName, nodesInActiveState);
             } else {
