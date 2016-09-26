@@ -6,6 +6,8 @@ import com.yahoo.search.query.Model;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -34,6 +36,7 @@ public final class Parsable {
     private String filter;
     private String defaultIndexName;
     private Language language;
+    private Optional<Language> explicitLanguage = Optional.empty();
 
     public String getQuery() {
         return query;
@@ -62,12 +65,24 @@ public final class Parsable {
         return this;
     }
 
-    public Language getLanguage() {
-        return language;
-    }
+    /** 
+     * Returns the language to use when parsing, 
+     * if not decided by the item under parsing. This is never null or UNKNOWN 
+     */
+    public Language getLanguage() { return language; }
 
     public Parsable setLanguage(Language language) {
+        Objects.requireNonNull(language, "Language cannot be null");
         this.language = language;
+        return this;
+    }
+
+    /** Returns the language explicitly set to be used when parsing, or empty if none is set. */
+    public Optional<Language> getExplicitLanguage() { return explicitLanguage; }
+
+    public Parsable setExplicitLanguage(Optional<Language> language) {
+        Objects.requireNonNull(language, "Explicit language cannot be null");
+        this.explicitLanguage = language;
         return this;
     }
 
@@ -104,6 +119,7 @@ public final class Parsable {
                 .setQuery(model.getQueryString())
                 .setFilter(model.getFilter())
                 .setLanguage(model.getParsingLanguage())
+                .setExplicitLanguage(Optional.ofNullable(model.getLanguage()))
                 .setDefaultIndexName(model.getDefaultIndex())
                 .addSources(model.getSources())
                 .addRestricts(model.getRestrict());

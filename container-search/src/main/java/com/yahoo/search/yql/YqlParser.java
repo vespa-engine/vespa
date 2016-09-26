@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -656,7 +657,7 @@ public class YqlParser implements Parser {
                                        Query.Type.ALL.toString(), "grammar for handling user input");
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
                                             String.class, "default", "default index for user input terms");
-        Language language = decideUserInputLanguage(ast, wordData);
+        Language language = decideParsingLanguage(ast, wordData);
         Item item;
         if (USER_INPUT_RAW.equals(grammar)) {
             item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, language);
@@ -666,17 +667,22 @@ public class YqlParser implements Parser {
             item = parseUserInput(grammar, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotations(ast, item);
         }
-        item.setLanguage(language);
         return item;
     }
     
-    private Language decideUserInputLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {
+    private Language decideParsingLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {
         String languageTag = getAnnotation(ast, USER_INPUT_LANGUAGE, String.class, null,
-                                           "language setting for segmenting user input parameter");
+                                           "language setting for segmenting query section");
+
         Language language = Language.fromLanguageTag(languageTag);
         if (language != Language.UNKNOWN) return language;
+
+        Optional<Language> explicitLanguage = currentlyParsing.getExplicitLanguage();
+        if (explicitLanguage.isPresent()) return explicitLanguage.get();
+
         language = detector.detect(wordData, null).getLanguage();
         if (language != Language.UNKNOWN) return language;
+
         return Language.ENGLISH;
     }
 
@@ -711,6 +717,9 @@ public class YqlParser implements Parser {
         // the null check should be unnecessary, but is there to avoid having to suppress null warnings
         if ( !allowNullItem && (item == null || item instanceof NullItem))
             throw new IllegalArgumentException("Parsing '" + wordData + "' only resulted in NullItem.");
+
+        if (language != Language.ENGLISH) // mark the language used, unless it's the default
+            item.setLanguage(language);
         return item;
     }
 
@@ -1037,11 +1046,8 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast,
-            int argIdx, @NonNull
-            CompositeItem out) {
-        Iterable<OperatorNode<ExpressionOperator>> args = ast
-                .getArgument(argIdx);
+    private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, @NonNull CompositeItem out) {
+        Iterable<OperatorNode<ExpressionOperator>> args = ast.getArgument(argIdx);
         for (OperatorNode<ExpressionOperator> arg : args) {
             assertHasOperator(arg, ExpressionOperator.class);
             out.addItem(convertExpression(arg));
@@ -1049,10 +1055,8 @@ public class YqlParser implements Parser {
         return out;
     }
 
-    private void convertVarArgsAnd(OperatorNode<ExpressionOperator> ast,
-            int argIdx, AndItem outAnd, NotItem outNot) {
-        Iterable<OperatorNode<ExpressionOperator>> args = ast
-                .getArgument(argIdx);
+    private void convertVarArgsAnd(OperatorNode<ExpressionOperator> ast, int argIdx, AndItem outAnd, NotItem outNot) {
+        Iterable<OperatorNode<ExpressionOperator>> args = ast.getArgument(argIdx);
         for (OperatorNode<ExpressionOperator> arg : args) {
             assertHasOperator(arg, ExpressionOperator.class);
             if (arg.getOperator() == ExpressionOperator.NOT) {
@@ -1087,28 +1091,25 @@ public class YqlParser implements Parser {
         assertHasOperator(spec, ExpressionOperator.CALL);
         assertHasFunctionName(spec, RANGE);
 
-        IntItem range = instantiateRangeItem(
-                spec.<List<OperatorNode<ExpressionOperator>>> getArgument(1),
-                spec);
+        IntItem range = instantiateRangeItem(spec.<List<OperatorNode<ExpressionOperator>>> getArgument(1), spec);
         return leafStyleSettings(spec, range);
     }
 
     private static Number negate(Number x) {
         if (x.getClass() == Integer.class) {
             int x1 = x.intValue();
-            return Integer.valueOf(-x1);
+            return -x1;
         } else if (x.getClass() == Long.class) {
             long x1 = x.longValue();
-            return Long.valueOf(-x1);
+            return -x1;
         } else if (x.getClass() == Float.class) {
             float x1 = x.floatValue();
-            return Float.valueOf(-x1);
+            return -x1;
         } else if (x.getClass() == Double.class) {
             double x1 = x.doubleValue();
-            return Double.valueOf(-x1);
+            return -x1;
         } else {
-            throw newUnexpectedArgumentException(x.getClass(), Integer.class,
-                    Long.class, Float.class, Double.class);
+            throw newUnexpectedArgumentException(x.getClass(), Integer.class, Long.class, Float.class, Double.class);
         }
     }
 
@@ -1199,23 +1200,19 @@ public class YqlParser implements Parser {
     private Item instantiateWordAlternativesItem(String field, OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         Preconditions.checkArgument(args.size() >= 1, "Expected 1 or more arguments, got %s.", args.size());
-        Preconditions.checkArgument(args.get(0).getOperator() == ExpressionOperator.MAP, "Expected MAP, got %s.", args.get(0)
-                .getOperator());
+        Preconditions.checkArgument(args.get(0).getOperator() == ExpressionOperator.MAP, "Expected MAP, got %s.", 
+                                    args.get(0).getOperator());
 
         List<WordAlternativesItem.Alternative> terms = new ArrayList<>();
         List<String> keys = args.get(0).getArgument(0);
         List<OperatorNode<ExpressionOperator>> values = args.get(0).getArgument(1);
         for (int i = 0; i < keys.size(); ++i) {
-            String term = keys.get(i);
-            double exactness;
             OperatorNode<ExpressionOperator> value = values.get(i);
-            switch (value.getOperator()) {
-            case LITERAL:
-                exactness = value.getArgument(0, Double.class);
-                break;
-            default:
+            if (value.getOperator() != ExpressionOperator.LITERAL)
                 throw newUnexpectedArgumentException(value.getOperator(), ExpressionOperator.LITERAL);
-            }
+
+            String term = keys.get(i);
+            double exactness = value.getArgument(0, Double.class);
             terms.add(new WordAlternativesItem.Alternative(term, exactness));
         }
         Substring origin = getOrigin(ast);
@@ -1225,54 +1222,51 @@ public class YqlParser implements Parser {
     }
 
     @NonNull
-    private Item instantiateEquivItem(String field,
-            OperatorNode<ExpressionOperator> ast) {
+    private Item instantiateEquivItem(String field, OperatorNode<ExpressionOperator> ast) {
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
-        Preconditions.checkArgument(args.size() >= 2,
-                "Expected 2 or more arguments, got %s.", args.size());
+        Preconditions.checkArgument(args.size() >= 2, "Expected 2 or more arguments, got %s.", args.size());
 
         EquivItem equiv = new EquivItem();
         equiv.setIndexName(field);
         for (OperatorNode<ExpressionOperator> arg : args) {
             switch (arg.getOperator()) {
-            case LITERAL:
-                equiv.addItem(instantiateWordItem(field, arg, equiv.getClass()));
-                break;
-            case CALL:
-                assertHasFunctionName(arg, PHRASE);
-                equiv.addItem(instantiatePhraseItem(field, arg));
-                break;
-            default:
-                throw newUnexpectedArgumentException(arg.getOperator(),
-                        ExpressionOperator.CALL, ExpressionOperator.LITERAL);
+                case LITERAL:
+                    equiv.addItem(instantiateWordItem(field, arg, equiv.getClass()));
+                    break;
+                case CALL:
+                    assertHasFunctionName(arg, PHRASE);
+                    equiv.addItem(instantiatePhraseItem(field, arg));
+                    break;
+                default:
+                    throw newUnexpectedArgumentException(arg.getOperator(),
+                                                         ExpressionOperator.CALL, ExpressionOperator.LITERAL);
             }
         }
         return leafStyleSettings(ast, equiv);
     }
 
     @NonNull
-    private Item instantiateWordItem(String field,
-            OperatorNode<ExpressionOperator> ast, Class<?> parent) {
+    private Item instantiateWordItem(String field, OperatorNode<ExpressionOperator> ast, Class<?> parent) {
         return instantiateWordItem(field, ast, parent, SegmentWhen.POSSIBLY);
     }
 
     @NonNull
-    private Item instantiateWordItem(String field,
-            OperatorNode<ExpressionOperator> ast, Class<?> parent,
-            SegmentWhen segmentPolicy) {
+    private Item instantiateWordItem(String field, 
+                                     OperatorNode<ExpressionOperator> ast, Class<?> parent,
+                                     SegmentWhen segmentPolicy) {
         String wordData = getStringContents(ast);
-        return instantiateWordItem(field, wordData, ast, parent,
-                segmentPolicy, null);
+        return instantiateWordItem(field, wordData, ast, parent, segmentPolicy, decideParsingLanguage(ast, wordData));
     }
 
     @NonNull
     private Item instantiateWordItem(String field,
-            String rawWord,
-            OperatorNode<ExpressionOperator> ast, Class<?> parent,
-            SegmentWhen segmentPolicy, Language language) {
+                                     String rawWord,
+                                     OperatorNode<ExpressionOperator> ast, Class<?> parent,
+                                     SegmentWhen segmentPolicy, 
+                                     Language language) {
         String wordData = rawWord;
         if (getAnnotation(ast, NFKC, Boolean.class, Boolean.TRUE,
-                "setting for whether to NFKC normalize input data")) {
+                          "setting for whether to NFKC normalize input data")) {
             wordData = normalizer.normalize(wordData);
         }
         boolean fromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS,
@@ -1320,6 +1314,8 @@ public class YqlParser implements Parser {
         if (wordItem instanceof WordItem) {
             prepareWord(field, ast, fromQuery, (WordItem) wordItem);
         }
+        if (language != Language.ENGLISH) // mark the language used, unless it's the default
+            ((Item)wordItem).setLanguage(language);
         return (Item) leafStyleSettings(ast, wordItem);
     }
 

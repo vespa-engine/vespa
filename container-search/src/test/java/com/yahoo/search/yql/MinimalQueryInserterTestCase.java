@@ -27,6 +27,8 @@ import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -133,32 +135,50 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
+    public void testExplicitLanguageIsHonoredWithVerbatimQuery() {
+        String japaneseWord = "\u30ab\u30bf\u30ab\u30ca";
+        Query query = new Query("search/?language=ja" + "&yql=select%20ignoredField%20from%20ignoredsource%20where%20title%20contains%20%22" + encode(japaneseWord) + "%22%3B");
+        execution.search(query);
+        assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
+        assertEquals("title:"+ japaneseWord, query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    public void testUserLanguageIsDetectedWithVerbatimQuery() {
+        String japaneseWord = "\u30ab\u30bf\u30ab\u30ca";
+        Query query = new Query("search/?yql=select%20ignoredField%20from%20ignoredsource%20where%20title%20contains%20%22" + encode(japaneseWord) + "%22%3B");
+        execution.search(query);
+        assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
+        assertEquals("title:"+ japaneseWord, query.getModel().getQueryTree().toString());
+    }
+
+    @Test
     public void testUserLanguageIsDetectedWithUserInput() {
         String japaneseWord = "\u30ab\u30bf\u30ab\u30ca";
-        Query query = new Query("search/?userString=" + japaneseWord + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userInput(@userString)%3B");
+        Query query = new Query("search/?userString=" + encode(japaneseWord) + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userInput(@userString)%3B");
         execution.search(query);
-        assertEquals("AND title:madonna default:" + japaneseWord, query.getModel().getQueryTree().toString());
         assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
+        assertEquals("AND title:madonna default:" + japaneseWord, query.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testUserLanguageIsDetectedWithUserQuery() {
         String japaneseWord = "\u30ab\u30bf\u30ab\u30ca";
-        Query query = new Query("search/?query=" + japaneseWord + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+        Query query = new Query("search/?query=" + encode(japaneseWord) + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
-        assertEquals("AND title:madonna " + japaneseWord, query.getModel().getQueryTree().toString());
         assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
+        assertEquals("AND title:madonna " + japaneseWord, query.getModel().getQueryTree().toString());
     }
 
     @Test
-    public final void testUserQueryFailsWithoutArgument() {
+    public void testUserQueryFailsWithoutArgument() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
     }
 
     @Test
-    public final void testSearchFromAllSourcesWithUserSource() {
+    public void testSearchFromAllSourcesWithUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
@@ -166,7 +186,7 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public final void testSearchFromAllSourcesWithoutUserSource() {
+    public void testSearchFromAllSourcesWithoutUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
@@ -174,7 +194,7 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public final void testSearchFromSomeSourcesWithoutUserSource() {
+    public void testSearchFromSomeSourcesWithoutUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
@@ -184,8 +204,8 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public final void testSearchFromSomeSourcesWithUserSource() {
-        final Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
+    public void testSearchFromSomeSourcesWithUserSource() {
+        Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()%3B");
         execution.search(query);
         assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(3, query.getModel().getSources().size());
@@ -206,8 +226,8 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public final void testLimitAndOffset() {
-        final Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20limit%2031offset%207%3B");
+    public void testLimitAndOffset() {
+        Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20limit%2031offset%207%3B");
         execution.search(query);
         assertEquals(7, query.getOffset());
         assertEquals(24, query.getHits());
@@ -216,8 +236,8 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public final void testMaxOffset() {
-        final Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20limit%2040031offset%2040000%3B");
+    public void testMaxOffset() {
+        Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20limit%2040031offset%2040000%3B");
         Result r = execution.search(query);
         assertEquals(1, r.hits().getErrorHit().errors().size());
         ErrorMessage e = r.hits().getErrorHit().errorIterator().next();
@@ -226,8 +246,8 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public final void testMaxLimit() {
-        final Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20limit%2040000offset%207%3B");
+    public void testMaxLimit() {
+        Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20limit%2040000offset%207%3B");
         Result r = execution.search(query);
         assertEquals(1, r.hits().getErrorHit().errors().size());
         ErrorMessage e = r.hits().getErrorHit().errorIterator().next();
@@ -236,15 +256,15 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public final void testTimeout() {
-        final Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20timeout%2051%3B");
+    public void testTimeout() {
+        Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20timeout%2051%3B");
         execution.search(query);
         assertEquals(51L, query.getTimeout());
         assertEquals("select * from sources * where title contains \"madonna\" timeout 51;", query.yqlRepresentation());
     }
 
     @Test
-    public final void testOrdering() {
+    public void testOrdering() {
         {
             String yql = "select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20order%20by%20something%2C%20shoesize%20desc%20limit%20300%20timeout%203%3B";
             Query query = new Query("search/?yql=" + yql);
@@ -276,22 +296,20 @@ public class MinimalQueryInserterTestCase {
             Query query = new Query("search/?yql=" + yql);
             execution.search(query);
             {
-                final FieldOrder fieldOrder = query.getRanking().getSorting()
-                        .fieldOrders().get(0);
+                FieldOrder fieldOrder = query.getRanking().getSorting().fieldOrders().get(0);
                 assertEquals("other", fieldOrder.getFieldName());
                 assertEquals(Order.DESCENDING, fieldOrder.getSortOrder());
-                final AttributeSorter sorter = fieldOrder.getSorter();
+                AttributeSorter sorter = fieldOrder.getSorter();
                 assertEquals(UcaSorter.class, sorter.getClass());
-                final UcaSorter uca = (UcaSorter) sorter;
+                UcaSorter uca = (UcaSorter) sorter;
                 assertEquals("en_US", uca.getLocale());
                 assertEquals(UcaSorter.Strength.IDENTICAL, uca.getStrength());
             }
             {
-                final FieldOrder fieldOrder = query.getRanking().getSorting()
-                        .fieldOrders().get(1);
+                FieldOrder fieldOrder = query.getRanking().getSorting().fieldOrders().get(1);
                 assertEquals("something", fieldOrder.getFieldName());
                 assertEquals(Order.ASCENDING, fieldOrder.getSortOrder());
-                final AttributeSorter sorter = fieldOrder.getSorter();
+                AttributeSorter sorter = fieldOrder.getSorter();
                 assertEquals(LowerCaseSorter.class, sorter.getClass());
             }
             assertEquals("select foo from bar where title contains \"madonna\" order by [{\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}]other desc, [{\"function\": \"lowercase\"}]something limit 300 timeout 3;",
@@ -300,7 +318,7 @@ public class MinimalQueryInserterTestCase {
     }
 
     @Test
-    public final void testStringReprBasicSanity() {
+    public void testStringReprBasicSanity() {
         String yql = "select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20order%20by%20something%2C%20shoesize%20desc%20limit%20300%20timeout%203%3B";
         Query query = new Query("search/?yql=" + yql);
         execution.search(query);
@@ -316,4 +334,14 @@ public class MinimalQueryInserterTestCase {
         }
         assertEquals(expected, actual.toString());
     }
+
+    private String encode(String s) {
+        try {
+            return URLEncoder.encode(s, "utf-8");
+        }
+        catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Will never happen");
+        }
+    }
+
 }
