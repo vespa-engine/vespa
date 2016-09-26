@@ -22,6 +22,7 @@ LOG_SETUP("fdispatch");
 
 using fdispatch::Fdispatch;
 using vespa::config::search::core::FdispatchrcConfig;
+using namespace std::literals;
 
 extern char FastS_VersionTag[];
 
@@ -34,8 +35,7 @@ private:
 protected:
     vespalib::string _configId;
 
-    bool CheckShutdownFlags ()
-    {
+    bool CheckShutdownFlags () const {
         return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check());
     }
 
@@ -66,8 +66,7 @@ FastS_FDispatchApp::Main()
     forcelink_searchlib_aggregation();
 
     if (!GetOptions(&exitCode)) {
-        EV_STOPPING("fdispatch",
-                    (exitCode == 0) ? "clean shutdown" : "error");
+        EV_STOPPING("fdispatch", (exitCode == 0) ? "clean shutdown" : "error");
         return exitCode;
     }
 
@@ -93,15 +92,14 @@ FastS_FDispatchApp::Main()
 #ifdef RLIMIT_NOFILE
     struct rlimit  curlim;
     getrlimit(RLIMIT_NOFILE, &curlim);
-    if (curlim.rlim_cur != (rlim_t)RLIM_INFINITY)
+    if (curlim.rlim_cur != (rlim_t)RLIM_INFINITY) {
         LOG(debug, "Max number of open files = %d", (int) curlim.rlim_cur);
-    else
+    } else {
         LOG(debug, "Max number of open files = unlimited");
+    }
     if (curlim.rlim_cur >= 64) {
     } else {
-        LOG(error,
-            "CRITICAL: Too few file descriptors available: %d",
-            (int)curlim.rlim_cur);
+        LOG(error, "CRITICAL: Too few file descriptors available: %d", (int)curlim.rlim_cur);
         throw std::runtime_error("CRITICAL: Too few file descriptors available");
     }
 #endif
@@ -109,19 +107,21 @@ FastS_FDispatchApp::Main()
     getrlimit(RLIMIT_DATA, &curlim);
     if (curlim.rlim_cur != (rlim_t)RLIM_INFINITY &&
         curlim.rlim_cur < (rlim_t) (400 * 1024 * 1024)) {
-        if (curlim.rlim_max == (rlim_t)RLIM_INFINITY)
+        if (curlim.rlim_max == (rlim_t)RLIM_INFINITY) {
             curlim.rlim_cur = (rlim_t) (400 * 1024 * 1024);
-        else
+        } else {
             curlim.rlim_cur = curlim.rlim_max;
+        }
         setrlimit(RLIMIT_DATA, &curlim);
         getrlimit(RLIMIT_DATA, &curlim);
     }
-    if (curlim.rlim_cur != (rlim_t)RLIM_INFINITY)
+    if (curlim.rlim_cur != (rlim_t)RLIM_INFINITY) {
         LOG(debug,
             "VERBOSE: Max data segment size = %dM",
             (int) ((curlim.rlim_cur + 512 * 1024) / (1024 * 1024)));
-    else
+    } else {
         LOG(debug, "VERBOSE: Max data segment size = unlimited");
+    }
 #endif
 
         if (!myfdispatch->Init()) {
@@ -139,7 +139,7 @@ FastS_FDispatchApp::Main()
                 if (myfdispatch->Failed()) {
                     throw std::runtime_error("myfdispatch->Failed()");
                 }
-                FastOS_Thread::Sleep(1000);
+                std::this_thread::sleep_for(100ms);
 #ifndef NO_MONITOR_LATENCY_CHECK
                 if (!myfdispatch->CheckTempFail())
                     break;
@@ -149,6 +149,9 @@ FastS_FDispatchApp::Main()
         if (myfdispatch->Failed()) {
             throw std::runtime_error("myfdispatch->Failed()");
         }
+    } catch (std::runtime_error &e) {
+        LOG(warning, "got std::runtime_error during init: %s", e.what());
+        exitCode = 1;
     } catch (std::exception &e) {
         LOG(error, "got exception during init: %s", e.what());
         exitCode = 1;
@@ -160,8 +163,7 @@ FastS_FDispatchApp::Main()
     LOG(debug, "Deleting fdispatch");
     myfdispatch.reset();
     LOG(debug, "COMPLETION: Exiting");
-    EV_STOPPING("fdispatch",
-                (exitCode == 0) ? "clean shutdown" : "error");
+    EV_STOPPING("fdispatch", (exitCode == 0) ? "clean shutdown" : "error");
     return exitCode;
 }
 
@@ -181,25 +183,18 @@ FastS_FDispatchApp::GetOptions(int *exitCode)
         LONGOPT_CONFIGID
     };
     int optIndex = 1;    // Start with argument 1
-    while ((c = GetOptLong("c:",
-                           optArgument,
-                           optIndex,
-                           longopts,
-                           &longopt_index)) != -1) {
+    while ((c = GetOptLong("c:", optArgument, optIndex, longopts, &longopt_index)) != -1) {
         switch (c) {
         case 0:
             switch (longopt_index) {
             case LONGOPT_CONFIGID:
                 break;
             default:
-                if (optArgument != NULL)
-                    LOG(info,
-                        "longopt %s with arg %s",
-                        longopts[longopt_index].name, optArgument);
-                else
-                    LOG(info,
-                        "longopt %s",
-                        longopts[longopt_index].name);
+                if (optArgument != NULL) {
+                    LOG(info, "longopt %s with arg %s", longopts[longopt_index].name, optArgument);
+                } else {
+                    LOG(info, "longopt %s", longopts[longopt_index].name);
+                }
                 break;
             }
             break;
