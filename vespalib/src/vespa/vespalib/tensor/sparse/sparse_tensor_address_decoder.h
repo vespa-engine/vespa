@@ -13,12 +13,12 @@ namespace tensor {
 /**
  * A decoder for a serialized tensor address, with only labels present.
  */
-class CompactTensorV2AddressDecoder
+class SparseTensorAddressDecoder
 {
     const char *_cur;
     const char *_end;
 public:
-    CompactTensorV2AddressDecoder(CompactTensorAddressRef ref)
+    SparseTensorAddressDecoder(CompactTensorAddressRef ref)
         : _cur(static_cast<const char *>(ref.start())),
           _end(_cur + ref.size())
     {

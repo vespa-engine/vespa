@@ -12,7 +12,7 @@ import com.yahoo.text.Utf8;
 import java.util.*;
 
 /**
- * Implementation of a compact binary format for a tensor on the form:
+ * Implementation of a sparse binary format for a tensor on the form:
  *
  * Sorted dimensions = num_dimensions [dimension_str_len dimension_str_bytes]*
  * Cells = num_cells [label_1_str_len label_1_str_bytes ... label_N_str_len label_N_str_bytes cell_value]*
@@ -23,7 +23,7 @@ import java.util.*;
  * @author geirst
  */
 @Beta
-class CompactBinaryFormat implements BinaryFormat {
+class SparseBinaryFormat implements BinaryFormat {
 
     @Override
     public void encode(GrowableByteBuffer buffer, Tensor tensor) {

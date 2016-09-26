@@ -3,24 +3,24 @@
 #pragma once
 
 #include <vespa/vespalib/tensor/direct_tensor_builder.h>
-#include "compact_tensor_v2.h"
-#include "compact_tensor_v2_address_builder.h"
-#include "compact_tensor_v2_address_padder.h"
+#include "sparse_tensor.h"
+#include "sparse_tensor_address_builder.h"
+#include "sparse_tensor_address_padder.h"
 
 namespace vespalib {
 namespace tensor {
 
 /**
- * Utility class to build tensors of type CompactTensorV2, to be used by
+ * Utility class to build tensors of type SparseTensor, to be used by
  * tensor operations.
  */
-template <> class DirectTensorBuilder<CompactTensorV2>
+template <> class DirectTensorBuilder<SparseTensor>
 {
 public:
-    using TensorImplType = CompactTensorV2;
+    using TensorImplType = SparseTensor;
     using Dimensions = typename TensorImplType::Dimensions;
     using Cells = typename TensorImplType::Cells;
-    using AddressBuilderType = CompactTensorV2AddressBuilder;
+    using AddressBuilderType = SparseTensorAddressBuilder;
     using AddressRefType = CompactTensorAddressRef;
     using AddressType = CompactTensorAddress;
 
@@ -43,7 +43,7 @@ public:
     void
     copyCells(const Cells &cells_in, const Dimensions &cells_in_dimensions)
     {
-        CompactTensorV2AddressPadder addressPadder(_dimensions,
+        SparseTensorAddressPadder addressPadder(_dimensions,
                                                    cells_in_dimensions);
         for (const auto &cell : cells_in) {
             addressPadder.padAddress(cell.first);
@@ -91,7 +91,7 @@ public:
     }
 
     Tensor::UP build() {
-        return std::make_unique<CompactTensorV2>(std::move(_dimensions),
+        return std::make_unique<SparseTensor>(std::move(_dimensions),
                                                  std::move(_cells),
                                                  std::move(_stash));
     }
@@ -116,13 +116,13 @@ public:
     }
 
     template <class Function>
-    void insertCell(CompactTensorV2AddressBuilder &address, double value,
+    void insertCell(SparseTensorAddressBuilder &address, double value,
                     Function &&func)
     {
         insertCell(address.getAddressRef(), value, func);
     }
 
-    void insertCell(CompactTensorV2AddressBuilder &address, double value) {
+    void insertCell(SparseTensorAddressBuilder &address, double value) {
         // This address should not already exist and a new cell should be inserted.
         insertCell(address.getAddressRef(), value, [](double, double) -> double { abort(); });
     }

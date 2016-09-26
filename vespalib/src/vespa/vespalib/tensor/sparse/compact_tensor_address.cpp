@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "compact_tensor_address.h"
-#include "compact_tensor_v2_address_decoder.h"
+#include "sparse_tensor_address_decoder.h"
 #include <algorithm>
 
 namespace vespalib {
@@ -93,7 +93,7 @@ CompactTensorAddress::deserializeFromAddressRefV2(CompactTensorAddressRef ref,
                                                   dimensions)
 {
     _elements.clear();
-    CompactTensorV2AddressDecoder addr(ref);
+    SparseTensorAddressDecoder addr(ref);
     for (auto &dim : dimensions) {
         auto label = addr.decodeLabel();
         if (label.size() != 0u) {

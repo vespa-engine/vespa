@@ -3,7 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "compact_tensor_unsorted_address_builder.h"
 #include "compact_tensor_address_builder.h"
-#include "compact_tensor_v2_address_builder.h"
+#include "sparse_tensor_address_builder.h"
 #include <algorithm>
 
 namespace vespalib {
@@ -31,7 +31,7 @@ CompactTensorUnsortedAddressBuilder::buildTo(CompactTensorAddressBuilder &
 }
 
 void
-CompactTensorUnsortedAddressBuilder::buildTo(CompactTensorV2AddressBuilder &
+CompactTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder &
                                              builder,
                                              const TensorDimensions &
                                              dimensions)

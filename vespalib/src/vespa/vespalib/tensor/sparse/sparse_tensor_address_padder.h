@@ -2,18 +2,18 @@
 
 #pragma once
 
-#include "compact_tensor_v2_address_builder.h"
-#include "compact_tensor_v2_address_decoder.h"
+#include "sparse_tensor_address_builder.h"
+#include "sparse_tensor_address_decoder.h"
 
 namespace vespalib {
 namespace tensor {
 
 
 /**
- * This class transforms serialized compact tensor v2 addresses by padding
+ * This class transforms serialized sparse tensor addresses by padding
  * in "undefined" labels for new dimensions.
  */
-class CompactTensorV2AddressPadder : public CompactTensorV2AddressBuilder
+class SparseTensorAddressPadder : public SparseTensorAddressBuilder
 {
     enum class PadOp
     {
@@ -24,9 +24,9 @@ class CompactTensorV2AddressPadder : public CompactTensorV2AddressBuilder
     std::vector<PadOp> _padOps;
 
 public:
-    CompactTensorV2AddressPadder(const TensorDimensions &resultDims,
+    SparseTensorAddressPadder(const TensorDimensions &resultDims,
                                  const TensorDimensions &inputDims)
-        : CompactTensorV2AddressBuilder(),
+        : SparseTensorAddressBuilder(),
           _padOps()
     {
         auto resultDimsItr = resultDims.cbegin();
@@ -50,7 +50,7 @@ public:
     padAddress(CompactTensorAddressRef ref)
     {
         clear();
-        CompactTensorV2AddressDecoder addr(ref);
+        SparseTensorAddressDecoder addr(ref);
         for (auto op : _padOps) {
             switch (op) {
             case PadOp::PAD:

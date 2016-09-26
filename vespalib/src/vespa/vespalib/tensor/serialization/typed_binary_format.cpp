@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "typed_binary_format.h"
-#include "compact_binary_format.h"
+#include "sparse_binary_format.h"
 #include "dense_binary_format.h"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
@@ -23,8 +23,8 @@ TypedBinaryFormat::serialize(nbostream &stream, const Tensor &tensor)
         stream.putInt1_4Bytes(DENSE_BINARY_FORMAT_TYPE);
         DenseBinaryFormat::serialize(stream, *denseTensor);
     } else {
-        stream.putInt1_4Bytes(COMPACT_BINARY_FORMAT_TYPE);
-        CompactBinaryFormat::serialize(stream, tensor);
+        stream.putInt1_4Bytes(SPARSE_BINARY_FORMAT_TYPE);
+        SparseBinaryFormat::serialize(stream, tensor);
     }
 }
 
@@ -33,8 +33,8 @@ void
 TypedBinaryFormat::deserialize(nbostream &stream, TensorBuilder &builder)
 {
     auto formatId = stream.getInt1_4Bytes();
-    assert(formatId == COMPACT_BINARY_FORMAT_TYPE);
-    CompactBinaryFormat::deserialize(stream, builder);
+    assert(formatId == SPARSE_BINARY_FORMAT_TYPE);
+    SparseBinaryFormat::deserialize(stream, builder);
 }
 
 
@@ -42,9 +42,9 @@ std::unique_ptr<Tensor>
 TypedBinaryFormat::deserialize(nbostream &stream)
 {
     auto formatId = stream.getInt1_4Bytes();
-    if (formatId == COMPACT_BINARY_FORMAT_TYPE) {
+    if (formatId == SPARSE_BINARY_FORMAT_TYPE) {
         DefaultTensor::builder builder;
-        CompactBinaryFormat::deserialize(stream, builder);
+        SparseBinaryFormat::deserialize(stream, builder);
         return builder.build();
     }
     if (formatId == DENSE_BINARY_FORMAT_TYPE) {

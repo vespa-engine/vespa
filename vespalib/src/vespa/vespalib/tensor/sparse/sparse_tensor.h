@@ -19,7 +19,7 @@ namespace tensor {
  * improve CPU cache and TLB hit ratio, relative to SimpleTensor
  * implementation.
  */
-class CompactTensorV2 : public Tensor
+class SparseTensor : public Tensor
 {
 public:
     typedef vespalib::hash_map<CompactTensorAddressRef, double> Cells;
@@ -33,14 +33,14 @@ private:
     Stash _stash;
 
 public:
-    explicit CompactTensorV2(const Dimensions &dimensions_in,
+    explicit SparseTensor(const Dimensions &dimensions_in,
                              const Cells &cells_in);
-    CompactTensorV2(Dimensions &&dimensions_in,
+    SparseTensor(Dimensions &&dimensions_in,
                     Cells &&cells_in, Stash &&stash_in);
     const Cells &cells() const { return _cells; }
     const Dimensions &dimensions() const { return _dimensions; }
-    bool operator==(const CompactTensorV2 &rhs) const;
-    Dimensions combineDimensionsWith(const CompactTensorV2 &rhs) const;
+    bool operator==(const SparseTensor &rhs) const;
+    Dimensions combineDimensionsWith(const SparseTensor &rhs) const;
 
     virtual eval::ValueType getType() const override;
     virtual double sum() const override;

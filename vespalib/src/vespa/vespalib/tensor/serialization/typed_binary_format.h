@@ -16,7 +16,7 @@ class TensorBuilder;
  */
 class TypedBinaryFormat
 {
-    static constexpr uint32_t COMPACT_BINARY_FORMAT_TYPE = 1u;
+    static constexpr uint32_t SPARSE_BINARY_FORMAT_TYPE = 1u;
     static constexpr uint32_t DENSE_BINARY_FORMAT_TYPE = 2u;
 public:
     static void serialize(nbostream &stream, const Tensor &tensor);

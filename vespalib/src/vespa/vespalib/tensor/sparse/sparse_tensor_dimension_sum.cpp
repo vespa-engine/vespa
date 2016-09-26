@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include "compact_tensor_v2_dimension_sum.h"
-#include "compact_tensor_v2_address_decoder.h"
+#include "sparse_tensor_dimension_sum.h"
+#include "sparse_tensor_address_decoder.h"
 
 namespace vespalib {
 namespace tensor {
@@ -35,12 +35,12 @@ buildReduceOps(const TensorDimensions &dims,
 
 
 void
-reduceAddress(CompactTensorV2AddressBuilder &builder,
+reduceAddress(SparseTensorAddressBuilder &builder,
               CompactTensorAddressRef ref,
               const ReduceOps &ops)
 {
     builder.clear();
-    CompactTensorV2AddressDecoder addr(ref);
+    SparseTensorAddressDecoder addr(ref);
     for (auto op : ops) {
         switch (op) {
         case AddressOp::REMOVE:
@@ -68,7 +68,7 @@ removeDimension(const TensorDimensions &dimensions,
 
 }
 
-CompactTensorV2DimensionSum::CompactTensorV2DimensionSum(const TensorImplType &
+SparseTensorDimensionSum::SparseTensorDimensionSum(const TensorImplType &
                                                          tensor,
                                                          const
                                                          vespalib::string &

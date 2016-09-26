@@ -19,7 +19,7 @@ class CompactTensorAddress;
  *
  * Format: (labelStr NUL)*
  */
-class CompactTensorV2AddressBuilder
+class SparseTensorAddressBuilder
 {
 private:
     std::vector<char> _address;
@@ -31,7 +31,7 @@ private:
         _address.insert(_address.end(), cstr, cstr + str.size() + 1);
     }
 public:
-    CompactTensorV2AddressBuilder()
+    SparseTensorAddressBuilder()
         : _address()
     {
     }

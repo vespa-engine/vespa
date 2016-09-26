@@ -19,11 +19,11 @@ namespace tensor {
  * The sparse tensor is associative and commutative. Its dimensions are the
  * set of the dimensions of the two input tensors.
  */
-class CompactTensorV2Product : public TensorOperation<CompactTensorV2>
+class SparseTensorProduct : public TensorOperation<SparseTensor>
 {
 public:
-    using TensorImplType = CompactTensorV2;
-    using Parent = TensorOperation<CompactTensorV2>;
+    using TensorImplType = SparseTensor;
+    using Parent = TensorOperation<SparseTensor>;
     using Dimensions = typename Parent::Dimensions;
     using AddressBuilderType = typename Parent::AddressBuilderType;
     using AddressRefType = typename Parent::AddressRefType;
@@ -38,7 +38,7 @@ private:
     fastProduct(const TensorImplType &lhs, const TensorImplType &rhs);
 
 public:
-    CompactTensorV2Product(const TensorImplType &lhs,
+    SparseTensorProduct(const TensorImplType &lhs,
                            const TensorImplType &rhs);
 };
 

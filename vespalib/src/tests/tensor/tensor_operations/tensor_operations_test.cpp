@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2_builder.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/tensor_function.h>
@@ -217,7 +217,7 @@ struct Fixture
     }
 };
 
-using CompactV2Fixture = Fixture<CompactTensorV2Builder>;
+using SparseFixture = Fixture<SparseTensorBuilder>;
 
 
 template <typename FixtureType>
@@ -610,7 +610,7 @@ testAllTensorOperations(FixtureType &f)
     TEST_DO(testTensorSumDimension(f));
 }
 
-TEST_F("test tensor operations for CompactTensorV2", CompactV2Fixture)
+TEST_F("test tensor operations for SparseTensor", SparseFixture)
 {
     testAllTensorOperations(f);
 }

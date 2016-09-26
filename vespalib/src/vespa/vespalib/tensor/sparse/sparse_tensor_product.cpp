@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include "compact_tensor_v2_product.h"
-#include "compact_tensor_v2_address_decoder.h"
+#include "sparse_tensor_product.h"
+#include "sparse_tensor_address_decoder.h"
 #include <type_traits>
 
 namespace vespalib {
@@ -47,14 +47,14 @@ buildCombineOps(const TensorDimensions &lhs,
 
 
 bool
-combineAddresses(CompactTensorV2AddressBuilder &builder,
+combineAddresses(SparseTensorAddressBuilder &builder,
                  CompactTensorAddressRef lhsRef,
                  CompactTensorAddressRef rhsRef,
                  const CombineOps &ops)
 {
     builder.clear();
-    CompactTensorV2AddressDecoder lhs(lhsRef);
-    CompactTensorV2AddressDecoder rhs(rhsRef);
+    SparseTensorAddressDecoder lhs(lhsRef);
+    SparseTensorAddressDecoder rhs(rhsRef);
     for (auto op : ops) {
         switch (op) {
         case AddressOp::LHS:
@@ -81,11 +81,11 @@ combineAddresses(CompactTensorV2AddressBuilder &builder,
 
 
 void
-CompactTensorV2Product::bruteForceProduct(const TensorImplType &lhs,
+SparseTensorProduct::bruteForceProduct(const TensorImplType &lhs,
                                           const TensorImplType &rhs)
 {
     CombineOps ops(buildCombineOps(lhs.dimensions(), rhs.dimensions()));
-    CompactTensorV2AddressBuilder addressBuilder;
+    SparseTensorAddressBuilder addressBuilder;
     for (const auto &lhsCell : lhs.cells()) {
         for (const auto &rhsCell : rhs.cells()) {
             bool combineSuccess = combineAddresses(addressBuilder,
@@ -101,7 +101,7 @@ CompactTensorV2Product::bruteForceProduct(const TensorImplType &lhs,
 
 
 void
-CompactTensorV2Product::fastProduct(const TensorImplType &lhs,
+SparseTensorProduct::fastProduct(const TensorImplType &lhs,
                                     const TensorImplType &rhs)
 {
     const typename TensorImplType::Cells &rhsCells = rhs.cells();
@@ -115,7 +115,7 @@ CompactTensorV2Product::fastProduct(const TensorImplType &lhs,
 }
 
 
-CompactTensorV2Product::CompactTensorV2Product(const TensorImplType &lhs,
+SparseTensorProduct::SparseTensorProduct(const TensorImplType &lhs,
                                                const TensorImplType &rhs)
     : Parent(lhs.combineDimensionsWith(rhs))
 {
