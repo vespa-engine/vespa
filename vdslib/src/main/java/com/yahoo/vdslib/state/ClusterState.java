@@ -64,38 +64,73 @@ public class ClusterState implements Cloneable {
         return true;
     }
 
+    @FunctionalInterface
+    private interface NodeStateCmp {
+        boolean similar(NodeType nodeType, NodeState lhs, NodeState rhs);
+    }
+
     public boolean similarTo(Object o) {
         if (!(o instanceof ClusterState)) { return false; }
         final ClusterState other = (ClusterState) o;
 
-        if (state.equals(State.DOWN) && other.state.equals(State.DOWN)) return true; // both down, means equal (why??)
-        if (version != other.version || !state.equals(other.state)) return false;
-        if (distributionBits != other.distributionBits) return false;
-        if ( ! nodeCount.equals(other.nodeCount)) return false;
+        return similarToImpl(other, this::normalizedNodeStateSimilarTo);
+    }
 
-        final Set<Node> unionNodeSet = new TreeSet<Node>(nodeStates.keySet());
-        unionNodeSet.addAll(other.nodeStates.keySet());
+    public boolean similarToIgnoringInitProgress(final ClusterState other) {
+        return similarToImpl(other, this::normalizedNodeStateSimilarToIgnoringInitProgress);
+    }
 
+    private boolean similarToImpl(final ClusterState other, final NodeStateCmp nodeStateCmp) {
+        // Two cluster states are considered similar if they are both down. When clusters
+        // are down, their individual node states do not matter to ideal state computations
+        // and content nodes therefore do not need to observe them.
+        if (state.equals(State.DOWN) && other.state.equals(State.DOWN)) {
+            return true;
+        }
+        if (!metaInformationSimilarTo(other)) {
+            return false;
+        }
         // TODO verify behavior of C++ impl against this
-        for (Node node : unionNodeSet) {
+        for (Node node : unionNodeSetWith(other.nodeStates.keySet())) {
             final NodeState lhs = nodeStates.get(node);
             final NodeState rhs = other.nodeStates.get(node);
-            // Assumed invariant: no valid nodeStates mapping may point to a null value.
-            // Consequently: either (but not both) of lhs and rhs _may_ be null at this point.
-            // Both may be non-null.
-            if (!normalizedNodeStateSimilarTo(node.getType(), lhs, rhs)) {
+            if (!nodeStateCmp.similar(node.getType(), lhs, rhs)) {
                 return false;
             }
         }
         return true;
     }
 
-    // Precondition: at most one of lhs or rhs may be null.
+    private Set<Node> unionNodeSetWith(final Set<Node> otherNodes) {
+        final Set<Node> unionNodeSet = new TreeSet<Node>(nodeStates.keySet());
+        unionNodeSet.addAll(otherNodes);
+        return unionNodeSet;
+    }
+
+    private boolean metaInformationSimilarTo(final ClusterState other) {
+        if (version != other.version || !state.equals(other.state)) {
+            return false;
+        }
+        if (distributionBits != other.distributionBits) {
+            return false;
+        }
+        return nodeCount.equals(other.nodeCount);
+    }
+
     private boolean normalizedNodeStateSimilarTo(final NodeType nodeType, final NodeState lhs, final NodeState rhs) {
         final NodeState lhsNormalized = (lhs != null ? lhs : defaultUpNodeState(nodeType));
         final NodeState rhsNormalized = (rhs != null ? rhs : defaultUpNodeState(nodeType));
 
         return lhsNormalized.similarTo(rhsNormalized);
+    }
+
+    private boolean normalizedNodeStateSimilarToIgnoringInitProgress(
+            final NodeType nodeType, final NodeState lhs, final NodeState rhs)
+    {
+        final NodeState lhsNormalized = (lhs != null ? lhs : defaultUpNodeState(nodeType));
+        final NodeState rhsNormalized = (rhs != null ? rhs : defaultUpNodeState(nodeType));
+
+        return lhsNormalized.similarToIgnoringInitProgress(rhsNormalized);
     }
 
     private static NodeState defaultUpNodeState(final NodeType nodeType) {

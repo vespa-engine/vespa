@@ -178,7 +178,6 @@ public class StateChangeTest extends FleetControllerTest {
         assertEquals("version:4 distributor:10 .0.s:d storage:10", ctrl.getSystemState().toString());
 
         timer.advanceTime(1000);
-        long distStartTime = timer.getCurrentTimeInMillis() / 1000;
 
         ctrl.tick();
 
@@ -380,15 +379,14 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl.tick();
 
         // Still maintenance since .i progress 0.0 is really down.
-        // FIXME(?): version bump due to internal init progress change -> NodeState.similarTo(previous) == false
-        assertEquals("version:5 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
+        assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
         communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.6), "");
 
         ctrl.tick();
 
         // Now it's OK
-        assertEquals("version:6 distributor:10 storage:10 .6.s:i .6.i:0.6", ctrl.getSystemState().toString());
+        assertEquals("version:5 distributor:10 storage:10 .6.s:i .6.i:0.6", ctrl.getSystemState().toString());
 
         tick(1000);
 
@@ -396,10 +394,9 @@ public class StateChangeTest extends FleetControllerTest {
 
         ctrl.tick();
 
-        assertEquals("version:7 distributor:10 storage:10", ctrl.getSystemState().toString());
+        assertEquals("version:6 distributor:10 storage:10", ctrl.getSystemState().toString());
         assert(!ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 6)).hasDescription());
 
-        // FIXME(?) due to NodeState.similarTo peculiarities for progress 1.0 -> 0.0, we emit an intermediate state here
         verifyNodeEvents(new Node(NodeType.STORAGE, 6),
                 "Event: storage.6: Now reporting state U\n" +
                 "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
@@ -407,9 +404,8 @@ public class StateChangeTest extends FleetControllerTest {
                 "Event: storage.6: Stopped or possibly crashed after 0 ms, which is before stable state time period. Premature crash count is now 1.\n" +
                 "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'\n" +
                 "Event: storage.6: Now reporting state I, i 0.00 (ls)\n" +
-                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'M'\n" +
                 "Event: storage.6: Now reporting state I, i 0.600 (read)\n" +
-                "Event: storage.6: Altered node state in cluster state from 'M' to 'I, i 0.600 (read)'\n" +
+                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'I, i 0.600 (read)'\n" +
                 "Event: storage.6: Now reporting state U\n" +
                 "Event: storage.6: Altered node state in cluster state from 'I, i 0.600 (read)' to 'U'\n");
     }
@@ -443,15 +439,14 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl.tick();
 
         // Still maintenance since .i progress 0.0 is really down.
-        // FIXME(?) version bump due to init progress changed in node state
-        assertEquals("version:5 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
+        assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
         communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.6), "");
 
         ctrl.tick();
 
         // Still maintenance since configured.
-        assertEquals("version:5 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
+        assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
         tick(1000);
 
@@ -459,19 +454,19 @@ public class StateChangeTest extends FleetControllerTest {
 
         ctrl.tick();
 
-        assertEquals("version:6 distributor:10 storage:10 .6.s:r", ctrl.getSystemState().toString());
+        assertEquals("version:5 distributor:10 storage:10 .6.s:r", ctrl.getSystemState().toString());
         assert(!ctrl.getReportedNodeState(new Node(NodeType.STORAGE, 6)).hasDescription());
 
         verifyNodeEvents(new Node(NodeType.STORAGE, 6),
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok' to 'R'\n" +
+                "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'R'\n" +
                 "Event: storage.6: Failed to get node state: D: Connection error: Closed at other end\n" +
                 "Event: storage.6: Stopped or possibly crashed after 0 ms, which is before stable state time period. Premature crash count is now 1.\n" +
                 "Event: storage.6: Altered node state in cluster state from 'R' to 'M: Connection error: Closed at other end'\n" +
                 "Event: storage.6: Now reporting state I, i 0.00 (ls)\n" +
                 "Event: storage.6: Now reporting state I, i 0.600 (read)\n" +
                 "Event: storage.6: Now reporting state U\n" +
-                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'R: Connection error: Closed at other end'\n");
+                "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'R'\n");
     }
 
     @Test
@@ -624,10 +619,6 @@ public class StateChangeTest extends FleetControllerTest {
         // Still down since it seemingly crashed during last init.
         assertEquals("version:7 distributor:10 storage:10 .6.s:d", ctrl.getSystemState().toString());
 
-        // TODO(?) this information is no longer contained in the actual state itself
-        /*assertEquals("Down: 5001 ms without initialize progress. Assuming node has deadlocked.",
-                ctrl.getSystemState().getNodeState(new Node(NodeType.STORAGE, 6)).toString());*/
-
         ctrl.tick();
 
         communicator.setNodeState(new Node(NodeType.STORAGE, 6), State.UP, "");
@@ -696,10 +687,6 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl.tick();
 
         assertEquals("version:7 distributor:10 storage:10 .6.s:d", ctrl.getSystemState().toString());
-
-        // TODO(?) this is no longer part of the actual generated state itself
-        /*String desc = ctrl.getSystemState().getNodeState(new Node(NodeType.STORAGE, 6)).getDescription();
-        assertEquals("Got reverse initialize progress. Assuming node has prematurely crashed", desc);*/
     }
 
     @Test
@@ -1209,7 +1196,6 @@ public class StateChangeTest extends FleetControllerTest {
                 "Event: storage.2: Stopped or possibly crashed after 500 ms, which is before stable state time period. Premature crash count is now 1.\n" +
                 "Event: storage.2: Altered node state in cluster state from 'U' to 'M: foo'\n" +
                 "Event: storage.2: 5000 milliseconds without contact. Marking node down.\n");
-
     }
 
 }

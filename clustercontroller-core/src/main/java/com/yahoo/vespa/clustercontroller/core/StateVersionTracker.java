@@ -99,7 +99,7 @@ public class StateVersionTracker {
     }
 
     boolean candidateChangedEnoughFromCurrentToWarrantPublish() {
-        return !currentUnversionedState.similarTo(latestCandidateState.getClusterState());
+        return !currentUnversionedState.similarToIgnoringInitProgress(latestCandidateState.getClusterState());
     }
 
     void promoteCandidateToVersionedState(final long currentTimeMs) {
