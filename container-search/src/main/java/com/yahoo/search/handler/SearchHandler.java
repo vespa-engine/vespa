@@ -349,7 +349,6 @@ public class SearchHandler extends LoggingRequestHandler {
         Execution execution = new Execution(searchChain,
                                             new Execution.Context(registry, indexFacts, specialTokens, rendererRegistry, linguistics));
         query.getModel().setExecution(execution);
-        query.getModel().traceLanguage();
         execution.trace().setForceTimestamps(query.properties().getBoolean(FORCE_TIMESTAMPS, false));
         if (query.properties().getBoolean(DETAILED_TIMING_LOGGING, false)) {
             // check and set (instead of set directly) to avoid overwriting stuff from prepareForBreakdownAnalysis()

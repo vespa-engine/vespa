@@ -96,7 +96,10 @@ public class Model implements Cloneable {
      * creating the query instance, {@link #setExecution(Execution)} has to be
      * invoked first with the same Execution instance the query is intended to
      * be run by.
+     * 
+     * @deprecated do not use; language can now be assigned later and for parts of the query tree, making this quite useless
      */
+    @Deprecated
     public void traceLanguage() {
         if (getParent().getTraceLevel()<2) return;
         if (language != null) {
