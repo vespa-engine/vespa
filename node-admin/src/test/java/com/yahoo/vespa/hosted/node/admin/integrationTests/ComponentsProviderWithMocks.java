@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
+import com.yahoo.vespa.hosted.node.admin.restapi.SecretAgentHandler;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
 import java.util.function.Function;
@@ -34,5 +35,10 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     @Override
     public NodeAdminStateUpdater getNodeAdminStateUpdater() {
         return new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 5, orchestratorMock, "localhost");
+    }
+
+    @Override
+    public SecretAgentHandler getSecretAgentHandler() {
+        return null;
     }
 }
