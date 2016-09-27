@@ -44,10 +44,8 @@ import java.net.URL;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.io.IOUtils.readAll;
 import static com.yahoo.text.Lowercase.toLowerCase;
 
 
@@ -626,13 +624,13 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     @Override
-    public void validateXML(DeployLogger logger) throws IOException {
-        validateXML(logger, Optional.empty());
+    public void validateXML() throws IOException {
+        validateXML(Optional.empty());
     }
 
     @Override
-    public void validateXML(DeployLogger logger, Optional<Version> vespaVersion) throws IOException {
-        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, logger, vespaVersion);
+    public void validateXML(Optional<Version> vespaVersion) throws IOException {
+        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, vespaVersion);
         xmlFilesValidator.checkApplication();
         ApplicationPackageXmlFilesValidator.checkIncludedDirs(this);
     }

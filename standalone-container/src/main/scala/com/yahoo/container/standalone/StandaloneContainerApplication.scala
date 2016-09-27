@@ -2,7 +2,7 @@
 package com.yahoo.container.standalone
 
 import com.google.inject.{Key, AbstractModule, Injector, Inject}
-import com.yahoo.config.application.api.{DeployLogger, RuleConfigDeriver, FileRegistry, ApplicationPackage}
+import com.yahoo.config.application.api.{RuleConfigDeriver, FileRegistry, ApplicationPackage}
 import com.yahoo.config.provision.Zone
 import com.yahoo.jdisc.application.Application
 import com.yahoo.container.jdisc.ConfiguredApplication
@@ -134,9 +134,9 @@ object StandaloneContainerApplication {
     tmpDir.toFile
   }
 
-  private def validateApplication(applicationPackage: ApplicationPackage, logger: DeployLogger) = {
+  private def validateApplication(applicationPackage: ApplicationPackage) = {
     try {
-      applicationPackage.validateXML(logger)
+      applicationPackage.validateXML()
     } catch {
       case e: IOException => throw new IllegalArgumentException(e)
     }
@@ -171,7 +171,7 @@ object StandaloneContainerApplication {
     val applicationPackage = rawApplicationPackage.preprocess(Zone.defaultZone(), new RuleConfigDeriver {
       override def derive(ruleBaseDir: String, outputDir: String): Unit = {}
     }, logger)
-    validateApplication(applicationPackage, logger)
+    validateApplication(applicationPackage)
     val deployState = new DeployState.Builder().
       applicationPackage(applicationPackage).
       fileRegistry(fileRegistry).

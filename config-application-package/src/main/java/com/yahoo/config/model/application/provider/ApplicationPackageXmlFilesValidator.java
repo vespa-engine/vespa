@@ -7,12 +7,10 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.Version;
 import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.log.LogLevel;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +22,6 @@ import java.util.Optional;
 public class ApplicationPackageXmlFilesValidator {
 
     private final AppSubDirs appDirs;
-    private final DeployLogger logger;
     private final Optional<Version> vespaVersion;
 
     private static final FilenameFilter xmlFilter = new FilenameFilter() {
@@ -34,25 +31,24 @@ public class ApplicationPackageXmlFilesValidator {
         }
     };
 
-    public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, DeployLogger logger, Optional<Version> vespaVersion) {
+
+    public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, Optional<Version> vespaVersion) {
         this.appDirs = appDirs;
-        this.logger = logger;
         this.vespaVersion = vespaVersion;
     }
 
-    public static ApplicationPackageXmlFilesValidator createDefaultXMLValidator(File appDir, DeployLogger logger, Optional<Version> vespaVersion) {
-        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), logger, vespaVersion);
+    // TODO: Remove when no version older than 6.33 is used
+    public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, DeployLogger logger, Optional<Version> vespaVersion) {
+        this.appDirs = appDirs;
+        this.vespaVersion = vespaVersion;
+    }
+
+    public static ApplicationPackageXmlFilesValidator createDefaultXMLValidator(File appDir, Optional<Version> vespaVersion) {
+        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), vespaVersion);
     }
 
     public static ApplicationPackageXmlFilesValidator createTestXmlValidator(File appDir) {
-        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), new BaseDeployLogger(), Optional.<Version>empty());
-    }
-
-    // Verify that files a and b does not coexist.
-    private void checkConflicts(String a, String b) throws IllegalArgumentException {
- 	   if (appDirs.file(a).exists() && appDirs.file(b).exists())
- 		   throw new IllegalArgumentException("Application package in " + appDirs.root() + " contains both " + a + " and " + b +
-                                              ", please use just one of them");
+        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), Optional.<Version>empty());
     }
 
     @SuppressWarnings("deprecation")
