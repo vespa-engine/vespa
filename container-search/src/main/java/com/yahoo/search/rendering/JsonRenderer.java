@@ -77,15 +77,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         boolean booleanValue() {
             switch (this) {
-            case YES:
-                return true;
-            case NO:
-                return false;
-            default:
-                throw new IllegalStateException();
+                case YES: return true;
+                case NO: return false;
+                default: throw new IllegalStateException();
             }
         }
-    };
+    }
 
     // if this must be optimized, simply use com.fasterxml.jackson.core.SerializableString
     private static final String BUCKET_LIMITS = "limits";
@@ -303,7 +300,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator = null;
         renderedChildren = null;
         debugRendering = false;
-        timeSource = () -> System.currentTimeMillis();
+        timeSource = System::currentTimeMillis;
         stream = null;
     }
 
@@ -320,21 +317,19 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private void renderTiming() throws IOException {
-        if (!getResult().getQuery().getPresentation().getTiming()) {
-            return;
-        }
+        if (!getResult().getQuery().getPresentation().getTiming()) return;
 
-        final double milli = .001d;
-        final long now = timeSource.getAsLong();
-        final long searchTime = now - getResult().getElapsedTime().first();
-        final double searchSeconds = searchTime * milli;
+        double milli = .001d;
+        long now = timeSource.getAsLong();
+        long searchTime = now - getResult().getElapsedTime().first();
+        double searchSeconds = searchTime * milli;
 
         generator.writeObjectFieldStart(TIMING);
         if (getResult().getElapsedTime().firstFill() != 0L) {
-            final long queryTime = getResult().getElapsedTime().weightedSearchTime();
-            final long summaryFetchTime = getResult().getElapsedTime().weightedFillTime();
-            final double querySeconds = queryTime * milli;
-            final double summarySeconds = summaryFetchTime * milli;
+            long queryTime = getResult().getElapsedTime().weightedSearchTime();
+            long summaryFetchTime = getResult().getElapsedTime().weightedFillTime();
+            double querySeconds = queryTime * milli;
+            double summarySeconds = summaryFetchTime * milli;
             generator.writeNumberField(QUERY_TIME, querySeconds);
             generator.writeNumberField(SUMMARY_FETCH_TIME, summarySeconds);
         }
@@ -344,18 +339,16 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private boolean getDebugRendering(Query q) {
-        return q == null ? false : q.properties().getBoolean(DEBUG_RENDERING_KEY, false);
+        return q != null && q.properties().getBoolean(DEBUG_RENDERING_KEY, false);
     }
 
-    private void renderTrace(Trace trace) throws JsonGenerationException, IOException {
-        if (!trace.traceNode().children().iterator().hasNext()) {
-            return;
-        }
+    private void renderTrace(Trace trace) throws IOException {
+        if (!trace.traceNode().children().iterator().hasNext()) return;
+
         try {
             long basetime = trace.traceNode().timestamp();
-            if (basetime == 0L) {
+            if (basetime == 0L)
                 basetime = getResult().getElapsedTime().first();
-            }
             trace.accept(new TraceRenderer(basetime));
         } catch (TraceRenderWrapper e) {
             throw new IOException(e);
@@ -365,53 +358,49 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void beginList(DataList<?> list) throws IOException {
         Preconditions.checkArgument(list instanceof HitGroup,
-                "Expected subclass of com.yahoo.search.result.HitGroup, got %s.",
-                list.getClass());
+                                    "Expected subclass of com.yahoo.search.result.HitGroup, got %s.",
+                                    list.getClass());
         moreChildren();
-
         renderHitGroupHead((HitGroup) list);
     }
 
-    protected void moreChildren() throws IOException, JsonGenerationException {
-        if (!renderedChildren.isEmpty()) {
+    protected void moreChildren() throws IOException {
+        if (!renderedChildren.isEmpty())
             childrenArray();
-        }
+
         renderedChildren.push(0);
     }
 
-    private void childrenArray() throws IOException, JsonGenerationException {
-        if (renderedChildren.peek() == 0) {
+    private void childrenArray() throws IOException {
+        if (renderedChildren.peek() == 0)
             generator.writeArrayFieldStart(CHILDREN);
-        }
         renderedChildren.push(renderedChildren.pop() + 1);
     }
 
-    private void lessChildren() throws IOException, JsonGenerationException {
+    private void lessChildren() throws IOException {
         int lastRenderedChildren = renderedChildren.pop();
         if (lastRenderedChildren > 0) {
             generator.writeEndArray();
         }
     }
 
-    private void renderHitGroupHead(HitGroup hitGroup) throws JsonGenerationException, IOException {
-        final ErrorHit errorHit = hitGroup.getErrorHit();
-
+    private void renderHitGroupHead(HitGroup hitGroup) throws IOException {
         generator.writeStartObject();
+
         renderHitContents(hitGroup);
-        if (getRecursionLevel() == 1) {
+        if (getRecursionLevel() == 1)
             renderCoverage();
-        }
-        if (errorHit != null) {
+
+        ErrorHit errorHit = hitGroup.getErrorHit();
+        if (errorHit != null)
             renderErrors(errorHit.errors());
-        }
 
         // the framework will invoke begin methods as needed from here
     }
 
-    private void renderErrors(Set<ErrorMessage> errors) throws JsonGenerationException, IOException {
-        if (errors.isEmpty()) {
-            return;
-        }
+    private void renderErrors(Set<ErrorMessage> errors) throws IOException {
+        if (errors.isEmpty()) return;
+
         generator.writeArrayFieldStart(ERRORS);
         for (ErrorMessage e : errors) {
             String summary = e.getMessage();
@@ -441,11 +430,10 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     }
 
-    private void renderCoverage() throws JsonGenerationException, IOException {
+    private void renderCoverage() throws IOException {
         Coverage c = getResult().getCoverage(false);
-        if (c == null) {
-            return;
-        }
+        if (c == null) return;
+
         generator.writeObjectFieldStart(COVERAGE);
         generator.writeNumberField(COVERAGE_COVERAGE, c.getResultPercentage());
         generator.writeNumberField(COVERAGE_DOCUMENTS, c.getDocs());
@@ -456,10 +444,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeEndObject();
     }
 
-    private void renderHit(Hit hit) throws JsonGenerationException, IOException {
-        if (!shouldRender(hit)) {
-            return;
-        }
+    private void renderHit(Hit hit) throws IOException {
+        if (!shouldRender(hit)) return;
 
         childrenArray();
         generator.writeStartObject();
@@ -475,7 +461,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return true;
     }
 
-    private boolean fieldsStart(boolean hasFieldsField) throws JsonGenerationException, IOException {
+    private boolean fieldsStart(boolean hasFieldsField) throws IOException {
         if (hasFieldsField) {
             return true;
         }
@@ -483,14 +469,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return true;
     }
 
-    private void fieldsEnd(boolean hasFieldsField) throws JsonGenerationException, IOException {
+    private void fieldsEnd(boolean hasFieldsField) throws IOException {
         if (!hasFieldsField) {
             return;
         }
         generator.writeEndObject();
     }
 
-    private void renderHitContents(Hit hit) throws JsonGenerationException, IOException {
+    private void renderHitContents(Hit hit) throws IOException {
         String id = hit.getDisplayId();
         Set<String> types = hit.types();
         String source = hit.getSource();
@@ -514,8 +500,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         renderAllFields(hit);
     }
 
-    private void renderAllFields(Hit hit) throws JsonGenerationException,
-            IOException {
+    private void renderAllFields(Hit hit) throws IOException {
         boolean hasFieldsField = false;
 
         hasFieldsField |= renderTotalHitCount(hit, hasFieldsField);
@@ -523,8 +508,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         fieldsEnd(hasFieldsField);
     }
 
-    private boolean renderStandardFields(Hit hit, boolean initialHasFieldsField)
-            throws JsonGenerationException, IOException {
+    private boolean renderStandardFields(Hit hit, boolean initialHasFieldsField) throws IOException {
         boolean hasFieldsField = initialHasFieldsField;
         for (String fieldName : hit.fieldKeys()) {
             if (!shouldRender(fieldName, hit)) continue;
@@ -659,26 +643,22 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 .getTo()) : id.getTo()).toString();
     }
 
-    private boolean renderTotalHitCount(Hit hit, boolean hasFieldsField)
-            throws JsonGenerationException, IOException {
-        if (getRecursionLevel() == 1 && hit instanceof HitGroup) {
-            fieldsStart(hasFieldsField);
-            generator.writeNumberField(TOTAL_COUNT, getResult()
-                    .getTotalHitCount());
-            return true;
-        } else {
-            return false;
-        }
+    private boolean renderTotalHitCount(Hit hit, boolean hasFieldsField) throws IOException {
+        if ( ! (getRecursionLevel() == 1 && hit instanceof HitGroup)) return false;
+
+        fieldsStart(hasFieldsField);
+        generator.writeNumberField(TOTAL_COUNT, getResult().getTotalHitCount());
+        return true;
     }
 
-    private void renderField(String fieldName, Hit hit) throws JsonGenerationException, IOException {
+    private void renderField(String fieldName, Hit hit) throws IOException {
         generator.writeFieldName(fieldName);
         if (!tryDirectRendering(fieldName, hit)) {
             renderFieldContents(hit.getField(fieldName));
         }
     }
 
-    private void renderFieldContents(Object field) throws JsonGenerationException, IOException {
+    private void renderFieldContents(Object field) throws IOException {
         if (field == null) {
             generator.writeNull();
         } else if (field instanceof Number) {
@@ -711,7 +691,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
     }
 
-    private void renderNumberField(Number field) throws JsonGenerationException, IOException {
+    private void renderNumberField(Number field) throws IOException {
         if (field instanceof Integer) {
             generator.writeNumber(field.intValue());
         }  else if (field instanceof Float) {
@@ -734,8 +714,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     /**
      * Really a private method, but package access for testability.
      */
-    boolean tryDirectRendering(String fieldName, Hit hit)
-            throws IOException, JsonGenerationException {
+    boolean tryDirectRendering(String fieldName, Hit hit) throws IOException {
         boolean renderedAsUtf8 = false;
         if (hit instanceof FastHit) {
             FastHit f = (FastHit) hit;
@@ -755,8 +734,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void data(Data data) throws IOException {
         Preconditions.checkArgument(data instanceof Hit,
-                "Expected subclass of com.yahoo.search.result.Hit, got %s.",
-                data.getClass());
+                                    "Expected subclass of com.yahoo.search.result.Hit, got %s.",
+                                    data.getClass());
         renderHit((Hit) data);
     }
 
@@ -785,8 +764,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private Result getResult() {
         Response r = getResponse();
         Preconditions.checkArgument(r instanceof Result,
-                "JsonRenderer can only render instances of com.yahoo.search.Result, got instance of %s.",
-                r.getClass());
+                                    "JsonRenderer can only render instances of com.yahoo.search.Result, got instance of %s.",
+                                    r.getClass());
         return (Result) r;
     }
 
@@ -841,4 +820,5 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     void setTimeSource(LongSupplier timeSource) {
         this.timeSource = timeSource;
     }
+
 }
