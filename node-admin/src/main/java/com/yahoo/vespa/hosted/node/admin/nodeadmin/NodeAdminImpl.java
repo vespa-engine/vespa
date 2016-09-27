@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -51,6 +52,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private GaugeWrapper numberOfContainersInActiveState;
     private GaugeWrapper numberOfContainersInLoadImageState;
+    private CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
     /**
      * @param docker interface to docker daemon and docker-related tasks
@@ -66,6 +68,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
         this.numberOfContainersInActiveState = metricReceiver.declageGauge("containers_in_active_state");
         this.numberOfContainersInLoadImageState = metricReceiver.declageGauge("containers_in_load_image_state");
+        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter("unhandled_exceptions_in_node_agent");
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
@@ -81,14 +84,17 @@ public class NodeAdminImpl implements NodeAdmin {
     private void updateNodeAgentMetrics() {
         int numberContainersInActive = 0;
         int numberContainersWaitingImage = 0;
+        int numberOfNewUnhandledExceptions = 0;
 
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             if (nodeAgent.getContainerNodeSpec().nodeState == Node.State.active) numberContainersInActive++;
             if (nodeAgent.isDownloadingImage()) numberContainersWaitingImage++;
+            numberOfNewUnhandledExceptions += nodeAgent.getAndResetNumberOfUnhandledExceptions();
         }
 
         numberOfContainersInActiveState.sample(numberContainersInActive);
         numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
+        numberOfUnhandledExceptionsInNodeAgent.add(numberOfNewUnhandledExceptions);
     }
 
     public boolean freezeNodeAgentsAndCheckIfAllFrozen() {

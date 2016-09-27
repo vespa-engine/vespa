@@ -53,6 +53,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private long delaysBetweenEachTickMillis;
+    private int numberOfUnhandledException = 0;
 
     private Thread loopThread;
 
@@ -272,6 +273,7 @@ public class NodeAgentImpl implements NodeAgent {
                 try {
                     tick();
                 } catch (Exception e) {
+                    numberOfUnhandledException++;
                     logger.error("Unhandled exception, ignoring.", e);
                     addDebugMessage(e.getMessage());
                 } catch (Throwable t) {
@@ -357,5 +359,12 @@ public class NodeAgentImpl implements NodeAgent {
     @Override
     public boolean isDownloadingImage() {
         return imageBeingDownloaded != null;
+    }
+
+    @Override
+    public int getAndResetNumberOfUnhandledExceptions() {
+        int temp = numberOfUnhandledException;
+        numberOfUnhandledException = 0;
+        return temp;
     }
 }
