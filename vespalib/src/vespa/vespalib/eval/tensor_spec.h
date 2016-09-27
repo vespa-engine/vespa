@@ -25,15 +25,15 @@ public:
         Label(const char *name_in) : index(npos), name(name_in) {}
         bool is_mapped() const { return (index == npos); }
         bool is_indexed() const { return (index != npos); }
+        bool operator==(const Label &rhs) const {
+            return ((index == rhs.index) &&
+                    (name == rhs.name));
+        }
         bool operator<(const Label &rhs) const {
             if (index != rhs.index) {
                 return (index < rhs.index);
             }
             return (name < rhs.name);
-        }
-        bool operator==(const Label &rhs) const {
-            return (index == rhs.index) &&
-                    (name == rhs.name);
         }
     };
     using Address = std::map<vespalib::string,Label>;
@@ -49,9 +49,11 @@ public:
     }
     const vespalib::string &type() const { return _type; }
     const Cells &cells() const { return _cells; }
+    vespalib::string to_string() const;
 };
 
-std::ostream &operator<<(std::ostream &out, const TensorSpec::Label &label);
+bool operator==(const TensorSpec &lhs, const TensorSpec &rhs);
+std::ostream &operator<<(std::ostream &out, const TensorSpec &tensor);
 
 } // namespace vespalib::eval
 } // namespace vespalib

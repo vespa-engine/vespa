@@ -24,8 +24,7 @@ void
 assertTensorSpec(const TensorSpec &expSpec, const Tensor &tensor)
 {
     TensorSpec actSpec = tensor.toSpec();
-    EXPECT_EQUAL(expSpec.type(), actSpec.type());
-    EXPECT_EQUAL(expSpec.cells(), actSpec.cells());
+    EXPECT_EQUAL(expSpec, actSpec);
 }
 
 struct Fixture

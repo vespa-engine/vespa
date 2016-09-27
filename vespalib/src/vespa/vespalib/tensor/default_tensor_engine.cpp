@@ -47,6 +47,14 @@ DefaultTensorEngine::to_string(const Tensor &tensor) const
     return my_tensor.toString();
 }
 
+eval::TensorSpec
+DefaultTensorEngine::to_spec(const Tensor &tensor) const
+{
+    assert(&tensor.engine() == this);
+    const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
+    return my_tensor.toSpec();
+}
+
 struct IsAddOperation : public eval::DefaultOperationVisitor {
     bool result = false;
     void visitDefault(const eval::Operation &) override {}

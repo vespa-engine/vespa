@@ -54,6 +54,30 @@ SimpleTensorEngine::to_string(const Tensor &tensor) const
     return out;
 }
 
+TensorSpec
+SimpleTensorEngine::to_spec(const Tensor &tensor) const
+{
+    assert(&tensor.engine() == this);
+    const SimpleTensor &simple_tensor = static_cast<const SimpleTensor&>(tensor);
+    ValueType type = simple_tensor.type(); 
+    const auto &dimensions = type.dimensions();
+    TensorSpec spec(type.to_spec());
+    for (const auto &cell: simple_tensor.cells()) {
+        TensorSpec::Address addr;
+        assert(cell.address.size() == dimensions.size());
+        for (size_t i = 0; i < cell.address.size(); ++i) {
+            const auto &label = cell.address[i];
+            if (label.is_mapped()) {
+                addr.emplace(dimensions[i].name, TensorSpec::Label(label.name));
+            } else {
+                addr.emplace(dimensions[i].name, TensorSpec::Label(label.index));
+            }
+        }
+        spec.add(addr, cell.value);
+    }
+    return spec;
+}
+
 std::unique_ptr<eval::Tensor>
 SimpleTensorEngine::create(const TensorSpec &spec) const
 {

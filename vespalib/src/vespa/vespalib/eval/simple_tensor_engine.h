@@ -22,6 +22,7 @@ public:
     ValueType type_of(const Tensor &tensor) const override;
     bool equal(const Tensor &a, const Tensor &b) const override;
     vespalib::string to_string(const Tensor &tensor) const override;
+    TensorSpec to_spec(const Tensor &tensor) const override;
 
     std::unique_ptr<Tensor> create(const TensorSpec &spec) const override;
     const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const override;

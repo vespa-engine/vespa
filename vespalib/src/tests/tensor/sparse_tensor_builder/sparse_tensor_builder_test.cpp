@@ -69,8 +69,7 @@ TEST("require that tensor can be converted to tensor spec")
     expSpec.add({{"a", "1"}, {"b", "2"}}, 10).
             add({{"c", "3"}, {"d", "4"}}, 20);
     TensorSpec actSpec = tensor->toSpec();
-    EXPECT_EQUAL(expSpec.type(), actSpec.type());
-    EXPECT_EQUAL(expSpec.cells(), actSpec.cells());
+    EXPECT_EQUAL(expSpec, actSpec);
 }
 
 TEST("require that dimensions are extracted")
