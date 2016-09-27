@@ -31,7 +31,7 @@ public class SecretAgentHandler {
 
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("application", applicationName);
-        report.put("timestamp", System.currentTimeMillis() / 1000.);
+        report.put("timestamp", System.currentTimeMillis() / 1000);
         report.put("dimensions", dimensions);
         report.put("metrics", metrics);
 

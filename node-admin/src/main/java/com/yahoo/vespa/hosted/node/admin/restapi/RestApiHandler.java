@@ -65,7 +65,9 @@ public class RestApiHandler extends LoggingRequestHandler{
             return new HttpResponse(200) {
                 @Override
                 public void render(OutputStream outputStream) throws IOException {
-                    objectMapper.writeValue(outputStream, secretAgentHandler.getSecretAgentReport());
+                    objectMapper.writerWithDefaultPrettyPrinter()
+                            .writeValue(outputStream, secretAgentHandler.getSecretAgentReport());
+                    outputStream.write("\n".getBytes());
                 }
             };
         }
