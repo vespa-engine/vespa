@@ -2,9 +2,10 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 using namespace vespalib::tensor;
-
+using vespalib::eval::TensorSpec;
 
 void
 assertCellValue(double expValue, const TensorAddress &address,
@@ -33,7 +34,8 @@ assertCellValue(double expValue, const TensorAddress &address,
     EXPECT_EQUAL(expValue, itr->second);
 }
 
-TEST("require that tensor can be constructed")
+Tensor::UP
+buildTensor()
 {
     SparseTensorBuilder builder;
     builder.define_dimension("c");
@@ -44,7 +46,12 @@ TEST("require that tensor can be constructed")
         add_label(builder.define_dimension("b"), "2").add_cell(10).
         add_label(builder.define_dimension("c"), "3").
         add_label(builder.define_dimension("d"), "4").add_cell(20);
-    Tensor::UP tensor = builder.build();
+    return builder.build();
+}
+
+TEST("require that tensor can be constructed")
+{
+    Tensor::UP tensor = buildTensor();
     const SparseTensor &sparseTensor = dynamic_cast<const SparseTensor &>(*tensor);
     const TensorDimensions &dimensions = sparseTensor.dimensions();
     const SparseTensor::Cells &cells = sparseTensor.cells();
@@ -53,6 +60,17 @@ TEST("require that tensor can be constructed")
                     dimensions, cells);
     assertCellValue(20, TensorAddress({{"c","3"},{"d","4"}}),
                     dimensions, cells);
+}
+
+TEST("require that tensor can be converted to tensor spec")
+{
+    Tensor::UP tensor = buildTensor();
+    TensorSpec expSpec("tensor(a{},b{},c{},d{})");
+    expSpec.add({{"a", "1"}, {"b", "2"}}, 10).
+            add({{"c", "3"}, {"d", "4"}}, 20);
+    TensorSpec actSpec = tensor->toSpec();
+    EXPECT_EQUAL(expSpec.type(), actSpec.type());
+    EXPECT_EQUAL(expSpec.cells(), actSpec.cells());
 }
 
 TEST("require that dimensions are extracted")

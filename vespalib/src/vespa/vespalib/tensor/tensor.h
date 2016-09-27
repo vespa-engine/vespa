@@ -42,9 +42,7 @@ struct Tensor : public eval::Tensor
     virtual void print(std::ostream &out) const = 0;
     virtual vespalib::string toString() const = 0;
     virtual Tensor::UP clone() const = 0;
-    virtual eval::TensorSpec toSpec() const {
-        return eval::TensorSpec(getType().to_spec());
-    }
+    virtual eval::TensorSpec toSpec() const = 0;
     virtual void accept(TensorVisitor &visitor) const = 0;
 };
 
