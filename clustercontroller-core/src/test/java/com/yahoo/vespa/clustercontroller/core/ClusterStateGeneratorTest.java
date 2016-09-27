@@ -808,6 +808,26 @@ public class ClusterStateGeneratorTest {
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .0.s:i .0.i:0.5"));
     }
 
+    /**
+     * The generated state must be considered over the Reported state when deciding whether
+     * to override it with the Wanted state. Otherwise, an unstable retired node could have
+     * its generated state be Retired instead of Down. We want it to stay down instead of
+     * potentially contributing additional instability to the cluster.
+     */
+    @Test
+    public void unstable_retired_node_should_be_marked_down() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
+                .bringEntireClusterUp()
+                .proposeStorageNodeWantedState(3, State.RETIRED);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().maxPrematureCrashes(10);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 3));
+        nodeInfo.setPrematureCrashCount(11);
+
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:5 storage:5 .3.s:d"));
+    }
+
     @Test
     public void generator_params_can_inherit_values_from_controller_options() {
         FleetControllerOptions options = new FleetControllerOptions("foocluster");

@@ -173,7 +173,7 @@ public class ClusterStateGenerator {
         if (nodeInfo.isStorage()) {
             applyStorageSpecificStateTransforms(nodeInfo, params, reported, wanted, baseline);
         }
-        if (reported.above(wanted)) { // FIXME baseline vs reported here (maintenance <-- above --> down is relevant)
+        if (baseline.above(wanted)) {
             applyWantedStateToBaselineState(baseline, wanted);
         }
 
