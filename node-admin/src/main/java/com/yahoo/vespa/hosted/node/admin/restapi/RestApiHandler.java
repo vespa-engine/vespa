@@ -30,12 +30,14 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
  */
 public class RestApiHandler extends LoggingRequestHandler{
 
-    private final NodeAdminStateUpdater refresher;
     private final static ObjectMapper objectMapper = new ObjectMapper();
+    private final NodeAdminStateUpdater refresher;
+    private final SecretAgentHandler secretAgentHandler;
 
     public RestApiHandler(Executor executor, AccessLog accessLog, ComponentsProvider componentsProvider) {
         super(executor, accessLog);
         this.refresher = componentsProvider.getNodeAdminStateUpdater();
+        this.secretAgentHandler = componentsProvider.getSecretAgentHandler();
     }
 
     @Override
@@ -57,6 +59,13 @@ public class RestApiHandler extends LoggingRequestHandler{
                 @Override
                 public void render(OutputStream outputStream) throws IOException {
                     objectMapper.writeValue(outputStream, refresher.getDebugPage());
+                }
+            };
+        } else if (path.endsWith("/metrics")) {
+            return new HttpResponse(200) {
+                @Override
+                public void render(OutputStream outputStream) throws IOException {
+                    objectMapper.writeValue(outputStream, secretAgentHandler.getSecretAgentReport());
                 }
             };
         }
