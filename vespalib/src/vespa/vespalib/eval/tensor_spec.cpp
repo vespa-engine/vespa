@@ -8,16 +8,6 @@
 namespace vespalib {
 namespace eval {
 
-std::ostream &operator<<(std::ostream &out, const TensorSpec::Label &label)
-{
-    if (label.is_indexed()) {
-        out << label.index;
-    } else {
-        out << label.name;
-    }
-    return out;
-}
-
 vespalib::string
 TensorSpec::to_string() const
 {

@@ -35,10 +35,6 @@ public:
             }
             return (name < rhs.name);
         }
-        bool operator==(const Label &rhs) const {
-            return (index == rhs.index) &&
-                    (name == rhs.name);
-        }
     };
     using Address = std::map<vespalib::string,Label>;
     using Cells = std::map<Address,double>;
@@ -55,8 +51,6 @@ public:
     const Cells &cells() const { return _cells; }
     vespalib::string to_string() const;
 };
-
-std::ostream &operator<<(std::ostream &out, const TensorSpec::Label &label);
 
 bool operator==(const TensorSpec &lhs, const TensorSpec &rhs);
 std::ostream &operator<<(std::ostream &out, const TensorSpec &tensor);
