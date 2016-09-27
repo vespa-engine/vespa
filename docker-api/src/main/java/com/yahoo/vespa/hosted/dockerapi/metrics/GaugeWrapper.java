@@ -19,4 +19,15 @@ public class GaugeWrapper implements MetricValue {
     public Number getValue() {
         return value;
     }
+
+
+    final static class NullGauge extends GaugeWrapper {
+        NullGauge() {
+            super(null);
+        }
+
+        @Override
+        public void sample(double x) {
+        }
+    }
 }

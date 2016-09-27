@@ -26,4 +26,18 @@ public class CounterWrapper implements MetricValue {
     public Number getValue() {
         return value;
     }
+
+
+    static final class NullCounter extends CounterWrapper {
+        NullCounter() {
+            super(null);
+        }
+
+        @Override
+        public void add() {
+        }
+
+        public void add(long n) {
+        }
+    }
 }
