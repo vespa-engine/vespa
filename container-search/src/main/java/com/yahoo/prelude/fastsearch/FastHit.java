@@ -19,7 +19,7 @@ import com.yahoo.data.access.simple.Value.StringValue;
  */
 public class FastHit extends Hit {
 
-    public static final String SUMMARY = "summary";
+    public static final String SUMMARY = "summary"; // TODO: Remove on Vespa 7
 
     private static final long serialVersionUID = 298098891191029589L;
 
