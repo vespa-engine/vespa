@@ -10,6 +10,7 @@ import com.yahoo.vdslib.state.State;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.yahoo.vespa.clustercontroller.core.matchers.HasStateReasonForNode.hasStateReasonForNode;
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
@@ -488,7 +489,7 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:3 storage:2 .0.s:d"));
-        assertThat(state.getClusterStateReason(), equalTo(ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE));
+        assertThat(state.getClusterStateReason(), equalTo(Optional.of(ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE)));
     }
 
     @Test
@@ -500,7 +501,7 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:d"));
-        assertThat(state.getClusterStateReason(), equalTo(null)); // FIXME
+        assertThat(state.getClusterStateReason(), equalTo(Optional.empty()));
     }
 
     @Test
@@ -513,7 +514,7 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:2 .0.s:d storage:3"));
-        assertThat(state.getClusterStateReason(), equalTo(ClusterStateReason.TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE));
+        assertThat(state.getClusterStateReason(), equalTo(Optional.of(ClusterStateReason.TOO_FEW_DISTRIBUTOR_NODES_AVAILABLE)));
     }
 
     @Test
@@ -525,7 +526,7 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 .0.s:d storage:3"));
-        assertThat(state.getClusterStateReason(), equalTo(null)); // FIXME
+        assertThat(state.getClusterStateReason(), equalTo(Optional.empty()));
     }
 
     @Test
@@ -564,7 +565,7 @@ public class ClusterStateGeneratorTest {
         // TODO de-dupe a lot of these tests?
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:3 storage:2 .0.s:d"));
-        assertThat(state.getClusterStateReason(), equalTo(ClusterStateReason.TOO_LOW_AVAILABLE_STORAGE_NODE_RATIO));
+        assertThat(state.getClusterStateReason(), equalTo(Optional.of(ClusterStateReason.TOO_LOW_AVAILABLE_STORAGE_NODE_RATIO)));
     }
 
     @Test
@@ -577,7 +578,7 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:d"));
-        assertThat(state.getClusterStateReason(), equalTo(null)); // FIXME
+        assertThat(state.getClusterStateReason(), equalTo(Optional.empty()));
     }
 
     @Test
@@ -591,7 +592,7 @@ public class ClusterStateGeneratorTest {
         // TODO de-dupe a lot of these tests?
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("cluster:d distributor:2 .0.s:d storage:3"));
-        assertThat(state.getClusterStateReason(), equalTo(ClusterStateReason.TOO_LOW_AVAILABLE_DISTRIBUTOR_NODE_RATIO));
+        assertThat(state.getClusterStateReason(), equalTo(Optional.of(ClusterStateReason.TOO_LOW_AVAILABLE_DISTRIBUTOR_NODE_RATIO)));
     }
 
     @Test
@@ -603,7 +604,7 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 .0.s:d storage:3"));
-        assertThat(state.getClusterStateReason(), equalTo(null)); // FIXME
+        assertThat(state.getClusterStateReason(), equalTo(Optional.empty()));
     }
 
     @Test

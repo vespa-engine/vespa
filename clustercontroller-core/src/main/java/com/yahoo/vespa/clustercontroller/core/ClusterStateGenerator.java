@@ -144,7 +144,7 @@ public class ClusterStateGenerator {
         }
         workingState.setDistributionBits(inferDistributionBitCount(cluster, workingState, params));
 
-        return new AnnotatedClusterState(workingState, reasonToBeDown.orElse(null/*FIXME*/), nodeStateReasons);
+        return new AnnotatedClusterState(workingState, reasonToBeDown, nodeStateReasons);
     }
 
     private static boolean nodeIsConsideredTooUnstable(final NodeInfo nodeInfo, final Params params) {

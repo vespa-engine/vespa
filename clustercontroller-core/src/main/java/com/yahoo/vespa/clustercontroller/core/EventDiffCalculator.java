@@ -10,6 +10,7 @@ import com.yahoo.vdslib.state.State;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Responsible for inferring the difference between two cluster states and their
@@ -60,8 +61,9 @@ public class EventDiffCalculator {
         return new ClusterEvent(ClusterEvent.Type.SYSTEMSTATE, description, params.currentTime);
     }
 
-    private static boolean clusterDownBecause(final Params params, ClusterStateReason reason) {
-        return params.toState.getClusterStateReason() == reason;
+    private static boolean clusterDownBecause(final Params params, ClusterStateReason wantedReason) {
+        final Optional<ClusterStateReason> actualReason = params.toState.getClusterStateReason();
+        return actualReason.isPresent() && actualReason.get().equals(wantedReason);
     }
 
     private static void emitWholeClusterDiffEvent(final Params params, final List<Event> events) {

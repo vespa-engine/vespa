@@ -6,14 +6,16 @@ import com.yahoo.vdslib.state.Node;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 public class AnnotatedClusterState {
     private final ClusterState clusterState;
     private final Map<Node, NodeStateReason> nodeStateReasons;
-    private final ClusterStateReason clusterStateReason;
+    private final Optional<ClusterStateReason> clusterStateReason;
 
     public AnnotatedClusterState(ClusterState clusterState,
-                                 ClusterStateReason clusterStateReason,
+                                 Optional<ClusterStateReason> clusterStateReason,
                                  Map<Node, NodeStateReason> nodeStateReasons)
     {
         this.clusterState = clusterState;
@@ -22,7 +24,7 @@ public class AnnotatedClusterState {
     }
 
     public static AnnotatedClusterState emptyState() {
-        return new AnnotatedClusterState(ClusterStateUtil.emptyState(), null/*TODO*/, emptyNodeStateReasons());
+        return new AnnotatedClusterState(ClusterStateUtil.emptyState(), Optional.empty(), emptyNodeStateReasons());
     }
 
     static Map<Node, NodeStateReason> emptyNodeStateReasons() {
@@ -37,7 +39,7 @@ public class AnnotatedClusterState {
         return Collections.unmodifiableMap(nodeStateReasons);
     }
 
-    public ClusterStateReason getClusterStateReason() {
+    public Optional<ClusterStateReason> getClusterStateReason() {
         return clusterStateReason;
     }
 
@@ -54,20 +56,14 @@ public class AnnotatedClusterState {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         AnnotatedClusterState that = (AnnotatedClusterState) o;
-
-        if (!clusterState.equals(that.clusterState)) return false;
-        if (!nodeStateReasons.equals(that.nodeStateReasons)) return false;
-        return clusterStateReason == that.clusterStateReason;
-
+        return Objects.equals(clusterState, that.clusterState) &&
+                Objects.equals(nodeStateReasons, that.nodeStateReasons) &&
+                Objects.equals(clusterStateReason, that.clusterStateReason);
     }
 
     @Override
     public int hashCode() {
-        int result = clusterState.hashCode();
-        result = 31 * result + nodeStateReasons.hashCode();
-        result = 31 * result + clusterStateReason.hashCode();
-        return result;
+        return Objects.hash(clusterState, nodeStateReasons, clusterStateReason);
     }
 }

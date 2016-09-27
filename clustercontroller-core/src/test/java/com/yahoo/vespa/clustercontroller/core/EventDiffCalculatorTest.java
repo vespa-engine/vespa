@@ -21,12 +21,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class EventDiffCalculatorTest {
-
-    private static ClusterStateReason emptyClusterStateReason() {
-        return null; // FIXME likely to change this, null is bull
-    }
 
     private static Map<Node, NodeStateReason> emptyNodeStateReasons() {
         return Collections.emptyMap();
@@ -35,8 +32,8 @@ public class EventDiffCalculatorTest {
     private static class EventFixture {
         final ClusterFixture clusterFixture;
         // TODO could reasonably put shared state into a common class to avoid dupes for both before/after
-        ClusterStateReason clusterReasonBefore = emptyClusterStateReason();
-        ClusterStateReason clusterReasonAfter = emptyClusterStateReason();
+        Optional<ClusterStateReason> clusterReasonBefore = Optional.empty();
+        Optional<ClusterStateReason> clusterReasonAfter = Optional.empty();
         ClusterState clusterStateBefore = ClusterStateUtil.emptyState();
         ClusterState clusterStateAfter = ClusterStateUtil.emptyState();
         final Map<Node, NodeStateReason> nodeReasonsBefore = new HashMap<>();
@@ -64,11 +61,11 @@ public class EventDiffCalculatorTest {
             return this;
         }
         EventFixture clusterReasonBefore(ClusterStateReason reason) {
-            this.clusterReasonBefore = reason;
+            this.clusterReasonBefore = Optional.of(reason);
             return this;
         }
         EventFixture clusterReasonAfter(ClusterStateReason reason) {
-            this.clusterReasonAfter = reason;
+            this.clusterReasonAfter = Optional.of(reason);
             return this;
         }
         EventFixture currentTimeMs(long timeMs) {
