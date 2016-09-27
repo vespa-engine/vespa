@@ -54,8 +54,6 @@ import java.util.logging.Level;
  */
 public class DomV20ClientsBuilder {
 
-    public static final String vespaClientBundleSpecification = "vespaclient-container-plugin";
-
     // The parent docproc plugin to register data with.
     private final Clients clients;
 
