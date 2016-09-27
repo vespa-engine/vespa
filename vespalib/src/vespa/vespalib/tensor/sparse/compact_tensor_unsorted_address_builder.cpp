@@ -2,7 +2,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include "compact_tensor_unsorted_address_builder.h"
-#include "compact_tensor_address_builder.h"
 #include "sparse_tensor_address_builder.h"
 #include <algorithm>
 
@@ -15,20 +14,6 @@ CompactTensorUnsortedAddressBuilder::CompactTensorUnsortedAddressBuilder()
 {
 }
 
-
-void
-CompactTensorUnsortedAddressBuilder::buildTo(CompactTensorAddressBuilder &
-                                             builder)
-{
-    const char *base = &_elementStrings[0];
-    std::sort(_elements.begin(), _elements.end(),
-              [=](const ElementRef &lhs, const ElementRef &rhs)
-              { return lhs.getDimension(base) < rhs.getDimension(base); });
-    // build normalized address with sorted dimensions
-    for (const auto &element : _elements) {
-        builder.add(element.getDimension(base), element.getLabel(base));
-    }
-}
 
 void
 CompactTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder &

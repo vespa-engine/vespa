@@ -9,7 +9,6 @@
 namespace vespalib {
 namespace tensor {
 
-class CompactTensorAddressBuilder;
 class SparseTensorAddressBuilder;
 
 /**
@@ -72,7 +71,6 @@ public:
      * Sort the stored tensor address and pass it over to a strict
      * tensor address builder in sorted order.
      */
-    void buildTo(CompactTensorAddressBuilder &builder);
     void buildTo(SparseTensorAddressBuilder &builder,
                  const TensorDimensions &dimensions);
     void clear() { _elementStrings.clear(); _elements.clear(); }
