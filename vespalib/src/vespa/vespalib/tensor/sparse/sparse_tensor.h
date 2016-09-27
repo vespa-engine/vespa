@@ -5,7 +5,7 @@
 #include <vespa/vespalib/tensor/cell_function.h>
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/tensor_address.h>
-#include "compact_tensor_address.h"
+#include "compact_tensor_address_ref.h"
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
