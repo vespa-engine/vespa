@@ -75,7 +75,6 @@ vespa_define_module(
     src/tests/tensor/sparse_tensor_builder
     src/tests/tensor/dense_tensor_builder
     src/tests/tensor/dense_tensor_operations
-    src/tests/tensor/join_tensor_addresses
     src/tests/tensor/tensor_address
     src/tests/tensor/tensor_address_element_iterator
     src/tests/tensor/tensor_conformance

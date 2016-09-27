@@ -65,7 +65,6 @@ tests/sync
 tests/tensor/sparse_tensor_builder
 tests/tensor/dense_tensor_builder
 tests/tensor/dense_tensor_operations
-tests/tensor/join_tensor_addresses
 tests/tensor/simple_tensor_builder
 tests/tensor/tensor
 tests/tensor/tensor_address
