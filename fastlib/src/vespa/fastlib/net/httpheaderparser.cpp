@@ -81,8 +81,9 @@ Fast_HTTPHeaderParser::ReadHeader(const char *&name, const char *&value)
     idx++;
   }
 
-  while ((idx + 1) < _bufferSize) {
-    size_t readLen = _input->ReadBufferFullUntil(&_lineBuffer[idx], _bufferSize - idx, '\n');
+  constexpr size_t ROOM_FOR_PUSH_BACK = 1u;
+  while ((idx + ROOM_FOR_PUSH_BACK) < _bufferSize) {
+    size_t readLen = _input->ReadBufferFullUntil(&_lineBuffer[idx], _bufferSize - idx - ROOM_FOR_PUSH_BACK, '\n');
     if (readLen <= 0) {
       return false;
     }
