@@ -12,6 +12,7 @@
 #include <vespa/vespalib/tensor/tensor_visitor.h>
 #include <sstream>
 
+using vespalib::eval::TensorSpec;
 
 namespace vespalib {
 namespace tensor {
@@ -188,6 +189,38 @@ Tensor::UP
 SparseTensor::clone() const
 {
     return std::make_unique<SparseTensor>(_dimensions, _cells);
+}
+
+namespace {
+
+void
+buildAddress(const SparseTensor::Dimensions &dimensions,
+             SparseTensorAddressDecoder &decoder,
+             TensorSpec::Address &address)
+{
+    for (const auto &dimension : dimensions) {
+        auto label = decoder.decodeLabel();
+        if (!label.empty()) {
+            address.emplace(std::make_pair(dimension, TensorSpec::Label(label)));
+        }
+    }
+    assert(!decoder.valid());
+}
+
+}
+
+TensorSpec
+SparseTensor::toSpec() const
+{
+    TensorSpec result(getType().to_spec());
+    TensorSpec::Address address;
+    for (const auto &cell : _cells) {
+        SparseTensorAddressDecoder decoder(cell.first);
+        buildAddress(_dimensions, decoder, address);
+        result.add(address, cell.second);
+        address.clear();
+    }
+    return result;
 }
 
 void
