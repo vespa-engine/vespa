@@ -68,7 +68,6 @@ tests/tensor/dense_tensor_operations
 tests/tensor/simple_tensor_builder
 tests/tensor/tensor
 tests/tensor/tensor_address
-tests/tensor/tensor_address_element_iterator
 tests/tensor/tensor_function
 tests/tensor/tensor_mapper
 tests/tensor/tensor_operations
