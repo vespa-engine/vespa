@@ -56,4 +56,9 @@ public interface NodeAgent {
      * Returns the {@link ContainerNodeSpec} for this node agent.
      */
     ContainerNodeSpec getContainerNodeSpec();
+
+    /**
+     * Returns true if NodeAgent is waiting for an image download to finish
+     */
+    boolean isDownloadingImage();
 }

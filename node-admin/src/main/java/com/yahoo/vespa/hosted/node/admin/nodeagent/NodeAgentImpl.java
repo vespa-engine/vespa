@@ -232,7 +232,7 @@ public class NodeAgentImpl implements NodeAgent {
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
             // Create a signalWorkToBeDone when download is finished.
             dockerOperations.scheduleDownloadOfImage(nodeSpec, this::signalWorkToBeDone);
-        } else {
+        } else if (imageBeingDownloaded != null) { // Image was downloading, but now its ready
             imageBeingDownloaded = null;
         }
     }
@@ -352,5 +352,10 @@ public class NodeAgentImpl implements NodeAgent {
         synchronized (monitor) {
             return lastNodeSpec;
         }
+    }
+
+    @Override
+    public boolean isDownloadingImage() {
+        return imageBeingDownloaded != null;
     }
 }

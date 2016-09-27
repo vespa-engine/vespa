@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -9,6 +11,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -46,16 +49,23 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final int nodeAgentScanIntervalMillis;
 
+    private GaugeWrapper numberOfContainersInActiveState;
+    private GaugeWrapper numberOfContainersInLoadImageState;
+
     /**
      * @param docker interface to docker daemon and docker-related tasks
      * @param nodeAgentFactory factory for {@link NodeAgent} objects
      */
     public NodeAdminImpl(final Docker docker, final Function<String, NodeAgent> nodeAgentFactory,
-                         final MaintenanceScheduler maintenanceScheduler, int nodeAgentScanIntervalMillis) {
+                         final MaintenanceScheduler maintenanceScheduler, int nodeAgentScanIntervalMillis,
+                         final MetricReceiverWrapper metricReceiver) {
         this.docker = docker;
         this.nodeAgentFactory = nodeAgentFactory;
         this.maintenanceScheduler = maintenanceScheduler;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
+
+        this.numberOfContainersInActiveState = metricReceiver.declageGauge("containers_in_active_state");
+        this.numberOfContainersInLoadImageState = metricReceiver.declageGauge("containers_in_load_image_state");
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
@@ -64,6 +74,21 @@ public class NodeAdminImpl implements NodeAdmin {
         maintenanceScheduler.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
         garbageCollectDockerImages(containersToRun);
+
+        updateNodeAgentMetrics();
+    }
+
+    private void updateNodeAgentMetrics() {
+        int numberContainersInActive = 0;
+        int numberContainersWaitingImage = 0;
+
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            if (nodeAgent.getContainerNodeSpec().nodeState == Node.State.active) numberContainersInActive++;
+            if (nodeAgent.isDownloadingImage()) numberContainersWaitingImage++;
+        }
+
+        numberOfContainersInActiveState.sample(numberContainersInActive);
+        numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
     }
 
     public boolean freezeNodeAgentsAndCheckIfAllFrozen() {
