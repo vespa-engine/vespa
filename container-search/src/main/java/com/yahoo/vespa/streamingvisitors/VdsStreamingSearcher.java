@@ -219,12 +219,10 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     private FastHit buildSummaryHit(Query query, SearchResult.Hit hit) {
         FastHit fastHit = new FastHit();
         fastHit.setQuery(query);
-        fastHit.setSource("VdsStreamingSearcher");
+        fastHit.setSource(getName());
         fastHit.setId(hit.getDocId());
-        // TODO: remove seField("uri", ...), just a helper for Velocity templates
-        fastHit.setField("uri", hit.getDocId());
-        fastHit.types().add("summary");
-
+        fastHit.setField("uri", hit.getDocId()); // TODO: Remove on Vespa 7
+        fastHit.types().add(FastHit.SUMMARY);
         fastHit.setRelevance(new Relevance(hit.getRank()));
 
         fastHit.setFillable();

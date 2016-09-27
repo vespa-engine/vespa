@@ -68,7 +68,7 @@ public class FastHit extends Hit {
 
     public FastHit(String uri, double relevance, String source) {
         setId(uri);
-        super.setField("uri", uri);
+        super.setField("uri", uri); // TODO: Remove on Vespa 7
         setRelevance(new Relevance(relevance));
         setSource(source);
         types().add(SUMMARY);
