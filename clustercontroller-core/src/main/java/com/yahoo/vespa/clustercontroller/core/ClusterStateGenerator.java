@@ -273,7 +273,7 @@ public class ClusterStateGenerator {
         return new Node(NodeType.STORAGE, index);
     }
 
-    // TODO we'll want to explicitly persist a bit upper bound in ZooKeeper and ensure we
+    // TODO we'll want to explicitly persist a bit lower bound in ZooKeeper and ensure we
     // never go below it (this is _not_ the case today). Nodes that have min bits lower than
     // this will just have to start splitting out in the background before being allowed
     // to join the cluster.
