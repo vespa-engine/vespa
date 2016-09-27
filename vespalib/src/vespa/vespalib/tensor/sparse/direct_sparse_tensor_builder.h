@@ -22,7 +22,6 @@ public:
     using Cells = typename TensorImplType::Cells;
     using AddressBuilderType = SparseTensorAddressBuilder;
     using AddressRefType = CompactTensorAddressRef;
-    using AddressType = CompactTensorAddress;
 
 private:
     Stash _stash;

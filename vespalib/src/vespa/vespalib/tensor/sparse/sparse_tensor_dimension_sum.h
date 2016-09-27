@@ -16,7 +16,6 @@ public:
     using TensorImplType = SparseTensor;
     using Parent = TensorOperation<SparseTensor>;
     using AddressBuilderType = typename Parent::AddressBuilderType;
-    using AddressType = typename Parent::AddressType;
     using Parent::_builder;
     SparseTensorDimensionSum(const TensorImplType &tensor,
                                 const vespalib::string &dimension);
