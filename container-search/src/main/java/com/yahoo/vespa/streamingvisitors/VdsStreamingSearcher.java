@@ -221,8 +221,6 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         fastHit.setQuery(query);
         fastHit.setSource(getName());
         fastHit.setId(hit.getDocId());
-        fastHit.setField("uri", hit.getDocId()); // TODO: Remove on Vespa 7
-        fastHit.types().add(FastHit.SUMMARY);
         fastHit.setRelevance(new Relevance(hit.getRank()));
 
         fastHit.setFillable();

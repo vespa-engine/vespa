@@ -62,16 +62,18 @@ public class FastHit extends Hit {
      */
     public FastHit() { }
 
+    // Note: This constructor is only used for tests, production use is always of the empty constructor
     public FastHit(String uri, double relevancy) {
         this(uri, relevancy, null);
     }
 
+    // Note: This constructor is only used for tests, production use is always of the empty constructor
     public FastHit(String uri, double relevance, String source) {
         setId(uri);
         super.setField("uri", uri); // TODO: Remove on Vespa 7
         setRelevance(new Relevance(relevance));
         setSource(source);
-        types().add(SUMMARY);
+        types().add(SUMMARY); // TODO: Remove on Vespa 7
         setPartId(0, 0);
     }
 
