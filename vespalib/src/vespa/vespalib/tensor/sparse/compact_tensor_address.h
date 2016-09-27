@@ -64,7 +64,6 @@ public:
     bool hasDimension(const vespalib::string &dimension) const;
     bool operator<(const CompactTensorAddress &rhs) const;
     bool operator==(const CompactTensorAddress &rhs) const;
-    void deserializeFromSparseAddressRef(CompactTensorAddressRef ref);
     void deserializeFromAddressRefV2(CompactTensorAddressRef ref,
                                      const TensorDimensions &dimensions);
 };

@@ -8,36 +8,6 @@
 namespace vespalib {
 namespace tensor {
 
-namespace
-{
-
-void
-setupElements(CompactTensorAddress::Elements &elements,
-              CompactTensorAddressRef ref)
-{
-    const char *cur = static_cast<const char *>(ref.start());
-    const char *end = cur + ref.size();
-    while (cur != end) {
-        const char *dim = cur;
-        while (*cur) {
-            ++cur;
-        }
-        ++cur;
-        const char *label = cur;
-        while (*cur) {
-            ++cur;
-        }
-        ++cur;
-        elements.emplace_back(vespalib::stringref(dim, label - 1 - dim),
-                              vespalib::stringref(label, cur - 1 - label));
-    }
-}
-
-
-}
-
-
-
 CompactTensorAddress::CompactTensorAddress()
     : _elements()
 {
@@ -75,15 +45,6 @@ bool
 CompactTensorAddress::operator==(const CompactTensorAddress &rhs) const
 {
     return _elements == rhs._elements;
-}
-
-
-void
-CompactTensorAddress::deserializeFromSparseAddressRef(CompactTensorAddressRef
-                                                      ref)
-{
-    _elements.clear();
-    setupElements(_elements, ref);
 }
 
 
