@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <vector>
-
 class Fast_BufferedInputStream;
 
 class Fast_HTTPHeaderParser
