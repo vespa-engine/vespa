@@ -6,6 +6,7 @@
 #include "tensor_address.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/eval/tensor.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
 #include <vespa/vespalib/eval/value_type.h>
 
 namespace vespalib {
@@ -41,6 +42,9 @@ struct Tensor : public eval::Tensor
     virtual void print(std::ostream &out) const = 0;
     virtual vespalib::string toString() const = 0;
     virtual Tensor::UP clone() const = 0;
+    virtual eval::TensorSpec toSpec() const {
+        return eval::TensorSpec(getType().to_spec());
+    }
     virtual void accept(TensorVisitor &visitor) const = 0;
 };
 

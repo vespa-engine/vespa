@@ -2,9 +2,20 @@
 
 #include <vespa/fastos/fastos.h>
 #include "tensor_spec.h"
+#include <iostream>
 
 namespace vespalib {
 namespace eval {
+
+std::ostream &operator<<(std::ostream &out, const TensorSpec::Label &label)
+{
+    if (label.is_indexed()) {
+        out << label.index;
+    } else {
+        out << label.name;
+    }
+    return out;
+}
 
 } // namespace vespalib::eval
 } // namespace vespalib

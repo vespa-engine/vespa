@@ -11,6 +11,7 @@
 #include <vespa/vespalib/tensor/tensor_visitor.h>
 #include <sstream>
 
+using vespalib::eval::TensorSpec;
 
 namespace vespalib {
 namespace tensor {
@@ -321,6 +322,33 @@ Tensor::UP
 DenseTensor::clone() const
 {
     return std::make_unique<DenseTensor>(_dimensionsMeta, _cells);
+}
+
+namespace {
+
+void
+buildAddress(const DenseTensor::CellsIterator &itr, TensorSpec::Address &address)
+{
+    auto addressItr = itr.address().begin();
+    for (const auto &dim : itr.dimensions()) {
+        address.emplace(std::make_pair(dim.dimension(), TensorSpec::Label(*addressItr++)));
+    }
+    assert(addressItr == itr.address().end());
+}
+
+}
+
+TensorSpec
+DenseTensor::toSpec() const
+{
+    TensorSpec result(getType().to_spec());
+    TensorSpec::Address address;
+    for (CellsIterator itr(_dimensionsMeta, _cells); itr.valid(); itr.next()) {
+        buildAddress(itr, address);
+        result.add(address, itr.cell());
+        address.clear();
+    }
+    return result;
 }
 
 void

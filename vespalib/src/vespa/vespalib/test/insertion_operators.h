@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <map>
 #include <ostream>
 #include <set>
 #include <vector>
@@ -38,6 +39,23 @@ operator<<(std::ostream &os, const std::vector<T> &set)
         first = false;
     }
     os << "]";
+    return os;
+}
+
+template <typename K, typename V>
+std::ostream &
+operator<<(std::ostream &os, const std::map<K, V> &map)
+{
+    os << "{";
+    bool first = true;
+    for (const auto &entry : map) {
+        if (!first) {
+            os << ",";
+        }
+        os << "{" << entry.first << "," << entry.second << "}";
+        first = false;
+    }
+    os << "}";
     return os;
 }
 

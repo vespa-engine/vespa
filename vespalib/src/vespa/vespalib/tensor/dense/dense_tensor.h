@@ -69,6 +69,7 @@ public:
         void next();
         double cell() const { return _cells[_cellIdx]; }
         const std::vector<size_t> &address() const { return _address; }
+        const DimensionsMeta &dimensions() const { return _dimensionsMeta; }
     };
 
 
@@ -103,6 +104,7 @@ public:
     virtual void print(std::ostream &out) const override;
     virtual vespalib::string toString() const override;
     virtual Tensor::UP clone() const override;
+    virtual eval::TensorSpec toSpec() const override;
     virtual void accept(TensorVisitor &visitor) const override;
 };
 
