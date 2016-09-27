@@ -48,10 +48,11 @@ DefaultTensorEngine::to_string(const Tensor &tensor) const
 }
 
 eval::TensorSpec
-DefaultTensorEngine::to_spec(const Tensor &) const
+DefaultTensorEngine::to_spec(const Tensor &tensor) const
 {
-    // temporary placeholder
-    return TensorSpec("double");
+    assert(&tensor.engine() == this);
+    const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
+    return my_tensor.toSpec();
 }
 
 struct IsAddOperation : public eval::DefaultOperationVisitor {
