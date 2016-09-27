@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.restapi.SecretAgentHandler;
 
 /**
  * Class for setting up instances of classes; enables testing.
@@ -10,4 +11,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
  */
 public interface ComponentsProvider {
     NodeAdminStateUpdater getNodeAdminStateUpdater();
+
+    SecretAgentHandler getSecretAgentHandler();
 }
