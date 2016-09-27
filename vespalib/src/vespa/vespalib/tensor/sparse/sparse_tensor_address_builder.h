@@ -10,8 +10,6 @@ namespace vespalib {
 namespace tensor {
 
 
-class CompactTensorAddress;
-
 /**
  * A writer to serialize tensor addresses into a compact representation.
  * All dimensions in the tensors are present, empty label is the "undefined"

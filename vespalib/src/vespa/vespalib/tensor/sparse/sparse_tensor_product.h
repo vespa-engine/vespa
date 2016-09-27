@@ -27,7 +27,6 @@ public:
     using Dimensions = typename Parent::Dimensions;
     using AddressBuilderType = typename Parent::AddressBuilderType;
     using AddressRefType = typename Parent::AddressRefType;
-    using AddressType = typename Parent::AddressType;
     using Parent::_builder;
 
 private:

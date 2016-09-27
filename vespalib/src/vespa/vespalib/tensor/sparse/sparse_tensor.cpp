@@ -31,6 +31,27 @@ copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
     }
 }
 
+void
+printAddress(std::ostream &out, const CompactTensorAddressRef &ref,
+             const TensorDimensions &dimensions)
+{
+    out << "{";
+    bool first = true;
+    SparseTensorAddressDecoder addr(ref);
+    for (auto &dim : dimensions) {
+        auto label = addr.decodeLabel();
+        if (label.size() != 0u) {
+            if (!first) {
+                out << ",";
+            }
+            out << dim << ":" << label;
+            first = false;
+        }
+    }
+    assert(!addr.valid());
+    out << "}";
+}
+
 }
 
 SparseTensor::SparseTensor(const Dimensions &dimensions_in,
@@ -228,13 +249,12 @@ SparseTensor::print(std::ostream &out) const
 {
     out << "{ ";
     bool first = true;
-    CompactTensorAddress addr;
     for (const auto &cell : cells()) {
         if (!first) {
             out << ", ";
         }
-        addr.deserializeFromAddressRefV2(cell.first, _dimensions);
-        out << addr << ":" << cell.second;
+        printAddress(out, cell.first, _dimensions);
+        out << ":" << cell.second;
         first = false;
     }
     out << " }";

@@ -21,7 +21,6 @@ public:
     using Cells = typename TensorImplType::Cells;
     using AddressBuilderType = typename MyTensorBuilder::AddressBuilderType;
     using AddressRefType = typename MyTensorBuilder::AddressRefType;
-    using AddressType = typename MyTensorBuilder::AddressType;
 protected:
     MyTensorBuilder _builder;
     Dimensions &_dimensions;
