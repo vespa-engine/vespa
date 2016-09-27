@@ -37,17 +37,17 @@ public class ClusterStateGenerator {
         public int idealDistributionBits = 16;
         public int highestObservedDistributionBitCount = 16;
         public int lowestObservedDistributionBitCount = 16;
-        public int maxInitProgressTime = 5000;
+        public int maxInitProgressTimeMs = 5000;
 
         Params() {
             this.transitionTimes = buildTransitionTimeMap(0, 0);
         }
 
         // FIXME de-dupe
-        static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTime, int storageTransitionTime) {
+        static Map<NodeType, Integer> buildTransitionTimeMap(int distributorTransitionTimeMs, int storageTransitionTimeMs) {
             Map<com.yahoo.vdslib.state.NodeType, java.lang.Integer> maxTransitionTime = new TreeMap<>();
-            maxTransitionTime.put(com.yahoo.vdslib.state.NodeType.DISTRIBUTOR, distributorTransitionTime);
-            maxTransitionTime.put(com.yahoo.vdslib.state.NodeType.STORAGE, storageTransitionTime);
+            maxTransitionTime.put(com.yahoo.vdslib.state.NodeType.DISTRIBUTOR, distributorTransitionTimeMs);
+            maxTransitionTime.put(com.yahoo.vdslib.state.NodeType.STORAGE, storageTransitionTimeMs);
             return maxTransitionTime;
         }
 
@@ -55,16 +55,16 @@ public class ClusterStateGenerator {
             this.cluster = cluster;
             return this;
         }
-        Params maxInitProgressTime(int maxTime) {
-            this.maxInitProgressTime = maxTime;
+        Params maxInitProgressTime(int maxTimeMs) {
+            this.maxInitProgressTimeMs = maxTimeMs;
             return this;
         }
         Params transitionTimes(int timeMs) {
             this.transitionTimes = buildTransitionTimeMap(timeMs, timeMs);
             return this;
         }
-        Params transitionTimes(Map<NodeType, Integer> times) {
-            this.transitionTimes = times;
+        Params transitionTimes(Map<NodeType, Integer> timesMs) {
+            this.transitionTimes = timesMs;
             return this;
         }
         Params currentTimeInMilllis(long currentTimeMs) {
@@ -205,7 +205,7 @@ public class ClusterStateGenerator {
         if (reported.getState() != State.INITIALIZING) {
             return false;
         }
-        return nodeInfo.getInitProgressTime() + params.maxInitProgressTime <= params.currentTimeInMillis;
+        return nodeInfo.getInitProgressTime() + params.maxInitProgressTimeMs <= params.currentTimeInMillis;
     }
 
     // Init while listing buckets should be treated as Down, as distributors expect a storage node

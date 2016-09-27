@@ -443,7 +443,7 @@ public class RpcServerTest extends FleetControllerTest {
             configuredNodes.add(new ConfiguredNode(6, false));
             FleetControllerOptions options = new FleetControllerOptions("mycluster", configuredNodes);
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
-            this.options.maxInitProgressTime = 30000;
+            this.options.maxInitProgressTimeMs = 30000;
             this.options.stableStateTimePeriod = 60000;
             fleetController.updateOptions(options, 0);
             for (int i = 0; i < 5*2; i++) {

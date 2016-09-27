@@ -6,7 +6,6 @@ import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.*;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
-import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
 import com.yahoo.vespa.clustercontroller.core.mocks.TestEventLog;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import junit.framework.TestCase;

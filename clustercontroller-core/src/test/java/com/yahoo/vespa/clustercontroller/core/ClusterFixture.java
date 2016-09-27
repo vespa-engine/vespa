@@ -158,8 +158,8 @@ class ClusterFixture {
         this.params.transitionTimes(0);
     }
 
-    void enableTransientMaintenanceModeOnDown(final int transitionTime) {
-        this.params.transitionTimes(transitionTime);
+    void enableTransientMaintenanceModeOnDown(final int transitionTimeMs) {
+        this.params.transitionTimes(transitionTimeMs);
     }
 
     AnnotatedClusterState annotatedGeneratedClusterState() {
