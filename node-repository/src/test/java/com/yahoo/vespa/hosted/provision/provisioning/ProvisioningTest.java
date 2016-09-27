@@ -467,7 +467,7 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void application_deployment_allocates_cheapest_available() {
+    public void application_deployment_prefers_cheapest_nodes_with_canonical_flavor() {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         tester.makeReadyNodes(6, "large"); //cost = 10
         tester.makeReadyNodes(6, "large-variant"); //cost = 9
@@ -476,7 +476,6 @@ public class ProvisioningTest {
         ApplicationId applicationId = tester.makeApplicationId();
         ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
         ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
-
 
         List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1, "large"); //should be replaced by 5 large-variant
         List<HostSpec> contentNodes = tester.prepare(applicationId, contentClusterSpec, 10, 1, "large"); // should give 1 large-variant, 6 large and 3 large-variant-variant
@@ -487,6 +486,23 @@ public class ProvisioningTest {
         tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant-variant", 3);
     }
 
+    @Test
+    public void application_deployment_prefers_exact_match_with_noncanonical_flavor() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        tester.makeReadyNodes(6, "large"); //cost = 10
+        tester.makeReadyNodes(8, "old-large2"); //cost = 14
+        System.out.println("old-large2 is canonical: " + tester.flavors().getFlavor("old-large2").get().isCanonical());
+        System.out.println("Large replaces" + tester.flavors().getFlavor("large").get().replaces());
+
+        ApplicationId applicationId = tester.makeApplicationId();
+        ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
+
+        List<HostSpec> contentNodes = tester.prepare(applicationId, contentClusterSpec, 10, 1, "old-large2");
+        
+        // old-large2 is preferred when explicitly specified even though it is more expensive
+        tester.assertNumberOfNodesWithFlavor(contentNodes, "old-large2", 8);
+        tester.assertNumberOfNodesWithFlavor(contentNodes, "large", 2);
+    }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups

@@ -5,13 +5,11 @@ import com.google.common.collect.ComparisonChain;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -67,7 +65,7 @@ class GroupPreparer {
             if (nodeList.saturated()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use active nodes from other groups that will otherwise be retired
-            List<Node> accepted = nodeList.offer(sortNodeListByCost(surplusActiveNodes), canChangeGroup);
+            List<Node> accepted = nodeList.offer(prioritizeNodes(surplusActiveNodes, requestedNodes), canChangeGroup);
             surplusActiveNodes.removeAll(accepted);
             if (nodeList.saturated()) return nodeList.finalNodes(surplusActiveNodes);
 
@@ -76,14 +74,14 @@ class GroupPreparer {
             if (nodeList.saturated()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use inactive nodes
-            accepted = nodeList.offer(sortNodeListByCost(nodeRepository.getNodes(application, Node.State.inactive)), !canChangeGroup);
+            accepted = nodeList.offer(prioritizeNodes(nodeRepository.getNodes(application, Node.State.inactive), requestedNodes), !canChangeGroup);
             nodeList.update(nodeRepository.reserve(accepted));
             if (nodeList.saturated()) return nodeList.finalNodes(surplusActiveNodes);
 
             // Use new, ready nodes. Lock ready pool to ensure that nodes are not grabbed by others.
             try (Mutex readyLock = nodeRepository.lockUnallocated()) {
                 List<Node> readyNodes = nodeRepository.getNodes(requestedNodes.type(), Node.State.ready);
-                accepted = nodeList.offer(stripeOverHosts(sortNodeListByCost(readyNodes)), !canChangeGroup);
+                accepted = nodeList.offer(stripeOverHosts(prioritizeNodes(readyNodes, requestedNodes)), !canChangeGroup);
                 nodeList.update(nodeRepository.reserve(accepted));
             }
 
@@ -101,13 +99,26 @@ class GroupPreparer {
         }
     }
 
-    /** Sort nodes according to their cost, and if the cost is equal, sort by hostname (to get stable tests) */
-    private List<Node> sortNodeListByCost(List<Node> nodeList) {
-        Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
-                .compare(n1.flavor().cost(), n2.flavor().cost())
-                .compare(n1.hostname(), n2.hostname())
-                .result()
-        );
+    /** 
+     * Returns the node list in prioritized order, where the nodes we would most prefer the application 
+     * to use comes first 
+     */
+    private List<Node> prioritizeNodes(List<Node> nodeList, NodeSpec nodeSpec) {
+        if (nodeSpec.specifiesExactFlavor()) { // sort by exact before inexact flavor match, increasing cost, hostname
+            Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
+                    .compareTrueFirst(nodeSpec.matchesExactly(n1.flavor()), nodeSpec.matchesExactly(n1.flavor()))
+                    .compare(n1.flavor().cost(), n2.flavor().cost())
+                    .compare(n1.hostname(), n2.hostname())
+                    .result()
+            );
+        }
+        else { // sort by increasing cost, hostname
+            Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
+                    .compare(n1.flavor().cost(), n2.flavor().cost())
+                    .compare(n1.hostname(), n2.hostname())
+                    .result()
+            );
+        }
         return nodeList;
     }
 

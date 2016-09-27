@@ -79,7 +79,7 @@ public class ProvisioningTester implements AutoCloseable {
         b.addFlavor("docker1", 1., 1., 10, Flavor.Type.DOCKER_CONTAINER).cost(1);
         b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.Type.VIRTUAL_MACHINE).cost(4);
         b.addFlavor("old-large1", 2., 4., 100, Flavor.Type.BARE_METAL).cost(6);
-        b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(8);
+        b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(14);
         NodeRepositoryConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
         b.addReplaces("old-large1", large);
         b.addReplaces("old-large2", large);
@@ -114,6 +114,7 @@ public class ProvisioningTester implements AutoCloseable {
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return new NodeList(nodeRepository.getNodes(id, inState)); }
+    public NodeFlavors flavors() { return nodeFlavors; }
 
     public void patchNode(Node node) { nodeRepository.write(node); }
 

@@ -78,11 +78,16 @@ public class Flavor {
      *
      * The logic is that we can use this to capture the gritty details of configurations in exact flavor names
      * but also encourage users to refer to them by a common name by letting such flavor variants declare that they
-     * replace the canonical name we want. However, if a node replaces multiple names, it means that a former
-     * flavor distinction has become obsolete so this name becomes one of the canonical names users should refer to.
+     * replace the canonical name we want. However, if a node replaces multiple names, we have no basis for choosing one
+     * of them as the canonical, so we return the current as canonical.
      */
     public String canonicalName() {
-        return replacesFlavors.size() == 1 ? replacesFlavors.get(0).canonicalName() : name;
+        return isCanonical() ? name : replacesFlavors.get(0).canonicalName();
+    }
+    
+    /** Returns whether this is a canonical flavor */
+    public boolean isCanonical() {
+        return replacesFlavors.size() != 1;
     }
 
     /**
