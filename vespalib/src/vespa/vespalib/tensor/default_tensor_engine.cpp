@@ -47,6 +47,13 @@ DefaultTensorEngine::to_string(const Tensor &tensor) const
     return my_tensor.toString();
 }
 
+eval::TensorSpec
+DefaultTensorEngine::to_spec(const Tensor &) const
+{
+    // temporary placeholder
+    return TensorSpec("double");
+}
+
 struct IsAddOperation : public eval::DefaultOperationVisitor {
     bool result = false;
     void visitDefault(const eval::Operation &) override {}
