@@ -163,28 +163,37 @@ vespalib::string infer_type(const Layout &layout) {
     return ValueType::tensor_type(dimensions).to_spec();
 }
 
-// Mix spaces with a number sequence to make a tensor spec
+// Wrapper for the things needed to generate a tensor
+struct Source {
+    using Address = TensorSpec::Address;
+
+    const Layout   &layout;
+    const Sequence &seq;
+    const Mask     &mask;
+    Source(const Layout &layout_in, const Sequence &seq_in, const Mask &mask_in)
+        : layout(layout_in), seq(seq_in), mask(mask_in) {}
+};
+
+// Mix layout with a number sequence to make a tensor spec
 class TensorSpecBuilder
 {
 private:
     using Label = TensorSpec::Label;
     using Address = TensorSpec::Address;
 
-    const Layout   &_layout;
-    const Sequence &_seq;
-    const Mask     &_mask;
-    TensorSpec      _spec;
-    Address         _addr;
-    size_t          _idx;
+    Source     _source;
+    TensorSpec _spec;
+    Address    _addr;
+    size_t     _idx;
 
     void generate(size_t layout_idx) {
-        if (layout_idx == _layout.size()) {
-            if (_mask[_idx]) {
-                _spec.add(_addr, _seq[_idx]);
+        if (layout_idx == _source.layout.size()) {
+            if (_source.mask[_idx]) {
+                _spec.add(_addr, _source.seq[_idx]);
             }
             ++_idx;
         } else {
-            const Domain &domain = _layout[layout_idx];
+            const Domain &domain = _source.layout[layout_idx];
             if (domain.size > 0) { // indexed
                 for (size_t i = 0; i < domain.size; ++i) {
                     _addr.emplace(domain.dimension, Label(i)).first->second = Label(i);
@@ -201,7 +210,7 @@ private:
 
 public:
     TensorSpecBuilder(const Layout &layout, const Sequence &seq, const Mask &mask)
-        : _layout(layout), _seq(seq), _mask(mask), _spec(infer_type(layout)), _addr(), _idx(0) {}
+        : _source(layout, seq, mask), _spec(infer_type(layout)), _addr(), _idx(0) {}
     TensorSpec build() {
         generate(0);
         return _spec;
