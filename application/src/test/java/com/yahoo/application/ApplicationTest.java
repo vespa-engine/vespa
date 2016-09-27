@@ -363,6 +363,16 @@ public class ApplicationTest {
             assertEquals(200, statusCode);
         }
     }
+    
+    @Test
+    public void application_with_document_api() {
+        String services = 
+                "<container version='1.0'>" + 
+                "    <document-api/>" +
+                "</container>";
+        try (Application application = Application.fromServicesXml(services, Networking.disable)) {
+        }        
+    }
 
     private static int getFreePort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {

@@ -60,23 +60,13 @@ public class DomV20ClientsBuilder {
     private final Clients clients;
 
     DomV20ClientsBuilder(Clients clients, String version) {
-        this.clients = clients;
-        if (!version.equals("2.0")) {
+        if ( ! version.equals("2.0"))
             throw new IllegalArgumentException("Version '" + version + "' of 'clients' not supported.");
-        }
+        this.clients = clients;
     }
 
     public void build(Element spec) {
-        NodeList children = spec.getElementsByTagName("gateways");
-        if (children.getLength() > 0 && clients.getConfigProducer()!=null)
-            clients.getConfigProducer().deployLogger().log(Level.WARNING, "The 'gateways' element is deprecated, and will be disallowed in a " +
-                    "later version of Vespa. Use 'document-api' under 'jdisc' instead, see: " +
-                    ConfigModelUtils.createDocLink("reference/services-jdisc.html"));
-        for (int i = 0; i < children.getLength(); i++) {
-            createGateways(clients.getConfigProducer(), (Element) children.item(i), clients);
-        }
-
-        children = spec.getElementsByTagName("spoolers");
+        NodeList children = spec.getElementsByTagName("spoolers");
         for (int i = 0; i < children.getLength(); i++) {
             createSpoolers(clients.getConfigProducer(), (Element) children.item(i), clients);
         }
@@ -87,59 +77,11 @@ public class DomV20ClientsBuilder {
         }
     }
 
-    static Boolean getBooleanNodeValue(Node node) {
-        return Boolean.valueOf(node.getFirstChild().getNodeValue());
-    }
-
-    static boolean getHttpFileServerEnabled(Element parentHttpFileServer, Element httpFileServer) {
-        boolean ret=false;
-        if (parentHttpFileServer != null) {
-            for (Element child : XML.getChildren(parentHttpFileServer)) {
-                if ("enabled".equals(child.getNodeName())) {
-                    ret = getBooleanNodeValue(child);
-                }
-            }
-        }
-        if (httpFileServer != null) {
-            for (Element child : XML.getChildren(httpFileServer)) {
-                if ("enabled".equals(child.getNodeName())) {
-                    ret = getBooleanNodeValue(child);
-                }
-            }
-        }
-        return ret;
-    }
-
     private void createLoadTypes(Element element, Clients clients) {
         for (Element e : XML.getChildren(element, "type")) {
             String priority = e.getAttribute("default-priority");
             clients.getLoadTypes().addType(e.getAttribute("name"), priority.length() > 0 ? priority : null);
         }
-    }
-
-    /**
-     * Creates HttpGateway objects using the given xml Element.
-     *
-     * @param pcp       AbstractConfigProducer
-     * @param element   The xml Element
-     */
-    private void createGateways(AbstractConfigProducer pcp, Element element, Clients clients) {
-        String jvmArgs = null;
-        if (element.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) jvmArgs=element.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-
-        Element gatewaysFeederOptions = findFeederOptions(element);
-
-        HttpGatewayOwner owner = new HttpGatewayOwner(pcp, getFeederConfig(null, gatewaysFeederOptions));
-        ContainerCluster cluster = new ContainerHttpGatewayClusterBuilder().build(owner, element);
-
-        int index = 0;
-        for (Element e : XML.getChildren(element, "gateway")) {
-            ContainerHttpGateway qrs = new ContainerHttpGatewayBuilder(cluster, index).build(cluster, e);
-
-            if ("".equals(qrs.getJvmArgs()) && jvmArgs!=null) qrs.setJvmArgs(jvmArgs);
-            index++;
-        }
-        clients.setContainerHttpGateways(cluster);
     }
 
     /**
@@ -170,13 +112,10 @@ public class DomV20ClientsBuilder {
         }
     }
 
-    private void createSpoolMasters(SimpleConfigProducer producer,
-            Element element) {
+    private void createSpoolMasters(SimpleConfigProducer producer, Element element) {
         int i=0;
-        for (Element e : XML.getChildren(element, "spoolmaster")) {
-            VespaSpoolMaster master = new VespaSpoolMasterBuilder(i).build(producer, e);
-            i++;
-        }
+        for (Element e : XML.getChildren(element, "spoolmaster"))
+            new VespaSpoolMasterBuilder(i++).build(producer, e);
     }
 
     private SpoolerConfig.Builder getSpoolConfig(Element conf) {
@@ -313,133 +252,6 @@ public class DomV20ClientsBuilder {
         }
     }
 
-    public static class ContainerHttpGatewayClusterBuilder extends DomConfigProducerBuilder<ContainerCluster> {
-        @Override
-        protected ContainerCluster doBuild(AbstractConfigProducer parent,
-                                                                 Element spec) {
-
-            ContainerCluster cluster = new ContainerCluster(parent, "gateway", "gateway");
-
-            SearchChains searchChains = new SearchChains(cluster, "searchchain");
-            Set<ComponentSpecification> inherited = new TreeSet<>();
-            //inherited.add(new ComponentSpecification("vespa", null, null));
-            {
-            SearchChain mySearchChain = new SearchChain(new ChainSpecification(new ComponentId("vespaget"),
-                    new ChainSpecification.Inheritance(inherited, null), new ArrayList<>(), new TreeSet<>()));
-            Searcher getComponent = newVespaClientSearcher("com.yahoo.storage.searcher.GetSearcher");
-            mySearchChain.addInnerComponent(getComponent);
-            searchChains.add(mySearchChain);
-            }
-            {
-                SearchChain mySearchChain = new SearchChain(new ChainSpecification(new ComponentId("vespavisit"),
-                        new ChainSpecification.Inheritance(inherited, null), new ArrayList<>(), new TreeSet<>()));
-                Searcher getComponent = newVespaClientSearcher("com.yahoo.storage.searcher.VisitSearcher");
-                mySearchChain.addInnerComponent(getComponent);
-                searchChains.add(mySearchChain);
-            }
-
-            ContainerSearch containerSearch = new ContainerSearch(cluster, searchChains, new ContainerSearch.Options());
-            cluster.setSearch(containerSearch);
-
-            cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandler", "http://*/feed"));
-            cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerRemove", "http://*/remove"));
-            cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerRemoveLocation", "http://*/removelocation"));
-            cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerGet", "http://*/get"));
-            cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerVisit", "http://*/visit"));
-            cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerCompatibility", "http://*/document"));
-            cluster.addComponent(newVespaClientHandler("com.yahoo.feedhandler.VespaFeedHandlerStatus", "http://*/feedstatus"));
-            final ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(
-                    cluster.getSearch().getChains(), "com.yahoo.search.handler.SearchHandler");
-            searchHandler.addServerBindings("http://*/search/*");
-            cluster.addComponent(searchHandler);
-
-            ContainerModelBuilder.addDefaultHandler_legacyBuilder(cluster);
-
-            //BEGIN HACK for docproc chains:
-            DocprocChains docprocChains = getDocprocChains(cluster, spec);
-            if (docprocChains != null) {
-                ContainerDocproc containerDocproc = new ContainerDocproc(cluster, docprocChains);
-                cluster.setDocproc(containerDocproc);
-            }
-            //END HACK
-
-            return cluster;
-        }
-
-        private Handler newVespaClientHandler(String componentId, String binding) {
-            Handler<AbstractConfigProducer<?>> handler = new Handler<>(new ComponentModel(
-                    BundleInstantiationSpecification.getFromStrings(componentId, null, vespaClientBundleSpecification), ""));
-            handler.addServerBindings(binding);
-            handler.addServerBindings(binding + '/');
-            return handler;
-        }
-
-        private Searcher newVespaClientSearcher(String componentSpec) {
-            return new Searcher<>(new ChainedComponentModel(
-                    BundleInstantiationSpecification.getFromStrings(componentSpec, null, vespaClientBundleSpecification),
-                            new Dependencies(null, null, null)));
-        }
-
-        //BEGIN HACK for docproc chains:
-        private DocprocChains getDocprocChains(AbstractConfigProducer qrs, Element gateways) {
-            Element clients = (Element) gateways.getParentNode();
-            Element services = (Element) clients.getParentNode();
-            if (services == null) {
-                return null;
-            }
-
-            Element docproc = XML.getChild(services, "docproc");
-            if (docproc == null) {
-                return null;
-            }
-
-            String version = docproc.getAttribute("version");
-            if (version.startsWith("1.")) {
-                return null;
-            } else if (version.startsWith("2.")) {
-                return null;
-            } else if (version.startsWith("3.")) {
-                return getDocprocChainsV3(qrs, docproc);
-            } else {
-                throw new IllegalArgumentException("Docproc version " + version + " unknown.");
-            }
-        }
-
-        private DocprocChains getDocprocChainsV3(AbstractConfigProducer qrs, Element docproc) {
-            Element docprocChainsElem = XML.getChild(docproc, "docprocchains");
-            if (docprocChainsElem == null) {
-                return null;
-            }
-            return new DomDocprocChainsBuilder(null, true).build(qrs, docprocChainsElem);
-        }
-        //END HACK
-    }
-
-    public static class ContainerHttpGatewayBuilder extends DomConfigProducerBuilder<ContainerHttpGateway> {
-        int index;
-        ContainerCluster cluster;
-
-        public ContainerHttpGatewayBuilder(ContainerCluster cluster, int index) {
-            this.index = index;
-            this.cluster = cluster;
-        }
-
-        @Override
-        protected ContainerHttpGateway doBuild(AbstractConfigProducer parent, Element spec) {
-            // TODO: remove port handling
-            int port = 19020;
-            if (spec != null && spec.hasAttribute("baseport")) {
-                port = Integer.parseInt(spec.getAttribute("baseport"));
-            }
-            ContainerHttpGateway httpGateway = new ContainerHttpGateway(cluster, "" + index, port, index);
-            List<Container> containers = new ArrayList<>();
-            containers.add(httpGateway);
-
-            cluster.addContainers(containers);
-            return httpGateway;
-        }
-    }
-
     /**
      * This class parses the feederoptions xml tag and produces Vespa config output.
      *
@@ -553,4 +365,5 @@ public class DomV20ClientsBuilder {
             return builder;
         }
     }
+
 }

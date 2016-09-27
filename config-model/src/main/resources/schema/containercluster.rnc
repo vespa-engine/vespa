@@ -161,7 +161,7 @@ ProcessingInContainer = element processing {
 
 
 
-# DOCUMENT API/GATEWAY:
+# DOCUMENT API:
 
 DocumentApi = element document-api {
    ServerBindings &
