@@ -22,7 +22,6 @@ import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -170,8 +169,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
         }
 
-        private void doVisit(final long timestamp, final Object payload, final boolean hasChildren)
-                throws IOException, JsonGenerationException {
+        private void doVisit(final long timestamp, final Object payload, final boolean hasChildren) throws IOException {
             boolean dirty = false;
             if (timestamp != 0L) {
                 header();
@@ -213,7 +211,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
         }
 
-        private void conditionalStartObject() throws IOException, JsonGenerationException {
+        private void conditionalStartObject() throws IOException {
             if (!isInsideOpenObject()) {
                 generator.writeStartObject();
             } else {
@@ -454,47 +452,39 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private boolean shouldRender(Hit hit) {
-        if (hit instanceof DefaultErrorHit) {
-            return false;
-        }
-
-        return true;
+        return ! (hit instanceof DefaultErrorHit);
     }
 
     private boolean fieldsStart(boolean hasFieldsField) throws IOException {
-        if (hasFieldsField) {
-            return true;
-        }
+        if (hasFieldsField) return true;
         generator.writeObjectFieldStart(FIELDS);
         return true;
     }
 
     private void fieldsEnd(boolean hasFieldsField) throws IOException {
-        if (!hasFieldsField) {
-            return;
-        }
+        if (!hasFieldsField) return;
         generator.writeEndObject();
     }
 
     private void renderHitContents(Hit hit) throws IOException {
         String id = hit.getDisplayId();
-        Set<String> types = hit.types();
-        String source = hit.getSource();
-
-        if (id != null) {
+        if (id != null)
             generator.writeStringField(ID, id);
-        }
+
         generator.writeNumberField(RELEVANCE, hit.getRelevance().getScore());
-        if (types.size() > 0) {
+
+        if (hit.types().size() > 0) { // TODO: Remove types rendering on Vespa 7
             generator.writeArrayFieldStart(TYPES);
-            for (String t : types) {
+            for (String t : hit.types()) {
                 generator.writeString(t);
             }
             generator.writeEndArray();
         }
-        if (source != null) {
+
+        String source = hit.getSource();
+        if (source != null)
             generator.writeStringField(SOURCE, hit.getSource());
-        }
+
         renderSpecialCasesForGrouping(hit);
 
         renderAllFields(hit);
@@ -522,55 +512,39 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private boolean shouldRender(String fieldName, Hit hit) {
-        if (debugRendering) {
-            return true;
-        }
-        if (fieldName.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) {
-            return false;
-        }
+        if (debugRendering) return true;
+
+        if (fieldName.startsWith(VESPA_HIDDEN_FIELD_PREFIX)) return false;
 
         RenderDecision r = lazyRenderAwareCheck(fieldName, hit);
-        if (r != RenderDecision.DO_NOT_KNOW) {
-            return r.booleanValue();
-        }
+        if (r != RenderDecision.DO_NOT_KNOW) return r.booleanValue();
 
         // this will trigger field decoding, so it is important the lazy decoding magic is done first
         Object field = hit.getField(fieldName);
 
-        if (field instanceof CharSequence && ((CharSequence) field).length() == 0) {
-            return false;
-        }
-        if (field instanceof StringFieldValue && ((StringFieldValue) field).getString().isEmpty()) {
-            // StringFieldValue cannot hold a null, so checking length directly is OK
-            return false;
-        }
-        if (field instanceof NanNumber) {
-            return false;
-        }
+        if (field instanceof CharSequence && ((CharSequence) field).length() == 0) return false;
+
+        // StringFieldValue cannot hold a null, so checking length directly is OK:
+        if (field instanceof StringFieldValue && ((StringFieldValue) field).getString().isEmpty()) return false;
+
+        if (field instanceof NanNumber) return false;
 
         return true;
     }
 
     private RenderDecision lazyRenderAwareCheck(String fieldName, Hit hit) {
-        if (!(hit instanceof FastHit)) return RenderDecision.DO_NOT_KNOW;
+        if ( ! (hit instanceof FastHit)) return RenderDecision.DO_NOT_KNOW;
 
         FastHit asFastHit = (FastHit) hit;
         if (asFastHit.fieldIsNotDecoded(fieldName)) {
-            FastHit.RawField r = asFastHit.fetchFieldAsUtf8(fieldName);
-            if (r != null) {
-                byte[] utf8 = r.getUtf8();
-                if (utf8.length == 0) {
-                    return RenderDecision.NO;
-                } else {
-                    return RenderDecision.YES;
-                }
-            }
+            FastHit.RawField rawField = asFastHit.fetchFieldAsUtf8(fieldName);
+            if (rawField != null)
+                return rawField.getUtf8().length == 0 ? RenderDecision.NO : RenderDecision.YES;
         }
         return RenderDecision.DO_NOT_KNOW;
     }
 
-    private void renderSpecialCasesForGrouping(Hit hit)
-            throws JsonGenerationException, IOException {
+    private void renderSpecialCasesForGrouping(Hit hit) throws IOException {
         if (hit instanceof AbstractList) {
             renderGroupingListSyntheticFields((AbstractList) hit);
         } else if (hit instanceof Group) {
@@ -578,8 +552,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
     }
 
-    private void renderGroupingGroupSyntheticFields(Hit hit)
-            throws JsonGenerationException, IOException {
+    private void renderGroupingGroupSyntheticFields(Hit hit) throws IOException {
         renderGroupMetadata(((Group) hit).getGroupId());
         if (hit instanceof RootGroup) {
             renderContinuations(Collections.singletonMap(
@@ -587,22 +560,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
     }
 
-    private void renderGroupingListSyntheticFields(AbstractList a)
-            throws JsonGenerationException, IOException {
+    private void renderGroupingListSyntheticFields(AbstractList a) throws IOException {
         writeGroupingLabel(a);
         renderContinuations(a.continuations());
     }
 
-    private void writeGroupingLabel(AbstractList a)
-            throws JsonGenerationException, IOException {
+    private void writeGroupingLabel(AbstractList a) throws IOException {
         generator.writeStringField(LABEL, a.getLabel());
     }
 
-    private void renderContinuations(Map<String, Continuation> continuations)
-            throws JsonGenerationException, IOException {
-        if (continuations.isEmpty()) {
-            return;
-        }
+    private void renderContinuations(Map<String, Continuation> continuations) throws IOException {
+        if (continuations.isEmpty()) return;
+
         generator.writeObjectFieldStart(CONTINUATION);
         for (Map.Entry<String, Continuation> e : continuations.entrySet()) {
             generator.writeStringField(e.getKey(), e.getValue().toString());
@@ -610,17 +579,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeEndObject();
     }
 
-    private void renderGroupMetadata(GroupId id) throws JsonGenerationException,
-            IOException {
-        if (!(id instanceof ValueGroupId || id instanceof BucketGroupId)) {
-            return;
-        }
+    private void renderGroupMetadata(GroupId id) throws IOException {
+        if (!(id instanceof ValueGroupId || id instanceof BucketGroupId)) return;
 
         if (id instanceof ValueGroupId) {
-            final ValueGroupId<?> valueId = (ValueGroupId<?>) id;
+            ValueGroupId<?> valueId = (ValueGroupId<?>) id;
             generator.writeStringField(GROUPING_VALUE, getIdValue(valueId));
-        } else if (id instanceof BucketGroupId) {
-            final BucketGroupId<?> bucketId = (BucketGroupId<?>) id;
+        } else {
+            BucketGroupId<?> bucketId = (BucketGroupId<?>) id;
             generator.writeObjectFieldStart(BUCKET_LIMITS);
             generator.writeStringField(BUCKET_FROM, getBucketFrom(bucketId));
             generator.writeStringField(BUCKET_TO, getBucketTo(bucketId));
@@ -629,18 +595,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private static String getIdValue(ValueGroupId<?> id) {
-        return (id instanceof RawId ? Arrays.toString(((RawId) id).getValue())
-                : id.getValue()).toString();
+        return (id instanceof RawId ? Arrays.toString(((RawId) id).getValue()) : id.getValue()).toString();
     }
 
     private static String getBucketFrom(BucketGroupId<?> id) {
-        return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id)
-                .getFrom()) : id.getFrom()).toString();
+        return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id).getFrom()) : id.getFrom()).toString();
     }
 
     private static String getBucketTo(BucketGroupId<?> id) {
-        return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id)
-                .getTo()) : id.getTo()).toString();
+        return (id instanceof RawBucketId ? Arrays.toString(((RawBucketId) id).getTo()) : id.getTo()).toString();
     }
 
     private boolean renderTotalHitCount(Hit hit, boolean hasFieldsField) throws IOException {
@@ -653,7 +616,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private void renderField(String fieldName, Hit hit) throws IOException {
         generator.writeFieldName(fieldName);
-        if (!tryDirectRendering(fieldName, hit)) {
+        if ( ! tryDirectRendering(fieldName, hit)) {
             renderFieldContents(hit.getField(fieldName));
         }
     }
