@@ -164,8 +164,7 @@ public class ClusterStateGenerator {
         final NodeState wanted   = nodeInfo.getWantedState();
         final NodeState baseline = reported.clone();
 
-        // TODO move shouldForceInitToDown into applyStorage...() ?
-        if (nodeIsConsideredTooUnstable(nodeInfo, params) || shouldForceInitToDown(nodeInfo, reported)) {
+        if (nodeIsConsideredTooUnstable(nodeInfo, params)) {
             baseline.setState(State.DOWN);
         }
         if (startupTimestampAlreadyObservedByAllNodes(nodeInfo, baseline)) {
@@ -186,6 +185,7 @@ public class ClusterStateGenerator {
     {
         if (reported.getState() == State.INITIALIZING) {
             if (timedOutWithoutNewInitProgress(reported, nodeInfo, params)
+                    || shouldForceInitToDown(reported)
                     || nodeInfo.recentlyObservedUnstableDuringInit())
             {
                 baseline.setState(State.DOWN);
@@ -208,18 +208,12 @@ public class ClusterStateGenerator {
         return nodeInfo.getInitProgressTime() + params.maxInitProgressTime <= params.currentTimeInMillis;
     }
 
-    private static boolean initializingNodeIsListingBuckets(final NodeState reported) {
-        return reported.getInitProgress() <= NodeState.getListingBucketsInitProgressLimit() + 0.00001;
-    }
-
     // Init while listing buckets should be treated as Down, as distributors expect a storage node
     // in Init mode to have a bucket set readily available. Clients also expect a node in Init to
     // be able to receive operations.
-    private static boolean shouldForceInitToDown(final NodeInfo nodeInfo, final NodeState reported) {
-        if (nodeInfo.isDistributor()) {
-            return false;
-        }
-        return reported.getState() == State.INITIALIZING && initializingNodeIsListingBuckets(reported);
+    // Precondition: reported.getState() == State.INITIALIZING
+    private static boolean shouldForceInitToDown(final NodeState reported) {
+        return reported.getInitProgress() <= NodeState.getListingBucketsInitProgressLimit() + 0.00001;
     }
 
     // Special case: since each node is published with a single state, if we let a Retired node
