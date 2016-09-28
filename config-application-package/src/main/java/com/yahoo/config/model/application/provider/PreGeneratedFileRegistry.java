@@ -83,11 +83,6 @@ public class PreGeneratedFileRegistry implements FileRegistry {
     }
 
     @Override
-    public Set<String> allRelativePaths() {
-        return path2Hash.keySet();
-    }
-
-    @Override
     public List<Entry> export() {
         List<Entry> entries = new ArrayList<>();
         for (Map.Entry<String, String> entry : path2Hash.entrySet()) {

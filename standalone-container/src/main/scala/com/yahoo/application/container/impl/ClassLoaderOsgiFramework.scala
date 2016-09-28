@@ -17,6 +17,8 @@ import org.osgi.framework.wiring._
 import org.osgi.resource.{Wire, Capability, Requirement}
 
 /**
+ * A (mock) OSGI implementation which loads classes from the system classpath
+ * 
  * @author tonytv
  */
 final class ClassLoaderOsgiFramework extends OsgiFramework {
@@ -197,4 +199,5 @@ final class ClassLoaderOsgiFramework extends OsgiFramework {
     override def createFilter(filter: String) = throw new UnsupportedOperationException
 
   }
+
 }

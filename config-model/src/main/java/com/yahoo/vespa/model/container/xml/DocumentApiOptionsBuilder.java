@@ -12,10 +12,11 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @since 5.1.11
  */
 public class DocumentApiOptionsBuilder {
+
     private static final Logger log = Logger.getLogger(DocumentApiOptionsBuilder.class.getName());
     private static final String[] DEFAULT_BINDINGS = {"http://*/", "https://*/"};
 
@@ -116,4 +117,5 @@ public class DocumentApiOptionsBuilder {
         String value = getCleanValue(spec, "abortondocumenterror");
         return value == null ? null : Boolean.parseBoolean(value);
     }
+
 }

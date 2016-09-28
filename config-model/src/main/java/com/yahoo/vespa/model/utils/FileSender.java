@@ -142,8 +142,10 @@ public class FileSender implements Serializable {
         FileReference reference = sentFiles.get(path);
         if (reference == null) {
             reference = sendFileToServices(path, services);
-            sentFiles.put(path, reference);
+            if (reference != null) // null when standalone TODO: Create admin in StandaloneContainerApplication instead
+                sentFiles.put(path, reference);
         }
-        builder.setValue(reference.value());
+        if (reference != null) // null when standalone TODO: Create admin in StandaloneContainerApplication instead
+            builder.setValue(reference.value());
     }
 }

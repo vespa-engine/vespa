@@ -28,6 +28,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -365,6 +366,7 @@ public class ApplicationTest {
     }
     
     @Test
+    @Ignore // TODO: New test
     public void application_with_document_api() {
         String services = 
                 "<container version='1.0'>" + 

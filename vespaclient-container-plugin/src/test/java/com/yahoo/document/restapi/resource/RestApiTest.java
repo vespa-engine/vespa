@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.restapi.resource;
 
-import com.yahoo.application.Application;
-import com.yahoo.application.Networking;
-import com.yahoo.application.container.handler.Request;
+//import com.yahoo.application.Application;
+//import com.yahoo.application.Networking;
+//import com.yahoo.application.container.handler.Request;
 import com.yahoo.container.Container;
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServer;
 import org.apache.http.HttpEntity;
@@ -33,6 +33,7 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertThat;
 
 public class RestApiTest {
+    /*
     Application application;
 
     @Before
@@ -295,5 +296,5 @@ public class RestApiTest {
                 (JettyHttpServer) Container.get().getServerProviderRegistry().allComponents().get(0);
         return Integer.toString(serverProvider.getListenPort());
     }
-
+*/
 }

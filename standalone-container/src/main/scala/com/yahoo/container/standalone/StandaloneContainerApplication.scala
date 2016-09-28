@@ -10,6 +10,7 @@ import java.io.{IOException, File}
 import com.yahoo.config.model.test.MockRoot
 import com.yahoo.config.model.application.provider._
 import com.yahoo.vespa.defaults.Defaults
+import com.yahoo.vespa.model.VespaModel
 import com.yahoo.vespa.model.container.xml.{ConfigServerContainerModelBuilder, ManhattanContainerModelBuilder, ContainerModelBuilder}
 import org.w3c.dom.Element
 import com.yahoo.config.model.builder.xml.XmlHelper
@@ -164,7 +165,7 @@ object StandaloneContainerApplication {
                            fileRegistry: FileRegistry,
                            preprocessedApplicationDir: File,
                            networkingOption: Networking,
-                           configModelRepo: ConfigModelRepo = new ConfigModelRepo): (MockRoot, Container) = {
+                           configModelRepo: ConfigModelRepo = new ConfigModelRepo): (VespaModel, Container) = {
     val logger = new BaseDeployLogger
     val rawApplicationPackage = new FilesApplicationPackage.Builder(applicationPath.toFile).includeSourceFiles(true).preprocessedDir(preprocessedApplicationDir).build()
     // TODO: Needed until we get rid of semantic rules
@@ -179,12 +180,14 @@ object StandaloneContainerApplication {
       configDefinitionRepo(configDefinitionRepo).
       build()
 
-    val root = new MockRoot("", deployState)
+    val root = VespaModel.createMutable(deployState)
     val vespaRoot = new ApplicationConfigProducerRoot(root,
       "vespa",
       deployState.getDocumentModel,
       deployState.getProperties.vespaVersion(),
       deployState.getProperties.applicationId())
+    
+    vespaRoot.setupAdmin(root.getAdmin) // TODO: Try to remove
 
     val spec = containerRootElement(applicationPackage)
     val containerModel = newContainerModelBuilder(networkingOption).build(deployState, configModelRepo, vespaRoot, spec)
@@ -197,6 +200,7 @@ object StandaloneContainerApplication {
     container.setHttpServerEnabled(networkingOption == Networking.enable)
 
     initializeContainer(container, spec)
+
     root.freezeModelTopology()
     (root, container)
   }

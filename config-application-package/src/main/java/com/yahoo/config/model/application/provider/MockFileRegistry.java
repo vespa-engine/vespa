@@ -35,8 +35,4 @@ public class MockFileRegistry implements FileRegistry {
         return result;
     }
 
-    @Override
-    public Set<String> allRelativePaths() {
-        return Collections.emptySet();
-    }
 }

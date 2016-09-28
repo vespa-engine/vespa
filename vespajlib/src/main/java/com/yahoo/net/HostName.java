@@ -20,8 +20,10 @@ public class HostName {
      *
      * @return the name of localhost.
      * @throws RuntimeException if executing the command 'hostname' fails.
-     * @see LinuxInetAddress if you need a host name/address which is reachable
      */
+    // Note. This will not currently return a FQDN in Mac.
+    // If that is needed, add 
+    // java.net.InetAddress.getByName(myHost).getCanonicalHostName()
     public static synchronized String getLocalhost() {
         if (myHost == null) {
             try {
@@ -38,4 +40,5 @@ public class HostName {
         }
         return myHost;
     }
+
 }

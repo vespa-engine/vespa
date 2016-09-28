@@ -18,8 +18,6 @@ public interface FileRegistry {
      */
     String fileSourceHost();
 
-    Set<String> allRelativePaths();
-
     List<Entry> export();
 
     class Entry {

@@ -7,8 +7,10 @@ package com.yahoo.config.model.api;
  * @author tonytv
  */
 public interface ConfigServerSpec {
-    public String getHostName();
-    public int getConfigServerPort();
-    public int getHttpPort();
-    public int getZooKeeperPort();
+
+    String getHostName();
+    int getConfigServerPort();
+    int getHttpPort();
+    int getZooKeeperPort();
+
 }
