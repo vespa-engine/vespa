@@ -365,16 +365,6 @@ public class ApplicationTest {
         }
     }
     
-    @Test
-    public void application_with_document_api() {
-        String services = 
-                "<container version='1.0'>" + 
-                "    <document-api/>" +
-                "</container>";
-        try (Application application = Application.fromServicesXml(services, Networking.enable)) {
-        }        
-    }
-
     private static int getFreePort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
             socket.setReuseAddress(true);

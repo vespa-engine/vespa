@@ -52,11 +52,6 @@
       <artifactId>zkfacade</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespaclient-container-plugin</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <!-- Because these are provided in jdisc_http_service and just preinstalled: -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
