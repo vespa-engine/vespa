@@ -3,6 +3,8 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
 
+import java.util.Objects;
+
 public class ClusterStateHistoryEntry {
 
     private final ClusterState state;
@@ -25,19 +27,14 @@ public class ClusterStateHistoryEntry {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         ClusterStateHistoryEntry that = (ClusterStateHistoryEntry) o;
-
-        if (time != that.time) return false;
-        return state.equals(that.state);
-
+        return time == that.time &&
+                Objects.equals(state, that.state);
     }
 
     @Override
     public int hashCode() {
-        int result = state.hashCode();
-        result = 31 * result + (int) (time ^ (time >>> 32));
-        return result;
+        return Objects.hash(state, time);
     }
 
     public String toString() {
