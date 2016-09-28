@@ -35,6 +35,14 @@ public class ContainerRestartValidatorTest {
         assertTrue(result.isEmpty());
     }
 
+    @Test
+    public void validator_returns_empty_list_for_containers_with_restart_on_deploy_disabled_where_previously_enabled() {
+        VespaModel current = createModel(true);
+        VespaModel next = createModel(false);
+        List<ConfigChangeAction> result = validateModel(current, next);
+        assertTrue(result.isEmpty());
+    }
+
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
         return new ContainerRestartValidator()
                 .validate(current, next, new ValidationOverrides(Collections.emptyList()));

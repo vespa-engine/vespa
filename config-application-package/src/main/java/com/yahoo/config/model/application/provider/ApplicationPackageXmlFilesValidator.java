@@ -55,6 +55,7 @@ public class ApplicationPackageXmlFilesValidator {
     public void checkApplication() throws IOException {
         validateHostsFile(SchemaValidator.hostsXmlSchemaName);
         validateServicesFile(SchemaValidator.servicesXmlSchemaName);
+        validateDeploymentFile(SchemaValidator.deploymentXmlSchemaName);
 
         if (appDirs.searchdefinitions().exists()) {
             if (FilesApplicationPackage.getSearchDefinitionFiles(appDirs.root()).isEmpty()) {
@@ -81,12 +82,17 @@ public class ApplicationPackageXmlFilesValidator {
         if (appDirs.file(FilesApplicationPackage.HOSTS).exists()) {
             validate(hostsXmlSchemaName, FilesApplicationPackage.HOSTS);
         }
-
     }
 
     private void validateServicesFile(String servicesXmlSchemaName) throws IOException {
         // vespa-services.xml or services.xml. Fallback to vespa-services.xml
         validate(servicesXmlSchemaName, servicesFileName());
+    }
+
+    private void validateDeploymentFile(String deploymentXmlSchemaName) throws IOException {
+        if (appDirs.file(FilesApplicationPackage.DEPLOYMENT_FILE.getName()).exists()) {
+            validate(deploymentXmlSchemaName, FilesApplicationPackage.DEPLOYMENT_FILE.getName());
+        }
     }
 
     private void validate(String schemaName, String xmlFileName) throws IOException {

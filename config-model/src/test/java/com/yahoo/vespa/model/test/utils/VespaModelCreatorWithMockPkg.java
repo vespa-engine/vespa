@@ -55,12 +55,13 @@ public class VespaModelCreatorWithMockPkg {
             VespaModel model = new VespaModel(configModelRegistry, deployState);
             if (validate) {
                 try {
-                    SchemaValidator validator = SchemaValidator.createTestValidatorHosts();
                     if (appPkg.getHosts() != null) {
-                        validator.validate(appPkg.getHosts());
+                        SchemaValidator.createTestValidatorHosts().validate(appPkg.getHosts());
                     }
-                    validator = SchemaValidator.createTestValidatorServices();
-                    validator.validate(appPkg.getServices());
+                    if (appPkg.getDeployment().isPresent()) {
+                        SchemaValidator.createTestValidatorDeployment().validate(appPkg.getDeployment().get());
+                    }
+                    SchemaValidator.createTestValidatorServices().validate(appPkg.getServices());
                 } catch (Exception e) {
                     System.err.println(e.getClass());
                     throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);

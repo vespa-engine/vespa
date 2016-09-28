@@ -203,6 +203,20 @@ public class ApplicationDeployTest {
         assertThat(getSearchDefinitions(app).size(), is(6));
     }
 
+    @Test
+    public void testThatAppWithDeploymentXmlIsValid() throws IOException {
+        File tmpDir = Files.createTempDir();
+        IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
+        createAppPkg(tmpDir.getAbsolutePath());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testThatAppWithIllegalDeploymentXmlIsNotValid() throws IOException {
+        File tmpDir = Files.createTempDir();
+        IOUtils.copyDirectory(new File(TESTDIR, "app_invalid_deployment_xml"), tmpDir);
+        createAppPkg(tmpDir.getAbsolutePath());
+    }
+
     private List<SearchDefinition> getSearchDefinitions(FilesApplicationPackage app) {
         return new DeployState.Builder().applicationPackage(app).build().getSearchDefinitions();
     }
