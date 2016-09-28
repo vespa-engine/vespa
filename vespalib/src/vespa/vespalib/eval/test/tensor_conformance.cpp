@@ -216,24 +216,39 @@ public:
         return _spec;
     }
 };
-
-using Tensor_UP = std::unique_ptr<Tensor>;
-
-// small utility used to capture passed tensor references for uniform handling
-struct TensorRef {
-    const Tensor &ref;
-    TensorRef(const Tensor &ref_in) : ref(ref_in) {}
-    TensorRef(const Tensor_UP &up_ref) : ref(*(up_ref.get())) {}
-};
+TensorSpec spec(const Layout &layout, const Sequence &seq, const Mask &mask) {
+    return TensorSpecBuilder(layout, seq, mask).build();
+}
+TensorSpec spec(const Layout &layout, const Sequence &seq) {
+    return spec(layout, seq, All());
+}
+TensorSpec spec(const Layout &layout) {
+    return spec(layout, Seq(), None());
+}
+TensorSpec spec(const Domain &domain, const Sequence &seq, const Mask &mask) {
+    return spec(Layout({domain}), seq, mask);
+}
+TensorSpec spec(const Domain &domain, const Sequence &seq) {
+    return spec(Layout({domain}), seq);
+}
+TensorSpec spec(const Domain &domain) {
+    return spec(Layout({domain}));
+}
+TensorSpec spec(double value) {
+    return spec(Layout({}), Seq({value}));
+}
+TensorSpec spec() {
+    return spec(Layout({}));
+}
 
 // abstract evaluation verification wrapper
 struct Eval {
-    virtual void verify(const TensorEngine &engine, TensorRef expect) const {
+    virtual void verify(const TensorEngine &engine, const TensorSpec &expect) const {
         (void) engine;
         (void) expect;
         TEST_ERROR("wrong signature");
     }
-    virtual void verify(const TensorEngine &engine, TensorRef a, TensorRef expect) const {
+    virtual void verify(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &expect) const {
         (void) engine;
         (void) a;
         (void) expect;
@@ -246,13 +261,13 @@ struct Eval {
 struct Expr_V_T : Eval {
     const vespalib::string &expr;
     Expr_V_T(const vespalib::string &expr_in) : expr(expr_in) {}
-    void verify(const TensorEngine &engine, TensorRef expect) const override {
+    void verify(const TensorEngine &engine, const TensorSpec &expect) const override {
         InterpretedFunction::Context ctx;
         InterpretedFunction ifun(engine, Function::parse(expr));
         const Value &result = ifun.eval(ctx);
         if (EXPECT_TRUE(result.is_tensor())) {
-            const Tensor *actual = result.as_tensor();
-            EXPECT_EQUAL(*actual, expect.ref);
+            TensorSpec actual = engine.to_spec(*result.as_tensor());
+            EXPECT_EQUAL(actual, expect);
         }
     }
 };
@@ -261,15 +276,15 @@ struct Expr_V_T : Eval {
 struct Expr_T_T : Eval {
     const vespalib::string &expr;
     Expr_T_T(const vespalib::string &expr_in) : expr(expr_in) {}
-    void verify(const TensorEngine &engine, TensorRef a, TensorRef expect) const override {
-        TensorValue va(a.ref);
+    void verify(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &expect) const override {
+        TensorValue va(engine.create(a));
         InterpretedFunction::Context ctx;
         InterpretedFunction ifun(engine, Function::parse(expr));
         ctx.add_param(va);
         const Value &result = ifun.eval(ctx);
         if (EXPECT_TRUE(result.is_tensor())) {
-            const Tensor *actual = result.as_tensor();
-            EXPECT_EQUAL(*actual, expect.ref);
+            TensorSpec actual = engine.to_spec(*result.as_tensor());
+            EXPECT_EQUAL(actual, expect);
         }
     }
 };
@@ -278,12 +293,12 @@ struct Expr_T_T : Eval {
 struct ImmediateMap : Eval {
     const UnaryOperation &op;
     ImmediateMap(const UnaryOperation &op_in) : op(op_in) {}
-    void verify(const TensorEngine &engine, TensorRef a, TensorRef expect) const override {
+    void verify(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &expect) const override {
         Stash stash;
-        const Value &result = engine.map(op, a.ref, stash);
+        const Value &result = engine.map(op, *engine.create(a), stash);
         if (EXPECT_TRUE(result.is_tensor())) {
-            const Tensor *actual = result.as_tensor();
-            EXPECT_EQUAL(*actual, expect.ref);
+            TensorSpec actual = engine.to_spec(*result.as_tensor());
+            EXPECT_EQUAL(actual, expect);
         }
     }
 };
@@ -295,7 +310,7 @@ const size_t map_operation_id = 22;
 struct TensorMapInput : TensorFunction::Input {
     TensorValue tensor;
     const UnaryOperation &map_op;
-    TensorMapInput(TensorRef in, const UnaryOperation &op) : tensor(in.ref), map_op(op) {}
+    TensorMapInput(std::unique_ptr<Tensor> in, const UnaryOperation &op) : tensor(std::move(in)), map_op(op) {}
     const Value &get_tensor(size_t id) const override {
         ASSERT_EQUAL(id, tensor_id);
         return tensor;
@@ -310,16 +325,16 @@ struct TensorMapInput : TensorFunction::Input {
 struct RetainedMap : Eval {
     const UnaryOperation &op;
     RetainedMap(const UnaryOperation &op_in) : op(op_in) {}
-    void verify(const TensorEngine &engine, TensorRef a, TensorRef expect) const override {
-        auto a_type = a.ref.engine().type_of(a.ref);
+    void verify(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &expect) const override {
+        auto a_type = ValueType::from_spec(a.type());
         auto ir = tensor_function::map(map_operation_id, tensor_function::inject(a_type, tensor_id));
         auto fun = engine.compile(std::move(ir));
-        TensorMapInput input(a, op);
+        TensorMapInput input(engine.create(a), op);
         Stash stash;
         const Value &result = fun->eval(input, stash);
         if (EXPECT_TRUE(result.is_tensor())) {
-            const Tensor *actual = result.as_tensor();
-            EXPECT_EQUAL(*actual, expect.ref);
+            TensorSpec actual = engine.to_spec(*result.as_tensor());
+            EXPECT_EQUAL(actual, expect);
         }
     }
 };
@@ -340,39 +355,17 @@ struct TestContext {
     TestContext(const TensorEngine &engine_in, bool test_mixed_cases_in)
         : engine(engine_in), test_mixed_cases(test_mixed_cases_in), skip_count(0) {}
 
+    std::unique_ptr<Tensor> tensor(const TensorSpec &spec) {
+        auto result = engine.create(spec);
+        EXPECT_EQUAL(spec.type(), engine.type_of(*result).to_spec());
+        return result;
+    }
+
     bool mixed(size_t n) {
         if (!test_mixed_cases) {
             skip_count += n;
         }
         return test_mixed_cases;
-    }
-
-    Tensor_UP tensor(const Layout &layout, const Sequence &seq, const Mask &mask) {
-        TensorSpec spec = TensorSpecBuilder(layout, seq, mask).build();
-        Tensor_UP result = engine.create(spec);
-        EXPECT_EQUAL(spec.type(), engine.type_of(*result).to_spec());
-        return result;
-    }
-    Tensor_UP tensor(const Layout &layout, const Sequence &seq) {
-        return tensor(layout, seq, All());
-    }
-    Tensor_UP tensor(const Layout &layout) {
-        return tensor(layout, Seq(), None());
-    }
-    Tensor_UP tensor(const Domain &domain, const Sequence &seq, const Mask &mask) {
-        return tensor(Layout({domain}), seq, mask);
-    }
-    Tensor_UP tensor(const Domain &domain, const Sequence &seq) {
-        return tensor(Layout({domain}), seq);
-    }
-    Tensor_UP tensor(const Domain &domain) {
-        return tensor(Layout({domain}));
-    }
-    Tensor_UP tensor(double value) {
-        return tensor(Layout({}), Seq({value}));
-    }
-    Tensor_UP tensor() {
-        return tensor(Layout({}));
     }
 
     void verify_create_type(const vespalib::string &type_spec) {
@@ -381,12 +374,23 @@ struct TestContext {
         EXPECT_EQUAL(type_spec, engine.type_of(*tensor).to_spec());
     }
 
-    void verify_not_equal(TensorRef a, TensorRef b) {
-        EXPECT_FALSE(a.ref == b.ref);
-        EXPECT_FALSE(b.ref == a.ref);
+    void verify_equal(const TensorSpec &a, const TensorSpec &b) {
+        auto ta = tensor(a);
+        auto tb = tensor(b);
+        EXPECT_EQUAL(a, b);
+        EXPECT_EQUAL(*ta, *tb);
     }
 
-    void verify_verbatim_tensor(const vespalib::string &tensor_expr, TensorRef expect) {
+    void verify_not_equal(const TensorSpec &a, const TensorSpec &b) {
+        auto ta = tensor(a);
+        auto tb = tensor(b);
+        EXPECT_NOT_EQUAL(a, b);
+        EXPECT_NOT_EQUAL(b, a);
+        EXPECT_NOT_EQUAL(*ta, *tb);
+        EXPECT_NOT_EQUAL(*tb, *ta);
+    }
+
+    void verify_verbatim_tensor(const vespalib::string &tensor_expr, const TensorSpec &expect) {
         Expr_V_T(tensor_expr).verify(engine, expect);
     }
 
@@ -402,36 +406,50 @@ struct TestContext {
         }
     }
 
+    void test_tensor_equality() {
+        TEST_DO(verify_equal(spec(), spec()));
+        TEST_DO(verify_equal(spec(10.0), spec(10.0)));
+        TEST_DO(verify_equal(spec(x()), spec(x())));
+        TEST_DO(verify_equal(spec(x({"a"}), Seq({1})), spec(x({"a"}), Seq({1}))));
+        TEST_DO(verify_equal(spec({x({"a"}),y({"a"})}, Seq({1})), spec({y({"a"}),x({"a"})}, Seq({1}))));
+        TEST_DO(verify_equal(spec(x(3)), spec(x(3))));
+        TEST_DO(verify_equal(spec({x(1),y(1)}, Seq({1})), spec({y(1),x(1)}, Seq({1}))));
+        if (mixed(2)) {
+            TEST_DO(verify_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({y(1),x({"a"})}, Seq({1}))));
+            TEST_DO(verify_equal(spec({y({"a"}),x(1)}, Seq({1})), spec({x(1),y({"a"})}, Seq({1}))));
+        }
+    }
+
     void test_tensor_inequality() {
-        TEST_DO(verify_not_equal(tensor(1.0), tensor(2.0)));
-        TEST_DO(verify_not_equal(tensor(), tensor(x())));
-        TEST_DO(verify_not_equal(tensor(), tensor(x(1))));
-        TEST_DO(verify_not_equal(tensor(x()), tensor(x(1))));
-        TEST_DO(verify_not_equal(tensor(x()), tensor(y())));
-        TEST_DO(verify_not_equal(tensor(x(1)), tensor(x(2))));
-        TEST_DO(verify_not_equal(tensor(x(1)), tensor(y(1))));
-        TEST_DO(verify_not_equal(tensor(x({"a"}), Seq({1})), tensor(x({"a"}), Seq({2}))));
-        TEST_DO(verify_not_equal(tensor(x({"a"}), Seq({1})), tensor(x({"b"}), Seq({1}))));
-        TEST_DO(verify_not_equal(tensor(x({"a"}), Seq({1})), tensor({x({"a"}),y({"a"})}, Seq({1}))));
-        TEST_DO(verify_not_equal(tensor(x(1), Seq({1})), tensor(x(1), Seq({2}))));
-        TEST_DO(verify_not_equal(tensor(x(1), Seq({1})), tensor(x(2), Seq({1}), Bits({1,0}))));
-        TEST_DO(verify_not_equal(tensor(x(2), Seq({1,1}), Bits({1,0})),
-                                 tensor(x(2), Seq({1,1}), Bits({0,1}))));
-        TEST_DO(verify_not_equal(tensor(x(1), Seq({1})), tensor({x(1),y(1)}, Seq({1}))));
+        TEST_DO(verify_not_equal(spec(1.0), spec(2.0)));
+        TEST_DO(verify_not_equal(spec(), spec(x())));
+        TEST_DO(verify_not_equal(spec(), spec(x(1))));
+        TEST_DO(verify_not_equal(spec(x()), spec(x(1))));
+        TEST_DO(verify_not_equal(spec(x()), spec(y())));
+        TEST_DO(verify_not_equal(spec(x(1)), spec(x(2))));
+        TEST_DO(verify_not_equal(spec(x(1)), spec(y(1))));
+        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec(x({"a"}), Seq({2}))));
+        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec(x({"b"}), Seq({1}))));
+        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec({x({"a"}),y({"a"})}, Seq({1}))));
+        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec(x(1), Seq({2}))));
+        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec(x(2), Seq({1}), Bits({1,0}))));
+        TEST_DO(verify_not_equal(spec(x(2), Seq({1,1}), Bits({1,0})),
+                                 spec(x(2), Seq({1,1}), Bits({0,1}))));
+        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec({x(1),y(1)}, Seq({1}))));
         if (mixed(3)) {
-            TEST_DO(verify_not_equal(tensor({x({"a"}),y(1)}, Seq({1})), tensor({x({"a"}),y(1)}, Seq({2}))));
-            TEST_DO(verify_not_equal(tensor({x({"a"}),y(1)}, Seq({1})), tensor({x({"b"}),y(1)}, Seq({1}))));
-            TEST_DO(verify_not_equal(tensor({x(2),y({"a"})}, Seq({1}), Bits({1,0})),
-                                     tensor({x(2),y({"a"})}, Seq({X,1}), Bits({0,1}))));
+            TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"a"}),y(1)}, Seq({2}))));
+            TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"b"}),y(1)}, Seq({1}))));
+            TEST_DO(verify_not_equal(spec({x(2),y({"a"})}, Seq({1}), Bits({1,0})),
+                                     spec({x(2),y({"a"})}, Seq({X,1}), Bits({0,1}))));
         }
     }
 
     void test_verbatim_tensors() {
-        TEST_DO(verify_verbatim_tensor("{}", tensor()));
-        TEST_DO(verify_verbatim_tensor("{{}:5}", tensor(5.0)));
-        TEST_DO(verify_verbatim_tensor("{{x:foo}:1,{x:bar}:2,{x:baz}:3}", tensor(x({"foo","bar","baz"}), Seq({1,2,3}))));
+        TEST_DO(verify_verbatim_tensor("{}", spec(0.0)));
+        TEST_DO(verify_verbatim_tensor("{{}:5}", spec(5.0)));
+        TEST_DO(verify_verbatim_tensor("{{x:foo}:1,{x:bar}:2,{x:baz}:3}", spec(x({"foo","bar","baz"}), Seq({1,2,3}))));
         TEST_DO(verify_verbatim_tensor("{{x:foo,y:a}:1,{y:b,x:bar}:2}",
-                                       tensor({x({"foo","bar"}),y({"a","b"})}, Seq({1,X,X,2}), Bits({1,0,0,1}))));
+                                       spec({x({"foo","bar"}),y({"a","b"})}, Seq({1,X,X,2}), Bits({1,0,0,1}))));
     }
 
     void test_map_op(const Eval &eval, const UnaryOperation &ref_op, const Sequence &seq) {
@@ -449,7 +467,7 @@ struct TestContext {
             layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
         }
         for (const Layout &layout: layouts) {
-            TEST_DO(eval.verify(engine, tensor(layout, seq), tensor(layout, OpSeq(seq, ref_op))));
+            TEST_DO(eval.verify(engine, spec(layout, seq), spec(layout, OpSeq(seq, ref_op))));
         }
     }
 
@@ -486,6 +504,7 @@ struct TestContext {
 
     void run_tests() {
         TEST_DO(test_tensor_create_type());
+        TEST_DO(test_tensor_equality());
         TEST_DO(test_tensor_inequality());
         TEST_DO(test_verbatim_tensors());
         TEST_DO(test_tensor_map());
