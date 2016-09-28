@@ -206,7 +206,7 @@ public class LogConnection implements Connection {
                     return;
                 }
                 int count = 200;
-                log.log(LogLevel.WARNING, "Log message too long. Message from "
+                log.log(LogLevel.DEBUG, "Log message too long. Message from "
                         + socket.socket().getInetAddress() +  " exceeds "
                         + readBuffer.capacity()
                         + ". Skipping buffer (might be part of same long message). Printing first " + count + " characters of line: " +
