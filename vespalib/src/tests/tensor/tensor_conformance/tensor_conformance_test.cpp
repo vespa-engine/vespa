@@ -16,8 +16,4 @@ IGNORE_TEST("require that production tensor implementation passes non-mixed conf
     TEST_DO(TensorConformance::run_tests(DefaultTensorEngine::ref(), false));
 }
 
-IGNORE_TEST("require that production tensor implementation passes all conformance tests") {
-    TEST_DO(TensorConformance::run_tests(DefaultTensorEngine::ref(), true));
-}
-
 TEST_MAIN() { TEST_RUN_ALL(); }
