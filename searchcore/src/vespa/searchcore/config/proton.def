@@ -171,12 +171,21 @@ grouping.sessionmanager.maxentries int default=500 restart
 ## Control of pruning interval to remove sessions that have timed out
 grouping.sessionmanager.pruning.interval double default=1.0
 
+## Redundancy of documents.
+distribution.redundancy long default=1 restart
+
+## Searchable copies of the documents.
+distribution.searchablecopies long default=1 restart
+
 ## Minimum initial size for any per document tables.
-grow.initial int default=1024 restart
+grow.initial long default=1024 restart
+
 ## Grow factor in percent for any per document tables.
 grow.factor int default=50 restart
+
 ## Constant added when growing any per document tables.
 grow.add int default=1 restart
+
 ## The number of documents to amortize memory spike cost over
 grow.numdocs int default=10000 restart
 
