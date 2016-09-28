@@ -10,7 +10,7 @@ import java.util.Map;
  * @author valerijf
  */
 public class SecretAgentHandler {
-    private final String applicationName = "node-admin";
+    private final String applicationName = "docker";
     private final String hostName;
     private final MetricReceiverWrapper metricReceiver;
 
