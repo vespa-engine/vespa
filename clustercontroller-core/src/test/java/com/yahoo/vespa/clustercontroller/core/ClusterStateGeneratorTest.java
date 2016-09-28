@@ -35,6 +35,9 @@ public class ClusterStateGeneratorTest {
         final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
         assertThat(state.getClusterState().getClusterState(), is(State.DOWN));
+        // The returned message in this case depends on which "is cluster down?" check
+        // kicks in first. Currently, the minimum storage node count does.
+        assertThat(state.getClusterStateReason(), equalTo(Optional.of(ClusterStateReason.TOO_FEW_STORAGE_NODES_AVAILABLE)));
     }
 
     @Test
