@@ -10,9 +10,10 @@
     <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerImpl" bundle="docker-api"/>
 
     <config name='vespa.hosted.dockerapi.docker'>
-      <caCertPath>/host/docker/certs/ca_cert.pem</caCertPath>
-      <clientCertPath>/host/docker/certs/client_cert.pem</clientCertPath>
-      <clientKeyPath>/host/docker/certs/client_key.pem</clientKeyPath>
+      <uri>tcp://localhost:2376</uri>
+      <caCertPath></caCertPath>
+      <clientCertPath></clientCertPath>
+      <clientKeyPath></clientKeyPath>
     </config>
   </jdisc>
 </services>
