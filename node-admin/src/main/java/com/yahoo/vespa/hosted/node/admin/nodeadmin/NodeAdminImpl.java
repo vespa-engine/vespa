@@ -66,9 +66,9 @@ public class NodeAdminImpl implements NodeAdmin {
         this.maintenanceScheduler = maintenanceScheduler;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
 
-        this.numberOfContainersInActiveState = metricReceiver.declageGauge("containers_in_active_state");
-        this.numberOfContainersInLoadImageState = metricReceiver.declageGauge("containers_in_load_image_state");
-        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter("unhandled_exceptions_in_node_agent");
+        this.numberOfContainersInActiveState = metricReceiver.declageGauge("nodes.state.active");
+        this.numberOfContainersInLoadImageState = metricReceiver.declageGauge("nodes.image.loading");
+        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter("nodes.unhandled_exceptions");
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
