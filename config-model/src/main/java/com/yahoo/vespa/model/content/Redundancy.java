@@ -2,13 +2,14 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.StorDistributionConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 
 /**
  * Configuration of the redundancy of a content cluster.
  *
  * @author bratseth
  */
-public class Redundancy implements StorDistributionConfig.Producer {
+public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig.Producer {
 
     private final int initialRedundancy ;
     private final int finalRedundancy;
@@ -53,5 +54,13 @@ public class Redundancy implements StorDistributionConfig.Producer {
         builder.initial_redundancy(effectiveInitialRedundancy());
         builder.redundancy(effectiveFinalRedundancy());
         builder.ready_copies(effectiveReadyCopies());
+    }
+    @Override
+    public void getConfig(ProtonConfig.Builder builder) {
+        ProtonConfig.Distribution.Builder distBuilder = new ProtonConfig.Distribution.Builder();
+        distBuilder.redundancy(finalRedundancy);
+        distBuilder.searchablecopies(readyCopies);
+        builder.distribution(distBuilder);
+
     }
 }

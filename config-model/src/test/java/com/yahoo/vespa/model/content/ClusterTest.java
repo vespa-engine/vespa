@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.metrics.MetricsmanagerConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -35,8 +36,7 @@ public class ClusterTest extends ContentBaseTest {
 
     @Test
     public void testRedundancy() {
-        StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
-        parse("" +
+        ContentCluster cc = parse("" +
                 "<content version=\"1.0\" id=\"storage\">\n" +
                 "  <documents/>" +
                 "  <engine>" +
@@ -53,12 +53,19 @@ public class ClusterTest extends ContentBaseTest {
                 "    <node hostalias=\"mockhost\" distribution-key=\"4\"/>\"" +
                 "  </group>" +
                 "</content>"
-        ).getConfig(builder);
+        );
+        StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
+        cc.getConfig(storBuilder);
+        StorDistributionConfig storConfig = new StorDistributionConfig(storBuilder);
+        assertEquals(4, storConfig.initial_redundancy());
+        assertEquals(5, storConfig.redundancy());
+        assertEquals(3, storConfig.ready_copies());
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(3, protonConfig.distribution().searchablecopies());
+        assertEquals(5, protonConfig.distribution().redundancy());
 
-        StorDistributionConfig config = new StorDistributionConfig(builder);
-        assertEquals(4, config.initial_redundancy());
-        assertEquals(5, config.redundancy());
-        assertEquals(3, config.ready_copies());
     }
 
     @Test
