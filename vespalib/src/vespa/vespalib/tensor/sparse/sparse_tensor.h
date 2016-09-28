@@ -5,7 +5,7 @@
 #include <vespa/vespalib/tensor/cell_function.h>
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/tensor_address.h>
-#include "compact_tensor_address_ref.h"
+#include "sparse_tensor_address_ref.h"
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -22,7 +22,7 @@ namespace tensor {
 class SparseTensor : public Tensor
 {
 public:
-    typedef vespalib::hash_map<CompactTensorAddressRef, double> Cells;
+    typedef vespalib::hash_map<SparseTensorAddressRef, double> Cells;
     typedef TensorDimensions Dimensions;
 
     static constexpr size_t STASH_CHUNK_SIZE = 16384u;

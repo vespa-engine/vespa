@@ -28,7 +28,7 @@ assertCellValue(double expValue, const TensorAddress &address,
         addressBuilder.add("");
         ++dimsItr;
     }
-    CompactTensorAddressRef addressRef(addressBuilder.getAddressRef());
+    SparseTensorAddressRef addressRef(addressBuilder.getAddressRef());
     auto itr = cells.find(addressRef);
     EXPECT_FALSE(itr == cells.end());
     EXPECT_EQUAL(expValue, itr->second);

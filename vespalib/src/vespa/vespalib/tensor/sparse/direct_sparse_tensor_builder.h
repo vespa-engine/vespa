@@ -21,7 +21,7 @@ public:
     using Dimensions = typename TensorImplType::Dimensions;
     using Cells = typename TensorImplType::Cells;
     using AddressBuilderType = SparseTensorAddressBuilder;
-    using AddressRefType = CompactTensorAddressRef;
+    using AddressRefType = SparseTensorAddressRef;
 
 private:
     Stash _stash;
@@ -33,8 +33,8 @@ public:
     copyCells(const Cells &cells_in)
     {
         for (const auto &cell : cells_in) {
-            CompactTensorAddressRef oldRef = cell.first;
-            CompactTensorAddressRef newRef(oldRef, _stash);
+            SparseTensorAddressRef oldRef = cell.first;
+            SparseTensorAddressRef newRef(oldRef, _stash);
             _cells[newRef] = cell.second;
         }
     }
@@ -46,8 +46,8 @@ public:
                                                    cells_in_dimensions);
         for (const auto &cell : cells_in) {
             addressPadder.padAddress(cell.first);
-            CompactTensorAddressRef oldRef = addressPadder.getAddressRef();
-            CompactTensorAddressRef newRef(oldRef, _stash);
+            SparseTensorAddressRef oldRef = addressPadder.getAddressRef();
+            SparseTensorAddressRef newRef(oldRef, _stash);
             _cells[newRef] = cell.second;
         }
     }
@@ -96,20 +96,20 @@ public:
     }
 
     template <class Function>
-    void insertCell(CompactTensorAddressRef address, double value,
+    void insertCell(SparseTensorAddressRef address, double value,
                     Function &&func)
     {
-        CompactTensorAddressRef oldRef(address);
+        SparseTensorAddressRef oldRef(address);
         auto res = _cells.insert(std::make_pair(oldRef, value));
         if (res.second) {
             // Replace key with own copy
-            res.first->first = CompactTensorAddressRef(oldRef, _stash);
+            res.first->first = SparseTensorAddressRef(oldRef, _stash);
         } else {
             res.first->second = func(res.first->second, value);
         }
     }
 
-    void insertCell(CompactTensorAddressRef address, double value) {
+    void insertCell(SparseTensorAddressRef address, double value) {
         // This address should not already exist and a new cell should be inserted.
         insertCell(address, value, [](double, double) -> double { abort(); });
     }

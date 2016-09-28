@@ -25,14 +25,14 @@ void
 copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
 {
     for (const auto &cell : cells_in) {
-        CompactTensorAddressRef oldRef = cell.first;
-        CompactTensorAddressRef newRef(oldRef, stash);
+        SparseTensorAddressRef oldRef = cell.first;
+        SparseTensorAddressRef newRef(oldRef, stash);
         cells[newRef] = cell.second;
     }
 }
 
 void
-printAddress(std::ostream &out, const CompactTensorAddressRef &ref,
+printAddress(std::ostream &out, const SparseTensorAddressRef &ref,
              const TensorDimensions &dimensions)
 {
     out << "{";

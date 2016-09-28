@@ -48,8 +48,8 @@ buildCombineOps(const TensorDimensions &lhs,
 
 bool
 combineAddresses(SparseTensorAddressBuilder &builder,
-                 CompactTensorAddressRef lhsRef,
-                 CompactTensorAddressRef rhsRef,
+                 SparseTensorAddressRef lhsRef,
+                 SparseTensorAddressRef rhsRef,
                  const CombineOps &ops)
 {
     builder.clear();

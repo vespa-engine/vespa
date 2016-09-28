@@ -1,14 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include "compact_tensor_unsorted_address_builder.h"
+#include "sparse_tensor_unsorted_address_builder.h"
 #include "sparse_tensor_address_builder.h"
 #include <algorithm>
 
 namespace vespalib {
 namespace tensor {
 
-CompactTensorUnsortedAddressBuilder::CompactTensorUnsortedAddressBuilder()
+SparseTensorUnsortedAddressBuilder::SparseTensorUnsortedAddressBuilder()
     : _elementStrings(),
       _elements()
 {
@@ -16,7 +16,7 @@ CompactTensorUnsortedAddressBuilder::CompactTensorUnsortedAddressBuilder()
 
 
 void
-CompactTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder &
+SparseTensorUnsortedAddressBuilder::buildTo(SparseTensorAddressBuilder &
                                              builder,
                                              const TensorDimensions &
                                              dimensions)
