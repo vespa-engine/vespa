@@ -36,7 +36,7 @@ buildReduceOps(const TensorDimensions &dims,
 
 void
 reduceAddress(SparseTensorAddressBuilder &builder,
-              CompactTensorAddressRef ref,
+              SparseTensorAddressRef ref,
               const ReduceOps &ops)
 {
     builder.clear();

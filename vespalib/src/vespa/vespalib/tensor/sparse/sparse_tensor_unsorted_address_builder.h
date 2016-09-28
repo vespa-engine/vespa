@@ -15,7 +15,7 @@ class SparseTensorAddressBuilder;
  * A builder that buffers up a tensor address with unsorted
  * dimensions.
  */
-class CompactTensorUnsortedAddressBuilder
+class SparseTensorUnsortedAddressBuilder
 {
     struct ElementStringRef
     {
@@ -61,7 +61,7 @@ class CompactTensorUnsortedAddressBuilder
     }
 
 public:
-    CompactTensorUnsortedAddressBuilder();
+    SparseTensorUnsortedAddressBuilder();
     bool empty() const { return _elementStrings.empty(); }
     void add(vespalib::stringref dimension, vespalib::stringref label)
     {

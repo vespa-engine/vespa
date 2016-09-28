@@ -4,7 +4,7 @@
 
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
-#include "compact_tensor_unsorted_address_builder.h"
+#include "sparse_tensor_unsorted_address_builder.h"
 #include <vespa/vespalib/tensor/tensor_builder.h>
 #include <vespa/vespalib/tensor/tensor_address.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -18,7 +18,7 @@ namespace tensor {
  */
 class SparseTensorBuilder : public TensorBuilder
 {
-    CompactTensorUnsortedAddressBuilder _addressBuilder; // unsorted dimensions
+    SparseTensorUnsortedAddressBuilder _addressBuilder; // unsorted dimensions
     SparseTensorAddressBuilder _normalizedAddressBuilder; // sorted dimensions
     SparseTensor::Cells _cells;
     Stash _stash;

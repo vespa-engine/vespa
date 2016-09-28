@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include "compact_tensor_address_ref.h"
+#include "sparse_tensor_address_ref.h"
 
 namespace vespalib {
 
@@ -18,7 +18,7 @@ class SparseTensorAddressDecoder
     const char *_cur;
     const char *_end;
 public:
-    SparseTensorAddressDecoder(CompactTensorAddressRef ref)
+    SparseTensorAddressDecoder(SparseTensorAddressRef ref)
         : _cur(static_cast<const char *>(ref.start())),
           _end(_cur + ref.size())
     {

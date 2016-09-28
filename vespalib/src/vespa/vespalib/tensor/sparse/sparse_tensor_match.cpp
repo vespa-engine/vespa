@@ -45,7 +45,7 @@ buildTransformOps(std::vector<AddressOp> &ops,
 
 bool
 transformAddress(SparseTensorAddressBuilder &builder,
-                 CompactTensorAddressRef ref,
+                 SparseTensorAddressRef ref,
                  const std::vector<AddressOp> &ops)
 {
     builder.clear();
@@ -99,7 +99,7 @@ SparseTensorMatch::slowMatch(const TensorImplType &lhs,
         if (!transformAddress(addressBuilder, lhsCell.first, ops)) {
             continue;
         }
-        CompactTensorAddressRef ref(addressBuilder.getAddressRef());
+        SparseTensorAddressRef ref(addressBuilder.getAddressRef());
         auto rhsItr = rhs.cells().find(ref);
         if (rhsItr != rhs.cells().end()) {
             addressPadder.padAddress(lhsCell.first);

@@ -16,24 +16,24 @@ namespace tensor {
 /**
  * A reference to a compact sparse immutable address to a tensor cell.
  */
-class CompactTensorAddressRef
+class SparseTensorAddressRef
 {
     const void *_start;
     size_t _size;
     size_t _hash;
 public:
-    CompactTensorAddressRef()
+    SparseTensorAddressRef()
         : _start(nullptr), _size(0u), _hash(0u)
     {
     }
 
-    CompactTensorAddressRef(const void *start_in, size_t size_in)
+    SparseTensorAddressRef(const void *start_in, size_t size_in)
         : _start(start_in), _size(size_in),
           _hash(calcHash())
     {
     }
 
-    CompactTensorAddressRef(const CompactTensorAddressRef rhs, Stash &stash)
+    SparseTensorAddressRef(const SparseTensorAddressRef rhs, Stash &stash)
         : _start(nullptr),
           _size(rhs._size),
           _hash(rhs._hash)
@@ -47,7 +47,7 @@ public:
 
     size_t calcHash() const { return hashValue(_start, _size); }
 
-    bool operator<(const CompactTensorAddressRef &rhs) const {
+    bool operator<(const SparseTensorAddressRef &rhs) const {
         size_t minSize = std::min(_size, rhs._size);
         int res = memcmp(_start, rhs._start, minSize);
         if (res != 0) {
@@ -56,7 +56,7 @@ public:
         return _size < rhs._size;
     }
 
-    bool operator==(const CompactTensorAddressRef &rhs) const
+    bool operator==(const SparseTensorAddressRef &rhs) const
     {
         if (_size != rhs._size || _hash != rhs._hash) {
             return false;
