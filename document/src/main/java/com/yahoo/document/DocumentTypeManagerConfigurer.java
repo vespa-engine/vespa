@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- * Configures the Vepsa document manager from a document id.
+ * Configures the Vespa document manager from a config id.
  *
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */

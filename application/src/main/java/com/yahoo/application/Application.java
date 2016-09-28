@@ -51,6 +51,7 @@ public final class Application implements AutoCloseable {
 
     // For internal use only
     Application(Path path, Networking networking, boolean deletePathWhenClosing) {
+        System.setProperty("vespa.local", "true");
         this.path = path;
         this.deletePathWhenClosing = deletePathWhenClosing;
         contentClusters = ContentCluster.fromPath(path);

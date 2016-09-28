@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 import static com.yahoo.messagebus.ErrorCode.NO_ADDRESS_FOR_SERVICE;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class LocalNetwork implements Network {
 
@@ -32,35 +32,35 @@ public class LocalNetwork implements Network {
     private final String hostId;
     private volatile NetworkOwner owner;
 
-    public LocalNetwork(final LocalWire wire) {
+    public LocalNetwork(LocalWire wire) {
         this.wire = wire;
         this.hostId = wire.newHostId();
     }
 
     @Override
-    public boolean waitUntilReady(final double seconds) {
+    public boolean waitUntilReady(double seconds) {
         return true;
     }
 
     @Override
-    public void attach(final NetworkOwner owner) {
+    public void attach(NetworkOwner owner) {
         this.owner = owner;
     }
 
     @Override
-    public void registerSession(final String session) {
+    public void registerSession(String session) {
         wire.registerService(hostId + "/" + session, this);
     }
 
     @Override
-    public void unregisterSession(final String session) {
+    public void unregisterSession(String session) {
         wire.unregisterService(hostId + "/" + session);
     }
 
     @Override
-    public boolean allocServiceAddress(final RoutingNode recipient) {
-        final String service = recipient.getRoute().getHop(0).getServiceName();
-        final ServiceAddress address = wire.resolveServiceAddress(service);
+    public boolean allocServiceAddress(RoutingNode recipient) {
+        String service = recipient.getRoute().getHop(0).getServiceName();
+        ServiceAddress address = wire.resolveServiceAddress(service);
         if (address == null) {
             recipient.setError(new Error(NO_ADDRESS_FOR_SERVICE, "No address for service '" + service + "'."));
             return false;
@@ -70,24 +70,24 @@ public class LocalNetwork implements Network {
     }
 
     @Override
-    public void freeServiceAddress(final RoutingNode recipient) {
+    public void freeServiceAddress(RoutingNode recipient) {
         recipient.setServiceAddress(null);
     }
 
     @Override
-    public void send(final Message msg, final List<RoutingNode> recipients) {
-        for (final RoutingNode recipient : recipients) {
+    public void send(Message msg, List<RoutingNode> recipients) {
+        for (RoutingNode recipient : recipients) {
             new MessageEnvelope(this, msg, recipient).send();
         }
     }
 
-    private void receiveLater(final MessageEnvelope envelope) {
-        final byte[] payload = envelope.sender.encode(envelope.msg.getProtocol(), envelope.msg);
+    private void receiveLater(MessageEnvelope envelope) {
+        byte[] payload = envelope.sender.encode(envelope.msg.getProtocol(), envelope.msg);
         executor.execute(new Runnable() {
 
             @Override
             public void run() {
-                final Message msg = decode(envelope.msg.getProtocol(), payload, Message.class);
+                Message msg = decode(envelope.msg.getProtocol(), payload, Message.class);
                 msg.getTrace().setLevel(envelope.msg.getTrace().getLevel());
                 msg.setRoute(envelope.msg.getRoute()).getRoute().removeHop(0);
                 msg.setRetryEnabled(envelope.msg.getRetryEnabled());
@@ -96,7 +96,7 @@ public class LocalNetwork implements Network {
                 msg.pushHandler(new ReplyHandler() {
 
                     @Override
-                    public void handleReply(final Reply reply) {
+                    public void handleReply(Reply reply) {
                         new ReplyEnvelope(LocalNetwork.this, envelope, reply).send();
                     }
                 });
@@ -106,17 +106,17 @@ public class LocalNetwork implements Network {
         });
     }
 
-    private void receiveLater(final ReplyEnvelope envelope) {
-        final byte[] payload = envelope.sender.encode(envelope.reply.getProtocol(), envelope.reply);
+    private void receiveLater(ReplyEnvelope envelope) {
+        byte[] payload = envelope.sender.encode(envelope.reply.getProtocol(), envelope.reply);
         executor.execute(new Runnable() {
 
             @Override
             public void run() {
-                final Reply reply = decode(envelope.reply.getProtocol(), payload, Reply.class);
+                Reply reply = decode(envelope.reply.getProtocol(), payload, Reply.class);
                 reply.setRetryDelay(envelope.reply.getRetryDelay());
                 reply.getTrace().getRoot().addChild(TraceNode.decode(envelope.reply.getTrace().getRoot().encode()));
                 for (int i = 0, len = envelope.reply.getNumErrors(); i < len; ++i) {
-                    final Error error = envelope.reply.getError(i);
+                    Error error = envelope.reply.getError(i);
                     reply.addError(new Error(error.getCode(),
                                              error.getMessage(),
                                              error.getService() != null ? error.getService() : envelope.sender.hostId));
@@ -126,7 +126,7 @@ public class LocalNetwork implements Network {
         });
     }
 
-    private byte[] encode(final Utf8String protocolName, final Routable toEncode) {
+    private byte[] encode(Utf8String protocolName, Routable toEncode) {
         if (toEncode.getType() == 0) {
             return new byte[0];
         }
@@ -134,7 +134,7 @@ public class LocalNetwork implements Network {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Routable> T decode(final Utf8String protocolName, final byte[] toDecode, final Class<T> clazz) {
+    private <T extends Routable> T decode(Utf8String protocolName, byte[] toDecode, Class<T> clazz) {
         if (toDecode.length == 0) {
             return clazz.cast(new EmptyReply());
         }
@@ -167,15 +167,14 @@ public class LocalNetwork implements Network {
         final Message msg;
         final RoutingNode recipient;
 
-        MessageEnvelope(final LocalNetwork sender, final Message msg, final RoutingNode recipient) {
+        MessageEnvelope(LocalNetwork sender, Message msg, RoutingNode recipient) {
             this.sender = sender;
             this.msg = msg;
             this.recipient = recipient;
         }
 
         void send() {
-            LocalServiceAddress.class.cast(recipient.getServiceAddress())
-                                     .getNetwork().receiveLater(this);
+            LocalServiceAddress.class.cast(recipient.getServiceAddress()).getNetwork().receiveLater(this);
         }
     }
 
@@ -185,7 +184,7 @@ public class LocalNetwork implements Network {
         final MessageEnvelope parent;
         final Reply reply;
 
-        ReplyEnvelope(final LocalNetwork sender, final MessageEnvelope parent, final Reply reply) {
+        ReplyEnvelope(LocalNetwork sender, MessageEnvelope parent, Reply reply) {
             this.sender = sender;
             this.parent = parent;
             this.reply = reply;
@@ -195,4 +194,5 @@ public class LocalNetwork implements Network {
             parent.sender.receiveLater(this);
         }
     }
+
 }

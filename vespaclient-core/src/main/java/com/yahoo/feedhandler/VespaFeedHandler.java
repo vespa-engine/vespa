@@ -3,8 +3,11 @@ package com.yahoo.feedhandler;
 
 import com.google.inject.Inject;
 import com.yahoo.clientmetrics.RouteMetricSet;
+import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.feedapi.DocprocMessageProcessor;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.Feeder;
@@ -30,9 +33,14 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
     public static final String JSON_INPUT = "jsonInput";
 
     @Inject
-    public VespaFeedHandler(FeederConfig feederConfig, LoadTypeConfig loadTypeConfig, Executor executor,
+    public VespaFeedHandler(FeederConfig feederConfig, 
+                            LoadTypeConfig loadTypeConfig, 
+                            DocumentmanagerConfig documentmanagerConfig,
+                            SlobroksConfig slobroksConfig,
+                            ClusterListConfig clusterListConfig,
+                            Executor executor, 
                             Metric metric) throws Exception {
-        super(feederConfig, loadTypeConfig, executor, metric);
+        super(feederConfig, loadTypeConfig, documentmanagerConfig, slobroksConfig, clusterListConfig, executor, metric);
     }
 
     VespaFeedHandler(FeedContext context, Executor executor) throws Exception {

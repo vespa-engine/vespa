@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.storage.searcher;
 
+import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.feedhandler.NullFeedMetric;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.component.ComponentId;
@@ -30,8 +33,13 @@ public class VisitSearcher extends Searcher {
     public static final String VISITOR_CONTINUATION_TOKEN_FIELDNAME = "visitorContinuationToken";
     FeedContext context;
 
-    public VisitSearcher(FeederConfig feederConfig, LoadTypeConfig loadTypeConfig) throws Exception {
-        this(FeedContext.getInstance(feederConfig, loadTypeConfig, new NullFeedMetric()));
+    public VisitSearcher(FeederConfig feederConfig, 
+                         LoadTypeConfig loadTypeConfig,
+                         DocumentmanagerConfig documentmanagerConfig,
+                         SlobroksConfig slobroksConfig,
+                         ClusterListConfig clusterListConfig) throws Exception {
+        this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, 
+                                     slobroksConfig, clusterListConfig, new NullFeedMetric()));
     }
 
     VisitSearcher(FeedContext context) throws Exception {

@@ -252,18 +252,6 @@ public class FeederOptions {
         return params;
     }
 
-    public MessageBusParams toMessageBusParams() {
-        MessageBusParams mbusParams = new MessageBusParams();
-        if (retryEnabled) {
-            RetryTransientErrorsPolicy retryPolicy = new RetryTransientErrorsPolicy();
-            retryPolicy.setBaseDelay(retryDelay);
-            mbusParams.setRetryPolicy(retryPolicy);
-        } else {
-            mbusParams.setRetryPolicy(null);
-        }
-        return mbusParams;
-    }
-
     public RPCNetworkParams getNetworkParams() {
         try {
             RPCNetworkParams networkParams = new RPCNetworkParams();

@@ -366,13 +366,12 @@ public class ApplicationTest {
     }
     
     @Test
-    @Ignore // TODO: New test
     public void application_with_document_api() {
         String services = 
                 "<container version='1.0'>" + 
                 "    <document-api/>" +
                 "</container>";
-        try (Application application = Application.fromServicesXml(services, Networking.disable)) {
+        try (Application application = Application.fromServicesXml(services, Networking.enable)) {
         }        
     }
 

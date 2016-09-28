@@ -41,13 +41,13 @@ import com.yahoo.config.subscription.ConfigSubscriber;
  * <p>Access to this class is thread-safe.</p>
  *
  * @author bratseth
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar Rosenvinge</a>
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Einar Rosenvinge
+ * @author Simon Thoresen
  */
 public abstract class DocumentAccess {
 
-    protected DocumentTypeManager documentMgr;
-    protected ConfigSubscriber documentTypeManagerConfig;
+    private final DocumentTypeManager documentTypeManager;
+    private final ConfigSubscriber documentTypeConfigSubscriber;
 
     /**
      * <p>This is a convenience method to return a document access object with
@@ -69,8 +69,14 @@ public abstract class DocumentAccess {
      */
     protected DocumentAccess(DocumentAccessParams params) {
         super();
-        documentMgr = new DocumentTypeManager();
-        documentTypeManagerConfig = DocumentTypeManagerConfigurer.configure(documentMgr, params.getDocumentManagerConfigId());
+        if (params.documentmanagerConfig().isPresent()) { // our config has been injected into the creator
+            documentTypeManager = new DocumentTypeManager(params.documentmanagerConfig().get());
+            documentTypeConfigSubscriber = null;
+        }
+        else { // fallback to old style subscription
+            documentTypeManager = new DocumentTypeManager();
+            documentTypeConfigSubscriber = DocumentTypeManagerConfigurer.configure(documentTypeManager, params.getDocumentManagerConfigId());
+        }
     }
 
     /**
@@ -154,11 +160,15 @@ public abstract class DocumentAccess {
     public abstract SubscriptionSession openSubscription(SubscriptionParameters parameters);
 
     /**
-     * <p>Shuts down the underlying sessions used by this DocumentAccess;
+     * Shuts down the underlying sessions used by this DocumentAccess;
      * subsequent use of this DocumentAccess will throw unspecified exceptions,
-     * depending on implementation.</p>
+     * depending on implementation.
+     * Classes overriding this must call super.shutdown().
      */
-    public abstract void shutdown();
+    public void shutdown() {
+        if (documentTypeConfigSubscriber != null)
+            documentTypeConfigSubscriber.close();
+    }
 
     /**
      * <p>Returns the {@link DocumentTypeManager} used by this
@@ -167,6 +177,6 @@ public abstract class DocumentAccess {
      * @return The document type manager.
      */
     public DocumentTypeManager getDocumentTypeManager() {
-        return documentMgr;
+        return documentTypeManager;
     }
 }

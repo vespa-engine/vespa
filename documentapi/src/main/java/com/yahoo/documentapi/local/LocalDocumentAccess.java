@@ -22,13 +22,6 @@ public class LocalDocumentAccess extends DocumentAccess {
     }
 
     @Override
-    public void shutdown() {
-        if (documentTypeManagerConfig != null) {
-            documentTypeManagerConfig.close();
-        }
-    }
-
-    @Override
     public SyncSession createSyncSession(SyncParameters parameters) {
         return new LocalSyncSession(this);
     }
@@ -57,4 +50,5 @@ public class LocalDocumentAccess extends DocumentAccess {
     public SubscriptionSession openSubscription(SubscriptionParameters parameters) {
         throw new UnsupportedOperationException("Not supported yet");
     }
+
 }

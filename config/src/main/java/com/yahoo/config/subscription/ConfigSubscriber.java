@@ -27,6 +27,7 @@ import com.yahoo.vespa.config.TimingValues;
  * @since 5.1
  */
 public class ConfigSubscriber {
+
     private Logger log = Logger.getLogger(getClass().getName());
     private State state = State.OPEN;
     protected List<ConfigHandle<? extends ConfigInstance>> subscriptionHandles = new ArrayList<>();

@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author Simon Thoresen Hult
  */
 public class LocalWire implements IMirror {
 
@@ -19,19 +19,19 @@ public class LocalWire implements IMirror {
     private final AtomicInteger updateCnt = new AtomicInteger();
     private final ConcurrentHashMap<String, LocalNetwork> services = new ConcurrentHashMap<>();
 
-    public void registerService(final String serviceName, final LocalNetwork owner) {
+    public void registerService(String serviceName, LocalNetwork owner) {
         if (services.putIfAbsent(serviceName, owner) != null) {
             throw new IllegalStateException();
         }
         updateCnt.incrementAndGet();
     }
 
-    public void unregisterService(final String serviceName) {
+    public void unregisterService(String serviceName) {
         services.remove(serviceName);
         updateCnt.incrementAndGet();
     }
 
-    public LocalServiceAddress resolveServiceAddress(final String serviceName) {
+    public LocalServiceAddress resolveServiceAddress(String serviceName) {
         final LocalNetwork owner = services.get(serviceName);
         return owner != null ? new LocalServiceAddress(serviceName, owner) : null;
     }
@@ -41,10 +41,10 @@ public class LocalWire implements IMirror {
     }
 
     @Override
-    public Mirror.Entry[] lookup(final String pattern) {
-        final List<Mirror.Entry> out = new ArrayList<>();
-        final Pattern regex = Pattern.compile(pattern.replace("*", "[a-zA-Z0-9_-]+"));
-        for (final String key : services.keySet()) {
+    public Mirror.Entry[] lookup(String pattern) {
+        List<Mirror.Entry> out = new ArrayList<>();
+        Pattern regex = Pattern.compile(pattern.replace("*", "[a-zA-Z0-9_-]+"));
+        for (String key : services.keySet()) {
             if (regex.matcher(key).matches()) {
                 out.add(new Mirror.Entry(key, key));
             }
@@ -56,4 +56,5 @@ public class LocalWire implements IMirror {
     public int updates() {
         return updateCnt.get();
     }
+
 }
