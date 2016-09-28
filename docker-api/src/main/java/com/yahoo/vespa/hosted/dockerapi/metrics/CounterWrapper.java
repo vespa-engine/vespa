@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.dockerapi.metrics;
 import com.yahoo.metrics.simple.Counter;
 
 /**
+ * Forwards sample to {@link com.yahoo.metrics.simple.Counter} to be displayed in /state/v1/metrics,
+ * while also saving the value so it can be accessed programatically later.
+ *
  * @author valerijf
  */
 public class CounterWrapper implements MetricValue {
@@ -14,17 +17,21 @@ public class CounterWrapper implements MetricValue {
     }
 
     public void add() {
-        counter.add();
-        value++;
+        add(1L);
     }
 
     public void add(long n) {
-        counter.add(n);
-        value += n;
+        synchronized (counter) {
+            counter.add(n);
+            value += n;
+        }
     }
 
+    @Override
     public Number getValue() {
-        return value;
+        synchronized (counter) {
+            return value;
+        }
     }
 
 
@@ -37,6 +44,7 @@ public class CounterWrapper implements MetricValue {
         public void add() {
         }
 
+        @Override
         public void add(long n) {
         }
     }

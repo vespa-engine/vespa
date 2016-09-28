@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Export metrics to both /state/v1/metrics and makes them available programatically.
+ *
  * @author valerijf
  */
 public class MetricReceiverWrapper {
