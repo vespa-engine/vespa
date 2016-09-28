@@ -335,12 +335,14 @@ struct TestContext {
 
     const TensorEngine &engine;
     bool test_mixed_cases;
-    TestContext(const TensorEngine &engine_in, bool test_mixed_cases_in)
-        : engine(engine_in), test_mixed_cases(test_mixed_cases_in) {}
+    size_t skip_count;
 
-    bool mixed() {
+    TestContext(const TensorEngine &engine_in, bool test_mixed_cases_in)
+        : engine(engine_in), test_mixed_cases(test_mixed_cases_in), skip_count(0) {}
+
+    bool mixed(size_t n) {
         if (!test_mixed_cases) {
-            fprintf(stderr, "skipping some tests since mixed testing is disabled\n");
+            skip_count += n;
         }
         return test_mixed_cases;
     }
@@ -394,7 +396,7 @@ struct TestContext {
         TEST_DO(verify_create_type("tensor(x{},y{})"));
         TEST_DO(verify_create_type("tensor(x[5])"));
         TEST_DO(verify_create_type("tensor(x[5],y[10])"));
-        if (mixed()) {
+        if (mixed(2)) {
             TEST_DO(verify_create_type("tensor(x{},y[10])"));
             TEST_DO(verify_create_type("tensor(x[5],y{})"));
         }
@@ -416,7 +418,7 @@ struct TestContext {
         TEST_DO(verify_not_equal(tensor(x(2), Seq({1,1}), Bits({1,0})),
                                  tensor(x(2), Seq({1,1}), Bits({0,1}))));
         TEST_DO(verify_not_equal(tensor(x(1), Seq({1})), tensor({x(1),y(1)}, Seq({1}))));
-        if (mixed()) {
+        if (mixed(3)) {
             TEST_DO(verify_not_equal(tensor({x({"a"}),y(1)}, Seq({1})), tensor({x({"a"}),y(1)}, Seq({2}))));
             TEST_DO(verify_not_equal(tensor({x({"a"}),y(1)}, Seq({1})), tensor({x({"b"}),y(1)}, Seq({1}))));
             TEST_DO(verify_not_equal(tensor({x(2),y({"a"})}, Seq({1}), Bits({1,0})),
@@ -442,7 +444,7 @@ struct TestContext {
             {x({"a","b","c"}),y({"foo","bar"})},
             {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}
         };
-        if (mixed()) {
+        if (mixed(2)) {
             layouts.push_back({x(3),y({"foo", "bar"}),z(7)});
             layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
         }
@@ -497,6 +499,9 @@ TensorConformance::run_tests(const TensorEngine &engine, bool test_mixed_cases)
 {
     TestContext ctx(engine, test_mixed_cases);
     ctx.run_tests();
+    if (ctx.skip_count > 0) {
+        fprintf(stderr, "WARNING: skipped %zu mixed test cases\n", ctx.skip_count);
+    }
 }
 
 } // namespace vespalib::eval::test
