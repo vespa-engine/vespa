@@ -4,19 +4,14 @@ package com.yahoo.vespa.config.server.application;
 import com.yahoo.cloud.config.ModelConfig;
 import com.yahoo.component.AbstractComponent;
 import com.google.inject.Inject;
-import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
-import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -28,7 +23,6 @@ import java.util.Optional;
 public class LogServerLogGrabber extends AbstractComponent {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(LogServerLogGrabber.class.getName());
 
-    @Inject
     public LogServerLogGrabber() {}
 
     private Optional<Integer> getErrorLogPort(ModelConfig.Hosts.Services service) {
@@ -43,7 +37,7 @@ public class LogServerLogGrabber extends AbstractComponent {
         int port;
     }
 
-    public HttpResponse grabLog(Application application) {
+    public String grabLog(Application application) {
 
         final ModelConfig config;
         try {
@@ -61,7 +55,7 @@ public class LogServerLogGrabber extends AbstractComponent {
                             Optional<Integer> logPort = getErrorLogPort(logService);
                             if (logPort.isPresent()) {
                                 if (logServerConnectionInfo.hostName != null) {
-                                    throw new RuntimeException("Found several log server ports.");
+                                    throw new RuntimeException("Found several log server ports");
                                 }
                                 logServerConnectionInfo.hostName = host.name();
                                 logServerConnectionInfo.port = logPort.get();
@@ -69,14 +63,7 @@ public class LogServerLogGrabber extends AbstractComponent {
                         }));
 
         if (logServerConnectionInfo.hostName == null) {
-            return new HttpResponse(503) {
-                @Override
-                public void render(OutputStream outputStream) throws IOException {
-                    PrintWriter printWriter = new PrintWriter(outputStream);
-                    printWriter.print("Did not find any log server in config model.");
-                    printWriter.close();
-                }
-            };
+            throw new InternalServerException("Did not find any log server in config model");
         }
         log.log(LogLevel.DEBUG, "Requested error logs, pulling from logserver on " + logServerConnectionInfo.hostName + " "
                 + logServerConnectionInfo.port);
@@ -85,20 +72,9 @@ public class LogServerLogGrabber extends AbstractComponent {
             response = readLog(logServerConnectionInfo.hostName, logServerConnectionInfo.port);
             log.log(LogLevel.DEBUG, "Requested error logs was " + response.length() + " characters");
         } catch (IOException e) {
-            return HttpErrorResponse.internalServerError(Exceptions.toMessageString(e));
+            throw new InternalServerException(Exceptions.toMessageString(e));
         }
-
-        return new HttpResponse(200) {
-            @Override
-            public void render(OutputStream outputStream) throws IOException {
-                outputStream.write(response.getBytes(StandardCharsets.UTF_8));
-            }
-
-            @Override
-            public String getContentType() {
-                return HttpConfigResponse.JSON_CONTENT_TYPE;
-            }
-        };
+        return response;
     }
 
     private String readLog(String host, int port) throws IOException {
