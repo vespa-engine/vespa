@@ -65,8 +65,18 @@ configure_memory() {
     consider_fallback jvm_baseMaxDirectMemorySize 75
     consider_fallback jvm_directMemorySizeCache 0
 
-    if (( jvm_heapSizeAsPercentageOfPhysicalMemory > 0 && jvm_heapSizeAsPercentageOfPhysicalMemory < 100 )); then
-        available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
+    # 0 is default which should mean 100
+    if (( jvm_heapSizeAsPercentageOfPhysicalMemory <= 0 )); then
+        jvm_heapSizeAsPercentageOfPhysicalMemory=100
+    fi
+
+    if (( jvm_heapSizeAsPercentageOfPhysicalMemory != 100 || TOTAL_MEMORY_MB != 0 )); then
+        if (( TOTAL_MEMORY_MB != 0 )); then
+            available="$TOTAL_MEMORY_MB"
+        else
+            available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
+        fi
+
         jvm_heapsize=$[available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100]
         if (( jvm_heapsize < 1024 )); then
             jvm_heapsize=1024
