@@ -348,12 +348,14 @@ const double my_nan = std::numeric_limits<double>::quiet_NaN();
 // Test wrapper to avoid passing global test parameters around
 struct TestContext {
 
+    const TensorEngine &ref_engine;
     const TensorEngine &engine;
     bool test_mixed_cases;
     size_t skip_count;
 
     TestContext(const TensorEngine &engine_in, bool test_mixed_cases_in)
-        : engine(engine_in), test_mixed_cases(test_mixed_cases_in), skip_count(0) {}
+        : ref_engine(SimpleTensorEngine::ref()), engine(engine_in),
+          test_mixed_cases(test_mixed_cases_in), skip_count(0) {}
 
     std::unique_ptr<Tensor> tensor(const TensorSpec &spec) {
         auto result = engine.create(spec);
@@ -379,6 +381,9 @@ struct TestContext {
         auto tb = tensor(b);
         EXPECT_EQUAL(a, b);
         EXPECT_EQUAL(*ta, *tb);
+        TensorSpec spec = engine.to_spec(*ta);
+        TensorSpec ref_spec = ref_engine.to_spec(*ref_engine.create(a));
+        EXPECT_EQUAL(spec, ref_spec);
     }
 
     void verify_not_equal(const TensorSpec &a, const TensorSpec &b) {
