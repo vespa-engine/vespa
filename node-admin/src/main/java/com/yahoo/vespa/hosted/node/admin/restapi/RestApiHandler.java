@@ -49,27 +49,15 @@ public class RestApiHandler extends LoggingRequestHandler{
             return handlePut(request);
         }
         return new SimpleResponse(400, "Only PUT and GET are implemented.");
-
     }
 
     private HttpResponse handleGet(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.endsWith("/info")) {
-            return new HttpResponse(200) {
-                @Override
-                public void render(OutputStream outputStream) throws IOException {
-                    objectMapper.writeValue(outputStream, refresher.getDebugPage());
-                }
-            };
-        } else if (path.endsWith("/metrics")) {
-            return new HttpResponse(200) {
-                @Override
-                public void render(OutputStream outputStream) throws IOException {
-                    objectMapper.writerWithDefaultPrettyPrinter()
-                            .writeValue(outputStream, secretAgentHandler.getSecretAgentReport());
-                    outputStream.write("\n".getBytes());
-                }
-            };
+            return new SimpleObjectResponse(200, refresher.getDebugPage());
+        }
+        if (path.endsWith("/metrics")) {
+            return new SimpleObjectResponse(200, secretAgentHandler.getSecretAgentReport());
         }
         return new SimpleResponse(400, "unknown path" + path);
     }
@@ -95,7 +83,6 @@ public class RestApiHandler extends LoggingRequestHandler{
     }
 
     private static class SimpleResponse extends HttpResponse {
-
         private final String jsonMessage;
 
         public SimpleResponse(int code, String message) {
@@ -116,4 +103,22 @@ public class RestApiHandler extends LoggingRequestHandler{
         }
     }
 
+    private static class SimpleObjectResponse extends HttpResponse {
+        private final Object response;
+
+        public SimpleObjectResponse(int status, Object response) {
+            super(status);
+            this.response = response;
+        }
+
+        @Override
+        public String getContentType() {
+            return MediaType.APPLICATION_JSON;
+        }
+
+        @Override
+        public void render(OutputStream outputStream) throws IOException {
+            objectMapper.writeValue(outputStream, response);
+        }
+    }
 }

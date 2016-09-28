@@ -7,6 +7,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
+ * Collects last value from all the previously declared counters/gauges and genereates a map
+ * structure that can be converted to secret-agent JSON message
+ *
  * @author valerijf
  */
 public class SecretAgentHandler {
