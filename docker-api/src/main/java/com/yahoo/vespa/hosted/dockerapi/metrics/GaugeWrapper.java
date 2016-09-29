@@ -1,5 +1,5 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
-
 
 import com.yahoo.metrics.simple.Gauge;
 
@@ -10,6 +10,8 @@ import com.yahoo.metrics.simple.Gauge;
  * @author valerijf
  */
 public class GaugeWrapper implements MetricValue {
+    private final Object lock = new Object();
+
     private final Gauge gauge;
     private double value;
 
@@ -18,7 +20,7 @@ public class GaugeWrapper implements MetricValue {
     }
 
     public void sample(double x) {
-        synchronized (gauge) {
+        synchronized (lock) {
             gauge.sample(x);
             this.value = x;
         }
@@ -26,6 +28,8 @@ public class GaugeWrapper implements MetricValue {
 
     @Override
     public Number getValue() {
-        return value;
+        synchronized (lock) {
+            return value;
+        }
     }
 }

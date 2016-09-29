@@ -1,3 +1,4 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
 import com.yahoo.metrics.simple.Counter;
@@ -9,6 +10,8 @@ import com.yahoo.metrics.simple.Counter;
  * @author valerijf
  */
 public class CounterWrapper implements MetricValue {
+    private final Object lock  = new Object();
+
     private final Counter counter;
     private long value = 0;
 
@@ -21,7 +24,7 @@ public class CounterWrapper implements MetricValue {
     }
 
     public void add(long n) {
-        synchronized (counter) {
+        synchronized (lock) {
             counter.add(n);
             value += n;
         }
@@ -29,7 +32,7 @@ public class CounterWrapper implements MetricValue {
 
     @Override
     public Number getValue() {
-        synchronized (counter) {
+        synchronized (lock) {
             return value;
         }
     }

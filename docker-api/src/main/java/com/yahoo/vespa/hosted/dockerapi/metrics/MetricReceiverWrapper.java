@@ -1,12 +1,13 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi.metrics;
 
 import com.google.inject.Inject;
 import com.yahoo.metrics.simple.MetricReceiver;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Export metrics to both /state/v1/metrics and makes them available programatically.
@@ -14,7 +15,7 @@ import java.util.Set;
  * @author valerijf
  */
 public class MetricReceiverWrapper {
-    private final Map<String, MetricValue> metrics = new HashMap<>();
+    private final Map<String, MetricValue> metrics = new ConcurrentHashMap<>();
     private final MetricReceiver metricReceiver;
 
     @Inject
