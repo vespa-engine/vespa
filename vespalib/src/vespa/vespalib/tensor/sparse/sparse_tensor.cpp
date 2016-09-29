@@ -5,7 +5,7 @@
 #include "sparse_tensor_address_builder.h"
 #include "sparse_tensor_dimension_sum.h"
 #include "sparse_tensor_match.h"
-#include "sparse_tensor_product.h"
+#include "sparse_tensor_apply.hpp"
 #include "join_sparse_tensors.h"
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_apply.h>
@@ -141,7 +141,8 @@ SparseTensor::multiply(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    return SparseTensorProduct(*this, *rhs).result();
+    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
+                         { return lhsValue * rhsValue; });
 }
 
 Tensor::UP

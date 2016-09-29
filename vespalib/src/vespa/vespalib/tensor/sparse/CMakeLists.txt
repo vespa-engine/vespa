@@ -5,7 +5,6 @@ vespa_add_library(vespalib_vespalib_tensor_sparse OBJECT
     sparse_tensor_address_combiner.cpp
     sparse_tensor_dimension_sum.cpp
     sparse_tensor_match.cpp
-    sparse_tensor_product.cpp
     sparse_tensor_builder.cpp
     sparse_tensor_unsorted_address_builder.cpp
     DEPENDS
