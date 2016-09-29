@@ -115,6 +115,9 @@ public class DockerImpl implements Docker {
 
         numberOfRunningContainersGauge = metricReceiver.declareGauge("containers.running");
         numberOfDockerDaemonFails = metricReceiver.declareCounter("daemon.api_fails");
+
+        // Some containers could already be running, count them and intialize to that value
+        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
     static DefaultDockerClientConfig.Builder buildDockerClientConfig(DockerConfig config) {
