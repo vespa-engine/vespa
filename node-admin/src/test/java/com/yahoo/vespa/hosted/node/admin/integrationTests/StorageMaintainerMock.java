@@ -2,28 +2,30 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 
 import java.io.IOException;
 
 /**
  * @author valerijf
  */
-public class MaintenanceSchedulerMock implements MaintenanceScheduler {
+public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrder;
 
-    public MaintenanceSchedulerMock(CallOrderVerifier callOrder) {
+    public StorageMaintainerMock(CallOrderVerifier callOrder) {
         this.callOrder = callOrder;
     }
 
     @Override
-    public void removeOldFilesFromNode(ContainerName containerName) {
+    public void updateDiskUsage(ContainerName containerName) {
+    }
 
+    @Override
+    public void removeOldFilesFromNode(ContainerName containerName) {
     }
 
     @Override
     public void cleanNodeAdmin() {
-
     }
 
     @Override

@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -41,7 +41,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final Docker docker;
     private final Function<String, NodeAgent> nodeAgentFactory;
-    private final MaintenanceScheduler maintenanceScheduler;
+    private final StorageMaintainer storageMaintainer;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
     private final Map<String, NodeAgent> nodeAgents = new HashMap<>();
@@ -59,11 +59,11 @@ public class NodeAdminImpl implements NodeAdmin {
      * @param nodeAgentFactory factory for {@link NodeAgent} objects
      */
     public NodeAdminImpl(final Docker docker, final Function<String, NodeAgent> nodeAgentFactory,
-                         final MaintenanceScheduler maintenanceScheduler, int nodeAgentScanIntervalMillis,
+                         final StorageMaintainer storageMaintainer, int nodeAgentScanIntervalMillis,
                          final MetricReceiverWrapper metricReceiver) {
         this.docker = docker;
         this.nodeAgentFactory = nodeAgentFactory;
-        this.maintenanceScheduler = maintenanceScheduler;
+        this.storageMaintainer = storageMaintainer;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
 
         this.numberOfContainersInActiveState = metricReceiver.declareGauge("nodes.state.active");
@@ -74,7 +74,7 @@ public class NodeAdminImpl implements NodeAdmin {
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = docker.getAllManagedContainers();
 
-        maintenanceScheduler.cleanNodeAdmin();
+        storageMaintainer.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
         garbageCollectDockerImages(containersToRun);
 

@@ -24,7 +24,7 @@ import java.util.function.Function;
 public class ComponentsProviderWithMocks implements ComponentsProvider {
     static final CallOrderVerifier callOrder = new CallOrderVerifier();
     static final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
-    static final MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock(callOrder);
+    static final StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
     static final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
     static final Docker dockerMock = new DockerMock(callOrder);
 
