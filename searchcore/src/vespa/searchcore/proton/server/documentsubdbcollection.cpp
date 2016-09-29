@@ -49,13 +49,14 @@ DocumentSubDBCollection::DocumentSubDBCollection(
       _bucketDB(),
       _bucketDBHandler()
 {
-
+    const ProtonConfig::Grow & growCfg = protonCfg.grow;
+    const ProtonConfig::Distribution & distCfg = protonCfg.distribution;
     _bucketDB = std::make_shared<BucketDBOwner>();
     _bucketDBHandler.reset(new bucketdb::BucketDBHandler(*_bucketDB));
-    search::GrowStrategy attributeGrow(protonCfg.grow.initial,
-                                       protonCfg.grow.factor,
-                                       protonCfg.grow.add);
-    size_t attributeGrowNumDocs(protonCfg.grow.numdocs);
+    search::GrowStrategy searchableGrowth(growCfg.initial * distCfg.searchablecopies, growCfg.factor, growCfg.add);
+    search::GrowStrategy removedGrowth(std::max(1024l, growCfg.initial/100), growCfg.factor, growCfg.add);
+    search::GrowStrategy notReadyGrowth(growCfg.initial * (distCfg.redundancy - distCfg.searchablecopies), growCfg.factor, growCfg.add);
+    size_t attributeGrowNumDocs(growCfg.numdocs);
     size_t numSearcherThreads = protonCfg.numsearcherthreads;
 
     StoreOnlyDocSubDB::Context context(owner,
@@ -74,7 +75,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                 (StoreOnlyDocSubDB::Config(docTypeName,
                         "0.ready",
                         baseDir,
-                        attributeGrow,
+                        searchableGrowth,
                         attributeGrowNumDocs,
                         _readySubDbId,
                         SubDbType::READY),
@@ -94,7 +95,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         (new StoreOnlyDocSubDB(StoreOnlyDocSubDB::Config(docTypeName,
                                                      "1.removed",
                                                      baseDir,
-                                                     attributeGrow,
+                                                     removedGrowth,
                                                      attributeGrowNumDocs,
                                                      _remSubDbId,
                                                      SubDbType::REMOVED),
@@ -104,7 +105,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                 (StoreOnlyDocSubDB::Config(docTypeName,
                         "2.notready",
                         baseDir,
-                        attributeGrow,
+                        notReadyGrowth,
                         attributeGrowNumDocs,
                         _notReadySubDbId,
                         SubDbType::NOTREADY),
@@ -201,7 +202,7 @@ DocumentSubDBCollection::initViews(const DocumentDBConfig &configSnapshot,
 
 
 void
-DocumentSubDBCollection::clearViews(void)
+DocumentSubDBCollection::clearViews()
 {
     for (auto subDb : _subDBs) {
         subDb->clearViews();
@@ -210,7 +211,7 @@ DocumentSubDBCollection::clearViews(void)
 
 
 void
-DocumentSubDBCollection::onReplayDone(void)
+DocumentSubDBCollection::onReplayDone()
 {
     for (auto subDb : _subDBs) {
         subDb->onReplayDone();
@@ -228,7 +229,7 @@ DocumentSubDBCollection::onReprocessDone(SerialNum serialNum)
 
 
 SerialNum
-DocumentSubDBCollection::getOldestFlushedSerial(void)
+DocumentSubDBCollection::getOldestFlushedSerial()
 {
     SerialNum lowest = -1;
     for (auto subDb : _subDBs) {
@@ -239,7 +240,7 @@ DocumentSubDBCollection::getOldestFlushedSerial(void)
 
 
 SerialNum
-DocumentSubDBCollection::getNewestFlushedSerial(void)
+DocumentSubDBCollection::getNewestFlushedSerial()
 {
     SerialNum highest = 0;
     for (auto subDb : _subDBs) {

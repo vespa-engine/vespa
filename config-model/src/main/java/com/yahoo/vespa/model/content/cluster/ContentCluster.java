@@ -104,8 +104,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             String routingSelection = new DocumentSelectionBuilder().build(contentElement.getChild("documents"));
             Redundancy redundancy = new RedundancyBuilder().build(contentElement);
 
-            ContentCluster c = new ContentCluster(ancestor, getClusterName(contentElement), documentDefinitions,
-                                                  routingSelection, redundancy);
+            ContentCluster c = new ContentCluster(ancestor, getClusterName(contentElement), documentDefinitions, routingSelection, redundancy);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions).build(c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
@@ -113,6 +112,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
             c.distributorNodes = new DistributorCluster.Builder(c).build(c, w3cContentElement);
             c.rootGroup = new StorageGroup.Builder(contentElement, c, deployLogger).buildRootGroup();
             validateThatGroupSiblingsAreUnique(c.clusterName, c.rootGroup);
+            redundancy.setExplicitGroups(c.getRootGroup().getNumberOfLeafGroups());
             c.search.handleRedundancy(redundancy);
 
             IndexedSearchCluster index = c.search.getIndexed();
