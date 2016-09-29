@@ -180,7 +180,7 @@ object StandaloneContainerApplication {
       configDefinitionRepo(configDefinitionRepo).
       build()
 
-    val root = VespaModel.createMutable(deployState)
+    val root = VespaModel.createIncomplete(deployState)
     val vespaRoot = new ApplicationConfigProducerRoot(root,
       "vespa",
       deployState.getDocumentModel,

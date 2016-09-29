@@ -135,37 +135,33 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         this(configModelRegistry, deployState, true, null);
     }
 
-    private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean freeze, FileDistributor fileDistributor) throws IOException, SAXException {
+    private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete, FileDistributor fileDistributor) throws IOException, SAXException {
         super("vespamodel");
         this.deployState = deployState;
         this.validationOverrides = deployState.validationOverrides();
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
-        if (freeze) {
+        this.info = Optional.of(createProvisionInfo());
+        if (complete) { // create a a completed, frozen model
             configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
             addServiceClusters(deployState.getApplicationPackage(), builder);
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
-        }
-        else {
-            this.fileDistributor = fileDistributor;
-        }
-        log.log(LogLevel.DEBUG, "hostsystem=" + getHostSystem());
-        this.info = Optional.of(createProvisionInfo());
-        if (freeze)
             getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState.getProperties());
-        if (freeze) { // TODO: A little more than freezing ...
             freezeModelTopology();
             root.prepare(configModelRepo);
             configModelRepo.prepareConfigModels();
             validateWrapExceptions();
             this.deployState = null;
         }
+        else { // create a model with no services instantiated and the given file distributor
+            this.fileDistributor = fileDistributor;
+        }
     }
     
-    /** Creates a mutable model which must be completed, then frozen, before use */
-    public static VespaModel createMutable(DeployState deployState)  throws IOException, SAXException {
+    /** Creates a mutable model with no services instantiated */
+    public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
         return new VespaModel(new NullConfigModelRegistry(), deployState, false, new FileDistributor(deployState.getFileRegistry()));
     }
 
