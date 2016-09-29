@@ -87,7 +87,8 @@ public class NodeAdminImpl implements NodeAdmin {
         int numberOfNewUnhandledExceptions = 0;
 
         for (NodeAgent nodeAgent : nodeAgents.values()) {
-            if (nodeAgent.getContainerNodeSpec().nodeState == Node.State.active) numberContainersInActive++;
+            Optional<ContainerNodeSpec> nodeSpec = nodeAgent.getContainerNodeSpec();
+            if (nodeSpec.isPresent() && nodeSpec.get().nodeState == Node.State.active) numberContainersInActive++;
             if (nodeAgent.isDownloadingImage()) numberContainersWaitingImage++;
             numberOfNewUnhandledExceptions += nodeAgent.getAndResetNumberOfUnhandledExceptions();
         }
