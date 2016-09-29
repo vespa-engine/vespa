@@ -96,7 +96,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         if (ipAddresses.containsKey(hostname)) return ipAddresses.get(hostname);
 
         String ipAddress;
-        if (hostname.startsWith(MockRoot.MOCKHOST)) {
+        if (hostname.startsWith(MockRoot.MOCKHOST)) { // TODO: Remove
             ipAddress = "0.0.0.0";
         } else {
             try {
