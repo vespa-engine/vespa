@@ -82,7 +82,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
      * @return The canonical hostname, or null if unable to resolve.
      * @throws UnknownHostException if the hostname cannot be resolved
      */
-    private String lookupCanonicalHostname(String hostname) throws UnknownHostException {
+    // public - This is used by amenders outside this repo
+    public static String lookupCanonicalHostname(String hostname) throws UnknownHostException {
         return java.net.InetAddress.getByName(hostname).getCanonicalHostName();
     }
 
