@@ -15,15 +15,12 @@ public class HostName {
     private static String myHost = null;
 
     /**
-     * Static method that returns the name of localhost using shell
-     * command "hostname".
+     * Static method that returns the name of localhost using shell command "hostname".
+     * If you need a guaranteed resolvable name see LinuxINetAddress.
      *
      * @return the name of localhost.
      * @throws RuntimeException if executing the command 'hostname' fails.
      */
-    // Note. This will not currently return a FQDN in Mac.
-    // If that is needed, add 
-    // java.net.InetAddress.getByName(myHost).getCanonicalHostName()
     public static synchronized String getLocalhost() {
         if (myHost == null) {
             try {
