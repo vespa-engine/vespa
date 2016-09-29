@@ -37,22 +37,22 @@ public class ClusterTest extends ContentBaseTest {
     @Test
     public void testRedundancy() {
         ContentCluster cc = parse("" +
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                "  <documents/>" +
-                "  <engine>" +
-                "     <proton>" +
-                "       <searchable-copies>3</searchable-copies>" +
-                "     </proton>" +
-                "  </engine>" +
-                "  <redundancy reply-after=\"4\">5</redundancy>\n" +
-                "  <group>" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\"" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"1\"/>\"" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"2\"/>\"" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"3\"/>\"" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"4\"/>\"" +
-                "  </group>" +
-                "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <engine>" +
+            "     <proton>" +
+            "       <searchable-copies>3</searchable-copies>" +
+            "     </proton>" +
+            "  </engine>" +
+            "  <redundancy reply-after=\"4\">5</redundancy>\n" +
+            "  <group>" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\"" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"1\"/>\"" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"2\"/>\"" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"3\"/>\"" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"4\"/>\"" +
+            "  </group>" +
+            "</content>"
         );
         StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
         cc.getConfig(storBuilder);
@@ -71,14 +71,14 @@ public class ClusterTest extends ContentBaseTest {
     @Test
     public void testNoId() {
         ContentCluster c = parse(
-                "<content version=\"1.0\">\n" +
-                "  <redundancy>1</redundancy>\n" +
-                "  <documents/>" +
-                "  <redundancy reply-after=\"4\">5</redundancy>\n" +
-                "  <group>" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\"" +
-                "  </group>" +
-                "</content>"
+            "<content version=\"1.0\">\n" +
+            "  <redundancy>1</redundancy>\n" +
+            "  <documents/>" +
+            "  <redundancy reply-after=\"4\">5</redundancy>\n" +
+            "  <group>" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\"" +
+            "  </group>" +
+            "</content>"
         );
 
         assertEquals("content", c.getName());
@@ -88,14 +88,14 @@ public class ClusterTest extends ContentBaseTest {
     public void testRedundancyDefaults() {
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
         parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                "  <documents/>" +
-                "  <group>" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\"" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"1\"/>\"" +
-                "    <node hostalias=\"mockhost\" distribution-key=\"2\"/>\"" +
-                "  </group>" +
-                "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <group>" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\"" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"1\"/>\"" +
+            "    <node hostalias=\"mockhost\" distribution-key=\"2\"/>\"" +
+            "  </group>" +
+            "</content>"
         ).getConfig(builder);
 
         StorDistributionConfig config = new StorDistributionConfig(builder);
@@ -106,39 +106,40 @@ public class ClusterTest extends ContentBaseTest {
 
     @Test
     public void testEndToEnd() throws Exception {
-        String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<services>\n" +
-                "\n" +
-                "  <admin version=\"2.0\">\n" +
-                "    <adminserver hostalias=\"configserver\" />\n" +
-                "    <logserver hostalias=\"logserver\" />\n" +
-                "    <slobroks>\n" +
-                "      <slobrok hostalias=\"configserver\" />\n" +
-                "      <slobrok hostalias=\"logserver\" />\n" +
-                "    </slobroks>\n" +
-                "    <cluster-controllers>\n" +
-                "      <cluster-controller hostalias=\"configserver\"/>" +
-                "      <cluster-controller hostalias=\"configserver2\"/>" +
-                "      <cluster-controller hostalias=\"configserver3\"/>" +
-                "    </cluster-controllers>\n" +
-                "  </admin>\n" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>1</redundancy>\n" +
-                "     <documents>" +
-                "       <document type=\"type1\" mode=\"index\"/>\n" +
-                "       <document type=\"type2\" mode=\"index\"/>\n" +
-                "     </documents>\n" +
-                "     <group>" +
-                "       <node hostalias='node0' distribution-key='0' />" +
-                "     </group>" +
-                "    <tuning>" +
-                "      <cluster-controller>\n" +
-                "        <init-progress-time>34567</init-progress-time>" +
-                "      </cluster-controller>" +
-                "    </tuning>" +
-                "   </content>" +
-                "\n" +
-                "</services>";
+        String xml =
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+            "<services>\n" +
+            "\n" +
+            "  <admin version=\"2.0\">\n" +
+            "    <adminserver hostalias=\"configserver\" />\n" +
+            "    <logserver hostalias=\"logserver\" />\n" +
+            "    <slobroks>\n" +
+            "      <slobrok hostalias=\"configserver\" />\n" +
+            "      <slobrok hostalias=\"logserver\" />\n" +
+            "    </slobroks>\n" +
+            "    <cluster-controllers>\n" +
+            "      <cluster-controller hostalias=\"configserver\"/>" +
+            "      <cluster-controller hostalias=\"configserver2\"/>" +
+            "      <cluster-controller hostalias=\"configserver3\"/>" +
+            "    </cluster-controllers>\n" +
+            "  </admin>\n" +
+            "  <content version='1.0' id='bar'>" +
+            "     <redundancy>1</redundancy>\n" +
+            "     <documents>" +
+            "       <document type=\"type1\" mode=\"index\"/>\n" +
+            "       <document type=\"type2\" mode=\"index\"/>\n" +
+            "     </documents>\n" +
+            "     <group>" +
+            "       <node hostalias='node0' distribution-key='0' />" +
+            "     </group>" +
+            "    <tuning>" +
+            "      <cluster-controller>\n" +
+            "        <init-progress-time>34567</init-progress-time>" +
+            "      </cluster-controller>" +
+            "    </tuning>" +
+            "   </content>" +
+            "\n" +
+            "</services>";
 
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
         VespaModel model = (new VespaModelCreatorWithMockPkg(null, xml, sds)).create();
@@ -190,32 +191,33 @@ public class ClusterTest extends ContentBaseTest {
 
     @Test
     public void testSearchTuning() throws Exception {
-        String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<services>\n" +
-                "\n" +
-                "  <admin version=\"2.0\">\n" +
-                "    <adminserver hostalias=\"node0\" />\n" +
-                "    <cluster-controllers>\n" +
-                "      <cluster-controller hostalias=\"node0\"/>" +
-                "    </cluster-controllers>\n" +
-                "  </admin>\n" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>1</redundancy>\n" +
-                "     <documents>" +
-                "       <document type=\"type1\" mode='index'/>\n" +
-                "       <document type=\"type2\" mode='index'/>\n" +
-                "     </documents>\n" +
-                "     <group>" +
-                "       <node hostalias='node0' distribution-key='0'/>" +
-                "     </group>" +
-                "    <tuning>\n" +
-                "      <cluster-controller>" +
-                "        <init-progress-time>34567</init-progress-time>" +
-                "      </cluster-controller>" +
-                "    </tuning>" +
-                "   </content>" +
-                "\n" +
-                "</services>";
+        String xml =
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+            "<services>\n" +
+            "\n" +
+            "  <admin version=\"2.0\">\n" +
+            "    <adminserver hostalias=\"node0\" />\n" +
+            "    <cluster-controllers>\n" +
+            "      <cluster-controller hostalias=\"node0\"/>" +
+            "    </cluster-controllers>\n" +
+            "  </admin>\n" +
+            "  <content version='1.0' id='bar'>" +
+            "     <redundancy>1</redundancy>\n" +
+            "     <documents>" +
+            "       <document type=\"type1\" mode='index'/>\n" +
+            "       <document type=\"type2\" mode='index'/>\n" +
+            "     </documents>\n" +
+            "     <group>" +
+            "       <node hostalias='node0' distribution-key='0'/>" +
+            "     </group>" +
+            "    <tuning>\n" +
+            "      <cluster-controller>" +
+            "        <init-progress-time>34567</init-progress-time>" +
+            "      </cluster-controller>" +
+            "    </tuning>" +
+            "   </content>" +
+            "\n" +
+            "</services>";
 
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
         VespaModel model = new VespaModelCreatorWithMockPkg(getHosts(), xml, sds).create();
@@ -239,21 +241,22 @@ public class ClusterTest extends ContentBaseTest {
 
     @Test
     public void testRedundancyRequired() throws Exception {
-        String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                "<services>\n" +
-                "\n" +
-                "  <admin version=\"2.0\">\n" +
-                "    <adminserver hostalias=\"node0\" />\n" +
-                "  </admin>\n" +
-                "  <content version='1.0' id='bar'>" +
-                "     <documents>" +
-                "       <document type=\"type1\" mode='index'/>\n" +
-                "     </documents>\n" +
-                "     <group>\n" +
-                "       <node hostalias='node0' distribution-key='0'/>\n" +
-                "     </group>\n" +
-                "   </content>\n" +
-                "</services>\n";
+        String xml =
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+            "<services>\n" +
+            "\n" +
+            "  <admin version=\"2.0\">\n" +
+            "    <adminserver hostalias=\"node0\" />\n" +
+            "  </admin>\n" +
+            "  <content version='1.0' id='bar'>" +
+            "     <documents>" +
+            "       <document type=\"type1\" mode='index'/>\n" +
+            "     </documents>\n" +
+            "     <group>\n" +
+            "       <node hostalias='node0' distribution-key='0'/>\n" +
+            "     </group>\n" +
+            "   </content>\n" +
+            "</services>\n";
 
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
         try{
@@ -268,12 +271,12 @@ public class ClusterTest extends ContentBaseTest {
     public void testRedundancyFinalLessThanInitial() {
         try {
             parse(
-                    "<content version=\"1.0\" id=\"storage\">\n" +
-                    "  <redundancy reply-after=\"4\">2</redundancy>\n" +
-                    "     <group>" +
-                    "       <node hostalias='node0' distribution-key='0' />" +
-                    "     </group>" +
-                    "</content>"
+                "<content version=\"1.0\" id=\"storage\">\n" +
+                "  <redundancy reply-after=\"4\">2</redundancy>\n" +
+                "     <group>" +
+                "       <node hostalias='node0' distribution-key='0' />" +
+                "     </group>" +
+                "</content>"
             );
             fail("no exception thrown");
         } catch (Exception e) {
@@ -284,17 +287,17 @@ public class ClusterTest extends ContentBaseTest {
     public void testReadyTooHigh() {
         try {
             parse(
-                    "<content version=\"1.0\" id=\"storage\">\n" +
-                            "  <engine>" +
-                            "     <proton>" +
-                            "       <searchable-copies>3</searchable-copies>" +
-                            "     </proton>" +
-                            "  </engine>" +
-                            "  <redundancy>2</redundancy>\n" +
-                            "     <group>" +
-                            "       <node hostalias='node0' distribution-key='0' />" +
-                            "     </group>" +
-                            "</content>"
+                "<content version=\"1.0\" id=\"storage\">\n" +
+                "  <engine>" +
+                "     <proton>" +
+                "       <searchable-copies>3</searchable-copies>" +
+                "     </proton>" +
+                "  </engine>" +
+                "  <redundancy>2</redundancy>\n" +
+                "     <group>" +
+                "       <node hostalias='node0' distribution-key='0' />" +
+                "     </group>" +
+                "</content>"
             );
             fail("no exception thrown");
         } catch (Exception e) {
@@ -315,12 +318,12 @@ public class ClusterTest extends ContentBaseTest {
     {
         {
             FleetcontrollerConfig config = getFleetControllerConfig(
-                    "<content version=\"1.0\" id=\"storage\">\n" +
-                            "  <documents/>" +
-                            "  <group>\n" +
-                            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                            "  </group>\n" +
-                            "</content>"
+                "<content version=\"1.0\" id=\"storage\">\n" +
+                "  <documents/>" +
+                "  <group>\n" +
+                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+                "  </group>\n" +
+                "</content>"
             );
 
             assertEquals(0, config.min_storage_up_ratio(), 0.01);
@@ -331,17 +334,17 @@ public class ClusterTest extends ContentBaseTest {
 
         {
             FleetcontrollerConfig config = getFleetControllerConfig(
-                    "<content version=\"1.0\" id=\"storage\">\n" +
-                            "  <documents/>" +
-                            "  <group>\n" +
-                            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                            "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
-                            "    <node distribution-key=\"2\" hostalias=\"mockhost\"/>\n" +
-                            "    <node distribution-key=\"3\" hostalias=\"mockhost\"/>\n" +
-                            "    <node distribution-key=\"4\" hostalias=\"mockhost\"/>\n" +
-                            "    <node distribution-key=\"5\" hostalias=\"mockhost\"/>\n" +
-                            "  </group>\n" +
-                            "</content>"
+                "<content version=\"1.0\" id=\"storage\">\n" +
+                "  <documents/>" +
+                "  <group>\n" +
+                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+                "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
+                "    <node distribution-key=\"2\" hostalias=\"mockhost\"/>\n" +
+                "    <node distribution-key=\"3\" hostalias=\"mockhost\"/>\n" +
+                "    <node distribution-key=\"4\" hostalias=\"mockhost\"/>\n" +
+                "    <node distribution-key=\"5\" hostalias=\"mockhost\"/>\n" +
+                "  </group>\n" +
+                "</content>"
             );
 
             assertNotSame(0, config.min_storage_up_ratio());
@@ -352,12 +355,12 @@ public class ClusterTest extends ContentBaseTest {
     public void testImplicitDistributionBits()
     {
         ContentCluster cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "  </group>\n" +
-                        "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+            "  </group>\n" +
+            "</content>"
         );
 
         {
@@ -375,15 +378,15 @@ public class ClusterTest extends ContentBaseTest {
             assertEquals(8, config.minsplitcount());
         }
         cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <engine>" +
-                        "    <vds/>" +
-                        "  </engine>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "  </group>\n" +
-                        "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <engine>" +
+            "    <vds/>" +
+            "  </engine>" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+            "  </group>\n" +
+            "</content>"
         );
 
         {
@@ -406,15 +409,15 @@ public class ClusterTest extends ContentBaseTest {
     public void testExplicitDistributionBits()
     {
         ContentCluster cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "  </group>\n" +
-                        "  <tuning>\n" +
-                        "    <distribution type=\"strict\"/>\n" +
-                        "  </tuning>\n" +
-                        "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+            "  </group>\n" +
+            "  <tuning>\n" +
+            "    <distribution type=\"strict\"/>\n" +
+            "  </tuning>\n" +
+            "</content>"
         );
 
         {
@@ -432,18 +435,18 @@ public class ClusterTest extends ContentBaseTest {
             assertEquals(8, config.minsplitcount());
         }
         cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <engine>" +
-                        "    <vds/>" +
-                        "  </engine>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "  </group>\n" +
-                        "  <tuning>\n" +
-                        "    <distribution type=\"loose\"/>\n" +
-                        "  </tuning>\n" +
-                        "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <engine>" +
+            "    <vds/>" +
+            "  </engine>" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+            "  </group>\n" +
+            "  <tuning>\n" +
+            "    <distribution type=\"loose\"/>\n" +
+            "  </tuning>\n" +
+            "</content>"
         );
 
         {
@@ -466,16 +469,16 @@ public class ClusterTest extends ContentBaseTest {
     public void testGenerateSearchNodes()
     {
         ContentCluster cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <engine>" +
-                        "    <proton/>" +
-                        "  </engine>" +
-                        "  <group>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
-                        "  </group>\n" +
-                        "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <engine>" +
+            "    <proton/>" +
+            "  </engine>" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+            "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
+            "  </group>\n" +
+            "</content>"
         );
 
         {
@@ -499,16 +502,16 @@ public class ClusterTest extends ContentBaseTest {
     public void testAlternativeNodeSyntax()
     {
         ContentCluster cluster = parse(
-                "<content version=\"1.0\" id=\"test\">\n" +
-                        "  <documents/>" +
-                        "  <engine>" +
-                        "    <proton/>" +
-                        "  </engine>" +
-                        "  <nodes>\n" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                        "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
-                        "  </nodes>\n" +
-                        "</content>"
+            "<content version=\"1.0\" id=\"test\">\n" +
+            "  <documents/>" +
+            "  <engine>" +
+            "    <proton/>" +
+            "  </engine>" +
+            "  <nodes>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+            "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
+            "  </nodes>\n" +
+            "</content>"
         );
 
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
@@ -526,13 +529,13 @@ public class ClusterTest extends ContentBaseTest {
     public void testReadyWhenInitialOne() {
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
         parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                "  <documents/>" +
-                "  <redundancy>1</redundancy>\n" +
-                "  <group>\n" +
-                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <redundancy>1</redundancy>\n" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+            "  </group>" +
+            "</content>"
         ).getConfig(builder);
 
         StorDistributionConfig config = new StorDistributionConfig(builder);
@@ -543,16 +546,16 @@ public class ClusterTest extends ContentBaseTest {
 
     public void testProvider(String tagName, StorServerConfig.Persistence_provider.Type.Enum type) {
         ContentCluster cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                        "  <documents/>" +
-                        "  <redundancy>3</redundancy>" +
-                "  <engine>\n" +
-                "    <" + tagName + "/>\n" +
-                "  </engine>\n" +
-                "  <group>\n" +
-                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                "  </group>" +
-                "</content>"
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <redundancy>3</redundancy>" +
+            "  <engine>\n" +
+            "    <" + tagName + "/>\n" +
+            "  </engine>\n" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+            "  </group>" +
+            "</content>"
         );
 
         {
@@ -589,11 +592,11 @@ public class ClusterTest extends ContentBaseTest {
         MetricsmanagerConfig.Builder builder = new MetricsmanagerConfig.Builder();
 
         ContentCluster cluster = parse("<content version=\"1.0\" id=\"storage\">\n" +
-                "  <documents/>" +
-                "  <group>\n" +
-                "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
-                "  </group>\n" +
-                "</content>"
+            "  <documents/>" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
+            "  </group>\n" +
+            "</content>"
         );
         cluster.getConfig(builder);
 
@@ -649,34 +652,34 @@ public class ClusterTest extends ContentBaseTest {
     @Test
     public void testConfiguredMetrics() throws Exception {
         String xml = "" +
-                "<services>" +
-                "<content version=\"1.0\" id=\"storage\">\n" +
-                "  <redundancy>1</redundancy>\n" +
-                "  <documents>" +
-                "   <document type=\"type1\" mode='index'/>\n" +
-                "   <document type=\"type2\" mode='index'/>\n" +
-                "  </documents>" +
-                "  <group>\n" +
-                "    <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
-                "  </group>\n" +
-                "</content>" +
-                "<admin version=\"2.0\">" +
-                "  <logserver hostalias=\"node0\"/>" +
-                "  <adminserver hostalias=\"node0\"/>" +
-                "  <metric-consumers>" +
-                "    <consumer name=\"foobar\">" +
-                "      <metric name=\"storage.foo.bar\"/>" +
-                "    </consumer>" +
-                "    <consumer name=\"log\">" +
-                "      <metric name=\"extralogmetric\"/>" +
-                "      <metric name=\"extralogmetric3\"/>" +
-                "    </consumer>" +
-                "    <consumer name=\"fleetcontroller\">" +
-                "      <metric name=\"extraextra\"/>" +
-                "    </consumer>" +
-                "  </metric-consumers>" +
-                "</admin>" +
-                "</services>";
+            "<services>" +
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <redundancy>1</redundancy>\n" +
+            "  <documents>" +
+            "   <document type=\"type1\" mode='index'/>\n" +
+            "   <document type=\"type2\" mode='index'/>\n" +
+            "  </documents>" +
+            "  <group>\n" +
+            "    <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
+            "  </group>\n" +
+            "</content>" +
+            "<admin version=\"2.0\">" +
+            "  <logserver hostalias=\"node0\"/>" +
+            "  <adminserver hostalias=\"node0\"/>" +
+            "  <metric-consumers>" +
+            "    <consumer name=\"foobar\">" +
+            "      <metric name=\"storage.foo.bar\"/>" +
+            "    </consumer>" +
+            "    <consumer name=\"log\">" +
+            "      <metric name=\"extralogmetric\"/>" +
+            "      <metric name=\"extralogmetric3\"/>" +
+            "    </consumer>" +
+            "    <consumer name=\"fleetcontroller\">" +
+            "      <metric name=\"extraextra\"/>" +
+            "    </consumer>" +
+            "  </metric-consumers>" +
+            "</admin>" +
+            "</services>";
 
 
         List<String> sds = ApplicationPackageUtils.generateSearchDefinitions("type1", "type2");
@@ -736,33 +739,33 @@ public class ClusterTest extends ContentBaseTest {
     @Test
     public void requireThatPreShutdownCommandIsSet() {
         ContentCluster cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">" +
-                        "  <documents/>" +
-                        "  <engine>" +
-                        "    <proton>" +
-                        "      <flush-on-shutdown>true</flush-on-shutdown>" +
-                        "    </proton>" +
-                        "  </engine>" +
-                        "  <group>" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                        "  </group>" +
-                        "</content>");
+            "<content version=\"1.0\" id=\"storage\">" +
+            "  <documents/>" +
+            "  <engine>" +
+            "    <proton>" +
+            "      <flush-on-shutdown>true</flush-on-shutdown>" +
+            "    </proton>" +
+            "  </engine>" +
+            "  <group>" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+            "  </group>" +
+            "</content>");
         assertThat(cluster.getSearch().getSearchNodes().size(), is(1));
         assertTrue(cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand().isPresent());
 
         cluster = parse(
-                "<content version=\"1.0\" id=\"storage\">" +
-                        "  <documents/>" +
-                        "  <engine>" +
-                        "    <proton>" +
-                        "      <flush-on-shutdown>  \n " +
-                        "  true  </flush-on-shutdown>" +
-                        "    </proton>" +
-                        "  </engine>" +
-                        "  <group>" +
-                        "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
-                        "  </group>" +
-                        "</content>");
+            "<content version=\"1.0\" id=\"storage\">" +
+            "  <documents/>" +
+            "  <engine>" +
+            "    <proton>" +
+            "      <flush-on-shutdown>  \n " +
+            "  true  </flush-on-shutdown>" +
+            "    </proton>" +
+            "  </engine>" +
+            "  <group>" +
+            "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>" +
+            "  </group>" +
+            "</content>");
         assertThat(cluster.getSearch().getSearchNodes().size(), is(1));
         assertTrue(cluster.getSearch().getSearchNodes().get(0).getPreShutdownCommand().isPresent());
     }
