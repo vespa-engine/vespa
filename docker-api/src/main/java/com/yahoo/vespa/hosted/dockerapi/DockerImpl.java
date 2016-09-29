@@ -113,7 +113,7 @@ public class DockerImpl implements Docker {
             throw new RuntimeException("Could not setup docker network", e);
         }
 
-        numberOfRunningContainersGauge = metricReceiver.declageGauge("containers.running");
+        numberOfRunningContainersGauge = metricReceiver.declareGauge("containers.running");
         numberOfDockerDaemonFails = metricReceiver.declareCounter("daemon.api_fails");
     }
 
