@@ -149,7 +149,7 @@ UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
                 equal = (*term == c);
             }
         }
-        if (equal && (qt.isPrefix() || (n == e))) {
+        if (equal && (term == eterm) && (qt.isPrefix() || (n == e))) {
             addHit(qt,0);
         }
     }
