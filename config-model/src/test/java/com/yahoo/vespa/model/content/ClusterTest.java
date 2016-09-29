@@ -35,22 +35,72 @@ public class ClusterTest extends ContentBaseTest {
     }
 
     @Test
+    public void testHierarchicRedundancy() {
+        ContentCluster cc = parse("" +
+            "<content version=\"1.0\" id=\"storage\">\n" +
+            "  <documents/>" +
+            "  <engine>" +
+            "    <proton>" +
+            "      <searchable-copies>3</searchable-copies>" +
+            "    </proton>" +
+            "  </engine>" +
+            "  <redundancy>15</redundancy>\n" +
+            "  <group name='root' distribution-key='0'>" +
+            "    <distribution partitions='1|1|*'/>" +
+            "    <group name='g-1' distribution-key='0'>" +
+            "      <node hostalias='mockhost' distribution-key='0'/>" +
+            "      <node hostalias='mockhost' distribution-key='1'/>" +
+            "      <node hostalias='mockhost' distribution-key='2'/>" +
+            "      <node hostalias='mockhost' distribution-key='3'/>" +
+            "      <node hostalias='mockhost' distribution-key='4'/>" +
+            "    </group>" +
+            "    <group name='g-2' distribution-key='1'>" +
+            "      <node hostalias='mockhost' distribution-key='5'/>" +
+            "      <node hostalias='mockhost' distribution-key='6'/>" +
+            "      <node hostalias='mockhost' distribution-key='7'/>" +
+            "      <node hostalias='mockhost' distribution-key='8'/>" +
+            "      <node hostalias='mockhost' distribution-key='9'/>" +
+            "    </group>" +
+            "    <group name='g-3' distribution-key='1'>" +
+            "      <node hostalias='mockhost' distribution-key='10'/>" +
+            "      <node hostalias='mockhost' distribution-key='11'/>" +
+            "      <node hostalias='mockhost' distribution-key='12'/>" +
+            "      <node hostalias='mockhost' distribution-key='13'/>" +
+            "      <node hostalias='mockhost' distribution-key='14'/>" +
+            "    </group>" +
+            "  </group>" +
+            "</content>"
+        );
+        StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
+        cc.getConfig(storBuilder);
+        StorDistributionConfig storConfig = new StorDistributionConfig(storBuilder);
+        assertEquals(15, storConfig.initial_redundancy());
+        assertEquals(15, storConfig.redundancy());
+        assertEquals(3, storConfig.ready_copies());
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(3, protonConfig.distribution().searchablecopies());
+        assertEquals(5, protonConfig.distribution().redundancy());
+    }
+
+    @Test
     public void testRedundancy() {
         ContentCluster cc = parse("" +
             "<content version=\"1.0\" id=\"storage\">\n" +
             "  <documents/>" +
             "  <engine>" +
-            "     <proton>" +
-            "       <searchable-copies>3</searchable-copies>" +
-            "     </proton>" +
+            "    <proton>" +
+            "      <searchable-copies>3</searchable-copies>" +
+            "    </proton>" +
             "  </engine>" +
-            "  <redundancy reply-after=\"4\">5</redundancy>\n" +
+            "  <redundancy reply-after='4'>5</redundancy>\n" +
             "  <group>" +
-            "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\"" +
-            "    <node hostalias=\"mockhost\" distribution-key=\"1\"/>\"" +
-            "    <node hostalias=\"mockhost\" distribution-key=\"2\"/>\"" +
-            "    <node hostalias=\"mockhost\" distribution-key=\"3\"/>\"" +
-            "    <node hostalias=\"mockhost\" distribution-key=\"4\"/>\"" +
+            "    <node hostalias='mockhost' distribution-key='0'/>" +
+            "    <node hostalias='mockhost' distribution-key='1'/>" +
+            "    <node hostalias='mockhost' distribution-key='2'/>" +
+            "    <node hostalias='mockhost' distribution-key='3'/>" +
+            "    <node hostalias='mockhost' distribution-key='4'/>" +
             "  </group>" +
             "</content>"
         );
@@ -65,7 +115,6 @@ public class ClusterTest extends ContentBaseTest {
         ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
         assertEquals(3, protonConfig.distribution().searchablecopies());
         assertEquals(5, protonConfig.distribution().redundancy());
-
     }
 
     @Test

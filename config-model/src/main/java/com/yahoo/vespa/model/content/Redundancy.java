@@ -16,6 +16,7 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     private final int readyCopies;
 
     private int implicitGroups = 1;
+    private int explicitGroups = 1;
 
     /** The total number of nodes available in this cluster (assigned when this becomes known) */
     private int totalNodes = 0;
@@ -40,6 +41,7 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
      * values returned in the config.
      */
     public void setImplicitGroups(int implicitGroups) { this.implicitGroups = implicitGroups; }
+    public void setExplicitGroups(int explicitGroups) { this.explicitGroups = explicitGroups; }
 
     public int initialRedundancy() { return initialRedundancy; }
     public int finalRedundancy() { return finalRedundancy; }
@@ -58,9 +60,8 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         ProtonConfig.Distribution.Builder distBuilder = new ProtonConfig.Distribution.Builder();
-        distBuilder.redundancy(finalRedundancy);
+        distBuilder.redundancy(finalRedundancy/explicitGroups);
         distBuilder.searchablecopies(readyCopies);
         builder.distribution(distBuilder);
-
     }
 }
