@@ -166,6 +166,9 @@ void asioWorker(asio::io_service& ioService)
             ioService.run();
         } catch (const ZKConnectionLossException & e) {
             LOG(info, "Connection loss in asioWorker thread, resuming. %s", e.what());
+        } catch (const std::exception & e) {
+            LOG(fatal, "Unknow exception in asioWorker. %s", e.what());
+            assert(false);
         }
     }
 }
