@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
-import static org.junit.Assert.assertEquals;
-import java.io.IOException;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
 /**
  * @author Vegard Sjonfjell
@@ -24,13 +23,7 @@ public class JsonTestHelper {
      * Structurally compare two JSON encoded strings
      */
     public static void assertJsonEquals(String inputJson, String expectedJson) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            assertEquals(mapper.readTree(inputJson), mapper.readTree(expectedJson));
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        assertThat(inputJson, sameJSONAs(expectedJson));
     }
 
 }
