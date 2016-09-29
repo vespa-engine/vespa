@@ -61,7 +61,7 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
     public void getConfig(ProtonConfig.Builder builder) {
         ProtonConfig.Distribution.Builder distBuilder = new ProtonConfig.Distribution.Builder();
         distBuilder.redundancy(finalRedundancy/explicitGroups);
-        distBuilder.searchablecopies(readyCopies/explicitGroups);
+        distBuilder.searchablecopies(readyCopies/(explicitGroups*implicitGroups));
         builder.distribution(distBuilder);
     }
 }
