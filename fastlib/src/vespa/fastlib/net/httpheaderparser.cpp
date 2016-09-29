@@ -25,8 +25,8 @@ Fast_HTTPHeaderParser::ReadRequestLine(const char *&method, const char *&url, in
   // end of requests.
 
   do {
-    int idx = 0;
-    size_t readLen = _input->ReadBufferFullUntil(_lineBuffer, _bufferSize, '\n');
+    size_t idx = 0;
+    ssize_t readLen = _input->ReadBufferFullUntil(_lineBuffer, _bufferSize, '\n');
     if (readLen <= 0) {
       return false;
     }
@@ -83,7 +83,7 @@ Fast_HTTPHeaderParser::ReadHeader(const char *&name, const char *&value)
 
   constexpr size_t ROOM_FOR_PUSH_BACK = 1u;
   while ((idx + ROOM_FOR_PUSH_BACK) < _bufferSize) {
-    size_t readLen = _input->ReadBufferFullUntil(&_lineBuffer[idx], _bufferSize - idx - ROOM_FOR_PUSH_BACK, '\n');
+    ssize_t readLen = _input->ReadBufferFullUntil(&_lineBuffer[idx], _bufferSize - idx - ROOM_FOR_PUSH_BACK, '\n');
     if (readLen <= 0) {
       return false;
     }
