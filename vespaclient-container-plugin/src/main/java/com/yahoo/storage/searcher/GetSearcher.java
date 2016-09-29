@@ -2,7 +2,10 @@
 package com.yahoo.storage.searcher;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.feedhandler.NullFeedMetric;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
@@ -169,9 +172,13 @@ public class GetSearcher extends Searcher {
     }
 
     @Inject
-    public GetSearcher(FeederConfig feederConfig, LoadTypeConfig loadTypeConfig) throws Exception {
-        this(FeedContext.getInstance(feederConfig, loadTypeConfig, new NullFeedMetric()),
-             (long)(feederConfig.timeout() * 1000));
+    public GetSearcher(FeederConfig feederConfig, 
+                       LoadTypeConfig loadTypeConfig,
+                       DocumentmanagerConfig documentmanagerConfig,
+                       SlobroksConfig slobroksConfig,
+                       ClusterListConfig clusterListConfig) throws Exception {
+        this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, slobroksConfig, 
+                                     clusterListConfig, new NullFeedMetric()), (long)(feederConfig.timeout() * 1000));
     }
 
     GetSearcher(FeedContext context) throws Exception {

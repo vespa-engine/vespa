@@ -32,8 +32,8 @@ public class FileSender implements Serializable {
     public static FileReference sendFileToServices(String relativePath,
                                                    Collection<? extends AbstractService> services) {
         if (services.isEmpty()) {
-            throw new IllegalStateException("'sendFileToServices called for empty services!" +
-                                            " - This should never happen!");
+            throw new IllegalStateException("No service instances. Probably a standalone cluster setting up <nodes> " +
+                                            "using 'count' instead of <node> tags.");
         }
         FileReference fileref = null;
         for (AbstractService service : services) {
@@ -146,4 +146,5 @@ public class FileSender implements Serializable {
         }
         builder.setValue(reference.value());
     }
+
 }

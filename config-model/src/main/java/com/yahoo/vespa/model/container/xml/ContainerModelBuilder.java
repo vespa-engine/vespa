@@ -16,6 +16,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
+import com.yahoo.path.Path;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -104,7 +105,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         checkVersion(spec);
 
         this.log = modelContext.getDeployLogger();
-
         ContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
         addBundlesForPlatformComponents(cluster);
@@ -587,9 +587,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private ContainerDocumentApi buildDocumentApi(ContainerCluster cluster, Element spec) {
         Element documentApiElement = XML.getChild(spec, "document-api");
-        if (documentApiElement == null) {
-            return null;
-        }
+        if (documentApiElement == null) return null;
 
         ContainerDocumentApi.Options documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         return new ContainerDocumentApi(cluster, documentApiOptions);

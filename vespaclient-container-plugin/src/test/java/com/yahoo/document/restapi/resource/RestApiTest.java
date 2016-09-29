@@ -33,11 +33,12 @@ import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertThat;
 
 public class RestApiTest {
+
     Application application;
 
     @Before
     public void setup() throws Exception {
-        application = Application.fromApplicationPackage(Paths.get("src/test/application"), Networking.enable);
+        application = Application.fromApplicationPackage(Paths.get("src/test/rest-api-application"), Networking.enable);
     }
 
     @After
@@ -249,7 +250,7 @@ public class RestApiTest {
     public void testbasicEncodingV2() throws Exception {
         Request request = new Request("http://localhost:" + getFirstListenPort() + get_enc_test_uri_v2);
         HttpGet get = new HttpGet(request.getUri());
-        final String rest = doRest(get);
+        String rest = doRest(get);
         assertThat(rest, containsString(get_enc_response_part1_v2));
         assertThat(rest, containsString(get_enc_response_part2));
     }
@@ -264,7 +265,7 @@ public class RestApiTest {
     public void testbasicVisit() throws Exception {
         Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_uri);
         HttpGet get = new HttpGet(request.getUri());
-        final String rest = doRest(get);
+        String rest = doRest(get);
         assertThat(rest, containsString(visit_response_part1));
         assertThat(rest, containsString(visit_response_part2));
         assertThat(rest, containsString(visit_response_part3));
@@ -276,9 +277,9 @@ public class RestApiTest {
 
     @Test
     public void testBadVisit() throws Exception {
-        final Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_bad_uri);
+        Request request = new Request("http://localhost:" + getFirstListenPort() + visit_test_bad_uri);
         HttpGet get = new HttpGet(request.getUri());
-        final String rest = doRest(get);
+        String rest = doRest(get);
         assertThat(rest, containsString(visit_test_bad_response));
     }
 

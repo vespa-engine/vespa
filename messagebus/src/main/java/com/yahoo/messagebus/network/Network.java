@@ -21,28 +21,28 @@ public interface Network {
      * @param seconds The timeout.
      * @return True if ready.
      */
-    public boolean waitUntilReady(double seconds);
+    boolean waitUntilReady(double seconds);
 
     /**
      * Attach the network layer to the given owner
      *
      * @param owner owner of the network
      */
-    public void attach(NetworkOwner owner);
+    void attach(NetworkOwner owner);
 
     /**
      * Register a session name with the network layer. This will make the session visible to other nodes.
      *
      * @param session the session name
      */
-    public void registerSession(String session);
+    void registerSession(String session);
 
     /**
      * Unregister a session name with the network layer. This will make the session unavailable for other nodes.
      *
      * @param session session name
      */
-    public void unregisterSession(String session);
+    void unregisterSession(String session);
 
     /**
      * Resolves the service address of the recipient referenced by the given routing node. If a recipient can not be
@@ -52,7 +52,7 @@ public interface Network {
      * @param recipient The node whose service address to allocate.
      * @return True if a service address was allocated.
      */
-    public boolean allocServiceAddress(RoutingNode recipient);
+    boolean allocServiceAddress(RoutingNode recipient);
 
     /**
      * Frees the service address from the given routing node. This allows the network layer to track and close
@@ -60,7 +60,7 @@ public interface Network {
      *
      * @param recipient The node whose service address to free.
      */
-    public void freeServiceAddress(RoutingNode recipient);
+    void freeServiceAddress(RoutingNode recipient);
 
     /**
      * Send a message to the given recipients. A {@link RoutingNode} contains all the necessary context for sending.
@@ -68,7 +68,7 @@ public interface Network {
      * @param msg        The message to send.
      * @param recipients A list of routing leaf nodes resolved for the message.
      */
-    public void send(Message msg, List<RoutingNode> recipients);
+    void send(Message msg, List<RoutingNode> recipients);
 
     /**
      * Synchronize with internal threads. This method will handshake with all internal threads. This has the implicit
@@ -76,12 +76,12 @@ public interface Network {
      * that would make the thread wait for itself... forever. This method is typically used to untangle during session
      * shutdown.
      */
-    public void sync();
+    void sync();
 
     /**
      * Shuts down the network. This is a blocking call that waits for all scheduled tasks to complete.
      */
-    public void shutdown();
+    void shutdown();
 
     /**
      * Returns a string that represents the connection specs of this network. It is in not a complete address since it
@@ -89,12 +89,13 @@ public interface Network {
      *
      * @return The connection string.
      */
-    public String getConnectionSpec();
+    String getConnectionSpec();
 
     /**
      * Returns a reference to a name server mirror.
      *
      * @return The mirror object.
      */
-    public IMirror getMirror();
+    IMirror getMirror();
+
 }

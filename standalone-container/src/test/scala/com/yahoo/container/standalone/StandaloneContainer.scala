@@ -32,7 +32,7 @@ object StandaloneContainer {
     }
   }
 
-  def withContainerModel[T](containerNode: Node)(f: MockRoot => T) {
+  def withContainerModel[T](containerNode: Node)(f: VespaModel => T) {
     withTempDirectory { applicationPath =>
       createServicesXml(applicationPath, containerNode)
 

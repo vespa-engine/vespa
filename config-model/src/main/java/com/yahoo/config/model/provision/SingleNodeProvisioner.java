@@ -27,10 +27,11 @@ public class SingleNodeProvisioner implements HostProvisioner {
     public SingleNodeProvisioner() {
         try {
             host = new Host(HostSystem.lookupCanonicalHostname(HostName.getLocalhost()));
-        } catch (UnknownHostException e) {
+            this.hostSpec = new HostSpec(host.hostname(), host.aliases());
+        }
+        catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        this.hostSpec = new HostSpec(host.hostname(), host.aliases());
     }
 
     @Override

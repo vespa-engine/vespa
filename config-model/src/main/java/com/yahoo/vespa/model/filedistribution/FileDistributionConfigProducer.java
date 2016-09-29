@@ -13,6 +13,7 @@ import java.util.Map;
  * @author tonytv
  */
 public class FileDistributionConfigProducer extends AbstractConfigProducer {
+
     private final Map<Host, FileDistributorService> fileDistributorServices = new IdentityHashMap<>();
     private final FileDistributor fileDistributor;
     private final FileDistributionOptions options;
@@ -56,4 +57,5 @@ public class FileDistributionConfigProducer extends AbstractConfigProducer {
             return new FileDistributionConfigProducer(ancestor, fileDistributor, options);
         }
     }
+
 }

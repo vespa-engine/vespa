@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedapi;
 
+import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.document.DocumentTypeManager;
@@ -87,16 +90,21 @@ public class FeedContext {
         return docTypeManager;
     }
 
-    public static FeedContext getInstance(FeederConfig feederConfig, LoadTypeConfig loadTypeConfig, Metric metric) {
+    public static FeedContext getInstance(FeederConfig feederConfig, 
+                                          LoadTypeConfig loadTypeConfig, 
+                                          DocumentmanagerConfig documentmanagerConfig, 
+                                          SlobroksConfig slobroksConfig,
+                                          ClusterListConfig clusterListConfig,
+                                          Metric metric) {
         synchronized (sync) {
             try {
                 if (instance == null) {
                     MessagePropertyProcessor proc = new MessagePropertyProcessor(feederConfig, loadTypeConfig);
-                    MessageBusSessionFactory mbusFactory = new MessageBusSessionFactory(proc);
+                    MessageBusSessionFactory mbusFactory = new MessageBusSessionFactory(proc, documentmanagerConfig, slobroksConfig);
                     instance = new FeedContext(proc,
                                                mbusFactory,
                                                mbusFactory.getAccess().getDocumentTypeManager(),
-                                               new ClusterList("client"), metric);
+                                               new ClusterList(clusterListConfig), metric);
                 } else {
                     instance.getPropertyProcessor().configure(feederConfig, loadTypeConfig);
                 }

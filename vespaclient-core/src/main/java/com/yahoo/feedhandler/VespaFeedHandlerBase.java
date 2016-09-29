@@ -3,11 +3,14 @@ package com.yahoo.feedhandler;
 
 import com.google.inject.Inject;
 import com.yahoo.clientmetrics.ClientMetrics;
+import com.yahoo.cloud.config.ClusterListConfig;
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.docproc.DocprocService;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.MessagePropertyProcessor;
 import com.yahoo.feedapi.SharedSender;
@@ -29,9 +32,14 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
     @Inject
     public VespaFeedHandlerBase(FeederConfig feederConfig,
                                 LoadTypeConfig loadTypeConfig,
+                                DocumentmanagerConfig documentmanagerConfig,
+                                SlobroksConfig slobroksConfig,
+                                ClusterListConfig clusterListConfig,
                                 Executor executor,
                                 Metric metric) throws Exception {
-        this(FeedContext.getInstance(feederConfig, loadTypeConfig, metric), executor, (long)feederConfig.timeout() * 1000);
+        this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, 
+                                     slobroksConfig, clusterListConfig, metric), 
+             executor, (long)feederConfig.timeout() * 1000);
     }
 
     public VespaFeedHandlerBase(FeedContext context, Executor executor) throws Exception {

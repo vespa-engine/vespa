@@ -60,8 +60,7 @@ public class VisitorSearcherTestCase {
     public VisitSearcher create() throws Exception {
         ClusterListConfig.Storage.Builder storageCluster = new ClusterListConfig.Storage.Builder().configid("storage/cluster.foobar").name("foobar");
         ClusterListConfig clusterListCfg = new ClusterListConfig(new ClusterListConfig.Builder().storage(storageCluster));
-        ClusterList clusterList = new ClusterList();
-        clusterList.configure(clusterListCfg);
+        ClusterList clusterList = new ClusterList(clusterListCfg);
         return new VisitSearcher(new FeedContext(
                 new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(458).route("riksveg18").retryenabled(true)),
                         new LoadTypeConfig(new LoadTypeConfig.Builder())),
@@ -139,15 +138,13 @@ public class VisitorSearcherTestCase {
         ClusterListConfig.Storage.Builder storageCluster1 = new ClusterListConfig.Storage.Builder().configid("storage/cluster.foo").name("foo");
         ClusterListConfig.Storage.Builder storageCluster2 = new ClusterListConfig.Storage.Builder().configid("storage/cluster.bar").name("bar");
         ClusterListConfig clusterListCfg = new ClusterListConfig(new ClusterListConfig.Builder().storage(Arrays.asList(storageCluster1, storageCluster2)));
-        ClusterList clusterList = new ClusterList();
-        clusterList.configure(clusterListCfg);
+        ClusterList clusterList = new ClusterList(clusterListCfg);
         VisitSearcher searcher = new VisitSearcher(new FeedContext(
                 new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(100).route("whatever").retryenabled(true)),
                         new LoadTypeConfig(new LoadTypeConfig.Builder())),
                 factory, docMan, clusterList, new NullFeedMetric()));
 
-            searcher.getVisitorParameters(
-                    newQuery("visit?visit.selection=id.user=1234"), null);
+            searcher.getVisitorParameters(newQuery("visit?visit.selection=id.user=1234"), null);
     }
 
     @Test

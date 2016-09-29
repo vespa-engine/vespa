@@ -200,7 +200,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         HostResource deployHost = getHostSystem().getHostByHostname(fileDistributor.fileSourceHost());
         if (deployHostIsMissing(deployHost)) {
             throw new RuntimeException("Could not find host in the application's host system: '" +
-                    fileDistributor.fileSourceHost() + "'. Hostsystem=" + getHostSystem());
+                                       fileDistributor.fileSourceHost() + "'. Hostsystem=" + getHostSystem());
         }
 
         FileDistributorService fds = new FileDistributorService(fileDistribution, host.getHost().getHostName(),

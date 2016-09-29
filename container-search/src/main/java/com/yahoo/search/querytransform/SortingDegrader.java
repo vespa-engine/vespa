@@ -69,6 +69,8 @@ public class SortingDegrader extends Searcher {
     }
 
     private void setDegradation(Query query) {
+        query.trace("Using sorting degrading for performance - totalHits will be wrong. " + 
+                    "Turn off with sorting.degrading=false.", 2);
         Sorting.FieldOrder primarySort = query.getRanking().getSorting().fieldOrders().get(0); // ensured above
         MatchPhase matchPhase = query.getRanking().getMatchPhase();
 

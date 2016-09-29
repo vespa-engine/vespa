@@ -4,8 +4,9 @@ package com.yahoo.vespa.model.utils;
 import java.util.*;
 
 /**
- * Delegates to a map that can be froozen.
+ * Delegates to a map that can be frozen.
  * Not thread safe.
+ *
  * @author tonytv
  */
 public class FreezableMap<K, V> implements Map<K, V> {
@@ -88,4 +89,5 @@ public class FreezableMap<K, V> implements Map<K, V> {
     public boolean isFrozen() {
         return frozen;
     }
+
 }
