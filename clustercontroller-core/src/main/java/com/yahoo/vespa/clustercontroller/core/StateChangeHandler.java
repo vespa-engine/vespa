@@ -59,15 +59,19 @@ public class StateChangeHandler {
                 final NodeState nodeState = currentState.getNodeState(node);
                 if (nodeInfo != null && nodeState != null) {
                     if (nodeState.getStartTimestamp() > nodeInfo.getStartTimestamp()) {
-                        log.log(LogLevel.DEBUG, String.format("Storing away new start timestamp for node %s (%d)",
-                                node, nodeState.getStartTimestamp()));
+                        if (log.isLoggable(LogLevel.DEBUG)) {
+                            log.log(LogLevel.DEBUG, String.format("Storing away new start timestamp for node %s (%d)",
+                                    node, nodeState.getStartTimestamp()));
+                        }
                         nodeInfo.setStartTimestamp(nodeState.getStartTimestamp());
                     }
                     if (nodeState.getStartTimestamp() > 0) {
-                        log.log(LogLevel.DEBUG, String.format("Resetting timestamp in cluster state for node %s", node));
+                        if (log.isLoggable(LogLevel.DEBUG)) {
+                            log.log(LogLevel.DEBUG, String.format("Resetting timestamp in cluster state for node %s", node));
+                        }
                         ++startTimestampsReset;
                     }
-                } else {
+                } else if (log.isLoggable(LogLevel.DEBUG)) {
                     log.log(LogLevel.DEBUG, node + ": " +
                                             (nodeInfo == null ? "null" : nodeInfo.getStartTimestamp()) + ", " +
                                             (nodeState == null ? "null" : nodeState.getStartTimestamp()));
@@ -114,16 +118,16 @@ public class StateChangeHandler {
                                            final NodeStateOrHostInfoChangeHandler nodeListener)
     {
         final NodeState currentState = currentClusterState.getNodeState(node.getNode());
-        log.log(currentState.equals(reportedState) && node.getVersion() == 0 ? LogLevel.SPAM : LogLevel.DEBUG,
-                "Got nodestate reply from " + node + ": "
-                + node.getReportedState().getTextualDifference(reportedState) + " (Current state is " + currentState.toString(true) + ")");
+        final LogLevel level = (currentState.equals(reportedState) && node.getVersion() == 0) ? LogLevel.SPAM : LogLevel.DEBUG;
+        if (log.isLoggable(level)) {
+            log.log(level, String.format("Got nodestate reply from %s: %s (Current state is %s)",
+                    node, node.getReportedState().getTextualDifference(reportedState), currentState.toString(true)));
+        }
         final long currentTime = timer.getCurrentTimeInMillis();
 
         if (reportedState.getState().equals(State.DOWN)) {
             node.setTimeOfFirstFailingConnectionAttempt(currentTime);
         }
-        // FIXME only set if reported state has actually changed...
-        stateMayHaveChanged = true;
 
         // *** LOGGING ONLY
         if ( ! reportedState.similarTo(node.getReportedState())) {
@@ -138,7 +142,6 @@ public class StateChangeHandler {
             return;
         }
 
-        // TODO rename, refactor, rejoice
         updateNodeInfoFromReportedState(node, currentState, reportedState, nodeListener);
 
         if (reportedState.getMinUsedBits() != currentState.getMinUsedBits()) {
@@ -149,11 +152,12 @@ public class StateChangeHandler {
                             oldCount, newCount));
             eventLog.add(new NodeEvent(node, String.format("Altered min distribution bit count from %d to %d", oldCount, newCount),
                          NodeEvent.Type.CURRENT, currentTime), isMaster);
-            stateMayHaveChanged = true;
         } else if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, String.format("Not altering state of %s in cluster state because new state is too similar: %s",
                     node, currentState.getTextualDifference(reportedState)));
         }
+
+        stateMayHaveChanged = true;
     }
 
     public void handleNewNode(NodeInfo node) {
@@ -265,7 +269,6 @@ public class StateChangeHandler {
         return Collections.unmodifiableMap(hostnames);
     }
 
-    // TODO refactor like a boss
     // TODO too many hidden behavior dependencies between this and the actually
     // generated cluster state. Still a bit of a mine field...
     // TODO remove all node state mutation from this function entirely in favor of ClusterStateGenerator!
@@ -276,47 +279,60 @@ public class StateChangeHandler {
     {
         boolean triggeredAnyTimers = false;
         final long currentTime = timer.getCurrentTimeInMillis();
+
         for(NodeInfo node : cluster.getNodeInfo()) {
-            final NodeState currentStateInSystem = currentClusterState.getNodeState(node.getNode());
-            final NodeState lastReportedState = node.getReportedState();
-
-            triggeredAnyTimers |= reportDownIfOutdatedSlobrokNode(
-                    currentClusterState, nodeListener, currentTime, node, lastReportedState);
-
-            if (nodeStillUnavailableAfterTransitionTimeExceeded(
-                    currentTime, node, currentStateInSystem, lastReportedState))
-            {
-                eventLog.add(new NodeEvent(node, (currentTime - node.getTransitionTime())
-                        + " milliseconds without contact. Marking node down.",
-                        NodeEvent.Type.CURRENT, currentTime), isMaster);
-                triggeredAnyTimers = true;
-            }
-
-            if (nodeInitProgressHasTimedOut(currentTime, node, currentStateInSystem, lastReportedState)) {
-                eventLog.add(new NodeEvent(node, String.format(
-                            "%d milliseconds without initialize progress. Marking node down. " +
-                                "Premature crash count is now %d.",
-                            currentTime - node.getInitProgressTime(),
-                            node.getPrematureCrashCount() + 1),
-                        NodeEvent.Type.CURRENT, currentTime), isMaster);
-                handlePrematureCrash(node, nodeListener);
-                triggeredAnyTimers = true;
-            }
-
-            if (mayResetCrashCounterOnStableUpNode(currentTime, node, lastReportedState)) {
-                node.setPrematureCrashCount(0);
-                log.log(LogLevel.DEBUG, "Resetting premature crash count on node " + node + " as it has been up for a long time.");
-                triggeredAnyTimers = true;
-            } else if (mayResetCrashCounterOnStableDownNode(currentTime, node, lastReportedState)) {
-                node.setPrematureCrashCount(0);
-                log.log(LogLevel.DEBUG, "Resetting premature crash count on node " + node + " as it has been down for a long time.");
-                triggeredAnyTimers = true;
-            }
+            triggeredAnyTimers |= handleTimeDependentOpsForNode(currentClusterState, nodeListener, currentTime, node);
         }
 
         if (triggeredAnyTimers) {
             stateMayHaveChanged = true;
         }
+        return triggeredAnyTimers;
+    }
+
+    private boolean handleTimeDependentOpsForNode(final ClusterState currentClusterState,
+                                                  final NodeStateOrHostInfoChangeHandler nodeListener,
+                                                  final long currentTime,
+                                                  final NodeInfo node)
+    {
+        final NodeState currentStateInSystem = currentClusterState.getNodeState(node.getNode());
+        final NodeState lastReportedState = node.getReportedState();
+        boolean triggeredAnyTimers = false;
+
+        triggeredAnyTimers = reportDownIfOutdatedSlobrokNode(
+                currentClusterState, nodeListener, currentTime, node, lastReportedState);
+
+        if (nodeStillUnavailableAfterTransitionTimeExceeded(
+                currentTime, node, currentStateInSystem, lastReportedState))
+        {
+            eventLog.add(new NodeEvent(node, String.format(
+                        "%d milliseconds without contact. Marking node down.",
+                        currentTime - node.getTransitionTime()),
+                    NodeEvent.Type.CURRENT, currentTime), isMaster);
+            triggeredAnyTimers = true;
+        }
+
+        if (nodeInitProgressHasTimedOut(currentTime, node, currentStateInSystem, lastReportedState)) {
+            eventLog.add(new NodeEvent(node, String.format(
+                        "%d milliseconds without initialize progress. Marking node down. " +
+                        "Premature crash count is now %d.",
+                        currentTime - node.getInitProgressTime(),
+                        node.getPrematureCrashCount() + 1),
+                    NodeEvent.Type.CURRENT, currentTime), isMaster);
+            handlePrematureCrash(node, nodeListener);
+            triggeredAnyTimers = true;
+        }
+
+        if (mayResetCrashCounterOnStableUpNode(currentTime, node, lastReportedState)) {
+            node.setPrematureCrashCount(0);
+            log.log(LogLevel.DEBUG, "Resetting premature crash count on node " + node + " as it has been up for a long time.");
+            triggeredAnyTimers = true;
+        } else if (mayResetCrashCounterOnStableDownNode(currentTime, node, lastReportedState)) {
+            node.setPrematureCrashCount(0);
+            log.log(LogLevel.DEBUG, "Resetting premature crash count on node " + node + " as it has been down for a long time.");
+            triggeredAnyTimers = true;
+        }
+
         return triggeredAnyTimers;
     }
 
@@ -365,14 +381,18 @@ public class StateChangeHandler {
             && !lastReportedState.getState().equals(State.DOWN)
             && node.getRpcAddressOutdatedTimestamp() + maxSlobrokDisconnectGracePeriod <= currentTime)
         {
-            StringBuilder sb = new StringBuilder().append("Set node down as it has been out of slobrok for ")
-                    .append(currentTime - node.getRpcAddressOutdatedTimestamp()).append(" ms which is more than the max limit of ")
-                    .append(maxSlobrokDisconnectGracePeriod).append(" ms.");
+            final String desc = String.format(
+                    "Set node down as it has been out of slobrok for %d ms which " +
+                    "is more than the max limit of %d ms.",
+                    currentTime - node.getRpcAddressOutdatedTimestamp(),
+                    maxSlobrokDisconnectGracePeriod);
             node.abortCurrentNodeStateRequests();
             NodeState state = lastReportedState.clone();
             state.setState(State.DOWN);
-            if (!state.hasDescription()) state.setDescription(sb.toString());
-            eventLog.add(new NodeEvent(node, sb.toString(), NodeEvent.Type.CURRENT, currentTime), isMaster);
+            if (!state.hasDescription()) {
+                state.setDescription(desc);
+            }
+            eventLog.add(new NodeEvent(node, desc, NodeEvent.Type.CURRENT, currentTime), isMaster);
             handleNewReportedNodeState(currentClusterState, node, state.clone(), nodeListener);
             node.setReportedState(state, currentTime);
             return true;
@@ -386,7 +406,6 @@ public class StateChangeHandler {
                     || state.getDescription().contains("controlled shutdown")));
     }
 
-    // TODO bless this mess
     /**
      * Modify a node's cross-state information in the cluster based on a newly arrived reported state.
      *
@@ -412,7 +431,7 @@ public class StateChangeHandler {
                 log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
                 eventLog.add(new NodeEvent(node,
                         String.format("Stopped or possibly crashed after %d ms, which is before " +
-                                        "stable state time period. Premature crash count is now %d.",
+                                      "stable state time period. Premature crash count is now %d.",
                                 timeNow - node.getUpStableStateTime(), node.getPrematureCrashCount() + 1),
                         NodeEvent.Type.CURRENT,
                         timeNow), isMaster);
@@ -439,8 +458,8 @@ public class StateChangeHandler {
             (reportedState.getState().equals(State.INITIALIZING) && reportedState.getInitProgress() < currentState.getInitProgress()))
         {
             eventLog.add(new NodeEvent(node, String.format(
-                    "Stop or crash during initialization detected from reverse initializing progress." +
-                            " Progress was %g but is now %g. Premature crash count is now %d.",
+                        "Stop or crash during initialization detected from reverse initializing progress." +
+                        " Progress was %g but is now %g. Premature crash count is now %d.",
                         currentState.getInitProgress(), reportedState.getInitProgress(),
                         node.getPrematureCrashCount() + 1),
                     NodeEvent.Type.CURRENT, timeNow), isMaster);
