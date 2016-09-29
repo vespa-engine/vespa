@@ -55,6 +55,25 @@ public class MetricReceiver {
         }
     }
 
+    private static final class NullGauge extends Gauge {
+        NullGauge() {
+            super(null, null, null);
+        }
+
+        @Override
+        public void sample(double x) {
+        }
+
+        @Override
+        public void sample(double x, Point p) {
+        }
+
+        @Override
+        public PointBuilder builder() {
+            return super.builder();
+        }
+    }
+
     private static final class NullReceiver extends MetricReceiver {
         NullReceiver() {
             super(null, null);
@@ -76,12 +95,12 @@ public class MetricReceiver {
 
         @Override
         public Gauge declareGauge(String name) {
-            return null;
+            return new NullGauge();
         }
 
         @Override
         public Gauge declareGauge(String name, Point boundDimensions) {
-            return null;
+            return new NullGauge();
         }
 
         @Override

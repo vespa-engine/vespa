@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -42,7 +44,7 @@ public class DockerTest {
             .clientKeyPath("")
             .uri("unix:///var/run/docker.sock"));
 
-    private static final DockerImpl docker = new DockerImpl(dockerConfig);
+    private static final DockerImpl docker = new DockerImpl(dockerConfig, new MetricReceiverWrapper(MetricReceiver.nullImplementation));
     private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
 
 

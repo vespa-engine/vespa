@@ -8,6 +8,7 @@
     </handler>
     <component id="node-admin" class="com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl" bundle="node-admin"/>
     <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerImpl" bundle="docker-api"/>
+    <component id="metrics-wrapper" class="com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper" bundle="docker-api"/>
 
     <config name='vespa.hosted.dockerapi.docker'>
       <uri>tcp://localhost:2376</uri>

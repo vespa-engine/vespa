@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -50,7 +52,8 @@ public class NodeAdminImplTest {
         final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
         final MaintenanceScheduler maintenanceScheduler = mock(MaintenanceScheduler.class);
 
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, maintenanceScheduler, 100);
+        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, maintenanceScheduler, 100,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation));
 
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
