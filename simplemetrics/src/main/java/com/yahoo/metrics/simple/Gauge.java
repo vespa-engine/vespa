@@ -14,7 +14,7 @@ import edu.umd.cs.findbugs.annotations.Nullable;
  * @author steinar
  */
 @Beta
-public final class Gauge {
+public class Gauge {
     @Nullable
     private final Point defaultPosition;
     private final String name;

@@ -33,19 +33,4 @@ public class CounterWrapper implements MetricValue {
             return value;
         }
     }
-
-
-    static final class NullCounter extends CounterWrapper {
-        NullCounter() {
-            super(null);
-        }
-
-        @Override
-        public void add() {
-        }
-
-        @Override
-        public void add(long n) {
-        }
-    }
 }
