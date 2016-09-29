@@ -27,7 +27,7 @@ class Connector {
     }
 
     public void connectLater(Connection c) {
-        if (!connectQueue.enqueue(c)) {
+        if ( ! connectQueue.enqueue(c)) {
             parent.addConnection(c);
         }
     }

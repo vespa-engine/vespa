@@ -229,9 +229,8 @@ public class Transport {
      * @param context application context for the new connection
      * @param sync perform a synchronous connect in the calling thread
      *             if this flag is set
-     **/
-    Connection connect(Supervisor owner, Spec spec,
-                       Object context, boolean sync) {
+     */
+    Connection connect(Supervisor owner, Spec spec, Object context, boolean sync) {
         Connection conn = new Connection(this, owner, spec, context);
         if (sync) {
             addConnection(conn.connect());

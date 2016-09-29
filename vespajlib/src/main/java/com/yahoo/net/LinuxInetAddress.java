@@ -12,28 +12,23 @@ import java.util.stream.Collectors;
 
 /**
  * Utilities for returning localhost addresses on Linux.
- * See
- * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4665037
- * on why this is necessary.
+ * See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4665037 on why this is necessary.
  *
  * @author bratseth
  */
-// TODO: Remove on vespa 7
 public class LinuxInetAddress {
 
     /**
-     * Returns an InetAddress representing the address of the localhost.
+     * Returns an InetAddress representing a resolvable localhost address.
      * A non-loopback address is preferred if available.
      * An address that resolves to a hostname is preferred among non-loopback addresses.
      * IPv4 is preferred over IPv6 among resolving addresses.
      *
      * @return a localhost address
-     * @deprecated use {@link HostName} instead
      */
     // Note: Checking resolvability of ipV6 addresses takes a long time on some systems (over 5 seconds 
     // for some addresses on my mac). This method is written to minimize the number of resolution checks done
     // and to defer ip6 checks until necessary.
-    @Deprecated
     public static InetAddress getLocalHost() {
         InetAddress fallback = InetAddress.getLoopbackAddress();
         try {
@@ -70,9 +65,7 @@ public class LinuxInetAddress {
      *
      * @return an array of the addresses of this
      * @throws UnknownHostException if we cannot access the network
-     * @deprecated do not use
      */
-    @Deprecated
     public static InetAddress[] getAllLocal() throws UnknownHostException {
         InetAddress[] localInetAddresses = InetAddress.getAllByName("127.0.0.1");
         if ( ! localInetAddresses[0].isLoopbackAddress()) return localInetAddresses;
