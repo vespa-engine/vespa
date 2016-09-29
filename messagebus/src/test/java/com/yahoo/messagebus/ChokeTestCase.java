@@ -11,28 +11,30 @@ import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
 import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 
 /**
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
-public class ChokeTestCase extends TestCase {
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Setup
-    //
-    ////////////////////////////////////////////////////////////////////////////////
+public class ChokeTestCase {
 
     Slobrok slobrok;
     TestServer srcServer, dstServer;
     SourceSession srcSession;
     DestinationSession dstSession;
 
-    @Override
+    @Before
     public void setUp() throws ListenFailedException, UnknownHostException {
         slobrok = new Slobrok();
         dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
@@ -45,7 +47,7 @@ public class ChokeTestCase extends TestCase {
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }
 
-    @Override
+    @After
     public void tearDown() {
         slobrok.stop();
         dstSession.destroy();
@@ -54,12 +56,7 @@ public class ChokeTestCase extends TestCase {
         srcServer.destroy();
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
+    @Test
     public void testMaxCount() {
         int max = 10;
         dstServer.mb.setMaxPendingCount(max);
@@ -107,6 +104,7 @@ public class ChokeTestCase extends TestCase {
         assertEquals(0, dstServer.mb.getPendingCount());
     }
 
+    @Test
     public void testMaxSize() {
         int size = createMessage("msg").getApproxSize();
         int max = size * 10;
@@ -155,15 +153,10 @@ public class ChokeTestCase extends TestCase {
         assertEquals(0, dstServer.mb.getPendingSize());
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Utilities
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
     private static Message createMessage(String msg) {
         Message ret = new SimpleMessage(msg);
         ret.getTrace().setLevel(9);
         return ret;
     }
+
 }

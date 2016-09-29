@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  * transport thread. To create an acceptor you need to invoke the
  * {@link Supervisor#listen listen} method in the {@link Supervisor}
  * class.
- **/
+ */
 public class Acceptor {
 
     private class Run implements Runnable {
@@ -34,15 +34,12 @@ public class Acceptor {
 
     private ServerSocketChannel serverChannel;
 
-    Acceptor(Transport parent, Supervisor owner,
-             Spec spec) throws ListenFailedException {
-
+    Acceptor(Transport parent, Supervisor owner, Spec spec) throws ListenFailedException {
         this.parent = parent;
         this.owner  = owner;
 
-        if (spec.malformed()) {
-            throw new ListenFailedException("Malformed spec");
-        }
+        if (spec.malformed())
+            throw new ListenFailedException("Malformed spec '" + spec + "'");
 
         try {
             serverChannel = ServerSocketChannel.open();
@@ -55,7 +52,7 @@ public class Acceptor {
             if (serverChannel != null) {
                 try { serverChannel.socket().close(); } catch (Exception x) {}
             }
-            throw new ListenFailedException("Listen failed", e);
+            throw new ListenFailedException("Failed to listen to " + spec, e);
         }
 
         thread.setDaemon(true);
@@ -84,7 +81,7 @@ public class Acceptor {
      * @return listening spec, or null if not listening.
      **/
     public Spec spec() {
-        if (!serverChannel.isOpen()) {
+        if ( ! serverChannel.isOpen()) {
             return null;
         }
         return new Spec(serverChannel.socket().getInetAddress().getHostName(),
@@ -94,8 +91,7 @@ public class Acceptor {
     private void run() {
         while (serverChannel.isOpen()) {
             try {
-                parent.addConnection(new Connection(parent, owner,
-                                                    serverChannel.accept()));
+                parent.addConnection(new Connection(parent, owner, serverChannel.accept()));
                 parent.sync();
             } catch (java.nio.channels.ClosedChannelException x) {
             } catch (Exception e) {

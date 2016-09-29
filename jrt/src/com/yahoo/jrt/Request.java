@@ -14,7 +14,7 @@ package com.yahoo.jrt;
  * client/server roles are independent of connection client/server
  * roles, since invocations can be performed both ways across a {@link
  * Target}.
- **/
+ */
 public class Request
 {
     private String  methodName;
@@ -242,8 +242,7 @@ public class Request
         if (returnValues.satisfies(returnTypes)) {
             return true;
         }
-        setError(ErrorCode.WRONG_RETURN,
-                 "checkReturnValues: Wrong return values");
+        setError(ErrorCode.WRONG_RETURN, "checkReturnValues: Wrong return values");
         return false;
     }
 
