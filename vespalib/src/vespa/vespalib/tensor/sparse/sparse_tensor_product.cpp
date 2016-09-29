@@ -3,96 +3,25 @@
 #include <vespa/fastos/fastos.h>
 #include "sparse_tensor_product.h"
 #include "sparse_tensor_address_decoder.h"
+#include "sparse_tensor_address_combiner.h"
 #include <type_traits>
 
 namespace vespalib {
 namespace tensor {
 
-namespace {
-
-enum class AddressOp
-{
-    LHS,
-    RHS,
-    BOTH
-};
-
-using CombineOps = std::vector<AddressOp>;
-
-CombineOps
-buildCombineOps(const TensorDimensions &lhs,
-                const TensorDimensions &rhs)
-{
-    CombineOps ops;
-    auto rhsItr = rhs.cbegin();
-    auto rhsItrEnd = rhs.cend();
-    for (auto &lhsDim : lhs) {
-        while (rhsItr != rhsItrEnd && *rhsItr < lhsDim) {
-            ops.push_back(AddressOp::RHS);
-            ++rhsItr;
-        }
-        if (rhsItr != rhsItrEnd && *rhsItr == lhsDim) {
-            ops.push_back(AddressOp::BOTH);
-            ++rhsItr;
-        } else {
-            ops.push_back(AddressOp::LHS);
-        }
-    }
-    while (rhsItr != rhsItrEnd) {
-        ops.push_back(AddressOp::RHS);
-        ++rhsItr;
-    }
-    return ops;
-}
-
-
-bool
-combineAddresses(SparseTensorAddressBuilder &builder,
-                 SparseTensorAddressRef lhsRef,
-                 SparseTensorAddressRef rhsRef,
-                 const CombineOps &ops)
-{
-    builder.clear();
-    SparseTensorAddressDecoder lhs(lhsRef);
-    SparseTensorAddressDecoder rhs(rhsRef);
-    for (auto op : ops) {
-        switch (op) {
-        case AddressOp::LHS:
-            builder.add(lhs.decodeLabel());
-            break;
-        case AddressOp::RHS:
-            builder.add(rhs.decodeLabel());
-            break;
-        case AddressOp::BOTH:
-            auto lhsLabel(lhs.decodeLabel());
-            auto rhsLabel(rhs.decodeLabel());
-            if (lhsLabel != rhsLabel) {
-                return false;
-            }
-            builder.add(lhsLabel);
-        }
-    }
-    assert(!lhs.valid());
-    assert(!rhs.valid());
-    return true;
-}
-
-}
-
+using sparse::TensorAddressCombiner;
 
 void
 SparseTensorProduct::bruteForceProduct(const TensorImplType &lhs,
                                           const TensorImplType &rhs)
 {
-    CombineOps ops(buildCombineOps(lhs.dimensions(), rhs.dimensions()));
-    SparseTensorAddressBuilder addressBuilder;
+    TensorAddressCombiner addressCombiner(lhs.dimensions(), rhs.dimensions());
     for (const auto &lhsCell : lhs.cells()) {
         for (const auto &rhsCell : rhs.cells()) {
-            bool combineSuccess = combineAddresses(addressBuilder,
-                                                   lhsCell.first, rhsCell.first,
-                                                   ops);
+            bool combineSuccess = addressCombiner.combine(lhsCell.first,
+                                                          rhsCell.first);
             if (combineSuccess) {
-                _builder.insertCell(addressBuilder.getAddressRef(),
+                _builder.insertCell(addressCombiner.getAddressRef(),
                                     lhsCell.second * rhsCell.second);
             }
         }
