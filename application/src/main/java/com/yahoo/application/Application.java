@@ -44,6 +44,13 @@ import java.util.*;
 @Beta
 public final class Application implements AutoCloseable {
 
+    /**
+     * This system property is set to "true" upon creation of an Application.
+     * This is useful for components which are created by dependendy injection which needs to modify
+     * their behavior to function without reliance on any processes outside the JVM.
+     */
+    public static final String vespaLocalProperty = "vespa.local";
+
     private final JDisc container;
     private final List<ContentCluster> contentClusters;
     private final Path path;
@@ -51,7 +58,7 @@ public final class Application implements AutoCloseable {
 
     // For internal use only
     Application(Path path, Networking networking, boolean deletePathWhenClosing) {
-        System.setProperty("vespa.local", "true");
+        System.setProperty(vespaLocalProperty, "true");
         this.path = path;
         this.deletePathWhenClosing = deletePathWhenClosing;
         contentClusters = ContentCluster.fromPath(path);

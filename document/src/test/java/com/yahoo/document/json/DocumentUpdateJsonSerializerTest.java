@@ -26,6 +26,7 @@ import static com.yahoo.document.json.JsonTestHelper.inputJson;
  * @author Vegard Sjonfjell
  */
 public class DocumentUpdateJsonSerializerTest {
+
     final static DocumentTypeManager types = new DocumentTypeManager();
     final static JsonFactory parserFactory = new JsonFactory();
     final static DocumentType docType = new DocumentType("doctype");

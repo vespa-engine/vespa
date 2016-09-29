@@ -32,6 +32,10 @@ public class LocalNetwork implements Network {
     private final String hostId;
     private volatile NetworkOwner owner;
 
+    public LocalNetwork() {
+        this(new LocalWire());
+    }
+    
     public LocalNetwork(LocalWire wire) {
         this.wire = wire;
         this.hostId = wire.newHostId();
