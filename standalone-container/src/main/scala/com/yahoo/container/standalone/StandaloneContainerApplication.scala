@@ -187,13 +187,16 @@ object StandaloneContainerApplication {
       deployState.getProperties.vespaVersion(),
       deployState.getProperties.applicationId())
     
-    vespaRoot.setupAdmin(root.getAdmin) // TODO: Try to remove
 
     val spec = containerRootElement(applicationPackage)
     val containerModel = newContainerModelBuilder(networkingOption).build(deployState, configModelRepo, vespaRoot, spec)
     containerModel.getCluster().prepare()
     containerModel.initialize(configModelRepo)
     val container = first(containerModel.getCluster().getContainers)
+
+    // TODO: If we can do the mutations below on the builder, we can separate out model finalization from the
+    // VespaModel constructor, such that the above and below code to finalize the container can be
+    // replaced by root.finalize();
 
     // Always disable rpc server for standalone container. This server will soon be removed anyway.
     container.setRpcServerEnabled(false)
