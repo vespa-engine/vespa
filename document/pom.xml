@@ -48,11 +48,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>uk.co.datumedge</groupId>
-            <artifactId>hamcrest-json</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config</artifactId>
             <version>${project.version}</version>
