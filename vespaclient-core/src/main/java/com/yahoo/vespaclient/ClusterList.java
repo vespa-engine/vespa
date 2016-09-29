@@ -5,20 +5,24 @@ import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.config.subscription.ConfigGetter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** A list of content clusters, either obtained from a list, a given config or by self-subscribing */
 public class ClusterList {
 
-    List<ClusterDef> storageClusters = new ArrayList<>();
+    List<ClusterDef> contentClusters = new ArrayList<>();
 
     public ClusterList() {
-        this((String)null);
+        this(Collections.emptyList());
+    }
+    
+    public ClusterList(List<ClusterDef> contentClusters) {
+        this.contentClusters = contentClusters;
     }
 
     public ClusterList(String configId) {
-        if (configId != null)
-            configure(new ConfigGetter<>(ClusterListConfig.class).getConfig(configId));
+        configure(new ConfigGetter<>(ClusterListConfig.class).getConfig(configId));
     }
     
     public ClusterList(ClusterListConfig config) {
@@ -26,13 +30,13 @@ public class ClusterList {
     }
 
     private void configure(ClusterListConfig config) {
-        storageClusters.clear(); // TODO: Create a new
+        contentClusters.clear(); // TODO: Create a new
         for (int i = 0; i < config.storage().size(); i++)
-            storageClusters.add(new ClusterDef(config.storage(i).name(), config.storage(i).configid()));
+            contentClusters.add(new ClusterDef(config.storage(i).name(), config.storage(i).configid()));
     }
 
     public List<ClusterDef> getStorageClusters() {
-        return storageClusters; // TODO: Use immutable list
+        return contentClusters; // TODO: Use immutable list
     }
 
 }

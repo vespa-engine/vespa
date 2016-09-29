@@ -30,6 +30,11 @@ public class MessageBusSessionFactory implements SessionFactory {
         String NUM_UPDATES = "num_updates";
     }
 
+    @SuppressWarnings("unused") // used from extensions
+    public MessageBusSessionFactory(MessagePropertyProcessor processor) {
+        this(processor, null, null);
+    }
+    
     public MessageBusSessionFactory(MessagePropertyProcessor processor, 
                                     DocumentmanagerConfig documentmanagerConfig,
                                     SlobroksConfig slobroksConfig) {
@@ -37,10 +42,12 @@ public class MessageBusSessionFactory implements SessionFactory {
         MessageBusParams params = new MessageBusParams(processor.getLoadTypes());
         params.setTraceLevel(processor.getFeederOptions().getTraceLevel());
         RPCNetworkParams rpcNetworkParams = processor.getFeederOptions().getNetworkParams();
-        rpcNetworkParams.setSlobroksConfig(slobroksConfig);
+        if (slobroksConfig != null) // not set: will subscribe
+            rpcNetworkParams.setSlobroksConfig(slobroksConfig);
         params.setRPCNetworkParams(rpcNetworkParams);
         params.setDocumentManagerConfigId("client");
-        params.setDocumentmanagerConfig(documentmanagerConfig);
+        if (documentmanagerConfig != null) // not set: will subscribe
+            params.setDocumentmanagerConfig(documentmanagerConfig);
         access = new MessageBusDocumentAccess(params);
     }
 
