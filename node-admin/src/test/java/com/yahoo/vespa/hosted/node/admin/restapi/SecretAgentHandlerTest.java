@@ -1,7 +1,7 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.restapi;
 
 import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import org.junit.Test;
@@ -19,9 +19,10 @@ public class SecretAgentHandlerTest {
     @Test
     public void testSecretAgentFormat() {
         MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        GaugeWrapper someGauge1 = metricReceiver.declareGauge("some.gauge-1");
-        GaugeWrapper someGauge2 = metricReceiver.declareGauge("some.other.gauge");
-        CounterWrapper counter = metricReceiver.declareCounter("a_counter.value");
+        GaugeWrapper someGauge = metricReceiver.declareGauge("some.other.gauge");
+        metricReceiver.declareGauge("some.gauge-1");
+        metricReceiver.declareCounter("a_counter.value");
+        someGauge.sample(123);
 
         SecretAgentHandler secretAgentHandler = new SecretAgentHandler(metricReceiver);
         Map<String, Object> response = secretAgentHandler.getSecretAgentReport();
@@ -34,13 +35,11 @@ public class SecretAgentHandlerTest {
 
         assertTrue(response.containsKey("metrics"));
 
-        // Test default value
-        assertEquals(0L, ((Map) response.get("metrics")).get("a_counter.value"));
+        // Test the default value
+        assertEquals(0., ((Map) response.get("metrics")).get("some.gauge-1"));
 
-        // Set a sample value and check that the new reports contains it
-        counter.add(123);
-        response = secretAgentHandler.getSecretAgentReport();
-        assertEquals(123L, ((Map) response.get("metrics")).get("a_counter.value"));
+        // Test the set value
+        assertEquals(123., ((Map) response.get("metrics")).get("some.other.gauge"));
 
     }
 }
