@@ -545,10 +545,14 @@ SearcherTest::testUTF8ExactStringFieldSearcher()
 {
     UTF8ExactStringFieldSearcher fs(0);
     // regular
-    assertString(fs, "vespa", "vespa", Hits().add(0));
-    assertString(fs, "vespa", "vespa vespa", Hits());
-    assertString(fs, "vesp",  "vespa", Hits());
-    assertString(fs, "vesp*",  "vespa", Hits().add(0));
+    TEST_DO(assertString(fs, "vespa", "vespa", Hits().add(0)));
+    TEST_DO(assertString(fs, "vespar", "vespa", Hits()));
+    TEST_DO(assertString(fs, "vespa", "vespar", Hits()));
+    TEST_DO(assertString(fs, "vespa", "vespa vespa", Hits()));
+    TEST_DO(assertString(fs, "vesp",  "vespa", Hits()));
+    TEST_DO(assertString(fs, "vesp*",  "vespa", Hits().add(0)));
+    TEST_DO(assertString(fs, "hutte",  "hutte", Hits().add(0)));
+    TEST_DO(assertString(fs, "hütte",  "hütte", Hits().add(0)));
 }
 
 void
