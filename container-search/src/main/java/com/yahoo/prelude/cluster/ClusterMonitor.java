@@ -53,7 +53,7 @@ public class ClusterMonitor implements Runnable, Freezable {
                     "Do not start the monitoring thread before the set of"
                     +" nodes to monitor is complete/the ClusterMonitor is frozen.");
         }
-        future = nodeManager.getScheduledExecutor().scheduleAtFixedRate(this, 30 * 1000, configuration.getCheckInterval(), TimeUnit.MILLISECONDS);
+        future = nodeManager.getScheduledExecutor().scheduleAtFixedRate(this, 0, configuration.getCheckInterval(), TimeUnit.MILLISECONDS);
     }
 
     /**
