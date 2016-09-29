@@ -96,29 +96,38 @@ public class EventDiffCalculator {
         final ClusterState fromState = params.fromState.getClusterState();
         final ClusterState toState = params.toState.getClusterState();
 
-        // TODO refactor!
         for (ConfiguredNode node : cluster.getConfiguredNodes().values()) {
             for (NodeType nodeType : NodeType.getTypes()) {
                 final Node n = new Node(nodeType, node.index());
-                final NodeState nodeFrom = fromState.getNodeState(n);
-                final NodeState nodeTo = toState.getNodeState(n);
-                if (!nodeTo.equals(nodeFrom)) {
-                    final NodeInfo info = cluster.getNodeInfo(n);
-                    events.add(createNodeEvent(info, String.format("Altered node state in cluster state from '%s' to '%s'",
-                                    nodeFrom.toString(true), nodeTo.toString(true)), params));
-
-                    // TODO refactor!
-                    NodeStateReason prevReason = params.fromState.getNodeStateReasons().get(n);
-                    NodeStateReason currReason = params.toState.getNodeStateReasons().get(n);
-                    if (prevReason != NodeStateReason.GROUP_IS_DOWN && currReason == NodeStateReason.GROUP_IS_DOWN) {
-                        events.add(createNodeEvent(info, "Setting node down as the total availability of its " +
-                                "group is below the configured threshold", params));
-                    } else if (prevReason == NodeStateReason.GROUP_IS_DOWN && currReason != NodeStateReason.GROUP_IS_DOWN) {
-                        events.add(createNodeEvent(info, "Group node availability restored; taking node back up", params));
-                    }
-                }
+                emitSingleNodeEvents(params, events, cluster, fromState, toState, n);
             }
         }
+    }
+
+    private static void emitSingleNodeEvents(Params params, List<Event> events, ContentCluster cluster, ClusterState fromState, ClusterState toState, Node n) {
+        final NodeState nodeFrom = fromState.getNodeState(n);
+        final NodeState nodeTo = toState.getNodeState(n);
+        if (!nodeTo.equals(nodeFrom)) {
+            final NodeInfo info = cluster.getNodeInfo(n);
+            events.add(createNodeEvent(info, String.format("Altered node state in cluster state from '%s' to '%s'",
+                            nodeFrom.toString(true), nodeTo.toString(true)), params));
+
+            NodeStateReason prevReason = params.fromState.getNodeStateReasons().get(n);
+            NodeStateReason currReason = params.toState.getNodeStateReasons().get(n);
+            if (isGroupDownEdge(prevReason, currReason)) {
+                events.add(createNodeEvent(info, "Group node availability is below configured threshold", params));
+            } else if (isGroupUpEdge(prevReason, currReason)) {
+                events.add(createNodeEvent(info, "Group node availability has been restored", params));
+            }
+        }
+    }
+
+    private static boolean isGroupUpEdge(NodeStateReason prevReason, NodeStateReason currReason) {
+        return prevReason == NodeStateReason.GROUP_IS_DOWN && currReason != NodeStateReason.GROUP_IS_DOWN;
+    }
+
+    private static boolean isGroupDownEdge(NodeStateReason prevReason, NodeStateReason currReason) {
+        return prevReason != NodeStateReason.GROUP_IS_DOWN && currReason == NodeStateReason.GROUP_IS_DOWN;
     }
 
     private static boolean clusterHasTransitionedToUpState(ClusterState prevState, ClusterState currentState) {

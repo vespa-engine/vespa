@@ -1,4 +1,5 @@
-package com.yahoo.vespa.clustercontroller.core;// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.clustercontroller.core;
 
 import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
 import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
@@ -34,8 +35,8 @@ public class EventDiffCalculatorTest {
         // TODO could reasonably put shared state into a common class to avoid dupes for both before/after
         Optional<ClusterStateReason> clusterReasonBefore = Optional.empty();
         Optional<ClusterStateReason> clusterReasonAfter = Optional.empty();
-        ClusterState clusterStateBefore = ClusterStateUtil.emptyState();
-        ClusterState clusterStateAfter = ClusterStateUtil.emptyState();
+        ClusterState clusterStateBefore = ClusterState.emptyState();
+        ClusterState clusterStateAfter = ClusterState.emptyState();
         final Map<Node, NodeStateReason> nodeReasonsBefore = new HashMap<>();
         final Map<Node, NodeStateReason> nodeReasonsAfter = new HashMap<>();
         long currentTimeMs = 0;
@@ -179,8 +180,7 @@ public class EventDiffCalculatorTest {
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(1)),
                 eventTypeIs(NodeEvent.Type.CURRENT),
-                nodeEventWithDescription("Setting node down as the total availability of " +
-                                         "its group is below the configured threshold"))));
+                nodeEventWithDescription("Group node availability is below configured threshold"))));
     }
 
     @Test
@@ -214,7 +214,7 @@ public class EventDiffCalculatorTest {
         assertThat(events, hasItem(allOf(
                 eventForNode(storageNode(2)),
                 eventTypeIs(NodeEvent.Type.CURRENT),
-                nodeEventWithDescription("Group node availability restored; taking node back up"))));
+                nodeEventWithDescription("Group node availability has been restored"))));
     }
 
     @Test

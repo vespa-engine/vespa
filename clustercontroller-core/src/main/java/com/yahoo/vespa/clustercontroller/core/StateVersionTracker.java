@@ -28,7 +28,7 @@ public class StateVersionTracker {
     // TODO this mirrors legacy behavior, but should be moved into stable ZK state.
     private int lowestObservedDistributionBits = 16;
 
-    private ClusterState currentUnversionedState = ClusterStateUtil.emptyState();
+    private ClusterState currentUnversionedState = ClusterState.emptyState();
     private AnnotatedClusterState latestCandidateState = AnnotatedClusterState.emptyState();
     private AnnotatedClusterState currentClusterState = latestCandidateState;
 

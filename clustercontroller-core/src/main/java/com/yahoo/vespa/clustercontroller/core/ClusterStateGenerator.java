@@ -128,7 +128,7 @@ public class ClusterStateGenerator {
 
     static AnnotatedClusterState generatedStateFrom(final Params params) {
         final ContentCluster cluster = params.cluster;
-        final ClusterState workingState = ClusterStateUtil.emptyState();
+        final ClusterState workingState = ClusterState.emptyState();
         final Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
 
         for (final NodeInfo nodeInfo : cluster.getNodeInfo()) {
@@ -339,39 +339,4 @@ public class ClusterStateGenerator {
         return Optional.empty();
     }
 
-    /**
-     * TODO must take the following into account:
-     *  - DONE - cluster bootstrap with all nodes down
-     *  - DONE - node (distr+storage) reported states
-     *  - DONE - node (distr+storage) "worse" wanted states
-     *  - DONE - wanted state (distr+storage) cannot make generated state "better"
-     *  - DONE - storage maintenance wanted state overrides all other states
-     *  - DONE - wanted state description carries over to generated state
-     *  - DONE - reported disk state not overridden by wanted state
-     *  - DONE - implicit wanted state retired through config is applied
-     *  - DONE - retired node in init is set to maintenance to inhibit load+merges
-     *  - DONE - max transition time (reported down -> implicit generated maintenance -> generated down)
-     *  - DONE - no maintenance transition for distributor nodes
-     *  - DONE - max premature crashes (reported up/down cycle -> generated down)
-     *  - DONE - node startup timestamp inclusion if not all distributors have observed timestamps
-     *  - DONE - min node count (distributor, storage) in state up for cluster to be up
-     *  - DONE - min node ratio (distributor, storage) in state up for cluster to be up
-     *  - DONE - implicit group node availability (only down-edge has to be considered, huzzah!)
-     *  - DONE - distribution bits inferred from storage nodes
-     *  - DONE - distribution bits inferred from nodes in states IUR only
-     *  - DONE - distribution bits inferred from config
-     *  - DONE - generation of accurate edge events for state deltas <- this is a sneaky one
-     *  - max init progress time (reported init -> generated down)
-     *  - slobrok disconnect grace period (reported down -> generated down)
-     *  - reported init progress (current code implies this causes new state versions; why should it do that?)
-     *  - DONE - reverse init progress(?) <-- implicit; handled in StateChangeHandler
-     *  - DONE - mark "listing buckets" stage as down, since node can't receive load yet at that point
-     *  - DONE interaction with ClusterStateView
-     *
-     * Features such as minimum time before/between cluster state broadcasts are handled outside
-     * the state generator.
-     * Cluster state version management is also handled outside the generator.
-     *
-     * TODO move generator logic into own sub-package?
-     */
 }

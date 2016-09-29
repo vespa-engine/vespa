@@ -349,4 +349,10 @@ public class ClusterStateTestCase{
         assertEquals(new NodeState(NodeType.STORAGE, State.INITIALIZING), state.getNodeState(new Node(NodeType.STORAGE, 0)));
         assertEquals(new NodeState(NodeType.STORAGE, State.MAINTENANCE), state.getNodeState(new Node(NodeType.STORAGE, 1)));
     }
+
+    @Test
+    public void empty_state_factory_method_returns_empty_state() {
+        final ClusterState state = ClusterState.emptyState();
+        assertEquals("", state.toString());
+    }
 }

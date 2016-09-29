@@ -206,8 +206,7 @@ public class GroupAutoTakedownTest {
                 .toState(annotatedStateAfterStorageTransition(fixture, 5, State.DOWN)));
 
         assertThat(events, hasItem(allOf(
-                nodeEventWithDescription("Setting node down as the total availability of its group is " +
-                        "below the configured threshold"),
+                nodeEventWithDescription("Group node availability is below configured threshold"),
                 eventForNode(contentNode(4)))));
     }
 
@@ -225,7 +224,7 @@ public class GroupAutoTakedownTest {
                 .toState(annotatedStateAfterStorageTransition(fixture, 5, State.UP)));
 
         assertThat(events, hasItem(allOf(
-                nodeEventWithDescription("Group node availability restored; taking node back up"),
+                nodeEventWithDescription("Group node availability has been restored"),
                 eventForNode(contentNode(4)))));
     }
 

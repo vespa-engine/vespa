@@ -24,7 +24,7 @@ public class AnnotatedClusterState {
     }
 
     public static AnnotatedClusterState emptyState() {
-        return new AnnotatedClusterState(ClusterStateUtil.emptyState(), Optional.empty(), emptyNodeStateReasons());
+        return new AnnotatedClusterState(ClusterState.emptyState(), Optional.empty(), emptyNodeStateReasons());
     }
 
     static Map<Node, NodeStateReason> emptyNodeStateReasons() {
