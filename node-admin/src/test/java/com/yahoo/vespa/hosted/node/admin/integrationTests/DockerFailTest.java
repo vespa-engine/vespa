@@ -41,7 +41,7 @@ public class DockerFailTest {
     @Before
     public void before() throws InterruptedException, UnknownHostException {
         callOrder = new CallOrderVerifier();
-        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock(callOrder);
+        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
         OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
         NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
         dockerMock = new DockerMock(callOrder);

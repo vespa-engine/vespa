@@ -39,7 +39,7 @@ public class ResumeTest {
     public void test() throws InterruptedException, UnknownHostException {
         CallOrderVerifier callOrder = new CallOrderVerifier();
         NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
-        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock(callOrder);
+        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
         OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
         DockerMock dockerMock = new DockerMock(callOrder);
 
