@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
@@ -139,7 +140,7 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not restart a node agent.");
         }
         loopThread = new Thread(this::loop);
-        loopThread.setName("loop-" + hostname.toString());
+        loopThread.setName("loop-" + hostname);
         loopThread.start();
     }
 
@@ -350,9 +351,9 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    public ContainerNodeSpec getContainerNodeSpec() {
+    public Optional<ContainerNodeSpec> getContainerNodeSpec() {
         synchronized (monitor) {
-            return lastNodeSpec;
+            return Optional.ofNullable(lastNodeSpec);
         }
     }
 
