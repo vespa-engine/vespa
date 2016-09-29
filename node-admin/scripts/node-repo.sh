@@ -3,6 +3,8 @@
 
 set -e
 
+declare -r VESPA_WEB_SERVICE_PORT=4080
+
 # Output from InnerCurlNodeRepo, see there for details.
 declare CURL_RESPONSE
 
@@ -162,7 +164,7 @@ function ProvisionNode {
     local config_server_hostname="$1"
     local json="$2"
 
-    local url="http://$config_server_hostname:4080/nodes/v2/node"
+    local url="http://$config_server_hostname:$VESPA_WEB_SERVICE_PORT/nodes/v2/node"
 
     CurlOrFail -H "Content-Type: application/json" -X POST -d "$json" "$url"
 }
@@ -172,7 +174,7 @@ function SetNodeState {
     local hostname="$2"
     local state="$3"
 
-    local url="http://$config_server_hostname:4080/nodes/v2/state/$state/$hostname"
+    local url="http://$config_server_hostname:$VESPA_WEB_SERVICE_PORT/nodes/v2/state/$state/$hostname"
     CurlOrFail -X PUT "$url"
 }
 
@@ -284,7 +286,7 @@ function RemoveCommand {
     local hostname
     for hostname in "$@"
     do
-        local url="http://$config_server_hostname:4080/nodes/v2/node/$hostname"
+        local url="http://$config_server_hostname:$VESPA_WEB_SERVICE_PORT/nodes/v2/node/$hostname"
         CurlOrFail -X DELETE "$url"
         echo -n .
     done

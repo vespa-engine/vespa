@@ -124,7 +124,7 @@ function Start {
     then
         # Wait for config server to come up
         echo -n "Waiting for healthy Config Server (~30s)"
-        local url="http://$CONFIG_SERVER_HOSTNAME:19071/state/v1/health"
+        local url="http://$CONFIG_SERVER_HOSTNAME:$VESPA_WEB_SERVICE_PORT/state/v1/health"
         while ! curl --silent --fail --max-time 1 "$url" >/dev/null
         do
             echo -n .
