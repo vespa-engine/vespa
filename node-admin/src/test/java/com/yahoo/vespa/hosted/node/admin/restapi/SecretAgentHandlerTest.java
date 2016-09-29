@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.restapi;
 
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import org.junit.Test;
@@ -19,9 +20,12 @@ public class SecretAgentHandlerTest {
     @Test
     public void testSecretAgentFormat() {
         MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+        CounterWrapper counter = metricReceiver.declareCounter("a_counter.value");
         GaugeWrapper someGauge = metricReceiver.declareGauge("some.other.gauge");
         metricReceiver.declareGauge("some.gauge-1");
-        metricReceiver.declareCounter("a_counter.value");
+
+        counter.add(5);
+        counter.add(8);
         someGauge.sample(123);
 
         SecretAgentHandler secretAgentHandler = new SecretAgentHandler(metricReceiver);
@@ -41,5 +45,7 @@ public class SecretAgentHandlerTest {
         // Test the set value
         assertEquals(123., ((Map) response.get("metrics")).get("some.other.gauge"));
 
+        // Test add function
+        assertEquals(13L, ((Map) response.get("metrics")).get("a_counter.value"));
     }
 }
