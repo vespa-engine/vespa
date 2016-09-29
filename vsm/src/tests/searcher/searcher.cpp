@@ -553,6 +553,10 @@ SearcherTest::testUTF8ExactStringFieldSearcher()
     TEST_DO(assertString(fs, "vesp*",  "vespa", Hits().add(0)));
     TEST_DO(assertString(fs, "hutte",  "hutte", Hits().add(0)));
     TEST_DO(assertString(fs, "hütte",  "hütte", Hits().add(0)));
+    TEST_DO(assertString(fs, "hutte",  "hütte", Hits()));
+    TEST_DO(assertString(fs, "hütte",  "hutte", Hits()));
+    TEST_DO(assertString(fs, "hütter", "hütte", Hits()));
+    TEST_DO(assertString(fs, "hütte",  "hütter", Hits()));
 }
 
 void
