@@ -80,7 +80,7 @@ public class ClusterTest extends ContentBaseTest {
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
         cc.getSearch().getConfig(protonBuilder);
         ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
-        assertEquals(3, protonConfig.distribution().searchablecopies());
+        assertEquals(1, protonConfig.distribution().searchablecopies());
         assertEquals(5, protonConfig.distribution().redundancy());
     }
 
