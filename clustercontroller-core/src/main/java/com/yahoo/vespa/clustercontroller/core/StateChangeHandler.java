@@ -162,8 +162,6 @@ public class StateChangeHandler {
         eventLog.add(new NodeEvent(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
-
-    // TODO move to node state change handler
     public void handleMissingNode(final ClusterState currentClusterState,
                                   final NodeInfo node,
                                   final NodeStateOrHostInfoChangeHandler nodeListener)
@@ -194,31 +192,33 @@ public class StateChangeHandler {
      * Propose a new state for a node. This may happen due to an administrator action, orchestration, or
      * a configuration change.
      *
-     * TODO this is currently really just to trigger (event) logging and state re-gen
+     * If the newly proposed state differs from the state the node currently has in the system,
+     * a cluster state regeneration will be triggered.
      */
     public void proposeNewNodeState(final ClusterState currentClusterState, final NodeInfo node, final NodeState proposedState) {
         final NodeState currentState = currentClusterState.getNodeState(node.getNode());
-        final NodeState currentReported = node.getReportedState(); // TODO: Is there a reason to have both of this and the above?
+        final NodeState currentReported = node.getReportedState();
 
-        final NodeState newCurrentState = currentReported.clone();
-
-        newCurrentState.setState(proposedState.getState()).setDescription(proposedState.getDescription());
-
-        if (currentState.getState().equals(newCurrentState.getState())) {
+        if (currentState.getState().equals(proposedState.getState())) {
             return;
         }
         stateMayHaveChanged = true;
 
-        log.log(LogLevel.DEBUG, "Got new wanted nodestate for " + node + ": " + currentState.getTextualDifference(proposedState));
+        if (log.isLoggable(LogLevel.DEBUG)) {
+            log.log(LogLevel.DEBUG, String.format("Got new wanted nodestate for %s: %s", node, currentState.getTextualDifference(proposedState)));
+        }
         // Should be checked earlier before state was set in cluster
-        assert(newCurrentState.getState().validWantedNodeState(node.getNode().getType()));
+        assert(proposedState.getState().validWantedNodeState(node.getNode().getType()));
         long timeNow = timer.getCurrentTimeInMillis();
-        if (newCurrentState.above(currentReported)) {
-            eventLog.add(new NodeEvent(node, "Wanted state " + newCurrentState + ", but we cannot force node into that state yet as it is currently in " + currentReported, NodeEvent.Type.REPORTED, timeNow), isMaster);
+        if (proposedState.above(currentReported)) {
+            eventLog.add(new NodeEvent(node, String.format("Wanted state %s, but we cannot force node into that " +
+                    "state yet as it is currently in %s", proposedState, currentReported),
+                    NodeEvent.Type.REPORTED, timeNow), isMaster);
             return;
         }
-        if ( ! newCurrentState.similarTo(currentState)) {
-            eventLog.add(new NodeEvent(node, "Node state set to " + newCurrentState + ".", NodeEvent.Type.WANTED, timeNow), isMaster);
+        if ( ! proposedState.similarTo(currentState)) {
+            eventLog.add(new NodeEvent(node, String.format("Node state set to %s.", proposedState),
+                    NodeEvent.Type.WANTED, timeNow), isMaster);
         }
     }
 
@@ -385,7 +385,6 @@ public class StateChangeHandler {
                 && (state.getDescription().contains("Received signal 15 (SIGTERM - Termination signal)")
                     || state.getDescription().contains("controlled shutdown")));
     }
-
 
     // TODO bless this mess
     /**
