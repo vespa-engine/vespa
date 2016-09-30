@@ -57,7 +57,7 @@ public class RestApiHandler extends LoggingRequestHandler{
             return new SimpleObjectResponse(200, refresher.getDebugPage());
         }
         if (path.endsWith("/metrics")) {
-            return new SimpleObjectResponse(200, secretAgentHandler.getSecretAgentReport());
+            return new SimpleObjectResponse(200, secretAgentHandler.getNodeAdminSecretAgentReport());
         }
         return new SimpleResponse(400, "unknown path" + path);
     }

@@ -29,7 +29,7 @@ public class SecretAgentHandlerTest {
         someGauge.sample(123);
 
         SecretAgentHandler secretAgentHandler = new SecretAgentHandler(metricReceiver);
-        Map<String, Object> response = secretAgentHandler.getSecretAgentReport();
+        Map<String, Object> response = secretAgentHandler.getNodeAdminSecretAgentReport();
 
         // Test required fields
         assertTrue(response.containsKey("application"));

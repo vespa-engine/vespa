@@ -14,25 +14,27 @@ import java.util.Map;
  * @author valerijf
  */
 public class SecretAgentHandler {
-    private final String applicationName = "docker";
-    private final String hostName;
+    private static final String applicationName = "docker";
     private final MetricReceiverWrapper metricReceiver;
+    private final Map<String, Object> dimensions;
 
     @Inject
     public SecretAgentHandler(MetricReceiverWrapper metricReceiver) {
-        this.hostName = com.yahoo.net.HostName.getLocalhost();
         this.metricReceiver = metricReceiver;
+        dimensions = new LinkedHashMap<>();
+        dimensions.put("host", com.yahoo.net.HostName.getLocalhost());
     }
 
-    public Map<String, Object> getSecretAgentReport() {
-        Map<String, String> dimensions = new LinkedHashMap<>();
-        dimensions.put("host", hostName);
-
-        Map<String, Number> metrics = new LinkedHashMap<>();
+    public Map<String, Object> getNodeAdminSecretAgentReport() {
+        Map<String, Object> metrics = new LinkedHashMap<>();
         for (String metricName : metricReceiver.getMetricNames()) {
             metrics.put(metricName, metricReceiver.getMetricByName(metricName).getValue());
         }
 
+        return generateSecretAgentReport(dimensions, metrics);
+    }
+
+    public static Map<String, Object> generateSecretAgentReport(Map<String, Object> dimensions, Map<String, Object> metrics) {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("application", applicationName);
         report.put("timestamp", System.currentTimeMillis() / 1000);
