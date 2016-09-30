@@ -83,6 +83,8 @@ if [ "$VESPA_USE_VALGRIND" = "all" ]; then
     no_valgrind=false
 fi
 
+export STD_THREAD_PREVENT_TRY_CATCH=true
+
 # special malloc setup; we should make some better mechanism for this
 #
 export GLIBCXX_FORCE_NEW=1
