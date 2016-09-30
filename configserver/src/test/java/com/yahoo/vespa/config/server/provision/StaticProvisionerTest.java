@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
  * @author lulf
  */
 public class StaticProvisionerTest {
+
     @Test
     public void sameHostsAreProvisioned() throws IOException, SAXException {
         ApplicationPackage app = FilesApplicationPackage.fromFile(new File("src/test/apps/hosted"));
