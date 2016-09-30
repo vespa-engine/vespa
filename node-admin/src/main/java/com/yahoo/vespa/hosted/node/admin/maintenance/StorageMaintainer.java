@@ -1,23 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.restapi.SecretAgentHandler;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
-import org.apache.commons.collections.map.HashedMap;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.Period;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,15 +28,16 @@ import java.util.concurrent.TimeUnit;
  */
 public class StorageMaintainer {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(StorageMaintainer.class);
-
     private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final Object monitor = new Object();
+    private final long intervalSec = 1000;
 
     private Map<ContainerName, Instant> nextDiskCalculationByContainerName = new ConcurrentHashMap<>();
-    private Object monitor = new Object();
     private Random random = new Random();
-    private long intervalSec = 1000;
 
-    public void updateDiskUsage(ContainerName containerName) {
+    public void updateDiskUsage(String hostname, ContainerName containerName) {
         if (nextDiskCalculationByContainerName.containsKey(containerName)) {
             if (nextDiskCalculationByContainerName.get(containerName).isAfter(Instant.now())) {
                 return;
@@ -49,13 +50,19 @@ public class StorageMaintainer {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
             File containerDir = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/").toFile();
             try {
-                Instant start = Instant.now();
                 long used = getDiscUsedInBytes(containerDir);
-                long durationMillis = Duration.between(start, Instant.now()).toMillis();
 
-                logger.info("Found disk usage for " + containerName + " to be " + used + " bytes. Took "
-                        + durationMillis + " ms.");
-                // TODO Write to file
+                Map<String, Object> dimensions = new HashMap<>();
+                dimensions.put("host", hostname);
+
+                Map<String, Object> metrics = new HashMap<>();
+                metrics.put("node.disk.used", used);
+
+                Map<String, Object> secretAgentReport = SecretAgentHandler.generateSecretAgentReport(dimensions, metrics);
+                String secretAgentReportJson = objectMapper.writeValueAsString(secretAgentReport);
+
+                Path metricsSharePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/metrics-share/disk.usage");
+                Files.write(metricsSharePath, secretAgentReportJson.getBytes(StandardCharsets.UTF_8.name()));
             } catch (Throwable e) {
                 logger.error("Problems during disk usage calculations: " + e.getMessage());
             }
@@ -63,14 +70,10 @@ public class StorageMaintainer {
     }
 
     // Public for testing
-    public long getDiscUsedInBytes(File path) throws IOException, InterruptedException {
-        final List<String> commands = new ArrayList<String>();
+    long getDiscUsedInBytes(File path) throws IOException, InterruptedException {
+        final String[] command = {"du", "-xsk", path.toString()};
 
-        commands.add("du");
-        commands.add("-xsk");
-        commands.add(path.toString());
-
-        Process duCommand = new ProcessBuilder().command(commands).start();
+        Process duCommand = new ProcessBuilder().command(command).start();
         if (!duCommand.waitFor(60, TimeUnit.SECONDS)) {
             duCommand.destroy();
             throw new RuntimeException("Disk usage command timedout, aborting.");
@@ -86,9 +89,9 @@ public class StorageMaintainer {
         if (results.length != 2) {
             throw new RuntimeException("Result from disk usage command not as expected: " + output);
         }
-        long diskUsage = Long.valueOf(results[0]);
+        long diskUsageKB = Long.valueOf(results[0]);
 
-        return diskUsage * 1024;
+        return diskUsageKB * 1024;
     }
 
 

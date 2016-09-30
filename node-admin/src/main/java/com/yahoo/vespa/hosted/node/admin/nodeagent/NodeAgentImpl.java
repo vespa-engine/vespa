@@ -329,7 +329,7 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
-                storageMaintainer.updateDiskUsage(nodeSpec.containerName);
+                storageMaintainer.updateDiskUsage(nodeSpec.hostname, nodeSpec.containerName);
                 break;
             case inactive:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
