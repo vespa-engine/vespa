@@ -663,6 +663,23 @@ public class ClusterStateGeneratorTest {
                 hasStateReasonForNode(storageNode(2), NodeStateReason.GROUP_IS_DOWN));
     }
 
+    @Test
+    public void maintenance_nodes_in_downed_group_are_not_affected() {
+        final ClusterFixture fixture = ClusterFixture
+                .forHierarchicCluster(DistributionBuilder.withGroups(3).eachWithNodeCount(3))
+                .bringEntireClusterUp()
+                .proposeStorageNodeWantedState(3, State.MAINTENANCE)
+                .reportStorageNodeState(4, State.DOWN);
+        final ClusterStateGenerator.Params params = fixture.generatorParams().minNodeRatioPerGroup(0.68);
+
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        // 4 is down by itself, 5 is down implicitly and 3 should happily stay in Maintenance mode.
+        // Side note: most special cases for when a node should and should not be affected by group
+        // down edges are covered in GroupAvailabilityCalculatorTest and GroupAutoTakedownTest.
+        // We test this case explicitly since it's an assurance that code integration works as expected.
+        assertThat(state.toString(), equalTo("distributor:9 storage:9 .3.s:m .4.s:d .5.s:d"));
+    }
+
     /**
      * Cluster-wide distribution bit count cannot be higher than the lowest split bit
      * count reported by the set of storage nodes. This is because the distribution bit
@@ -867,7 +884,5 @@ public class ClusterStateGeneratorTest {
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:i .0.i:0.5"));
     }
-
-    // TODO test that group down feature doesn't rustle the feathers of maintenance nodes et al
 
 }
