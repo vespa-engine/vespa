@@ -91,7 +91,7 @@ public class RpcConfigSourceClient extends ConfigSourceClient {
                 target.close();
             }
             String extra = "";
-            log.log(LogLevel.ERROR, "Could not connect to any config source in set " + configSourceSet.toString() +
+            log.log(LogLevel.WARNING, "Could not connect to any config source in set " + configSourceSet.toString() +
                     ", please make sure config server(s) are running. " + extra);
         }
         return false;
