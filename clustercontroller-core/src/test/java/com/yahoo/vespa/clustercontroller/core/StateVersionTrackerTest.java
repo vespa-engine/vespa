@@ -9,6 +9,7 @@ import com.yahoo.vdslib.state.State;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -22,8 +23,8 @@ import static org.mockito.Mockito.mock;
 public class StateVersionTrackerTest {
 
     private static AnnotatedClusterState stateWithoutAnnotations(String stateStr) {
-        final ClusterState state = ClusterStateUtil.stateFromString(stateStr);
-        return new AnnotatedClusterState(state, null/*TODO*/, AnnotatedClusterState.emptyNodeStateReasons());
+        final ClusterState state = ClusterState.stateFromString(stateStr);
+        return new AnnotatedClusterState(state, Optional.empty(), AnnotatedClusterState.emptyNodeStateReasons());
     }
 
     private static StateVersionTracker createWithMockedMetrics() {
@@ -172,7 +173,7 @@ public class StateVersionTrackerTest {
     }
 
     private static ClusterStateHistoryEntry historyEntry(final String state, final long time) {
-        return new ClusterStateHistoryEntry(ClusterStateUtil.stateFromString(state), time);
+        return new ClusterStateHistoryEntry(ClusterState.stateFromString(state), time);
     }
 
     @Test

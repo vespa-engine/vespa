@@ -121,7 +121,6 @@ public class StateVersionTracker {
                 lowestObservedDistributionBits,
                 newState.getClusterState().getDistributionBitCount());
         // TODO should this take place in updateLatestCandidateState instead? I.e. does it require a consolidated state?
-        // FIXME it probably does!
         clusterStateView = ClusterStateView.create(currentClusterState.getClusterState(), metricUpdater);
     }
 

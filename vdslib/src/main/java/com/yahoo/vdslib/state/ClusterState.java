@@ -33,12 +33,20 @@ public class ClusterState implements Cloneable {
         deserialize(serialized);
     }
 
-    public static ClusterState emptyState() {
+    /**
+     * Parse a given cluster state string into a returned ClusterState instance, wrapping any
+     * parse exceptions in a RuntimeException.
+     */
+    public static ClusterState stateFromString(final String stateStr) {
         try {
-            return new ClusterState("");
-        } catch (ParseException e) {
-            throw new RuntimeException(e); // Will never happen. Empty strings cannot fail parsing.
+            return new ClusterState(stateStr);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    public static ClusterState emptyState() {
+        return stateFromString("");
     }
 
     public ClusterState clone() {

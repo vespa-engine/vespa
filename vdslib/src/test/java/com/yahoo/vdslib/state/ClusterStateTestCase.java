@@ -355,4 +355,16 @@ public class ClusterStateTestCase{
         final ClusterState state = ClusterState.emptyState();
         assertEquals("", state.toString());
     }
+
+    @Test
+    public void state_from_string_factory_method_returns_cluster_state_constructed_from_input() {
+        final String stateStr = "version:123 distributor:2 storage:2";
+        final ClusterState state = ClusterState.stateFromString(stateStr);
+        assertEquals(stateStr, state.toString());
+    }
+
+    @Test(expected=RuntimeException.class)
+    public void state_from_string_factory_method_throws_runtime_exception_on_parse_failure() {
+        ClusterState.stateFromString("fraggle rock");
+    }
 }

@@ -46,11 +46,11 @@ public class EventDiffCalculatorTest {
         }
 
         EventFixture clusterStateBefore(String stateStr) {
-            clusterStateBefore = ClusterStateUtil.stateFromString(stateStr);
+            clusterStateBefore = ClusterState.stateFromString(stateStr);
             return this;
         }
         EventFixture clusterStateAfter(String stateStr) {
-            clusterStateAfter = ClusterStateUtil.stateFromString(stateStr);
+            clusterStateAfter = ClusterState.stateFromString(stateStr);
             return this;
         }
         EventFixture storageNodeReasonBefore(int index, NodeStateReason reason) {

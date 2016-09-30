@@ -682,9 +682,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             stateVersionTracker.updateLatestCandidateState(candidate);
 
             if (stateVersionTracker.candidateChangedEnoughFromCurrentToWarrantPublish()
-                    || stateVersionTracker.hasReceivedNewVersionFromZooKeeper()) {
+                    || stateVersionTracker.hasReceivedNewVersionFromZooKeeper())
+            {
                 final long timeNowMs = timer.getCurrentTimeInMillis();
                 final AnnotatedClusterState before = stateVersionTracker.getAnnotatedVersionedClusterState();
+
                 stateVersionTracker.promoteCandidateToVersionedState(timeNowMs);
                 emitEventsForAlteredStateEdges(before, stateVersionTracker.getAnnotatedVersionedClusterState(), timeNowMs);
                 handleNewSystemState(stateVersionTracker.getVersionedClusterState());
