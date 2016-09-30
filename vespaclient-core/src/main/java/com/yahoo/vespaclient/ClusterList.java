@@ -14,7 +14,7 @@ public class ClusterList {
     List<ClusterDef> contentClusters = new ArrayList<>();
 
     public ClusterList() {
-        this(Collections.emptyList());
+        this(new ArrayList<>());
     }
     
     public ClusterList(List<ClusterDef> contentClusters) {
@@ -35,6 +35,7 @@ public class ClusterList {
             contentClusters.add(new ClusterDef(config.storage(i).name(), config.storage(i).configid()));
     }
 
+    /** Returns a reference to the mutable list */
     public List<ClusterDef> getStorageClusters() {
         return contentClusters; // TODO: Use immutable list
     }
