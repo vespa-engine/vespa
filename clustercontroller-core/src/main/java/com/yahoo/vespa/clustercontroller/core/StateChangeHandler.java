@@ -414,46 +414,56 @@ public class StateChangeHandler {
      * @param  reportedState the new state reported by (or, in the case of down - inferred from) the node
      * @param  nodeListener this listener is notified for some of the system state changes that this will return
      */
-    private void updateNodeInfoFromReportedState(NodeInfo node, NodeState currentState, NodeState reportedState,
-                                                 NodeStateOrHostInfoChangeHandler nodeListener) {
+    private void updateNodeInfoFromReportedState(final NodeInfo node,
+                                                 final NodeState currentState,
+                                                 final NodeState reportedState,
+                                                 final NodeStateOrHostInfoChangeHandler nodeListener) {
         final long timeNow = timer.getCurrentTimeInMillis();
-
         if (log.isLoggable(LogLevel.DEBUG)) {
             log.log(LogLevel.DEBUG, String.format("Finding new cluster state entry for %s switching state %s",
                     node, currentState.getTextualDifference(reportedState)));
         }
 
-        // Set nodes in maintenance if 1) down, or 2) initializing but set retired, to avoid migrating data
-        // to the retired node while it is initializing
-        if (nodeUpToDownEdge(node, currentState, reportedState)) {
-            node.setTransitionTime(timeNow);
-            if (node.getUpStableStateTime() + stableStateTimePeriod > timeNow && !isControlledShutdown(reportedState)) {
-                log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
-                eventLog.add(new NodeEvent(node,
-                        String.format("Stopped or possibly crashed after %d ms, which is before " +
-                                      "stable state time period. Premature crash count is now %d.",
-                                timeNow - node.getUpStableStateTime(), node.getPrematureCrashCount() + 1),
-                        NodeEvent.Type.CURRENT,
-                        timeNow), isMaster);
-                if (handlePrematureCrash(node, nodeListener)) {
-                    return;
-                }
-            }
+        if (handleReportedNodeCrashEdge(node, currentState, reportedState, nodeListener, timeNow)) {
+            return;
         }
-
-        // TODO move this to new reported state handling
-        // FIXME need to offload tracking of last reported state somewhere else (or take in last generated state?)
-        // If we got increasing initialization progress, reset initialize timer
         if (initializationProgressHasIncreased(currentState, reportedState)) {
             node.setInitProgressTime(timeNow);
-            if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
+            if (log.isLoggable(LogLevel.SPAM)) {
+                log.log(LogLevel.SPAM, "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
             }
         }
+        if (handleImplicitCrashEdgeFromReverseInitProgress(node, currentState, reportedState, nodeListener, timeNow)) {
+            return;
+        }
+        markNodeUnstableIfDownEdgeDuringInit(node, currentState, reportedState, nodeListener, timeNow);
+    }
 
-        // TODO do we need this when we have startup timestamps? at least it's unit tested.
-        // TODO this seems fairly contrived...
-        // If we get reverse initialize progress, mark node unstable, such that we don't mark it initializing again before it is up.
+    // If we go down while initializing, mark node unstable, such that we don't mark it initializing again before it is up.
+    private void markNodeUnstableIfDownEdgeDuringInit(final NodeInfo node,
+                                                      final NodeState currentState,
+                                                      final NodeState reportedState,
+                                                      final NodeStateOrHostInfoChangeHandler nodeListener,
+                                                      final long timeNow) {
+        if (currentState.getState().equals(State.INITIALIZING)
+                && reportedState.getState().oneOf("ds")
+                && !isControlledShutdown(reportedState))
+        {
+            eventLog.add(new NodeEvent(node, String.format("Stop or crash during initialization. " +
+                    "Premature crash count is now %d.", node.getPrematureCrashCount() + 1),
+                    NodeEvent.Type.CURRENT, timeNow), isMaster);
+            handlePrematureCrash(node, nodeListener);
+        }
+    }
+
+    // TODO do we need this when we have startup timestamps? at least it's unit tested.
+    // TODO this seems fairly contrived...
+    // If we get reverse initialize progress, mark node unstable, such that we don't mark it initializing again before it is up.
+    private boolean handleImplicitCrashEdgeFromReverseInitProgress(final NodeInfo node,
+                                                                   final NodeState currentState,
+                                                                   final NodeState reportedState,
+                                                                   final NodeStateOrHostInfoChangeHandler nodeListener,
+                                                                   final long timeNow) {
         if (currentState.getState().equals(State.INITIALIZING) &&
             (reportedState.getState().equals(State.INITIALIZING) && reportedState.getInitProgress() < currentState.getInitProgress()))
         {
@@ -465,19 +475,30 @@ public class StateChangeHandler {
                     NodeEvent.Type.CURRENT, timeNow), isMaster);
             node.setRecentlyObservedUnstableDuringInit(true);
             handlePrematureCrash(node, nodeListener);
-            return;
+            return true;
         }
+        return false;
+    }
 
-        // If we go down while initializing, mark node unstable, such that we don't mark it initializing again before it is up.
-        if (currentState.getState().equals(State.INITIALIZING)
-                && reportedState.getState().oneOf("ds")
-                && !isControlledShutdown(reportedState))
-        {
-            eventLog.add(new NodeEvent(node, String.format("Stop or crash during initialization. " +
-                    "Premature crash count is now %d.", node.getPrematureCrashCount() + 1),
-                    NodeEvent.Type.CURRENT, timeNow), isMaster);
-            handlePrematureCrash(node, nodeListener);
+    private boolean handleReportedNodeCrashEdge(NodeInfo node, NodeState currentState,
+                                                NodeState reportedState, NodeStateOrHostInfoChangeHandler nodeListener,
+                                                long timeNow) {
+        if (nodeUpToDownEdge(node, currentState, reportedState)) {
+            node.setTransitionTime(timeNow);
+            if (node.getUpStableStateTime() + stableStateTimePeriod > timeNow && !isControlledShutdown(reportedState)) {
+                log.log(LogLevel.DEBUG, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
+                eventLog.add(new NodeEvent(node,
+                        String.format("Stopped or possibly crashed after %d ms, which is before " +
+                                      "stable state time period. Premature crash count is now %d.",
+                                timeNow - node.getUpStableStateTime(), node.getPrematureCrashCount() + 1),
+                        NodeEvent.Type.CURRENT,
+                        timeNow), isMaster);
+                if (handlePrematureCrash(node, nodeListener)) {
+                    return true;
+                }
+            }
         }
+        return false;
     }
 
     private boolean initializationProgressHasIncreased(NodeState currentState, NodeState reportedState) {
