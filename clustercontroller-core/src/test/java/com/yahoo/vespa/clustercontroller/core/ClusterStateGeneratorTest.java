@@ -751,7 +751,7 @@ public class ClusterStateGeneratorTest {
     private String do_test_storage_node_with_no_init_progress(State wantedState) {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
-                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING))
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5))
                 .proposeStorageNodeWantedState(0, wantedState);
 
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
@@ -852,7 +852,21 @@ public class ClusterStateGeneratorTest {
         assertThat(params.transitionTimes, equalTo(options.maxTransitionTime));
     }
 
-    // TODO test init progress time of zero == feature disabled
+    @Test
+    public void configured_zero_init_progress_time_disables_auto_init_to_down_feature() {
+        final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
+                .bringEntireClusterUp()
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5));
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
+        nodeInfo.setInitProgressTime(10_000);
+
+        final ClusterStateGenerator.Params params = fixture.generatorParams()
+                .maxInitProgressTime(0)
+                .currentTimeInMilllis(11_000);
+        final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
+        assertThat(state.toString(), equalTo("distributor:3 storage:3 .0.s:i .0.i:0.5"));
+    }
 
     // TODO test that group down feature doesn't rustle the feathers of maintenance nodes et al
 

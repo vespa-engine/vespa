@@ -205,6 +205,9 @@ public class ClusterStateGenerator {
         if (reported.getState() != State.INITIALIZING) {
             return false;
         }
+        if (params.maxInitProgressTimeMs <= 0) {
+            return false; // No upper bound for max init time; auto-down for all intents and purposes disabled.
+        }
         return nodeInfo.getInitProgressTime() + params.maxInitProgressTimeMs <= params.currentTimeInMillis;
     }
 
