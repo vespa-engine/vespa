@@ -142,10 +142,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
-        this.info = Optional.of(createProvisionInfo());
         if (complete) { // create a a completed, frozen model
             configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
             addServiceClusters(deployState.getApplicationPackage(), builder);
+            this.info = Optional.of(createProvisionInfo()); // must happen after the two lines above
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
             getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState.getProperties());
@@ -156,6 +156,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             this.deployState = null;
         }
         else { // create a model with no services instantiated and the given file distributor
+            this.info = Optional.of(createProvisionInfo());
             this.fileDistributor = fileDistributor;
         }
     }
