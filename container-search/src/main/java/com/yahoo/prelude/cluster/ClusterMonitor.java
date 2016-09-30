@@ -20,6 +20,9 @@ import com.yahoo.search.result.ErrorMessage;
  * @author Steinar Knutsen
  */
 public class ClusterMonitor implements Runnable, Freezable {
+    // We need to wait a bit with starting thread because OSGi may not have
+    // loaded all needed classes until some time has elapsed
+    private static final int pingThreadInitialDelayMs = 3000;
 
     private final MonitorConfiguration configuration;
 
@@ -53,7 +56,7 @@ public class ClusterMonitor implements Runnable, Freezable {
                     "Do not start the monitoring thread before the set of"
                     +" nodes to monitor is complete/the ClusterMonitor is frozen.");
         }
-        future = nodeManager.getScheduledExecutor().scheduleAtFixedRate(this, 0, configuration.getCheckInterval(), TimeUnit.MILLISECONDS);
+        future = nodeManager.getScheduledExecutor().scheduleAtFixedRate(this, pingThreadInitialDelayMs, configuration.getCheckInterval(), TimeUnit.MILLISECONDS);
     }
 
     /**
