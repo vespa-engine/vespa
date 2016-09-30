@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -61,8 +62,13 @@ public class StorageMaintainer {
                 Map<String, Object> secretAgentReport = SecretAgentHandler.generateSecretAgentReport(dimensions, metrics);
                 String secretAgentReportJson = objectMapper.writeValueAsString(secretAgentReport);
 
+                // First write to temp file, then move temp file to main file to achieve atomic write
                 Path metricsSharePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/metrics-share/disk.usage");
-                Files.write(metricsSharePath, secretAgentReportJson.getBytes(StandardCharsets.UTF_8.name()));
+                Path metricsSharePathTemp = Paths.get(metricsSharePath.toString() + "_temp");
+                Files.write(metricsSharePathTemp, secretAgentReportJson.getBytes(StandardCharsets.UTF_8.name()));
+
+                // Files.move() fails to move if target already exist, could do target.delete() first, but then it's no longer atomic
+                execute(logger, "mv", metricsSharePathTemp.toString(), metricsSharePath.toString());
             } catch (Throwable e) {
                 logger.error("Problems during disk usage calculations: " + e.getMessage());
             }
@@ -118,12 +124,12 @@ public class StorageMaintainer {
             DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
         }
 
-        execute(logger, Maintainer.JOB_CLEAN_CORE_DUMPS);
+        execute(logger, concatenateArrays(baseArguments, Maintainer.JOB_CLEAN_CORE_DUMPS));
     }
 
     public void cleanNodeAdmin() {
-        execute(NODE_ADMIN_LOGGER, Maintainer.JOB_DELETE_OLD_APP_DATA);
-        execute(NODE_ADMIN_LOGGER, Maintainer.JOB_CLEAN_HOME);
+        execute(NODE_ADMIN_LOGGER, concatenateArrays(baseArguments, Maintainer.JOB_DELETE_OLD_APP_DATA));
+        execute(NODE_ADMIN_LOGGER, concatenateArrays(baseArguments, Maintainer.JOB_CLEAN_HOME));
 
         File nodeAdminJDiskLogsPath = Maintainer.pathInNodeAdminFromPathInNode(new ContainerName("node-admin"),
                 "/home/y/logs/jdisc_core/").toFile();
@@ -152,7 +158,7 @@ public class StorageMaintainer {
 
     private void execute(PrefixLogger logger, String... params) {
         try {
-            Process p = Runtime.getRuntime().exec(concatenateArrays(baseArguments, params));
+            Process p = Runtime.getRuntime().exec(params);
             String output = IOUtils.readAll(new InputStreamReader(p.getInputStream()));
             String errors = IOUtils.readAll(new InputStreamReader(p.getErrorStream()));
 
@@ -163,7 +169,7 @@ public class StorageMaintainer {
         }
     }
 
-    private static String[] concatenateArrays(String[] ar1, String[] ar2) {
+    private static String[] concatenateArrays(String[] ar1, String... ar2) {
         String[] concatenated = new String[ar1.length + ar2.length];
         System.arraycopy(ar1, 0, concatenated, 0, ar1.length);
         System.arraycopy(ar2, 0, concatenated, ar1.length, ar2.length);
