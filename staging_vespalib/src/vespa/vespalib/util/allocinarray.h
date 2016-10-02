@@ -16,7 +16,7 @@ namespace vespalib {
  *   - when the AllocInArray goes out of scope.
  *   - on an explicit clear.
 **/
-template <typename T, typename V=vespalib::Array<T, HeapAlloc> >
+template <typename T, typename V=vespalib::Array<T> >
 class AllocInArray {
 public:
     typedef uint32_t Index;

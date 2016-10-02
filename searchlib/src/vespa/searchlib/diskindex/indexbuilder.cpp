@@ -152,9 +152,9 @@ public:
         }
     };
 
-    typedef vespalib::Array<FHWordDocFieldFeatures, vespalib::DefaultAlloc>          FHWordDocFieldFeaturesVector;
-    typedef vespalib::Array<FHWordDocElementFeatures, vespalib::DefaultAlloc>        FHWordDocElementFeaturesVector;
-    typedef vespalib::Array<FHWordDocElementWordPosFeatures, vespalib::DefaultAlloc> FHWordDocElementWordPosFeaturesVector;
+    typedef vespalib::Array<FHWordDocFieldFeatures>          FHWordDocFieldFeaturesVector;
+    typedef vespalib::Array<FHWordDocElementFeatures>        FHWordDocElementFeaturesVector;
+    typedef vespalib::Array<FHWordDocElementWordPosFeatures> FHWordDocElementWordPosFeaturesVector;
 
     FHWordDocFieldFeaturesVector          _wdff;
     FHWordDocElementFeaturesVector        _wdfef;

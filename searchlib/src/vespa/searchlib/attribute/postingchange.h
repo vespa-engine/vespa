@@ -18,7 +18,7 @@ template <typename P>
 class PostingChange
 {
 public:
-    typedef vespalib::Array<P, vespalib::DefaultAlloc> A;
+    typedef vespalib::Array<P> A;
     typedef std::vector<uint32_t> R;
     A _additions;
     R _removals;

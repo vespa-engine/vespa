@@ -5,7 +5,7 @@
 using namespace vespalib;
 
 GrowableByteBuffer::GrowableByteBuffer(uint32_t initialLen) :
-    _buffer(initialLen),
+    _buffer(DefaultAlloc::create(initialLen)),
     _position(0)
 {
 }
@@ -16,7 +16,7 @@ GrowableByteBuffer::allocate(uint32_t len)
     size_t need(_position + len);
     if (need > _buffer.size()) {
         uint32_t newSize = vespalib::roundUp2inN(need);
-        DefaultAlloc newBuf(newSize);
+        Alloc newBuf(DefaultAlloc::create(newSize));
         memcpy(newBuf.get(), _buffer.get(), _position);
         _buffer.swap(newBuf);
     }

@@ -11,7 +11,7 @@ namespace mbusprot {
 
 class StorageReply : public mbus::Reply, public StorageMessage {
     const ProtocolSerialization* _serializer;
-    mutable vespalib::DefaultAlloc _buffer;
+    mutable vespalib::alloc::Alloc _buffer;
     uint32_t _mbusType;
     mutable api::StorageReply::SP _reply;
 

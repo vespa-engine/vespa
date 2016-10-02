@@ -125,9 +125,8 @@ BufferState::BufferState(void)
       _typeId(0),
       _clusterSize(0),
       _compacting(false),
-      _buffer()
+      _buffer(DefaultAlloc::create())
 {
-      _buffer.reset(new Alloc());
 }
 
 
@@ -163,14 +162,13 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     assert(_freeListList == NULL || _freeListList->_head != this);
 
     size_t initialSizeNeeded = 0;
-    if (bufferId == 0)
+    if (bufferId == 0) {
         initialSizeNeeded = typeHandler->getClusterSize();
-    size_t allocClusters =
-        typeHandler->calcClustersToAlloc(initialSizeNeeded + sizeNeeded,
-                maxClusters);
+    }
+    size_t allocClusters = typeHandler->calcClustersToAlloc(initialSizeNeeded + sizeNeeded, maxClusters);
     size_t allocSize = allocClusters * typeHandler->getClusterSize();
     assert(allocSize >= initialSizeNeeded + sizeNeeded);
-    _buffer.reset(new Alloc(allocSize * typeHandler->elementSize()));
+    _buffer.create(allocSize * typeHandler->elementSize()).swap(_buffer);
     buffer = _buffer->get();
     typeHandler->onActive(&_usedElems);
     assert(buffer != NULL);
@@ -218,7 +216,7 @@ BufferState::onFree(void *&buffer)
     assert(_deadElems <= _usedElems);
     assert(_holdElems == _usedElems - _deadElems);
     _typeHandler->destroyElements(buffer, _usedElems);
-    Alloc().swap(*_buffer);
+    _buffer.create().swap(_buffer);
     _typeHandler->onFree(_usedElems);
     buffer = NULL;
     _usedElems = 0;
@@ -334,10 +332,9 @@ BufferState::fallbackResize(uint64_t newSize,
     size_t allocSize = allocClusters * _typeHandler->getClusterSize();
     assert(allocSize >= newSize);
     assert(allocSize > _allocElems);
-    Alloc::UP newBuffer(std::make_unique<Alloc>
-                        (allocSize * _typeHandler->elementSize()));
-    _typeHandler->fallbackCopy(newBuffer->get(), buffer, _usedElems);
-    holdBuffer.swap(*_buffer);
+    Alloc newBuffer = _buffer.create(allocSize * _typeHandler->elementSize());
+    _typeHandler->fallbackCopy(newBuffer.get(), buffer, _usedElems);
+    holdBuffer.swap(_buffer);
     std::atomic_thread_fence(std::memory_order_release);
     _buffer = std::move(newBuffer);
     buffer = _buffer->get();

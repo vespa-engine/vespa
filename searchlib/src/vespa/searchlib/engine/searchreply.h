@@ -56,7 +56,7 @@ public:
     search::HitRank       maxRank;
     std::vector<uint32_t> sortIndex;
     std::vector<char>     sortData;
-    vespalib::Array<char, vespalib::DefaultAlloc> groupResult;
+    vespalib::Array<char> groupResult;
     bool                  useCoverage;
     Coverage              coverage;
     bool                  useWideHits;

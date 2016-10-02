@@ -36,7 +36,8 @@ private:
 class nbostream
 {
  public:
-    typedef Array<char, DefaultAlloc> Buffer;
+    using Buffer = Array<char>;
+    using Alloc = alloc::Alloc;
     enum State { ok=0, eof=0x01};
     nbostream(size_t initialSize=1024) :
         _wbuf(),
@@ -59,7 +60,7 @@ class nbostream
     {
     }
 
-    nbostream(DefaultAlloc && buf, size_t sz) :
+    nbostream(Alloc && buf, size_t sz) :
         _wbuf(std::move(buf), sz),
         _rbuf(&_wbuf[0], sz),
         _rp(0),

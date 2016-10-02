@@ -94,7 +94,7 @@ public:
     }
 };
     
-typedef vespalib::Array<LoadedEnumAttribute, vespalib::DefaultAlloc> LoadedEnumAttributeVector;
+typedef vespalib::Array<LoadedEnumAttribute> LoadedEnumAttributeVector;
 
 
 /**

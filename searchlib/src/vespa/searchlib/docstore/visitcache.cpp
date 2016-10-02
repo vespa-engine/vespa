@@ -35,7 +35,7 @@ size_t getBufferSize(const BlobSet::Positions & p) {
 
 }
 
-BlobSet::BlobSet(const Positions & positions, vespalib::DefaultAlloc && buffer) :
+BlobSet::BlobSet(const Positions & positions, vespalib::alloc::Alloc && buffer) :
     _positions(positions),
     _buffer(std::move(buffer), getBufferSize(_positions))
 {

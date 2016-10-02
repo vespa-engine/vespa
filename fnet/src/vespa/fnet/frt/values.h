@@ -72,12 +72,12 @@ public:
     class LocalBlob : public FRT_ISharedBlob
     {
     public:
-        LocalBlob(vespalib::DefaultAlloc data, uint32_t len) :
+        LocalBlob(vespalib::alloc::Alloc data, uint32_t len) :
             _data(std::move(data)),
             _len(len)
         { }
         LocalBlob(const char *data, uint32_t len) :
-            _data(len),
+            _data(vespalib::DefaultAlloc::create(len)),
             _len(len)
         {
             if (data != NULL) {
@@ -85,7 +85,7 @@ public:
             }
         }
         void addRef() override {}
-        void subRef() override { vespalib::DefaultAlloc().swap(_data); }
+        void subRef() override { vespalib::alloc::Alloc().swap(_data); }
         uint32_t getLen() override { return _len; }
         const char *getData() override { return static_cast<const char *>(_data.get()); }
         char *getInternalData() { return static_cast<char *>(_data.get()); }
@@ -93,7 +93,7 @@ public:
         LocalBlob(const LocalBlob &);
         LocalBlob &operator=(const LocalBlob &);
 
-        vespalib::DefaultAlloc _data;
+        vespalib::alloc::Alloc _data;
         uint32_t _len;
     };
 
@@ -439,7 +439,7 @@ public:
         _typeString[_numValues++] = FRT_VALUE_DATA;
     }
 
-    void AddData(vespalib::DefaultAlloc buf, uint32_t len)
+    void AddData(vespalib::alloc::Alloc buf, uint32_t len)
     {
         AddSharedData(new (_tub) LocalBlob(std::move(buf), len));
     }

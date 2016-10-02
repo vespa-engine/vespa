@@ -73,7 +73,7 @@ public:
      * @param buffer The buffer to represent.
      * @param len The length of the buffer
      */
-    ByteBuffer(vespalib::DefaultAlloc buffer, size_t len);
+    ByteBuffer(vespalib::alloc::Alloc buffer, size_t len);
 
     /**
      * Sets the buffer pointed to by this buffer. Allows for multiple
@@ -393,10 +393,10 @@ public:
         BufferHolder& operator=(const BufferHolder &);
 
     public:
-        BufferHolder(vespalib::DefaultAlloc buffer);
+        BufferHolder(vespalib::alloc::Alloc buffer);
         virtual ~BufferHolder();
 
-        vespalib::DefaultAlloc _buffer;
+        vespalib::alloc::Alloc _buffer;
     };
 
     ByteBuffer(BufferHolder* buf, size_t pos, size_t len, size_t limit);
@@ -409,7 +409,7 @@ private:
     size_t _pos;
     size_t _limit;
     mutable BufferHolder   * _bufHolder;
-    vespalib::DefaultAlloc _ownedBuffer;
+    vespalib::alloc::Alloc _ownedBuffer;
 public:
 
     std::string toString();

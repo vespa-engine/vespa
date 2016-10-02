@@ -11,6 +11,12 @@ LOG_SETUP(".document.compressor");
 #include <lz4.h>
 #include <lz4hc.h>
 
+using vespalib::alloc::Alloc;
+using vespalib::DefaultAlloc;
+using vespalib::ConstBufferRef;
+using vespalib::DataBuffer;
+using vespalib::make_string;
+
 namespace document
 {
 
@@ -24,10 +30,10 @@ LZ4Compressor::process(const CompressionConfig& config, const void * inputV, siz
     char * output(static_cast<char *>(outputV));
     int sz(-1);
     if (config.compressionLevel > 6) {
-        vespalib::DefaultAlloc state(LZ4_sizeofStateHC());
+        Alloc state = DefaultAlloc::create(LZ4_sizeofStateHC());
         sz = LZ4_compressHC2_withStateHC(state.get(), input, output, inputLen, config.compressionLevel);
     } else {
-        vespalib::DefaultAlloc state(LZ4_sizeofState());
+        Alloc state = DefaultAlloc::create(LZ4_sizeofState());
         sz = LZ4_compress_withState(state.get(), input, output, inputLen);
     }
     if (sz != 0) {
@@ -52,7 +58,7 @@ LZ4Compressor::unprocess(const void * inputV, size_t inputLen, void * outputV, s
 }
 
 CompressionConfig::Type
-compress(ICompressor & compressor, const CompressionConfig & compression, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest)
+compress(ICompressor & compressor, const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest)
 {
     CompressionConfig::Type type(CompressionConfig::NONE);
     dest.ensureFree(compressor.adjustProcessLen(0, org.size()));
@@ -67,7 +73,7 @@ compress(ICompressor & compressor, const CompressionConfig & compression, const 
 }
 
 CompressionConfig::Type
-docompress(const CompressionConfig & compression, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest)
+docompress(const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest)
 {
     CompressionConfig::Type type(CompressionConfig::NONE);
     switch (compression.type) {
@@ -85,7 +91,7 @@ docompress(const CompressionConfig & compression, const vespalib::ConstBufferRef
 }
 
 CompressionConfig::Type
-compress(const CompressionConfig & compression, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap)
+compress(const CompressionConfig & compression, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
 {
     CompressionConfig::Type type(CompressionConfig::NONE);
     if (org.size() >= compression.minSize) {
@@ -93,7 +99,7 @@ compress(const CompressionConfig & compression, const vespalib::ConstBufferRef &
     }
     if (type == CompressionConfig::NONE) {
         if (allowSwap) {
-            vespalib::DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
+            DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
             tmp.moveFreeToData(org.size());
             dest.swap(tmp);
         } else {
@@ -105,27 +111,22 @@ compress(const CompressionConfig & compression, const vespalib::ConstBufferRef &
 
 
 void
-decompress(ICompressor & decompressor, size_t uncompressedLen, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap)
+decompress(ICompressor & decompressor, size_t uncompressedLen, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
 {
     dest.ensureFree(uncompressedLen);
     size_t realUncompressedLen(dest.getFreeLen());
     if ( ! decompressor.unprocess(org.c_str(), org.size(), dest.getFree(), realUncompressedLen) ) {
         if ( uncompressedLen < realUncompressedLen) {
             if (allowSwap) {
-                vespalib::DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
+                DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
                 tmp.moveFreeToData(org.size());
                 dest.swap(tmp);
             } else {
                 dest.writeBytes(org.c_str(), org.size());
             }
         } else {
-            throw std::runtime_error(
-                vespalib::make_string("unprocess failed had %" PRIu64
-                                      ", wanted %" PRId64
-                                      ", got %" PRIu64,
-                                      org.size(),
-                                      uncompressedLen,
-                                      realUncompressedLen));
+            throw std::runtime_error(make_string("unprocess failed had %" PRIu64 ", wanted %" PRId64 ", got %" PRIu64,
+                                                 org.size(), uncompressedLen, realUncompressedLen));
         }
     } else {
         dest.moveFreeToData(realUncompressedLen);
@@ -133,7 +134,7 @@ decompress(ICompressor & decompressor, size_t uncompressedLen, const vespalib::C
 }
 
 void
-decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const vespalib::ConstBufferRef & org, vespalib::DataBuffer & dest, bool allowSwap)
+decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const ConstBufferRef & org, DataBuffer & dest, bool allowSwap)
 {
     switch (type) {
     case CompressionConfig::LZ4:
@@ -145,7 +146,7 @@ decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const v
     case CompressionConfig::NONE:
     case CompressionConfig::UNCOMPRESSABLE:
         if (allowSwap) {
-            vespalib::DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
+            DataBuffer tmp(const_cast<char *>(org.c_str()), org.size());
             tmp.moveFreeToData(org.size());
             dest.swap(tmp);
         } else {
@@ -153,7 +154,7 @@ decompress(const CompressionConfig::Type & type, size_t uncompressedLen, const v
         }
         break;
     default:
-        throw std::runtime_error(vespalib::make_string("Unable to handle decompression of type '%d'", type));
+        throw std::runtime_error(make_string("Unable to handle decompression of type '%d'", type));
         break;
     }
 }

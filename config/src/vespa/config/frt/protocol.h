@@ -59,9 +59,9 @@ extern const vespalib::slime::Memory RESPONSE_COMPRESSION_INFO_TYPE;
 extern const vespalib::slime::Memory RESPONSE_COMPRESSION_INFO_UNCOMPRESSED_SIZE;
 
 struct DecompressedData {
-    DecompressedData(vespalib::DefaultAlloc::UP mem, uint32_t sz)
+    DecompressedData(vespalib::alloc::Alloc mem, uint32_t sz)
         : memory(std::move(mem)),
-          memRef(static_cast<const char *>(memory->get()), sz),
+          memRef(static_cast<const char *>(memory.get()), sz),
           size(sz)
     { }
     DecompressedData(const vespalib::slime::Memory & mem, uint32_t sz)
@@ -70,7 +70,7 @@ struct DecompressedData {
           size(sz)
     {}
 
-    vespalib::DefaultAlloc::UP memory;
+    vespalib::alloc::Alloc memory;
     vespalib::slime::Memory memRef;
     uint32_t size;
 };

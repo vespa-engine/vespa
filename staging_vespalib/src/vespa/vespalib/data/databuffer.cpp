@@ -12,21 +12,20 @@ size_t padbefore(size_t alignment, const char *buf) {
 }
 }
 
-template <typename T>
-DataBufferT<T>::DataBufferT(size_t len, size_t alignment)
+DataBuffer::DataBuffer(size_t len, size_t alignment, const Alloc & initial)
     : _alignment(alignment),
       _externalBuf(NULL),
       _bufstart(NULL),
       _bufend(NULL),
       _datapt(NULL),
       _freept(NULL),
-      _buffer()
+      _buffer(initial.create(0))
 {
     assert(_alignment > 0);
     if (len > 0) {
         // avoid very small buffers for performance reasons:
         size_t bufsize = std::max(256ul, roundUp2inN(len + (_alignment - 1)));
-        T newBuf(bufsize);
+        Alloc newBuf(initial.create(bufsize));
         _bufstart = static_cast<char *>(newBuf.get());
         _buffer.swap(newBuf);
 
@@ -38,18 +37,16 @@ DataBufferT<T>::DataBufferT(size_t len, size_t alignment)
 }
 
 
-template <typename T>
 void
-DataBufferT<T>::moveFreeToData(size_t len)
+DataBuffer::moveFreeToData(size_t len)
 {
     assert(getFreeLen() >= len);
     _freept += len;
 }
 
 
-template <typename T>
 void
-DataBufferT<T>::moveDeadToData(size_t len)
+DataBuffer::moveDeadToData(size_t len)
 {
     assert(getDeadLen() >= len);
     _datapt -= len;
@@ -59,18 +56,16 @@ DataBufferT<T>::moveDeadToData(size_t len)
 }
 
 
-template <typename T>
 void
-DataBufferT<T>::moveDataToFree(size_t len)
+DataBuffer::moveDataToFree(size_t len)
 {
     assert(getDataLen() >= len);
     _freept -= len;
 }
 
 
-template <typename T>
 bool
-DataBufferT<T>::shrink(size_t newsize)
+DataBuffer::shrink(size_t newsize)
 {
     if (getBufSize() <= newsize || getDataLen() > newsize) {
         return false;
@@ -78,7 +73,7 @@ DataBufferT<T>::shrink(size_t newsize)
     char *newbuf = NULL;
     char *newdata = NULL;
     newsize += (_alignment - 1);
-    T newBuf(newsize);
+    Alloc newBuf(_buffer.create(newsize));
     if (newsize != 0) {
         newbuf = static_cast<char *>(newBuf.get());
         newdata = newbuf + padbefore(_alignment, newbuf);
@@ -93,9 +88,8 @@ DataBufferT<T>::shrink(size_t newsize)
 }
 
 
-template <typename T>
 void
-DataBufferT<T>::pack(size_t needbytes)
+DataBuffer::pack(size_t needbytes)
 {
     needbytes += (_alignment - 1);
     size_t dataLen = getDataLen();
@@ -104,7 +98,7 @@ DataBufferT<T>::pack(size_t needbytes)
         (getDeadLen() + getFreeLen()) * 4 < dataLen)
     {
         size_t bufsize = std::max(256ul, roundUp2inN(needbytes+dataLen));
-        T newBuf(bufsize);
+        Alloc newBuf(_buffer.create(bufsize));
         char *newbuf = static_cast<char *>(newBuf.get());
         char *newdata = newbuf + padbefore(_alignment, newbuf);
         memcpy(newdata, _datapt, dataLen);
@@ -122,9 +116,8 @@ DataBufferT<T>::pack(size_t needbytes)
 }
 
 
-template <typename T>
 bool
-DataBufferT<T>::equals(DataBufferT *other)
+DataBuffer::equals(DataBuffer *other)
 {
     if (getDataLen() != other->getDataLen())
         return false;
@@ -132,9 +125,8 @@ DataBufferT<T>::equals(DataBufferT *other)
 }
 
 
-template <typename T>
 void
-DataBufferT<T>::hexDump()
+DataBuffer::hexDump()
 {
     char *pt = _datapt;
     printf("*** DataBuffer HexDump BEGIN ***\n");
@@ -150,9 +142,8 @@ DataBufferT<T>::hexDump()
 }
 
 
-template <typename T>
 void
-DataBufferT<T>::swap(DataBufferT &other)
+DataBuffer::swap(DataBuffer &other)
 {
     _buffer.swap(other._buffer);
     std::swap(_alignment, other._alignment);
@@ -163,9 +154,8 @@ DataBufferT<T>::swap(DataBufferT &other)
     std::swap(_freept, other._freept);
 }
 
-template <typename T>
-T
-DataBufferT<T>::stealBuffer()
+vespalib::alloc::Alloc
+DataBuffer::stealBuffer()
 {
     assert( ! referencesExternalData() );
     _externalBuf = nullptr;
@@ -176,15 +166,9 @@ DataBufferT<T>::stealBuffer()
     return std::move(_buffer);
 }
 
-template <typename T>
 bool
-DataBufferT<T>::referencesExternalData() const {
+DataBuffer::referencesExternalData() const {
     return (_externalBuf == _bufstart) && (getBufSize() > 0);
 }
-
-template class DataBufferT<HeapAlloc>;
-template class DataBufferT<MMapAlloc>;
-template class DataBufferT<DefaultAlloc>;
-
 
 } // namespace vespalib

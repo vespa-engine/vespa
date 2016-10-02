@@ -226,19 +226,16 @@ decompress_buckets_from(char *buffer, uint32_t size) {
         memcpy(bucket, buffer, BUCKET_COUNT);
     } else {
         vespalib::ConstBufferRef compressed(buffer, size);
-        vespalib::DataBuffer uncompressed(reinterpret_cast<char *>(&bucket[0]),
-                                          BUCKET_COUNT);
-        document::decompress(document::CompressionConfig::LZ4, BUCKET_COUNT,
-                             compressed, uncompressed, false);
+        vespalib::DataBuffer uncompressed(reinterpret_cast<char *>(&bucket[0]), BUCKET_COUNT);
+        document::decompress(document::CompressionConfig::LZ4, BUCKET_COUNT, compressed, uncompressed, false);
     }
 }
 template <int BucketBits, typename HashT>
 void NormalSketch<BucketBits, HashT>::
 serialize(vespalib::Serializer &os) const {
-    vespalib::DefaultAlloc backing(LZ4_compressBound(BUCKET_COUNT));
+    vespalib::alloc::Alloc backing(vespalib::DefaultAlloc::create(LZ4_compressBound(BUCKET_COUNT)));
     char * compress_array(static_cast<char *>(backing.get()));
-    uint32_t size =
-        compress_buckets_into(compress_array, backing.size());
+    uint32_t size = compress_buckets_into(compress_array, backing.size());
     os << BUCKET_COUNT << size;
     for (size_t i = 0; i < size; ++i) {
         os << static_cast<uint8_t>(compress_array[i]);

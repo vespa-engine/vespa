@@ -4,13 +4,17 @@
 
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 
+using vespalib::DefaultAlloc;
+using vespalib::alloc::Alloc;
+using vespalib::IllegalStateException;
+
 namespace storage {
 namespace mbusprot {
 
 StorageReply::StorageReply(const mbus::BlobRef& data,
                            const ProtocolSerialization& serializer)
     : _serializer(&serializer),
-      _buffer(data.size()),
+      _buffer(DefaultAlloc::create(data.size())),
       _mbusType(0),
       _reply()
 {
@@ -38,20 +42,16 @@ StorageReply::deserialize() const
     StorageReply& reply(const_cast<StorageReply&>(*this));
     mbus::Message::UP msg(reply.getMessage());
     if (msg.get() == 0) {
-        throw vespalib::IllegalStateException(
-                "Cannot deserialize storage reply before message have been set",
-                VESPA_STRLOC);
+        throw IllegalStateException("Cannot deserialize storage reply before message have been set", VESPA_STRLOC);
     }
     const StorageCommand* cmd(dynamic_cast<const StorageCommand*>(msg.get()));
     reply.setMessage(std::move(msg));
     if (cmd == 0) {
-        throw vespalib::IllegalStateException(
-                "Storage reply get message did not return a storage command",
-                VESPA_STRLOC);
+        throw IllegalStateException("Storage reply get message did not return a storage command", VESPA_STRLOC);
     }
     mbus::BlobRef blobRef(static_cast<char *>(_buffer.get()), _buffer.size());
     _reply = _serializer->decodeReply(blobRef, *cmd->getCommand())->getReply();
-    vespalib::DefaultAlloc().swap(_buffer);
+    Alloc().swap(_buffer);
 }
 
 } // mbusprot

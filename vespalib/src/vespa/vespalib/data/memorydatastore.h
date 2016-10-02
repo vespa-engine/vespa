@@ -23,7 +23,7 @@ public:
     private:
         void   * _data;
     };
-    MemoryDataStore(size_t initialSize=256, Lock * lock=nullptr);
+    MemoryDataStore(alloc::Alloc && initialAlloc=DefaultAlloc::create(256), Lock * lock=nullptr);
     MemoryDataStore(const MemoryDataStore &) = delete;
     MemoryDataStore & operator = (const MemoryDataStore &) = delete;
     ~MemoryDataStore();
@@ -38,7 +38,7 @@ public:
         _buffers.clear();
     }
 private:
-    std::vector<DefaultAlloc> _buffers;
+    std::vector<alloc::Alloc> _buffers;
     size_t _writePos;
     Lock * _lock;
 };

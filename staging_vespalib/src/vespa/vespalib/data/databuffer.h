@@ -30,23 +30,23 @@ namespace vespalib {
  * the data will be relocated within the buffer and/or a bigger buffer
  * will be allocated.
  **/
-template <typename T>
-class DataBufferT
+class DataBuffer
 {
 private:
+    using Alloc = vespalib::alloc::Alloc;
     size_t         _alignment;
     char          *_externalBuf;
     char          *_bufstart;
     char          *_bufend;
     char          *_datapt;
     char          *_freept;
-    T              _buffer;
+    Alloc          _buffer;
 
-    DataBufferT(const DataBufferT &);
-    DataBufferT &operator=(const DataBufferT &);
+    DataBuffer(const DataBuffer &);
+    DataBuffer &operator=(const DataBuffer &);
 
 public:
-    typedef std::unique_ptr<DataBufferT<T>> UP;
+    typedef std::unique_ptr<DataBuffer> UP;
 
     /**
      * Construct a databuffer.
@@ -54,7 +54,7 @@ public:
      * @param len the initial size of the buffer.
      * @param alignment required memory alignment for data start
      **/
-    DataBufferT(size_t len = 1024, size_t alignment = 1);
+    DataBuffer(size_t len = 1024, size_t alignment = 1, const Alloc & initial = vespalib::DefaultAlloc::create(0));
 
     /**
      * Construct a databuffer using externally allocated memory. Note
@@ -64,22 +64,24 @@ public:
      * @param buf pointer to preallocated memory
      * @param len length of preallocated memory
      **/
-    DataBufferT(char *buf, size_t len) :
+    DataBuffer(char *buf, size_t len) :
         _alignment(1),
         _externalBuf(buf),
         _bufstart(buf),
         _bufend(buf + len),
         _datapt(_bufstart),
-        _freept(_bufstart)
+        _freept(_bufstart),
+        _buffer(vespalib::DefaultAlloc::create(0))
     { }
 
-    DataBufferT(const char *buf, size_t len) :
+    DataBuffer(const char *buf, size_t len) :
         _alignment(1),
         _externalBuf(const_cast<char *>(buf)),
         _bufstart(_externalBuf),
         _bufend(_bufstart + len),
         _datapt(_bufstart),
-        _freept(_bufend)
+        _freept(_bufend),
+        _buffer(vespalib::DefaultAlloc::create(0))
     { }
 
     /**
@@ -570,7 +572,7 @@ public:
      * @return true(equal)/false(not equal)
      * @param other the other buffer.
      **/
-    bool equals(DataBufferT *other);
+    bool equals(DataBuffer *other);
 
     /**
      * Print a human-readable representation of this buffer to
@@ -601,13 +603,10 @@ public:
      *
      * @param other the other buffer.
      **/
-    void swap(DataBufferT &other);
+    void swap(DataBuffer &other);
 
-    T stealBuffer();
+    Alloc stealBuffer();
 };
-
-typedef DataBufferT<DefaultAlloc> DataBuffer;
-typedef DataBufferT<MMapAlloc> MMapDataBuffer;
 
 } // namespace vespalib
 

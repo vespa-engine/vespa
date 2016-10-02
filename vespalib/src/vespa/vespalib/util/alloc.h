@@ -17,14 +17,14 @@ public:
     MemoryAllocator & operator = (const MemoryAllocator &) = delete;
     MemoryAllocator() { }
     virtual ~MemoryAllocator() { }
-    virtual void * alloc(size_t sz) = 0;
-    virtual void free(void * buf, size_t sz) = 0;
+    virtual void * alloc(size_t sz) const = 0;
+    virtual void free(void * buf, size_t sz) const = 0;
 };
 
 class HeapAllocator : public MemoryAllocator {
 public:
-    void * alloc(size_t sz) override;
-    void free(void * buf, size_t sz) override;
+    void * alloc(size_t sz) const override;
+    void free(void * buf, size_t sz) const override;
     static void * salloc(size_t sz);
     static void sfree(void * buf, size_t sz);
     static MemoryAllocator & getDefault();
@@ -33,7 +33,7 @@ public:
 class AlignedHeapAllocator : public HeapAllocator {
 public:
     AlignedHeapAllocator(size_t alignment) : _alignment(alignment) { }
-    void * alloc(size_t sz) override;
+    void * alloc(size_t sz) const override;
     static MemoryAllocator & get4K();
     static MemoryAllocator & get512B();
 private:
@@ -43,8 +43,8 @@ private:
 class MMapAllocator : public MemoryAllocator {
 public:
     enum {HUGEPAGE_SIZE=0x200000};
-    void * alloc(size_t sz) override;
-    void free(void * buf, size_t sz) override;
+    void * alloc(size_t sz) const override;
+    void free(void * buf, size_t sz) const override;
     static void * salloc(size_t sz);
     static void sfree(void * buf, size_t sz);
     static size_t roundUpToHugePages(size_t sz) {
@@ -55,35 +55,35 @@ public:
 
 class AutoAllocator : public MemoryAllocator {
 public:
-    AutoAllocator(size_t mmapLimit) : _mmapLimit(mmapLimit) { }
-    void * alloc(size_t sz) override;
-    void free(void * buf, size_t sz) override;
+    AutoAllocator(size_t mmapLimit, size_t alignment) : _mmapLimit(mmapLimit), _alignment(alignment) { }
+    void * alloc(size_t sz) const override;
+    void free(void * buf, size_t sz) const override;
     static MemoryAllocator & getDefault();
     static MemoryAllocator & get2P();
     static MemoryAllocator & get4P();
     static MemoryAllocator & get8P();
     static MemoryAllocator & get16P();
 private:
-    size_t roundUpToHugePages(size_t sz) {
+    size_t roundUpToHugePages(size_t sz) const {
         return (_mmapLimit >= MMapAllocator::HUGEPAGE_SIZE)
             ? MMapAllocator::roundUpToHugePages(sz)
             : sz;
     }
-    bool useMMap(size_t sz) { return (sz >= _mmapLimit); }
+    bool useMMap(size_t sz) const { return (sz >= _mmapLimit); }
     size_t _mmapLimit;
+    size_t _alignment;
 };
 
-}
 
-inline size_t roundUp2inN(size_t minimum) {
-    return 2ul << Optimized::msbIdx(minimum - 1);
-}
 /**
- * This is an allocated buffer interface that does not accept virtual inheritance.
+ * This represents an allocation.
+ * It can be created, moved, swapped and resized.
+ * The allocation strategy is decided upon creation.
 **/
 class Alloc
 {
 public:
+    using MemoryAllocator = alloc::MemoryAllocator;
     size_t size() const { return _sz; }
     void * get() { return _buf; }
     const void * get() const { return _buf; }
@@ -91,107 +91,66 @@ public:
     const void * operator -> () const { return _buf; }
     Alloc(const Alloc &) = delete;
     Alloc & operator = (const Alloc &) = delete;
-protected:
     Alloc(Alloc && rhs) :
         _buf(rhs._buf),
-        _sz(rhs._sz)
+        _sz(rhs._sz),
+        _allocator(rhs._allocator)
     {
         rhs._buf = nullptr;
         rhs._sz = 0;
+        rhs._allocator = 0;
     }
     Alloc & operator=(Alloc && rhs) {
         if (this != & rhs) {
-            internalSwap(rhs);
+            swap(rhs);
         }
         return *this;
     }
-    Alloc(void * buf, size_t sz) : _buf(buf), _sz(sz) { }
-    ~Alloc() { _buf = 0; }
-    void internalSwap(Alloc & rhs) {
+    Alloc() : _buf(nullptr), _sz(0), _allocator(nullptr) { }
+    Alloc(const MemoryAllocator * allocator, size_t sz) : _buf(allocator->alloc(sz)), _sz(sz), _allocator(allocator) { }
+    ~Alloc() { 
+        if (_buf != nullptr) {
+            _allocator->free(_buf, _sz);
+            _buf = nullptr;
+        }
+    }
+    void swap(Alloc & rhs) {
         std::swap(_buf, rhs._buf);
         std::swap(_sz, rhs._sz);
+        std::swap(_allocator, rhs._allocator);
     }
-private:
-    void * _buf;
-    size_t _sz;
+    Alloc create(size_t sz) const {
+        return Alloc(_allocator, sz);
+    }
+protected:
+    void alloc(const MemoryAllocator * allocator, size_t sz) {
+        assert(_buf == nullptr);
+        _allocator = allocator;
+        _sz = sz;
+        _buf = allocator->alloc(sz);
+    }
+    void                  * _buf;
+    size_t                  _sz;
+    const MemoryAllocator * _allocator;
 };
 
-class HeapAlloc : public Alloc
+class HeapAllocFactory
 {
 public:
-    typedef std::unique_ptr<HeapAlloc> UP;
-    HeapAlloc() : Alloc(NULL, 0) { }
-    HeapAlloc(size_t sz) : Alloc(HeapAlloc::alloc(sz), sz) { }
-    ~HeapAlloc() { HeapAlloc::free(get(), size()); }
-    HeapAlloc(HeapAlloc && rhs) : Alloc(std::move(rhs)) { }
-
-    HeapAlloc & operator=(HeapAlloc && rhs) {
-        Alloc::operator=(std::move(rhs));
-        return *this;
-    }
-    void swap(HeapAlloc & rhs) { internalSwap(rhs); }
-public:
-    static void * alloc(size_t sz) { return alloc::HeapAllocator::getDefault().alloc(sz); }
-    static void free(void * buf, size_t sz) { alloc::HeapAllocator::getDefault().free(buf, sz); }
+    static Alloc create(size_t sz=0);
 };
 
-class AlignedHeapAlloc : public Alloc
+class AlignedHeapAllocFactory
 {
 public:
-    typedef std::unique_ptr<AlignedHeapAlloc> UP;
-    AlignedHeapAlloc() : Alloc(NULL, 0) { }
-    AlignedHeapAlloc(size_t sz, size_t alignment)
-        : Alloc(AlignedHeapAlloc::alloc(sz, alignment), sz) { }
-    AlignedHeapAlloc(AlignedHeapAlloc && rhs) : Alloc(std::move(rhs)) { }
-
-    AlignedHeapAlloc & operator=(AlignedHeapAlloc && rhs) {
-        Alloc::operator=(std::move(rhs));
-        return *this;
-    }
-    ~AlignedHeapAlloc() { AlignedHeapAlloc::free(get(), size()); }
-    void swap(AlignedHeapAlloc & rhs) { internalSwap(rhs); }
-public:
-    static void * alloc(size_t sz, size_t alignment) { return alloc::AlignedHeapAllocator(alignment).alloc(sz); }
-    static void free(void * buf, size_t sz) { return alloc::AlignedHeapAllocator(0).free(buf, sz); }
+    static Alloc create(size_t sz, size_t alignment);
 };
 
-
-class MMapAlloc : public Alloc
+class MMapAllocFactory
 {
 public:
     enum {HUGEPAGE_SIZE=0x200000};
-    typedef std::unique_ptr<MMapAlloc> UP;
-    MMapAlloc() : Alloc(NULL, 0) { }
-    MMapAlloc(size_t sz) : Alloc(MMapAlloc::alloc(sz), sz) { }
-    MMapAlloc(MMapAlloc && rhs) : Alloc(std::move(rhs)) { }
-
-    MMapAlloc & operator=(MMapAlloc && rhs) {
-        Alloc::operator=(std::move(rhs));
-        return *this;
-    }
-    ~MMapAlloc() { MMapAlloc::free(get(), size()); }
-    void swap(MMapAlloc & rhs) { internalSwap(rhs); }
-public:
-    static void * alloc(size_t sz) { return alloc::MMapAllocator::getDefault().alloc(sz); }
-    static void free(void * buf, size_t sz) { alloc::MMapAllocator::getDefault().free(buf, sz); }
-};
-
-// Alignment requirement is != 0, use posix_memalign
-template <size_t Alignment>
-struct ChooseHeapAlloc
-{
-    static inline void* alloc(size_t sz) {
-        return AlignedHeapAlloc::alloc(sz, Alignment);
-    }
-};
-
-// No alignment required, use regular malloc
-template <>
-struct ChooseHeapAlloc<0>
-{
-    static inline void* alloc(size_t sz) {
-        return HeapAlloc::alloc(sz);
-    }
+    static Alloc create(size_t sz=0);
 };
 
 /**
@@ -199,53 +158,19 @@ struct ChooseHeapAlloc<0>
  * is always used when size is above limit.
  */
 
-template <size_t Lim=MMapAlloc::HUGEPAGE_SIZE, size_t Alignment=0>
-class AutoAlloc : public Alloc
+class AutoAllocFactory 
 {
 public:
-    typedef std::unique_ptr<AutoAlloc> UP;
-    typedef vespalib::LinkedPtr<AutoAlloc> LP;
-    AutoAlloc() : Alloc(NULL, 0) { }
-    AutoAlloc(size_t sz)
-        : Alloc(useMMap(sz)
-                    ? MMapAlloc::alloc(roundUpToHugePages(sz))
-                    : ChooseHeapAlloc<Alignment>::alloc(sz),
-                useMMap(sz)
-                    ? roundUpToHugePages(sz)
-                    : sz)
-    { }
-    AutoAlloc(AutoAlloc && rhs) : Alloc(std::move(rhs)) { }
-
-    AutoAlloc & operator=(AutoAlloc && rhs) {
-        Alloc::operator=(std::move(rhs));
-        return *this;
-    }
-
-    ~AutoAlloc() {
-        if (useMMap(size())) {
-            MMapAlloc::free(get(), size());
-        } else {
-            HeapAlloc::free(get(), size());
-        }
-    }
-    void swap(AutoAlloc & rhs) { internalSwap(rhs); }
-private:
-    static size_t roundUpToHugePages(size_t sz) {
-        return (Lim >= MMapAlloc::HUGEPAGE_SIZE)
-            ? (sz+(MMapAlloc::HUGEPAGE_SIZE-1)) & ~(MMapAlloc::HUGEPAGE_SIZE-1)
-            : sz;
-    }
-    static bool useMMap(size_t sz) { return (sz >= Lim); }
+    static Alloc create(size_t sz=0, size_t mmapLimit=MMapAllocator::HUGEPAGE_SIZE, size_t alignment=0);
 };
 
-template <size_t Lim>
-inline void swap(AutoAlloc<Lim> & a, AutoAlloc<Lim> & b) { a.swap(b); }
+}
 
-inline void swap(HeapAlloc & a, HeapAlloc & b) { a.swap(b); }
-inline void swap(AlignedHeapAlloc & a, AlignedHeapAlloc & b) { a.swap(b); }
-inline void swap(MMapAlloc & a, MMapAlloc & b) { a.swap(b); }
+inline size_t roundUp2inN(size_t minimum) {
+    return 2ul << Optimized::msbIdx(minimum - 1);
+}
 
-typedef AutoAlloc<> DefaultAlloc;
+using DefaultAlloc = alloc::AutoAllocFactory;
 
 }
 

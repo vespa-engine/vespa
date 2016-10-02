@@ -72,7 +72,7 @@ public:
     typedef std::unordered_set<uint64_t> FeatureSet;
 
     DocumentFeaturesStore(uint32_t arity);
-    DocumentFeaturesStore(vespalib::MMapDataBuffer &buffer);
+    DocumentFeaturesStore(vespalib::DataBuffer &buffer);
     ~DocumentFeaturesStore();
 
     void insert(uint64_t featureId, uint32_t docId);
@@ -81,7 +81,7 @@ public:
     void remove(uint32_t docId);
     search::MemoryUsage getMemoryUsage() const;
 
-    void serialize(vespalib::MMapDataBuffer &buffer) const;
+    void serialize(vespalib::DataBuffer &buffer) const;
 };
 
 }  // namespace predicate

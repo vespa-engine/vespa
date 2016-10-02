@@ -23,7 +23,7 @@
 class Fast_BufferedFile : public FastOS_FileInterface, public vespalib::noncopyable
 {
 private:
-    typedef vespalib::MMapAlloc Alloc;
+    using Alloc = vespalib::alloc::Alloc;
     /** The number of bytes left in the file. */
     int64_t _fileleft;
     /** Pointer to the start of the buffer. Correctly aligned for direct IO */

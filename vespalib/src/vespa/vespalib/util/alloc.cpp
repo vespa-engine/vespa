@@ -88,11 +88,11 @@ alloc::HeapAllocator _G_heapAllocatorDefault;
 alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(4096);
 alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
 alloc::MMapAllocator _G_mmapAllocatorDefault;
-alloc::AutoAllocator _G_autoAllocatorDefault(alloc::MMapAllocator::HUGEPAGE_SIZE);
-alloc::AutoAllocator _G_2PautoAllocatorDefault(2 * alloc::MMapAllocator::HUGEPAGE_SIZE);
-alloc::AutoAllocator _G_4PautoAllocatorDefault(4 * alloc::MMapAllocator::HUGEPAGE_SIZE);
-alloc::AutoAllocator _G_8PautoAllocatorDefault(8 * alloc::MMapAllocator::HUGEPAGE_SIZE);
-alloc::AutoAllocator _G_16PautoAllocatorDefault(16 * alloc::MMapAllocator::HUGEPAGE_SIZE);
+alloc::AutoAllocator _G_autoAllocatorDefault(alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
+alloc::AutoAllocator _G_2PautoAllocatorDefault(2 * alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
+alloc::AutoAllocator _G_4PautoAllocatorDefault(4 * alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
+alloc::AutoAllocator _G_8PautoAllocatorDefault(8 * alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
+alloc::AutoAllocator _G_16PautoAllocatorDefault(16 * alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
 
 }
 
@@ -134,7 +134,7 @@ MemoryAllocator & AutoAllocator::get16P() {
     return _G_16PautoAllocatorDefault;
 }
 
-void * HeapAllocator::alloc(size_t sz) {
+void * HeapAllocator::alloc(size_t sz) const {
     return salloc(sz);
 }
 
@@ -142,7 +142,7 @@ void * HeapAllocator::salloc(size_t sz) {
     return (sz > 0) ? malloc(sz) : 0;
 }
 
-void HeapAllocator::free(void * p, size_t sz) {
+void HeapAllocator::free(void * p, size_t sz) const {
     sfree(p, sz);
 }
 
@@ -150,19 +150,17 @@ void HeapAllocator::sfree(void * p, size_t sz) {
     (void) sz; if (p) { ::free(p); }
 }
 
-void * AlignedHeapAllocator::alloc(size_t sz) {
+void * AlignedHeapAllocator::alloc(size_t sz) const {
     if (!sz) { return 0; }
     void* ptr;
     int result = posix_memalign(&ptr, _alignment, sz);
     if (result != 0) {
-        throw IllegalArgumentException(
-                make_string("posix_memalign(%zu, %zu) failed with code %d",
-                            sz, _alignment, result));
+        throw IllegalArgumentException(make_string("posix_memalign(%zu, %zu) failed with code %d", sz, _alignment, result));
     }
     return ptr;
 }
 
-void * MMapAllocator::alloc(size_t sz) {
+void * MMapAllocator::alloc(size_t sz) const {
     return salloc(sz);
 }
 
@@ -217,7 +215,7 @@ void * MMapAllocator::salloc(size_t sz)
     return buf;
 }
 
-void MMapAllocator::free(void * buf, size_t sz) {
+void MMapAllocator::free(void * buf, size_t sz) const {
     sfree(buf, sz);
 }
 
@@ -236,16 +234,20 @@ void MMapAllocator::sfree(void * buf, size_t sz)
     }
 }
 
-void * AutoAllocator::alloc(size_t sz) {
+void * AutoAllocator::alloc(size_t sz) const {
     if (useMMap(sz)) {
         sz = roundUpToHugePages(sz);
         return MMapAllocator::salloc(sz);
     } else {
-        return HeapAllocator::salloc(sz);
+        if (_alignment == 0) {
+            return HeapAllocator::salloc(sz);
+        } else {
+            return AlignedHeapAllocator(_alignment).alloc(sz);
+        }
     }
 }
 
-void AutoAllocator::free(void *p, size_t sz) {
+void AutoAllocator::free(void *p, size_t sz) const {
     if (useMMap(sz)) {
         return MMapAllocator::sfree(p, sz);
     } else {
@@ -253,5 +255,32 @@ void AutoAllocator::free(void *p, size_t sz) {
     }
 }
 
+Alloc
+MMapAllocFactory::create(size_t sz)
+{
+    return Alloc(&MMapAllocator::getDefault(), sz);
 }
+
+Alloc
+AutoAllocFactory::create(size_t sz, size_t mmapLimit, size_t alignment)
+{
+    if (alignment == 0) {
+        if (mmapLimit <= MMapAllocator::HUGEPAGE_SIZE) {
+            return Alloc(&AutoAllocator::getDefault(), sz);
+        } else if (mmapLimit <= 2*MMapAllocator::HUGEPAGE_SIZE) {
+            return Alloc(&AutoAllocator::get2P(), sz);
+        } else if (mmapLimit <= 4*MMapAllocator::HUGEPAGE_SIZE) {
+            return Alloc(&AutoAllocator::get4P(), sz);
+        } else if (mmapLimit <= 8*MMapAllocator::HUGEPAGE_SIZE) {
+            return Alloc(&AutoAllocator::get8P(), sz);
+        } else {
+            return Alloc(&AutoAllocator::get16P(), sz);
+        }
+    } else {
+        abort();
+    }
+}
+
+}
+
 }

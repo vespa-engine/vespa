@@ -6,6 +6,7 @@ LOG_SETUP(".config.frt.protocol");
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib;
+using vespalib::alloc::Alloc;
 using namespace vespalib::slime;
 
 namespace config {
@@ -58,15 +59,15 @@ const Memory RESPONSE_COMPRESSION_INFO_UNCOMPRESSED_SIZE = "uncompressedSize";
 DecompressedData
 decompress_lz4(const char * input, uint32_t inputLen, int uncompressedLength)
 {
-    DefaultAlloc::UP memory(new DefaultAlloc(uncompressedLength));
-    int sz = LZ4_decompress_safe(input, static_cast<char *>(memory->get()), inputLen, uncompressedLength);
+    Alloc memory( DefaultAlloc::create(uncompressedLength));
+    int sz = LZ4_decompress_safe(input, static_cast<char *>(memory.get()), inputLen, uncompressedLength);
     if (sz >= 0 && sz != uncompressedLength) {
         if (LOG_WOULD_LOG(debug)) {
             LOG(debug, "Returned compressed size (%d) is not the same as uncompressed size(%d)", sz, uncompressedLength);
         }
-        DefaultAlloc * copy = new DefaultAlloc(sz);
-        memcpy(copy->get(), memory->get(), sz);
-        memory.reset(copy);
+        Alloc copy = memory.create(sz);
+        memcpy(copy.get(), memory.get(), sz);
+        memory = std::move(copy);
     }
     assert(sz >= 0);
     return DecompressedData(std::move(memory), static_cast<uint32_t>(sz));

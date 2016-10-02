@@ -19,7 +19,7 @@ class StringEntryType;
 class StringAttribute : public AttributeVector
 {
 public:
-    typedef vespalib::Array<uint32_t, vespalib::DefaultAlloc> OffsetVector;
+    typedef vespalib::Array<uint32_t> OffsetVector;
     typedef const char *                  LoadedValueType;
     typedef EnumStoreBase::Index          EnumIndex;
     typedef EnumStoreBase::IndexVector    EnumIndexVector;
