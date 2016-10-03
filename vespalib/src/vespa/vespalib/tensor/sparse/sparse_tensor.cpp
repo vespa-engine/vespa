@@ -6,7 +6,6 @@
 #include "sparse_tensor_match.h"
 #include "sparse_tensor_apply.hpp"
 #include "sparse_tensor_reduce.hpp"
-#include "join_sparse_tensors.h"
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_apply.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
@@ -118,8 +117,8 @@ SparseTensor::add(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    return joinSparseTensors(*this, *rhs,
-            [](double lhsValue, double rhsValue) { return lhsValue + rhsValue; });
+    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
+                         { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
@@ -129,9 +128,8 @@ SparseTensor::subtract(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    // Note that -rhsCell.second is passed to the lambda function, that is why we do addition.
-    return joinSparseTensorsNegated(*this, *rhs,
-            [](double lhsValue, double rhsValue) { return lhsValue + rhsValue; });
+    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
+                         { return lhsValue - rhsValue; });
 }
 
 Tensor::UP
@@ -152,8 +150,8 @@ SparseTensor::min(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    return joinSparseTensors(*this, *rhs,
-            [](double lhsValue, double rhsValue) { return std::min(lhsValue, rhsValue); });
+    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
+                         { return std::min(lhsValue, rhsValue); });
 }
 
 Tensor::UP
@@ -163,8 +161,8 @@ SparseTensor::max(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    return joinSparseTensors(*this, *rhs,
-            [](double lhsValue, double rhsValue) { return std::max(lhsValue, rhsValue); });
+    return sparse::apply(*this, *rhs, [](double lhsValue, double rhsValue)
+                         { return std::max(lhsValue, rhsValue); });
 }
 
 Tensor::UP
