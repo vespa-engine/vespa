@@ -3,9 +3,9 @@
 #include <vespa/fastos/fastos.h>
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
-#include "sparse_tensor_dimension_sum.h"
 #include "sparse_tensor_match.h"
 #include "sparse_tensor_apply.hpp"
+#include "sparse_tensor_reduce.hpp"
 #include "join_sparse_tensors.h"
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_apply.h>
@@ -186,7 +186,9 @@ SparseTensor::apply(const CellFunction &func) const
 Tensor::UP
 SparseTensor::sum(const vespalib::string &dimension) const
 {
-    return SparseTensorDimensionSum(*this, dimension).result();
+    return sparse::reduce(*this, { dimension },
+                          [](double lhsValue, double rhsValue)
+                          { return lhsValue + rhsValue; });
 }
 
 bool
