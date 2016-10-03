@@ -10,6 +10,7 @@ using vespalib::LockGuard;
 using vespalib::DataBuffer;
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;
+using vespalib::DefaultAlloc;
 
 KeySet::KeySet(uint32_t key) :
     _keys()
@@ -30,7 +31,7 @@ KeySet::contains(const KeySet &rhs) const {
 
 BlobSet::BlobSet() :
     _positions(),
-    _buffer()
+    _buffer(DefaultAlloc::create(0, 16 * MemoryAllocator::HUGEPAGE_SIZE), 0)
 { }
 
 namespace {
@@ -91,7 +92,7 @@ BlobSet
 CompressedBlobSet::getBlobSet() const
 {
     // These are frequent lage allocations that are to expensive to mmap.
-    DataBuffer uncompressed(0, 1, vespalib::DefaultAlloc::create(0, 16 * MemoryAllocator::HUGEPAGE_SIZE));
+    DataBuffer uncompressed(0, 1, DefaultAlloc::create(0, 16 * MemoryAllocator::HUGEPAGE_SIZE));
     if ( ! _positions.empty() ) {
         document::decompress(_compression, getBufferSize(_positions), ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
     }
