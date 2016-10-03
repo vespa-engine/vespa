@@ -27,8 +27,9 @@ public:
 
 /**
  * This represents an allocation.
- * It can be created, moved, swapped and resized.
+ * It can be created, moved, swapped.
  * The allocation strategy is decided upon creation.
+ * It can also create create additional allocations with the same allocation strategy.
 **/
 class Alloc
 {
@@ -117,4 +118,3 @@ inline size_t roundUp2inN(size_t minimum) {
 using DefaultAlloc = alloc::AutoAllocFactory;
 
 }
-
