@@ -49,7 +49,7 @@ shafile(const string &baseDir,
     string fullFile(prependBaseDir(baseDir, file));
     FastOS_File f;
     std::ostringstream os;
-    Alloc buf = DefaultAlloc::create(65536, MMapAllocator::HUGEPAGE_SIZE, 0x1000);
+    Alloc buf = DefaultAlloc::create(65536, MemoryAllocator::HUGEPAGE_SIZE, 0x1000);
     f.EnableDirectIO();
     bool openres = f.OpenReadOnly(fullFile.c_str());
     if (!openres) {

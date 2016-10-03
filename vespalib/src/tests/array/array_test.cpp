@@ -157,7 +157,7 @@ void Test::testArray(const T & a, const T & b)
 {
     Array<T> array;
 
-    ASSERT_EQUAL(sizeof(array), 24u);
+    ASSERT_EQUAL(sizeof(array), 32u);
     ASSERT_EQUAL(array.size(), 0u);
     ASSERT_EQUAL(array.capacity(), 0u);
     for(size_t i(0); i < 5; i++) {

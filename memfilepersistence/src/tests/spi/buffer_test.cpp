@@ -36,8 +36,8 @@ BufferTest::getSizeReturnsInitiallyAllocatedSize()
 void
 BufferTest::getSizeReturnsUnAlignedSizeForMMappedAllocs()
 {
-    Buffer buf(vespalib::alloc::MMapAllocator::HUGEPAGE_SIZE + 1);
-    CPPUNIT_ASSERT_EQUAL(size_t(vespalib::alloc::MMapAllocator::HUGEPAGE_SIZE + 1), buf.getSize());
+    Buffer buf(vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE + 1);
+    CPPUNIT_ASSERT_EQUAL(size_t(vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE + 1), buf.getSize());
 }
 
 void

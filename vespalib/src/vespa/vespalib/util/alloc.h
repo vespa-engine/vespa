@@ -12,6 +12,7 @@ namespace alloc {
 
 class MemoryAllocator {
 public:
+    enum {HUGEPAGE_SIZE=0x200000};
     using UP = std::unique_ptr<MemoryAllocator>;
     MemoryAllocator(const MemoryAllocator &) = delete;
     MemoryAllocator & operator = (const MemoryAllocator &) = delete;
@@ -19,61 +20,10 @@ public:
     virtual ~MemoryAllocator() { }
     virtual void * alloc(size_t sz) const = 0;
     virtual void free(void * buf, size_t sz) const = 0;
-};
-
-class HeapAllocator : public MemoryAllocator {
-public:
-    void * alloc(size_t sz) const override;
-    void free(void * buf, size_t sz) const override;
-    static void * salloc(size_t sz);
-    static void sfree(void * buf, size_t sz);
-    static MemoryAllocator & getDefault();
-};
-
-class AlignedHeapAllocator : public HeapAllocator {
-public:
-    AlignedHeapAllocator(size_t alignment) : _alignment(alignment) { }
-    void * alloc(size_t sz) const override;
-    static MemoryAllocator & get4K();
-    static MemoryAllocator & get512B();
-private:
-    size_t _alignment;
-};
-
-class MMapAllocator : public MemoryAllocator {
-public:
-    enum {HUGEPAGE_SIZE=0x200000};
-    void * alloc(size_t sz) const override;
-    void free(void * buf, size_t sz) const override;
-    static void * salloc(size_t sz);
-    static void sfree(void * buf, size_t sz);
     static size_t roundUpToHugePages(size_t sz) {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
     }
-    static MemoryAllocator & getDefault();
 };
-
-class AutoAllocator : public MemoryAllocator {
-public:
-    AutoAllocator(size_t mmapLimit, size_t alignment) : _mmapLimit(mmapLimit), _alignment(alignment) { }
-    void * alloc(size_t sz) const override;
-    void free(void * buf, size_t sz) const override;
-    static MemoryAllocator & getDefault();
-    static MemoryAllocator & get2P();
-    static MemoryAllocator & get4P();
-    static MemoryAllocator & get8P();
-    static MemoryAllocator & get16P();
-private:
-    size_t roundUpToHugePages(size_t sz) const {
-        return (_mmapLimit >= MMapAllocator::HUGEPAGE_SIZE)
-            ? MMapAllocator::roundUpToHugePages(sz)
-            : sz;
-    }
-    bool useMMap(size_t sz) const { return (sz >= _mmapLimit); }
-    size_t _mmapLimit;
-    size_t _alignment;
-};
-
 
 /**
  * This represents an allocation.
@@ -123,12 +73,6 @@ public:
         return Alloc(_allocator, sz);
     }
 protected:
-    void alloc(const MemoryAllocator * allocator, size_t sz) {
-        assert(_buf == nullptr);
-        _allocator = allocator;
-        _sz = sz;
-        _buf = allocator->alloc(sz);
-    }
     void                  * _buf;
     size_t                  _sz;
     const MemoryAllocator * _allocator;
@@ -161,7 +105,7 @@ public:
 class AutoAllocFactory 
 {
 public:
-    static Alloc create(size_t sz=0, size_t mmapLimit=MMapAllocator::HUGEPAGE_SIZE, size_t alignment=0);
+    static Alloc create(size_t sz=0, size_t mmapLimit=MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
 };
 
 }

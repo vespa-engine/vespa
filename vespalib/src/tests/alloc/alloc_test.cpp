@@ -53,7 +53,7 @@ Test::testBasic()
         EXPECT_TRUE(h.get() != NULL);
     }
     {
-        EXPECT_EXCEPTION(AlignedHeapAllocFactory::create(100, 0), IllegalArgumentException, "posix_memalign(100, 0) failed with code 22");
+        EXPECT_EXCEPTION(AlignedHeapAllocFactory::create(100, 7), IllegalArgumentException, "AlignedHeapAllocFactory::create(100, 7) does not support 7 alignment");
         Alloc h = AlignedHeapAllocFactory::create(100, 1024);
         EXPECT_EQUAL(100u, h.size());
         EXPECT_TRUE(h.get() != NULL);
@@ -86,13 +86,13 @@ void
 Test::testAlignedAllocation()
 {
     {
-        Alloc buf = AutoAllocFactory::create(10, 2048, 1024);
+        Alloc buf = AutoAllocFactory::create(10, MemoryAllocator::HUGEPAGE_SIZE, 1024);
         EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 1024 == 0);
     }
 
     {
         // Mmapped pointers are page-aligned, but sanity test anyway.
-        Alloc buf = AutoAllocFactory::create(3000, 1024, 512);
+        Alloc buf = AutoAllocFactory::create(3000000, MemoryAllocator::HUGEPAGE_SIZE, 512);
         EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 512 == 0);
     }
 }

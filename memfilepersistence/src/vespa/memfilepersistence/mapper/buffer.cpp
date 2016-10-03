@@ -16,7 +16,7 @@ namespace memfile {
 // It is crucial that any backing buffer type returns an address that is
 // 512-byte aligned, or direct IO will scream at us and fail everything.
 Buffer::Buffer(size_t size)
-    : _buffer(DefaultAlloc::create(size, MMapAllocator::HUGEPAGE_SIZE, 512)),
+    : _buffer(DefaultAlloc::create(size, MemoryAllocator::HUGEPAGE_SIZE, 512)),
       _size(size)
 {
 }

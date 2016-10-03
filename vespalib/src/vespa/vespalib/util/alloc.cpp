@@ -13,6 +13,7 @@
 #include <vespa/log/log.h>
 #include <map>
 #include <atomic>
+#include <unordered_map>
 
 LOG_SETUP(".vespalib.alloc");
 
@@ -84,19 +85,113 @@ size_t sum(const MMapStore & s)
     return sum;
 }
 
-alloc::HeapAllocator _G_heapAllocatorDefault;
-alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(4096);
-alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
-alloc::MMapAllocator _G_mmapAllocatorDefault;
-alloc::AutoAllocator _G_autoAllocatorDefault(alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
-alloc::AutoAllocator _G_2PautoAllocatorDefault(2 * alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
-alloc::AutoAllocator _G_4PautoAllocatorDefault(4 * alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
-alloc::AutoAllocator _G_8PautoAllocatorDefault(8 * alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
-alloc::AutoAllocator _G_16PautoAllocatorDefault(16 * alloc::MMapAllocator::HUGEPAGE_SIZE, 0);
+class MMapLimitAndAlignment {
+public:
+    MMapLimitAndAlignment(size_t mmapLimit, size_t alignment);
+    uint32_t hash() const { return _key; }
+    bool operator == (MMapLimitAndAlignment rhs) const { return _key == rhs._key; }
+private:
+    uint32_t _key;
+};
 
+void verifyMMapLimitAndAlignment(size_t mmapLimit, size_t alignment) __attribute__((noinline));
+
+void verifyMMapLimitAndAlignment(size_t mmapLimit, size_t alignment) {
+    if ((0x01ul << Optimized::msbIdx(mmapLimit)) != mmapLimit) {
+        throw IllegalArgumentException(make_string("We only support mmaplimit(%0lx) to be a power of 2", mmapLimit));
+    }
+    if ((alignment != 0) && (0x01ul << Optimized::msbIdx(alignment)) != alignment) {
+        throw IllegalArgumentException(make_string("We only support alignment(%0lx) to be a power of 2", alignment));
+    }
+}
+
+MMapLimitAndAlignment::MMapLimitAndAlignment(size_t mmapLimit, size_t alignment) :
+    _key(Optimized::msbIdx(mmapLimit) | Optimized::msbIdx(alignment) << 6)
+{
+    verifyMMapLimitAndAlignment(mmapLimit, alignment);
+}
 }
 
 namespace alloc {
+
+class HeapAllocator : public MemoryAllocator {
+public:
+    void * alloc(size_t sz) const override;
+    void free(void * buf, size_t sz) const override;
+    static void * salloc(size_t sz);
+    static void sfree(void * buf, size_t sz);
+    static MemoryAllocator & getDefault();
+};
+
+class AlignedHeapAllocator : public HeapAllocator {
+public:
+    AlignedHeapAllocator(size_t alignment) : _alignment(alignment) { }
+    void * alloc(size_t sz) const override;
+    static MemoryAllocator & get4K();
+    static MemoryAllocator & get1K();
+    static MemoryAllocator & get512B();
+private:
+    size_t _alignment;
+};
+
+class MMapAllocator : public MemoryAllocator {
+public:
+    void * alloc(size_t sz) const override;
+    void free(void * buf, size_t sz) const override;
+    static void * salloc(size_t sz);
+    static void sfree(void * buf, size_t sz);
+    static MemoryAllocator & getDefault();
+};
+
+class AutoAllocator : public MemoryAllocator {
+public:
+    AutoAllocator(size_t mmapLimit, size_t alignment) : _mmapLimit(mmapLimit), _alignment(alignment) { }
+    void * alloc(size_t sz) const override;
+    void free(void * buf, size_t sz) const override;
+    static MemoryAllocator & getDefault();
+    static MemoryAllocator & getAllocator(size_t mmapLimit, size_t alignment);
+private:
+    size_t roundUpToHugePages(size_t sz) const {
+        return (_mmapLimit >= MemoryAllocator::HUGEPAGE_SIZE)
+            ? MMapAllocator::roundUpToHugePages(sz)
+            : sz;
+    }
+    bool useMMap(size_t sz) const { return (sz >= _mmapLimit); }
+    size_t _mmapLimit;
+    size_t _alignment;
+};
+
+
+namespace {
+
+struct MMapLimitAndAlignmentHash {
+    std::size_t operator ()(MMapLimitAndAlignment key) const { return key.hash(); }
+};
+
+using AutoAllocatorsMap = std::unordered_map<MMapLimitAndAlignment, AutoAllocator::UP, MMapLimitAndAlignmentHash>;
+
+AutoAllocatorsMap createAutoAllocators() {
+    AutoAllocatorsMap map;
+    map.reserve(15);
+    for (size_t alignment : {0,0x200, 0x400, 0x1000}) {
+        for (size_t pages : {1,2,4,8,16}) {
+            size_t mmapLimit = pages * MemoryAllocator::HUGEPAGE_SIZE;
+            MMapLimitAndAlignment key(mmapLimit, alignment);
+            auto result = map.emplace(key, AutoAllocator::UP(new AutoAllocator(mmapLimit, alignment)));
+            assert( result.second );
+        }
+    }
+    return map;
+}
+
+AutoAllocatorsMap  _G_availableAutoAllocators = createAutoAllocators();
+alloc::HeapAllocator _G_heapAllocatorDefault;
+alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(1024);
+alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(4096);
+alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
+alloc::MMapAllocator _G_mmapAllocatorDefault;
+
+}
 
 MemoryAllocator & HeapAllocator::getDefault() {
     return _G_heapAllocatorDefault;
@@ -104,6 +199,10 @@ MemoryAllocator & HeapAllocator::getDefault() {
 
 MemoryAllocator & AlignedHeapAllocator::get4K() {
     return _G_4KalignedHeapAllocator;
+}
+
+MemoryAllocator & AlignedHeapAllocator::get1K() {
+    return _G_1KalignedHeapAllocator;
 }
 
 MemoryAllocator & AlignedHeapAllocator::get512B() {
@@ -115,23 +214,16 @@ MemoryAllocator & MMapAllocator::getDefault() {
 }
 
 MemoryAllocator & AutoAllocator::getDefault() {
-    return _G_autoAllocatorDefault;
+    return getAllocator(1 * MemoryAllocator::HUGEPAGE_SIZE, 0);
 }
 
-MemoryAllocator & AutoAllocator::get2P() {
-    return _G_2PautoAllocatorDefault;
-}
-
-MemoryAllocator & AutoAllocator::get4P() {
-    return _G_4PautoAllocatorDefault;
-}
-
-MemoryAllocator & AutoAllocator::get8P() {
-    return _G_8PautoAllocatorDefault;
-}
-
-MemoryAllocator & AutoAllocator::get16P() {
-    return _G_16PautoAllocatorDefault;
+MemoryAllocator & AutoAllocator::getAllocator(size_t mmapLimit, size_t alignment) {
+    MMapLimitAndAlignment key(mmapLimit, alignment);
+    auto found = _G_availableAutoAllocators.find(key);
+    if (found == _G_availableAutoAllocators.end()) {
+        throw IllegalArgumentException(make_string("We currently have no support for mmapLimit(%0lx) and alignment(%0lx)", mmapLimit, alignment));
+    }
+    return *(found->second);
 }
 
 void * HeapAllocator::alloc(size_t sz) const {
@@ -268,10 +360,12 @@ AlignedHeapAllocFactory::create(size_t sz, size_t alignment)
         return Alloc(&AlignedHeapAllocator::getDefault(), sz);
     } else if (alignment == 0x200) {
         return Alloc(&AlignedHeapAllocator::get512B(), sz);
+    } else if (alignment == 0x400) {
+        return Alloc(&AlignedHeapAllocator::get1K(), sz);
     } else if (alignment == 0x1000) {
         return Alloc(&AlignedHeapAllocator::get4K(), sz);
     } else {
-        abort();
+        throw IllegalArgumentException(make_string("AlignedHeapAllocFactory::create(%zu, %zu) does not support %zu alignment", sz, alignment, alignment));
     }
 }
 
@@ -284,21 +378,7 @@ MMapAllocFactory::create(size_t sz)
 Alloc
 AutoAllocFactory::create(size_t sz, size_t mmapLimit, size_t alignment)
 {
-    if (alignment == 0) {
-        if (mmapLimit <= MMapAllocator::HUGEPAGE_SIZE) {
-            return Alloc(&AutoAllocator::getDefault(), sz);
-        } else if (mmapLimit <= 2*MMapAllocator::HUGEPAGE_SIZE) {
-            return Alloc(&AutoAllocator::get2P(), sz);
-        } else if (mmapLimit <= 4*MMapAllocator::HUGEPAGE_SIZE) {
-            return Alloc(&AutoAllocator::get4P(), sz);
-        } else if (mmapLimit <= 8*MMapAllocator::HUGEPAGE_SIZE) {
-            return Alloc(&AutoAllocator::get8P(), sz);
-        } else {
-            return Alloc(&AutoAllocator::get16P(), sz);
-        }
-    } else {
-        abort();
-    }
+    return Alloc(&AutoAllocator::getAllocator(mmapLimit, alignment), sz);
 }
 
 }
