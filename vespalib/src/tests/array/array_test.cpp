@@ -28,8 +28,8 @@ private:
 
 namespace vespalib {
 
-template <typename T, typename B>
-std::ostream & operator << (std::ostream & os, const Array<T,B> & a)
+template <typename T>
+std::ostream & operator << (std::ostream & os, const Array<T> & a)
 {
     os << '{';
     if (! a.empty()) {
@@ -118,7 +118,7 @@ Test::Main()
 
 void Test::testThatOrganicGrowthIsBy2InNAndReserveResizeAreExact()
 {
-    Array<char, DefaultAlloc> c(256);
+    Array<char> c(256);
     EXPECT_EQUAL(256u, c.size());
     EXPECT_EQUAL(256u, c.capacity());
     c.reserve(258);

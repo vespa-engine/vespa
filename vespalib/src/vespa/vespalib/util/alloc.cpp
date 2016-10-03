@@ -256,6 +256,26 @@ void AutoAllocator::free(void *p, size_t sz) const {
 }
 
 Alloc
+HeapAllocFactory::create(size_t sz)
+{
+    return Alloc(&HeapAllocator::getDefault(), sz);
+}
+
+Alloc
+AlignedHeapAllocFactory::create(size_t sz, size_t alignment)
+{
+    if (alignment == 0) {
+        return Alloc(&AlignedHeapAllocator::getDefault(), sz);
+    } else if (alignment == 0x200) {
+        return Alloc(&AlignedHeapAllocator::get512B(), sz);
+    } else if (alignment == 0x1000) {
+        return Alloc(&AlignedHeapAllocator::get4K(), sz);
+    } else {
+        abort();
+    }
+}
+
+Alloc
 MMapAllocFactory::create(size_t sz)
 {
     return Alloc(&MMapAllocator::getDefault(), sz);
