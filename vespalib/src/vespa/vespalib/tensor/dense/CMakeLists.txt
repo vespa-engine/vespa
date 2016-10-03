@@ -1,10 +1,10 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(vespalib_vespalib_tensor_dense OBJECT
     SOURCES
+    direct_dense_tensor_builder.cpp
     dense_tensor.cpp
     dense_tensor_address_combiner.cpp
     dense_tensor_builder.cpp
     dense_tensor_dimension_sum.cpp
-    dense_tensor_product.cpp
     DEPENDS
 )

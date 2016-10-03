@@ -3,7 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "dense_tensor.h"
 #include "dense_tensor_dimension_sum.h"
-#include "dense_tensor_product.h"
+#include "dense_tensor_apply.hpp"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -238,7 +238,8 @@ DenseTensor::multiply(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    return DenseTensorProduct(*this, *rhs).result();
+    return dense::apply(*this, *rhs, [](double lhsValue, double rhsValue)
+    { return lhsValue * rhsValue; });
 }
 
 Tensor::UP
