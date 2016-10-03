@@ -104,9 +104,9 @@ class GroupPreparer {
      * to use comes first 
      */
     private List<Node> prioritizeNodes(List<Node> nodeList, NodeSpec nodeSpec) {
-        if (nodeSpec.specifiesExactFlavor()) { // sort by exact before inexact flavor match, increasing cost, hostname
+        if ( nodeSpec.specifiesNonStockFlavor()) { // sort by exact before inexact flavor match, increasing cost, hostname
             Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
-                    .compareTrueFirst(nodeSpec.matchesExactly(n1.flavor()), nodeSpec.matchesExactly(n1.flavor()))
+                    .compareTrueFirst(nodeSpec.matchesExactly(n1.flavor()), nodeSpec.matchesExactly(n2.flavor()))
                     .compare(n1.flavor().cost(), n2.flavor().cost())
                     .compare(n1.hostname(), n2.hostname())
                     .result()
@@ -114,6 +114,7 @@ class GroupPreparer {
         }
         else { // sort by increasing cost, hostname
             Collections.sort(nodeList, (n1, n2) -> ComparisonChain.start()
+                    .compareTrueFirst(nodeSpec.matchesExactly(n1.flavor()), nodeSpec.matchesExactly(n1.flavor()))
                     .compare(n1.flavor().cost(), n2.flavor().cost())
                     .compare(n1.hostname(), n2.hostname())
                     .result()

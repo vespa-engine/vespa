@@ -17,6 +17,7 @@ public class Flavor {
 
     private final String name;
     private final int cost;
+    private final boolean isStock;
     private final Type type;
     private final double minCpuCores;
     private final double minMainMemoryAvailableGb;
@@ -32,6 +33,7 @@ public class Flavor {
         this.name = flavorConfig.name();
         this.replacesFlavors = new ArrayList<>();
         this.cost = flavorConfig.cost();
+        this.isStock = flavorConfig.stock();
         this.type = Type.valueOf(flavorConfig.environment());
         this.minCpuCores = flavorConfig.minCpuCores();
         this.minMainMemoryAvailableGb = flavorConfig.minMainMemoryAvailableGb();
@@ -39,6 +41,7 @@ public class Flavor {
         this.description = flavorConfig.description();
     }
 
+    /** Returns the unique identity of this flavor */
     public String name() { return name; }
 
     /**
@@ -47,26 +50,18 @@ public class Flavor {
      * @return Monthly cost in USD
      */
     public int cost() { return cost; }
+    
+    public boolean isStock() { return isStock; }
 
-    public double getMinMainMemoryAvailableGb() {
-        return minMainMemoryAvailableGb;
-    }
+    public double getMinMainMemoryAvailableGb() { return minMainMemoryAvailableGb; }
 
-    public double getMinDiskAvailableGb() {
-        return minDiskAvailableGb;
-    }
+    public double getMinDiskAvailableGb() { return minDiskAvailableGb; }
 
-    public double getMinCpuCores() {
-        return minCpuCores;
-    }
+    public double getMinCpuCores() { return minCpuCores; }
 
-    public String getDescription() {
-        return description;
-    }
+    public String getDescription() { return description; }
 
-    public Type getType() {
-        return type;
-    }
+    public Type getType() { return type; }
 
     /**
      * Returns the canonical name of this flavor - which is the name which should be used as an interface to users.

@@ -72,6 +72,20 @@ public class ProvisioningTester implements AutoCloseable {
         }
     }
 
+    public ProvisioningTester(Zone zone, NodeRepositoryConfig config) {
+        try {
+            nodeFlavors = new NodeFlavors(config);
+            clock = new ManualClock();
+            nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+            provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
+            capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
+            provisionLogger = new NullProvisionLogger();
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private NodeRepositoryConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);

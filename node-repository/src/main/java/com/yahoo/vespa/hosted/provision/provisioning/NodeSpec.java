@@ -23,8 +23,8 @@ public interface NodeSpec {
     /** Returns whether the given flavor is exactly specified by this node spec */
     boolean matchesExactly(Flavor flavor);
 
-    /** Returns whether this requesta a specific (non-canonical) flavor */
-    boolean specifiesExactFlavor();
+    /** Returns whether this requests a non-stock flavor */
+    boolean specifiesNonStockFlavor();
 
     /** Returns whether the given node count is sufficient to consider this spec fulfilled to the maximum amount */
     boolean saturatedBy(int count);
@@ -68,7 +68,7 @@ public interface NodeSpec {
         public boolean matchesExactly(Flavor flavor) { return flavor.equals(this.flavor); }
 
         @Override
-        public boolean specifiesExactFlavor() { return ! flavor.isCanonical(); }
+        public boolean specifiesNonStockFlavor() { return ! flavor.isStock(); }
 
         @Override
         public boolean fulfilledBy(int count) { return count >= this.count; } 
@@ -106,7 +106,7 @@ public interface NodeSpec {
         public boolean matchesExactly(Flavor flavor) { return false; }
 
         @Override
-        public boolean specifiesExactFlavor() { return false; }
+        public boolean specifiesNonStockFlavor() { return false; }
 
         @Override
         public boolean fulfilledBy(int count) { return true; }
