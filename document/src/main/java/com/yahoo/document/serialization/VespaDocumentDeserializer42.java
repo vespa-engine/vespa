@@ -78,8 +78,8 @@ import static com.yahoo.text.Utf8.calculateStringPositions;
  * @deprecated Please use {@link com.yahoo.document.serialization.VespaDocumentDeserializerHead} instead for new code.
  * @author baldersheim
  */
-@Deprecated // OK: Don't remove on Vespa 6: Mail may have documents on this format still
-// When removing: Move content of this class into VespaDocumentDeserializerHead (and subclass VespaDocumentSerializerHead in that)
+@Deprecated // Remove on Vespa 7
+// When removing: Move content of this class into VespaDocumentDeserializerHead
 public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 implements DocumentDeserializer {
 
     private final Compressor compressor = new Compressor();
@@ -597,8 +597,8 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
 
         DocumentType docType = manager.getDocumentType(new DataTypeName(docTypeName));
         if (docType == null) {
-            throw new DeserializationException(
-                    "No known document type with name " + new Utf8String(docTypeName).toString());
+            throw new DeserializationException("No known document type with name " + 
+                                               new Utf8String(docTypeName).toString());
         }
         return docType;
     }
