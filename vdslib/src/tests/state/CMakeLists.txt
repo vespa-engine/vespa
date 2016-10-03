@@ -4,4 +4,5 @@ vespa_add_library(vdslib_teststate
     clusterstatetest.cpp
     nodestatetest.cpp
     DEPENDS
+    vdslib
 )

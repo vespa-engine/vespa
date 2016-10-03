@@ -9,4 +9,5 @@ vespa_add_library(vdslib_containertest
     lruordertest.cpp
     indexedcontaineriteratortest.cpp
     DEPENDS
+    vdslib
 )

@@ -9,6 +9,5 @@ vespa_add_executable(memfilepersistence_testrunner_app TEST
     memfilepersistence_testinit
     memfilepersistence_testspi
     memfilepersistence_testtools
-    memfilepersistence
 )
 vespa_add_test(NAME memfilepersistence_testrunner_app COMMAND memfilepersistence_testrunner_app)

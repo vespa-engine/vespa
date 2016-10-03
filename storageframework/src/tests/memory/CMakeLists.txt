@@ -4,4 +4,5 @@ vespa_add_library(storageframework_testmemory
     memorymanagertest.cpp
     memorystatetest.cpp
     DEPENDS
+    storageframework
 )

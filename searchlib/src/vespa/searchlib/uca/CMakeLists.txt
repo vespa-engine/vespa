@@ -5,6 +5,7 @@ vespa_add_library(searchlib_searchlib_uca
     ucafunctionnode.cpp
     INSTALL lib64
     DEPENDS
+    searchlib
     icui18n
     icuuc
 )

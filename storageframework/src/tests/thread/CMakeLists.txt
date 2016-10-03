@@ -4,4 +4,5 @@ vespa_add_library(storageframework_testthread
     tickingthreadtest.cpp
     taskthreadtest.cpp
     DEPENDS
+    storageframework
 )

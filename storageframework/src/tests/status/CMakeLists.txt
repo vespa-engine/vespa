@@ -3,4 +3,5 @@ vespa_add_library(storageframework_teststatus
     SOURCES
     htmlstatustest.cpp
     DEPENDS
+    storageframework
 )

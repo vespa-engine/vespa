@@ -3,4 +3,5 @@ vespa_add_library(vdslib_bucketdistributiontest
     SOURCES
     bucketdistributiontest.cpp
     DEPENDS
+    vdslib
 )

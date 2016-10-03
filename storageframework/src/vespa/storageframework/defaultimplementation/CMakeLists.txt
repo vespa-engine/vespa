@@ -7,4 +7,5 @@ vespa_add_library(storageframework_defaultimplementation
     $<TARGET_OBJECTS:storageframework_threadimpl>
     INSTALL lib64
     DEPENDS
+    storageframework_generic
 )
