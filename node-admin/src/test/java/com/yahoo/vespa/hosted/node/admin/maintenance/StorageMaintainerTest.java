@@ -24,7 +24,7 @@ public class StorageMaintainerTest {
 
         StorageMaintainer storageMaintainer = new StorageMaintainer();
         long usedBytes = storageMaintainer.getDiscUsedInBytes(folder.getRoot());
-        if (usedBytes / writeSize > 4) fail("Used bytes is " + usedBytes + ", but wrote " + writeSize
-                + " bytes, not even close.");
+        if (usedBytes * 4 < writeSize || usedBytes > writeSize * 4)
+            fail("Used bytes is " + usedBytes + ", but wrote " + writeSize + " bytes, not even close.");
     }
 }

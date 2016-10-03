@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.restapi.SecretAgentHandler;
@@ -30,43 +29,26 @@ import java.util.concurrent.TimeUnit;
 public class StorageMaintainer {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(StorageMaintainer.class);
     private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
-    private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final long intervalSec = 1000;
 
     private final Object monitor = new Object();
 
-    private Map<ContainerName, Instant> nextDiskCalculationByContainerName = new ConcurrentHashMap<>();
-    private Map<ContainerName, Map<String, Object>> diskMetricsCache = new ConcurrentHashMap<>();
+    private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
     private Random random = new Random();
 
     public void updateDiskUsage(String hostname, ContainerName containerName) {
-        // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
-        // that calculation rarely. Additionally, we spread out the calculation for different containers by adding
-        // a random deviation.
-        if (nextDiskCalculationByContainerName.containsKey(containerName) &&
-                nextDiskCalculationByContainerName.get(containerName).isBefore(Instant.now())) {
-
-            Map<String, Object> diskUsageMetrics = getDiskUsageByContainerMetrics(containerName);
-            diskMetricsCache.put(containerName, diskUsageMetrics);
-            long distributedSecs = (long) (intervalSec * (0.5 + random.nextDouble()));
-            nextDiskCalculationByContainerName.put(containerName, Instant.now().plusSeconds(distributedSecs));
-        }
+        updateMetricsCacheForContainerIfNeeded(containerName);
 
         try {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-
-            Map<String, Object> dimensions = new HashMap<>();
-            dimensions.put("host", hostname);
-
-            Map<String, Object> metrics = diskMetricsCache.get(containerName);
-
-            Map<String, Object> secretAgentReport = SecretAgentHandler.generateSecretAgentReport(dimensions, metrics);
-            String secretAgentReportJson = objectMapper.writeValueAsString(secretAgentReport);
+            SecretAgentHandler secretAgentHandler = new SecretAgentHandler();
+            secretAgentHandler.withDimension("host", hostname);
+            metricsCacheByContainerName.get(containerName).metrics.forEach(secretAgentHandler::withMetric);
 
             // First write to temp file, then move temp file to main file to achieve atomic write
             Path metricsSharePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/metrics-share/disk.usage");
             Path metricsSharePathTemp = Paths.get(metricsSharePath.toString() + "_temp");
-            Files.write(metricsSharePathTemp, secretAgentReportJson.getBytes(StandardCharsets.UTF_8.name()));
+            Files.write(metricsSharePathTemp, secretAgentHandler.toJson().getBytes(StandardCharsets.UTF_8.name()));
 
             // Files.move() fails to move if target already exist, could do target.delete() first, but then it's no longer atomic
             execute(logger, "mv", metricsSharePathTemp.toString(), metricsSharePath.toString());
@@ -75,8 +57,15 @@ public class StorageMaintainer {
         }
     }
 
-    private Map<String, Object> getDiskUsageByContainerMetrics(ContainerName containerName) {
-        Map<String, Object> metrics = new HashMap<>();
+    private void updateMetricsCacheForContainerIfNeeded(ContainerName containerName) {
+        // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
+        // that calculation rarely. Additionally, we spread out the calculation for different containers by adding
+        // a random deviation.
+        if (metricsCacheByContainerName.containsKey(containerName) &&
+                metricsCacheByContainerName.get(containerName).nextUpdateAt.isAfter(Instant.now())) return;
+
+        long distributedSecs = (long) (intervalSec * (0.5 + random.nextDouble()));
+        MetricsCache metricsCache = new MetricsCache(Instant.now().plusSeconds(distributedSecs));
 
         // Throttle to one disk usage calculation at a time.
         synchronized (monitor) {
@@ -85,13 +74,13 @@ public class StorageMaintainer {
 
             try {
                 long used = getDiscUsedInBytes(containerDir);
-                metrics.put("node.disk.used", used);
+                metricsCache.metrics.put("node.disk.used", used);
             } catch (Throwable e) {
                 logger.error("Problems during disk usage calculations: " + e.getMessage());
             }
         }
 
-        return metrics;
+        metricsCacheByContainerName.put(containerName, metricsCache);
     }
 
     // Public for testing
@@ -193,5 +182,14 @@ public class StorageMaintainer {
         System.arraycopy(ar1, 0, concatenated, 0, ar1.length);
         System.arraycopy(ar2, 0, concatenated, ar1.length, ar2.length);
         return concatenated;
+    }
+
+    private static class MetricsCache {
+        private final Instant nextUpdateAt;
+        private final Map<String, Object> metrics = new HashMap<>();
+
+        MetricsCache(Instant nextUpdateAt) {
+            this.nextUpdateAt = nextUpdateAt;
+        }
     }
 }
