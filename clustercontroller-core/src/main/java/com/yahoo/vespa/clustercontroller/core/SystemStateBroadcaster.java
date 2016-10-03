@@ -33,7 +33,6 @@ public class SystemStateBroadcaster {
     }
 
     public void handleNewSystemState(ClusterState state) {
-        log.log(LogLevel.INFO, String.format("Broadcaster got state: %s", state)); // FIXME TEMP
         systemState = state;
     }
 
