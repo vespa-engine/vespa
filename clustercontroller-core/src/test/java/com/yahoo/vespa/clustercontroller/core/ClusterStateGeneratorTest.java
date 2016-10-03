@@ -259,9 +259,10 @@ public class ClusterStateGeneratorTest {
 
         // We do not publish disk states for nodes in Down state. This differs from how the
         // legacy controller did things, but such states cannot be counted on for ideal state
-        // calculations either way. In particular, disk states are not persisted and only exist
-        // transiently in the cluster controller's memory. A controller restart is sufficient
-        // to clear all disk states that have been incidentally remembered for now downed nodes.
+        // calculations either way. In particular, reported disk states are not persisted and
+        // only exist transiently in the cluster controller's memory. A controller restart is
+        // sufficient to clear all disk states that have been incidentally remembered for now
+        // downed nodes.
         // The keen reader may choose to convince themselves of this independently by reading the
         // code in com.yahoo.vdslib.distribution.Distribution#getIdealStorageNodes and observing
         // how disk states for nodes that are in a down-state are never considered.

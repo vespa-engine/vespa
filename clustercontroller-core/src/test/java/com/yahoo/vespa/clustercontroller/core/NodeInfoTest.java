@@ -68,6 +68,13 @@ public class NodeInfoTest {
         assertTrue(nodeInfo.recentlyObservedUnstableDuringInit());
     }
 
-    // TODO test the opposite edge
+    @Test
+    public void non_zero_crash_count_does_not_implicitly_set_unstable_init_flag() {
+        ClusterFixture fixture = ClusterFixture.forFlatCluster(3);
+
+        final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 1));
+        nodeInfo.setPrematureCrashCount(1);
+        assertFalse(nodeInfo.recentlyObservedUnstableDuringInit());
+    }
 
 }
