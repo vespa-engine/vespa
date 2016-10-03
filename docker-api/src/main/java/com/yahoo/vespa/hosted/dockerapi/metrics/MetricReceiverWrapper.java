@@ -4,10 +4,9 @@ package com.yahoo.vespa.hosted.dockerapi.metrics;
 import com.google.inject.Inject;
 import com.yahoo.metrics.simple.MetricReceiver;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Export metrics to both /state/v1/metrics and makes them available programatically.
@@ -35,11 +34,8 @@ public class MetricReceiverWrapper {
         return gauge;
     }
 
-    public Set<String> getMetricNames() {
-        return new HashSet<>(metrics.keySet());
-    }
-
-    public MetricValue getMetricByName(String name) {
-        return metrics.get(name);
+    public Map<String, Number> getLatestMetrics() {
+        return metrics.entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey, entry -> entry.getValue().getValue()));
     }
 }

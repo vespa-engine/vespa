@@ -27,8 +27,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -50,24 +52,29 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
-    private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
-            getDefaults().underVespaHome("logs"),
-            getDefaults().underVespaHome("var/cache"),
-            getDefaults().underVespaHome("var/crash"),
-            getDefaults().underVespaHome("var/db/jdisc"),
-            getDefaults().underVespaHome("var/db/vespa"),
-            getDefaults().underVespaHome("var/jdisc_container"),
-            getDefaults().underVespaHome("var/jdisc_core"),
-            getDefaults().underVespaHome("var/maven"),
-            getDefaults().underVespaHome("var/run"),
-            getDefaults().underVespaHome("var/scoreboards"),
-            getDefaults().underVespaHome("var/service"),
-            getDefaults().underVespaHome("var/share"),
-            getDefaults().underVespaHome("var/spool"),
-            getDefaults().underVespaHome("var/vespa"),
-            getDefaults().underVespaHome("var/yca"),
-            getDefaults().underVespaHome("var/ycore++"),
-            getDefaults().underVespaHome("var/zookeeper"));
+    // Map of directories to mount and whether they should be writeable by everyone
+    private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
+    static {
+        DIRECTORIES_TO_MOUNT.put("/metrics-share", true);
+        DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/cache"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/crash"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/db/jdisc"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/db/vespa"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/jdisc_container"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/jdisc_core"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/maven"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/run"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/scoreboards"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/service"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/share"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/spool"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/vespa"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/yca"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/ycore++"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zookeeper"), false);
+    }
 
     private final Docker docker;
     private final Environment environment;
@@ -119,32 +126,30 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     private void configureContainer(ContainerNodeSpec nodeSpec) {
-        Path yamasAgentTempFolder = Paths.get("/tmp/yamas_schedule_" + System.currentTimeMillis() + "/yamas-agent/");
-        yamasAgentTempFolder.toFile().mkdirs();
+        final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
 
-        // Path to the executeable that the secret-agent will run to gather metrics
-        Path systemCheckPath = Paths.get("/usr/bin/yms_check_system");
-        // Path to the secret-agent schedule file
-        Path systemCheckSchedulePath = yamasAgentTempFolder.resolve("system-checks.yaml");
-        // Contents of the secret-agent schedule file
-        String systemCheckSchedule = generateSecretAgentSchedule(nodeSpec, "system-checks", 60, systemCheckPath,
-                "-l", "/var/secret-agent/custom/");
+        Path diskUsageCheckPath = Paths.get("/bin/cat");
+        Path diskUsageCheckSchedulePath = yamasAgentFolder.resolve("disk-usage.yaml");
+        String diskUsageCheckSchedule = generateSecretAgentSchedule(nodeSpec, "disk-usage", 60, diskUsageCheckPath,
+                "/metrics-share/disk.usage");
 
         Path vespaCheckPath = Paths.get("/home/y/libexec/yms/yms_check_vespa");
-        Path vespaCheckSchedulePath = yamasAgentTempFolder.resolve("vespa.yaml");
+        Path vespaCheckSchedulePath = yamasAgentFolder.resolve("vespa.yaml");
         String vespaCheckSchedule = generateSecretAgentSchedule(nodeSpec, "vespa", 60, vespaCheckPath, "all");
         try {
-            Files.write(systemCheckSchedulePath, systemCheckSchedule.getBytes());
-            systemCheckSchedulePath.toFile().setReadable(true, false); // Give everyone read access to the schedule file
-
-            Files.write(vespaCheckSchedulePath, vespaCheckSchedule.getBytes());
-            vespaCheckSchedulePath.toFile().setReadable(true, false);
+            writeSecretAgentSchedule(nodeSpec.containerName, diskUsageCheckSchedulePath, diskUsageCheckSchedule);
+            writeSecretAgentSchedule(nodeSpec.containerName, vespaCheckSchedulePath, vespaCheckSchedule);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        docker.copyArchiveToContainer(yamasAgentTempFolder.toString(), nodeSpec.containerName, "/etc/");
         docker.executeInContainer(nodeSpec.containerName, "service", "yamas-agent", "restart");
+    }
+
+    private void writeSecretAgentSchedule(ContainerName containerName, Path schedulePath, String secretAgentSchedule) throws IOException {
+        Path scheduleFilePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, schedulePath.toString());
+        Files.write(scheduleFilePath, secretAgentSchedule.getBytes());
+        scheduleFilePath.toFile().setReadable(true, false); // Give everyone read access to the schedule file
     }
 
     String generateSecretAgentSchedule(ContainerNodeSpec nodeSpec, String id, int interval, Path pathToCheck,
@@ -292,7 +297,7 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers);
 
             command.withVolume("/etc/hosts", "/etc/hosts");
-            for (String pathInNode : DIRECTORIES_TO_MOUNT) {
+            for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
                 String pathInHost = Maintainer.pathInHostFromPathInNode(nodeSpec.containerName, pathInNode).toString();
                 command = command.withVolume(pathInHost, pathInNode);
             }
@@ -320,6 +325,9 @@ public class DockerOperationsImpl implements DockerOperations {
             } else {
                 docker.startContainer(nodeSpec.containerName);
             }
+
+            DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
+                    docker.executeInContainer(nodeSpec.containerName, "sudo", "chmod", "-R", "a+w", entry.getKey()));
         } catch (UnknownHostException e) {
             throw new RuntimeException("Failed to create container " + nodeSpec.containerName.asString(), e);
         }

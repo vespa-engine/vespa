@@ -17,7 +17,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void updateDiskUsage(ContainerName containerName) {
+    public void updateDiskUsage(String hostname, ContainerName containerName) {
     }
 
     @Override
