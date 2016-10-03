@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
-import com.yahoo.vespa.hosted.node.admin.restapi.SecretAgentHandler;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 
 import java.util.Set;
@@ -28,7 +27,7 @@ import java.util.function.Function;
 public class ComponentsProviderImpl implements ComponentsProvider {
 
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
-    private final SecretAgentHandler secretAgentHandler;
+    private final MetricReceiverWrapper metricReceiverWrapper;
 
     private static final long INITIAL_SCHEDULER_DELAY_MILLIS = 1;
     private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 30000;
@@ -56,7 +55,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         nodeAdminStateUpdater = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
 
-        secretAgentHandler = new SecretAgentHandler(metricReceiver);
+        metricReceiverWrapper = metricReceiver;
     }
 
     @Override
@@ -65,7 +64,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     }
 
     @Override
-    public SecretAgentHandler getSecretAgentHandler() {
-        return secretAgentHandler;
+    public MetricReceiverWrapper getMetricReceiverWrapper() {
+        return metricReceiverWrapper;
     }
 }

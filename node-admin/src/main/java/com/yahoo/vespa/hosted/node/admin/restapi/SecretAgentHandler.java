@@ -1,9 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.restapi;
 
-import com.google.inject.Inject;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -14,33 +15,29 @@ import java.util.Map;
  * @author valerijf
  */
 public class SecretAgentHandler {
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private static final String applicationName = "docker";
-    private final MetricReceiverWrapper metricReceiver;
-    private final Map<String, Object> dimensions;
+    private final Map<String, Object> dimensions = new HashMap<>();
+    private final Map<String, Object> metrics = new HashMap<>();
 
-    @Inject
-    public SecretAgentHandler(MetricReceiverWrapper metricReceiver) {
-        this.metricReceiver = metricReceiver;
-        dimensions = new LinkedHashMap<>();
-        dimensions.put("host", com.yahoo.net.HostName.getLocalhost());
+    public SecretAgentHandler withDimension(String name, Object value) {
+        dimensions.put(name, value);
+        return this;
     }
 
-    public Map<String, Object> getNodeAdminSecretAgentReport() {
-        Map<String, Object> metrics = new LinkedHashMap<>();
-        for (String metricName : metricReceiver.getMetricNames()) {
-            metrics.put(metricName, metricReceiver.getMetricByName(metricName).getValue());
-        }
-
-        return generateSecretAgentReport(dimensions, metrics);
+    public SecretAgentHandler withMetric(String name, Object value) {
+        metrics.put(name, value);
+        return this;
     }
 
-    public static Map<String, Object> generateSecretAgentReport(Map<String, Object> dimensions, Map<String, Object> metrics) {
+    public String toJson() throws JsonProcessingException {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("application", applicationName);
         report.put("timestamp", System.currentTimeMillis() / 1000);
         report.put("dimensions", dimensions);
         report.put("metrics", metrics);
 
-        return report;
+        return objectMapper.writeValueAsString(report);
     }
 }
