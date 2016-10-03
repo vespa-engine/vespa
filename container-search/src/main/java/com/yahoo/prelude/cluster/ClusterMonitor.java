@@ -20,8 +20,9 @@ import com.yahoo.search.result.ErrorMessage;
  * @author Steinar Knutsen
  */
 public class ClusterMonitor implements Runnable, Freezable {
-    // We need to wait a bit with starting thread because OSGi may not have
-    // loaded all needed classes until some time has elapsed
+    // The ping thread wil start using the system, but we cannot be guaranteed that all components
+    // in the system is up. As a workaround for not being able to find out when the system
+    // is ready to be used, we wait some time before starting the ping thread
     private static final int pingThreadInitialDelayMs = 3000;
 
     private final MonitorConfiguration configuration;
