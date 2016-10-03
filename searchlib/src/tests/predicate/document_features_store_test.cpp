@@ -191,7 +191,7 @@ TEST("require that DocumentFeaturesStore can be serialized") {
     expectHash("foo=bar", features);
     expectHash("foo=100-199", features);
 
-    vespalib::MMapDataBuffer buffer;
+    vespalib::DataBuffer buffer;
     features_store.serialize(buffer);
 
     DocumentFeaturesStore features_store2(buffer);
@@ -213,7 +213,7 @@ TEST("require that serialization cleans up wordstore") {
     features_store.remove(doc_id + 1);
     EXPECT_EQUAL(672u, features_store.getMemoryUsage().usedBytes());
 
-    vespalib::MMapDataBuffer buffer;
+    vespalib::DataBuffer buffer;
     features_store.serialize(buffer);
     DocumentFeaturesStore features_store2(buffer);
     EXPECT_EQUAL(428u, features_store2.getMemoryUsage().usedBytes());
