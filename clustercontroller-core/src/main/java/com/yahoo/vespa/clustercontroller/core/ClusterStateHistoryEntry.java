@@ -37,6 +37,8 @@ public class ClusterStateHistoryEntry {
         return Objects.hash(state, time);
     }
 
+    // String representation only used for test expectation failures and debugging output.
+    // Actual status page history entry rendering emits formatted date/time.
     public String toString() {
         return String.format("state '%s' at time %d", state, time);
     }
