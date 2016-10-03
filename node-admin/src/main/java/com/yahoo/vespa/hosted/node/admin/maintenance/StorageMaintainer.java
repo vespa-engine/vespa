@@ -31,48 +31,67 @@ public class StorageMaintainer {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(StorageMaintainer.class);
     private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final long intervalSec = 1000;
 
     private final Object monitor = new Object();
-    private final long intervalSec = 1000;
 
     private Map<ContainerName, Instant> nextDiskCalculationByContainerName = new ConcurrentHashMap<>();
+    private Map<ContainerName, Map<String, Object>> diskMetricsCache = new ConcurrentHashMap<>();
     private Random random = new Random();
 
     public void updateDiskUsage(String hostname, ContainerName containerName) {
-        if (nextDiskCalculationByContainerName.containsKey(containerName)) {
-            if (nextDiskCalculationByContainerName.get(containerName).isAfter(Instant.now())) {
-                return;
-            }
+        // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
+        // that calculation rarely. Additionally, we spread out the calculation for different containers by adding
+        // a random deviation.
+        if (nextDiskCalculationByContainerName.containsKey(containerName) &&
+                nextDiskCalculationByContainerName.get(containerName).isBefore(Instant.now())) {
+
+            Map<String, Object> diskUsageMetrics = getDiskUsageByContainerMetrics(containerName);
+            diskMetricsCache.put(containerName, diskUsageMetrics);
+            long distributedSecs = (long) (intervalSec * (0.5 + random.nextDouble()));
+            nextDiskCalculationByContainerName.put(containerName, Instant.now().plusSeconds(distributedSecs));
         }
-        long distributedSecs = (long) (intervalSec * (0.5 + random.nextDouble()));
-        nextDiskCalculationByContainerName.put(containerName, Instant.now().plusSeconds(distributedSecs));
+
+        try {
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
+
+            Map<String, Object> dimensions = new HashMap<>();
+            dimensions.put("host", hostname);
+
+            Map<String, Object> metrics = diskMetricsCache.get(containerName);
+
+            Map<String, Object> secretAgentReport = SecretAgentHandler.generateSecretAgentReport(dimensions, metrics);
+            String secretAgentReportJson = objectMapper.writeValueAsString(secretAgentReport);
+
+            // First write to temp file, then move temp file to main file to achieve atomic write
+            Path metricsSharePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/metrics-share/disk.usage");
+            Path metricsSharePathTemp = Paths.get(metricsSharePath.toString() + "_temp");
+            Files.write(metricsSharePathTemp, secretAgentReportJson.getBytes(StandardCharsets.UTF_8.name()));
+
+            // Files.move() fails to move if target already exist, could do target.delete() first, but then it's no longer atomic
+            execute(logger, "mv", metricsSharePathTemp.toString(), metricsSharePath.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Map<String, Object> getDiskUsageByContainerMetrics(ContainerName containerName) {
+        Map<String, Object> metrics = new HashMap<>();
+
         // Throttle to one disk usage calculation at a time.
         synchronized (monitor) {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
             File containerDir = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/").toFile();
+
             try {
                 long used = getDiscUsedInBytes(containerDir);
-
-                Map<String, Object> dimensions = new HashMap<>();
-                dimensions.put("host", hostname);
-
-                Map<String, Object> metrics = new HashMap<>();
                 metrics.put("node.disk.used", used);
-
-                Map<String, Object> secretAgentReport = SecretAgentHandler.generateSecretAgentReport(dimensions, metrics);
-                String secretAgentReportJson = objectMapper.writeValueAsString(secretAgentReport);
-
-                // First write to temp file, then move temp file to main file to achieve atomic write
-                Path metricsSharePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/metrics-share/disk.usage");
-                Path metricsSharePathTemp = Paths.get(metricsSharePath.toString() + "_temp");
-                Files.write(metricsSharePathTemp, secretAgentReportJson.getBytes(StandardCharsets.UTF_8.name()));
-
-                // Files.move() fails to move if target already exist, could do target.delete() first, but then it's no longer atomic
-                execute(logger, "mv", metricsSharePathTemp.toString(), metricsSharePath.toString());
             } catch (Throwable e) {
                 logger.error("Problems during disk usage calculations: " + e.getMessage());
             }
         }
+
+        return metrics;
     }
 
     // Public for testing

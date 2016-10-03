@@ -130,7 +130,8 @@ public class DockerOperationsImpl implements DockerOperations {
 
         Path diskUsageCheckPath = Paths.get("/bin/cat");
         Path diskUsageCheckSchedulePath = yamasAgentFolder.resolve("disk-usage.yaml");
-        String diskUsageCheckSchedule = generateSecretAgentSchedule(nodeSpec, "disk-usage", 1000, diskUsageCheckPath);
+        String diskUsageCheckSchedule = generateSecretAgentSchedule(nodeSpec, "disk-usage", 60, diskUsageCheckPath,
+                "/metrics-share/disk.usage");
 
         Path vespaCheckPath = Paths.get("/home/y/libexec/yms/yms_check_vespa");
         Path vespaCheckSchedulePath = yamasAgentFolder.resolve("vespa.yaml");
