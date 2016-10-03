@@ -19,7 +19,13 @@ public interface NodeSpec {
     
     /** Returns whether the given flavor is compatible with this spec */
     boolean isCompatible(Flavor flavor);
-    
+
+    /** Returns whether the given flavor is exactly specified by this node spec */
+    boolean matchesExactly(Flavor flavor);
+
+    /** Returns whether this requests a non-stock flavor */
+    boolean specifiesNonStockFlavor();
+
     /** Returns whether the given node count is sufficient to consider this spec fulfilled to the maximum amount */
     boolean saturatedBy(int count);
 
@@ -59,6 +65,12 @@ public interface NodeSpec {
         public boolean isCompatible(Flavor flavor) { return flavor.satisfies(this.flavor); }
 
         @Override
+        public boolean matchesExactly(Flavor flavor) { return flavor.equals(this.flavor); }
+
+        @Override
+        public boolean specifiesNonStockFlavor() { return ! flavor.isStock(); }
+
+        @Override
         public boolean fulfilledBy(int count) { return count >= this.count; } 
 
         @Override
@@ -89,6 +101,12 @@ public interface NodeSpec {
 
         @Override
         public boolean isCompatible(Flavor flavor) { return true; }
+
+        @Override
+        public boolean matchesExactly(Flavor flavor) { return false; }
+
+        @Override
+        public boolean specifiesNonStockFlavor() { return false; }
 
         @Override
         public boolean fulfilledBy(int count) { return true; }
