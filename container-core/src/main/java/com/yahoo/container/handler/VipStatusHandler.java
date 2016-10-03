@@ -14,7 +14,6 @@ import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
