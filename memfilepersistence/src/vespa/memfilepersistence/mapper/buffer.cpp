@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 using vespalib::DefaultAlloc;
-using vespalib::alloc::MMapAllocator;
+using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::Alloc;
 
 namespace storage {
