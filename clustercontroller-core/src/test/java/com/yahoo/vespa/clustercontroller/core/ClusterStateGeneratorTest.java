@@ -243,7 +243,6 @@ public class ClusterStateGeneratorTest {
                 ".2.s:d .2.m:bar .3.s:r .3.m:baz"));
     }
 
-    // TODO verify behavior against legacy impl
     @Test
     public void reported_disk_state_not_hidden_by_wanted_state() {
         final NodeState stateWithDisks = new NodeState(NodeType.STORAGE, State.UP);
@@ -258,7 +257,14 @@ public class ClusterStateGeneratorTest {
                 .proposeStorageNodeWantedState(3, State.MAINTENANCE);
         final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
 
-        // TODO verify that it's correct that Down nodes don't report disk states..!
+        // We do not publish disk states for nodes in Down state. This differs from how the
+        // legacy controller did things, but such states cannot be counted on for ideal state
+        // calculations either way. In particular, disk states are not persisted and only exist
+        // transiently in the cluster controller's memory. A controller restart is sufficient
+        // to clear all disk states that have been incidentally remembered for now downed nodes.
+        // The keen reader may choose to convince themselves of this independently by reading the
+        // code in com.yahoo.vdslib.distribution.Distribution#getIdealStorageNodes and observing
+        // how disk states for nodes that are in a down-state are never considered.
         assertThat(state.toString(), equalTo("distributor:9 storage:9 .2.s:r .2.d:5 .2.d.3.s:d " +
                 ".3.s:m .3.d:5 .3.d.3.s:d"));
     }
