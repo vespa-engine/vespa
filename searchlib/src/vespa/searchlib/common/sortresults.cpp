@@ -17,7 +17,11 @@ using search::common::SortInfo;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 
+using vespalib::DefaultAlloc;
+
 namespace {
+
+constexpr size_t MMAP_LIMIT = 0x2000000;
 
 template<typename T>
 class RadixHelper
@@ -498,7 +502,7 @@ FastS_SortSpec::sortResults(RankedHit a[], uint32_t n, uint32_t topn)
     } else if (_method == 1) {
         std::sort(sortData, sortData + n, StdSortDataCompare(&_binarySortData[0]));
     } else {
-        vespalib::Array<uint32_t, Alloc> radixScratchPad(n);
+        vespalib::Array<uint32_t> radixScratchPad(n, DefaultAlloc::create(0, MMAP_LIMIT));
         search::radix_sort(SortDataRadix(&_binarySortData[0]), StdSortDataCompare(&_binarySortData[0]), SortDataEof(), 1, sortData, n, &radixScratchPad[0], 0, 96, topn);
     }
     for (uint32_t i(0), m(_sortDataArray.size()); i < m; ++i) {

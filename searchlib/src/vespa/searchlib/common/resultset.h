@@ -13,14 +13,12 @@ namespace search
 class ResultSet
 {
 private:
-    // Everything above 8m we return to OS.
-    typedef vespalib::AutoAlloc<0x800000> ArrayAlloc;
     ResultSet& operator=(const ResultSet &);
 
     unsigned int _elemsUsedInRankedHitsArray;
     unsigned int _rankedHitsArrayAllocElements;
-    BitVector::UP _bitOverflow;
-    ArrayAlloc        _rankedHitsArray;
+    BitVector::UP          _bitOverflow;
+    vespalib::alloc::Alloc _rankedHitsArray;
 
 public:
     typedef std::unique_ptr<ResultSet> UP;

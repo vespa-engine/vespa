@@ -3,12 +3,12 @@
 #include "bufferstate.h"
 #include <limits>
 
-namespace search
-{
+using vespalib::DefaultAlloc;
+using vespalib::alloc::Alloc;
 
-namespace btree
-{
+namespace search {
 
+namespace btree {
 
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
@@ -149,7 +149,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
                       void *&buffer)
 {
     assert(buffer == NULL);
-    assert(_buffer->get() == NULL);
+    assert(_buffer.get() == NULL);
     assert(_state == FREE);
     assert(_typeHandler == NULL);
     assert(_allocElems == 0);
@@ -169,7 +169,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     size_t allocSize = allocClusters * typeHandler->getClusterSize();
     assert(allocSize >= initialSizeNeeded + sizeNeeded);
     _buffer.create(allocSize * typeHandler->elementSize()).swap(_buffer);
-    buffer = _buffer->get();
+    buffer = _buffer.get();
     typeHandler->onActive(&_usedElems);
     assert(buffer != NULL);
     _allocElems = allocSize;
@@ -210,13 +210,13 @@ BufferState::onHold(void)
 void
 BufferState::onFree(void *&buffer)
 {
-    assert(buffer == _buffer->get());
+    assert(buffer == _buffer.get());
     assert(_state == HOLD);
     assert(_typeHandler != NULL);
     assert(_deadElems <= _usedElems);
     assert(_holdElems == _usedElems - _deadElems);
     _typeHandler->destroyElements(buffer, _usedElems);
-    _buffer.create().swap(_buffer);
+    DefaultAlloc::create().swap(_buffer);
     _typeHandler->onFree(_usedElems);
     buffer = NULL;
     _usedElems = 0;
@@ -337,7 +337,7 @@ BufferState::fallbackResize(uint64_t newSize,
     holdBuffer.swap(_buffer);
     std::atomic_thread_fence(std::memory_order_release);
     _buffer = std::move(newBuffer);
-    buffer = _buffer->get();
+    buffer = _buffer.get();
     _allocElems = allocSize;
     std::atomic_thread_fence(std::memory_order_release);
 }

@@ -119,9 +119,8 @@ public:
 
 private:
     typedef std::vector<VectorRef> VectorRefList;
-    typedef vespalib::AutoAlloc<0x800000> Alloc;
-    typedef vespalib::Array<uint8_t, Alloc> BinarySortData;
-    typedef vespalib::Array<SortData, Alloc> SortDataArray;
+    typedef vespalib::Array<uint8_t> BinarySortData;
+    typedef vespalib::Array<SortData> SortDataArray;
     using ConverterFactory = search::common::ConverterFactory;
     vespalib::Doom           _doom;
     const ConverterFactory & _ucaFactory;
