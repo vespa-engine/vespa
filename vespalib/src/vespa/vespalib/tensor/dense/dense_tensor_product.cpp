@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "dense_tensor_product.h"
+#include "dense_tensor_address_combiner.h"
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace vespalib {
@@ -15,34 +16,6 @@ using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 
 namespace {
-
-enum class AddressCombineOp
-{
-    LHS,
-    RHS,
-    BOTH
-};
-
-using AddressCombineOps = std::vector<AddressCombineOp>;
-
-class AddressReader
-{
-private:
-    const Address &_address;
-    size_t _idx;
-
-public:
-    AddressReader(const Address &address)
-        : _address(address),
-          _idx(0)
-    {}
-    size_t nextLabel() {
-        return _address[_idx++];
-    }
-    bool valid() {
-        return _idx < _address.size();
-    }
-};
 
 class CellsInserter
 {
@@ -110,75 +83,18 @@ calculateCellsSize(const DimensionsMeta &dimensionsMeta)
     return cellsSize;
 }
 
-AddressCombineOps
-buildCombineOps(const DimensionsMeta &lhs,
-                const DimensionsMeta &rhs)
-{
-    AddressCombineOps ops;
-    auto rhsItr = rhs.cbegin();
-    auto rhsItrEnd = rhs.cend();
-    for (const auto &lhsDim : lhs) {
-        while ((rhsItr != rhsItrEnd) && (rhsItr->dimension() < lhsDim.dimension())) {
-            ops.push_back(AddressCombineOp::RHS);
-            ++rhsItr;
-        }
-        if ((rhsItr != rhsItrEnd) && (rhsItr->dimension() == lhsDim.dimension())) {
-            ops.push_back(AddressCombineOp::BOTH);
-            ++rhsItr;
-        } else {
-            ops.push_back(AddressCombineOp::LHS);
-        }
-    }
-    while (rhsItr != rhsItrEnd) {
-        ops.push_back(AddressCombineOp::RHS);
-        ++rhsItr;
-    }
-    return ops;
-}
-
-bool
-combineAddress(Address &combinedAddress,
-               const CellsIterator &lhsItr,
-               const CellsIterator &rhsItr,
-               const AddressCombineOps &ops)
-{
-    combinedAddress.clear();
-    AddressReader lhsReader(lhsItr.address());
-    AddressReader rhsReader(rhsItr.address());
-    for (const auto &op : ops) {
-        switch (op) {
-        case AddressCombineOp::LHS:
-            combinedAddress.emplace_back(lhsReader.nextLabel());
-            break;
-        case AddressCombineOp::RHS:
-            combinedAddress.emplace_back(rhsReader.nextLabel());
-            break;
-        case AddressCombineOp::BOTH:
-            size_t lhsLabel = lhsReader.nextLabel();
-            size_t rhsLabel = rhsReader.nextLabel();
-            if (lhsLabel != rhsLabel) {
-                return false;
-            }
-            combinedAddress.emplace_back(lhsLabel);
-        }
-    }
-    assert(!lhsReader.valid());
-    assert(!rhsReader.valid());
-    return true;
-}
-
 }
 
 void
 DenseTensorProduct::bruteForceProduct(const DenseTensor &lhs,
                                       const DenseTensor &rhs)
 {
-    AddressCombineOps ops = buildCombineOps(lhs.dimensionsMeta(), rhs.dimensionsMeta());
+    DenseTensorAddressCombiner addressCombiner(lhs.dimensionsMeta(), rhs.dimensionsMeta());
     Address combinedAddress;
     CellsInserter cellsInserter(_dimensionsMeta, _cells);
     for (CellsIterator lhsItr = lhs.cellsIterator(); lhsItr.valid(); lhsItr.next()) {
         for (CellsIterator rhsItr = rhs.cellsIterator(); rhsItr.valid(); rhsItr.next()) {
-            bool combineSuccess = combineAddress(combinedAddress, lhsItr, rhsItr, ops);
+            bool combineSuccess = addressCombiner.combine(lhsItr, rhsItr, combinedAddress);
             if (combineSuccess) {
                 cellsInserter.insertCell(combinedAddress, lhsItr.cell() * rhsItr.cell());
             }

@@ -2,6 +2,7 @@
 vespa_add_library(vespalib_vespalib_tensor_dense OBJECT
     SOURCES
     dense_tensor.cpp
+    dense_tensor_address_combiner.cpp
     dense_tensor_builder.cpp
     dense_tensor_dimension_sum.cpp
     dense_tensor_product.cpp
