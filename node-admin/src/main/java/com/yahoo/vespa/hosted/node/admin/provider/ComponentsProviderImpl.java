@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.provider;
 
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
@@ -32,7 +33,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
     private static final long INITIAL_SCHEDULER_DELAY_MILLIS = 1;
     private static final int NODE_AGENT_SCAN_INTERVAL_MILLIS = 30000;
-    private static final int HARDCODED_NODEREPOSITORY_PORT = 19071;
+    private static final int WEB_SERVICE_PORT = Defaults.getDefaults().vespaWebServicePort();
     private static final String ENV_HOSTNAME = "HOSTNAME";
     // We only scan for new nodes within a host every 5 minutes. This is only if new nodes are added or removed
     // which happens rarely. Changes of apps running etc it detected by the NodeAgent.
@@ -46,7 +47,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         Set<String> configServerHosts = environment.getConfigServerHosts();
 
         Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
-        NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, HARDCODED_NODEREPOSITORY_PORT, baseHostName);
+        NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
         StorageMaintainer storageMaintainer = new StorageMaintainer();
 
         final Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepository,

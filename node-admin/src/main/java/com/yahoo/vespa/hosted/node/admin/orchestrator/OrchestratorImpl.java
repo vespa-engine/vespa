@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
@@ -22,8 +23,7 @@ import java.util.Set;
  */
 public class OrchestratorImpl implements Orchestrator {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(OrchestratorImpl.class);
-    // TODO: Figure out the port dynamically.
-    static final int HARDCODED_ORCHESTRATOR_PORT = 19071;
+    static final int WEB_SERVICE_PORT = Defaults.getDefaults().vespaWebServicePort();
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
     private static final String ORCHESTRATOR_PATH_PREFIX = "/orchestrator";
     static final String ORCHESTRATOR_PATH_PREFIX_HOST_API
@@ -53,7 +53,7 @@ public class OrchestratorImpl implements Orchestrator {
         try {
             final UpdateHostResponse updateHostResponse = requestExecutor.put(
                     ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended",
-                    HARDCODED_ORCHESTRATOR_PORT,
+                    WEB_SERVICE_PORT,
                     Optional.empty(), /* body */
                     UpdateHostResponse.class);
             return updateHostResponse.reason() == null;
@@ -72,7 +72,7 @@ public class OrchestratorImpl implements Orchestrator {
         try {
             final BatchOperationResult batchOperationResult = requestExecutor.put(
                     ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                    HARDCODED_ORCHESTRATOR_PORT,
+                    WEB_SERVICE_PORT,
                     Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                     BatchOperationResult.class);
             return batchOperationResult.getFailureReason();
@@ -89,7 +89,7 @@ public class OrchestratorImpl implements Orchestrator {
         try {
             final UpdateHostResponse batchOperationResult = requestExecutor.delete(
                     ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName + "/suspended",
-                    HARDCODED_ORCHESTRATOR_PORT,
+                    WEB_SERVICE_PORT,
                     UpdateHostResponse.class);
             return batchOperationResult.reason() == null;
         } catch (ConfigServerHttpRequestExecutor.NotFoundException n) {
