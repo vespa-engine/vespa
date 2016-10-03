@@ -11,6 +11,7 @@ import com.yahoo.clientmetrics.ClientMetrics;
 import com.yahoo.vespaclient.ClusterList;
 import com.yahoo.vespaclient.config.FeederConfig;
 
+import javax.naming.OperationNotSupportedException;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -100,11 +101,25 @@ public class FeedContext {
             try {
                 if (instance == null) {
                     MessagePropertyProcessor proc = new MessagePropertyProcessor(feederConfig, loadTypeConfig);
-                    MessageBusSessionFactory mbusFactory = new MessageBusSessionFactory(proc, documentmanagerConfig, slobroksConfig);
-                    instance = new FeedContext(proc,
-                                               mbusFactory,
-                                               mbusFactory.getAccess().getDocumentTypeManager(),
-                                               new ClusterList(clusterListConfig), metric);
+                    
+                    if (System.getProperty("vespa.local", "false").equals("true")) {
+                        // Use injected configs when running from Application. This means we cannot reconfigure
+                        MessageBusSessionFactory mbusFactory = new MessageBusSessionFactory(proc, documentmanagerConfig, slobroksConfig);
+                        instance = new FeedContext(proc,
+                                                   mbusFactory,
+                                                   mbusFactory.getAccess().getDocumentTypeManager(),
+                                                   new ClusterList(clusterListConfig), metric);
+                    }
+                    else {
+                        // Don't send configs to messagebus to make it self-subscribe instead as this instance
+                        // survives reconfig :-/
+                        // This code will die soon ...
+                        MessageBusSessionFactory mbusFactory = new MessageBusSessionFactory(proc, null, null);
+                        instance = new FeedContext(proc,
+                                                   mbusFactory,
+                                                   mbusFactory.getAccess().getDocumentTypeManager(),
+                                                   new ClusterList("client"), metric);
+                    }
                 } else {
                     instance.getPropertyProcessor().configure(feederConfig, loadTypeConfig);
                 }
