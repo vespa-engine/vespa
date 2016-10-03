@@ -42,11 +42,10 @@ private:
     char          *_freept;
     Alloc          _buffer;
 
-    DataBuffer(const DataBuffer &);
-    DataBuffer &operator=(const DataBuffer &);
-
 public:
     typedef std::unique_ptr<DataBuffer> UP;
+    DataBuffer(const DataBuffer &) = delete;
+    DataBuffer &operator=(const DataBuffer &) = delete;
 
     /**
      * Construct a databuffer.
