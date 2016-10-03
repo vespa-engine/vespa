@@ -64,13 +64,13 @@ TEST("require that tensor sum over dimension works") {
 }
 
 TEST("require that tensor add works") {
-    EXPECT_EQUAL(Eval("{{x:1}:1,{x:2}:5,{x:3}:3}"), Eval("{{x:1}:1,{x:2}:2} + {{x:2}:3,{x:3}:3}"));
-    EXPECT_EQUAL(Eval("{{x:1}:1,{x:2}:5,{x:3}:3}"), Eval("{{x:2}:3,{x:3}:3} + {{x:1}:1,{x:2}:2}"));
+    EXPECT_EQUAL(Eval("{{x:2}:5}"), Eval("{{x:1}:1,{x:2}:2} + {{x:2}:3,{x:3}:3}"));
+    EXPECT_EQUAL(Eval("{{x:2}:5}"), Eval("{{x:2}:3,{x:3}:3} + {{x:1}:1,{x:2}:2}"));
 }
 
 TEST("require that tensor sub works") {
-    EXPECT_EQUAL(Eval("{{x:1}:1,{x:2}:-1,{x:3}:-3}"), Eval("{{x:1}:1,{x:2}:2} - {{x:2}:3,{x:3}:3}"));
-    EXPECT_EQUAL(Eval("{{x:1}:-1,{x:2}:1,{x:3}:3}"), Eval("{{x:2}:3,{x:3}:3} - {{x:1}:1,{x:2}:2}"));
+    EXPECT_EQUAL(Eval("{{x:2}:-1}"), Eval("{{x:1}:1,{x:2}:2} - {{x:2}:3,{x:3}:3}"));
+    EXPECT_EQUAL(Eval("{{x:2}:1}"), Eval("{{x:2}:3,{x:3}:3} - {{x:1}:1,{x:2}:2}"));
 }
 
 TEST("require that tensor multiply works") {
@@ -78,13 +78,13 @@ TEST("require that tensor multiply works") {
 }
 
 TEST("require that tensor min works") {
-    EXPECT_EQUAL(Eval("{{x:1}:1,{x:2}:2,{x:3}:3}"), Eval("min({{x:1}:1,{x:2}:2}, {{x:2}:3,{x:3}:3})"));
-    EXPECT_EQUAL(Eval("{{x:1}:1,{x:2}:2,{x:3}:3}"), Eval("min({{x:2}:3,{x:3}:3}, {{x:1}:1,{x:2}:2})"));
+    EXPECT_EQUAL(Eval("{{x:2}:2}"), Eval("min({{x:1}:1,{x:2}:2}, {{x:2}:3,{x:3}:3})"));
+    EXPECT_EQUAL(Eval("{{x:2}:2}"), Eval("min({{x:2}:3,{x:3}:3}, {{x:1}:1,{x:2}:2})"));
 }
 
 TEST("require that tensor max works") {
-    EXPECT_EQUAL(Eval("{{x:1}:1,{x:2}:3,{x:3}:3}"), Eval("max({{x:1}:1,{x:2}:2}, {{x:2}:3,{x:3}:3})"));
-    EXPECT_EQUAL(Eval("{{x:1}:1,{x:2}:3,{x:3}:3}"), Eval("max({{x:2}:3,{x:3}:3}, {{x:1}:1,{x:2}:2})"));
+    EXPECT_EQUAL(Eval("{{x:2}:3}"), Eval("max({{x:1}:1,{x:2}:2}, {{x:2}:3,{x:3}:3})"));
+    EXPECT_EQUAL(Eval("{{x:2}:3}"), Eval("max({{x:2}:3,{x:3}:3}, {{x:1}:1,{x:2}:2})"));
 }
 
 TEST("require that tensor match works") {
