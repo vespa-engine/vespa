@@ -3,8 +3,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("multivaluemapping_test");
 #include <vespa/vespalib/testkit/testapp.h>
-//#define DEBUG_MULTIVALUE_MAPPING
-//#define LOG_MULTIVALUE_MAPPING
 #include <vespa/searchlib/attribute/multivaluemapping.h>
 #include <algorithm>
 #include <limits>
@@ -117,7 +115,7 @@ MultiValueMappingTest::testIndex64()
         EXPECT_EQUAL(idx.alternative(), 0u);
         EXPECT_EQUAL(idx.vectorIdx(), 6u);
         EXPECT_EQUAL(idx.offset(), 1000u);
-        EXPECT_EQUAL(idx.idx(), 0x3000003e8ull);
+        EXPECT_EQUAL(idx.idx(), 0x600000003e8ul);
     }
     {
         Index64 idx(15, 1, 134217727);
@@ -125,11 +123,20 @@ MultiValueMappingTest::testIndex64()
         EXPECT_EQUAL(idx.alternative(), 1u);
         EXPECT_EQUAL(idx.vectorIdx(), 31u);
         EXPECT_EQUAL(idx.offset(), 134217727u);
-        EXPECT_EQUAL(idx.idx(), 0xf87ffffffull);
+        EXPECT_EQUAL(idx.idx(), 0x1f0007fffffful);
     }
     {
-        EXPECT_EQUAL(Index64::maxValues(), 1023u);
+        Index64 idx(3087, 1, 911134217727ul);
+        EXPECT_EQUAL(idx.values(), 3087u);
+        EXPECT_EQUAL(idx.alternative(), 1u);
+        EXPECT_EQUAL(idx.vectorIdx(), (3087u << 1) + 1);
+        EXPECT_EQUAL(idx.offset(), 911134217727ul);
+        EXPECT_EQUAL(idx.idx(), 0x181fd423d4d5fful);
+    }
+    {
+        EXPECT_EQUAL(Index64::maxValues(), 4095u);
         EXPECT_EQUAL(Index64::alternativeSize(), 2u);
+        EXPECT_EQUAL(Index64::offsetSize(), 0x1ul << 40);
     }
 }
 
@@ -160,9 +167,6 @@ MultiValueMappingTest::testSimpleSetAndGet()
         } else {
             EXPECT_EQUAL(idx.values(), Index::maxValues());
         }
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info, "------------------------------------------------------------");
-#endif
     }
     EXPECT_TRUE(!mvm.hasKey(numKeys));
 
@@ -221,9 +225,6 @@ MultiValueMappingTest::testChangingValueCount()
 
     // Increasing the value count for some keys
     for (uint32_t valueCount = 1; valueCount <= maxCount; ++valueCount) {
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info, "########################### %u ##############################", valueCount);
-#endif
         uint32_t lastValueCount = valueCount - 1;
         // set values
         for (uint32_t key = 0; key < numKeys; ++key) {
@@ -271,10 +272,6 @@ MultiValueMappingTest::checkReaders(MvMapping &mvm,
     for (ReaderVector::iterator iter = readers.begin();
          iter != readers.end(); ) {
         if (iter->_endGen <= mvmGen) {
-#ifdef LOG_MULTIVALUE_MAPPING
-            LOG(info, "check and remove reader: start = %u, end = %u",
-                iter->_startGen, iter->_endGen);
-#endif
             for (uint32_t key = 0; key < iter->numKeys(); ++key) {
                 Index idx = iter->_indices[key];
                 uint32_t valueCount = iter->_expected[key].size();
@@ -321,11 +318,6 @@ MultiValueMappingTest::testHoldListAndGeneration()
     generation_t mvmGen = 0u;
 
     for (uint32_t valueCount = 1; valueCount < maxCount; ++valueCount) {
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info, "#################### count(%u) - gen(%u) ####################",
-            valueCount, mvm.getGeneration());
-#endif
-
         // check and remove readers
         checkReaders(mvm, mvmGen, readers);
 
