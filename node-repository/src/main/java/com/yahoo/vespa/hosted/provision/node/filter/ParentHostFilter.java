@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node.filter;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -21,7 +22,7 @@ public class ParentHostFilter extends NodeFilter {
     private ParentHostFilter(Set<String> parentHostNames, NodeFilter next) {
         super(next);
         Objects.requireNonNull(parentHostNames, "parentHostNames cannot be null.");
-        this.parentHostNames = parentHostNames;
+        this.parentHostNames = ImmutableSet.copyOf(parentHostNames);
     }
 
     @Override
@@ -36,4 +37,5 @@ public class ParentHostFilter extends NodeFilter {
     public static ParentHostFilter from(String parentNames, NodeFilter filter) {
         return new ParentHostFilter(HostFilter.split(parentNames).stream().collect(Collectors.toSet()), filter);
     }
+
 }
