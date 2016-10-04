@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.node.admin.restapi.SecretAgentHandler;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
@@ -36,17 +37,19 @@ public class StorageMaintainer {
     private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
     private Random random = new Random();
 
-    public void updateDiskUsage(String hostname, ContainerName containerName) {
+    public void updateDockerUsage(String hostname, ContainerName containerName, Docker.ContainerStats stats) {
         updateMetricsCacheForContainerIfNeeded(containerName);
 
         try {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
             SecretAgentHandler secretAgentHandler = new SecretAgentHandler();
             secretAgentHandler.withDimension("host", hostname);
+
+            getRelevantMetricsFromDockerStats(stats).forEach(secretAgentHandler::withMetric);
             metricsCacheByContainerName.get(containerName).metrics.forEach(secretAgentHandler::withMetric);
 
             // First write to temp file, then move temp file to main file to achieve atomic write
-            Path metricsSharePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/metrics-share/disk.usage");
+            Path metricsSharePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/metrics-share/docker.stats");
             Path metricsSharePathTemp = Paths.get(metricsSharePath.toString() + "_temp");
             Files.write(metricsSharePathTemp, secretAgentHandler.toJson().getBytes(StandardCharsets.UTF_8.name()));
 
@@ -55,6 +58,32 @@ public class StorageMaintainer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getRelevantMetricsFromDockerStats(Docker.ContainerStats stats) {
+        Map<String, Object> relevantStats = new HashMap<>();
+
+        Map<String, Object> throttledData = (Map<String, Object>) stats.getCpuStats().get("throttling_data");
+        Map<String, Object> cpuUsage = (Map<String, Object>) stats.getCpuStats().get("cpu_usage");
+        relevantStats.put("node.cpu.throttled_time", throttledData.get("throttled_time"));
+        relevantStats.put("node.cpu.system_cpu_usage", stats.getCpuStats().get("system_cpu_usage"));
+        relevantStats.put("node.cpu.total_usage", cpuUsage.get("total_usage"));
+
+        relevantStats.put("node.memory.limit", stats.getMemoryStats().get("limit"));
+        relevantStats.put("node.memory.usage", stats.getMemoryStats().get("usage"));
+
+        Map<String, Object> ipv4stats = (Map<String, Object>) stats.getNetworks().get("eth0");
+        relevantStats.put("node.network.ipv4.bytes_rcvd", ipv4stats.get("rx_bytes"));
+        relevantStats.put("node.network.ipv4.bytes_sent", ipv4stats.get("tx_bytes"));
+
+        if (stats.getNetworks().size() == 2) {
+            Map<String, Object> ipv6stats = (Map<String, Object>) stats.getNetworks().get("eth1");
+            relevantStats.put("node.network.ipv6.bytes_rcvd", ipv6stats.get("rx_bytes"));
+            relevantStats.put("node.network.ipv6.bytes_sent", ipv6stats.get("tx_bytes"));
+        }
+
+        return relevantStats;
     }
 
     private void updateMetricsCacheForContainerIfNeeded(ContainerName containerName) {
@@ -71,7 +100,6 @@ public class StorageMaintainer {
         synchronized (monitor) {
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
             File containerDir = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/").toFile();
-
             try {
                 long used = getDiscUsedInBytes(containerDir);
                 metricsCache.metrics.put("node.disk.used", used);
