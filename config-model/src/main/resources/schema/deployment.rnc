@@ -22,5 +22,5 @@ Prod =
         element region { 
             attribute active { xsd:boolean },
             text
-        }+
+        }*
    }

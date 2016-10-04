@@ -219,6 +219,13 @@ public class ApplicationDeployTest {
         createAppPkg(tmpDir.getAbsolutePath());
     }
 
+    @Test
+    public void testThatAppWithIllegalEmptyProdRegion() throws IOException {
+        File tmpDir = Files.createTempDir();
+        IOUtils.copyDirectory(new File(TESTDIR, "empty_prod_region_in_deployment_xml"), tmpDir);
+        createAppPkg(tmpDir.getAbsolutePath());
+    }
+
     private List<SearchDefinition> getSearchDefinitions(FilesApplicationPackage app) {
         return new DeployState.Builder().applicationPackage(app).build().getSearchDefinitions();
     }
