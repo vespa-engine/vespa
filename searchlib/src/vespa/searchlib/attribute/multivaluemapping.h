@@ -80,12 +80,12 @@ public:
     static uint64_t
     offsetSize(void)
     {
-        return 1 << (NUM_OFFSET_BITS);
+        return 1ul << (NUM_OFFSET_BITS);
     }
 };
 
 typedef Index<uint32_t, 27,4,1> Index32;
-typedef Index<uint64_t, 31,10,1> Index64;
+typedef Index<uint64_t, 40,12,1> Index64;
 
 template <typename T, typename I>
 struct MVMTemplateArg {
