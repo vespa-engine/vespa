@@ -695,7 +695,7 @@ compactSingleVector(SingleVectorPtr &activeVector,
         return;
     }
     swapVector(*freeVector.first, newSize);
-    size_t activeVectorIdx = activeVector.second.vectorIdx();
+    uint32_t activeVectorIdx = activeVector.second.vectorIdx();
     for (size_t i = 0; i < this->_indices.size(); ++i) {
         Index & idx = this->_indices[i];
         if (activeVectorIdx == idx.vectorIdx()) {
@@ -753,7 +753,7 @@ compactVectorVector(VectorVectorPtr &activeVector,
         return;
     }
     swapVector(*freeVector.first, newSize);
-    size_t activeVectorIdx = activeVector.second.vectorIdx();
+    uint32_t activeVectorIdx = activeVector.second.vectorIdx();
     for (size_t i = 0; i < this->_indices.size(); ++i) {
         Index & idx = this->_indices[i];
         if (activeVectorIdx == idx.vectorIdx()) {
