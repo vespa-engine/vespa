@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -27,6 +28,7 @@ public interface Docker {
             ContainerName containerName,
             String hostName);
 
+
     interface ContainerInfo {
         /** returns Optional.empty() if not running. */
         Optional<Integer> getPid();
@@ -34,6 +36,16 @@ public interface Docker {
 
     ContainerInfo inspectContainer(ContainerName containerName);
 
+
+    interface ContainerStats {
+        Map<String, Object> getNetworks();
+        Map<String, Object> getCpuStats();
+        Map<String, Object> getMemoryStats();
+        Map<String, Object> getBlkioStats();
+    }
+
+    ContainerStats getContainerStats(ContainerName containerName);
+    
     void startContainer(ContainerName containerName);
 
     void stopContainer(ContainerName containerName);

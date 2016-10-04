@@ -10,9 +10,11 @@ import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
+import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.RemoteApiVersion;
+import com.github.dockerjava.core.async.ResultCallbackTemplate;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
@@ -288,6 +290,22 @@ public class DockerImpl implements Docker {
         }
     }
 
+    public ContainerStats getContainerStats(ContainerName containerName) {
+        try {
+//            DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
+//            statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
+
+            Statistics stats = DockerStatsCmd.getContainerStatistics(containerName);
+            return new ContainerStatsImpl(stats.getNetworks(), stats.getCpuStats(),
+                    stats.getMemoryStats(), stats.getBlkioStats());
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to get container stats", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to get container stats", e);
+        }
+    }
+
     @Override
     public void startContainer(ContainerName containerName) {
         Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
@@ -301,7 +319,6 @@ public class DockerImpl implements Docker {
             }
         }
     }
-
 
     @Override
     public void stopContainer(final ContainerName containerName) {
@@ -508,6 +525,18 @@ public class DockerImpl implements Docker {
             } else {
                 removeScheduledPoll(dockerImage).completeExceptionally(
                         new DockerClientException("Could not download image: " + dockerImage));
+            }
+        }
+    }
+
+    private class DockerStatsCallback extends ResultCallbackTemplate<DockerStatsCallback, Statistics> {
+        private Statistics stats;
+
+        @Override
+        public void onNext(Statistics stats) {
+            if (stats != null) {
+                this.stats = stats;
+                onComplete();
             }
         }
     }
