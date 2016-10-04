@@ -2,8 +2,8 @@
 
 #include <vespa/fastos/fastos.h>
 #include "dense_tensor.h"
-#include "dense_tensor_dimension_sum.h"
 #include "dense_tensor_apply.hpp"
+#include "dense_tensor_reduce.hpp"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -298,7 +298,9 @@ DenseTensor::apply(const CellFunction &func) const
 Tensor::UP
 DenseTensor::sum(const vespalib::string &dimension) const
 {
-    return DenseTensorDimensionSum(*this, dimension).result();
+    return dense::reduce(*this, { dimension },
+                          [](double lhsValue, double rhsValue)
+                          { return lhsValue + rhsValue; });
 }
 
 bool
