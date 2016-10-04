@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
@@ -22,4 +23,6 @@ public interface DockerOperations {
     void scheduleDownloadOfImage(ContainerNodeSpec nodeSpec, Runnable callback);
 
     void executeResume(ContainerName containerName);
+
+    Docker.ContainerStats getContainerStats(ContainerName containerName);
 }
