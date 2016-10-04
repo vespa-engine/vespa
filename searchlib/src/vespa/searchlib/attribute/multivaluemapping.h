@@ -607,9 +607,9 @@ template <typename T, typename I>
 void
 MultiValueMappingT<T, I>::initVectors(const Histogram &initCapacity)
 {
-    for (typename Histogram::const_iterator it(initCapacity.begin()), mt(initCapacity.end()); it != mt; ++it) {
-        size_t valueCnt = it->first;
-        uint64_t numEntries = it->second;
+    for (const auto & entry : initCapacity) {
+        uint32_t valueCnt = entry.first;
+        uint64_t numEntries = entry.second;
         if (valueCnt != 0 && valueCnt < Index::maxValues()) {
             uint64_t maxSize = Index::offsetSize() * valueCnt;
             if (numEntries * valueCnt > maxSize) {
@@ -1147,9 +1147,9 @@ MultiValueMappingT<T, I>::enoughCapacity(const Histogram & capacityNeeded)
 {
     if (_pendingCompact)
         return false;
-    for (typename Histogram::const_iterator it(capacityNeeded.begin()), mt(capacityNeeded.end()); it != mt; ++it) {
-        size_t valueCnt = it->first;
-        uint64_t numEntries = it->second;
+    for (const auto & entry : capacityNeeded) {
+        uint32_t valueCnt = entry.first;
+        uint64_t numEntries = entry.second;
         if (valueCnt < Index::maxValues()) {
             SingleVectorPtr active =
                 getSingleVector(valueCnt, MultiValueMappingBaseBase::ACTIVE);
@@ -1173,19 +1173,16 @@ MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
 {
     if (_pendingCompact) {
         // Further populate histogram to ensure pending compaction being done.
-        for (std::set<uint32_t>::const_iterator
-                 pit(_pendingCompactSingleVector.begin()),
-                 pmt(_pendingCompactSingleVector.end());
-             pit != pmt; ++pit) {
-            (void) capacityNeeded[*pit];
+        for (uint32_t value : _pendingCompactSingleVector) {
+            (void) capacityNeeded[value];
         }
         if (_pendingCompactVectorVector) {
             (void) capacityNeeded[Index::maxValues()];
         }
     }
-    for (typename Histogram::const_iterator it(capacityNeeded.begin()), mt(capacityNeeded.end()); it != mt; ++it) {
-        uint32_t valueCnt = it->first;
-        uint64_t numEntries = it->second;
+    for (const auto & entry : capacityNeeded) {
+        uint32_t valueCnt = entry.first;
+        uint64_t numEntries = entry.second;
         if (valueCnt != 0 && valueCnt < Index::maxValues()) {
             SingleVectorPtr active =
                 getSingleVector(valueCnt, MultiValueMappingBaseBase::ACTIVE);
