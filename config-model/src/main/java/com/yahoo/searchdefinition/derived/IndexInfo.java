@@ -420,7 +420,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         if (active != null) {
             return active;
         }
-        // assume default
+        // assume default: TODO: Change to Stemming.BEST on Vespa 7
         return Stemming.SHORTEST;
     }
 
