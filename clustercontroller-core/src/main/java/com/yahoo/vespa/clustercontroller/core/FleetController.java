@@ -61,7 +61,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final List<com.yahoo.vdslib.state.ClusterState> newStates = new ArrayList<>();
     private long configGeneration = -1;
     private long nextConfigGeneration = -1;
-    private List<RemoteClusterControllerTask> remoteTasks = new ArrayList<>();
+    private Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
     private final MetricUpdater metricUpdater;
 
     private boolean isMaster = false;
@@ -512,7 +512,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 didWork |= rpcServer.handleRpcRequests(cluster, consolidatedClusterState(), this, this);
             }
 
-            processAllQueuedRemoteTasks();
+            didWork |= processNextQueuedRemoteTask();
 
             processingCycle = false;
             ++cycleCount;
@@ -605,23 +605,27 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
     }
 
-    private void processAllQueuedRemoteTasks() {
+    private boolean processNextQueuedRemoteTask() {
         if ( ! remoteTasks.isEmpty()) {
-            RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
-            context.cluster = cluster;
-            context.currentState = consolidatedClusterState();
-            context.masterInfo = masterElectionHandler;
-            context.nodeStateOrHostInfoChangeHandler = this;
-            context.nodeAddedOrRemovedListener = this;
-            for (RemoteClusterControllerTask task : remoteTasks) {
-                log.finest("Processing remote task " + task.getClass().getName());
-                task.doRemoteFleetControllerTask(context);
-                task.notifyCompleted();
-                log.finest("Done processing remote task " + task.getClass().getName());
-            }
-            log.fine("Completed processing remote tasks");
-            remoteTasks.clear();
+            final RemoteClusterControllerTask.Context context = createRemoteTaskProcessingContext();
+            final RemoteClusterControllerTask task = remoteTasks.poll();
+            log.finest("Processing remote task " + task.getClass().getName());
+            task.doRemoteFleetControllerTask(context);
+            task.notifyCompleted();
+            log.finest("Done processing remote task " + task.getClass().getName());
+            return true;
         }
+        return false;
+    }
+
+    private RemoteClusterControllerTask.Context createRemoteTaskProcessingContext() {
+        final RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
+        context.cluster = cluster;
+        context.currentState = consolidatedClusterState();
+        context.masterInfo = masterElectionHandler;
+        context.nodeStateOrHostInfoChangeHandler = this;
+        context.nodeAddedOrRemovedListener = this;
+        return context;
     }
 
     /**
