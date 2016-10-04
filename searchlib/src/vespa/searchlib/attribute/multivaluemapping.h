@@ -141,15 +141,15 @@ public:
     class Histogram
     {
     private:
-        typedef vespalib::hash_map<size_t, size_t> HistogramM;
+        typedef vespalib::hash_map<uint32_t, size_t> HistogramM;
     public:
         typedef HistogramM::const_iterator const_iterator;
-        Histogram(size_t maxValues);
-        size_t & operator [] (size_t i) { return _histogram[std::min(i, _maxValues)]; }
+        Histogram(uint32_t maxValues);
+        size_t & operator [] (uint32_t i) { return _histogram[std::min(i, _maxValues)]; }
         const_iterator begin() const { return _histogram.begin(); }
-        const_iterator end() const { return _histogram.end(); }
+        const_iterator   end() const { return _histogram.end(); }
     private:
-        size_t   _maxValues;
+        uint32_t   _maxValues;
         HistogramM _histogram;
     };
 protected:
@@ -177,7 +177,7 @@ protected:
     std::set<uint32_t> _pendingCompactSingleVector;
     bool _pendingCompactVectorVector;
     bool _pendingCompact;
-    Histogram getEmptyHistogram(size_t maxValues) const;
+    Histogram getEmptyHistogram(uint32_t maxValues) const;
     virtual const MemoryUsage & getSingleVectorUsage(size_t i) const = 0;
     virtual const MemoryUsage & getVectorVectorUsage(size_t i) const = 0;
     virtual size_t getSingleVectorAddressSpaceUsed(size_t i) const = 0;

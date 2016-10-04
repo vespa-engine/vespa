@@ -5,7 +5,6 @@
 namespace search
 {
 
-
 template <typename T, typename I>
 template <typename V, class Saver>
 uint32_t
@@ -36,15 +35,15 @@ MultiValueMappingT<T, I>::fillMapped(AttributeVector::ReaderBase &attrReader,
             indices.push_back(T(map[e], weight));
             saver.save(e, doc, vci, weight);
         }
-        if (maxvc < indices.size())
+        if (maxvc < indices.size()) {
             maxvc = indices.size();
+        }
         set(doc, indices);
     }
     assert(di == numValues);
     (void) numValues;
     return maxvc;
 }
-
 
 } // namespace search
 

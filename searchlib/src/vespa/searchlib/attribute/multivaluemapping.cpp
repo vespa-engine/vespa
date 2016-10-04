@@ -43,8 +43,7 @@ MultiValueMappingBaseBase::
 computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize)
 {
     float growRatio = 1.5f;
-    size_t newSize = static_cast<size_t>
-                       ((used - dead + needed) * growRatio);
+    size_t newSize = static_cast<size_t>((used - dead + needed) * growRatio);
     if (newSize <= maxSize)
         return newSize;
     newSize = (used - dead + needed) + 1000000;
@@ -54,14 +53,14 @@ computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize)
     return 0;
 }
 
-MultiValueMappingBaseBase::Histogram::Histogram(size_t maxValues) :
+MultiValueMappingBaseBase::Histogram::Histogram(uint32_t maxValues) :
     _maxValues(maxValues),
     _histogram()
 {
 }
 
 MultiValueMappingBaseBase::Histogram
-MultiValueMappingBaseBase::getEmptyHistogram(size_t maxValues) const
+MultiValueMappingBaseBase::getEmptyHistogram(uint32_t maxValues) const
 {
     return Histogram(maxValues);
 }
