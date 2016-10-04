@@ -139,13 +139,13 @@ MultiValueMappingBase<I>::getMemoryUsage() const
 {
     MemoryUsage retval = _indices.getMemoryUsage();
 
-    for (uint32_t i = 0; i < _singleVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < _singleVectorsStatus.size(); ++i) {
         if (_singleVectorsStatus[i] == HOLD)
             continue;
         const MemoryUsage & memUsage(getSingleVectorUsage(i));
         retval.merge(memUsage);
     }
-    for (uint32_t i = 0; i < _vectorVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < _vectorVectorsStatus.size(); ++i) {
         if (_vectorVectorsStatus[i] == HOLD)
             continue;
         const MemoryUsage & memUsage(getVectorVectorUsage(i));
@@ -160,12 +160,12 @@ AddressSpace
 MultiValueMappingBase<I>::getAddressSpaceUsage() const
 {
     size_t addressSpaceUsed = 0;
-    for (uint32_t i = 0; i < _singleVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < _singleVectorsStatus.size(); ++i) {
         if (_singleVectorsStatus[i] == ACTIVE) {
             addressSpaceUsed = std::max(addressSpaceUsed, getSingleVectorAddressSpaceUsed(i));
         }
     }
-    for (uint32_t i = 0; i < _vectorVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < _vectorVectorsStatus.size(); ++i) {
         if (_vectorVectorsStatus[i] == ACTIVE) {
             addressSpaceUsed = std::max(addressSpaceUsed, getVectorVectorAddressSpaceUsed(i));
         }
