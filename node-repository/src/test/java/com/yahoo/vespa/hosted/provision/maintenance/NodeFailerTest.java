@@ -1,70 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
-import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostLivenessTracker;
-import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.test.ManualClock;
-import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.applicationmodel.ApplicationInstance;
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
-import com.yahoo.vespa.applicationmodel.ClusterId;
-import com.yahoo.vespa.applicationmodel.ConfigId;
-import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.applicationmodel.ServiceCluster;
-import com.yahoo.vespa.applicationmodel.ServiceInstance;
-import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.applicationmodel.TenantId;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Flavor;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
-import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
-import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
-import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
-import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.service.monitor.ServiceMonitor;
-import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Tests automatic failing of nodes.
@@ -216,8 +169,8 @@ public class NodeFailerTest {
         
         List<Node> ready = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready);
 
-        // Two ready nodes die and a ready docker node "dies" (Vespa does not run when in ready state for docker node, so
-        // it does not make config requests)
+        // Two ready nodes die and a ready docker node "dies" 
+        // (Vespa does not run when in ready state for docker node, so it does not make config requests)
         tester.clock.advance(Duration.ofMinutes(180));
         Node dockerNode = ready.stream().filter(node -> node.flavor() == tester.nodeFlavors.getFlavorOrThrow("docker")).findFirst().get();
         List<Node> otherNodes = ready.stream()
@@ -237,4 +190,59 @@ public class NodeFailerTest {
         assertEquals( 3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
     }
 
+    @Test
+    public void testFailingProxyNodes() {
+        NodeFailTester tester = NodeFailTester.withProxyApplication();
+
+        // For a day all nodes work so nothing happens
+        for (int minutes = 0; minutes < 24 * 60; minutes +=5 ) {
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+
+            assertEquals(16, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
+        }
+
+        Set<String> downHosts = new HashSet<>();
+        downHosts.add("host4");
+        downHosts.add("host5");
+
+        for (String downHost : downHosts)
+            tester.serviceMonitor.setHostDown(downHost);
+        // nothing happens the first 45 minutes
+        for (int minutes = 0; minutes < 45; minutes +=5 ) {
+            tester.failer.run();
+            tester.clock.advance(Duration.ofMinutes(5));
+            tester.allNodesMakeAConfigRequestExcept();
+            assertEquals( 0, tester.deployer.redeployments);
+            assertEquals(16, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
+            assertEquals( 0, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).size());
+        }
+
+        tester.clock.advance(Duration.ofMinutes(60));
+        tester.failer.run();
+
+        // one down host should now be failed, but not two as we are only allowed to fail one proxy
+        assertEquals( 1, tester.deployer.redeployments);
+        assertEquals(15, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
+        assertEquals( 1, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).size());
+        String failedHost1 = tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).get(0).hostname();
+        assertTrue(downHosts.contains(failedHost1));
+
+        // trying to fail again will still not fail the other down host
+        tester.clock.advance(Duration.ofMinutes(60));
+        tester.failer.run();
+        assertEquals(15, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
+
+        // The first down host is removed, which causes the second one to be moved to failed
+        tester.nodeRepository.remove(failedHost1);
+        tester.failer.run();
+        assertEquals( 2, tester.deployer.redeployments);
+        assertEquals(14, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
+        assertEquals( 1, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).size());
+        String failedHost2 = tester.nodeRepository.getNodes(NodeType.proxy, Node.State.failed).get(0).hostname();
+        assertFalse(failedHost1.equals(failedHost2));
+        assertTrue(downHosts.contains(failedHost2));
+    }
+    
 }

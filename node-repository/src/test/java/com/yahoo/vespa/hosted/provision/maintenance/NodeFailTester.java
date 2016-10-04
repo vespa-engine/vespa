@@ -109,14 +109,33 @@ public class NodeFailTester {
         assertEquals(wantedNodesApp2, tester.nodeRepository.getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, wantedNodesApp1, Optional.of("default"), 1));
-        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, wantedNodesApp2, Optional.of("default"), 1));
+        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default")), 1));
+        apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
         tester.deployer = new MockDeployer(tester.provisioner, apps);
         tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
         tester.failer = tester.createFailer();
         return tester;
     }
-    
+
+    public static NodeFailTester withProxyApplication() {
+        NodeFailTester tester = new NodeFailTester();
+
+        tester.createReadyNodes(16, NodeType.proxy);
+
+        // Create application
+        Capacity allProxies = Capacity.fromRequiredNodeType(NodeType.proxy);
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test"), Optional.empty());
+        tester.activate(app1, clusterApp1, allProxies);
+        assertEquals(16, tester.nodeRepository.getNodes(NodeType.proxy, Node.State.active).size());
+
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
+        apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allProxies, 1));
+        tester.deployer = new MockDeployer(tester.provisioner, apps);
+        tester.serviceMonitor = new ServiceMonitorStub(apps, tester.nodeRepository);
+        tester.failer = tester.createFailer();
+        return tester;
+    }
+
     public void suspend(ApplicationId app) {
         try {
             orchestrator.suspend(app);
@@ -140,6 +159,10 @@ public class NodeFailTester {
 
     public void createReadyNodes(int count) {
         createReadyNodes(count, 0);
+    }
+
+    public void createReadyNodes(int count, NodeType nodeType) {
+        createReadyNodes(count, 0, nodeFlavors.getFlavorOrThrow("default"), nodeType);
     }
 
     public void createReadyNodes(int count, int startIndex) {
@@ -167,7 +190,10 @@ public class NodeFailTester {
     }
 
     private void activate(ApplicationId applicationId, ClusterSpec cluster, int nodeCount) {
-        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(nodeCount), 1, null);
+        activate(applicationId, cluster, Capacity.fromNodeCount(nodeCount));
+    }
+    private void activate(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
+        List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, 1, null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
         provisioner.activate(transaction, applicationId, hosts);
         transaction.commit();
