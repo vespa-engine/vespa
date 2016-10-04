@@ -164,7 +164,7 @@ protected:
     };
 
     typedef AttributeVector::generation_t generation_t;
-    typedef vespalib::Array<VectorStatus> StatusVector;
+    typedef std::vector<VectorStatus> StatusVector;
     typedef vespalib::GenerationHolder GenerationHolder;
 
     // active -> hold
@@ -264,7 +264,7 @@ public:
     {
         uint32_t size = _committedDocIdLimit;
         assert(size <= _indices.size());
-        return std::move(IndexCopyVector(&_indices[0], &_indices[0] + size));
+        return IndexCopyVector(&_indices[0], &_indices[0] + size);
     }
 
     bool
