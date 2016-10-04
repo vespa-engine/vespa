@@ -51,6 +51,7 @@ public class Search implements Serializable {
     private boolean documentsOnly = false;
 
     // The stemming setting of this search definition. Default is SHORTEST.
+    // TODO: Change to Stemming.BEST on Vespa 7
     private Stemming stemming = Stemming.SHORTEST;
 
     // Documents contained in this definition.
