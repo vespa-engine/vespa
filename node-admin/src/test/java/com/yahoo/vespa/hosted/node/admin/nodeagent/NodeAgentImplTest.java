@@ -371,6 +371,7 @@ public class NodeAgentImplTest {
 
         inOrder.verify(dockerOperations).executeResume(any());
         inOrder.verify(orchestrator).resume(hostName);
+        inOrder.verify(dockerOperations).getContainerStats(nodeSpec.containerName);
         inOrder.verifyNoMoreInteractions();
     }
 }
