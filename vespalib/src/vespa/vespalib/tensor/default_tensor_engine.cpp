@@ -115,11 +115,11 @@ DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, con
     const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
     IsAddOperation check;
     op.accept(check);
+    tensor::Tensor::UP result;
     if (check.result) {
         if (dimensions.empty()) { // sum
             return stash.create<eval::DoubleValue>(my_tensor.sum());
         } else { // dimension sum
-            tensor::Tensor::UP result;
             for (const auto &dimension: dimensions) {
                 if (result) {
                     result = result->sum(dimension);
@@ -127,7 +127,17 @@ DefaultTensorEngine::reduce(const Tensor &tensor, const BinaryOperation &op, con
                     result = my_tensor.sum(dimension);
                 }
             }
+        }
+    } else {
+        result = my_tensor.reduce(op, dimensions);
+    }
+    if (result) {
+        eval::ValueType result_type(result->getType());
+        if (result_type.is_tensor()) {
             return stash.create<TensorValue>(std::move(result));
+        }
+        if (result_type.is_double()) {
+            return stash.create<eval::DoubleValue>(result->sum());
         }
     }
     return stash.create<ErrorValue>();

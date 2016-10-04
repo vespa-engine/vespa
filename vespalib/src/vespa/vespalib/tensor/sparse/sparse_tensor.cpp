@@ -9,6 +9,7 @@
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_apply.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
+#include <vespa/vespalib/eval/operation.h>
 #include <sstream>
 
 using vespalib::eval::TensorSpec;
@@ -242,6 +243,9 @@ SparseTensor::toSpec() const
         result.add(address, cell.second);
         address.clear();
     }
+    if (_dimensions.empty() && _cells.empty()) {
+        result.add(address, 0.0);
+    }
     return result;
 }
 
@@ -279,6 +283,16 @@ SparseTensor::accept(TensorVisitor &visitor) const
         addr = addrBuilder.build();
         visitor.visit(addr, cell.second);
     }
+}
+
+Tensor::UP
+SparseTensor::reduce(const eval::BinaryOperation &op,
+                     const std::vector<vespalib::string> &dimensions) const
+{
+    return sparse::reduce(*this,
+                          (dimensions.empty() ? _dimensions : dimensions),
+                          [&op](double lhsValue, double rhsValue)
+                          { return op.eval(lhsValue, rhsValue); });
 }
 
 } // namespace vespalib::tensor
