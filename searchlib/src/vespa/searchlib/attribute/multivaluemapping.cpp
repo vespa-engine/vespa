@@ -2,11 +2,12 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.multivaluemapping");
 #include "multivaluemapping.h"
 #include "multivaluemapping.hpp"
 #include "attributevector.h"
 #include "loadedenumvalue.h"
+
+LOG_SETUP(".searchlib.attribute.multivaluemapping");
 
 namespace search {
 
@@ -118,11 +119,6 @@ public:
 template <typename I>
 void MultiValueMappingBase<I>::doneHoldVector(Index idx)
 {
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info,
-        "free vector: idx.values() = %u, idx.alternative() = %u",
-        idx.values(), idx.alternative());
-#endif
     clearVector(idx);
     if (idx.values() < Index::maxValues()) {
         _singleVectorsStatus[idx.vectorIdx()] = FREE;

@@ -3,8 +3,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("multivaluemapping_test");
 #include <vespa/vespalib/testkit/testapp.h>
-//#define DEBUG_MULTIVALUE_MAPPING
-//#define LOG_MULTIVALUE_MAPPING
 #include <vespa/searchlib/attribute/multivaluemapping.h>
 #include <algorithm>
 #include <limits>
@@ -160,9 +158,6 @@ MultiValueMappingTest::testSimpleSetAndGet()
         } else {
             EXPECT_EQUAL(idx.values(), Index::maxValues());
         }
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info, "------------------------------------------------------------");
-#endif
     }
     EXPECT_TRUE(!mvm.hasKey(numKeys));
 
@@ -221,9 +216,6 @@ MultiValueMappingTest::testChangingValueCount()
 
     // Increasing the value count for some keys
     for (uint32_t valueCount = 1; valueCount <= maxCount; ++valueCount) {
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info, "########################### %u ##############################", valueCount);
-#endif
         uint32_t lastValueCount = valueCount - 1;
         // set values
         for (uint32_t key = 0; key < numKeys; ++key) {
@@ -271,10 +263,6 @@ MultiValueMappingTest::checkReaders(MvMapping &mvm,
     for (ReaderVector::iterator iter = readers.begin();
          iter != readers.end(); ) {
         if (iter->_endGen <= mvmGen) {
-#ifdef LOG_MULTIVALUE_MAPPING
-            LOG(info, "check and remove reader: start = %u, end = %u",
-                iter->_startGen, iter->_endGen);
-#endif
             for (uint32_t key = 0; key < iter->numKeys(); ++key) {
                 Index idx = iter->_indices[key];
                 uint32_t valueCount = iter->_expected[key].size();
@@ -321,11 +309,6 @@ MultiValueMappingTest::testHoldListAndGeneration()
     generation_t mvmGen = 0u;
 
     for (uint32_t valueCount = 1; valueCount < maxCount; ++valueCount) {
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info, "#################### count(%u) - gen(%u) ####################",
-            valueCount, mvm.getGeneration());
-#endif
-
         // check and remove readers
         checkReaders(mvm, mvmGen, readers);
 

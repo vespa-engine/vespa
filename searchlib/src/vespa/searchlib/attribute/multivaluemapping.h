@@ -498,11 +498,6 @@ public:
                bool hasWeights);
 
     virtual void doneHoldElem(Index idx) override;
-
-#ifdef DEBUG_MULTIVALUE_MAPPING
-    void printContent() const;
-    void printVectorVectors() const;
-#endif
 };
 
 //-----------------------------------------------------------------------------
@@ -681,9 +676,6 @@ compactSingleVector(SingleVectorPtr &activeVector,
     SingleVectorPtr freeVector =
         getSingleVector(valueCnt, MultiValueMappingBaseBase::FREE);
     if (freeVector.first == NULL) {
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(warning, "did not find any free '%u-vector'", valueCnt);
-#endif
         uint64_t dead = activeVector.first->dead();
         uint64_t fallbackNewSize = newSize + dead * valueCnt + 1024 * valueCnt;
         if (fallbackNewSize > maxSize)
@@ -703,16 +695,6 @@ compactSingleVector(SingleVectorPtr &activeVector,
         return;
     }
     swapVector(*freeVector.first, newSize);
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info,
-        "compacting from '%u-vector(%u)' "
-        "(s = %u, u = %u, d = %u) to "
-        "'%u-vector(%u)' (s = %u)",
-        valueCnt, activeVector.second.alternative(),
-        activeVector.first->size(),
-        activeVector.first->used() , activeVector.first->dead(),
-        valueCnt, freeVector.second.alternative(), newSize);
-#endif
     size_t activeVectorIdx = activeVector.second.vectorIdx();
     for (size_t i = 0; i < this->_indices.size(); ++i) {
         Index & idx = this->_indices[i];
@@ -753,9 +735,6 @@ compactVectorVector(VectorVectorPtr &activeVector,
     VectorVectorPtr freeVector =
         getVectorVector(MultiValueMappingBaseBase::FREE);
     if (freeVector.first == NULL) {
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(error, "did not find any free vectorvector");
-#endif
         uint64_t dead = activeVector.first->dead();
         uint64_t fallbackNewSize = newSize + dead + 1024;
         if (fallbackNewSize > maxSize)
@@ -774,15 +753,6 @@ compactVectorVector(VectorVectorPtr &activeVector,
         return;
     }
     swapVector(*freeVector.first, newSize);
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info,
-        "compacting from 'vectorvector(%u)' "
-        "(s = %u, u = %u, d = %u) to "
-        "'vectorvector(%u)' (s = %u)",
-        activeVector.second.alternative(), activeVector.first->size(),
-        activeVector.first->used(), activeVector.first->dead(),
-        freeVector.second.alternative(), newSize);
-#endif
     size_t activeVectorIdx = activeVector.second.vectorIdx();
     for (size_t i = 0; i < this->_indices.size(); ++i) {
         Index & idx = this->_indices[i];
@@ -1014,11 +984,6 @@ MultiValueMappingT<T, I>::set(uint32_t key,
     if (!getValidIndex(newIdx, numValues)) {
         abort();
     }
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info,
-        "newIdx: values = %u, alternative = %u, offset = %lu",
-        newIdx.values(), newIdx.alternative(), newIdx.offset());
-#endif
 
     if (newIdx.values() != 0 && newIdx.values() < Index::maxValues()) {
         SingleVector & vec = _singleVectors[newIdx.vectorIdx()];
@@ -1028,26 +993,11 @@ MultiValueMappingT<T, I>::set(uint32_t key,
         {
             vec[i] = values[j];
         }
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info,
-            "inserted in '%u-vector(%u)': "
-            "key = %u, size = %u, used = %u, dead = %u, offset = %lu",
-            newIdx.values(), newIdx.alternative(),
-            key, vec.size(),
-            vec.used(), vec.dead(), newIdx.offset() * newIdx.values());
-#endif
     } else if (newIdx.values() == Index::maxValues()) {
         VectorVector & vec = _vectorVectors[newIdx.alternative()];
         for (uint32_t i = 0; i < numValues; ++i) {
             vec[newIdx.offset()][i] = values[i];
         }
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info,
-            "inserted %u values in 'vector-vector(%u)': "
-            "key = %u, size = %u, used = %u, dead = %u, offset = %lu",
-            numValues, newIdx.alternative(),
-            key, vec.size(), vec.used(), vec.dead(), newIdx.offset());
-#endif
     }
 
     std::atomic_thread_fence(std::memory_order_release);
@@ -1059,25 +1009,12 @@ MultiValueMappingT<T, I>::set(uint32_t key,
         SingleVector & vec = _singleVectors[oldIdx.vectorIdx()];
         incDead(vec, oldIdx.values());
         this->decValueCnt(oldIdx.values());
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info,
-            "mark space dead in '%u-vector(%u)': "
-            "size = %u, used = %u, dead = %u",
-            oldIdx.values(), oldIdx.alternative(),
-            vec.size(), vec.used(), vec.dead());
-#endif
     } else if (oldIdx.values() == Index::maxValues()) {
         VectorVector & vec = _vectorVectors[oldIdx.alternative()];
         uint32_t oldNumValues = vec[oldIdx.offset()].size();
         incDead(vec);
         this->decValueCnt(oldNumValues);
         holdElem(oldIdx, sizeof(VectorBase) + sizeof(T) * oldNumValues);
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info,
-            "mark space dead in 'vector-vector(%u)': "
-            "size = %u, used = %u, dead = %u",
-            oldIdx.alternative(), vec.size(), vec.used(), vec.dead());
-#endif
     }
 }
 
@@ -1234,9 +1171,6 @@ template <typename T, typename I>
 void
 MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
 {
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info, "performCompaction()");
-#endif
     if (_pendingCompact) {
         // Further populate histogram to ensure pending compaction being done.
         for (std::set<uint32_t>::const_iterator
@@ -1285,41 +1219,6 @@ MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
     }
     assert(!_pendingCompact);
 }
-
-#ifdef DEBUG_MULTIVALUE_MAPPING
-template <typename T, typename I>
-void
-MultiValueMappingT<T, I>::printContent() const
-{
-    for (size_t key = 0; key < this->_indices.size(); ++key) {
-        std::vector<T> buffer(getValueCount(key));
-        get(key, buffer);
-        std::cout << "key = " << key << ", count = " <<
-            getValueCount(key) << ": ";
-        for (size_t i = 0; i < buffer.size(); ++i) {
-            std::cout << buffer[i] << ", ";
-        }
-        std::cout << '\n';
-    }
-}
-
-template <typename T, typename I>
-void
-MultiValueMappingT<T, I>::printVectorVectors() const
-{
-    for (size_t i = 0; i < _vectorVectors.size(); ++i) {
-        std::cout << "Alternative " << i << '\n';
-        for (size_t j = 0; j < _vectorVectors[i].size(); ++j) {
-            std::cout << "Vector " << j << ": [";
-            size_t size = _vectorVectors[i][j].size();
-            for (size_t k = 0; k < size; ++k) {
-                std::cout << _vectorVectors[i][j][k] << ", ";
-            }
-            std::cout << "]\n";
-        }
-    }
-}
-#endif
 
 extern template class MultiValueMappingFallbackVectorHold<
     MultiValueMappingVector<multivalue::Value<int8_t> >::VectorBase >;
