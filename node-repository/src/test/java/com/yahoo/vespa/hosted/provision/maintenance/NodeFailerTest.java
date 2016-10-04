@@ -266,7 +266,7 @@ public class NodeFailerTest {
         List<Node> ready = nodeRepository.getNodes(NodeType.tenant, Node.State.ready);
 
         // Two ready nodes die and a ready docker node "dies" (Vespa does not run when in ready state for docker node, so
-        // it does not mae config requests)
+        // it does not make config requests)
         clock.advance(Duration.ofMinutes(180));
         Node dockerNode = ready.stream().filter(node -> node.flavor() == NODE_FLAVORS.getFlavorOrThrow("docker")).findFirst().get();
         List<Node> otherNodes = ready.stream()
@@ -285,7 +285,7 @@ public class NodeFailerTest {
         assertEquals(ready.get(1), nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(0));
         assertEquals( 3, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
     }
-    
+
     private void allNodesMakeAConfigRequestExcept(Node ... deadNodeArray) {
         Set<Node> deadNodes = new HashSet<>(Arrays.asList(deadNodeArray));
         for (Node node : nodeRepository.getNodes(NodeType.tenant)) {
@@ -303,9 +303,13 @@ public class NodeFailerTest {
     }
 
     private void createReadyNodes(int count, int startIndex, NodeRepository nodeRepository, Flavor flavor) {
+        createReadyNodes(count, startIndex, nodeRepository, flavor, NodeType.tenant);
+    }
+
+    private void createReadyNodes(int count, int startIndex, NodeRepository nodeRepository, Flavor flavor, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < startIndex + count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), flavor, NodeType.tenant));
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), flavor, nodeType));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
     }
