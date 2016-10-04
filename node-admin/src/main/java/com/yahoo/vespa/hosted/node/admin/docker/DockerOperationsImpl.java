@@ -128,16 +128,16 @@ public class DockerOperationsImpl implements DockerOperations {
     private void configureContainer(ContainerNodeSpec nodeSpec) {
         final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
 
-        Path diskUsageCheckPath = Paths.get("/bin/cat");
-        Path diskUsageCheckSchedulePath = yamasAgentFolder.resolve("disk-usage.yaml");
-        String diskUsageCheckSchedule = generateSecretAgentSchedule(nodeSpec, "disk-usage", 60, diskUsageCheckPath,
-                "/metrics-share/disk.usage");
+        Path dockerStatsCheckPath = Paths.get("/bin/cat");
+        Path dockerStatsCheckSchedulePath = yamasAgentFolder.resolve("docker-stats.yaml");
+        String dockerStatsCheckSchedule = generateSecretAgentSchedule(nodeSpec, "docker-stats", 60, dockerStatsCheckPath,
+                "/metrics-share/docker.stats");
 
         Path vespaCheckPath = Paths.get("/home/y/libexec/yms/yms_check_vespa");
         Path vespaCheckSchedulePath = yamasAgentFolder.resolve("vespa.yaml");
         String vespaCheckSchedule = generateSecretAgentSchedule(nodeSpec, "vespa", 60, vespaCheckPath, "all");
         try {
-            writeSecretAgentSchedule(nodeSpec.containerName, diskUsageCheckSchedulePath, diskUsageCheckSchedule);
+            writeSecretAgentSchedule(nodeSpec.containerName, dockerStatsCheckSchedulePath, dockerStatsCheckSchedule);
             writeSecretAgentSchedule(nodeSpec.containerName, vespaCheckSchedulePath, vespaCheckSchedule);
         } catch (IOException e) {
             e.printStackTrace();
