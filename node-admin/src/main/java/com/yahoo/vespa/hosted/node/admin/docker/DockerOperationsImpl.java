@@ -446,4 +446,9 @@ public class DockerOperationsImpl implements DockerOperations {
                     + ": command " + Arrays.toString(RESUME_NODE_COMMAND) + " failed: " + result.get());
         }
     }
+
+    @Override
+    public Docker.ContainerStats getContainerStats(ContainerName containerName) {
+        return docker.getContainerStats(containerName);
+    }
 }
