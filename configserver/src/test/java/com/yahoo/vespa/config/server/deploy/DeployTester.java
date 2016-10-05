@@ -26,8 +26,9 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
-import com.yahoo.vespa.config.server.modelfactory.ModelResult;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -35,13 +36,10 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
-import org.apache.curator.framework.CuratorFramework;
-import org.junit.Before;
 
 import java.io.File;
 import java.io.IOException;
@@ -112,11 +110,14 @@ public class DeployTester {
     }
 
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive(ApplicationId id) {
-        ApplicationRepository applicationRepository = new ApplicationRepository(tenants, HostProvisionerProvider.withProvisioner(createHostProvisioner()),
-                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()), curator);
+        ApplicationRepository applicationRepository = new ApplicationRepository(tenants,
+                                                                                HostProvisionerProvider.withProvisioner(createHostProvisioner()),
+                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                                                                curator,
+                                                                                new LogServerLogGrabber(),
+                                                                                new ApplicationConvergenceChecker());
 
-        Optional<com.yahoo.config.provision.Deployment> deployment = applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
-        return deployment;
+        return applicationRepository.deployFromLocalActive(id, Duration.ofSeconds(60));
     }
 
     private Provisioner createHostProvisioner() {

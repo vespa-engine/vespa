@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.*;
@@ -16,6 +15,8 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -167,7 +168,9 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
                 new ApplicationRepository(testTenantBuilder.createTenants(),
                                           HostProvisionerProvider.withProvisioner(hostProvisioner),
                                           new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                          curator));
+                                          curator,
+                                          new LogServerLogGrabber(),
+                                          new ApplicationConvergenceChecker()));
     }
 
     public static class MockProvisioner implements Provisioner {
