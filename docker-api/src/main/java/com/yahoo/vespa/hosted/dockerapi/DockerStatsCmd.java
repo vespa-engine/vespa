@@ -9,6 +9,9 @@ import java.net.URL;
 
 
 /**
+ * Class that makes HTTP request to get docker container stats as docker-java's
+ * {@link com.github.dockerjava.api.DockerClient#statsCmd(String)} fails because of jersey version conflict.
+ *
  * @author valerijf
  */
 public class DockerStatsCmd {
