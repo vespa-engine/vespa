@@ -7,7 +7,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
@@ -61,10 +60,6 @@ public class RestApiHandler extends LoggingRequestHandler{
         }
 
         if (path.endsWith("/metrics")) {
-            SecretAgentHandler secretAgentHandler = new SecretAgentHandler();
-            secretAgentHandler.withDimension("host", HostName.getLocalhost());
-            metricReceiverWrapper.getLatestMetrics().forEach(secretAgentHandler::withMetric);
-
             return new HttpResponse(200) {
                 @Override
                 public String getContentType() {
@@ -74,7 +69,10 @@ public class RestApiHandler extends LoggingRequestHandler{
                 @Override
                 public void render(OutputStream outputStream) throws IOException {
                     try (PrintStream printStream = new PrintStream(outputStream)) {
-                        printStream.write(secretAgentHandler.toJson().getBytes(StandardCharsets.UTF_8.name()));
+                        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiverWrapper) {
+                            String secretAgentJsonReport = dimensionMetrics.toSecretAgentReport() + "\n";
+                            printStream.write(secretAgentJsonReport.getBytes(StandardCharsets.UTF_8.name()));
+                        }
                     }
                 }
             };
