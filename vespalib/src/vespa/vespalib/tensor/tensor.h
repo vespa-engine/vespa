@@ -41,11 +41,7 @@ struct Tensor : public eval::Tensor
     virtual Tensor::UP sum(const vespalib::string &dimension) const = 0;
     virtual Tensor::UP reduce(const eval::BinaryOperation &op,
                               const std::vector<vespalib::string> &dimensions)
-        const {
-        (void) op;
-        (void) dimensions;
-        return Tensor::UP();
-    }
+        const = 0;
     virtual bool equals(const Tensor &arg) const = 0;
     virtual void print(std::ostream &out) const = 0;
     virtual vespalib::string toString() const = 0;

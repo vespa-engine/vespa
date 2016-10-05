@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
+#include <vespa/vespalib/eval/operation.h>
 #include <sstream>
 
 using vespalib::eval::TensorSpec;
@@ -122,6 +123,15 @@ joinDenseTensorsNegated(const DenseTensor &lhs,
                                          std::move(cells));
 }
 
+std::vector<vespalib::string>
+getDimensions(const DenseTensor &tensor)
+{
+    std::vector<vespalib::string> dimensions;
+    for (const auto &dimMeta : tensor.dimensionsMeta()) {
+        dimensions.emplace_back(dimMeta.dimension());
+    }
+    return dimensions;
+}
 
 }
 
@@ -405,6 +415,16 @@ operator<<(std::ostream &out, const DenseTensor::DimensionMeta &value)
 {
     out << value.dimension() << ":" << value.size();
     return out;
+}
+
+Tensor::UP
+DenseTensor::reduce(const eval::BinaryOperation &op,
+                    const std::vector<vespalib::string> &dimensions) const
+{
+    return dense::reduce(*this,
+                         (dimensions.empty() ? getDimensions(*this) : dimensions),
+                         [&op](double lhsValue, double rhsValue)
+                         { return op.eval(lhsValue, rhsValue); });
 }
 
 } // namespace vespalib::tensor
