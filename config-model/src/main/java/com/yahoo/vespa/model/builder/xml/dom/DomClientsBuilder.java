@@ -35,4 +35,5 @@ public class DomClientsBuilder extends LegacyConfigModelBuilder<Clients> {
             throw new IllegalArgumentException("Version '" + version + "' of 'clients' not supported.");
         }
     }
+
 }

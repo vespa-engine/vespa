@@ -25,6 +25,7 @@ import java.util.List;
  * @since 5.22
  */
 public class XmlPreProcessor {
+
     final static String deployNamespace = "xmlns:deploy";
     final static String deployNamespaceUri = "vespa";
     final static String preprocessNamespace = "xmlns:preprocess";
@@ -68,4 +69,5 @@ public class XmlPreProcessor {
         chain.add(new PropertiesProcessor());
         return chain;
     }
+
 }

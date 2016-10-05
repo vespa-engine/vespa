@@ -20,6 +20,7 @@ import java.util.logging.Logger;
  * @since 5.22
  */
 class OverrideProcessor implements PreProcessor {
+
     private static final Logger log = Logger.getLogger(OverrideProcessor.class.getName());
 
     private final Environment environment;
@@ -34,6 +35,7 @@ class OverrideProcessor implements PreProcessor {
     }
 
     public Document process(Document input) throws TransformerException {
+        if (1==1) return input;
         log.log(LogLevel.DEBUG, "Preprocessing overrides with " + environment + "." + region);
         Document ret = Xml.copyDocument(input);
         Element root = ret.getDocumentElement();

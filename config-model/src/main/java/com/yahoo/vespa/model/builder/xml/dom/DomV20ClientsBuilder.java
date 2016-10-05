@@ -1,40 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.component.ComponentId;
-import com.yahoo.component.ComponentSpecification;
-import com.yahoo.component.chain.Phase;
-import com.yahoo.component.chain.dependencies.Dependencies;
-import com.yahoo.component.chain.model.ChainSpecification;
-import com.yahoo.component.chain.model.ChainedComponentModel;
-import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.vespa.config.content.spooler.SpoolerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
-import com.yahoo.vespa.model.builder.xml.dom.chains.docproc.DomDocprocChainsBuilder;
 import com.yahoo.vespa.model.clients.Clients;
-import com.yahoo.vespa.model.clients.HttpGatewayOwner;
 import com.yahoo.vespa.model.clients.VespaSpoolMaster;
 import com.yahoo.vespa.model.clients.VespaSpooler;
 import com.yahoo.vespa.model.clients.VespaSpoolerProducer;
 import com.yahoo.vespa.model.clients.VespaSpoolerService;
-import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
-import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
-import com.yahoo.vespa.model.container.docproc.DocprocChains;
-import com.yahoo.vespa.model.container.search.ContainerHttpGateway;
-import com.yahoo.vespa.model.container.search.ContainerSearch;
-import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
-import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
-import com.yahoo.vespa.model.container.search.searchchain.Searcher;
-import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespaclient.config.FeederConfig;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -43,9 +20,6 @@ import org.w3c.dom.NodeList;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.logging.Level;
 
 /**
  * Builds the Clients plugin
