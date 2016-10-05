@@ -29,11 +29,11 @@ public class NodeFailerTest {
     @Test
     public void nodes_for_suspended_applications_are_not_failed() throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
-        tester.suspend(tester.app1);
+        tester.suspend(NodeFailTester.app1);
 
         // Set two nodes down (one for each application) and wait 65 minutes
-        String host_from_suspended_app = tester.nodeRepository.getNodes(tester.app1, Node.State.active).get(1).hostname();
-        String host_from_normal_app = tester.nodeRepository.getNodes(tester.app2, Node.State.active).get(3).hostname();
+        String host_from_suspended_app = tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname();
+        String host_from_normal_app = tester.nodeRepository.getNodes(NodeFailTester.app2, Node.State.active).get(3).hostname();
         tester.serviceMonitor.setHostDown(host_from_suspended_app);
         tester.serviceMonitor.setHostDown(host_from_normal_app);
         tester.failer.run();
@@ -71,8 +71,8 @@ public class NodeFailerTest {
         assertEquals(Node.State.failed, tester.nodeRepository.getNode(readyFail1.hostname()).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.getNode(readyFail2.hostname()).get().state());
         
-        String downHost1 = tester.nodeRepository.getNodes(tester.app1, Node.State.active).get(1).hostname();
-        String downHost2 = tester.nodeRepository.getNodes(tester.app2, Node.State.active).get(3).hostname();
+        String downHost1 = tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname();
+        String downHost2 = tester.nodeRepository.getNodes(NodeFailTester.app2, Node.State.active).get(3).hostname();
         tester.serviceMonitor.setHostDown(downHost1);
         tester.serviceMonitor.setHostDown(downHost2);
         // nothing happens the first 45 minutes
@@ -125,7 +125,7 @@ public class NodeFailerTest {
         assertEquals( 0, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
 
         // the last host goes down
-        Node lastNode = tester.highestIndex(tester.nodeRepository.getNodes(tester.app1, Node.State.active));
+        Node lastNode = tester.highestIndex(tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active));
         tester.serviceMonitor.setHostDown(lastNode.hostname());
         // it is not failed because there are no ready nodes to replace it
         for (int minutes = 0; minutes < 75; minutes +=5 ) {
@@ -147,7 +147,7 @@ public class NodeFailerTest {
         assertEquals( 5, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
         assertEquals( 0, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         assertTrue("The index of the last failed node is not reused",
-                   tester.highestIndex(tester.nodeRepository.getNodes(tester.app1, Node.State.active)).allocation().get().membership().index()
+                   tester.highestIndex(tester.nodeRepository.getNodes(NodeFailTester.app1, Node.State.active)).allocation().get().membership().index()
                    >
                    lastNode.allocation().get().membership().index());
     }
@@ -172,9 +172,9 @@ public class NodeFailerTest {
         // Two ready nodes die and a ready docker node "dies" 
         // (Vespa does not run when in ready state for docker node, so it does not make config requests)
         tester.clock.advance(Duration.ofMinutes(180));
-        Node dockerNode = ready.stream().filter(node -> node.flavor() == tester.nodeFlavors.getFlavorOrThrow("docker")).findFirst().get();
+        Node dockerNode = ready.stream().filter(node -> node.flavor() == NodeFailTester.nodeFlavors.getFlavorOrThrow("docker")).findFirst().get();
         List<Node> otherNodes = ready.stream()
-                               .filter(node -> node.flavor() != tester.nodeFlavors.getFlavorOrThrow("docker"))
+                               .filter(node -> node.flavor() != NodeFailTester.nodeFlavors.getFlavorOrThrow("docker"))
                                .collect(Collectors.toList());
         tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode);
         tester.failer.run();
