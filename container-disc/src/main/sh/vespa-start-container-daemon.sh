@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #set -x
@@ -60,28 +60,26 @@ getconfig() {
 }
 
 configure_memory() {
+    consider_fallback jvm_heapsize 1536
     consider_fallback jvm_stacksize 512
     consider_fallback jvm_baseMaxDirectMemorySize 75
     consider_fallback jvm_directMemorySizeCache 0
 
-    if ! varhasvalue jvm_heapsize; then
-        if varhasvalue jvm_heapSizeAsPercentageOfPhysicalMemory; then
-            if varhasvalue TOTAL_MEMORY_MB; then
-                available="$TOTAL_MEMORY_MB"
-            else
-                available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
-            fi
-
-            jvm_heapsize=$[available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100]
-            if (( jvm_heapsize < 1024 )); then
-                jvm_heapsize=1024
-            fi
+    # Update jvm_heapsize only if percentage is explicitly set (default is 0).
+    if ((jvm_heapSizeAsPercentageOfPhysicalMemory > 0)); then
+        if ((TOTAL_MEMORY_MB > 0)); then
+            available="$TOTAL_MEMORY_MB"
         else
-            jvm_heapsize=1536
-        fi            
+            available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
+        fi
+
+        jvm_heapsize=$((available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100))
+        if (( jvm_heapsize < 1024 )); then
+            jvm_heapsize=1024
+        fi
     fi
 
-    maxDirectMemorySize=$(( ${jvm_baseMaxDirectMemorySize} + ${jvm_heapsize}/8 + ${jvm_directMemorySizeCache} ))
+    maxDirectMemorySize=$(( jvm_baseMaxDirectMemorySize + jvm_heapsize / 8 + jvm_directMemorySizeCache ))
 
     memory_options="-Xms${jvm_heapsize}m -Xmx${jvm_heapsize}m"
     memory_options="${memory_options} -XX:ThreadStackSize=${jvm_stacksize}"
