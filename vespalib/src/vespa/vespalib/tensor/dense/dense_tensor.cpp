@@ -246,10 +246,9 @@ DenseTensor::min(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    checkDimensions(*this, *rhs, "min");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return std::min(lhsValue, rhsValue); });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return std::min(lhsValue, rhsValue); });
 }
 
 Tensor::UP
