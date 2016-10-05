@@ -113,7 +113,7 @@ public class ClusterSearcher extends Searcher {
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
         documentTypes = new LinkedHashSet<>();
         failoverToRemote = clusterConfig.failoverToRemote();
-        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool);
+        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount());
 
         String eventName = clusterModelName + ".cache_hit_ratio";
         cacheHitRatio = new Value(eventName, manager, new Value.Parameters().setNameExtension(false)
@@ -128,8 +128,6 @@ public class ClusterSearcher extends Searcher {
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
                 .defaultclass());
         
-        int containerClusterSize = clusterInfoConfig.nodeCount();
-
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             String docTypeName = docDb.name();
             documentTypes.add(docTypeName);
@@ -151,7 +149,7 @@ public class ClusterSearcher extends Searcher {
                 Backend b = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
                 FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, 
                                                        searchClusterConfig, cacheParams, emulationConfig, docSumParams,
-                                                       documentDbConfig, b, dispatcher, dispatcherIndex, containerClusterSize);
+                                                       documentDbConfig, b, dispatcher, dispatcherIndex);
                 try {
                     searcher.setLocalDispatching( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host()));
                 } catch (UnknownHostException e) {
@@ -210,14 +208,13 @@ public class ClusterSearcher extends Searcher {
                                                DocumentdbInfoConfig documentdbInfoConfig,
                                                Backend backend,
                                                Dispatcher dispatcher,
-                                               int dispatcherIndex,
-                                               int containerClusterSize) {
+                                               int dispatcherIndex) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
                                                         searchClusterConfig,
                                                         emulConfig, 
                                                         dispatcherIndex);
         return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, 
-                                documentdbInfoConfig, containerClusterSize);
+                                documentdbInfoConfig);
     }
 
     private static VdsStreamingSearcher vdsCluster(int searchclusterIndex,

@@ -1,6 +1,7 @@
 package com.yahoo.search.dispatch;
 
 import com.google.common.annotations.Beta;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -19,6 +20,7 @@ import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -47,18 +49,20 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
     private final ClusterMonitor<Node> clusterMonitor;
+    private final int containerClusterSize;
 
     // Only needed until query requests are moved to rpc
     private final FS4ResourcePool fs4ResourcePool;
 
-    public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool) {
-        this(dispatchConfig.minActivedocsPercentage(), toNodes(dispatchConfig), fs4ResourcePool);
+    public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize) {
+        this(dispatchConfig.minActivedocsPercentage(), toNodes(dispatchConfig), fs4ResourcePool, containerClusterSize);
     }
     
-    public SearchCluster(double minActivedocsCoverage, List<Node> nodes, FS4ResourcePool fs4ResourcePool) {
+    public SearchCluster(double minActivedocsCoverage, List<Node> nodes, FS4ResourcePool fs4ResourcePool, int containerClusterSize) {
         this.minActivedocsCoveragePercentage = minActivedocsCoverage;
-        size = nodes.size();
+        this.size = nodes.size();
         this.fs4ResourcePool = fs4ResourcePool;
+        this.containerClusterSize = containerClusterSize;
         
         // Create groups
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
@@ -97,6 +101,37 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
      * One host may contain multiple nodes (on different ports), so this is a multi-map.
      */
     public ImmutableMultimap<String, Node> nodesByHost() { return nodesByHost; }
+
+    /** Whether direct dispatch (bypassing fdispatch) should be used when dispatching queries from the given hostname */
+    public Optional<Node> dispatchDirectlyFrom(String selfHostname) {
+        // A search node in the search cluster in question is configured on the same host as the currently running container.
+        // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
+        //         That local search node responds.
+        // The search cluster to be searched has at least as many nodes as the container cluster we're running in.
+        ImmutableCollection<Node> localSearchNodes = nodesByHost().get(selfHostname);
+        // Only use direct dispatch if we have exactly 1 search node on the same machine:
+        if (localSearchNodes.size() != 1) return Optional.empty();
+
+        SearchCluster.Node localSearchNode = localSearchNodes.iterator().next();
+        SearchCluster.Group localSearchGroup = groups().get(localSearchNode.group());
+
+        // Only use direct dispatch if the local search node has the entire corpus
+        if (localSearchGroup.nodes().size() != 1) return Optional.empty();
+
+        // Only use direct dispatch if this container cluster has at least as many nodes as the search cluster
+        // to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers.
+        // This disregards the case where the search and container clusters are partially overlapping. 
+        // Such configurations produce skewed load in any case.
+        if (containerClusterSize < size()) return Optional.empty();
+
+        // Only use direct dispatch if the local group has sufficient coverage
+        if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
+
+        // Only use direct dispatch if the local search node is up
+        if ( ! localSearchNode.isWorking()) return Optional.empty();
+
+        return Optional.of(localSearchNode);
+    }
 
     /** Used by the cluster monitor to manage node status */
     @Override

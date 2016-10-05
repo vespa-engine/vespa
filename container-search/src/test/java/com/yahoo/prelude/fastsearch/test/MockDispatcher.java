@@ -11,11 +11,11 @@ import java.util.List;
 class MockDispatcher extends Dispatcher {
 
     public MockDispatcher(List<SearchCluster.Node> nodes) {
-        super(toDispatchConfig(nodes), new FS4ResourcePool(1));
+        super(toDispatchConfig(nodes), new FS4ResourcePool(1), 1);
     }
 
-    public MockDispatcher(List<SearchCluster.Node> nodes, FS4ResourcePool fs4ResourcePool) {
-        super(toDispatchConfig(nodes), fs4ResourcePool);
+    public MockDispatcher(List<SearchCluster.Node> nodes, FS4ResourcePool fs4ResourcePool, int containerClusterSize) {
+        super(toDispatchConfig(nodes), fs4ResourcePool, containerClusterSize);
     }
 
     private static DispatchConfig toDispatchConfig(List<SearchCluster.Node> nodes) {

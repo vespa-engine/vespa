@@ -71,7 +71,6 @@ public class FastSearcher extends VespaBackEndSearcher {
     private final FS4ResourcePool fs4ResourcePool;
     
     private final String selfHostname;
-    private final int containerClusterSize;
     
     /**
      * Creates a Fastsearcher.
@@ -88,18 +87,15 @@ public class FastSearcher extends VespaBackEndSearcher {
      * @param clusterParams the cluster number, and other cluster backend parameters
      * @param cacheParams   the size, lifetime, and controller of our cache
      * @param documentdbInfoConfig document database parameters
-     * @param containerClusterSize the size of the cluster this is part of
      */
     public FastSearcher(Backend dispatchBackend, FS4ResourcePool fs4ResourcePool,
                         Dispatcher dispatcher, SummaryParameters docSumParams, ClusterParams clusterParams,
-                        CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig,
-                        int containerClusterSize) {
+                        CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
         init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         this.dispatchBackend = dispatchBackend;
         this.fs4ResourcePool = fs4ResourcePool;
         this.dispatcher = dispatcher;
         this.selfHostname = HostName.getLocalhost();
-        this.containerClusterSize = containerClusterSize;
     }
 
     private static SimpleDateFormat isoDateFormat;
@@ -226,39 +222,17 @@ public class FastSearcher extends VespaBackEndSearcher {
     private Backend chooseBackend(Query query) {
         // TODO 2016-08-16: Turn this on by default (by changing the 'false' below to 'true')
         if ( ! query.properties().getBoolean(dispatchDirect, false)) return dispatchBackend;
-        
-        // A search node in the search cluster in question is configured on the same host as the currently running container.
-        // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
-        //         That local search node responds.
-        // The search cluster to be searched has at least as many nodes as the container cluster we're running in.
-        ImmutableCollection<SearchCluster.Node> localSearchNodes = dispatcher.searchCluster().nodesByHost().get(selfHostname);
-        // Only use direct dispatch if we have exactly 1 search node on the same machine:
-        if (localSearchNodes.size() != 1) return dispatchBackend;
 
-        SearchCluster.Node localSearchNode = localSearchNodes.iterator().next();
-        SearchCluster.Group localSearchGroup = dispatcher.searchCluster().groups().get(localSearchNode.group());
-
-        // Only use direct dispatch if the local search node has the entire corpus
-        if (localSearchGroup.nodes().size() != 1) return dispatchBackend;
-
-        // Only use direct dispatch if this container cluster has at least as many nodes as the search cluster
-        // to avoid load skew/preserve fanout in the case where a subset of the search nodes are also containers.
-        // This disregards the case where the search and container clusters are partially overlapping. 
-        // Such configurations produce skewed load in any case.
-        if (containerClusterSize < dispatcher.searchCluster().size()) return dispatchBackend;
-
-        // Only use direct dispatch if the upstream ClusterSearcher chose the local dispatch
-        // (otherwise, we may be in this method due to a failover situation)
+        // Don't use direct dispatch if the upstream ClusterSearcher did not chose the local dispatch
+        // as that probably means that we are in a failover situation
         if ( ! dispatchBackend.getHost().equals(selfHostname)) return dispatchBackend;
 
-        // Only use direct dispatch if the local grouop has sufficient coverage
-        if ( ! localSearchGroup.hasSufficientCoverage()) return dispatchBackend;
+        Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().dispatchDirectlyFrom(selfHostname);
+        if ( ! directDispatchRecipient.isPresent()) return dispatchBackend;
 
-        // Only use direct dispatch if the local search node is up
-        if ( ! localSearchNode.isWorking()) return dispatchBackend;
-
-        query.trace(false, 2, "Dispatching directly to ", localSearchNode);
-        return fs4ResourcePool.getBackend(localSearchNode.hostname(), localSearchNode.fs4port());
+        query.trace(false, 2, "Dispatching directly to ", directDispatchRecipient.get());
+        return fs4ResourcePool.getBackend(directDispatchRecipient.get().hostname(), 
+                                          directDispatchRecipient.get().fs4port());
     }
 
     /**

@@ -32,25 +32,24 @@ class FastSearcherTester {
     private final FastSearcher fastSearcher;
     private final MockDispatcher mockDispatcher;
 
-    public FastSearcherTester(int containerNodeCount, SearchCluster.Node searchNode) {
-        this(containerNodeCount, Collections.singletonList(searchNode));
+    public FastSearcherTester(int containerClusterSize, SearchCluster.Node searchNode) {
+        this(containerClusterSize, Collections.singletonList(searchNode));
     }
 
-    public FastSearcherTester(int containerNodeCount, String... hostAndPortAndGroupStrings) {
-        this(containerNodeCount, toNodes(hostAndPortAndGroupStrings));
+    public FastSearcherTester(int containerClusterSize, String... hostAndPortAndGroupStrings) {
+        this(containerClusterSize, toNodes(hostAndPortAndGroupStrings));
     }
 
-    public FastSearcherTester(int containerNodeCount, List<SearchCluster.Node> searchNodes) {
+    public FastSearcherTester(int containerClusterSize, List<SearchCluster.Node> searchNodes) {
         mockFS4ResourcePool = new MockFS4ResourcePool();
-        mockDispatcher = new MockDispatcher(searchNodes, mockFS4ResourcePool);
+        mockDispatcher = new MockDispatcher(searchNodes, mockFS4ResourcePool, containerClusterSize);
         fastSearcher = new FastSearcher(new MockBackend(selfHostname, MockFSChannel::new),
                                         mockFS4ResourcePool,
                                         mockDispatcher,
                                         new SummaryParameters(null),
                                         new ClusterParams("testhittype"),
                                         new CacheParams(100, 1e64),
-                                        new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder()),
-                                        containerNodeCount);
+                                        new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder()));
     }
 
     private static List<SearchCluster.Node> toNodes(String... hostAndPortAndGroupStrings) {
