@@ -21,6 +21,7 @@ import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.log.LogLevel;
+import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
@@ -115,8 +116,11 @@ public class DockerImpl implements Docker {
             throw new RuntimeException("Could not setup docker network", e);
         }
 
-        numberOfRunningContainersGauge = metricReceiver.declareGauge("containers.running");
-        numberOfDockerDaemonFails = metricReceiver.declareCounter("daemon.api_fails");
+        Map<String, Object> dimensions = new HashMap<>();
+        dimensions.put("host", HostName.getLocalhost());
+
+        numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");
+        numberOfDockerDaemonFails = metricReceiver.declareCounter(dimensions, "daemon.api_fails");
 
         // Some containers could already be running, count them and intialize to that value
         numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
