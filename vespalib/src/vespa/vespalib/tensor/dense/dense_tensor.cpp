@@ -418,6 +418,18 @@ operator<<(std::ostream &out, const DenseTensor::DimensionMeta &value)
 }
 
 Tensor::UP
+DenseTensor::apply(const eval::BinaryOperation &op, const Tensor &arg) const
+{
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return dense::apply(*this, *rhs,
+                        [&op](double lhsValue, double rhsValue)
+                        { return op.eval(lhsValue, rhsValue); });
+}
+
+Tensor::UP
 DenseTensor::reduce(const eval::BinaryOperation &op,
                     const std::vector<vespalib::string> &dimensions) const
 {

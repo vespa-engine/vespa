@@ -286,6 +286,18 @@ SparseTensor::accept(TensorVisitor &visitor) const
 }
 
 Tensor::UP
+SparseTensor::apply(const eval::BinaryOperation &op, const Tensor &arg) const
+{
+    const SparseTensor *rhs = dynamic_cast<const SparseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return sparse::apply(*this, *rhs,
+                         [&op](double lhsValue, double rhsValue)
+                         { return op.eval(lhsValue, rhsValue); });
+}
+
+Tensor::UP
 SparseTensor::reduce(const eval::BinaryOperation &op,
                      const std::vector<vespalib::string> &dimensions) const
 {
