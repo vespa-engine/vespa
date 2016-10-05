@@ -1,22 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
-import com.yahoo.foo.ArraytypesConfig;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.foo.ArraytypesConfig;
+import com.yahoo.foo.MaptypesConfig;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.SpecialtypesConfig;
 import com.yahoo.foo.StructtypesConfig;
-import com.yahoo.foo.MaptypesConfig;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static com.yahoo.config.subscription.util.JsonHelper.assertJsonEquals;
-import static com.yahoo.config.subscription.util.JsonHelper.inputJson;
+import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
+import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static org.junit.Assert.fail;
 
 /**

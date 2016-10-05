@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.document.json;
+package com.yahoo.test.json;
 
 import com.google.common.base.Joiner;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.hamcrest.MatcherAssert;
+
 import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
 /**
@@ -23,7 +24,6 @@ public class JsonTestHelper {
      * Structurally compare two JSON encoded strings
      */
     public static void assertJsonEquals(String inputJson, String expectedJson) {
-        assertThat(inputJson, sameJSONAs(expectedJson));
+        MatcherAssert.assertThat(inputJson, sameJSONAs(expectedJson));
     }
-
 }
