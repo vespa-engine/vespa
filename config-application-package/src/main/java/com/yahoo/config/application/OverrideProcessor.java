@@ -141,6 +141,9 @@ class OverrideProcessor implements PreProcessor {
             }
         }
 
+        if (bestMatch > 1) // there was a region/environment specific overriode
+            doElementSpecificProcessingOnOverride(bestMatchElement);
+
         // Remove elements not specific
         for (Element child : children) {
             if (child != bestMatchElement) {
@@ -149,6 +152,14 @@ class OverrideProcessor implements PreProcessor {
         }
     }
 
+    /** Called on each element which is selected by matching some override condition */
+    private void doElementSpecificProcessingOnOverride(Element element) {
+        // if node capacity is specified explicitly for some evn/region we should require that capacity
+        if ( element.getTagName().equals("nodes"))
+            if (element.getChildNodes().getLength() == 0) // specifies capacity, not a list of nodes
+                element.setAttribute("required", "true");
+    }
+    
     /**
      * Retains all elements where at least one element is overridden. Removes non-overridden elements from map.
      */
