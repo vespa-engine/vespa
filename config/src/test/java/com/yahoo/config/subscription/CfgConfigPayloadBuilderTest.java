@@ -11,8 +11,8 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
-import static com.yahoo.test.json.JsonTestHelper.inputJson;
+import static com.yahoo.config.subscription.util.JsonHelper.assertJsonEquals;
+import static com.yahoo.config.subscription.util.JsonHelper.inputJson;
 import static org.junit.Assert.assertEquals;
 
 /**

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.runner;
 
+import com.google.common.base.Joiner;
 import com.yahoo.vespa.http.client.FeedClient;
 import com.yahoo.vespa.http.client.core.JsonReader;
 import org.junit.Test;
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
@@ -259,5 +259,14 @@ public class JsonReaderTest {
         inputStream.close();
         assertThat(session.documentIds.size(), is(1));
         assertThat(session.documentIds.get(0), is("id:foo:music:doc:foo:bar"));
+    }
+
+    /**
+     * Convenience method to input JSON without escaping double quotes and newlines
+     * Each parameter represents a line of JSON encoded data
+     * The lines are joined with newline and single quotes are replaced with double quotes
+     */
+    static String inputJson(String... lines) {
+        return Joiner.on("\n").join(lines).replaceAll("'", "\"");
     }
 }
