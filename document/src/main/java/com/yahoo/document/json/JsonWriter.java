@@ -112,7 +112,6 @@ public class JsonWriter implements DocumentWriter {
                 Map.Entry<Field, FieldValue> entry = i.next();
                 entry.getValue().serialize(entry.getKey(), this);
             }
-
             generator.writeEndObject();
             generator.writeEndObject();
             generator.flush();
