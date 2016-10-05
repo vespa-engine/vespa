@@ -105,7 +105,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 redeployFrequency = Duration.ofMinutes(30);
                 zooKeeperAccessMaintenanceInterval = Duration.ofSeconds(10);
                 reservationExpiry = Duration.ofMinutes(10); // Need to be long enough for deployment to be finished for all config model versions
-                inactiveExpiry = Duration.ofMinutes(1);
+                inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
                 retiredExpiry = Duration.ofMinutes(1);
                 failedExpiry = Duration.ofMinutes(10);
                 dirtyExpiry = Duration.ofMinutes(30);
