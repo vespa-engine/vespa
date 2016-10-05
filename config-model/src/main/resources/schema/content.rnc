@@ -216,6 +216,7 @@ ContentNodes = element nodes {
       (
         attribute count { xsd:positiveInteger } &
         attribute flavor { xsd:string }? &
+        attribute required { xsd:boolean }? &
         attribute docker-image { xsd:string }? &
         attribute groups { xsd:positiveInteger }?
       )
@@ -260,6 +261,7 @@ Group = element group {
             element nodes {
                 attribute count { xsd:positiveInteger } &
                 attribute flavor { xsd:string }? &
+                attribute required { xsd:boolean }? &
                 attribute docker-image { xsd:string }? &
                 attribute groups { xsd:positiveInteger }?
             }

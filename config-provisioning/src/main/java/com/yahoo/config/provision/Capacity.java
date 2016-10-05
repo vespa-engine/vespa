@@ -75,7 +75,11 @@ public final class Capacity {
     public static Capacity fromRequiredNodeCount(int nodeCount, Optional<String> flavor) {
         return new Capacity(nodeCount, true, flavor, NodeType.tenant);
     }
-    
+
+    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required) {
+        return new Capacity(nodeCount, required, flavor, NodeType.tenant);
+    }
+
     /** Creates this from a node type */
     public static Capacity fromRequiredNodeType(NodeType type) {
         return new Capacity(0, true, Optional.empty(), type);

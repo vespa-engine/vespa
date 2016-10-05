@@ -101,8 +101,9 @@ public class InMemoryProvisioner implements HostProvisioner {
             throw new IllegalArgumentException("Requested " + requestedCapacity.nodeCount() + " nodes in " +
                                                groups + " groups, but the node count is not divisible into this number of groups");
 
-        int capacity = failOnOutOfCapacity ? requestedCapacity.nodeCount() :
-                                             Math.min(requestedCapacity.nodeCount(), freeNodes.get("default").size() + totalAllocatedTo(cluster));
+        int capacity = failOnOutOfCapacity || requestedCapacity.isRequired() 
+                       ? requestedCapacity.nodeCount() 
+                       : Math.min(requestedCapacity.nodeCount(), freeNodes.get("default").size() + totalAllocatedTo(cluster));
         if (groups > capacity)
             groups = capacity;
 
@@ -138,7 +139,7 @@ public class InMemoryProvisioner implements HostProvisioner {
 
         int nextIndex = nextIndexInCluster.getOrDefault(new Pair<>(clusterGroup.type(), clusterGroup.id()), startIndex);
         while (allocation.size() < nodesInGroup) {
-            if (freeNodes.get(flavor).isEmpty()) throw new IllegalArgumentException("No nodes of flavor '" + flavor + "' available");
+            if (freeNodes.get(flavor).isEmpty()) throw new IllegalArgumentException("Insufficient capacity of flavor '" + flavor + "'");
             Host newHost = freeNodes.removeValue(flavor, 0);
             ClusterMembership membership = ClusterMembership.from(clusterGroup, nextIndex++);
             allocation.add(new HostSpec(newHost.hostname(), newHost.aliases(), membership));
