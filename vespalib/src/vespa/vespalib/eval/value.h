@@ -6,6 +6,7 @@
 #include <memory>
 #include <vespa/vespalib/util/stash.h>
 #include "tensor.h"
+#include "value_type.h"
 
 namespace vespalib {
 namespace eval {
@@ -33,6 +34,7 @@ struct Value {
     virtual bool equal(const Value &rhs) const = 0;
     virtual const Value &apply(const UnaryOperation &op, Stash &stash) const;
     virtual const Value &apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const;
+    virtual ValueType type() const = 0;
     virtual ~Value() {}
 };
 
@@ -40,6 +42,7 @@ struct ErrorValue : public Value {
     virtual bool is_error() const override { return true; }
     virtual double as_double() const { return error_value; }
     virtual bool equal(const Value &) const override { return false; }
+    ValueType type() const override { return ValueType::error_type(); }
 };
 
 class DoubleValue : public Value
@@ -54,6 +57,7 @@ public:
     bool equal(const Value &rhs) const override {
         return (rhs.is_double() && (_value == rhs.as_double()));
     }
+    ValueType type() const override { return ValueType::double_type(); }
 };
 
 class TensorValue : public Value
@@ -67,6 +71,7 @@ public:
     bool equal(const Value &rhs) const override;
     const Value &apply(const UnaryOperation &op, Stash &stash) const override;
     const Value &apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const override;
+    ValueType type() const override;
 };
 
 } // namespace vespalib::eval

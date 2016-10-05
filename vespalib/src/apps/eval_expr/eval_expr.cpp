@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
         return 1;
     }
     InterpretedFunction::Context ctx;
-    InterpretedFunction interpreted(SimpleTensorEngine::ref(), function);
+    InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
     double result = interpreted.eval(ctx).as_double();
     fprintf(stdout, "%.32g\n", result);
     return 0;

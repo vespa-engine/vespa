@@ -53,9 +53,21 @@ void inject_params(const Function &function, const Params &params,
     }
 }
 
+std::vector<ValueType> extract_param_types(const Function &function, const Params &params) {
+    std::vector<ValueType> result;
+    EXPECT_EQUAL(params.map.size(), function.num_params());
+    for (size_t i = 0; i < function.num_params(); ++i) {
+        auto param = params.map.find(function.param_name(i));
+        ASSERT_TRUE(param != params.map.end());
+        result.push_back(param->second->type());
+    }
+    return result;
+}
+
 double calculate_expression(const vespalib::string &expression, const Params &params) {
     const Function function = Function::parse(expression);
-    const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function);
+    const NodeTypes types(function, extract_param_types(function, params));
+    const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function, types);
     InterpretedFunction::Context context;
     inject_params(function, params, context);
     const Value &result = interpreted.eval(context);
@@ -68,7 +80,8 @@ const Value &dummy_ranking(InterpretedFunction::Context &) { return dummy_result
 
 double benchmark_expression_us(const vespalib::string &expression, const Params &params) {
     const Function function = Function::parse(expression);
-    const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function);
+    const NodeTypes types(function, extract_param_types(function, params));
+    const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function, types);
     InterpretedFunction::Context context;
     inject_params(function, params, context);
     auto ranking = [&](){ interpreted.eval(context); };

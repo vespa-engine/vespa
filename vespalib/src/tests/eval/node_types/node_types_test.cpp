@@ -240,4 +240,23 @@ TEST("require that various operations resolve appropriate type") {
     TEST_DO(verify_op1("sigmoid(%s)"));          // Sigmoid
 }
 
+TEST("require that double only expressions can be detected") {
+    Function plain_fun = Function::parse("1+2");
+    Function complex_fun = Function::parse("sum({{x:1,y:2}:3})");
+    NodeTypes plain_types(plain_fun, {});
+    NodeTypes complex_types(complex_fun, {});
+    EXPECT_TRUE(plain_types.get_type(plain_fun.root()).is_double());
+    EXPECT_TRUE(complex_types.get_type(complex_fun.root()).is_double());
+    EXPECT_TRUE(plain_types.all_types_are_double());
+    EXPECT_FALSE(complex_types.all_types_are_double());
+}
+
+TEST("require that empty type repo works as expected") {
+    NodeTypes types;
+    Function function = Function::parse("1+2");
+    EXPECT_FALSE(function.has_error());
+    EXPECT_TRUE(types.get_type(function.root()).is_any());
+    EXPECT_FALSE(types.all_types_are_double());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -26,7 +26,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
     {
         Function fun = Function::parse(param_names, expression);
         EXPECT_EQUAL(fun.num_params(), param_values.size());
-        InterpretedFunction ifun(SimpleTensorEngine::ref(), fun);
+        InterpretedFunction ifun(SimpleTensorEngine::ref(), fun, NodeTypes());
         InterpretedFunction::Context ictx;
         for (double param: param_values) {
             ictx.add_param(param);
@@ -61,7 +61,7 @@ TEST("require that invalid function evaluates to a error") {
     std::vector<vespalib::string> params({"x", "y", "z", "w"});
     Function function = Function::parse(params, "x & y");
     EXPECT_TRUE(function.has_error());
-    InterpretedFunction ifun(SimpleTensorEngine::ref(), function);
+    InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx;
     ctx.add_param(1);
     ctx.add_param(2);
@@ -76,7 +76,7 @@ TEST("require that invalid function evaluates to a error") {
 
 size_t count_ifs(const vespalib::string &expr, std::initializer_list<double> params_in) {
     Function fun = Function::parse(expr);
-    InterpretedFunction ifun(SimpleTensorEngine::ref(), fun);
+    InterpretedFunction ifun(SimpleTensorEngine::ref(), fun, NodeTypes());
     InterpretedFunction::Context ctx;
     for (double param: params_in) {
         ctx.add_param(param);
@@ -102,7 +102,7 @@ TEST("require that interpreted function instructions have expected size") {
 
 TEST("require that basic addition works") {
     Function function = Function::parse("a+10");
-    InterpretedFunction interpreted(SimpleTensorEngine::ref(), function);
+    InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx;
     ctx.add_param(20);
     EXPECT_EQUAL(interpreted.eval(ctx).as_double(), 30.0);

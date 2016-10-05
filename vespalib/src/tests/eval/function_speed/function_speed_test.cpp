@@ -13,7 +13,7 @@ double sum_sum = 0.0;
 
 const char *function_str = "(0.35*p + 0.15*o + 0.30*q + 0.20*f) * w";
 Function function_ast = Function::parse(params_5, function_str);
-InterpretedFunction interpreted_function(SimpleTensorEngine::ref(), function_ast);
+InterpretedFunction interpreted_function(SimpleTensorEngine::ref(), function_ast, NodeTypes());
 CompiledFunction compiled_function(function_ast, PassParams::SEPARATE);
 auto jit_function = compiled_function.get_function<5>();
 
@@ -41,7 +41,7 @@ const char *big_function_str = "(0.35*p + 0.15*o + 0.30*q + 0.20*f) * w + "
     "(0.35*p + 0.15*o + 0.30*q + 0.20*f) * w";
 
 Function big_function_ast = Function::parse(params_5, big_function_str);
-InterpretedFunction big_interpreted_function(SimpleTensorEngine::ref(), big_function_ast);
+InterpretedFunction big_interpreted_function(SimpleTensorEngine::ref(), big_function_ast, NodeTypes());
 CompiledFunction big_compiled_function(big_function_ast, PassParams::SEPARATE);
 auto big_jit_function = big_compiled_function.get_function<5>();
 

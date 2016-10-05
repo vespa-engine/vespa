@@ -31,7 +31,7 @@ struct Eval {
     InterpretedFunction ifun;
     const Value *result;
     explicit Eval(const vespalib::string &expr)
-        : ctx(), ifun(tensor::DefaultTensorEngine::ref(), Function::parse(expr)), result(&ifun.eval(ctx)) {}
+        : ctx(), ifun(tensor::DefaultTensorEngine::ref(), Function::parse(expr), NodeTypes()), result(&ifun.eval(ctx)) {}
     bool operator==(const Eval &rhs) const { return result->equal(*rhs.result); }
 };
 
