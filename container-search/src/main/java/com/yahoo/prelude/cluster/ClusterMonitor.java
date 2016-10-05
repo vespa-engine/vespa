@@ -53,11 +53,9 @@ public class ClusterMonitor implements Runnable, Freezable {
     }
 
     void startPingThread() {
-        if (!isFrozen()) {
-            throw new IllegalStateException(
-                    "Do not start the monitoring thread before the set of"
-                    +" nodes to monitor is complete/the ClusterMonitor is frozen.");
-        }
+        if ( ! isFrozen())
+            throw new IllegalStateException("Do not start the monitoring thread before the set of " +
+                                            "nodes to monitor is complete/the ClusterMonitor is frozen.");
         future = nodeManager.getScheduledExecutor().scheduleAtFixedRate(this, pingThreadInitialDelayMs, configuration.getCheckInterval(), TimeUnit.MILLISECONDS);
     }
 
@@ -65,9 +63,8 @@ public class ClusterMonitor implements Runnable, Freezable {
      * Adds a new node for monitoring.
      */
     void add(VespaBackEndSearcher node) {
-        if (isFrozen()) {
+        if (isFrozen())
             throw new IllegalStateException("Can not add new nodes after ClusterMonitor has been frozen.");
-        }
         nodeMonitors.put(node, new NodeMonitor(node));
     }
 
