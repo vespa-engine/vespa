@@ -292,8 +292,9 @@ public class DockerImpl implements Docker {
 
     public ContainerStats getContainerStats(ContainerName containerName) {
         try {
-//            DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
-//            statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
+            // TODO: Uncomment this to get container stats through docker-java when the jersey issues are resolved
+            // DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
+            // statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
 
             Statistics stats = DockerStatsCmd.getContainerStatistics(containerName);
             return new ContainerStatsImpl(stats.getNetworks(), stats.getCpuStats(),

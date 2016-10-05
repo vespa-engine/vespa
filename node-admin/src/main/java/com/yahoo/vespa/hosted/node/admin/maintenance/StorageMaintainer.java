@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -37,11 +38,18 @@ public class StorageMaintainer {
     private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
     private Random random = new Random();
 
+    // When connecting a docker container to a docker network, the interface name is set to eth[interface number],
+    // for ipv4 only container, there will be only 1 interface: the ipv4 interface at eth0. For ipv6 container
+    // there will be 2 interfaces: ipv4 for and ipv6. Because of the order they are connected in, ipv4 will also get
+    // eth0 in that case aswell while ipv6 will be eth1.
+    private static final String ipv4NetworkInterfaceName = "eth0";
+    private static final String ipv6NetworkInterfaceName = "eth1";
+
     public void updateDockerUsage(String hostname, ContainerName containerName, Docker.ContainerStats stats) {
         updateMetricsCacheForContainerIfNeeded(containerName);
 
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
         try {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
             SecretAgentHandler secretAgentHandler = new SecretAgentHandler();
             secretAgentHandler.withDimension("host", hostname);
 
@@ -56,12 +64,12 @@ public class StorageMaintainer {
             // Files.move() fails to move if target already exist, could do target.delete() first, but then it's no longer atomic
             execute(logger, "mv", metricsSharePathTemp.toString(), metricsSharePath.toString());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warning("Failed to get/write docker container stats", e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getRelevantMetricsFromDockerStats(Docker.ContainerStats stats) {
+    static Map<String, Object> getRelevantMetricsFromDockerStats(Docker.ContainerStats stats) {
         Map<String, Object> relevantStats = new HashMap<>();
 
         Map<String, Object> throttledData = (Map<String, Object>) stats.getCpuStats().get("throttling_data");
@@ -73,12 +81,12 @@ public class StorageMaintainer {
         relevantStats.put("node.memory.limit", stats.getMemoryStats().get("limit"));
         relevantStats.put("node.memory.usage", stats.getMemoryStats().get("usage"));
 
-        Map<String, Object> ipv4stats = (Map<String, Object>) stats.getNetworks().get("eth0");
+        Map<String, Object> ipv4stats = (Map<String, Object>) stats.getNetworks().get(ipv4NetworkInterfaceName);
         relevantStats.put("node.network.ipv4.bytes_rcvd", ipv4stats.get("rx_bytes"));
         relevantStats.put("node.network.ipv4.bytes_sent", ipv4stats.get("tx_bytes"));
 
         if (stats.getNetworks().size() == 2) {
-            Map<String, Object> ipv6stats = (Map<String, Object>) stats.getNetworks().get("eth1");
+            Map<String, Object> ipv6stats = (Map<String, Object>) stats.getNetworks().get(ipv6NetworkInterfaceName);
             relevantStats.put("node.network.ipv6.bytes_rcvd", ipv6stats.get("rx_bytes"));
             relevantStats.put("node.network.ipv6.bytes_sent", ipv6stats.get("tx_bytes"));
         }
@@ -201,7 +209,7 @@ public class StorageMaintainer {
             if (! output.isEmpty()) logger.info(output);
             if (! errors.isEmpty()) logger.error(errors);
         } catch (IOException e) {
-            e.printStackTrace();
+            NODE_ADMIN_LOGGER.warning("Failed to execute command " + Arrays.toString(params), e);
         }
     }
 

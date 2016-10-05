@@ -140,7 +140,7 @@ public class DockerOperationsImpl implements DockerOperations {
             writeSecretAgentSchedule(nodeSpec.containerName, dockerStatsCheckSchedulePath, dockerStatsCheckSchedule);
             writeSecretAgentSchedule(nodeSpec.containerName, vespaCheckSchedulePath, vespaCheckSchedule);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
         }
 
         docker.executeInContainer(nodeSpec.containerName, "service", "yamas-agent", "restart");
