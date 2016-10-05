@@ -19,8 +19,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
-import static com.yahoo.document.json.JsonTestHelper.assertJsonEquals;
-import static com.yahoo.document.json.JsonTestHelper.inputJson;
+import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
+import static com.yahoo.test.json.JsonTestHelper.inputJson;
 
 /**
  * @author Vegard Sjonfjell

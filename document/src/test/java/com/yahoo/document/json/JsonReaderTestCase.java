@@ -59,7 +59,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import static com.yahoo.document.json.JsonTestHelper.inputJson;
+import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
