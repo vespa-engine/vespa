@@ -250,7 +250,7 @@ struct Eval {
                 _type = Type::TENSOR;
                 _tensor = value.as_tensor()->engine().to_spec(*value.as_tensor());
                 if (_tensor.type() == "double") {
-                    _number = _tensor.cells().empty() ? 0.0 : _tensor.cells().begin()->second;
+                    _number = _tensor.cells().empty() ? 0.0 : _tensor.cells().begin()->second.value;
                 }
             }
         }
