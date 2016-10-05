@@ -81,7 +81,7 @@ MultiValueMappingBaseBase::getHistogram(AttributeVector::ReaderBase &reader)
 
 
 void
-MultiValueMappingBaseBase::clearPendingCompact(void)
+MultiValueMappingBaseBase::clearPendingCompact()
 {
     if (!_pendingCompact || _pendingCompactVectorVector ||
         !_pendingCompactSingleVector.empty())
@@ -109,7 +109,7 @@ public:
     }
 
     virtual
-    ~MultiValueMappingHeldVector(void)
+    ~MultiValueMappingHeldVector()
     {
         _mvmb.doneHoldVector(_idx);
     }

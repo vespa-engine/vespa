@@ -40,25 +40,25 @@ public:
     }
 
     uint32_t
-    values(void) const
+    values() const
     {
         return _idx >> (NUM_ALT_BITS+NUM_OFFSET_BITS);
     }
 
     uint32_t
-    alternative(void) const
+    alternative() const
     {
         return (_idx >> NUM_OFFSET_BITS) & ((1<<NUM_ALT_BITS) - 1);
     }
 
     // values and alternative combined
     uint32_t
-    vectorIdx(void) const
+    vectorIdx() const
     {
         return _idx >> NUM_OFFSET_BITS;
     }
 
-    uint64_t offset(void) const
+    uint64_t offset() const
     {
         return (_idx & ((1ul << NUM_OFFSET_BITS) - 1));
     }
@@ -66,19 +66,19 @@ public:
     T idx()                const { return _idx; }
 
     static uint32_t
-    maxValues(void)
+    maxValues()
     {
         return (1 << NUM_VALUE_BITS) - 1;
     }
 
     static uint32_t
-    alternativeSize(void)
+    alternativeSize()
     {
         return 1 << NUM_ALT_BITS;
     }
 
     static uint64_t
-    offsetSize(void)
+    offsetSize()
     {
         return 1ul << (NUM_OFFSET_BITS);
     }
@@ -103,26 +103,14 @@ public:
           _dead(0),
           _wantCompact(false),
           _usage()
-    {
-    }
+    { }
 
-    size_t used()                const { return _used; }
-    size_t dead()                const { return _dead; }
-    void incUsed(size_t inc)           { _used += inc; }
-    void incDead(size_t inc)           { _dead += inc; }
-
-    void
-    setWantCompact(void)
-    {
-        _wantCompact = true;
-    }
-
-    bool
-    getWantCompact(void) const
-    {
-        return _wantCompact;
-    }
-
+    size_t used()                  const { return _used; }
+    size_t dead()                  const { return _dead; }
+    void incUsed(uint32_t inc)           { _used += inc; }
+    void incDead(uint32_t inc)           { _dead += inc; }
+    void setWantCompact()                { _wantCompact = true; }
+    bool getWantCompact()          const { return _wantCompact; }
     MemoryUsage & getUsage()             { return _usage; }
     const MemoryUsage & getUsage() const { return _usage; }
 protected:
@@ -194,7 +182,7 @@ public:
     static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
 
     void
-    clearPendingCompact(void);
+    clearPendingCompact();
 
     static size_t
     computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize);
@@ -249,12 +237,12 @@ public:
 
     AddressSpace getAddressSpaceUsage() const;
 
-    size_t getNumKeys(void) const
+    size_t getNumKeys() const
     {
         return _indices.size();
     }
 
-    size_t getCapacityKeys(void) const
+    size_t getCapacityKeys() const
     {
         return _indices.capacity();
     }
@@ -280,13 +268,13 @@ public:
     }
 
     bool
-    isFull(void) const
+    isFull() const
     {
         return _indices.isFull();
     }
 
     static size_t
-    maxValues(void)
+    maxValues()
     {
         return Index::maxValues();
     }
@@ -323,7 +311,7 @@ public:
     }
 
     virtual
-    ~MultiValueMappingFallbackVectorHold(void)
+    ~MultiValueMappingFallbackVectorHold()
     {
     }
 };
