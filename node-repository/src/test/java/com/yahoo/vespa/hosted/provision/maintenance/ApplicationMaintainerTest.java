@@ -143,8 +143,10 @@ public class ApplicationMaintainerTest {
 
         void runApplicationMaintainer() {
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-            apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, wantedNodesApp1, Optional.of("default"), 1));
-            apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, wantedNodesApp2, Optional.of("default"), 1));
+            apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, 
+                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default")), 1));
+            apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
+                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
             MockDeployer deployer = new MockDeployer(provisioner, apps);
             new ApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30)).run();
         }

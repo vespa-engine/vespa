@@ -34,7 +34,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final Yamas yamas;
-    private final Map<String,MetricsConsumer> metricsConsumers;
+    private final Map<String, MetricsConsumer> metricsConsumers;
     private final List<Configserver> configservers = new ArrayList<>();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
@@ -245,4 +245,5 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     public boolean multitenant() {
         return multitenant;
     }
+
 }
