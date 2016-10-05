@@ -28,10 +28,10 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     static final Docker dockerMock = new DockerMock(callOrder);
 
     private Environment environment = new Environment();
+    private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName,
-            nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
-    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100,
-            new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+            nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock, mr);
+    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
 
     @Override

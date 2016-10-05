@@ -50,7 +50,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         StorageMaintainer storageMaintainer = new StorageMaintainer();
 
         final Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
-                orchestrator, new DockerOperationsImpl(docker, environment), storageMaintainer);
+                orchestrator, new DockerOperationsImpl(docker, environment), storageMaintainer, metricReceiver);
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(

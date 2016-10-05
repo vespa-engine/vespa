@@ -57,10 +57,10 @@ public class NodeStateTest {
         when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
         when(environment.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
 
+        MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock, mr);
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
         initialContainerNodeSpec = new ContainerNodeSpec(
                 "host1",
