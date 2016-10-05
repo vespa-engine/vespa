@@ -9,7 +9,8 @@ namespace vespalib {
 namespace tensor {
 
 /**
- * TODO
+ * A dense tensor where all dimensions are indexed.
+ * Tensor cells are stored in an underlying array according to the order of the dimensions.
  */
 class DenseTensor : public Tensor
 {

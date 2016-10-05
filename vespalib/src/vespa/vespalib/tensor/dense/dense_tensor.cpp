@@ -211,10 +211,9 @@ DenseTensor::add(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    checkDimensions(*this, *rhs, "add");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return lhsValue + rhsValue; });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
