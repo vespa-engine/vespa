@@ -223,11 +223,9 @@ DenseTensor::subtract(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    // Note that - *rhsCellItr is passed to the lambda function, that is why we do addition.
-    checkDimensions(*this, *rhs, "subtract");
-    return joinDenseTensorsNegated(*this, *rhs,
-                                   [](double lhsValue, double rhsValue)
-                                   { return lhsValue + rhsValue; });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return lhsValue - rhsValue; });
 }
 
 Tensor::UP

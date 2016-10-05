@@ -234,19 +234,22 @@ template <typename FixtureType>
 void
 testTensorSubtract(FixtureType &f)
 {
-    f.assertSubtract({},{},{}, false);
-    f.assertSubtract({ {{{"x",0}}, -2} },
-                     { {{{"x",0}}, 3} },
-                     { {{{"x",0}}, 5} });
-    f.assertSubtract({ {{{"x",0}}, 8} },
-                     { {{{"x",0}}, 3} },
-                     { {{{"x",0}}, -5} });
-    f.assertSubtract({ {{{"x",0}}, -4}, {{{"x",1}}, -6} },
-                     { {{{"x",0}}, 3}, {{{"x",1}}, 5} },
-                     { {{{"x",0}}, 7}, {{{"x",1}}, 11} });
-    f.assertSubtract({ {{{"x",0},{"y",0}}, -2} },
-                     { {{{"x",0},{"y",0}}, 3} },
-                     { {{{"x",0},{"y",0}}, 5} });
+    TEST_DO(f.assertSubtract({},{},{}, false));
+    TEST_DO(f.assertSubtract({ {{{"x",0}}, -2} },
+                             { {{{"x",0}}, 3} },
+                             { {{{"x",0}}, 5} }));
+    TEST_DO(f.assertSubtract({ {{{"x",0}}, 8} },
+                             { {{{"x",0}}, 3} },
+                             { {{{"x",0}}, -5} }));
+    TEST_DO(f.assertSubtract({ {{{"x",0}}, -4}, {{{"x",1}}, -6} },
+                             { {{{"x",0}}, 3}, {{{"x",1}}, 5} },
+                             { {{{"x",0}}, 7}, {{{"x",1}}, 11} }));
+    TEST_DO(f.assertSubtract({ {{{"x",0},{"y",0}}, -2} },
+                             { {{{"x",0},{"y",0}}, 3} },
+                             { {{{"x",0},{"y",0}}, 5} }));
+    TEST_DO(f.assertSubtract({ {{{"x",0}}, -5} },
+                             { {{{"x",1}}, 3} },
+                             { {{{"x",0}}, 5} }));
 }
 
 template <typename FixtureType>
