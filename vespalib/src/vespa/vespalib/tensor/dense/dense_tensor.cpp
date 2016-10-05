@@ -130,7 +130,7 @@ getDimensions(const DenseTensor &tensor)
     for (const auto &dimMeta : tensor.dimensionsMeta()) {
         dimensions.emplace_back(dimMeta.dimension());
     }
-    return std::move(dimensions);
+    return dimensions;
 }
 
 }
