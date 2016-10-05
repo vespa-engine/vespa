@@ -26,6 +26,7 @@ public class RankingConstant {
     public String getName() { return name; }
     public String getFileName() { return fileName; }
     public String getFileReference() { return fileRef; }
+    public TensorType getTensorType() { return tensorType; }
     public String getType() { return tensorType.toString(); }
 
     public void validate() {
