@@ -161,7 +161,7 @@ ProcessingInContainer = element processing {
 
 
 
-# DOCUMENT API/GATEWAY:
+# DOCUMENT API:
 
 DocumentApi = element document-api {
    ServerBindings &
@@ -194,6 +194,7 @@ NodesOfContainerCluster = element nodes {
       (
         attribute count { xsd:positiveInteger } &
         attribute flavor { xsd:string }? &
+        attribute required { xsd:boolean }? &
         attribute docker-image { xsd:string }?
       )
       |

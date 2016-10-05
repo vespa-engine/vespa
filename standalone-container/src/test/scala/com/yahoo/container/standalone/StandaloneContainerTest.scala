@@ -58,7 +58,7 @@ class StandaloneContainerTest {
       </services>
     StandaloneContainer.withContainerModel(servicesXml) {
       root =>
-        assertNotNull(root.getProducer("container-1/standalone"))
+        assertTrue(root.getConfigProducer("container-1/standalone").isPresent)
     }
   }
 
@@ -72,10 +72,10 @@ class StandaloneContainerTest {
       </jdisc>
 
     StandaloneContainer.withContainerModel(xml) { root =>
-      val container = root.getProducer("jdisc/standalone").asInstanceOf[AbstractService]
+      val container = root.getConfigProducer("jdisc/standalone").get().asInstanceOf[AbstractService]
       println("portCnt: " + container.getPortCount)
       println("numPorts: " + container.getNumPortsAllocated)
-      assertThat(container.getNumPortsAllocated, is(1))
+      assertEquals(1, container.getNumPortsAllocated)
     }
   }
 

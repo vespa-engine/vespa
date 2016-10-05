@@ -65,9 +65,9 @@ SparseTensorBuilder::add_cell(double value)
         makeSortedDimensions();
     }
     _addressBuilder.buildTo(_normalizedAddressBuilder, _sortedDimensions);
-    CompactTensorAddressRef taddress(_normalizedAddressBuilder.getAddressRef());
+    SparseTensorAddressRef taddress(_normalizedAddressBuilder.getAddressRef());
     // Make a persistent copy of sparse tensor address owned by _stash
-    CompactTensorAddressRef address(taddress, _stash);
+    SparseTensorAddressRef address(taddress, _stash);
     _cells[address] = value;
     _addressBuilder.clear();
     _normalizedAddressBuilder.clear();

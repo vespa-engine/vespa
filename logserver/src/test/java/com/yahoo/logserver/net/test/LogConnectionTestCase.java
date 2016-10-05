@@ -32,7 +32,6 @@ import static org.junit.Assert.*;
 public class LogConnectionTestCase {
     private static final Logger log = Logger.getLogger(LogConnectionTestCase.class.getName());
 
-    private static final int PROBING_RANGE_START = 41352;
     private static final Charset charset = Charset.forName("utf-8");
     private static final ByteBuffer bigBuffer;
     private int port;
@@ -48,7 +47,7 @@ public class LogConnectionTestCase {
         prefix = prefix.substring(0, prefix.length() - 1);
         sb.append(prefix);
 
-        // fill up the remainding buffer with rubbish to make
+        // fill up the remaining buffer with rubbish to make
         // it too long
         for (int i = 0; i < (LogConnection.READBUFFER_SIZE * 3); i++) {
             sb.append("a");

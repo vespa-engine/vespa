@@ -47,7 +47,7 @@ public:
     }
 
     void
-    padAddress(CompactTensorAddressRef ref)
+    padAddress(SparseTensorAddressRef ref)
     {
         clear();
         SparseTensorAddressDecoder addr(ref);

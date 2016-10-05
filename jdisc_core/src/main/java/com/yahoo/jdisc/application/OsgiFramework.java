@@ -38,7 +38,7 @@ public interface OsgiFramework {
      *                                     or the caller does not have the appropriate permissions, or the system {@link
      *                                     BundleContext} is no longer valid.
      */
-    public List<Bundle> installBundle(String bundleLocation) throws BundleException;
+    List<Bundle> installBundle(String bundleLocation) throws BundleException;
 
     /**
      * <p>Starts the given {@link Bundle}s. The parameter <tt>privileged</tt> tells the framework whether or not
@@ -53,13 +53,13 @@ public interface OsgiFramework {
      * @throws SecurityException     If the caller does not have the appropriate permissions.
      * @throws IllegalStateException If this bundle has been uninstalled or this bundle tries to change its own state.
      */
-    public void startBundles(List<Bundle> bundles, boolean privileged) throws BundleException;
+    void startBundles(List<Bundle> bundles, boolean privileged) throws BundleException;
 
     /**
      * <p>This method <em>synchronously</em> refreshes all bundles currently loaded. Once this method returns, the
      * class loaders of all bundles will reflect on the current set of loaded bundles.</p>
      */
-    public void refreshPackages();
+    void refreshPackages();
 
     /**
      * <p>Returns the BundleContext of this framework's system bundle. The returned BundleContext can be used by the
@@ -70,7 +70,7 @@ public interface OsgiFramework {
      * @throws SecurityException If the caller does not have the appropriate permissions.
      * @since 2.0
      */
-    public BundleContext bundleContext();
+    BundleContext bundleContext();
 
     /**
      * <p>Returns an iterable collection of all installed bundles. This method returns a list of all bundles installed
@@ -79,7 +79,7 @@ public interface OsgiFramework {
      *
      * @return An iterable collection of Bundle objects, one object per installed bundle.
      */
-    public List<Bundle> bundles();
+    List<Bundle> bundles();
 
     /**
      * <p>This method starts the framework instance. Before this method is called, any call to {@link
@@ -87,7 +87,7 @@ public interface OsgiFramework {
      *
      * @throws BundleException If any error occurs.
      */
-    public void start() throws BundleException;
+    void start() throws BundleException;
 
     /**
      * <p>This method <em>synchronously</em> shuts down the framework. It must be called at the end of a session in
@@ -95,5 +95,6 @@ public interface OsgiFramework {
      *
      * @throws BundleException If any error occurs.
      */
-    public void stop() throws BundleException;
+    void stop() throws BundleException;
+
 }

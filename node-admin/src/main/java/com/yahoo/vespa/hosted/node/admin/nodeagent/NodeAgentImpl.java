@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
@@ -45,7 +46,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
-    private final MaintenanceScheduler maintenanceScheduler;
+    private final StorageMaintainer storageMaintainer;
 
     private final Object monitor = new Object();
 
@@ -53,6 +54,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private long delaysBetweenEachTickMillis;
+    private int numberOfUnhandledException = 0;
 
     private Thread loopThread;
 
@@ -72,12 +74,12 @@ public class NodeAgentImpl implements NodeAgent {
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
-            final MaintenanceScheduler maintenanceScheduler) {
+            final StorageMaintainer storageMaintainer) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
         this.dockerOperations = dockerOperations;
-        this.maintenanceScheduler = maintenanceScheduler;
+        this.storageMaintainer = storageMaintainer;
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName));
     }
@@ -138,7 +140,7 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not restart a node agent.");
         }
         loopThread = new Thread(this::loop);
-        loopThread.setName("loop-" + hostname.toString());
+        loopThread.setName("loop-" + hostname);
         loopThread.start();
     }
 
@@ -232,7 +234,7 @@ public class NodeAgentImpl implements NodeAgent {
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
             // Create a signalWorkToBeDone when download is finished.
             dockerOperations.scheduleDownloadOfImage(nodeSpec, this::signalWorkToBeDone);
-        } else {
+        } else if (imageBeingDownloaded != null) { // Image was downloading, but now its ready
             imageBeingDownloaded = null;
         }
     }
@@ -272,6 +274,7 @@ public class NodeAgentImpl implements NodeAgent {
                 try {
                     tick();
                 } catch (Exception e) {
+                    numberOfUnhandledException++;
                     logger.error("Unhandled exception, ignoring.", e);
                     addDebugMessage(e.getMessage());
                 } catch (Throwable t) {
@@ -303,7 +306,7 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             case active:
-                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
+                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
@@ -326,17 +329,18 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
+                storageMaintainer.updateDiskUsage(nodeSpec.hostname, nodeSpec.containerName);
                 break;
             case inactive:
-                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
+                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             case provisioned:
             case dirty:
-                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
+                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
-                maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);
+                storageMaintainer.deleteContainerStorage(nodeSpec.containerName);
                 updateNodeRepoAndMarkNodeAsReady(nodeSpec);
                 break;
             case parked:
@@ -348,9 +352,21 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    public ContainerNodeSpec getContainerNodeSpec() {
+    public Optional<ContainerNodeSpec> getContainerNodeSpec() {
         synchronized (monitor) {
-            return lastNodeSpec;
+            return Optional.ofNullable(lastNodeSpec);
         }
+    }
+
+    @Override
+    public boolean isDownloadingImage() {
+        return imageBeingDownloaded != null;
+    }
+
+    @Override
+    public int getAndResetNumberOfUnhandledExceptions() {
+        int temp = numberOfUnhandledException;
+        numberOfUnhandledException = 0;
+        return temp;
     }
 }

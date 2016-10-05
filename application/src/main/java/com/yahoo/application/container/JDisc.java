@@ -23,6 +23,7 @@ import com.yahoo.jdisc.test.TestDriver;
 import com.yahoo.processing.handler.ProcessingHandler;
 import com.yahoo.search.handler.SearchHandler;
 
+import java.io.File;
 import java.nio.file.Path;
 
 /**
@@ -97,7 +98,7 @@ public final class JDisc implements AutoCloseable {
      * @param networking enabled or disabled
      * @return a new JDisc instance
      */
-    public static JDisc fromPath(final Path path, Networking networking) {
+    public static JDisc fromPath(Path path, Networking networking) {
         return new JDisc(path, false, networking, new ConfigModelRepo());
     }
 
@@ -105,7 +106,7 @@ public final class JDisc implements AutoCloseable {
      * Create a jDisc instance which is given a config model repo (in which (mock) content clusters
      * can be looked up).
      */
-    public static JDisc fromPath(final Path path, Networking networking, ConfigModelRepo configModelRepo) {
+    public static JDisc fromPath(Path path, Networking networking, ConfigModelRepo configModelRepo) {
         return new JDisc(path, false, networking, configModelRepo);
     }
 

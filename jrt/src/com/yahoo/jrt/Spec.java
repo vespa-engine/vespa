@@ -2,6 +2,8 @@
 package com.yahoo.jrt;
 
 
+import com.yahoo.net.HostName;
+
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
 
@@ -9,9 +11,9 @@ import java.net.InetSocketAddress;
 /**
  * A Spec is a network address used for either listening or
  * connecting.
- **/
-public class Spec
-{
+ */
+public class Spec {
+
     private SocketAddress address;
     private String        host;
     private int           port;
@@ -24,11 +26,11 @@ public class Spec
      *
      * @param spec input string to be parsed
      * @see #malformed
-     **/
+     */
     public Spec(String spec) {
         if (spec.startsWith("tcp/")) {
             int sep = spec.indexOf(':');
-            String portStr = null;
+            String portStr;
             if (sep == -1) {
                 portStr = spec.substring(4);
             } else {
@@ -52,7 +54,7 @@ public class Spec
      *
      * @param host host name
      * @param port port number
-     **/
+     */
     public Spec(String host, int port) {
         this.host = host;
         this.port = port;
@@ -62,7 +64,7 @@ public class Spec
      * Create a Spec from a port number.
      *
      * @param port port number
-     **/
+     */
     public Spec(int port) {
         this.port = port;
     }
@@ -71,7 +73,7 @@ public class Spec
      * Obtain the host name of this address
      *
      * @return host name
-     **/
+     */
     public String host() {
         return host;
     }
@@ -80,7 +82,7 @@ public class Spec
      * Obtain the port number if this address
      *
      * @return port number
-     **/
+     */
     public int port() {
         return port;
     }
@@ -90,7 +92,7 @@ public class Spec
      * you whether that string was malformed.
      *
      * @return true if this address is malformed
-     **/
+     */
     public boolean malformed() {
         return malformed;
     }
@@ -100,7 +102,7 @@ public class Spec
      * malformed, this method will return null.
      *
      * @return socket address
-     **/
+     */
     SocketAddress address() {
         if (malformed) {
             return null;
@@ -114,13 +116,13 @@ public class Spec
         }
         return address;
     }
-
+    
     /**
      * Obtain a string representation of this address. The return
      * value from this method may be used to create a new Spec.
      *
      * @return string representation of this address
-     **/
+     */
     public String toString() {
         if (malformed) {
             return "MALFORMED";
@@ -130,4 +132,5 @@ public class Spec
         }
         return "tcp/" + host + ":" + port;
     }
+
 }

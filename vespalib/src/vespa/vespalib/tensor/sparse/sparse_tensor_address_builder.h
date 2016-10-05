@@ -4,13 +4,11 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
-#include "compact_tensor_address_ref.h"
+#include "sparse_tensor_address_ref.h"
 
 namespace vespalib {
 namespace tensor {
 
-
-class CompactTensorAddress;
 
 /**
  * A writer to serialize tensor addresses into a compact representation.
@@ -38,8 +36,8 @@ public:
     void add(vespalib::stringref label) { append(label); }
     void addUndefined() { _address.emplace_back('\0'); }
     void clear() { _address.clear(); }
-    CompactTensorAddressRef getAddressRef() const {
-        return CompactTensorAddressRef(&_address[0], _address.size());
+    SparseTensorAddressRef getAddressRef() const {
+        return SparseTensorAddressRef(&_address[0], _address.size());
     }
     bool empty() const { return _address.empty(); }
 };

@@ -17,13 +17,17 @@ public enum Stemming {
      /** No stemming */
     NONE("none"),
 
-    /** Stem as much as possible */
+    /** @deprecated incorrectly don't stem at all */
+    @Deprecated
     ALL("all"),
 
     /** select shortest possible stem */
     SHORTEST("shortest"),
 
-    /** index (and query?) multiple stems */
+    /** select the "best" stem alternative */
+    BEST("best"),
+
+    /** index multiple stems */
     MULTIPLE("multiple");
 
     private static Logger log=Logger.getLogger(Stemming.class.getName());
@@ -36,6 +40,7 @@ public enum Stemming {
      *
      * @throws IllegalArgumentException if there is no stemming type with the given name
      */
+    @SuppressWarnings("deprecation")
     public static Stemming get(String stemmingName) {
         try {
             Stemming stemming = Stemming.valueOf(stemmingName.toUpperCase());
@@ -49,7 +54,7 @@ public enum Stemming {
         }
     }
 
-    private Stemming(String name) {
+    Stemming(String name) {
         this.name = name;
     }
 
@@ -59,14 +64,16 @@ public enum Stemming {
         return "stemming " + name;
     }
 
+    @SuppressWarnings("deprecation")
     public StemMode toStemMode() {
-        if (this == Stemming.SHORTEST) {
-            return StemMode.SHORTEST;
+        switch(this) {
+            case SHORTEST: return StemMode.SHORTEST;
+            case MULTIPLE: return StemMode.ALL;
+            case BEST : return StemMode.BEST;
+            case NONE: return StemMode.NONE;
+            case ALL: return StemMode.SHORTEST; // Intentional; preserve historic behavior
+            default: throw new IllegalStateException("Inconvertible stem mode " + this);
         }
-        if (this == Stemming.MULTIPLE) {
-            return StemMode.ALL;
-        }
-        return StemMode.NONE;
     }
 
 }

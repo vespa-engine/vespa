@@ -43,12 +43,4 @@ public class FileDBRegistry implements FileRegistry {
         return entries;
     }
 
-    @Override
-    public Set<String> allRelativePaths() {
-        Set<String> ret = new HashSet<>();
-        for (Entry entry : entries) {
-            ret.add(entry.relativePath);
-        }
-        return ret;
-    }
 }

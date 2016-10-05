@@ -98,22 +98,6 @@ mapAddress(const TensorAddress &address)
 
 template <class TensorT>
 void
-SparseTensorMapper<TensorT>::mapAddress(const TensorAddress &address)
-{
-    _addressBuilder.clear();
-    TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    for (const auto &dimension : _builder.dimensions()) {
-        if (addressIterator.skipToDimension(dimension)) {
-            _addressBuilder.add(dimension, addressIterator.label());
-            addressIterator.next();
-        } else {
-            // output dimension not in input
-        }
-    }
-}
-
-template <class TensorT>
-void
 SparseTensorMapper<TensorT>::visit(const TensorAddress &address, double value)
 {
     mapAddress(address);

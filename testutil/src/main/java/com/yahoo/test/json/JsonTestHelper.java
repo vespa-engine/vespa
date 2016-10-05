@@ -10,6 +10,7 @@ import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
  * @author Vegard Sjonfjell
  */
 public class JsonTestHelper {
+
     /**
      * Convenience method to input JSON without escaping double quotes and newlines
      * Each parameter represents a line of JSON encoded data

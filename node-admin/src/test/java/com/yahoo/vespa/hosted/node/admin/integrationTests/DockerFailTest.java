@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
@@ -39,7 +41,7 @@ public class DockerFailTest {
     @Before
     public void before() throws InterruptedException, UnknownHostException {
         callOrder = new CallOrderVerifier();
-        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock(callOrder);
+        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
         OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
         NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
         dockerMock = new DockerMock(callOrder);
@@ -50,7 +52,8 @@ public class DockerFailTest {
 
         Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation));
 
         initialContainerNodeSpec = new ContainerNodeSpec(
                 "hostName",

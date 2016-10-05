@@ -4,6 +4,7 @@ package com.yahoo.container.standalone
 import com.yahoo.config.model.test.MockRoot
 import com.yahoo.config.{ConfigBuilder, ConfigInstance}
 import com.yahoo.container.di.ConfigKeyT
+import com.yahoo.vespa.model.VespaModel
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 import com.yahoo.vespa.config.ConfigKey
@@ -14,7 +15,7 @@ import StandaloneSubscriberFactory._
  * @author tonytv
  * @author gjoranv
  */
-class StandaloneSubscriberFactory(root: MockRoot) extends SubscriberFactory {
+class StandaloneSubscriberFactory(root: VespaModel) extends SubscriberFactory {
   class StandaloneSubscriber(configKeys: Set[ConfigKeyT]) extends Subscriber {
     override def configChanged =
       generation == 0

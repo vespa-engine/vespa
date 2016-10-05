@@ -4,11 +4,11 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <algorithm>
 
 using namespace vespalib::tensor;
 using vespalib::IllegalArgumentException;
 using Builder = DenseTensorBuilder;
+using vespalib::eval::TensorSpec;
 
 void
 assertTensor(const DenseTensor::DimensionsMeta &expDims,
@@ -20,33 +20,71 @@ assertTensor(const DenseTensor::DimensionsMeta &expDims,
     EXPECT_EQUAL(expCells, realTensor.cells());
 }
 
+void
+assertTensorSpec(const TensorSpec &expSpec, const Tensor &tensor)
+{
+    TensorSpec actSpec = tensor.toSpec();
+    EXPECT_EQUAL(expSpec, actSpec);
+}
+
 struct Fixture
 {
     Builder builder;
 };
 
+Tensor::UP
+build1DTensor(Builder &builder)
+{
+    Builder::Dimension dimX = builder.defineDimension("x", 3);
+    builder.addLabel(dimX, 0).addCell(10).
+            addLabel(dimX, 1).addCell(11).
+            addLabel(dimX, 2).addCell(12);
+    return builder.build();
+}
+
 TEST_F("require that 1d tensor can be constructed", Fixture)
 {
-    Builder::Dimension dimX = f.builder.defineDimension("x", 3);
-    f.builder.addLabel(dimX, 0).addCell(10).
-              addLabel(dimX, 1).addCell(11).
-              addLabel(dimX, 2).addCell(12);
-    assertTensor({{"x",3}}, {10,11,12},
-            *f.builder.build());
+    assertTensor({{"x",3}}, {10,11,12}, *build1DTensor(f.builder));
+}
+
+TEST_F("require that 1d tensor can be converted to tensor spec", Fixture)
+{
+    assertTensorSpec(TensorSpec("tensor(x[3])").
+            add({{"x", 0}}, 10).
+            add({{"x", 1}}, 11).
+            add({{"x", 2}}, 12),
+                     *build1DTensor(f.builder));
+}
+
+Tensor::UP
+build2DTensor(Builder &builder)
+{
+    Builder::Dimension dimX = builder.defineDimension("x", 3);
+    Builder::Dimension dimY = builder.defineDimension("y", 2);
+    builder.addLabel(dimX, 0).addLabel(dimY, 0).addCell(10).
+            addLabel(dimX, 0).addLabel(dimY, 1).addCell(11).
+            addLabel(dimX, 1).addLabel(dimY, 0).addCell(12).
+            addLabel(dimX, 1).addLabel(dimY, 1).addCell(13).
+            addLabel(dimX, 2).addLabel(dimY, 0).addCell(14).
+            addLabel(dimX, 2).addLabel(dimY, 1).addCell(15);
+    return builder.build();
 }
 
 TEST_F("require that 2d tensor can be constructed", Fixture)
 {
-    Builder::Dimension dimX = f.builder.defineDimension("x", 3);
-    Builder::Dimension dimY = f.builder.defineDimension("y", 2);
-    f.builder.addLabel(dimX, 0).addLabel(dimY, 0).addCell(10).
-              addLabel(dimX, 0).addLabel(dimY, 1).addCell(11).
-              addLabel(dimX, 1).addLabel(dimY, 0).addCell(12).
-              addLabel(dimX, 1).addLabel(dimY, 1).addCell(13).
-              addLabel(dimX, 2).addLabel(dimY, 0).addCell(14).
-              addLabel(dimX, 2).addLabel(dimY, 1).addCell(15);
-    assertTensor({{"x",3},{"y",2}}, {10,11,12,13,14,15},
-            *f.builder.build());
+    assertTensor({{"x",3},{"y",2}}, {10,11,12,13,14,15}, *build2DTensor(f.builder));
+}
+
+TEST_F("require that 2d tensor can be converted to tensor spec", Fixture)
+{
+    assertTensorSpec(TensorSpec("tensor(x[3],y[2])").
+            add({{"x", 0},{"y", 0}}, 10).
+            add({{"x", 0},{"y", 1}}, 11).
+            add({{"x", 1},{"y", 0}}, 12).
+            add({{"x", 1},{"y", 1}}, 13).
+            add({{"x", 2},{"y", 0}}, 14).
+            add({{"x", 2},{"y", 1}}, 15),
+                     *build2DTensor(f.builder));
 }
 
 TEST_F("require that 3d tensor can be constructed", Fixture)
@@ -189,7 +227,6 @@ TEST_F("require that already specified label throws exception", Fixture)
             "Label for dimension 'x' is already specified with value '0'");
 }
 
-
 TEST_F("require that dimensions are sorted", Fixture)
 {
     Builder::Dimension dimY = f.builder.defineDimension("y", 3);
@@ -204,5 +241,10 @@ TEST_F("require that dimensions are sorted", Fixture)
                  denseTensor);
     EXPECT_EQUAL("tensor(x[5],y[3])", denseTensor.getType().to_spec());
 }
+
+
+
+
+
 
 TEST_MAIN() { TEST_RUN_ALL(); }

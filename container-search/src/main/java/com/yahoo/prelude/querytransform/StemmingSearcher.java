@@ -108,11 +108,8 @@ public class StemmingSearcher extends Searcher {
         return reverseConnectivity;
     }
 
-    private Item scan(Item item,
-            boolean isCJK,
-            Language l,
-            IndexFacts.Session indexFacts,
-            Map<Item, TaggableItem> reverseConnectivity) {
+    private Item scan(Item item, boolean isCJK, Language l, IndexFacts.Session indexFacts, 
+                      Map<Item, TaggableItem> reverseConnectivity) {
         if (item == null) {
             return null;
         } else if (item instanceof BlockItem) {
@@ -153,9 +150,8 @@ public class StemmingSearcher extends Searcher {
             if (i instanceof TermItem) {
                 return ((TermItem) i).getOrigin(); // this should always be the case
             } else {
-                getLogger().log(LogLevel.WARNING,
-                        "Weird, BlockItem '" + b + "' was a composite containing " + i.getClass().getName()
-                                + ", expected TermItem.");
+                getLogger().log(LogLevel.WARNING, "Weird, BlockItem '" + b + "' was a composite containing " + 
+                                                  i.getClass().getName() + ", expected TermItem.");
             }
         }
         return null;
@@ -217,8 +213,8 @@ public class StemmingSearcher extends Searcher {
         setConnectivity(current, reverseConnectivity, replacement);
     }
 
-    private void andSegmentConnectivity(BlockItem current,
-            Map<Item, TaggableItem> reverseConnectivity, CompositeItem composite) {
+    private void andSegmentConnectivity(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, 
+                                        CompositeItem composite) {
         // if the original has connectivity to something, add to last word
         Connectivity connectivity = getConnectivity(current);
         if (connectivity != null) {
@@ -269,8 +265,7 @@ public class StemmingSearcher extends Searcher {
     private TaggableItem singleWordSegment(BlockItem current,
                                            StemList segment,
                                            Index index,
-                                           Substring substring)
-    {
+                                           Substring substring) {
         String indexName = current.getIndexName();
         if (index.getLiteralBoost() || index.getStemMode() == StemMode.ALL) {
             // Yes, this will create a new WordAlternativesItem even if stemmed
@@ -301,8 +296,7 @@ public class StemmingSearcher extends Searcher {
     }
 
     private WordItem singleStemSegment(Item blockAsItem, String stem, String indexName,
-                                       Substring substring)
-    {
+                                       Substring substring) {
         WordItem replacement = new WordItem(stem, indexName, true, substring);
         replacement.setStemmed(true);
         copyAttributes(blockAsItem, replacement);
@@ -311,8 +305,7 @@ public class StemmingSearcher extends Searcher {
 
     private void setConnectivity(BlockItem current,
                                  Map<Item, TaggableItem> reverseConnectivity,
-                                 Item replacement)
-    {
+                                 Item replacement) {
         if (reverseConnectivity != null && !reverseConnectivity.isEmpty()) {
             // This Map<Item, TaggableItem>.get(BlockItem) is technically wrong, but the Item API ensures its correctness
             TaggableItem connectedTo = reverseConnectivity.get(current);
@@ -425,4 +418,5 @@ public class StemmingSearcher extends Searcher {
         }
 
     }
+
 }

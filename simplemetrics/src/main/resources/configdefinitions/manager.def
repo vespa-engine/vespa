@@ -2,5 +2,5 @@
 version=1
 namespace=metrics
 
-reportPeriodSeconds int default=300
+reportPeriodSeconds int default=60
 pointsToKeepPerMetric int default=100

@@ -17,6 +17,7 @@ import java.nio.file.NoSuchFileException;
  * @since 5.22
  */
 public class IncludeProcessorTest {
+
     @Test
     public void testInclude() throws IOException, SAXException, XMLStreamException, ParserConfigurationException, TransformerException {
         File app = new File("src/test/resources/multienvapp");
@@ -68,7 +69,7 @@ public class IncludeProcessorTest {
                 "</jdisc></services>";
 
         Document doc = (new IncludeProcessor(app)).process(docBuilder.parse(Xml.getServices(app)));
-        System.out.println(Xml.documentAsString(doc));
+        // System.out.println(Xml.documentAsString(doc));
         TestBase.assertDocument(expected, doc);
     }
 
@@ -78,4 +79,5 @@ public class IncludeProcessorTest {
         DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
         (new IncludeProcessor(app)).process(docBuilder.parse(Xml.getServices(app)));
     }
+
 }

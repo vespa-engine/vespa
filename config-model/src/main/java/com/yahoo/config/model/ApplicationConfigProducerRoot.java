@@ -265,6 +265,7 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
+        if (admin == null) return null; // no admin if standalone
         return admin.getFileDistributionConfigProducer();
     }
 

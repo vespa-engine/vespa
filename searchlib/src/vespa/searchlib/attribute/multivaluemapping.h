@@ -34,58 +34,25 @@ public:
         : _idx(0)
     {
         _idx += static_cast<T>(values_) << (NUM_ALT_BITS+NUM_OFFSET_BITS);
-        _idx += static_cast<T>((alternative_) &
-                               ((1<<NUM_ALT_BITS) - 1)) << NUM_OFFSET_BITS;
+        _idx += static_cast<T>((alternative_) & ((1<<NUM_ALT_BITS) - 1)) << NUM_OFFSET_BITS;
         _idx += offset_;
     }
 
-    uint32_t
-    values(void) const
-    {
-        return _idx >> (NUM_ALT_BITS+NUM_OFFSET_BITS);
-    }
-
-    uint32_t
-    alternative(void) const
-    {
-        return (_idx >> NUM_OFFSET_BITS) & ((1<<NUM_ALT_BITS) - 1);
-    }
+    uint32_t      values() const { return _idx >> (NUM_ALT_BITS+NUM_OFFSET_BITS); }
+    uint32_t alternative() const { return (_idx >> NUM_OFFSET_BITS) & ((1<<NUM_ALT_BITS) - 1); }
 
     // values and alternative combined
-    uint32_t
-    vectorIdx(void) const
-    {
-        return _idx >> NUM_OFFSET_BITS;
-    }
+    uint32_t   vectorIdx() const { return _idx >> NUM_OFFSET_BITS; }
+    uint64_t      offset() const { return (_idx & ((1ul << NUM_OFFSET_BITS) - 1)); }
+    T                idx() const { return _idx; }
 
-    uint32_t offset(void) const
-    {
-        return (_idx & ((1u << NUM_OFFSET_BITS) - 1));
-    }
-
-    T idx()                const { return _idx; }
-
-    static uint32_t
-    maxValues(void)
-    {
-        return (1 << NUM_VALUE_BITS) - 1;
-    }
-
-    static uint32_t
-    alternativeSize(void)
-    {
-        return 1 << NUM_ALT_BITS;
-    }
-
-    static T
-    offsetSize(void)
-    {
-        return 1 << (NUM_OFFSET_BITS);
-    }
+    static uint32_t       maxValues() { return (1 << NUM_VALUE_BITS) - 1; }
+    static uint32_t alternativeSize() { return 1 << NUM_ALT_BITS; }
+    static uint64_t      offsetSize() { return 1ul << (NUM_OFFSET_BITS); }
 };
 
 typedef Index<uint32_t, 27,4,1> Index32;
-typedef Index<uint64_t, 31,10,1> Index64;
+typedef Index<uint64_t, 32,12,1> Index64;
 
 template <typename T, typename I>
 struct MVMTemplateArg {
@@ -103,33 +70,21 @@ public:
           _dead(0),
           _wantCompact(false),
           _usage()
-    {
-    }
+    { }
 
-    uint32_t used()                const { return _used; }
-    uint32_t dead()                const { return _dead; }
+    size_t used()                  const { return _used; }
+    size_t dead()                  const { return _dead; }
     void incUsed(uint32_t inc)           { _used += inc; }
     void incDead(uint32_t inc)           { _dead += inc; }
-
-    void
-    setWantCompact(void)
-    {
-        _wantCompact = true;
-    }
-
-    bool
-    getWantCompact(void) const
-    {
-        return _wantCompact;
-    }
-
+    void setWantCompact()                { _wantCompact = true; }
+    bool getWantCompact()          const { return _wantCompact; }
     MemoryUsage & getUsage()             { return _usage; }
     const MemoryUsage & getUsage() const { return _usage; }
 protected:
     void reset() { _used = 0; _dead = 0; }
 private:
-    uint32_t _used;
-    uint32_t _dead;
+    size_t _used;
+    size_t _dead;
     bool _wantCompact;
     MemoryUsage _usage;
 };
@@ -141,13 +96,13 @@ public:
     class Histogram
     {
     private:
-        typedef vespalib::hash_map<uint32_t, uint32_t> HistogramM;
+        typedef vespalib::hash_map<uint32_t, size_t> HistogramM;
     public:
         typedef HistogramM::const_iterator const_iterator;
-        Histogram(size_t maxValues);
-        uint32_t & operator [] (uint32_t i) { return _histogram[std::min(i, _maxValues)]; }
+        Histogram(uint32_t maxValues);
+        size_t & operator [] (uint32_t i) { return _histogram[std::min(i, _maxValues)]; }
         const_iterator begin() const { return _histogram.begin(); }
-        const_iterator end() const { return _histogram.end(); }
+        const_iterator   end() const { return _histogram.end(); }
     private:
         uint32_t   _maxValues;
         HistogramM _histogram;
@@ -164,7 +119,7 @@ protected:
     };
 
     typedef AttributeVector::generation_t generation_t;
-    typedef vespalib::Array<VectorStatus> StatusVector;
+    typedef std::vector<VectorStatus> StatusVector;
     typedef vespalib::GenerationHolder GenerationHolder;
 
     // active -> hold
@@ -177,7 +132,7 @@ protected:
     std::set<uint32_t> _pendingCompactSingleVector;
     bool _pendingCompactVectorVector;
     bool _pendingCompact;
-    Histogram getEmptyHistogram(size_t maxValues) const;
+    Histogram getEmptyHistogram(uint32_t maxValues) const;
     virtual const MemoryUsage & getSingleVectorUsage(size_t i) const = 0;
     virtual const MemoryUsage & getVectorVectorUsage(size_t i) const = 0;
     virtual size_t getSingleVectorAddressSpaceUsed(size_t i) const = 0;
@@ -192,22 +147,15 @@ public:
     Histogram getHistogram(AttributeVector::ReaderBase & reader) const;
     size_t getTotalValueCnt() const { return _totalValueCnt; }
     static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
+    void clearPendingCompact();
 
-    void
-    clearPendingCompact(void);
+    static size_t computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize);
 
-    static size_t
-    computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize);
-
-    void
-    transferHoldLists(generation_t generation)
-    {
+    void transferHoldLists(generation_t generation) {
         _genHolder.transferHoldLists(generation);
     }
 
-    void
-    trimHoldLists(generation_t firstUsed)
-    {
+    void trimHoldLists(generation_t firstUsed) {
         _genHolder.trimHoldLists(firstUsed);
     }
 };
@@ -238,71 +186,36 @@ private:
 public:
     using IndexCopyVector = vespalib::Array<Index, vespalib::DefaultAlloc>;
 
-    void
-    doneHoldVector(Index idx);
+    void doneHoldVector(Index idx);
 
-    virtual Histogram getEmptyHistogram() const override {
+    Histogram getEmptyHistogram() const override {
         return MultiValueMappingBaseBase::getEmptyHistogram(Index::maxValues());
     }
 
-    virtual MemoryUsage getMemoryUsage() const override;
-
+    MemoryUsage getMemoryUsage() const override;
     AddressSpace getAddressSpaceUsage() const;
+    size_t getNumKeys() const { return _indices.size(); }
+    size_t getCapacityKeys() const { return _indices.capacity(); }
 
-    size_t getNumKeys(void) const
-    {
-        return _indices.size();
-    }
-
-    size_t getCapacityKeys(void) const
-    {
-        return _indices.capacity();
-    }
-
-    IndexCopyVector
-    getIndicesCopy() const
-    {
+    IndexCopyVector getIndicesCopy() const {
         uint32_t size = _committedDocIdLimit;
         assert(size <= _indices.size());
-        return std::move(IndexCopyVector(&_indices[0], &_indices[0] + size));
+        return IndexCopyVector(&_indices[0], &_indices[0] + size);
     }
 
-    bool
-    hasKey(uint32_t key) const
-    {
-        return key < _indices.size();
-    }
-
-    bool
-    hasReaderKey(uint32_t key) const
-    {
+    bool hasReaderKey(uint32_t key) const {
         return key < _committedDocIdLimit && key < _indices.size();
     }
 
-    bool
-    isFull(void) const
-    {
-        return _indices.isFull();
-    }
-
-    static size_t
-    maxValues(void)
-    {
-        return Index::maxValues();
-    }
-
-    void
-    addKey(uint32_t & key);
-
-    void
-    shrinkKeys(uint32_t newSize);
-
-    void
-    clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
-
+    bool hasKey(uint32_t key) const { return key < _indices.size(); }
+    bool isFull() const { return _indices.isFull(); }
+    void addKey(uint32_t & key);
+    void shrinkKeys(uint32_t newSize);
+    void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
     void holdElem(Index idx, size_t size);
-
     virtual void doneHoldElem(Index idx) = 0;
+
+    static size_t maxValues() { return Index::maxValues(); }
 };
 
 extern template class MultiValueMappingBase<multivalue::Index32>;
@@ -314,18 +227,14 @@ class MultiValueMappingFallbackVectorHold
 {
     V _hold;
 public:
-    MultiValueMappingFallbackVectorHold(size_t size,
-                                        V &rhs)
+    MultiValueMappingFallbackVectorHold(size_t size, V &rhs)
         : vespalib::GenerationHeldBase(size),
           _hold()
     {
         _hold.swap(rhs);
     }
 
-    virtual
-    ~MultiValueMappingFallbackVectorHold(void)
-    {
-    }
+    virtual ~MultiValueMappingFallbackVectorHold() { }
 };
 
 
@@ -337,14 +246,14 @@ public:
     typedef vespalib::Array<VT, vespalib::DefaultAlloc> VectorBase;
     typedef MultiValueMappingFallbackVectorHold<VectorBase> FallBackHold;
     MultiValueMappingVector();
-    MultiValueMappingVector(uint32_t n);
+    MultiValueMappingVector(size_t n);
     MultiValueMappingVector(const MultiValueMappingVector & rhs);
     MultiValueMappingVector &
     operator=(const MultiValueMappingVector & rhs);
 
     ~MultiValueMappingVector();
-    void reset(uint32_t n);
-    uint32_t remaining() const { return this->size() - used(); }
+    void reset(size_t n);
+    size_t remaining() const { return this->size() - used(); }
     void swapVector(MultiValueMappingVector & rhs);
 
     vespalib::GenerationHeldBase::UP
@@ -391,7 +300,7 @@ private:
     virtual const MemoryUsage & getVectorVectorUsage(size_t i) const override;
     virtual size_t getSingleVectorAddressSpaceUsed(size_t i) const override;
     virtual size_t getVectorVectorAddressSpaceUsed(size_t i) const override;
-    void initVectors(uint32_t initSize);
+    void initVectors(size_t initSize);
     void initVectors(const Histogram & initCapacity);
     bool getValidIndex(Index & newIdx, uint32_t numValues);
 
@@ -420,7 +329,7 @@ private:
         vec.incDead(numValues);
         vec.getUsage().incDeadBytes(numValues * sizeof(T));
     }
-    void swapVector(SingleVector & vec, uint32_t initSize) {
+    void swapVector(SingleVector & vec, size_t initSize) {
         SingleVector(initSize).swapVector(vec);
         vec.getUsage().setAllocatedBytes(initSize * sizeof(T));
     }
@@ -433,7 +342,7 @@ private:
     void incDead(VectorVector & vec) {
         vec.incDead(1);
     }
-    void swapVector(VectorVector & vec, uint32_t initSize) {
+    void swapVector(VectorVector & vec, size_t initSize) {
         VectorVector(initSize).swapVector(vec);
         vec.getUsage().setAllocatedBytes(initSize * sizeof(VectorBase));
     }
@@ -443,13 +352,13 @@ public:
     MultiValueMappingT(uint32_t &committedDocIdLimit,
                        const GrowStrategy & gs = GrowStrategy());
     MultiValueMappingT(uint32_t &committedDocIdLimit,
-                       uint32_t numKeys, uint32_t initSize = 0,
+                       uint32_t numKeys, size_t initSize = 0,
                        const GrowStrategy & gs = GrowStrategy());
     MultiValueMappingT(uint32_t &committedDocIdLimit,
                        uint32_t numKeys, const Histogram & initCapacity,
                        const GrowStrategy & gs = GrowStrategy());
     ~MultiValueMappingT();
-    void reset(uint32_t numKeys, uint32_t initSize = 0);
+    void reset(uint32_t numKeys, size_t initSize = 0);
     void reset(uint32_t numKeys, const Histogram & initCapacity);
     uint32_t get(uint32_t key, std::vector<T> & buffer) const;
     template <typename BufferType>
@@ -498,11 +407,6 @@ public:
                bool hasWeights);
 
     virtual void doneHoldElem(Index idx) override;
-
-#ifdef DEBUG_MULTIVALUE_MAPPING
-    void printContent() const;
-    void printVectorVectors() const;
-#endif
 };
 
 //-----------------------------------------------------------------------------
@@ -521,7 +425,7 @@ MultiValueMappingVector<VT>::~MultiValueMappingVector()
 }
 
 template <typename VT>
-MultiValueMappingVector<VT>::MultiValueMappingVector(uint32_t n)
+MultiValueMappingVector<VT>::MultiValueMappingVector(size_t n)
     : VectorBase(),
       MultiValueMappingVectorBaseBase()
 {
@@ -549,7 +453,7 @@ MultiValueMappingVector<VT>::operator=(const MultiValueMappingVector & rhs)
 
 template <typename VT>
 void
-MultiValueMappingVector<VT>::reset(uint32_t n)
+MultiValueMappingVector<VT>::reset(size_t n)
 {
     this->resize(n);
     MultiValueMappingVectorBaseBase::reset();
@@ -586,9 +490,9 @@ MultiValueMappingVector<VT>::fallbackResize(uint64_t newSize)
 
 template <typename T, typename I>
 void
-MultiValueMappingT<T, I>::initVectors(uint32_t initSize)
+MultiValueMappingT<T, I>::initVectors(size_t initSize)
 {
-    for (uint32_t i = 0; i < this->_singleVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < this->_singleVectorsStatus.size(); ++i) {
         if (i % Index::alternativeSize() == 0) {
             swapVector(_singleVectors[i], initSize);
             this->_singleVectorsStatus[i] = MultiValueMappingBaseBase::ACTIVE;
@@ -597,7 +501,7 @@ MultiValueMappingT<T, I>::initVectors(uint32_t initSize)
             this->_singleVectorsStatus[i] = MultiValueMappingBaseBase::FREE;
         }
     }
-    for (uint32_t i = 0; i < this->_vectorVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < this->_vectorVectorsStatus.size(); ++i) {
         if (i % Index::alternativeSize() == 0) {
             swapVector(_vectorVectors[i], initSize);
             this->_vectorVectorsStatus[i] = MultiValueMappingBaseBase::ACTIVE;
@@ -612,23 +516,17 @@ template <typename T, typename I>
 void
 MultiValueMappingT<T, I>::initVectors(const Histogram &initCapacity)
 {
-    for (typename Histogram::const_iterator it(initCapacity.begin()), mt(initCapacity.end()); it != mt; ++it) {
-        uint32_t valueCnt = it->first;
-        uint64_t numEntries = it->second;
+    for (const auto & entry : initCapacity) {
+        uint32_t valueCnt = entry.first;
+        uint64_t numEntries = entry.second;
         if (valueCnt != 0 && valueCnt < Index::maxValues()) {
             uint64_t maxSize = Index::offsetSize() * valueCnt;
-            if (maxSize > std::numeric_limits<uint32_t>::max()) {
-                maxSize = std::numeric_limits<uint32_t>::max();
-                maxSize -= (maxSize % valueCnt);
-            }
             if (numEntries * valueCnt > maxSize) {
                 failNewSize(numEntries * valueCnt, maxSize);
             }
             swapVector(_singleVectors[valueCnt * 2], valueCnt * numEntries);
         } else if (valueCnt == Index::maxValues()) {
             uint64_t maxSize = Index::offsetSize();
-            if (maxSize > std::numeric_limits<uint32_t>::max())
-                maxSize = std::numeric_limits<uint32_t>::max();
             if (numEntries > maxSize) {
                 failNewSize(numEntries, maxSize);
             }
@@ -651,7 +549,7 @@ MultiValueMappingT<T, I>::getValidIndex(Index &newIdx, uint32_t numValues)
             return false;
         }
 
-        uint32_t used = active.first->used();
+        size_t used = active.first->used();
         assert(used % numValues == 0);
         incUsed(*active.first, numValues);
         newIdx = Index(active.second.values(), active.second.alternative(),
@@ -664,7 +562,7 @@ MultiValueMappingT<T, I>::getValidIndex(Index &newIdx, uint32_t numValues)
             return false;
         }
 
-        uint32_t used = active.first->used();
+        size_t used = active.first->used();
         incUsed(*active.first, numValues);
         (*active.first)[used].resize(numValues);
         newIdx = Index(active.second.values(), active.second.alternative(),
@@ -687,9 +585,6 @@ compactSingleVector(SingleVectorPtr &activeVector,
     SingleVectorPtr freeVector =
         getSingleVector(valueCnt, MultiValueMappingBaseBase::FREE);
     if (freeVector.first == NULL) {
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(warning, "did not find any free '%u-vector'", valueCnt);
-#endif
         uint64_t dead = activeVector.first->dead();
         uint64_t fallbackNewSize = newSize + dead * valueCnt + 1024 * valueCnt;
         if (fallbackNewSize > maxSize)
@@ -709,21 +604,11 @@ compactSingleVector(SingleVectorPtr &activeVector,
         return;
     }
     swapVector(*freeVector.first, newSize);
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info,
-        "compacting from '%u-vector(%u)' "
-        "(s = %u, u = %u, d = %u) to "
-        "'%u-vector(%u)' (s = %u)",
-        valueCnt, activeVector.second.alternative(),
-        activeVector.first->size(),
-        activeVector.first->used() , activeVector.first->dead(),
-        valueCnt, freeVector.second.alternative(), newSize);
-#endif
     uint32_t activeVectorIdx = activeVector.second.vectorIdx();
-    for (uint32_t i = 0; i < this->_indices.size(); ++i) {
+    for (size_t i = 0; i < this->_indices.size(); ++i) {
         Index & idx = this->_indices[i];
         if (activeVectorIdx == idx.vectorIdx()) {
-            for (uint32_t j = idx.offset() * idx.values(),
+            for (uint64_t j = idx.offset() * idx.values(),
                           k = freeVector.first->used();
                  j < (idx.offset() + 1) * idx.values() &&
                  k < freeVector.first->used() + valueCnt; ++j, ++k)
@@ -759,9 +644,6 @@ compactVectorVector(VectorVectorPtr &activeVector,
     VectorVectorPtr freeVector =
         getVectorVector(MultiValueMappingBaseBase::FREE);
     if (freeVector.first == NULL) {
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(error, "did not find any free vectorvector");
-#endif
         uint64_t dead = activeVector.first->dead();
         uint64_t fallbackNewSize = newSize + dead + 1024;
         if (fallbackNewSize > maxSize)
@@ -780,24 +662,15 @@ compactVectorVector(VectorVectorPtr &activeVector,
         return;
     }
     swapVector(*freeVector.first, newSize);
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info,
-        "compacting from 'vectorvector(%u)' "
-        "(s = %u, u = %u, d = %u) to "
-        "'vectorvector(%u)' (s = %u)",
-        activeVector.second.alternative(), activeVector.first->size(),
-        activeVector.first->used(), activeVector.first->dead(),
-        freeVector.second.alternative(), newSize);
-#endif
     uint32_t activeVectorIdx = activeVector.second.vectorIdx();
-    for (uint32_t i = 0; i < this->_indices.size(); ++i) {
+    for (size_t i = 0; i < this->_indices.size(); ++i) {
         Index & idx = this->_indices[i];
         if (activeVectorIdx == idx.vectorIdx()) {
-            uint32_t activeOffset = idx.offset();
-            uint32_t vecSize = (*activeVector.first)[activeOffset].size();
-            uint32_t freeOffset = freeVector.first->used();
+            uint64_t activeOffset = idx.offset();
+            uint64_t vecSize = (*activeVector.first)[activeOffset].size();
+            uint64_t freeOffset = freeVector.first->used();
             (*freeVector.first)[freeOffset].resize(vecSize);
-            for (uint32_t j = 0; j < vecSize; ++j) {
+            for (uint64_t j = 0; j < vecSize; ++j) {
                 (*freeVector.first)[freeOffset][j] =
                     (*activeVector.first)[activeOffset][j];
             }
@@ -820,7 +693,7 @@ typename MultiValueMappingT<T, I>::SingleVectorPtr
 MultiValueMappingT<T, I>::getSingleVector(uint32_t numValues,
         VectorStatus status)
 {
-    for (uint32_t i = numValues * Index::alternativeSize();
+    for (size_t i = numValues * Index::alternativeSize();
          i < (numValues + 1) * Index::alternativeSize(); ++i)
     {
         if (this->_singleVectorsStatus[i] == status) {
@@ -837,7 +710,7 @@ template <typename T, typename I>
 typename MultiValueMappingT<T, I>::VectorVectorPtr
 MultiValueMappingT<T, I>::getVectorVector(VectorStatus status)
 {
-    for (uint32_t i = 0; i < _vectorVectors.size(); ++i) {
+    for (size_t i = 0; i < _vectorVectors.size(); ++i) {
         if (this->_vectorVectorsStatus[i] == status) {
             return VectorVectorPtr(&_vectorVectors[i],
                                    Index(Index::maxValues(), i, 0));
@@ -875,7 +748,7 @@ MultiValueMappingT<T, I>::MultiValueMappingT(uint32_t &committedDocIdLimit,
 template <typename T, typename I>
 MultiValueMappingT<T, I>::MultiValueMappingT(uint32_t &committedDocIdLimit,
                                              uint32_t numKeys,
-        uint32_t initSize,
+        size_t initSize,
         const GrowStrategy & gs)
     : MultiValueMappingBase<I>(committedDocIdLimit, numKeys, gs),
       _singleVectors((Index::maxValues()) * Index::alternativeSize()),
@@ -905,7 +778,7 @@ MultiValueMappingT<T, I>::~MultiValueMappingT()
 
 template <typename T, typename I>
 void
-MultiValueMappingT<T, I>::reset(uint32_t numKeys, uint32_t initSize)
+MultiValueMappingT<T, I>::reset(uint32_t numKeys, size_t initSize)
 {
     MultiValueMappingBase<I>::reset(numKeys);
     initVectors(initSize);
@@ -941,7 +814,7 @@ MultiValueMappingT<T, I>::get(uint32_t key,
         uint32_t available = idx.values();
         uint32_t num2Read = std::min(available, sz);
         const SingleVector & vec = _singleVectors[idx.vectorIdx()];
-        for (uint32_t i = 0, j = idx.offset() * idx.values();
+        for (uint64_t i = 0, j = idx.offset() * idx.values();
              i < num2Read && j < (idx.offset() + 1) * idx.values(); ++i, ++j) {
             buffer[i] = static_cast<BufferType>(vec[j]);
         }
@@ -970,7 +843,7 @@ MultiValueMappingT<T, I>::get(uint32_t key, uint32_t index, T & value) const
         if (index >= idx.values()) {
             return false;
         }
-        uint32_t offset = idx.offset() * idx.values() + index;
+        uint64_t offset = idx.offset() * idx.values() + index;
         value = _singleVectors[idx.vectorIdx()][offset];
         return true;
     } else {
@@ -1020,40 +893,20 @@ MultiValueMappingT<T, I>::set(uint32_t key,
     if (!getValidIndex(newIdx, numValues)) {
         abort();
     }
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info,
-        "newIdx: values = %u, alternative = %u, offset = %u",
-        newIdx.values(), newIdx.alternative(), newIdx.offset());
-#endif
 
     if (newIdx.values() != 0 && newIdx.values() < Index::maxValues()) {
         SingleVector & vec = _singleVectors[newIdx.vectorIdx()];
-        for (uint32_t i = newIdx.offset() * newIdx.values(), j = 0;
+        for (uint64_t i = newIdx.offset() * newIdx.values(), j = 0;
              i < (newIdx.offset() + 1) * newIdx.values() && j < numValues;
              ++i, ++j)
         {
             vec[i] = values[j];
         }
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info,
-            "inserted in '%u-vector(%u)': "
-            "key = %u, size = %u, used = %u, dead = %u, offset = %u",
-            newIdx.values(), newIdx.alternative(),
-            key, vec.size(),
-            vec.used(), vec.dead(), newIdx.offset() * newIdx.values());
-#endif
     } else if (newIdx.values() == Index::maxValues()) {
         VectorVector & vec = _vectorVectors[newIdx.alternative()];
         for (uint32_t i = 0; i < numValues; ++i) {
             vec[newIdx.offset()][i] = values[i];
         }
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info,
-            "inserted %u values in 'vector-vector(%u)': "
-            "key = %u, size = %u, used = %u, dead = %u, offset = %u",
-            numValues, newIdx.alternative(),
-            key, vec.size(), vec.used(), vec.dead(), newIdx.offset());
-#endif
     }
 
     std::atomic_thread_fence(std::memory_order_release);
@@ -1065,25 +918,12 @@ MultiValueMappingT<T, I>::set(uint32_t key,
         SingleVector & vec = _singleVectors[oldIdx.vectorIdx()];
         incDead(vec, oldIdx.values());
         this->decValueCnt(oldIdx.values());
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info,
-            "mark space dead in '%u-vector(%u)': "
-            "size = %u, used = %u, dead = %u",
-            oldIdx.values(), oldIdx.alternative(),
-            vec.size(), vec.used(), vec.dead());
-#endif
     } else if (oldIdx.values() == Index::maxValues()) {
         VectorVector & vec = _vectorVectors[oldIdx.alternative()];
         uint32_t oldNumValues = vec[oldIdx.offset()].size();
         incDead(vec);
         this->decValueCnt(oldNumValues);
         holdElem(oldIdx, sizeof(VectorBase) + sizeof(T) * oldNumValues);
-#ifdef LOG_MULTIVALUE_MAPPING
-        LOG(info,
-            "mark space dead in 'vector-vector(%u)': "
-            "size = %u, used = %u, dead = %u",
-            oldIdx.alternative(), vec.size(), vec.used(), vec.dead());
-#endif
     }
 }
 
@@ -1109,7 +949,7 @@ MultiValueMappingT<T, I>::replace(uint32_t key,
 
     if (currIdx.values() != 0 && currIdx.values() < Index::maxValues()) {
         SingleVector & vec = _singleVectors[currIdx.vectorIdx()];
-        for (uint32_t i = currIdx.offset() * currIdx.values(), j = 0;
+        for (uint64_t i = currIdx.offset() * currIdx.values(), j = 0;
              i < (currIdx.offset() + 1) * currIdx.values() && j < numValues;
              ++i, ++j)
         {
@@ -1216,9 +1056,9 @@ MultiValueMappingT<T, I>::enoughCapacity(const Histogram & capacityNeeded)
 {
     if (_pendingCompact)
         return false;
-    for (typename Histogram::const_iterator it(capacityNeeded.begin()), mt(capacityNeeded.end()); it != mt; ++it) {
-        uint32_t valueCnt = it->first;
-        uint64_t numEntries = it->second;
+    for (const auto & entry : capacityNeeded) {
+        uint32_t valueCnt = entry.first;
+        uint64_t numEntries = entry.second;
         if (valueCnt < Index::maxValues()) {
             SingleVectorPtr active =
                 getSingleVector(valueCnt, MultiValueMappingBaseBase::ACTIVE);
@@ -1240,24 +1080,18 @@ template <typename T, typename I>
 void
 MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
 {
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info, "performCompaction()");
-#endif
     if (_pendingCompact) {
         // Further populate histogram to ensure pending compaction being done.
-        for (std::set<uint32_t>::const_iterator
-                 pit(_pendingCompactSingleVector.begin()),
-                 pmt(_pendingCompactSingleVector.end());
-             pit != pmt; ++pit) {
-            (void) capacityNeeded[*pit];
+        for (uint32_t value : _pendingCompactSingleVector) {
+            (void) capacityNeeded[value];
         }
         if (_pendingCompactVectorVector) {
             (void) capacityNeeded[Index::maxValues()];
         }
     }
-    for (typename Histogram::const_iterator it(capacityNeeded.begin()), mt(capacityNeeded.end()); it != mt; ++it) {
-        uint32_t valueCnt = it->first;
-        uint64_t numEntries = it->second;
+    for (const auto & entry : capacityNeeded) {
+        uint32_t valueCnt = entry.first;
+        uint64_t numEntries = entry.second;
         if (valueCnt != 0 && valueCnt < Index::maxValues()) {
             SingleVectorPtr active =
                 getSingleVector(valueCnt, MultiValueMappingBaseBase::ACTIVE);
@@ -1266,10 +1100,6 @@ MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
                 _pendingCompactSingleVector.find(valueCnt) !=
                 _pendingCompactSingleVector.end()) {
                 uint64_t maxSize = Index::offsetSize() * valueCnt;
-                if (maxSize > std::numeric_limits<uint32_t>::max()) {
-                    maxSize = std::numeric_limits<uint32_t>::max();
-                    maxSize -= (maxSize % valueCnt);
-                }
                 uint64_t newSize = this->computeNewSize(active.first->used(),
                         active.first->dead(),
                         valueCnt * numEntries,
@@ -1284,8 +1114,6 @@ MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
             if (active.first->remaining() < numEntries ||
                 _pendingCompactVectorVector) {
                 uint64_t maxSize = Index::offsetSize();
-                if (maxSize > std::numeric_limits<uint32_t>::max())
-                    maxSize = std::numeric_limits<uint32_t>::max();
                 uint64_t newSize = this->computeNewSize(active.first->used(),
                         active.first->dead(),
                         numEntries,
@@ -1297,41 +1125,6 @@ MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
     }
     assert(!_pendingCompact);
 }
-
-#ifdef DEBUG_MULTIVALUE_MAPPING
-template <typename T, typename I>
-void
-MultiValueMappingT<T, I>::printContent() const
-{
-    for (uint32_t key = 0; key < this->_indices.size(); ++key) {
-        std::vector<T> buffer(getValueCount(key));
-        get(key, buffer);
-        std::cout << "key = " << key << ", count = " <<
-            getValueCount(key) << ": ";
-        for (uint32_t i = 0; i < buffer.size(); ++i) {
-            std::cout << buffer[i] << ", ";
-        }
-        std::cout << '\n';
-    }
-}
-
-template <typename T, typename I>
-void
-MultiValueMappingT<T, I>::printVectorVectors() const
-{
-    for (uint32_t i = 0; i < _vectorVectors.size(); ++i) {
-        std::cout << "Alternative " << i << '\n';
-        for (uint32_t j = 0; j < _vectorVectors[i].size(); ++j) {
-            std::cout << "Vector " << j << ": [";
-            uint32_t size = _vectorVectors[i][j].size();
-            for (uint32_t k = 0; k < size; ++k) {
-                std::cout << _vectorVectors[i][j][k] << ", ";
-            }
-            std::cout << "]\n";
-        }
-    }
-}
-#endif
 
 extern template class MultiValueMappingFallbackVectorHold<
     MultiValueMappingVector<multivalue::Value<int8_t> >::VectorBase >;
@@ -1495,4 +1288,3 @@ extern template class MultiValueMappingT<
     multivalue::Index64>;
 
 } // namespace search
-

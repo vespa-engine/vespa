@@ -44,10 +44,8 @@ import java.net.URL;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.io.IOUtils.readAll;
 import static com.yahoo.text.Lowercase.toLowerCase;
 
 
@@ -626,13 +624,27 @@ public class FilesApplicationPackage implements ApplicationPackage {
     }
 
     @Override
+    public void validateXML() throws IOException {
+        validateXML(Optional.empty());
+    }
+
+    // TODO: Remove when no version older than 6.33 is used
+    @Override
     public void validateXML(DeployLogger logger) throws IOException {
-        validateXML(logger, Optional.empty());
+        validateXML(Optional.empty());
     }
 
     @Override
+    public void validateXML(Optional<Version> vespaVersion) throws IOException {
+        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, vespaVersion);
+        xmlFilesValidator.checkApplication();
+        ApplicationPackageXmlFilesValidator.checkIncludedDirs(this);
+    }
+
+    // TODO: Remove when no version older than 6.33 is used
+    @Override
     public void validateXML(DeployLogger logger, Optional<Version> vespaVersion) throws IOException {
-        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, logger, vespaVersion);
+        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, vespaVersion);
         xmlFilesValidator.checkApplication();
         ApplicationPackageXmlFilesValidator.checkIncludedDirs(this);
     }
@@ -659,10 +671,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
     @Override
     public ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ignored, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
-        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> !name.equals(".preprocessed") &&
-                !name.equals(SERVICES) &&
-                !name.equals(HOSTS) &&
-                !name.equals(CONFIG_DEFINITIONS_DIR));
+        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(".preprocessed") &&
+                                                                          ! name.equals(SERVICES) &&
+                                                                          ! name.equals(HOSTS) &&
+                                                                          ! name.equals(CONFIG_DEFINITIONS_DIR));
         preprocessXML(new File(preprocessedDir, SERVICES), getServicesFile(), zone);
         if (getHostsFile().exists()) {
             preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);

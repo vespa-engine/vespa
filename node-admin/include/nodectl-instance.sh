@@ -103,7 +103,7 @@ stop() {
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef out
 
     if has_searchnode; then
-        $echo $VESPA_HOME/bin/vespa-proton-cmd --local triggerFlush
+        $echo $VESPA_HOME/bin/vespa-proton-cmd --local prepareRestart
     fi
 
     if has_container; then

@@ -4,6 +4,7 @@ package com.yahoo.search.handler;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.component.Vtag;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.ChainsConfigurer;
 import com.yahoo.component.chain.model.ChainsModel;
@@ -25,7 +26,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
-import com.yahoo.prelude.VespaSVersionRetriever;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
@@ -363,7 +363,7 @@ public class SearchHandler extends LoggingRequestHandler {
         execution.fill(result, result.getQuery().getPresentation().getSummary());
 
         traceExecutionTimes(query, result);
-        traceVespaSVersion(query);
+        traceVespaVersion(query);
         traceRequestAttributes(query);
         return result;
     }
@@ -519,8 +519,8 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    private void traceVespaSVersion(Query query) {
-        query.trace("Vespa version: " + VespaSVersionRetriever.getVersion(), false, 4);
+    private void traceVespaVersion(Query query) {
+        query.trace("Vespa version: " + Vtag.currentVersion.toString(), false, 4);
     }
 
     public SearchChainRegistry getSearchChainRegistry() {

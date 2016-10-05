@@ -43,6 +43,7 @@ public class SchemaValidator {
     public static final String schemaDirBase = System.getProperty("java.io.tmpdir", File.separator + "tmp" + File.separator + "vespa");
     static final String servicesXmlSchemaName = "services.rnc";
     static final String hostsXmlSchemaName = "hosts.rnc";
+    static final String deploymentXmlSchemaName = "deployment.rnc";
     private final CustomErrorHandler errorHandler = new CustomErrorHandler();
     private final ValidationDriver driver;
     private DeployLogger deployLogger;
@@ -89,6 +90,15 @@ public class SchemaValidator {
     */
     public static SchemaValidator createTestValidatorHosts() throws IOException {
         return new SchemaValidator(hostsXmlSchemaName);
+    }
+
+    /**
+     * Create a validator for deployment.xml for tests
+     *
+     * @throws IOException if it is not possible to read schema files
+     */
+    public static SchemaValidator createTestValidatorDeployment() throws IOException {
+        return new SchemaValidator(deploymentXmlSchemaName);
     }
 
     private class CustomErrorHandler implements ErrorHandler {

@@ -13,7 +13,10 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Flavor;
+import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -467,8 +470,24 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void application_deployment_allocates_cheapest_available() {
-        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+    public void application_deployment_prefers_cheapest_stock_nodes() {
+        assertCorrectFlavorPreferences(true);
+    }
+
+    @Test
+    public void application_deployment_prefers_exact_nonstock_nodes() {
+        assertCorrectFlavorPreferences(false);
+    }
+    
+    private void assertCorrectFlavorPreferences(boolean largeIsStock) {
+        FlavorConfigBuilder b = new FlavorConfigBuilder();
+        b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10).stock(largeIsStock);
+        NodeRepositoryConfig.Flavor.Builder largeVariant = b.addFlavor("large-variant", 3., 9., 101, Flavor.Type.BARE_METAL).cost(9);
+        b.addReplaces("large", largeVariant);
+        NodeRepositoryConfig.Flavor.Builder largeVariantVariant = b.addFlavor("large-variant-variant", 4., 9., 101, Flavor.Type.BARE_METAL).cost(11);
+        b.addReplaces("large-variant", largeVariantVariant);
+
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), b.build());
         tester.makeReadyNodes(6, "large"); //cost = 10
         tester.makeReadyNodes(6, "large-variant"); //cost = 9
         tester.makeReadyNodes(6, "large-variant-variant"); //cost = 11
@@ -477,16 +496,22 @@ public class ProvisioningTest {
         ClusterSpec contentClusterSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty());
         ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer"), Optional.empty());
 
+        List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1, "large");
+        List<HostSpec> contentNodes = tester.prepare(applicationId, contentClusterSpec, 10, 1, "large");
 
-        List<HostSpec> containerNodes = tester.prepare(applicationId, containerClusterSpec, 5, 1, "large"); //should be replaced by 5 large-variant
-        List<HostSpec> contentNodes = tester.prepare(applicationId, contentClusterSpec, 10, 1, "large"); // should give 1 large-variant, 6 large and 3 large-variant-variant
-
-        tester.assertNumberOfNodesWithFlavor(containerNodes, "large-variant", 5);
-        tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant", 1);
-        tester.assertNumberOfNodesWithFlavor(contentNodes, "large", 6);
+        if (largeIsStock) { // 'large' is replaced by 'large-variant' when possible, as it is cheaper
+            tester.assertNumberOfNodesWithFlavor(containerNodes, "large-variant", 5);
+            tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant", 1);
+            tester.assertNumberOfNodesWithFlavor(contentNodes, "large", 6);
+        }
+        else { // 'large' is preferred when available, as it is what is exactly specified
+            tester.assertNumberOfNodesWithFlavor(containerNodes, "large", 5);
+            tester.assertNumberOfNodesWithFlavor(contentNodes, "large", 1);
+            tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant", 6);
+        }
+        // in both cases the most expensive, never exactly specified is least preferred
         tester.assertNumberOfNodesWithFlavor(contentNodes, "large-variant-variant", 3);
     }
-
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size, int content1Size, String flavor, ProvisioningTester tester) {
         // "deploy prepare" with a two container clusters and a storage cluster having of two groups

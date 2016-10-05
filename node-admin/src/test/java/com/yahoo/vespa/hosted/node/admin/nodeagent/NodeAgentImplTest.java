@@ -5,7 +5,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
@@ -38,9 +38,9 @@ public class NodeAgentImplTest {
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
-    private final MaintenanceScheduler maintenanceScheduler = mock(MaintenanceScheduler.class);
+    private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
 
-    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations, maintenanceScheduler);
+    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations, storageMaintainer);
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -262,8 +262,8 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        final InOrder inOrder = inOrder(maintenanceScheduler, dockerOperations);
-        inOrder.verify(maintenanceScheduler, times(1)).removeOldFilesFromNode(eq(containerName));
+        final InOrder inOrder = inOrder(storageMaintainer, dockerOperations);
+        inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
         inOrder.verify(dockerOperations, times(1)).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
 
         verify(orchestrator, never()).resume(any(String.class));
@@ -294,10 +294,10 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        final InOrder inOrder = inOrder(maintenanceScheduler, dockerOperations, nodeRepository);
-        inOrder.verify(maintenanceScheduler, times(1)).removeOldFilesFromNode(eq(containerName));
+        final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
+        inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
         inOrder.verify(dockerOperations, times(1)).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
-        inOrder.verify(maintenanceScheduler, times(1)).deleteContainerStorage(eq(containerName));
+        inOrder.verify(storageMaintainer, times(1)).deleteContainerStorage(eq(containerName));
         inOrder.verify(nodeRepository, times(1)).markAsReady(eq(hostName));
 
         verify(dockerOperations, never()).startContainerIfNeeded(any());

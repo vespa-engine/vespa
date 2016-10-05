@@ -41,6 +41,10 @@ public class ClusterStateView {
         return new ClusterStateView(clusterState, createNewAggregator(clusterState, metricUpdater), metricUpdater);
     }
 
+    public static ClusterStateView create(final ClusterState clusterState, final MetricUpdater metricUpdater) {
+        return new ClusterStateView(clusterState, createNewAggregator(clusterState, metricUpdater), metricUpdater);
+    }
+
     private static ClusterStatsAggregator createNewAggregator(ClusterState clusterState, MetricUpdater metricUpdater) {
         Set<Integer> upDistributors = getIndicesOfUpNodes(clusterState, NodeType.DISTRIBUTOR);
         Set<Integer> upStorageNodes = getIndicesOfUpNodes(clusterState, NodeType.STORAGE);

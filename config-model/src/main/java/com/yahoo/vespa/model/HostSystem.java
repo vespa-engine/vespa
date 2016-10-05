@@ -5,12 +5,21 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.config.provision.*;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.net.HostName;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -73,6 +82,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
      * @return The canonical hostname, or null if unable to resolve.
      * @throws UnknownHostException if the hostname cannot be resolved
      */
+    // public - This is used by amenders outside this repo
     public static String lookupCanonicalHostname(String hostname) throws UnknownHostException {
         return java.net.InetAddress.getByName(hostname).getCanonicalHostName();
     }
@@ -87,7 +97,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         if (ipAddresses.containsKey(hostname)) return ipAddresses.get(hostname);
 
         String ipAddress;
-        if (hostname.startsWith(MockRoot.MOCKHOST)) {
+        if (hostname.startsWith(MockRoot.MOCKHOST)) { // TODO: Remove
             ipAddress = "0.0.0.0";
         } else {
             try {

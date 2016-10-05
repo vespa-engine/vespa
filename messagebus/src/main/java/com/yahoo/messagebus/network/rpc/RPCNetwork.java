@@ -51,7 +51,7 @@ public class RPCNetwork implements Network, MethodHandler {
     private final ExecutorService sendService =
             new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(),
                                    0L, TimeUnit.SECONDS,
-                                   new SynchronousQueue<Runnable>(false),
+                                   new SynchronousQueue<>(false),
                                    ThreadFactoryFactory.getDaemonThreadFactory("mbus.net"), new ThreadPoolExecutor.CallerRunsPolicy());
 
     /**

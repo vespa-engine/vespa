@@ -2,12 +2,10 @@
 vespa_add_library(vespalib_vespalib_tensor_sparse OBJECT
     SOURCES
     sparse_tensor.cpp
-    sparse_tensor_dimension_sum.cpp
+    sparse_tensor_address_combiner.cpp
+    sparse_tensor_address_reducer.cpp
     sparse_tensor_match.cpp
-    sparse_tensor_product.cpp
-    compact_tensor_address.cpp
-    compact_tensor_address_builder.cpp
     sparse_tensor_builder.cpp
-    compact_tensor_unsorted_address_builder.cpp
+    sparse_tensor_unsorted_address_builder.cpp
     DEPENDS
 )

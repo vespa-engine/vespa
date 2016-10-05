@@ -4,7 +4,6 @@ package com.yahoo.vespa.model;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.MapConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -89,7 +88,6 @@ public class VespaModelFactory implements ModelFactory {
         if (modelContext.appDir().isPresent()) {
             ApplicationPackageXmlFilesValidator validator =
                     ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(modelContext.appDir().get(),
-                                                                                  modelContext.deployLogger(),
                                                                                   modelContext.vespaVersion());
             try {
                 validator.checkApplication();
@@ -101,7 +99,7 @@ public class VespaModelFactory implements ModelFactory {
             }
 
         } else {
-            validateXML(modelContext.applicationPackage(), modelContext.deployLogger(), ignoreValidationErrors);
+            validateXML(modelContext.applicationPackage(), ignoreValidationErrors);
         }
         DeployState deployState = createDeployState(modelContext);
         VespaModel model = buildModel(deployState);
@@ -173,9 +171,9 @@ public class VespaModelFactory implements ModelFactory {
         return modelContext.properties().hostedVespa() && id.isHostedVespaRoutingApplication();
     }
 
-    private void validateXML(ApplicationPackage applicationPackage, DeployLogger deployLogger, boolean ignoreValidationErrors) {
+    private void validateXML(ApplicationPackage applicationPackage, boolean ignoreValidationErrors) {
         try {
-            applicationPackage.validateXML(deployLogger);
+            applicationPackage.validateXML();
         } catch (IllegalArgumentException e) {
             rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);
         } catch (Exception e) {
@@ -185,7 +183,7 @@ public class VespaModelFactory implements ModelFactory {
 
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, boolean ignoreValidationErrors) {
         try {
-            deployState.getApplicationPackage().validateXML(deployState.getDeployLogger());
+            deployState.getApplicationPackage().validateXML();
             return Validation.validate(model, ignoreValidationErrors, deployState);
         } catch (IllegalArgumentException e) {
             rethrowUnlessIgnoreErrors(e, ignoreValidationErrors);

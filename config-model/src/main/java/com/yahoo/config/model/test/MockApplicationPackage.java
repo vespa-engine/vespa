@@ -232,6 +232,16 @@ public class MockApplicationPackage implements ApplicationPackage {
             "  </host>" +
             "</hosts>";
 
+
+    @Override
+    public void validateXML() throws IOException {
+        if (failOnValidateXml) {
+            throw new IllegalArgumentException("Error in application package");
+        } else {
+            throw new UnsupportedOperationException("This application package cannot validate XML");
+        }
+    }
+
     @Override
     public void validateXML(DeployLogger logger) throws IOException {
         if (failOnValidateXml) {

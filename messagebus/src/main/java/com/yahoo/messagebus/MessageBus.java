@@ -22,33 +22,34 @@ import java.util.logging.Logger;
  * and forward messages.</p>
  *
  * <p>There are three types of sessions:</p>
- * <ul><li>{@link SourceSession Source sessions} sends messages and receives
- * replies</li>
- * <li>{@link IntermediateSession Intermediate sessions} receives messages on
- * their way to their final destination, and may decide to forward the messages
- * or reply directly.</li>
- * <li>{@link DestinationSession Destination sessions} are the final recipient
- * of messages, and are expected to reply to every one of them, but may not
- * forward messages.</li></ul>
+ * <ul>
+ *     <li>{@link SourceSession Source sessions} sends messages and receives replies</li>
+ *     <li>{@link IntermediateSession Intermediate sessions} receives messages on
+ *         their way to their final destination, and may decide to forward the messages or reply directly.
+ *     <li>{@link DestinationSession Destination sessions} are the final recipient
+ *         of messages, and are expected to reply to every one of them, but may not forward messages.
+ * </ul>
  *
  * <p>A message bus is configured with a {@link Protocol protocol}. This table
  * enumerates the permissible routes from intermediates to destinations and the
  * messaging semantics of each hop.</p>
  *
- * <p>The responsibilities of a message bus are:</p>
- * <ul> <li>Assign a route to every send message from its routing table</li>
- * <li>Deliver every message it <i>accepts</i> to the next hop on its route on a
- * best effort basis, <i>or</i> deliver a <i>failure reply</i>.</li>
- * <li>Deliver replies back to message sources through all the intermediate
- * hops.</li></ul>
+ * The responsibilities of a message bus are:
+ * <ul> 
+ *     <li>Assign a route to every send message from its routing table
+ *     <li>Deliver every message it <i>accepts</i> to the next hop on its route
+ *         <i>or</i> deliver a <i>failure reply</i>.
+ *     <li>Deliver replies back to message sources through all the intermediate hops.
+ * </ul>
  *
- * <p>A runtime will typically</p>
- * <ul><li>Create a message bus implementation and set properties on this
- * implementation once.</li>
- * <li>Create sessions using that message bus many places.</li></ul>
+ * A runtime will typically
+ * <ul>
+ *     <li>Create a message bus implementation and set properties on this implementation once.
+ *     <li>Create sessions using that message bus many places.</li>
+ * </ul>
  *
- * @author btratseth
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author bratseth
+ * @author Simon Thoresen
  */
 public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, ReplyHandler {
 
@@ -101,9 +102,8 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         // Attach and start network.
         this.net = net;
         net.attach(this);
-        if (!net.waitUntilReady(120)) {
+        if ( ! net.waitUntilReady(120))
             throw new IllegalStateException("Network failed to become ready in time.");
-        }
 
         // Start messenger.
         msn = new Messenger();

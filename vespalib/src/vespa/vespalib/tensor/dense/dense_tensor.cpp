@@ -2,15 +2,17 @@
 
 #include <vespa/fastos/fastos.h>
 #include "dense_tensor.h"
-#include "dense_tensor_dimension_sum.h"
-#include "dense_tensor_product.h"
+#include "dense_tensor_apply.hpp"
+#include "dense_tensor_reduce.hpp"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
+#include <vespa/vespalib/eval/operation.h>
 #include <sstream>
 
+using vespalib::eval::TensorSpec;
 
 namespace vespalib {
 namespace tensor {
@@ -121,6 +123,15 @@ joinDenseTensorsNegated(const DenseTensor &lhs,
                                          std::move(cells));
 }
 
+std::vector<vespalib::string>
+getDimensions(const DenseTensor &tensor)
+{
+    std::vector<vespalib::string> dimensions;
+    for (const auto &dimMeta : tensor.dimensionsMeta()) {
+        dimensions.emplace_back(dimMeta.dimension());
+    }
+    return dimensions;
+}
 
 }
 
@@ -237,7 +248,8 @@ DenseTensor::multiply(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    return DenseTensorProduct(*this, *rhs).result();
+    return dense::apply(*this, *rhs, [](double lhsValue, double rhsValue)
+    { return lhsValue * rhsValue; });
 }
 
 Tensor::UP
@@ -296,7 +308,9 @@ DenseTensor::apply(const CellFunction &func) const
 Tensor::UP
 DenseTensor::sum(const vespalib::string &dimension) const
 {
-    return DenseTensorDimensionSum(*this, dimension).result();
+    return dense::reduce(*this, { dimension },
+                          [](double lhsValue, double rhsValue)
+                          { return lhsValue + rhsValue; });
 }
 
 bool
@@ -321,6 +335,33 @@ Tensor::UP
 DenseTensor::clone() const
 {
     return std::make_unique<DenseTensor>(_dimensionsMeta, _cells);
+}
+
+namespace {
+
+void
+buildAddress(const DenseTensor::CellsIterator &itr, TensorSpec::Address &address)
+{
+    auto addressItr = itr.address().begin();
+    for (const auto &dim : itr.dimensions()) {
+        address.emplace(std::make_pair(dim.dimension(), TensorSpec::Label(*addressItr++)));
+    }
+    assert(addressItr == itr.address().end());
+}
+
+}
+
+TensorSpec
+DenseTensor::toSpec() const
+{
+    TensorSpec result(getType().to_spec());
+    TensorSpec::Address address;
+    for (CellsIterator itr(_dimensionsMeta, _cells); itr.valid(); itr.next()) {
+        buildAddress(itr, address);
+        result.add(address, itr.cell());
+        address.clear();
+    }
+    return result;
 }
 
 void
@@ -374,6 +415,28 @@ operator<<(std::ostream &out, const DenseTensor::DimensionMeta &value)
 {
     out << value.dimension() << ":" << value.size();
     return out;
+}
+
+Tensor::UP
+DenseTensor::apply(const eval::BinaryOperation &op, const Tensor &arg) const
+{
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return dense::apply(*this, *rhs,
+                        [&op](double lhsValue, double rhsValue)
+                        { return op.eval(lhsValue, rhsValue); });
+}
+
+Tensor::UP
+DenseTensor::reduce(const eval::BinaryOperation &op,
+                    const std::vector<vespalib::string> &dimensions) const
+{
+    return dense::reduce(*this,
+                         (dimensions.empty() ? getDimensions(*this) : dimensions),
+                         [&op](double lhsValue, double rhsValue)
+                         { return op.eval(lhsValue, rhsValue); });
 }
 
 } // namespace vespalib::tensor

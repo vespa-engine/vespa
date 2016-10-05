@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.maintenance;
 
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
 
@@ -157,13 +156,13 @@ public class DeleteOldAppDataTest {
         initSubDirectories();
 
         File temp1 = new File(folder.getRoot(), "small_file");
-        writeNBytesToFiles(temp1, 50);
+        writeNBytesToFile(temp1, 50);
 
         File temp2 = new File(folder.getRoot(), "some_file");
-        writeNBytesToFiles(temp2, 20);
+        writeNBytesToFile(temp2, 20);
 
         File temp3 = new File(folder.getRoot(), "test_folder1/some_other_file");
-        writeNBytesToFiles(temp3, 75);
+        writeNBytesToFile(temp3, 75);
 
         DeleteOldAppData.deleteFilesLargerThan(folder.getRoot(), 10);
 
@@ -238,9 +237,7 @@ public class DeleteOldAppDataTest {
         return total;
     }
 
-    private static void writeNBytesToFiles(File file, int nBytes) throws IOException {
-        try (FileWriter writer = new FileWriter(file)) {
-            writer.write(StringUtils.repeat("0", nBytes));
-        }
+    public static void writeNBytesToFile(File file, int nBytes) throws IOException {
+        Files.write(file.toPath(), new byte[nBytes]);
     }
 }

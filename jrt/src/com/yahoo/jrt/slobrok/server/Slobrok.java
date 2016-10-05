@@ -5,79 +5,16 @@ import com.yahoo.jrt.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Slobrok {
 
-    private class RegisterCallback implements RequestWaiter {
-
-        Request registerReq;
-        String  name;
-        String  spec;
-        Target  target;
-
-        public RegisterCallback(Request req, String name, String spec) {
-            req.detach();
-            registerReq = req;
-            this.name = name;
-            this.spec = spec;
-            target = orb.connect(new Spec(spec));
-            Request cbReq = new Request("slobrok.callback.listNamesServed");
-            target.invokeAsync(cbReq, 5.0, this);
-        }
-
-        public void handleRequestDone(Request req) {
-            if (!req.checkReturnTypes("S")) {
-                registerReq.setError(ErrorCode.METHOD_FAILED, "error during register callback: "
-                                     + req.errorMessage());
-                registerReq.returnRequest();
-                target.close();
-                return;
-            }
-            String[] names = req.returnValues().get(0).asStringArray();
-            boolean found = false;
-            for (String n : names) {
-                if (n.equals(name)) {
-                    found = true;
-                }
-            }
-            if (!found) {
-                registerReq.setError(ErrorCode.METHOD_FAILED, "register failed: "
-                                     + "served names does not contain name");
-                registerReq.returnRequest();
-                target.close();
-                return;
-            }
-            handleRegisterCallbackDone(registerReq, name, spec, target);
-        }
-    }
-
-    private class FetchMirror implements Runnable {
-        public final Request req;
-        public final Task    task;
-
-        public FetchMirror(Request req, int timeout) {
-            req.detach();
-            this.req = req;
-            task = orb.transport().createTask(this);
-            task.schedule(((double)timeout)/1000.0);
-        }
-        public void run() { // timeout
-            handleFetchMirrorTimeout(this);
-        }
-    }
-
-    private class TargetMonitor implements TargetWatcher {
-        public void notifyTargetInvalid(Target target) {
-            handleTargetDown(target);
-        }
-    }
-
     Supervisor             orb;
     Acceptor               listener;
-    HashMap<String,String> services     = new HashMap<String,String>();
-    ArrayList<FetchMirror> pendingFetch = new ArrayList<FetchMirror>();
-    HashMap<String,Target> targets      = new HashMap<String,Target>();
+    private Map<String,String> services = new HashMap<>();
+    List<FetchMirror> pendingFetch = new ArrayList<>();
+    Map<String,Target> targets = new HashMap<>();
     TargetMonitor          monitor      = new TargetMonitor();
     int                    gencnt       = 1;
 
@@ -123,15 +60,11 @@ public class Slobrok {
         handleFetchMirrorFlush();
     }
 
-    private void handleRegisterCallbackDone(Request req,
-                                            String name, String spec,
-                                            Target target)
-    {
+    private void handleRegisterCallbackDone(Request req, String name, String spec, Target target){
         String stored = services.get(name);
         if (stored != null) { // too late
-            if (!stored.equals(spec)) {
-                req.setError(ErrorCode.METHOD_FAILED,
-                             "service '" + name + "' registered with another spec");
+            if ( ! stored.equals(spec)) {
+                req.setError(ErrorCode.METHOD_FAILED, "service '" + name + "' registered with another spec");
             }
             req.returnRequest();
             target.close();
@@ -153,8 +86,8 @@ public class Slobrok {
     }
 
     private void dumpServices(Request req) {
-        ArrayList<String> names = new ArrayList<String>();
-        ArrayList<String> specs = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
+        List<String> specs = new ArrayList<>();
         for (Map.Entry<String,String> entry : services.entrySet()) {
             names.add(entry.getKey());
             specs.add(entry.getValue());
@@ -225,12 +158,8 @@ public class Slobrok {
         if (stored == null) {
             new RegisterCallback(req, name, spec);
         } else {
-            if (stored.equals(spec)) {
-                // ok, already stored
-            } else {
-                req.setError(ErrorCode.METHOD_FAILED,
-                             "service '" + name + "' registered with another spec");
-            }
+            if ( ! stored.equals(spec))
+                req.setError(ErrorCode.METHOD_FAILED, "service '" + name + "' registered with another spec");
         }
     }
 
@@ -264,6 +193,69 @@ public class Slobrok {
             pendingFetch.add(new FetchMirror(req, timeout));
         } else {
             dumpServices(req);
+        }
+    }
+
+    private class RegisterCallback implements RequestWaiter {
+
+        Request registerReq;
+        String  name;
+        String  spec;
+        Target  target;
+
+        public RegisterCallback(Request req, String name, String spec) {
+            req.detach();
+            registerReq = req;
+            this.name = name;
+            this.spec = spec;
+            target = orb.connect(new Spec(spec));
+            Request cbReq = new Request("slobrok.callback.listNamesServed");
+            target.invokeAsync(cbReq, 5.0, this);
+        }
+
+        @Override
+        public void handleRequestDone(Request req) {
+            if ( ! req.checkReturnTypes("S")) {
+                registerReq.setError(ErrorCode.METHOD_FAILED, "error during register callback: " + req.errorMessage());
+                registerReq.returnRequest();
+                target.close();
+                return;
+            }
+            String[] names = req.returnValues().get(0).asStringArray();
+            boolean found = false;
+            for (String n : names) {
+                if (n.equals(name)) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                registerReq.setError(ErrorCode.METHOD_FAILED, "register failed: served names does not contain name");
+                registerReq.returnRequest();
+                target.close();
+                return;
+            }
+            handleRegisterCallbackDone(registerReq, name, spec, target);
+        }
+    }
+
+    private class FetchMirror implements Runnable {
+        public final Request req;
+        public final Task    task;
+
+        public FetchMirror(Request req, int timeout) {
+            req.detach();
+            this.req = req;
+            task = orb.transport().createTask(this);
+            task.schedule(((double)timeout)/1000.0);
+        }
+        public void run() { // timeout
+            handleFetchMirrorTimeout(this);
+        }
+    }
+
+    private class TargetMonitor implements TargetWatcher {
+        public void notifyTargetInvalid(Target target) {
+            handleTargetDown(target);
         }
     }
 

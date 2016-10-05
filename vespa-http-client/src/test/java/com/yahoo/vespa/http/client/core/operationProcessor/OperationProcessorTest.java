@@ -13,11 +13,16 @@ import org.junit.Test;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -366,5 +371,33 @@ public class OperationProcessorTest {
                 new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("d"))), 0);
         assertThat(done.await(120, TimeUnit.SECONDS), is(true));
 
+    }
+
+    @Test
+    public void testSendsResponseToQueuedDocumentOnClose() throws InterruptedException {
+        SessionParams sessionParams = new SessionParams.Builder()
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("#$#")).build())
+                .build();
+
+        ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
+        when(executor.awaitTermination(anyLong(), any())).thenReturn(true);
+
+        CountDownLatch countDownLatch = new CountDownLatch(3);
+
+        OperationProcessor operationProcessor = new OperationProcessor(
+                new IncompleteResultsThrottler(19, 19, null, null),
+                (docId, documentResult) -> {
+                    countDownLatch.countDown();
+                },
+                sessionParams, executor);
+
+        // Will fail due to bogus host name, but will be retried.
+        operationProcessor.sendDocument(doc1);
+        operationProcessor.sendDocument(doc2);
+        operationProcessor.sendDocument(doc3);
+
+        // Will create fail results.
+        operationProcessor.close();
+        countDownLatch.await();
     }
 }

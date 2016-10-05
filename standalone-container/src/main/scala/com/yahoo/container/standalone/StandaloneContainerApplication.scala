@@ -2,7 +2,7 @@
 package com.yahoo.container.standalone
 
 import com.google.inject.{Key, AbstractModule, Injector, Inject}
-import com.yahoo.config.application.api.{DeployLogger, RuleConfigDeriver, FileRegistry, ApplicationPackage}
+import com.yahoo.config.application.api.{RuleConfigDeriver, FileRegistry, ApplicationPackage}
 import com.yahoo.config.provision.Zone
 import com.yahoo.jdisc.application.Application
 import com.yahoo.container.jdisc.ConfiguredApplication
@@ -10,6 +10,7 @@ import java.io.{IOException, File}
 import com.yahoo.config.model.test.MockRoot
 import com.yahoo.config.model.application.provider._
 import com.yahoo.vespa.defaults.Defaults
+import com.yahoo.vespa.model.VespaModel
 import com.yahoo.vespa.model.container.xml.{ConfigServerContainerModelBuilder, ManhattanContainerModelBuilder, ContainerModelBuilder}
 import org.w3c.dom.Element
 import com.yahoo.config.model.builder.xml.XmlHelper
@@ -134,9 +135,9 @@ object StandaloneContainerApplication {
     tmpDir.toFile
   }
 
-  private def validateApplication(applicationPackage: ApplicationPackage, logger: DeployLogger) = {
+  private def validateApplication(applicationPackage: ApplicationPackage) = {
     try {
-      applicationPackage.validateXML(logger)
+      applicationPackage.validateXML()
     } catch {
       case e: IOException => throw new IllegalArgumentException(e)
     }
@@ -164,14 +165,14 @@ object StandaloneContainerApplication {
                            fileRegistry: FileRegistry,
                            preprocessedApplicationDir: File,
                            networkingOption: Networking,
-                           configModelRepo: ConfigModelRepo = new ConfigModelRepo): (MockRoot, Container) = {
+                           configModelRepo: ConfigModelRepo = new ConfigModelRepo): (VespaModel, Container) = {
     val logger = new BaseDeployLogger
     val rawApplicationPackage = new FilesApplicationPackage.Builder(applicationPath.toFile).includeSourceFiles(true).preprocessedDir(preprocessedApplicationDir).build()
     // TODO: Needed until we get rid of semantic rules
     val applicationPackage = rawApplicationPackage.preprocess(Zone.defaultZone(), new RuleConfigDeriver {
       override def derive(ruleBaseDir: String, outputDir: String): Unit = {}
     }, logger)
-    validateApplication(applicationPackage, logger)
+    validateApplication(applicationPackage)
     val deployState = new DeployState.Builder().
       applicationPackage(applicationPackage).
       fileRegistry(fileRegistry).
@@ -179,12 +180,13 @@ object StandaloneContainerApplication {
       configDefinitionRepo(configDefinitionRepo).
       build()
 
-    val root = new MockRoot("", deployState)
+    val root = VespaModel.createIncomplete(deployState)
     val vespaRoot = new ApplicationConfigProducerRoot(root,
       "vespa",
       deployState.getDocumentModel,
       deployState.getProperties.vespaVersion(),
       deployState.getProperties.applicationId())
+    
 
     val spec = containerRootElement(applicationPackage)
     val containerModel = newContainerModelBuilder(networkingOption).build(deployState, configModelRepo, vespaRoot, spec)
@@ -192,11 +194,16 @@ object StandaloneContainerApplication {
     containerModel.initialize(configModelRepo)
     val container = first(containerModel.getCluster().getContainers)
 
+    // TODO: If we can do the mutations below on the builder, we can separate out model finalization from the
+    // VespaModel constructor, such that the above and below code to finalize the container can be
+    // replaced by root.finalize();
+
     // Always disable rpc server for standalone container. This server will soon be removed anyway.
     container.setRpcServerEnabled(false)
     container.setHttpServerEnabled(networkingOption == Networking.enable)
 
     initializeContainer(container, spec)
+
     root.freezeModelTopology()
     (root, container)
   }

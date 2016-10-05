@@ -34,7 +34,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final Yamas yamas;
-    private final Map<String,MetricsConsumer> metricsConsumers;
+    private final Map<String, MetricsConsumer> metricsConsumers;
     private final List<Configserver> configservers = new ArrayList<>();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
@@ -200,7 +200,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         HostResource deployHost = getHostSystem().getHostByHostname(fileDistributor.fileSourceHost());
         if (deployHostIsMissing(deployHost)) {
             throw new RuntimeException("Could not find host in the application's host system: '" +
-                    fileDistributor.fileSourceHost() + "'. Hostsystem=" + getHostSystem());
+                                       fileDistributor.fileSourceHost() + "'. Hostsystem=" + getHostSystem());
         }
 
         FileDistributorService fds = new FileDistributorService(fileDistribution, host.getHost().getHostName(),
@@ -245,4 +245,5 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     public boolean multitenant() {
         return multitenant;
     }
+
 }

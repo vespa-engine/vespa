@@ -5,7 +5,7 @@
 #include <vespa/vespalib/tensor/cell_function.h>
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/tensor_address.h>
-#include "compact_tensor_address.h"
+#include "sparse_tensor_address_ref.h"
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -22,7 +22,7 @@ namespace tensor {
 class SparseTensor : public Tensor
 {
 public:
-    typedef vespalib::hash_map<CompactTensorAddressRef, double> Cells;
+    typedef vespalib::hash_map<SparseTensorAddressRef, double> Cells;
     typedef TensorDimensions Dimensions;
 
     static constexpr size_t STASH_CHUNK_SIZE = 16384u;
@@ -52,10 +52,16 @@ public:
     virtual Tensor::UP match(const Tensor &arg) const override;
     virtual Tensor::UP apply(const CellFunction &func) const override;
     virtual Tensor::UP sum(const vespalib::string &dimension) const override;
+    virtual Tensor::UP apply(const eval::BinaryOperation &op,
+                             const Tensor &arg) const override;
+    virtual Tensor::UP reduce(const eval::BinaryOperation &op,
+                              const std::vector<vespalib::string> &dimensions)
+        const override;
     virtual bool equals(const Tensor &arg) const override;
     virtual void print(std::ostream &out) const override;
     virtual vespalib::string toString() const override;
     virtual Tensor::UP clone() const override;
+    virtual eval::TensorSpec toSpec() const override;
     virtual void accept(TensorVisitor &visitor) const override;
 };
 

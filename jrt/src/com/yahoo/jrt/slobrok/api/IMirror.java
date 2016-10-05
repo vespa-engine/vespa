@@ -4,8 +4,8 @@ package com.yahoo.jrt.slobrok.api;
 /**
  * Defines an interface for the name server lookup.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
- **/
+ * @author Simon Thoresen
+ */
 public interface IMirror {
 
     /**
@@ -21,7 +21,7 @@ public interface IMirror {
      * @return a list of all matching services, with corresponding connect specs
      * @param pattern The pattern used for matching
      **/
-    public Mirror.Entry[] lookup(String pattern);
+    Mirror.Entry[] lookup(String pattern);
 
     /**
      * Obtain the number of updates seen by this mirror. The value may wrap, but will never become 0 again. This can be
@@ -30,5 +30,6 @@ public interface IMirror {
      *
      * @return number of slobrok updates seen
      **/
-    public int updates();
+    int updates();
+
 }

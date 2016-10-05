@@ -5,7 +5,6 @@
 #include <cstdlib>
 
 #include <boost/program_options.hpp>
-#include <boost/exception/diagnostic_information.hpp>
 
 #include <vespa/fastos/app.h>
 #include <vespa/config-zookeepers.h>
@@ -288,32 +287,28 @@ FileDistributorApplication::Main() {
         EV_STOPPING(programName, "Clean exit");
         return 0;
     } catch(const FileDoesNotExistException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 1;
     } catch(const ZKNodeDoesNotExistsException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 2;
     } catch(const ZKSessionExpired & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 3;
     } catch(const config::ConfigTimeoutException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 4;
     } catch(const vespalib::PortListenException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 5;
     } catch(const ZKConnectionLossException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 6;
+    } catch(const ZKFailedConnecting & e) {
+        EV_STOPPING(programName, e.what());
+        return 7;
     } catch(const ZKGenericException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 99;
     }
 }

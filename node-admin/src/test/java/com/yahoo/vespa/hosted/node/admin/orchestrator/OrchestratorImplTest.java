@@ -34,7 +34,7 @@ public class OrchestratorImplTest {
     public void testSuspendCall() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.empty(),
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
@@ -47,7 +47,7 @@ public class OrchestratorImplTest {
     public void testSuspendCallWithFailureReason() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.empty(),
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "service", "fail")));
@@ -87,7 +87,7 @@ public class OrchestratorImplTest {
     public void testResumeCall() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, null));
 
@@ -99,7 +99,7 @@ public class OrchestratorImplTest {
     public void testResumeCallWithFailureReason() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 UpdateHostResponse.class
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "service", "fail")));
 
@@ -140,7 +140,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenReturn(BatchOperationResult.successResult());
@@ -157,7 +157,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenReturn(new BatchOperationResult(failureReason));
@@ -174,7 +174,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenThrow(new RuntimeException(exceptionMessage));

@@ -7,11 +7,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Track metainformation about the ports of a service.
+ * Track meta information about the ports of a service.
  *
  * @author Vidar Larsen
  */
 public class PortsMeta implements Serializable {
+
     /** A list of all ports. The list elements are lists of strings. */
     private List<LinkedList<String>> ports;
 

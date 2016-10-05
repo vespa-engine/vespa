@@ -120,13 +120,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                    ConfigserverConfig configserverConfig,
                                                                    Zone zone,
                                                                    Set<Rotation> rotations) {
-        return new ModelContextImpl.Properties(
-                applicationId,
-                configserverConfig.multitenant(),
-                ConfigServerSpec.fromConfig(configserverConfig),
-                configserverConfig.hostedVespa(),
-                zone,
-                rotations);
+        return new ModelContextImpl.Properties(applicationId, 
+                                               configserverConfig.multitenant(),
+                                               ConfigServerSpec.fromConfig(configserverConfig),
+                                               configserverConfig.hostedVespa(),
+                                               zone,
+                                               rotations);
     }
 
 }

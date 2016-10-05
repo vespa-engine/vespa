@@ -67,7 +67,7 @@ public class RetiredExpirerTest {
         clock.advance(Duration.ofHours(30)); // Retire period spent
         MockDeployer deployer =
             new MockDeployer(provisioner,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, wantedNodes, Optional.of("default"), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(wantedNodes, Optional.of("default")), 1)));
         new RetiredExpirer(nodeRepository, deployer, clock, Duration.ofHours(12)).run();
         assertEquals(3, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(4, nodeRepository.getNodes(applicationId, Node.State.inactive).size());
@@ -101,7 +101,7 @@ public class RetiredExpirerTest {
         clock.advance(Duration.ofHours(30)); // Retire period spent
         MockDeployer deployer =
             new MockDeployer(provisioner,
-                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, 1, Optional.of("default"), 1)));
+                             Collections.singletonMap(applicationId, new MockDeployer.ApplicationContext(applicationId, cluster, Capacity.fromNodeCount(1, Optional.of("default")), 1)));
         new RetiredExpirer(nodeRepository, deployer, clock, Duration.ofHours(12)).run();
         assertEquals(1, nodeRepository.getNodes(applicationId, Node.State.active).size());
         assertEquals(7, nodeRepository.getNodes(applicationId, Node.State.inactive).size());

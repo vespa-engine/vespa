@@ -15,12 +15,11 @@ public class HostName {
     private static String myHost = null;
 
     /**
-     * Static method that returns the name of localhost using shell
-     * command "hostname".
+     * Static method that returns the name of localhost using shell command "hostname".
+     * If you need a guaranteed resolvable name see LinuxINetAddress.
      *
      * @return the name of localhost.
      * @throws RuntimeException if executing the command 'hostname' fails.
-     * @see LinuxInetAddress if you need a host name/address which is reachable
      */
     public static synchronized String getLocalhost() {
         if (myHost == null) {
@@ -38,4 +37,5 @@ public class HostName {
         }
         return myHost;
     }
+
 }

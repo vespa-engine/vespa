@@ -20,6 +20,10 @@ import com.yahoo.search.result.ErrorMessage;
  * @author Steinar Knutsen
  */
 public class ClusterMonitor implements Runnable, Freezable {
+    // The ping thread wil start using the system, but we cannot be guaranteed that all components
+    // in the system is up. As a workaround for not being able to find out when the system
+    // is ready to be used, we wait some time before starting the ping thread
+    private static final int pingThreadInitialDelayMs = 3000;
 
     private final MonitorConfiguration configuration;
 
@@ -53,7 +57,7 @@ public class ClusterMonitor implements Runnable, Freezable {
                     "Do not start the monitoring thread before the set of"
                     +" nodes to monitor is complete/the ClusterMonitor is frozen.");
         }
-        future = nodeManager.getScheduledExecutor().scheduleAtFixedRate(this, 30 * 1000, configuration.getCheckInterval(), TimeUnit.MILLISECONDS);
+        future = nodeManager.getScheduledExecutor().scheduleAtFixedRate(this, pingThreadInitialDelayMs, configuration.getCheckInterval(), TimeUnit.MILLISECONDS);
     }
 
     /**

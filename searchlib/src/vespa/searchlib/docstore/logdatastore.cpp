@@ -465,8 +465,9 @@ void LogDataStore::compactFile(FileId fileId)
         flushFileAndWait(guard, compactTo, 0);
         compactTo.freeze();
     }
+    compacter.reset();
 
-    std::this_thread::sleep_for(10s);
+    std::this_thread::sleep_for(1s);
     uint64_t currentGeneration;
     {
         LockGuard guard(_updateLock);

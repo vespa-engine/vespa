@@ -113,8 +113,8 @@ TEST("SMOKETEST - require that model match benchmark expression produces expecte
 
 TEST("SMOKETEST - require that matrix product benchmark expression produces expected result") {
     Params params;
-    params.add("query",    parse_tensor("{{x:0}:1.0}"));
-    params.add("document", parse_tensor("{{x:1}:2.0}"));
+    params.add("query",    parse_tensor("{{x:0}:1.0,{x:1}:0.0}"));
+    params.add("document", parse_tensor("{{x:0}:0.0,{x:1}:2.0}"));
     params.add("model",    parse_tensor("{{x:0,y:0}:1.0,{x:0,y:1}:2.0,"
                                         " {x:1,y:0}:3.0,{x:1,y:1}:4.0}"));
     EXPECT_EQUAL(calculate_expression(matrix_product_expr, params), 17.0);
@@ -339,12 +339,8 @@ TEST("benchmark matrix product") {
         size_t matrix_size = vector_size * 2;
         for (auto type: {SPARSE, DENSE}) {
             Params params;
-            size_t document_size = vector_size;
-            if (type == DENSE) {
-                document_size = matrix_size;
-            }
-            params.add("query",    make_tensor(type, {DimensionSpec("x", vector_size, vector_size)}));
-            params.add("document", make_tensor(type, {DimensionSpec("x", document_size)}));
+            params.add("query",    make_tensor(type, {DimensionSpec("x", matrix_size)}));
+            params.add("document", make_tensor(type, {DimensionSpec("x", matrix_size)}));
             params.add("model",    make_tensor(type, {DimensionSpec("x", matrix_size), DimensionSpec("y", matrix_size)}));
             double time_us = benchmark_expression_us(matrix_product_expr, params);
             fprintf(stderr, "-- matrix product (%s) %zu + %zu vs %zux%zu: %g us\n", name(type), vector_size, vector_size, matrix_size, matrix_size, time_us);
