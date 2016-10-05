@@ -12,8 +12,8 @@ public class ContainerStatsImpl implements Docker.ContainerStats {
     private final Map<String, Object> memoryStats;
     private final Map<String, Object> blkioStats;
 
-    ContainerStatsImpl(Map<String, Object> networks, Map<String, Object> cpuStats,
-                       Map<String, Object> memoryStats, Map<String, Object> blkioStats) {
+    public ContainerStatsImpl(Map<String, Object> networks, Map<String, Object> cpuStats,
+                              Map<String, Object> memoryStats, Map<String, Object> blkioStats) {
         this.networks = networks;
         this.cpuStats = cpuStats;
         this.memoryStats = memoryStats;
