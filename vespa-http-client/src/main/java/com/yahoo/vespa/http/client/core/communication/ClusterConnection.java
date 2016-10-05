@@ -114,8 +114,8 @@ public class ClusterConnection implements AutoCloseable {
         IOThread ioThread = ioThreads.get(hash % ioThreads.size());
         try {
             ioThread.post(document);
-        } catch (InterruptedException e) {
-            throw new EndpointIOException(ioThread.getEndpoint(), "While sending", e);
+        } catch (Throwable t) {
+            throw new EndpointIOException(ioThread.getEndpoint(), "While sending", t);
         }
     }
 

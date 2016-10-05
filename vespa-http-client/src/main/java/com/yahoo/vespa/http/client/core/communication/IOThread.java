@@ -136,33 +136,18 @@ class IOThread implements Runnable, AutoCloseable {
 
         stopSignal.countDown();
         log.finer("Closed called.");
-        try {
-            if (! running.await(2 * localQueueTimeOut, TimeUnit.MILLISECONDS)) {
-                log.info("Waited " + 2 * localQueueTimeOut
-                        + " ms for queue to be empty, did not happen, interrupting thread.");
-            }
-        } catch (InterruptedException e) {
-            log.log(Level.INFO, "Interrupted while waiting for threads to finish sending.", e);
-        }
 
-        // Make 5 attempts the next 30 secs to get results from previous operations.
-        for (int i = 0 ; i < 5; i++) {
-            int size = resultQueue.getPendingSize();
-            if (size == 0) break;
-            log.info("We have outstanding operations (" + size +") , waiting for responses, iteraton: " + i + ".");
-
+        // Make a last attempt to get results from previous operations, we have already waited quite a bit before getting here.
+        int size = resultQueue.getPendingSize();
+        if (size > 0) {
+            log.info("We have outstanding operations (" + size + ") , trying to fetch responses.");
             try {
                 processResponse(client.drain());
             } catch (Throwable e) {
                 log.log(Level.SEVERE, "Some failures while trying to get latest responses from vespa.", e);
-                break;
-            }
-            try {
-                Thread.sleep(6000);
-            } catch (InterruptedException e) {
-                break;
             }
         }
+
         try {
             client.close();
         } finally {
