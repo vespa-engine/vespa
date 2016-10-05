@@ -81,20 +81,31 @@ public:
     template <typename Function>
     DenseTensor::UP
     reduceCells(const Cells &cellsIn, Function &&func) {
+        std::vector<bool> cellsResult_IsSet(_outerDimSize * _innerDimSize);
         auto itr_in = cellsIn.cbegin();
         auto itr_out = _cellsResult.begin();
+        auto itr_out_isSet = cellsResult_IsSet.begin();
         for (size_t outerDim = 0; outerDim < _outerDimSize; ++outerDim) {
             auto saved_itr = itr_out;
+            auto saved_itr_isSet = itr_out_isSet;
             for (size_t sumDim = 0; sumDim < _sumDimSize; ++sumDim) {
                 itr_out = saved_itr;
+                itr_out_isSet = saved_itr_isSet;
                 for (size_t innerDim = 0; innerDim < _innerDimSize; ++innerDim) {
-                    *itr_out = func(*itr_out, *itr_in);
+                    if (*itr_out_isSet) {
+                        *itr_out = func(*itr_out, *itr_in);
+                    } else {
+                        *itr_out = *itr_in;
+                        *itr_out_isSet = true;
+                    }
                     ++itr_out;
+                    ++itr_out_isSet;
                     ++itr_in;
                 }
             }
         }
         assert(itr_out == _cellsResult.end());
+        assert(itr_out_isSet == cellsResult_IsSet.end());
         assert(itr_in == cellsIn.cend());
         return std::make_unique<DenseTensor>(std::move(_dimensionsResult), std::move(_cellsResult));
     }
