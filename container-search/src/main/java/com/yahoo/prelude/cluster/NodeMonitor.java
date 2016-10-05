@@ -85,9 +85,8 @@ public class NodeMonitor {
         this.searchNodesOnline = searchNodesOnline;
         atStartUp = false;
 
-        if (!isWorking) {
+        if ( ! isWorking)
             setWorking(true, "Responds correctly");
-        }
     }
 
     /** Changes the state of this node if required */
@@ -95,20 +94,15 @@ public class NodeMonitor {
         if (isWorking == working) return; // Old news
 
         String explanationToLog;
-        if (explanation == null) {
+        if (explanation == null)
             explanationToLog = "";
-        } else {
+        else
             explanationToLog = ": " + explanation;
-        }
 
-        if (working) {
+        if (working)
             log.info("Putting " + node + " in service" + explanationToLog);
-        } else {
-            if (!atStartUp) {
-                // was warning, see VESPA-1922
-                log.info("Taking " + node + " out of service" + explanationToLog);
-            }
-        }
+        else if ( ! atStartUp)
+            log.info("Taking " + node + " out of service" + explanationToLog);
 
         isWorking = working;
     }

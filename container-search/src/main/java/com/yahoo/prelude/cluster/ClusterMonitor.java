@@ -84,10 +84,10 @@ public class ClusterMonitor implements Runnable, Freezable {
     }
 
     /** Called when a node responded */
-    void responded(VespaBackEndSearcher node, boolean hasDocumentsOnline) {
+    void responded(VespaBackEndSearcher node, boolean hasSearchNodesOnline) {
         NodeMonitor monitor = nodeMonitors.get(node);
         boolean wasFailing = !monitor.isWorking();
-        monitor.responded(hasDocumentsOnline);
+        monitor.responded(hasSearchNodesOnline);
         if (wasFailing && monitor.isWorking()) {
             log.info("Failed node '" + node + "' started working again.");
             nodeManager.working(monitor.getNode());
