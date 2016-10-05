@@ -64,7 +64,7 @@ import java.util.logging.Logger;
 /**
  * Handles search request.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SearchHandler extends LoggingRequestHandler {
 
@@ -377,7 +377,10 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /**
      * For internal use only
+     * 
+     * @deprecated remove on Vespa 7
      */
+    @Deprecated
     public Renderer<Result> getRendererCopy(ComponentSpecification spec) { // TODO: Deprecate this
         Renderer<Result> renderer = rendererRegistry.getRenderer(spec);
         return perRenderingCopy(renderer);
@@ -508,14 +511,10 @@ public class SearchHandler extends LoggingRequestHandler {
         ElapsedTime elapsedTime = result.getElapsedTime();
         long now = System.currentTimeMillis();
         if (elapsedTime.firstFill() != 0) {
-            query.trace("Query time " + query + ": "
-                     + (elapsedTime.firstFill() - elapsedTime.first()) + " ms", false, 3);
-
-            query.trace("Summary fetch time " + query + ": "
-                        + (now - elapsedTime.firstFill()) + " ms", false, 3);
+            query.trace("Query time " + query + ": " + (elapsedTime.firstFill() - elapsedTime.first()) + " ms", false, 3);
+            query.trace("Summary fetch time " + query + ": " + (now - elapsedTime.firstFill()) + " ms", false, 3);
         } else {
-            query.trace("Total search time " + query + ": "
-                        + (now - elapsedTime.first()) + " ms", false, 3);
+            query.trace("Total search time " + query + ": " + (now - elapsedTime.first()) + " ms", false, 3);
         }
     }
 

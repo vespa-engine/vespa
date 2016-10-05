@@ -3,7 +3,7 @@ package com.yahoo.data;
 
 /**
  * Generic API for classes that contain data representable as JSON.
- **/
+ */
 public interface JsonProducer {
 
     /**
@@ -14,13 +14,14 @@ public interface JsonProducer {
      * canonical format.
      * @param target the StringBuilder to append to.
      * @return the target passed in is also returned (to allow chaining).
-     **/
-    public StringBuilder writeJson(StringBuilder target);
+     */
+    StringBuilder writeJson(StringBuilder target);
 
     /**
      * Convenience method equivalent to:
      * makeJson(new StringBuilder()).toString()
      * @return String containing JSON representation of this object's data.
-     **/
-    public String toJson();
+     */
+    String toJson();
+
 }

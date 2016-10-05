@@ -20,6 +20,7 @@ import com.yahoo.search.result.ErrorMessage;
  * @author Steinar Knutsen
  */
 public class ClusterMonitor implements Runnable, Freezable {
+
     // The ping thread wil start using the system, but we cannot be guaranteed that all components
     // in the system is up. As a workaround for not being able to find out when the system
     // is ready to be used, we wait some time before starting the ping thread
@@ -76,7 +77,6 @@ public class ClusterMonitor implements Runnable, Freezable {
         boolean wasWorking = monitor.isWorking();
         monitor.failed(error);
         if (wasWorking && !monitor.isWorking()) {
-            // was warning, see VESPA-1922            
             log.info("Failed monitoring node '" + node + "' due to '" + error);
             nodeManager.failed(node);
         }

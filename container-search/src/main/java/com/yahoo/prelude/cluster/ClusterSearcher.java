@@ -116,12 +116,12 @@ public class ClusterSearcher extends Searcher {
         Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool);
 
         String eventName = clusterModelName + ".cache_hit_ratio";
-        cacheHitRatio = new Value(eventName, manager, new Value.Parameters()
-                .setNameExtension(false).setLogRaw(false).setLogMean(true));
+        cacheHitRatio = new Value(eventName, manager, new Value.Parameters().setNameExtension(false)
+                                                                            .setLogRaw(false).setLogMean(true));
 
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(),
-                DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
+                                                              DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
         CacheParams cacheParams = new CacheParams(createCache(clusterConfig, clusterModelName));
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
@@ -162,10 +162,10 @@ public class ClusterSearcher extends Searcher {
                 gotExpectedBackend |= searcher.isLocalDispatching();
             }
         }
-        if (!gotExpectedBackend) {
+        if ( ! gotExpectedBackend) {
             log.log(Level.SEVERE, "ClusterSearcher should have a local top level dispatch."
-                    + " The possibility to configure dispatchers explicitly will be removed"
-                    + " in a future release.");
+                                  + " The possibility to configure dispatchers explicitly will be removed"
+                                  + " in a future release.");
         }
         hasher.running = true;
         monitor.freeze();
@@ -231,10 +231,8 @@ public class ClusterSearcher extends Searcher {
                                                         emulConfig, 0);
         VdsStreamingSearcher searcher = (VdsStreamingSearcher) VespaBackEndSearcher
                 .getSearcher("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher");
-        searcher.setSearchClusterConfigId(searchClusterConfig
-                .rankprofiles().configid());
-        searcher.setStorageClusterRouteSpec(searchClusterConfig
-                .storagecluster().routespec());
+        searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
+        searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
         searcher.init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         return searcher;
     }
@@ -245,9 +243,8 @@ public class ClusterSearcher extends Searcher {
         this.failoverToRemote = false;
         this.documentTypes = documentTypes;
         monitor = new ClusterMonitor(this, new QrMonitorConfig(new QrMonitorConfig.Builder()), new VipStatus());
-        cacheHitRatio = new Value(
-                "com.yahoo.prelude.cluster.ClusterSearcher.ClusterSearcher().dummy",
-                Statistics.nullImplementation, new Value.Parameters());
+        cacheHitRatio = new Value("com.yahoo.prelude.cluster.ClusterSearcher.ClusterSearcher().dummy",
+                                  Statistics.nullImplementation, new Value.Parameters());
         clusterModelName = "testScenario";
         fs4ResourcePool = null;
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
@@ -268,8 +265,8 @@ public class ClusterSearcher extends Searcher {
 
     private static CacheControl createCache(ClusterConfig config, String clusterModelName) {
         log.log(Level.INFO, "Enabling cache for search cluster "
-                + clusterModelName + " (size=" + config.cacheSize()
-                + ", timeout=" + config.cacheTimeout() + ")");
+                            + clusterModelName + " (size=" + config.cacheSize()
+                            + ", timeout=" + config.cacheTimeout() + ")");
 
         return new CacheControl(config.cacheSize(), config.cacheTimeout());
     }
@@ -311,6 +308,7 @@ public class ClusterSearcher extends Searcher {
      * @return          null if request rank profile is ok for the requested
      *                  doc types, a result with error message if not.
      */
+    // TODO: This should be in a separate searcher
     private Result checkValidRankProfiles(Query query, Set<String> docTypes) {
         String rankProfile = query.getRanking().getProfile();
         Set<String> invalidInDocTypes = null;
@@ -405,8 +403,7 @@ public class ClusterSearcher extends Searcher {
         int tries = 0;
 
         do {
-            // The loop is in case there are other searchers available
-            // able to produce results
+            // The loop is in case there are other searchers available able to produce results
             validateQueryTimeout(query);
             validateQueryCache(query);
             VespaBackEndSearcher searcher = hasher.select(tries++);
