@@ -45,4 +45,8 @@ public class NodeEvent implements Event {
     public String getCategory() {
         return type.toString();
     }
+
+    public Type getType() {
+        return type;
+    }
 }
