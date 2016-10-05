@@ -221,10 +221,9 @@ DenseTensor::add(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    checkDimensions(*this, *rhs, "add");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return lhsValue + rhsValue; });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
@@ -234,11 +233,9 @@ DenseTensor::subtract(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    // Note that - *rhsCellItr is passed to the lambda function, that is why we do addition.
-    checkDimensions(*this, *rhs, "subtract");
-    return joinDenseTensorsNegated(*this, *rhs,
-                                   [](double lhsValue, double rhsValue)
-                                   { return lhsValue + rhsValue; });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return lhsValue - rhsValue; });
 }
 
 Tensor::UP
@@ -259,10 +256,9 @@ DenseTensor::min(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    checkDimensions(*this, *rhs, "min");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return std::min(lhsValue, rhsValue); });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return std::min(lhsValue, rhsValue); });
 }
 
 Tensor::UP
@@ -272,10 +268,9 @@ DenseTensor::max(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    checkDimensions(*this, *rhs, "max");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return std::max(lhsValue,rhsValue); });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return std::max(lhsValue, rhsValue); });
 }
 
 Tensor::UP
