@@ -174,6 +174,24 @@ public class ConstantTensorJsonValidatorTest {
     }
 
     @Test
+    public void ensure_that_non_number_values_are_disallowed() {
+        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expectMessage("Expected a number, but got VALUE_STRING");
+
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[])"),
+                inputJsonToReader(
+                        "{",
+                        "   'cells': [",
+                        "        {",
+                        "            'address': { 'x': '3' },",
+                        "            'value': 'fruit'",
+                        "        }",
+                        "   ]",
+                        "}"));
+    }
+
+    @Test
     public void ensure_that_extra_dimensions_are_disallowed() {
         expectedException.expect(InvalidConstantTensor.class);
         expectedException.expectMessage("Tensor dimension with name \"z\" does not exist");
