@@ -65,6 +65,12 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
                 new DimensionMetrics(entry.getKey(), entry.getValue())).iterator();
     }
 
+    // For testing
+    Map<String, Number> getMetricsForDimension(Dimensions dimensions) {
+        return metricsByDimensions.get(dimensions).entrySet().stream().collect(
+                Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
+    }
+
     public class DimensionMetrics {
         private final Dimensions dimensions;
         private final Map<String, Object> metrics;
