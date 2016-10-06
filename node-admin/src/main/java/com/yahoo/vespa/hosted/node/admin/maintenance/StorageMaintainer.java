@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.node.admin.restapi.SecretAgentHandler;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
@@ -11,15 +10,13 @@ import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -34,53 +31,32 @@ public class StorageMaintainer {
     private final Object monitor = new Object();
 
     private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
-    private Random random = new Random();
 
-    public void updateDiskUsage(String hostname, ContainerName containerName) {
-        updateMetricsCacheForContainerIfNeeded(containerName);
-
-        try {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-            SecretAgentHandler secretAgentHandler = new SecretAgentHandler();
-            secretAgentHandler.withDimension("host", hostname);
-            metricsCacheByContainerName.get(containerName).metrics.forEach(secretAgentHandler::withMetric);
-
-            // First write to temp file, then move temp file to main file to achieve atomic write
-            Path metricsSharePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/metrics-share/disk.usage");
-            Path metricsSharePathTemp = Paths.get(metricsSharePath.toString() + "_temp");
-            Files.write(metricsSharePathTemp, secretAgentHandler.toJson().getBytes(StandardCharsets.UTF_8.name()));
-
-            // Files.move() fails to move if target already exist, could do target.delete() first, but then it's no longer atomic
-            execute(logger, "mv", metricsSharePathTemp.toString(), metricsSharePath.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void updateMetricsCacheForContainerIfNeeded(ContainerName containerName) {
+    public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
         // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
         // that calculation rarely. Additionally, we spread out the calculation for different containers by adding
         // a random deviation.
-        if (metricsCacheByContainerName.containsKey(containerName) &&
-                metricsCacheByContainerName.get(containerName).nextUpdateAt.isAfter(Instant.now())) return;
+        if (! metricsCacheByContainerName.containsKey(containerName) ||
+                    metricsCacheByContainerName.get(containerName).nextUpdateAt.isBefore(Instant.now())) {
+            long distributedSecs = (long) (intervalSec * (0.5 + Math.random()));
+            MetricsCache metricsCache = new MetricsCache(Instant.now().plusSeconds(distributedSecs));
 
-        long distributedSecs = (long) (intervalSec * (0.5 + random.nextDouble()));
-        MetricsCache metricsCache = new MetricsCache(Instant.now().plusSeconds(distributedSecs));
-
-        // Throttle to one disk usage calculation at a time.
-        synchronized (monitor) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-            File containerDir = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/").toFile();
-
-            try {
-                long used = getDiscUsedInBytes(containerDir);
-                metricsCache.metrics.put("node.disk.used", used);
-            } catch (Throwable e) {
-                logger.error("Problems during disk usage calculations: " + e.getMessage());
+            // Throttle to one disk usage calculation at a time.
+            synchronized (monitor) {
+                PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
+                File containerDir = Maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/").toFile();
+                try {
+                    long used = getDiscUsedInBytes(containerDir);
+                    metricsCache.metrics.put("node.disk.used", used);
+                } catch (Throwable e) {
+                    logger.error("Problems during disk usage calculations: " + e.getMessage());
+                }
             }
+
+            metricsCacheByContainerName.put(containerName, metricsCache);
         }
 
-        metricsCacheByContainerName.put(containerName, metricsCache);
+        return metricsCacheByContainerName.get(containerName).metrics;
     }
 
     // Public for testing
@@ -173,7 +149,7 @@ public class StorageMaintainer {
             if (! output.isEmpty()) logger.info(output);
             if (! errors.isEmpty()) logger.error(errors);
         } catch (IOException e) {
-            e.printStackTrace();
+            NODE_ADMIN_LOGGER.warning("Failed to execute command " + Arrays.toString(params), e);
         }
     }
 
@@ -186,7 +162,7 @@ public class StorageMaintainer {
 
     private static class MetricsCache {
         private final Instant nextUpdateAt;
-        private final Map<String, Object> metrics = new HashMap<>();
+        private final Map<String, Number> metrics = new HashMap<>();
 
         MetricsCache(Instant nextUpdateAt) {
             this.nextUpdateAt = nextUpdateAt;

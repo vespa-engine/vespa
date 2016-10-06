@@ -5,6 +5,8 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author valerijf
@@ -17,7 +19,8 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void updateDiskUsage(String hostname, ContainerName containerName) {
+    public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
+        return new HashMap<>();
     }
 
     @Override

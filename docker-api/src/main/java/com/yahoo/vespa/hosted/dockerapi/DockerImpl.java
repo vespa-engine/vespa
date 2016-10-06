@@ -10,18 +10,22 @@ import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
+import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.RemoteApiVersion;
+import com.github.dockerjava.core.async.ResultCallbackTemplate;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.log.LogLevel;
+import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
@@ -113,8 +117,12 @@ public class DockerImpl implements Docker {
             throw new RuntimeException("Could not setup docker network", e);
         }
 
-        numberOfRunningContainersGauge = metricReceiver.declareGauge("containers.running");
-        numberOfDockerDaemonFails = metricReceiver.declareCounter("daemon.api_fails");
+        Dimensions dimensions = new Dimensions.Builder()
+                .add("host", HostName.getLocalhost())
+                .add("role", "docker").build();
+
+        numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");
+        numberOfDockerDaemonFails = metricReceiver.declareCounter(dimensions, "daemon.api_fails");
 
         // Some containers could already be running, count them and intialize to that value
         numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
@@ -288,6 +296,23 @@ public class DockerImpl implements Docker {
         }
     }
 
+    public ContainerStats getContainerStats(ContainerName containerName) {
+        try {
+            // TODO: Uncomment this to get container stats through docker-java when the jersey issues are resolved
+            // DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
+            // statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
+
+            Statistics stats = DockerStatsCmd.getContainerStatistics(containerName);
+            return new ContainerStatsImpl(stats.getNetworks(), stats.getCpuStats(),
+                    stats.getMemoryStats(), stats.getBlkioStats());
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to get container stats", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to get container stats", e);
+        }
+    }
+
     @Override
     public void startContainer(ContainerName containerName) {
         Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
@@ -301,7 +326,6 @@ public class DockerImpl implements Docker {
             }
         }
     }
-
 
     @Override
     public void stopContainer(final ContainerName containerName) {
@@ -508,6 +532,18 @@ public class DockerImpl implements Docker {
             } else {
                 removeScheduledPoll(dockerImage).completeExceptionally(
                         new DockerClientException("Could not download image: " + dockerImage));
+            }
+        }
+    }
+
+    private class DockerStatsCallback extends ResultCallbackTemplate<DockerStatsCallback, Statistics> {
+        private Statistics stats;
+
+        @Override
+        public void onNext(Statistics stats) {
+            if (stats != null) {
+                this.stats = stats;
+                onComplete();
             }
         }
     }

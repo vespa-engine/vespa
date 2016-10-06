@@ -1,7 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -69,12 +72,15 @@ public class NodeAgentImpl implements NodeAgent {
     private NodeAttributes lastAttributesSet = null;
     private ContainerNodeSpec lastNodeSpec = null;
 
+    private final MetricReceiverWrapper metricReceiver;
+
     public NodeAgentImpl(
             final String hostName,
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
-            final StorageMaintainer storageMaintainer) {
+            final StorageMaintainer storageMaintainer,
+            final MetricReceiverWrapper metricReceiver) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
@@ -82,6 +88,8 @@ public class NodeAgentImpl implements NodeAgent {
         this.storageMaintainer = storageMaintainer;
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName));
+
+        this.metricReceiver = metricReceiver;
     }
 
     @Override
@@ -283,6 +291,8 @@ public class NodeAgentImpl implements NodeAgent {
                 }
             }
         }
+
+        metricReceiver.unsetMetricsForContainer(hostname);
     }
 
     // Public for testing
@@ -329,7 +339,7 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
-                storageMaintainer.updateDiskUsage(nodeSpec.hostname, nodeSpec.containerName);
+                updateContainerNodeMetrics(nodeSpec);
                 break;
             case inactive:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
@@ -350,6 +360,66 @@ public class NodeAgentImpl implements NodeAgent {
             default:
                 throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    void updateContainerNodeMetrics(ContainerNodeSpec nodeSpec) {
+        Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
+        Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
+                .add("host", hostname)
+                .add("role", "tenants")
+                .add("flavor", nodeSpec.nodeFlavor)
+                .add("state", nodeSpec.nodeState.toString());
+
+        if (nodeSpec.owner.isPresent()) {
+            dimensionsBuilder
+                    .add("tenantName", nodeSpec.owner.get().tenant)
+                    .add("app", nodeSpec.owner.get().application);
+        }
+        if (nodeSpec.membership.isPresent()) {
+            dimensionsBuilder
+                    .add("clustertype", nodeSpec.membership.get().clusterType)
+                    .add("clusterid", nodeSpec.membership.get().clusterId);
+        }
+
+        if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
+        Dimensions dimensions = dimensionsBuilder.build();
+
+        Map<String, Object> throttledData = (Map<String, Object>) stats.getCpuStats().get("throttling_data");
+        Map<String, Object> cpuUsage = (Map<String, Object>) stats.getCpuStats().get("cpu_usage");
+        if (throttledData != null && throttledData.containsKey("throttled_data")) {
+            metricReceiver.declareGauge(dimensions, "node.cpu.throttled_time")
+                    .sample(((Number) throttledData.get("throttled_time")).doubleValue());
+        }
+        if (cpuUsage != null && cpuUsage.containsKey("total_usage")) {
+            metricReceiver.declareGauge(dimensions, "node.cpu.total_usage")
+                    .sample(((Number) cpuUsage.get("total_usage")).doubleValue());
+        }
+        if (stats.getCpuStats().containsKey("system_cpu_usage")) {
+            metricReceiver.declareGauge(dimensions, "node.cpu.system_cpu_usage")
+                    .sample(((Number) stats.getCpuStats().get("system_cpu_usage")).doubleValue());
+        }
+        if (stats.getMemoryStats().containsKey("limit")) {
+            metricReceiver.declareGauge(dimensions, "node.memory.limit")
+                    .sample(((Number) stats.getMemoryStats().get("limit")).doubleValue());
+        }
+        if (stats.getMemoryStats().containsKey("usage")) {
+            metricReceiver.declareGauge(dimensions, "node.memory.usage")
+                    .sample(((Number) stats.getMemoryStats().get("usage")).doubleValue());
+        }
+
+        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName).forEach(
+                (metricName, metricValue) -> metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue()));
+
+        stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
+            Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
+            Map<String, Object> intStats = (Map<String, Object>) interfaceStats;
+
+            metricReceiver.declareGauge(netDims, "node.network.bytes_rcvd")
+                    .sample(((Number) intStats.get("rx_bytes")).doubleValue());
+            metricReceiver.declareGauge(netDims, "node.network.bytes_sent")
+                   .sample(((Number) intStats.get("tx_bytes")).doubleValue());
+        });
     }
 
     public Optional<ContainerNodeSpec> getContainerNodeSpec() {

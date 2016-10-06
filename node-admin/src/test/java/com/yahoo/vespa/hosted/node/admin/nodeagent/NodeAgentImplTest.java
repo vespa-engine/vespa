@@ -1,8 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStatsImpl;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -13,8 +18,15 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -39,8 +51,10 @@ public class NodeAgentImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
+    private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
 
-    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations, storageMaintainer);
+    private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
+            storageMaintainer, metricReceiver);
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -62,9 +76,10 @@ public class NodeAgentImplTest {
                 MIN_CPU_CORES,
                 MIN_MAIN_MEMORY_AVAILABLE_GB,
                 MIN_DISK_AVAILABLE_GB);
-        final boolean isRunning = true;
         final String vespaVersion = "7.8.9";
 
+        Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+        when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(false);
@@ -111,6 +126,8 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
         final String vespaVersion = "7.8.9";
 
+        Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+        when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(true);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(true);
@@ -154,7 +171,6 @@ public class NodeAgentImplTest {
                 MIN_CPU_CORES,
                 MIN_MAIN_MEMORY_AVAILABLE_GB,
                 MIN_DISK_AVAILABLE_GB);
-        final String vespaVersion = "7.8.9";
 
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
@@ -199,8 +215,7 @@ public class NodeAgentImplTest {
         try {
             nodeAgent.tick();
             fail("Expected to throw an exception");
-        } catch (Exception e) {
-        }
+        } catch (Exception ignored) { }
 
         verify(dockerOperations, never()).startContainerIfNeeded(eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
@@ -345,6 +360,8 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
         final String vespaVersion = "7.8.9";
 
+        Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+        when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(wantedDockerImage))).thenReturn(false);
         when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(true);
@@ -360,8 +377,7 @@ public class NodeAgentImplTest {
         try {
             nodeAgent.tick();
             fail("Expected to throw an exception");
-        } catch (RuntimeException e) {
-        }
+        } catch (RuntimeException ignored) { }
 
         inOrder.verify(dockerOperations, times(1)).executeResume(any());
         inOrder.verifyNoMoreInteractions();
@@ -371,6 +387,45 @@ public class NodeAgentImplTest {
 
         inOrder.verify(dockerOperations).executeResume(any());
         inOrder.verify(orchestrator).resume(hostName);
+        inOrder.verify(dockerOperations).getContainerStats(nodeSpec.containerName);
         inOrder.verifyNoMoreInteractions();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testGetRelevantMetrics() throws IOException {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        ClassLoader classLoader = getClass().getClassLoader();
+        File statsFile = new File(classLoader.getResource("docker.stats.json").getFile());
+        Map<String, Object> dockerStats = objectMapper.readValue(statsFile, Map.class);
+
+        Map<String, Object> networks = (Map<String, Object>) dockerStats.get("networks");
+        Map<String, Object> cpu_stats = (Map<String, Object>) dockerStats.get("cpu_stats");
+        Map<String, Object> memory_stats = (Map<String, Object>) dockerStats.get("memory_stats");
+        Map<String, Object> blkio_stats = (Map<String, Object>) dockerStats.get("blkio_stats");
+        Docker.ContainerStats stats = new ContainerStatsImpl(networks, cpu_stats, memory_stats, blkio_stats);
+
+        final ContainerName containerName = new ContainerName("cont-name");
+        when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(stats);
+
+        Optional<String> version = Optional.of("1.2.3");
+        ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner("tester", "testapp", "testinstance");
+        ContainerNodeSpec.Membership membership = new ContainerNodeSpec.Membership("clustType", "clustId", "grp", 3, false);
+        ContainerNodeSpec nodeSpec = new ContainerNodeSpec(hostName, null, containerName, Node.State.active, "tenants",
+                "docker", version, Optional.of(owner), Optional.of(membership), null, null, null, null, null);
+
+        nodeAgent.updateContainerNodeMetrics(nodeSpec);
+
+        Set<Map<String, Object>> actualMetrics = new HashSet<>();
+        for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver) {
+            Map<String, Object> metrics = objectMapper.readValue(dimensionMetrics.toSecretAgentReport(), Map.class);
+            metrics.remove("timestamp"); // Remove timestamp so we can test against expected map
+            actualMetrics.add(metrics);
+        }
+
+        File expectedMetricsFile = new File(classLoader.getResource("docker.stats.metrics.expected.json").getFile());
+        Set<Map<String, Object>> expectedMetrics = objectMapper.readValue(expectedMetricsFile, Set.class);
+
+        assertEquals(expectedMetrics, actualMetrics);
     }
 }
