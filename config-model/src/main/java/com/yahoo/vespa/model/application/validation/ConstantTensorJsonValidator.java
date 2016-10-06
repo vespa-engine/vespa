@@ -10,9 +10,10 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -27,8 +28,9 @@ public class ConstantTensorJsonValidator {
     private static final String FIELD_VALUE = "value";
 
     private static final JsonFactory jsonFactory = new JsonFactory();
-    private TensorType tensorType;
     private JsonParser parser;
+
+    private Map<String, TensorType.Dimension> tensorDimensions;
 
     public static class InvalidConstantTensor extends RuntimeException {
         public InvalidConstantTensor(JsonParser parser, String message) {
@@ -56,7 +58,10 @@ public class ConstantTensorJsonValidator {
     public ConstantTensorJsonValidator(Reader tensorFile, TensorType tensorType) {
         wrapIOException(() -> {
             this.parser = jsonFactory.createParser(tensorFile);
-            this.tensorType = tensorType;
+            this.tensorDimensions = tensorType
+                    .dimensions()
+                    .stream()
+                    .collect(Collectors.toMap(TensorType.Dimension::name, Function.identity()));
         });
     }
 
@@ -69,14 +74,14 @@ public class ConstantTensorJsonValidator {
             assertNextTokenIs(JsonToken.START_ARRAY);
 
             while (parser.nextToken() != JsonToken.END_ARRAY) {
-                validateTensorCell(tensorType.dimensions());
+                validateTensorCell();
             }
 
             assertNextTokenIs(JsonToken.END_OBJECT);
         });
     }
 
-    private void validateTensorCell(Collection<TensorType.Dimension> tensorDimensions) {
+    private void validateTensorCell() {
         wrapIOException(() -> {
             assertCurrentTokenIs(JsonToken.START_OBJECT);
 
@@ -89,7 +94,7 @@ public class ConstantTensorJsonValidator {
                     fieldNameCandidates.remove(fieldName);
 
                     if (fieldName.equals(FIELD_ADDRESS)) {
-                        validateTensorAddress(tensorDimensions);
+                        validateTensorAddress();
                     } else if (fieldName.equals(FIELD_VALUE)) {
                         validateTensorValue();
                     }
@@ -102,28 +107,31 @@ public class ConstantTensorJsonValidator {
         });
     }
 
-    private void validateTensorAddress(Collection<TensorType.Dimension> tensorDimensions) throws IOException {
+    private void validateTensorAddress() throws IOException {
         assertNextTokenIs(JsonToken.START_OBJECT);
 
-        final Map<String, TensorType.Dimension> tensorDimensionsMapping = tensorDimensions.stream()
-                .collect(Collectors.toMap(TensorType.Dimension::name, Function.identity()));
+        final Set<String> cellDimensions = new HashSet<>(tensorDimensions.keySet());
 
         // Iterate within the address key, value pairs
         while ((parser.nextToken() != JsonToken.END_OBJECT)) {
             assertCurrentTokenIs(JsonToken.FIELD_NAME);
 
             final String dimensionName = parser.getCurrentName();
-            TensorType.Dimension dimension = tensorDimensionsMapping.get(dimensionName);
+            TensorType.Dimension dimension = tensorDimensions.get(dimensionName);
             if (dimension == null) {
-                throw new InvalidConstantTensor(parser, String.format("Tensor dimension with name \"%s\" does not exist", parser.getCurrentName()));
+                throw new InvalidConstantTensor(parser, String.format("Tensor dimension \"%s\" does not exist", parser.getCurrentName()));
             }
 
-            tensorDimensionsMapping.remove(dimensionName);
+            if (!cellDimensions.contains(dimensionName)) {
+                throw new InvalidConstantTensor(parser, String.format("Duplicate tensor dimension \"%s\"", parser.getCurrentName()));
+            }
+
+            cellDimensions.remove(dimensionName);
             validateTensorCoordinate(dimension);
         }
 
-        if (!tensorDimensionsMapping.isEmpty()) {
-            throw new InvalidConstantTensor(parser, String.format("Tensor address missing dimension(s): %s", Joiner.on(", ").join(tensorDimensionsMapping.keySet())));
+        if (!cellDimensions.isEmpty()) {
+            throw new InvalidConstantTensor(parser, String.format("Tensor address missing dimension(s): %s", Joiner.on(", ").join(cellDimensions)));
         }
     }
 
