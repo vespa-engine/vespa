@@ -5,6 +5,13 @@
 namespace search {
 namespace docstore {
 
+using vespalib::ConstBufferRef;
+using vespalib::LockGuard;
+using vespalib::DataBuffer;
+using vespalib::alloc::Alloc;
+using vespalib::alloc::MemoryAllocator;
+using vespalib::DefaultAlloc;
+
 KeySet::KeySet(uint32_t key) :
     _keys()
 {
@@ -24,7 +31,7 @@ KeySet::contains(const KeySet &rhs) const {
 
 BlobSet::BlobSet() :
     _positions(),
-    _buffer()
+    _buffer(DefaultAlloc::create(0, 16 * MemoryAllocator::HUGEPAGE_SIZE), 0)
 { }
 
 namespace {
@@ -35,25 +42,25 @@ size_t getBufferSize(const BlobSet::Positions & p) {
 
 }
 
-BlobSet::BlobSet(const Positions & positions, vespalib::DefaultAlloc && buffer) :
+BlobSet::BlobSet(const Positions & positions, Alloc && buffer) :
     _positions(positions),
     _buffer(std::move(buffer), getBufferSize(_positions))
 {
 }
 
 void
-BlobSet::append(uint32_t lid, vespalib::ConstBufferRef blob) {
+BlobSet::append(uint32_t lid, ConstBufferRef blob) {
     _positions.emplace_back(lid, getBufferSize(_positions), blob.size());
     _buffer.write(blob.c_str(), blob.size());
 }
 
-vespalib::ConstBufferRef
+ConstBufferRef
 BlobSet::get(uint32_t lid) const
 {
-    vespalib::ConstBufferRef buf;
+    ConstBufferRef buf;
     for (LidPosition pos : _positions) {
         if (pos.lid() == lid) {
-            buf = vespalib::ConstBufferRef(_buffer.c_str() + pos.offset(), pos.size());
+            buf = ConstBufferRef(_buffer.c_str() + pos.offset(), pos.size());
             break;
         }
     }
@@ -73,8 +80,8 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
     _buffer()
 {
     if ( ! _positions.empty() ) {
-        vespalib::DataBuffer compressed;
-        vespalib::ConstBufferRef org = uncompressed.getBuffer();
+        DataBuffer compressed;
+        ConstBufferRef org = uncompressed.getBuffer();
         _compression = document::compress(compression, org, compressed, false);
         _buffer.resize(compressed.getDataLen());
         memcpy(_buffer, compressed.getData(), compressed.getDataLen());
@@ -84,9 +91,10 @@ CompressedBlobSet::CompressedBlobSet(const document::CompressionConfig &compress
 BlobSet
 CompressedBlobSet::getBlobSet() const
 {
-    vespalib::DataBuffer uncompressed;
+    // These are frequent lage allocations that are to expensive to mmap.
+    DataBuffer uncompressed(0, 1, DefaultAlloc::create(0, 16 * MemoryAllocator::HUGEPAGE_SIZE));
     if ( ! _positions.empty() ) {
-        document::decompress(_compression, getBufferSize(_positions), vespalib::ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
+        document::decompress(_compression, getBufferSize(_positions), ConstBufferRef(_buffer.c_str(), _buffer.size()), uncompressed, false);
     }
     return BlobSet(_positions, uncompressed.stealBuffer());
 }
@@ -103,14 +111,14 @@ public:
     VisitCollector() :
         _blobSet()
     { }
-    void visit(uint32_t lid, vespalib::ConstBufferRef buf) override;
+    void visit(uint32_t lid, ConstBufferRef buf) override;
     const BlobSet & getBlobSet() const { return _blobSet; }
 private:
     BlobSet _blobSet;
 };
 
 void
-VisitCollector::visit(uint32_t lid, vespalib::ConstBufferRef buf) {
+VisitCollector::visit(uint32_t lid, ConstBufferRef buf) {
     if (buf.size() > 0) {
         _blobSet.append(lid, buf);
     }
@@ -133,7 +141,7 @@ VisitCache::VisitCache(IDataStore &store, size_t cacheSize, const document::Comp
 }
 
 VisitCache::Cache::IdSet
-VisitCache::Cache::findSetsContaining(const vespalib::LockGuard &, const KeySet & keys) const {
+VisitCache::Cache::findSetsContaining(const LockGuard &, const KeySet & keys) const {
     IdSet found;
     for (uint32_t subKey : keys.getKeys()) {
         const auto foundLid = _lid2Id.find(subKey);
@@ -160,7 +168,7 @@ VisitCache::Cache::readSet(const KeySet & key)
 }
 
 void
-VisitCache::Cache::locateAndInvalidateOtherSubsets(const vespalib::LockGuard & cacheGuard, const KeySet & keys)
+VisitCache::Cache::locateAndInvalidateOtherSubsets(const LockGuard & cacheGuard, const KeySet & keys)
 {
     // Due to the implementation of insert where the global lock is released and the fact
     // that 2 overlapping keysets kan have different keys and use different ValueLock

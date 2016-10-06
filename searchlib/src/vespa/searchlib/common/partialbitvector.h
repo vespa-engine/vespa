@@ -16,8 +16,6 @@ namespace search {
 class PartialBitVector : public BitVector
 {
 public:
-    typedef vespalib::AutoAlloc<0x800000, 0x1000> Alloc;
-
     /**
      * Class constructor specifying startindex and endindex.
      * Allocated area is zeroed.
@@ -31,7 +29,7 @@ public:
     virtual ~PartialBitVector(void);
 
 private:
-    Alloc  _alloc;
+    vespalib::alloc::Alloc  _alloc;
 };
 
 } // namespace search

@@ -221,7 +221,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
         SerialNum lastSerial(0);
         int64_t firstPos(currPos);
         bool full(false);
-        vespalib::DefaultAlloc buf;
+        vespalib::alloc::Alloc buf;
         for(size_t i(0); !full && (currPos < fSize); i++) {
             Packet::Entry e;
             if (read(transLog, e, buf, allowTruncate)) {
@@ -552,7 +552,7 @@ DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)
     }
     if (retval) {
         Packet newPacket;
-        vespalib::DefaultAlloc buf;
+        vespalib::alloc::Alloc buf;
         for (bool full(false);!full && retval && (r.from() < r.to());) {
             Packet::Entry e;
             int64_t fPos = file.GetPosition();
@@ -612,7 +612,7 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
 bool
 DomainPart::read(FastOS_FileInterface &file,
                  Packet::Entry &entry,
-                 vespalib::DefaultAlloc & buf,
+                 vespalib::alloc::Alloc & buf,
                  bool allowTruncate)
 {
     bool retval(true);
@@ -636,7 +636,7 @@ DomainPart::read(FastOS_FileInterface &file,
             }
         }
         if (len > buf.size()) {
-            vespalib::DefaultAlloc(len).swap(buf);
+            vespalib::DefaultAlloc::create(len).swap(buf);
         }
         rlen = file.Read(buf.get(), len);
         retval = rlen == len;

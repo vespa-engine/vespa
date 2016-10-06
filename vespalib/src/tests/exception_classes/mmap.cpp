@@ -1,6 +1,6 @@
 #include <vespa/vespalib/util/alloc.h>
 
-using vespalib::MMapAlloc;
+using namespace vespalib::alloc;
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
@@ -13,9 +13,9 @@ int main(int argc, char *argv[]) {
     virtualLimit.rlim_cur = virt;
     virtualLimit.rlim_max = virt;
     assert(setrlimit(RLIMIT_AS, &virtualLimit) == 0);
-    std::vector<MMapAlloc> mappings;
+    std::vector<Alloc> mappings;
     for (size_t i(0); i < numBlocks; i++) {
-        mappings.emplace_back(blockSize);
+        mappings.emplace_back(MMapAllocFactory::create(blockSize));
         memset(mappings.back().get(), 0xa5, mappings.back().size());
     }
     return 0;

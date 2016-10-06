@@ -70,7 +70,7 @@ private:
     static bool
     read(FastOS_FileInterface &file,
          Packet::Entry &entry,
-         vespalib::DefaultAlloc &buf,
+         vespalib::alloc::Alloc &buf,
          bool allowTruncate);
 
     void write(FastOS_FileInterface &file, const Packet::Entry &entry);

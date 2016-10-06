@@ -7,11 +7,13 @@
 namespace search {
 namespace grouping {
 
-class GroupingEngine  : private vespalib::noncopyable
+class GroupingEngine
 {
 public:
     typedef std::vector<GroupEngine *> GroupEngines;
 public:
+    GroupingEngine(const GroupingEngine &) = delete;
+    GroupingEngine & operator = (const GroupingEngine &) = delete;
     GroupingEngine(aggregation::Grouping & request);
     GroupingEngine(vespalib::nbostream & request, bool oldWay);
     ~GroupingEngine();

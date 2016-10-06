@@ -24,8 +24,7 @@ protected:
     typedef vespalib::GenerationHolder GenerationHolder;
 
 public:
-    using EnumIndexCopyVector = vespalib::Array<EnumIndex,
-                                                vespalib::DefaultAlloc>;
+    using EnumIndexCopyVector = vespalib::Array<EnumIndex>;
 
     EnumStoreBase::Index getEnumIndex(DocId docId) const { return _enumIndices[docId]; }
     EnumHandle getE(DocId doc) const { return _enumIndices[doc].ref(); }

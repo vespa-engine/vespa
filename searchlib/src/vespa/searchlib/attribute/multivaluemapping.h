@@ -184,7 +184,7 @@ private:
     virtual void clearVector(Index idx) = 0;
 
 public:
-    using IndexCopyVector = vespalib::Array<Index, vespalib::DefaultAlloc>;
+    using IndexCopyVector = vespalib::Array<Index>;
 
     void doneHoldVector(Index idx);
 
@@ -239,11 +239,11 @@ public:
 
 
 template <typename VT>
-class MultiValueMappingVector : public vespalib::Array<VT, vespalib::DefaultAlloc>,
+class MultiValueMappingVector : public vespalib::Array<VT>,
                                 public MultiValueMappingVectorBaseBase
 {
 public:
-    typedef vespalib::Array<VT, vespalib::DefaultAlloc> VectorBase;
+    typedef vespalib::Array<VT> VectorBase;
     typedef MultiValueMappingFallbackVectorHold<VectorBase> FallBackHold;
     MultiValueMappingVector();
     MultiValueMappingVector(size_t n);

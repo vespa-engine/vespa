@@ -26,7 +26,7 @@ Test::Main()
     TEST_INIT("allocinarray_test");
 
     testAllocInArray<int64_t, vespalib::Array<int64_t> >();
-    testAllocInArray<int64_t, vespalib::Array<int64_t, vespalib::DefaultAlloc> >();
+    testAllocInArray<int64_t, vespalib::Array<int64_t> >();
     testAllocInArray<int64_t, std::vector<int64_t> >();
     testAllocInArray<int64_t, std::deque<int64_t> >();
 

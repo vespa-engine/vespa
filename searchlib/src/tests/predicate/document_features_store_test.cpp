@@ -166,17 +166,17 @@ TEST("require that both features and ranges are removed by 'remove'") {
 
 TEST("require that both features and ranges counts towards memory usage") {
     DocumentFeaturesStore features_store(10);
-    EXPECT_EQUAL(332u, features_store.getMemoryUsage().usedBytes());
+    EXPECT_EQUAL(364u, features_store.getMemoryUsage().usedBytes());
 
     PredicateTreeAnnotations annotations;
     annotations.features.push_back(PredicateHash::hash64("foo=100-199"));
     features_store.insert(annotations, doc_id);
-    EXPECT_EQUAL(340u, features_store.getMemoryUsage().usedBytes());
+    EXPECT_EQUAL(372u, features_store.getMemoryUsage().usedBytes());
 
     annotations.features.clear();
     annotations.range_features.push_back({"foo", 100, 199});
     features_store.insert(annotations, doc_id + 1);
-    EXPECT_EQUAL(436u, features_store.getMemoryUsage().usedBytes());
+    EXPECT_EQUAL(468u, features_store.getMemoryUsage().usedBytes());
 }
 
 TEST("require that DocumentFeaturesStore can be serialized") {
@@ -191,7 +191,7 @@ TEST("require that DocumentFeaturesStore can be serialized") {
     expectHash("foo=bar", features);
     expectHash("foo=100-199", features);
 
-    vespalib::MMapDataBuffer buffer;
+    vespalib::DataBuffer buffer;
     features_store.serialize(buffer);
 
     DocumentFeaturesStore features_store2(buffer);
@@ -206,17 +206,17 @@ TEST("require that serialization cleans up wordstore") {
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", 100, 199});
     features_store.insert(annotations, doc_id);
-    EXPECT_EQUAL(428u, features_store.getMemoryUsage().usedBytes());
+    EXPECT_EQUAL(460u, features_store.getMemoryUsage().usedBytes());
     annotations.range_features.push_back({"bar", 100, 199});
     features_store.insert(annotations, doc_id + 1);
-    EXPECT_EQUAL(720u, features_store.getMemoryUsage().usedBytes());
+    EXPECT_EQUAL(800u, features_store.getMemoryUsage().usedBytes());
     features_store.remove(doc_id + 1);
-    EXPECT_EQUAL(672u, features_store.getMemoryUsage().usedBytes());
+    EXPECT_EQUAL(752u, features_store.getMemoryUsage().usedBytes());
 
-    vespalib::MMapDataBuffer buffer;
+    vespalib::DataBuffer buffer;
     features_store.serialize(buffer);
     DocumentFeaturesStore features_store2(buffer);
-    EXPECT_EQUAL(428u, features_store2.getMemoryUsage().usedBytes());
+    EXPECT_EQUAL(460u, features_store2.getMemoryUsage().usedBytes());
 }
 
 

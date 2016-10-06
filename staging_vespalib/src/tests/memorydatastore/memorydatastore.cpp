@@ -21,7 +21,7 @@ public:
 void
 MemoryDataStoreTest::testMemoryDataStore()
 {
-    MemoryDataStore s(256);
+    MemoryDataStore s(DefaultAlloc::create(256));
     std::vector<MemoryDataStore::Reference> v;
     v.push_back(s.push_back("mumbo", 5));
     for (size_t i(0); i < 50; i++) {

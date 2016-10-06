@@ -17,8 +17,7 @@ class BitVectorTest;
 class AllocatedBitVector : public BitVector
 {
 public:
-    typedef vespalib::AutoAlloc<0x800000, 0x1000> Alloc;
-
+    using Alloc = vespalib::alloc::Alloc;
     /**
      * Class constructor specifying size but not content.  New bitvector
      * is cleared.

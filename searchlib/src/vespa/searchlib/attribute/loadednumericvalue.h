@@ -6,12 +6,9 @@
 #include <vespa/searchlib/util/fileutil.h>
 #include "loadedvalue.h"
 
+namespace search {
 
-namespace search
-{
-
-namespace attribute
-{
+namespace attribute {
 
 /**
  * Temporary representation of enumerated attribute loaded from non-enumerated
@@ -21,20 +18,12 @@ namespace attribute
 template <typename T>
 struct LoadedNumericValue : public LoadedValue<T>
 {
-    LoadedNumericValue()
-        : LoadedValue<T>()
-    {
-    }
+    LoadedNumericValue() : LoadedValue<T>() { }
 
-    class ValueCompare : public std::binary_function<LoadedNumericValue<T>,
-                                                     LoadedNumericValue<T>,
-                                                     bool>
+    class ValueCompare : public std::binary_function<LoadedNumericValue<T>, LoadedNumericValue<T>, bool>
     {
     public:
-        bool
-        operator()(const LoadedNumericValue<T> &x,
-                   const LoadedNumericValue<T> &y) const
-        {
+        bool operator()(const LoadedNumericValue<T> &x, const LoadedNumericValue<T> &y) const {
             return x < y;
         }
     };
@@ -42,9 +31,7 @@ struct LoadedNumericValue : public LoadedValue<T>
     class ValueRadix
     {
     public:
-        uint64_t
-        operator()(const LoadedValue<T> &v) const
-        {
+        uint64_t operator()(const LoadedValue<T> &v) const {
             return vespalib::convertForSort<T, true>::convert(v.getValue());
         }
     };
@@ -53,15 +40,11 @@ struct LoadedNumericValue : public LoadedValue<T>
 
 template <typename T>
 void
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<T>,
-                                                  vespalib::DefaultAlloc> &
-                  loaded);
+sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<T>> & loaded);
 
 template <typename T>
 void
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<T>,
-                  vespalib::DefaultAlloc> &
-                  loaded);
+sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<T>> & loaded);
 
 } // namespace attribute
 

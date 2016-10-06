@@ -16,7 +16,7 @@ LOG_SETUP(".document_features_store");
 
 using search::btree::BTreeNoLeafData;
 using search::btree::EntryRef;
-using vespalib::MMapDataBuffer;
+using vespalib::DataBuffer;
 using vespalib::stringref;
 using std::unordered_map;
 using std::vector;
@@ -44,7 +44,7 @@ DocumentFeaturesStore::DocumentFeaturesStore(uint32_t arity)
 
 namespace {
 template <typename KeyComp, typename WordIndex>
-void deserializeWords(MMapDataBuffer &buffer,
+void deserializeWords(DataBuffer &buffer,
                       memoryindex::WordStore &word_store,
                       WordIndex &word_index,
                       vector<EntryRef> &word_refs) {
@@ -63,7 +63,7 @@ void deserializeWords(MMapDataBuffer &buffer,
 }
 
 template <typename RangeFeaturesMap>
-void deserializeRanges(MMapDataBuffer &buffer, vector<EntryRef> &word_refs,
+void deserializeRanges(DataBuffer &buffer, vector<EntryRef> &word_refs,
                        RangeFeaturesMap &ranges, size_t &num_ranges) {
     typedef typename RangeFeaturesMap::mapped_type::value_type Range;
     uint32_t ranges_size = buffer.readInt32();
@@ -84,7 +84,7 @@ void deserializeRanges(MMapDataBuffer &buffer, vector<EntryRef> &word_refs,
 }
 
 template <typename DocumentFeaturesMap>
-void deserializeDocs(MMapDataBuffer &buffer, DocumentFeaturesMap &docs,
+void deserializeDocs(DataBuffer &buffer, DocumentFeaturesMap &docs,
                      size_t &num_features) {
     uint32_t docs_size = buffer.readInt32();
     for (uint32_t i = 0; i < docs_size; ++i) {
@@ -100,7 +100,7 @@ void deserializeDocs(MMapDataBuffer &buffer, DocumentFeaturesMap &docs,
 }
 }  // namespace
 
-DocumentFeaturesStore::DocumentFeaturesStore(MMapDataBuffer &buffer)
+DocumentFeaturesStore::DocumentFeaturesStore(DataBuffer &buffer)
     : DocumentFeaturesStore(0) {
     _arity = buffer.readInt16();
 
@@ -238,7 +238,7 @@ void findUsedWords(const RangeFeaturesMap &ranges,
     }
 }
 
-void serializeWords(MMapDataBuffer &buffer, const vector<EntryRef> &word_list,
+void serializeWords(DataBuffer &buffer, const vector<EntryRef> &word_list,
                     const memoryindex::WordStore &word_store) {
     buffer.writeInt32(word_list.size());
     for (const auto &word_ref : word_list) {
@@ -250,7 +250,7 @@ void serializeWords(MMapDataBuffer &buffer, const vector<EntryRef> &word_list,
 }
 
 template <typename RangeFeaturesMap>
-void serializeRanges(MMapDataBuffer &buffer, RangeFeaturesMap &ranges,
+void serializeRanges(DataBuffer &buffer, RangeFeaturesMap &ranges,
                      unordered_map<uint32_t, uint32_t> &word_map) {
     buffer.writeInt32(ranges.size());
     for (const auto &range_features_entry : ranges) {
@@ -265,7 +265,7 @@ void serializeRanges(MMapDataBuffer &buffer, RangeFeaturesMap &ranges,
 }
 
 template <typename DocumentFeaturesMap>
-void serializeDocs(MMapDataBuffer &buffer, DocumentFeaturesMap &docs) {
+void serializeDocs(DataBuffer &buffer, DocumentFeaturesMap &docs) {
     buffer.writeInt32(docs.size());
     for (const auto &doc_features_entry : docs) {
         buffer.writeInt32(doc_features_entry.first);  // doc id
@@ -277,7 +277,7 @@ void serializeDocs(MMapDataBuffer &buffer, DocumentFeaturesMap &docs) {
 }
 }  // namespace
 
-void DocumentFeaturesStore::serialize(MMapDataBuffer &buffer) const {
+void DocumentFeaturesStore::serialize(DataBuffer &buffer) const {
     vector<EntryRef> word_list;
     unordered_map<uint32_t, uint32_t> word_map;
 

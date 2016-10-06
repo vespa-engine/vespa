@@ -3,13 +3,15 @@
 
 namespace vespalib {
 
-MemoryDataStore::MemoryDataStore(size_t initialSize, Lock * lock) :
+using alloc::Alloc;
+
+MemoryDataStore::MemoryDataStore(Alloc && initialAlloc, Lock * lock) :
     _buffers(),
     _writePos(0),
     _lock(lock)
 {
     _buffers.reserve(24);
-    _buffers.emplace_back(initialSize);
+    _buffers.emplace_back(std::move(initialAlloc));
 }
 
 MemoryDataStore::~MemoryDataStore()
@@ -26,7 +28,7 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
     const Alloc & b = _buffers.back();
     if ((sz + _writePos) > b.size()) {
         size_t newSize(std::max(sz, _buffers.back().size()*2));
-        _buffers.emplace_back(newSize);
+        _buffers.emplace_back(b.create(newSize));
         _writePos = 0;
     }
     Alloc & buf = _buffers.back();
@@ -39,7 +41,7 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
 
 VariableSizeVector::VariableSizeVector(size_t initialSize) :
     _vector(),
-    _store(initialSize)
+    _store(DefaultAlloc::create(initialSize))
 {
 }
 

@@ -29,11 +29,12 @@
 class FNET_DataBuffer
 {
 private:
-    char          *_bufstart;
-    char          *_bufend;
-    char          *_datapt;
-    char          *_freept;
-    vespalib::DefaultAlloc _ownedBuf;
+    using Alloc = vespalib::alloc::Alloc;
+    char  *_bufstart;
+    char  *_bufend;
+    char  *_datapt;
+    char  *_freept;
+    Alloc  _ownedBuf;
 
     FNET_DataBuffer(const FNET_DataBuffer &);
     FNET_DataBuffer &operator=(const FNET_DataBuffer &);

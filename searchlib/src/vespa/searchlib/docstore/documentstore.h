@@ -173,7 +173,7 @@ private:
             _compressedSize(rhs._compressedSize),
             _uncompressedSize(rhs._uncompressedSize),
             _compression(rhs._compression),
-            _buf(rhs.size())
+            _buf(vespalib::DefaultAlloc::create(rhs.size()))
         {
             memcpy(get(), rhs.get(), size());
         }
@@ -213,7 +213,7 @@ private:
         size_t _compressedSize;
         size_t _uncompressedSize;
         document::CompressionConfig::Type _compression;
-        vespalib::DefaultAlloc _buf;
+        vespalib::alloc::Alloc _buf;
     };
     class BackingStore {
     public:

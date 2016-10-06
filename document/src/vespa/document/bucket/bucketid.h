@@ -50,7 +50,7 @@ public:
      * typedef when needed we can alter this later with less code changes.
      */
     typedef uint64_t Type;
-    typedef vespalib::Array<BucketId, vespalib::DefaultAlloc> List;
+    typedef vespalib::Array<BucketId> List;
     /** Create an initially unset bucket id. */
     BucketId() : _id(0) {}
     /** Create a bucket id with the given raw unchecked content. */

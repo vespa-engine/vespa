@@ -14,6 +14,7 @@ using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using vespalib::hwaccelrated::IAccelrated;
 using vespalib::Optimized;
+using vespalib::DefaultAlloc;
 
 namespace {
 
@@ -31,8 +32,7 @@ void verifyContains(const search::BitVector & a, const search::BitVector & b)
 }
 
 /////////////////////////////////
-namespace search
-{
+namespace search {
 
 using vespalib::nbostream;
 using vespalib::GenerationHeldBase;
@@ -323,7 +323,7 @@ BitVector::create(Index numberOfElements,
         size_t vectorsize = getFileBytes(numberOfElements);
         file.DirectIOPadding(offset, vectorsize, padbefore, padafter);
         assert((padbefore & (getAlignment() - 1)) == 0);
-        AllocatedBitVector::Alloc alloc(padbefore + vectorsize + padafter);
+        AllocatedBitVector::Alloc alloc = DefaultAlloc::create(padbefore + vectorsize + padafter, 0x1000000, 0x1000);
         void * alignedBuffer = alloc.get();
         file.ReadBuf(alignedBuffer, alloc.size(), offset - padbefore);
         bv.reset(new AllocatedBitVector(numberOfElements, std::move(alloc), padbefore));

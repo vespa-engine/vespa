@@ -173,7 +173,7 @@ MemoryFieldIndex::dump(search::index::IndexBuilder & indexBuilder)
     vespalib::stringref word;
     FeatureStore::DecodeContextCooked decoder(NULL);
     DocIdAndFeatures features;
-    vespalib::Array<uint32_t, vespalib::DefaultAlloc> wordMap(_numUniqueWords + 1, 0);
+    vespalib::Array<uint32_t> wordMap(_numUniqueWords + 1, 0);
     _featureStore.setupForField(_fieldId, decoder);
     for (DictionaryTree::Iterator itr = _dict.begin(); itr.valid(); ++itr) {
         const WordKey & wk = itr.getKey();

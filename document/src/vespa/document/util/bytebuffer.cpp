@@ -21,6 +21,7 @@
 #define LOG_DEBUG3(a,b,c) LOG_DEBUG1(vespalib::make_string(a,b,c));
 #define LOG_DEBUG4(a,b,c,d) LOG_DEBUG1(vespalib::make_string(a,b,c,d));
 
+using vespalib::alloc::Alloc;
 using vespalib::DefaultAlloc;
 
 namespace document {
@@ -59,7 +60,7 @@ ByteBuffer::ByteBuffer() :
 }
 
 ByteBuffer::ByteBuffer(size_t len) :
-    ByteBuffer(DefaultAlloc(len), len)
+    ByteBuffer(DefaultAlloc::create(len), len)
 {
 }
 
@@ -74,7 +75,7 @@ ByteBuffer::ByteBuffer(const char* buffer, size_t len) :
     set(buffer, len);
 }
 
-ByteBuffer::ByteBuffer(DefaultAlloc buffer, size_t len) :
+ByteBuffer::ByteBuffer(Alloc buffer, size_t len) :
       _buffer(static_cast<char *>(buffer.get())),
       _len(len),
       _pos(0),
@@ -114,7 +115,7 @@ ByteBuffer& ByteBuffer::operator=(const ByteBuffer & org)
     if (this != & org) {
         cleanUp();
         if (org._len > 0 && org._buffer) {
-            DefaultAlloc(org._len + 1).swap(_ownedBuffer);
+            DefaultAlloc::create(org._len + 1).swap(_ownedBuffer);
             _buffer = static_cast<char *>(_ownedBuffer.get());
             memcpy(_buffer,org._buffer,org._len);
             _buffer[org._len] = 0;
@@ -189,7 +190,7 @@ ByteBuffer::sliceFrom(const ByteBuffer& buf, size_t from, size_t to) // throw (B
         // Slicing from someone that doesn't own their buffer, must make own copy.
         if (( buf._ownedBuffer.get() == NULL ) && (buf._bufHolder == NULL)) {
             cleanUp();
-            DefaultAlloc(to-from + 1).swap(_ownedBuffer);
+            DefaultAlloc::create(to-from + 1).swap(_ownedBuffer);
             _buffer = static_cast<char *>(_ownedBuffer.get());
             memcpy(_buffer, buf._buffer + from, to-from);
             _buffer[to-from] = 0;
@@ -200,7 +201,7 @@ ByteBuffer::sliceFrom(const ByteBuffer& buf, size_t from, size_t to) // throw (B
 
         // Slicing from someone that owns, but hasn't made a reference counter yet.
         if (!buf._bufHolder) {
-            buf._bufHolder=new BufferHolder(std::move(const_cast<DefaultAlloc &>(buf._ownedBuffer)));
+            buf._bufHolder=new BufferHolder(std::move(const_cast<Alloc &>(buf._ownedBuffer)));
         }
 
         // Slicing from refcounter.
@@ -218,7 +219,7 @@ ByteBuffer::sliceFrom(const ByteBuffer& buf, size_t from, size_t to) // throw (B
 ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, size_t len)
 {
     if (buffer && len) {
-        DefaultAlloc newBuf(len + 1);
+        Alloc newBuf = DefaultAlloc::create(len + 1);
         memcpy(newBuf.get(), buffer, len);
         static_cast<char *>(newBuf.get())[len] = 0;
         return new ByteBuffer(std::move(newBuf), len);
@@ -265,7 +266,7 @@ void ByteBuffer::flip()
 }
 
 
-ByteBuffer::BufferHolder::BufferHolder(DefaultAlloc buffer)
+ByteBuffer::BufferHolder::BufferHolder(Alloc buffer)
     : _buffer(std::move(buffer))
 {
 }
@@ -753,7 +754,7 @@ void ByteBuffer::cleanUp() {
         _bufHolder->subRef();
         _bufHolder = NULL;
     } else {
-        DefaultAlloc().swap(_ownedBuffer);
+        Alloc().swap(_ownedBuffer);
     }
     _buffer = NULL;
 }
