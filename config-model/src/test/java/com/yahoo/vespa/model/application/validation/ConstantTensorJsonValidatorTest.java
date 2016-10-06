@@ -118,7 +118,7 @@ public class ConstantTensorJsonValidatorTest {
     }
 
     @Test
-    public void ensure_that_non_integer_strings_in_address_points_are_disallowed() {
+    public void ensure_that_non_integer_strings_in_address_points_are_disallowed_unbounded() {
         expectedException.expect(InvalidConstantTensor.class);
         expectedException.expectMessage("Coordinate \"a\" for dimension x is not an integer");
 
@@ -130,6 +130,25 @@ public class ConstantTensorJsonValidatorTest {
                         "        {",
                         "            'address': { 'x': 'a' },",
                         "            'value': 47.0",
+                        "        }",
+                        "   ]",
+                        "}"));
+
+    }
+
+    @Test
+    public void ensure_that_non_integer_strings_in_address_points_are_disallowed_bounded() {
+        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expectMessage("Coordinate \"a\" for dimension x is not an integer");
+
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[5])"),
+                inputJsonToReader(
+                        "{",
+                        "   'cells': [",
+                        "        {",
+                        "            'address': { 'x': 'a' },",
+                        "            'value': 41.0",
                         "        }",
                         "   ]",
                         "}"));
