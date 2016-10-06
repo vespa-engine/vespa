@@ -172,7 +172,7 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
         if (do_compile) {
             _compile_token = CompileCache::compile(rank_function, PassParams::ARRAY);
         } else {
-            _interpreted_function.reset(new InterpretedFunction(DefaultTensorEngine::ref(), rank_function));
+            _interpreted_function.reset(new InterpretedFunction(DefaultTensorEngine::ref(), rank_function, node_types));
         }
     }
     FeatureType output_type = do_compile

@@ -9,6 +9,7 @@
 #include <vespa/vespalib/eval/function.h>
 #include <iostream>
 
+using vespalib::eval::NodeTypes;
 using vespalib::eval::Function;
 using vespalib::eval::ValueType;
 using vespalib::tensor::DefaultTensorEngine;
@@ -19,7 +20,7 @@ namespace fef {
 namespace test {
 
 AsTensor::AsTensor(const vespalib::string &expr)
-    : ifun(DefaultTensorEngine::ref(), Function::parse(expr)), ctx(), result(&ifun.eval(ctx))
+    : ifun(DefaultTensorEngine::ref(), Function::parse(expr), NodeTypes()), ctx(), result(&ifun.eval(ctx))
 {
     ASSERT_TRUE(result->is_tensor());
     tensor = static_cast<const Tensor *>(result->as_tensor());

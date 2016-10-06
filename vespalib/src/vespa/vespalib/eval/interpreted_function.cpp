@@ -128,9 +128,10 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     std::vector<Instruction> &program;
     Stash                    &stash;
     const TensorEngine       &tensor_engine;
+    const NodeTypes          &types;
 
-    ProgramBuilder(std::vector<Instruction> &program_in, Stash &stash_in, const TensorEngine &tensor_engine_in)
-        : program(program_in), stash(stash_in), tensor_engine(tensor_engine_in) {}
+    ProgramBuilder(std::vector<Instruction> &program_in, Stash &stash_in, const TensorEngine &tensor_engine_in, const NodeTypes &types_in)
+        : program(program_in), stash(stash_in), tensor_engine(tensor_engine_in), types(types_in) {}
 
     //-------------------------------------------------------------------------
 
@@ -370,13 +371,13 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
 
 } // namespace vespalib::<unnamed>
 
-InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in)
+InterpretedFunction::InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types)
     : _program(),
       _stash(),
       _num_params(num_params_in),
       _tensor_engine(engine)
 {
-    ProgramBuilder program_builder(_program, _stash, _tensor_engine);
+    ProgramBuilder program_builder(_program, _stash, _tensor_engine, types);
     root.traverse(program_builder);
 }
 

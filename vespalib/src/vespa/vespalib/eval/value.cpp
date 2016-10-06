@@ -42,5 +42,11 @@ TensorValue::apply(const BinaryOperation &op, const Value &rhs, Stash &stash) co
     return _value->engine().apply(op, *_value, *other, stash);
 }
 
+ValueType
+TensorValue::type() const
+{
+    return _value->engine().type_of(*_value);
+}
+
 } // namespace vespalib::eval
 } // namespace vespalib
