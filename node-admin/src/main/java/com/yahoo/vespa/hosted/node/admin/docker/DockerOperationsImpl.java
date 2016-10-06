@@ -217,7 +217,7 @@ public class DockerOperationsImpl implements DockerOperations {
         Optional<String> restartReason = shouldRestartContainer(nodeSpec);
         if (restartReason.isPresent()) {
             logger.info("Will restart container " + existingContainer.get() + ": " + restartReason.get());
-            restartContainer(nodeSpec, existingContainer.get(), orchestrator);
+            restartServices(nodeSpec, existingContainer.get(), orchestrator);
             return true;
         }
 
@@ -429,7 +429,7 @@ public class DockerOperationsImpl implements DockerOperations {
         docker.deleteContainer(containerName);
     }
 
-    private void restartContainer(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
+    private void restartServices(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
             throws Exception {
         if (existingContainer.isRunning) {
             ContainerName containerName = existingContainer.name;
