@@ -17,6 +17,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
+ * ConstantTensorJsonValidator strictly validates a constant tensor in JSON format read from a Reader object
+ *
  * @author Vegard Sjonfjell
  */
 public class ConstantTensorJsonValidator {
