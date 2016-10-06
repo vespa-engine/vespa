@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.dockerapi;
 import java.util.Map;
 
 /**
+ * Wrapper class for {@link com.github.dockerjava.api.model.Statistics} to prevent leaking from docker-java library.
+ *
  * @author valerijf
  */
 public class ContainerStatsImpl implements Docker.ContainerStats {

@@ -7,11 +7,11 @@ import com.google.inject.Inject;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
  */
 public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.DimensionMetrics> {
     private final static ObjectMapper objectMapper = new ObjectMapper();
-    private final Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = new ConcurrentHashMap<>();
+    private final Object monitor = new Object();
+    private final Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = new HashMap<>();
     private final MetricReceiver metricReceiver;
 
     @Inject
@@ -29,31 +30,42 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
         this.metricReceiver = metricReceiver;
     }
 
+    /**
+     *  Declaring the same dimensions and name results in the same CounterWrapper instance (idempotent). **/
     public CounterWrapper declareCounter(Dimensions dimensions, String name) {
-        if (! metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new ConcurrentHashMap<>());
-        if (! metricsByDimensions.get(dimensions).containsKey(name)) {
-            CounterWrapper counter = new CounterWrapper(metricReceiver.declareCounter(name, new Point(dimensions.dimensionsMap)));
-            metricsByDimensions.get(dimensions).put(name, counter);
-        }
+        synchronized (monitor) {
+            if (!metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new HashMap<>());
+            if (!metricsByDimensions.get(dimensions).containsKey(name)) {
+                CounterWrapper counter = new CounterWrapper(metricReceiver.declareCounter(name, new Point(dimensions.dimensionsMap)));
+                metricsByDimensions.get(dimensions).put(name, counter);
+            }
 
-        return (CounterWrapper) metricsByDimensions.get(dimensions).get(name);
+            return (CounterWrapper) metricsByDimensions.get(dimensions).get(name);
+        }
     }
 
+    /**
+     *  Declaring the same dimensions and name results in the same GaugeWrapper instance (idempotent). **/
     public GaugeWrapper declareGauge(Dimensions dimensions, String name) {
-        if (! metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new ConcurrentHashMap<>());
-        if (! metricsByDimensions.get(dimensions).containsKey(name)) {
-            GaugeWrapper gauge = new GaugeWrapper(metricReceiver.declareGauge(name, new Point(dimensions.dimensionsMap)));
-            metricsByDimensions.get(dimensions).put(name, gauge);
-        }
+        synchronized (monitor) {
+            if (!metricsByDimensions.containsKey(dimensions))
+                metricsByDimensions.put(dimensions, new HashMap<>());
+            if (!metricsByDimensions.get(dimensions).containsKey(name)) {
+                GaugeWrapper gauge = new GaugeWrapper(metricReceiver.declareGauge(name, new Point(dimensions.dimensionsMap)));
+                metricsByDimensions.get(dimensions).put(name, gauge);
+            }
 
-        return (GaugeWrapper) metricsByDimensions.get(dimensions).get(name);
+            return (GaugeWrapper) metricsByDimensions.get(dimensions).get(name);
+        }
     }
 
     public void unsetMetricsForContainer(String hostname) {
-        Set<Dimensions> dimensions = metricsByDimensions.keySet();
-        for (Dimensions dimension : dimensions) {
-            if (dimension.dimensionsMap.containsKey("host") && dimension.dimensionsMap.get("host").equals(hostname)) {
-                metricsByDimensions.remove(dimensions);
+        synchronized (monitor) {
+            Set<Dimensions> dimensions = metricsByDimensions.keySet();
+            for (Dimensions dimension : dimensions) {
+                if (dimension.dimensionsMap.containsKey("host") && dimension.dimensionsMap.get("host").equals(hostname)) {
+                    metricsByDimensions.remove(dimension);
+                }
             }
         }
     }
@@ -61,14 +73,18 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
 
     @Override
     public Iterator<DimensionMetrics> iterator() {
-        return metricsByDimensions.entrySet().stream().map(entry ->
-                new DimensionMetrics(entry.getKey(), entry.getValue())).iterator();
+        synchronized (monitor) {
+            return metricsByDimensions.entrySet().stream().map(entry ->
+                    new DimensionMetrics(entry.getKey(), entry.getValue())).iterator();
+        }
     }
 
     // For testing
     Map<String, Number> getMetricsForDimension(Dimensions dimensions) {
-        return metricsByDimensions.get(dimensions).entrySet().stream().collect(
-                Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
+        synchronized (monitor) {
+            return metricsByDimensions.get(dimensions).entrySet().stream().collect(
+                    Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
+        }
     }
 
     public class DimensionMetrics {

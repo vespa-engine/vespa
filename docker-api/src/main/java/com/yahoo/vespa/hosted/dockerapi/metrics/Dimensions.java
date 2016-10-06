@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Each metric reported to secret agent has dimmensions.
+ *
  * @author valerijf
  */
 public class Dimensions {
