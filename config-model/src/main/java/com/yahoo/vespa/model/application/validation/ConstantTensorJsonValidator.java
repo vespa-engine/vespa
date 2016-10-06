@@ -171,7 +171,11 @@ public class ConstantTensorJsonValidator {
     }
 
     private void validateTensorValue() throws IOException {
-        assertNextTokenIs(JsonToken.VALUE_NUMBER_FLOAT);
+        final JsonToken token = parser.nextToken();
+
+        if (token != JsonToken.VALUE_NUMBER_FLOAT && token != JsonToken.VALUE_NUMBER_INT) {
+            throw new InvalidConstantTensor(parser, String.format("Expected a number, but got %s", token.toString()));
+        }
     }
 
     private void assertCurrentTokenIs(JsonToken wantedToken) {
