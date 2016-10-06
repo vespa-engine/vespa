@@ -147,16 +147,13 @@ public class ConstantTensorJsonValidator {
             try {
                 final int value = Integer.parseInt(parser.getValueAsString());
                 if (value >= dimension.size().get()) {
-                    throwCoordinateOutsideBoundedDimension(parser.getValueAsString(), dimension.name());
+                    throw new InvalidConstantTensor(parser, String.format("Coordinate \"%s\" not within limits of bounded dimension %s", value, dimension.name()));
+
                 }
             } catch (NumberFormatException e) {
-                throwCoordinateOutsideBoundedDimension(parser.getValueAsString(), dimension.name());
+                throwCoordinateIsNotInteger(parser.getValueAsString(), dimension.name());
             }
         });
-    }
-
-    private void throwCoordinateOutsideBoundedDimension(String value, String dimensionName) {
-        throw new InvalidConstantTensor(parser, String.format("Coordinate \"%s\" not within limits of bounded dimension %s", value, dimensionName));
     }
 
     private void validateUnboundedCoordinate(TensorType.Dimension dimension) {
@@ -164,9 +161,13 @@ public class ConstantTensorJsonValidator {
             try {
                 Integer.parseInt(parser.getValueAsString());
             } catch (NumberFormatException e) {
-                throw new InvalidConstantTensor(parser, String.format("Coordinate \"%s\" for dimension %s is not an integer", parser.getValueAsString(), dimension.name()));
+                throwCoordinateIsNotInteger(parser.getValueAsString(), dimension.name());
             }
         });
+    }
+
+    private void throwCoordinateIsNotInteger(String value, String dimensionName) {
+        throw new InvalidConstantTensor(parser, String.format("Coordinate \"%s\" for dimension %s is not an integer", value, dimensionName));
     }
 
     private void validateTensorValue() throws IOException {
