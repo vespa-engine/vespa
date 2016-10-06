@@ -194,7 +194,7 @@ public class ConstantTensorJsonValidatorTest {
     @Test
     public void ensure_that_extra_dimensions_are_disallowed() {
         expectedException.expect(InvalidConstantTensor.class);
-        expectedException.expectMessage("Tensor dimension with name \"z\" does not exist");
+        expectedException.expectMessage("Tensor dimension \"z\" does not exist");
 
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[], y[])"),
@@ -204,6 +204,24 @@ public class ConstantTensorJsonValidatorTest {
                         "        {",
                         "            'address': { 'x': '3', 'y': '2', 'z': '4' },",
                         "            'value': 99.3",
+                        "        }",
+                        "   ]",
+                        "}"));
+    }
+
+    @Test
+    public void ensure_that_duplicate_dimensions_are_disallowed() {
+        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expectMessage("Duplicate tensor dimension \"y\"");
+
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[], y[])"),
+                inputJsonToReader(
+                        "{",
+                        "   'cells': [",
+                        "        {",
+                        "            'address': { 'x': '1', 'y': '2', 'y': '4' },",
+                        "            'value': 88.1",
                         "        }",
                         "   ]",
                         "}"));
