@@ -49,6 +49,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
+    private static final String[] RESTART_NODE_COMMAND = new String[] {NODE_PROGRAM, "restart"};
 
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
@@ -205,14 +206,31 @@ public class DockerOperationsImpl implements DockerOperations {
         if (! existingContainer.isPresent()) {
             return true;
         }
+
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
         if (removeReason.isPresent()) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
             removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             return true;
         }
+        Optional<String> restartReason = shouldRestartContainer(nodeSpec);
+        if (restartReason.isPresent()) {
+            logger.info("Will restart container " + existingContainer.get() + ": " + restartReason.get());
+            restartContainer(nodeSpec, existingContainer.get(), orchestrator);
+            return true;
+        }
+
         return false;
+    }
+
+    private Optional<String> shouldRestartContainer(ContainerNodeSpec nodeSpec) {
+        if (nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
+            return Optional.of("Restart requested - wanted restart generation has been bumped: "
+                                       + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration
+                    .get());
+        }
+        return Optional.empty();
     }
 
     private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
@@ -222,10 +240,6 @@ public class DockerOperationsImpl implements DockerOperations {
         if (!nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
                     + existingContainer.get() + " -> " + nodeSpec.wantedDockerImage.get());
-        }
-        if (nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
-            return Optional.of("Restart requested - wanted restart generation has been bumped: "
-                    + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration.get());
         }
         if (!existingContainer.get().isRunning) {
             return Optional.of("Container no longer running");
@@ -403,28 +417,7 @@ public class DockerOperationsImpl implements DockerOperations {
             // If we're stopping the node only to upgrade or restart the node or similar, we need to suspend
             // the services.
             if (nodeSpec.nodeState == Node.State.active) {
-                // TODO: Also skip orchestration if we're downgrading in test/staging
-                // How to implement:
-                //  - test/staging: We need to figure out whether we're in test/staging, by asking Chef!? Or,
-                //    let the Orchestrator handle it - it may know what zone we're in.
-                //  - downgrading: Impossible to know unless we look at the hosted version, which is
-                //    not available in the docker image (nor its name). Not sure how to solve this. Should
-                //    the node repo return the hosted version or a downgrade bit in addition to
-                //    wanted docker image etc?
-                // Should the tenant pipeline instead use BCP tool to upgrade faster!?
-                //
-                // More generally, the node repo response should contain sufficient info on what the docker image is,
-                // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
-                // needs to contain routines for drain and suspend. For many image, these can just be dummy routines.
-
-                logger.info("Ask Orchestrator for permission to suspend node " + nodeSpec.hostname);
-                final boolean suspendAllowed = orchestrator.suspend(nodeSpec.hostname);
-                if (!suspendAllowed) {
-                    logger.info("Orchestrator rejected suspend of node");
-                    // TODO: change suspend() to throw an exception if suspend is denied
-                    throw new OrchestratorException("Failed to get permission to suspend " + nodeSpec.hostname);
-                }
-
+                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
                 trySuspendNode(containerName);
             }
 
@@ -436,14 +429,53 @@ public class DockerOperationsImpl implements DockerOperations {
         docker.deleteContainer(containerName);
     }
 
+    private void restartContainer(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
+            throws Exception {
+        if (existingContainer.isRunning) {
+            ContainerName containerName = existingContainer.name;
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+            if (nodeSpec.nodeState == Node.State.active) {
+                logger.info("Restarting container " + containerName);
+                // Since we are restarting the node we need to suspend the services.
+                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
+                executeCommand(containerName, RESTART_NODE_COMMAND);
+            }
+        }
+    }
+
+    // TODO: Also skip orchestration if we're downgrading in test/staging
+    // How to implement:
+    //  - test/staging: We need to figure out whether we're in test/staging, zone is available in Environment
+    //  - downgrading: Impossible to know unless we look at the hosted version, which is
+    //    not available in the docker image (nor its name). Not sure how to solve this. Should
+    //    the node repo return the hosted version or a downgrade bit in addition to
+    //    wanted docker image etc?
+    // Should the tenant pipeline instead use BCP tool to upgrade faster!?
+    //
+    // More generally, the node repo response should contain sufficient info on what the docker image is,
+    // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
+    // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
+    private void orchestratorSuspendNode(Orchestrator orchestrator, ContainerNodeSpec nodeSpec, PrefixLogger logger) throws OrchestratorException {
+        final String hostname = nodeSpec.hostname;
+        logger.info("Ask Orchestrator for permission to suspend node " + hostname);
+        if ( ! orchestrator.suspend(hostname)) {
+            logger.info("Orchestrator rejected suspend of node " + hostname);
+            // TODO: change suspend() to throw an exception if suspend is denied
+            throw new OrchestratorException("Failed to get permission to suspend " + hostname);
+        }
+    }
+
+    public void executeCommand(ContainerName containerName, String[] command) {
+        Optional<ProcessResult> result = executeOptionalProgram(containerName, command);
+
+        if (result.isPresent() && !result.get().isSuccess()) {
+            throw new RuntimeException("Container " + containerName.asString()
+                                               + ": command " + Arrays.toString(command) + " failed: " + result.get());
+        }
+    }
 
     @Override
     public void executeResume(ContainerName containerName) {
-        Optional<ProcessResult> result = executeOptionalProgram(containerName, RESUME_NODE_COMMAND);
-
-        if (result.isPresent() && !result.get().isSuccess()) {
-            throw new RuntimeException("Container " +containerName.asString()
-                    + ": command " + Arrays.toString(RESUME_NODE_COMMAND) + " failed: " + result.get());
-        }
+        executeCommand(containerName, RESUME_NODE_COMMAND);
     }
 }
