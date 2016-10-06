@@ -406,10 +406,7 @@ public class NodeAgentImpl implements NodeAgent {
     @SuppressWarnings("unchecked")
     private void addIfNotNull(Dimensions dimensions, String yamasName, Object metrics, String metricName) {
         Map<String, Object> metricsMap = (Map<String, Object>) metrics;
-        if (metricsMap == null || !metricsMap.containsKey(metricName)) {
-            System.out.println(yamasName + " " + metricsMap + " " + metricName);
-            return;
-        }
+        if (metricsMap == null || !metricsMap.containsKey(metricName)) return;
         metricReceiver.declareGauge(dimensions, yamasName).sample(((Number) metricsMap.get(metricName)).doubleValue());
     }
 
