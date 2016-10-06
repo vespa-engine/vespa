@@ -214,9 +214,9 @@ public class DockerOperationsImpl implements DockerOperations {
             removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             return true;
         }
-        Optional<String> restartReason = shouldRestartContainer(nodeSpec);
+        Optional<String> restartReason = shouldRestartServices(nodeSpec);
         if (restartReason.isPresent()) {
-            logger.info("Will restart container " + existingContainer.get() + ": " + restartReason.get());
+            logger.info("Will restart services for container " + existingContainer.get() + ": " + restartReason.get());
             restartServices(nodeSpec, existingContainer.get(), orchestrator);
             return true;
         }
@@ -224,7 +224,7 @@ public class DockerOperationsImpl implements DockerOperations {
         return false;
     }
 
-    private Optional<String> shouldRestartContainer(ContainerNodeSpec nodeSpec) {
+    private Optional<String> shouldRestartServices(ContainerNodeSpec nodeSpec) {
         if (nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
                                        + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration
@@ -414,8 +414,7 @@ public class DockerOperationsImpl implements DockerOperations {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {
-            // If we're stopping the node only to upgrade or restart the node or similar, we need to suspend
-            // the services.
+            // If we're stopping the node only to upgrade we need to suspend the services.
             if (nodeSpec.nodeState == Node.State.active) {
                 orchestratorSuspendNode(orchestrator, nodeSpec, logger);
                 trySuspendNode(containerName);
@@ -435,8 +434,8 @@ public class DockerOperationsImpl implements DockerOperations {
             ContainerName containerName = existingContainer.name;
             PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
             if (nodeSpec.nodeState == Node.State.active) {
-                logger.info("Restarting container " + containerName);
-                // Since we are restarting the node we need to suspend the services.
+                logger.info("Restarting services for " + containerName);
+                // Since we are restarting the services we need to suspend the node.
                 orchestratorSuspendNode(orchestrator, nodeSpec, logger);
                 executeCommand(containerName, RESTART_NODE_COMMAND);
             }
