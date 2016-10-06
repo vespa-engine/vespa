@@ -22,7 +22,11 @@ import java.util.stream.Collectors;
  * @author Vegard Sjonfjell
  */
 public class ConstantTensorJsonValidator {
-    static private final JsonFactory jsonFactory = new JsonFactory();
+    private static final String FIELD_CELLS = "cells";
+    private static final String FIELD_ADDRESS = "address";
+    private static final String FIELD_VALUE = "value";
+
+    private static final JsonFactory jsonFactory = new JsonFactory();
     private TensorType tensorType;
     private JsonParser parser;
 
@@ -60,7 +64,7 @@ public class ConstantTensorJsonValidator {
         wrapIOException(() -> {
             assertNextTokenIs(JsonToken.START_OBJECT);
             assertNextTokenIs(JsonToken.FIELD_NAME);
-            assertFieldNameIs("cells");
+            assertFieldNameIs(FIELD_CELLS);
 
             assertNextTokenIs(JsonToken.START_ARRAY);
 
@@ -76,7 +80,7 @@ public class ConstantTensorJsonValidator {
         wrapIOException(() -> {
             assertCurrentTokenIs(JsonToken.START_OBJECT);
 
-            final List<String> fieldNameCandidates = new ArrayList<>(Arrays.asList("address", "value"));
+            final List<String> fieldNameCandidates = new ArrayList<>(Arrays.asList(FIELD_ADDRESS, FIELD_VALUE));
             for (int i = 0; i < 2; i++) {
                 assertNextTokenIs(JsonToken.FIELD_NAME);
                 final String fieldName = parser.getCurrentName();
@@ -84,9 +88,9 @@ public class ConstantTensorJsonValidator {
                 if (fieldNameCandidates.contains(fieldName)) {
                     fieldNameCandidates.remove(fieldName);
 
-                    if (fieldName.equals("address")) {
+                    if (fieldName.equals(FIELD_ADDRESS)) {
                         validateTensorAddress(tensorDimensions);
-                    } else if (fieldName.equals("value")) {
+                    } else if (fieldName.equals(FIELD_VALUE)) {
                         validateTensorValue();
                     }
                 } else {
