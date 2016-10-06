@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +31,6 @@ public class StorageMaintainer {
     private final Object monitor = new Object();
 
     private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
-    private Random random = new Random();
 
     public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
         // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
@@ -40,7 +38,7 @@ public class StorageMaintainer {
         // a random deviation.
         if (! metricsCacheByContainerName.containsKey(containerName) ||
                     metricsCacheByContainerName.get(containerName).nextUpdateAt.isBefore(Instant.now())) {
-            long distributedSecs = (long) (intervalSec * (0.5 + random.nextDouble()));
+            long distributedSecs = (long) (intervalSec * (0.5 + Math.random()));
             MetricsCache metricsCache = new MetricsCache(Instant.now().plusSeconds(distributedSecs));
 
             // Throttle to one disk usage calculation at a time.

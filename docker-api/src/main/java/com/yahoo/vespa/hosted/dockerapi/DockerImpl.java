@@ -25,6 +25,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
@@ -116,8 +117,9 @@ public class DockerImpl implements Docker {
             throw new RuntimeException("Could not setup docker network", e);
         }
 
-        Map<String, Object> dimensions = new HashMap<>();
-        dimensions.put("host", HostName.getLocalhost());
+        Dimensions dimensions = new Dimensions.Builder()
+                .add("host", HostName.getLocalhost())
+                .add("role", "docker").build();
 
         numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");
         numberOfDockerDaemonFails = metricReceiver.declareCounter(dimensions, "daemon.api_fails");
