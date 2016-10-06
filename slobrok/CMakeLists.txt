@@ -19,7 +19,6 @@ vespa_define_module(
     src/tests/backoff
     src/tests/configure
     src/tests/mirrorapi
-    src/tests/multi
     src/tests/oldapi
     src/tests/registerapi
     src/tests/standalone
