@@ -67,7 +67,7 @@ public class ConstantTensorJsonValidatorTest {
                         "        },",
                         "        {",
                         "            'address': { 'x': '2', 'y': '0' },",
-                        "            'value': 4.5",
+                        "            'value': 45",
                         "        }",
                         "   ]",
                         "}"));
