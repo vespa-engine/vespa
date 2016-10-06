@@ -87,7 +87,7 @@ public class ConstantTensorJsonValidatorTest {
     @Test
     public void ensure_that_bounded_tensor_outside_limits_is_disallowed() {
         expectedException.expect(InvalidConstantTensor.class);
-        expectedException.expectMessage("Coordinate \"9\" not within limits of bounded dimension x");
+        expectedException.expectMessage("Coordinate \"5\" not within limits of bounded dimension x");
 
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[5], y[10])"),
@@ -95,7 +95,7 @@ public class ConstantTensorJsonValidatorTest {
                         "{",
                         "   'cells': [",
                         "        {",
-                        "            'address': { 'x': '9', 'y': '2' },",
+                        "            'address': { 'x': '5', 'y': '2' },",
                         "            'value': 1e47",
                         "        }",
                         "   ]",
