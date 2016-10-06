@@ -383,43 +383,34 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
+
         Dimensions dimensions = dimensionsBuilder.build();
+        addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
+        addIfNotNull(dimensions, "node.cpu.total_usage", stats.getCpuStats().get("cpu_usage"), "total_usage");
+        addIfNotNull(dimensions, "node.cpu.system_cpu_usage", stats.getCpuStats(), "system_cpu_usage");
 
-        Map<String, Object> throttledData = (Map<String, Object>) stats.getCpuStats().get("throttling_data");
-        Map<String, Object> cpuUsage = (Map<String, Object>) stats.getCpuStats().get("cpu_usage");
-        if (throttledData != null && throttledData.containsKey("throttled_data")) {
-            metricReceiver.declareGauge(dimensions, "node.cpu.throttled_time")
-                    .sample(((Number) throttledData.get("throttled_time")).doubleValue());
-        }
-        if (cpuUsage != null && cpuUsage.containsKey("total_usage")) {
-            metricReceiver.declareGauge(dimensions, "node.cpu.total_usage")
-                    .sample(((Number) cpuUsage.get("total_usage")).doubleValue());
-        }
-        if (stats.getCpuStats().containsKey("system_cpu_usage")) {
-            metricReceiver.declareGauge(dimensions, "node.cpu.system_cpu_usage")
-                    .sample(((Number) stats.getCpuStats().get("system_cpu_usage")).doubleValue());
-        }
-        if (stats.getMemoryStats().containsKey("limit")) {
-            metricReceiver.declareGauge(dimensions, "node.memory.limit")
-                    .sample(((Number) stats.getMemoryStats().get("limit")).doubleValue());
-        }
-        if (stats.getMemoryStats().containsKey("usage")) {
-            metricReceiver.declareGauge(dimensions, "node.memory.usage")
-                    .sample(((Number) stats.getMemoryStats().get("usage")).doubleValue());
-        }
-
-        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName).forEach(
-                (metricName, metricValue) -> metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue()));
+        addIfNotNull(dimensions, "node.memory.limit", stats.getMemoryStats(), "limit");
+        addIfNotNull(dimensions, "node.memory.usage", stats.getMemoryStats(), "usage");
 
         stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
             Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
-            Map<String, Object> intStats = (Map<String, Object>) interfaceStats;
 
-            metricReceiver.declareGauge(netDims, "node.network.bytes_rcvd")
-                    .sample(((Number) intStats.get("rx_bytes")).doubleValue());
-            metricReceiver.declareGauge(netDims, "node.network.bytes_sent")
-                   .sample(((Number) intStats.get("tx_bytes")).doubleValue());
+            addIfNotNull(netDims, "node.network.bytes_rcvd", interfaceStats, "rx_bytes");
+            addIfNotNull(netDims, "node.network.bytes_sent", interfaceStats, "tx_bytes");
         });
+
+        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName).forEach(
+                (metricName, metricValue) -> metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addIfNotNull(Dimensions dimensions, String yamasName, Object metrics, String metricName) {
+        Map<String, Object> metricsMap = (Map<String, Object>) metrics;
+        if (metricsMap == null || !metricsMap.containsKey(metricName)) {
+            System.out.println(yamasName + " " + metricsMap + " " + metricName);
+            return;
+        }
+        metricReceiver.declareGauge(dimensions, yamasName).sample(((Number) metricsMap.get(metricName)).doubleValue());
     }
 
     public Optional<ContainerNodeSpec> getContainerNodeSpec() {

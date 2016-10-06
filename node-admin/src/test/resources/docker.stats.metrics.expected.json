@@ -34,6 +34,7 @@
     "metrics":{
       "node.cpu.system_cpu_usage":5.87688268E15,
       "node.cpu.total_usage":3.32131205198E11,
+      "node.cpu.throttled_time": 4523.0,
       "node.memory.usage":1.752707072E9,
       "node.memory.limit":4.294967296E9
     }
