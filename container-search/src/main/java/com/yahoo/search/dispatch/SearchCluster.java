@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.yahoo.container.handler.VipStatus;
+import com.yahoo.net.HostName;
 import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
 import com.yahoo.search.result.ErrorMessage;
@@ -50,20 +52,27 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private final ImmutableMultimap<String, Node> nodesByHost;
     private final ClusterMonitor<Node> clusterMonitor;
     private final int containerClusterSize;
+    private final String selfHostname;
+    private final VipStatus vipStatus;
 
     // Only needed until query requests are moved to rpc
     private final FS4ResourcePool fs4ResourcePool;
 
-    public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize) {
-        this(dispatchConfig.minActivedocsPercentage(), toNodes(dispatchConfig), fs4ResourcePool, containerClusterSize);
+    public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, 
+                         int containerClusterSize, VipStatus vipStatus) {
+        this(dispatchConfig.minActivedocsPercentage(), toNodes(dispatchConfig), fs4ResourcePool, 
+             containerClusterSize, vipStatus);
     }
     
-    public SearchCluster(double minActivedocsCoverage, List<Node> nodes, FS4ResourcePool fs4ResourcePool, int containerClusterSize) {
+    public SearchCluster(double minActivedocsCoverage, List<Node> nodes, FS4ResourcePool fs4ResourcePool, 
+                         int containerClusterSize, VipStatus vipStatus) {
         this.minActivedocsCoveragePercentage = minActivedocsCoverage;
         this.size = nodes.size();
         this.fs4ResourcePool = fs4ResourcePool;
         this.containerClusterSize = containerClusterSize;
-        
+        this.selfHostname = HostName.getLocalhost();
+        this.vipStatus = vipStatus;
+
         // Create groups
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
         for (Map.Entry<Integer, List<Node>> group : nodes.stream().collect(Collectors.groupingBy(Node::group)).entrySet())
@@ -102,8 +111,11 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
      */
     public ImmutableMultimap<String, Node> nodesByHost() { return nodesByHost; }
 
-    /** Whether direct dispatch (bypassing fdispatch) should be used when dispatching queries from the given hostname */
-    public Optional<Node> dispatchDirectlyFrom(String selfHostname) {
+    /** 
+     * Returns the recipient we should dispatch queries directly to (bypassing fdispatch),
+     * or empty if we should not dispatch directly.
+     */
+    public Optional<Node> directDispatchTarget() {
         // A search node in the search cluster in question is configured on the same host as the currently running container.
         // It has all the data <==> No other nodes in the search cluster have the same group id as this node.
         //         That local search node responds.
@@ -135,11 +147,26 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
     /** Used by the cluster monitor to manage node status */
     @Override
-    public void working(Node node) { node.setWorking(true); }
+    public void working(Node node) { 
+        node.setWorking(true);
+
+        if (usesDirectDispatchTo(node))
+            vipStatus.removeFromRotation(this);
+    }
 
     /** Used by the cluster monitor to manage node status */
     @Override
-    public void failed(Node node) { node.setWorking(false); }
+    public void failed(Node node) { 
+        node.setWorking(false);
+
+        // Take ourselves out if we usually dispatch only to our own host
+        if (usesDirectDispatchTo(node))
+            vipStatus.removeFromRotation(this);
+    }
+    
+    private boolean usesDirectDispatchTo(Node node) {
+        return directDispatchTarget().map((Node target) -> target.equals(node)).orElse(false);
+    }
 
     /** Used by the cluster monitor to manage node status */
     @Override

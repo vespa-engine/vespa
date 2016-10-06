@@ -113,7 +113,7 @@ public class ClusterSearcher extends Searcher {
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
         documentTypes = new LinkedHashSet<>();
         failoverToRemote = clusterConfig.failoverToRemote();
-        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount());
+        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus);
 
         String eventName = clusterModelName + ".cache_hit_ratio";
         cacheHitRatio = new Value(eventName, manager, new Value.Parameters().setNameExtension(false)

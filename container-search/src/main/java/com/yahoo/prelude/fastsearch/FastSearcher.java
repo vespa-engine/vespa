@@ -3,7 +3,6 @@ package com.yahoo.prelude.fastsearch;
 
 import java.util.Optional;
 
-import com.google.common.collect.ImmutableCollection;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
@@ -227,7 +226,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         // as that probably means that we are in a failover situation
         if ( ! dispatchBackend.getHost().equals(selfHostname)) return dispatchBackend;
 
-        Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().dispatchDirectlyFrom(selfHostname);
+        Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().directDispatchTarget();
         if ( ! directDispatchRecipient.isPresent()) return dispatchBackend;
 
         query.trace(false, 2, "Dispatching directly to ", directDispatchRecipient.get());
