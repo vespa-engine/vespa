@@ -79,9 +79,9 @@ public class ConstantTensorJsonValidatorTest {
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[], y[])"),
                 inputJsonToReader(
-                "{",
-                "   'cells': []",
-                "}"));
+                        "{",
+                        "   'cells': []",
+                        "}"));
     }
 
     @Test
@@ -199,7 +199,7 @@ public class ConstantTensorJsonValidatorTest {
                 inputJsonToReader(
                         "{",
                         "   'stats': {",
-                        "       'grandma-surprise': true,",
+                        "       'パープルゴム製のアヒルは私を殺すために望んでいます': true,",
                         "       'points': 47",
                         "   }",
                         "}"));
