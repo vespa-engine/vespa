@@ -166,7 +166,7 @@
                 component-jar-with-dependencies.jar,
                 <!-- jersey2 -->
                 aopalliance-repackaged-2.3.0-b10.jar,
-                hk2-api-2.3.0-b010.jar,
+                hk2-api-2.3.0-b10.jar,
                 hk2-locator-2.3.0-b10.jar,
                 hk2-utils-2.3.0-b10.jar,
                 jackson-annotations-${jackson2.version}.jar,
