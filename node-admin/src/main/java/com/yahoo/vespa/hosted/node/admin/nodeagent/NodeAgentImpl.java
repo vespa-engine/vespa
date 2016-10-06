@@ -369,7 +369,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .add("host", hostname)
                 .add("role", "tenants")
                 .add("flavor", nodeSpec.nodeFlavor)
-                .add("state", nodeSpec.nodeState);
+                .add("state", nodeSpec.nodeState.toString());
 
         if (nodeSpec.owner.isPresent()) {
             dimensionsBuilder
