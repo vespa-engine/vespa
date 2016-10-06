@@ -7,7 +7,6 @@ import com.google.inject.Inject;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.metrics.simple.Point;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
  */
 public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.DimensionMetrics> {
     private final static ObjectMapper objectMapper = new ObjectMapper();
-    private final Map<Map<String, Object>, Map<String, MetricValue>> metricsByDimensions = new ConcurrentHashMap<>();
+    private final Map<Dimensions, Map<String, MetricValue>> metricsByDimensions = new ConcurrentHashMap<>();
     private final MetricReceiver metricReceiver;
 
     @Inject
@@ -30,20 +29,20 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
         this.metricReceiver = metricReceiver;
     }
 
-    public CounterWrapper declareCounter(Map<String, Object> dimensions, String name) {
+    public CounterWrapper declareCounter(Dimensions dimensions, String name) {
         if (! metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new ConcurrentHashMap<>());
         if (! metricsByDimensions.get(dimensions).containsKey(name)) {
-            CounterWrapper counter = new CounterWrapper(metricReceiver.declareCounter(name, new Point(dimensions)));
+            CounterWrapper counter = new CounterWrapper(metricReceiver.declareCounter(name, new Point(dimensions.dimensionsMap)));
             metricsByDimensions.get(dimensions).put(name, counter);
         }
 
         return (CounterWrapper) metricsByDimensions.get(dimensions).get(name);
     }
 
-    public GaugeWrapper declareGauge(Map<String, Object> dimensions, String name) {
+    public GaugeWrapper declareGauge(Dimensions dimensions, String name) {
         if (! metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new ConcurrentHashMap<>());
         if (! metricsByDimensions.get(dimensions).containsKey(name)) {
-            GaugeWrapper gauge = new GaugeWrapper(metricReceiver.declareGauge(name, new Point(dimensions)));
+            GaugeWrapper gauge = new GaugeWrapper(metricReceiver.declareGauge(name, new Point(dimensions.dimensionsMap)));
             metricsByDimensions.get(dimensions).put(name, gauge);
         }
 
@@ -51,9 +50,9 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
     }
 
     public void unsetMetricsForContainer(String hostname) {
-        Set<Map<String, Object>> dimensions = metricsByDimensions.keySet();
-        for (Map<String, Object> dimension : dimensions) {
-            if (dimension.containsKey("host") && dimension.get("host").equals(hostname)) {
+        Set<Dimensions> dimensions = metricsByDimensions.keySet();
+        for (Dimensions dimension : dimensions) {
+            if (dimension.dimensionsMap.containsKey("host") && dimension.dimensionsMap.get("host").equals(hostname)) {
                 metricsByDimensions.remove(dimensions);
             }
         }
@@ -67,11 +66,11 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
     }
 
     public class DimensionMetrics {
-        private final Map<String, Object> dimensions;
+        private final Dimensions dimensions;
         private final Map<String, Object> metrics;
 
-        DimensionMetrics(Map<String, Object> dimensions, Map<String, MetricValue> metricValues) {
-            this.dimensions = new HashMap<>(dimensions);
+        DimensionMetrics(Dimensions dimensions, Map<String, MetricValue> metricValues) {
+            this.dimensions = dimensions;
             this.metrics = metricValues.entrySet().stream().collect(
                     Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getValue()));
         }
@@ -80,7 +79,7 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
             Map<String, Object> report = new LinkedHashMap<>();
             report.put("application", "docker");
             report.put("timestamp", System.currentTimeMillis() / 1000);
-            report.put("dimensions", dimensions);
+            report.put("dimensions", dimensions.dimensionsMap);
             report.put("metrics", metrics);
 
             return objectMapper.writeValueAsString(report);
