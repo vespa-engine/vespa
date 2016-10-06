@@ -29,8 +29,7 @@
       "host":"hostname",
       "vespaVersion":"1.2.3",
       "state":"active",
-      "clusterid":"clustId",
-      "interface":"eth1"
+      "clusterid":"clustId"
     },
     "metrics":{
       "node.cpu.system_cpu_usage":5.87688268E15,
@@ -51,7 +50,7 @@
       "vespaVersion":"1.2.3",
       "state":"active",
       "clusterid":"clustId",
-      "interface":"eth1"
+      "interface":"eth0"
     },
     "metrics":{
       "node.network.bytes_sent":2.0303455E7,

@@ -21,9 +21,7 @@ public class Dimensions {
         if (o == null || getClass() != o.getClass()) return false;
 
         Dimensions that = (Dimensions) o;
-
         return dimensionsMap.equals(that.dimensionsMap);
-
     }
 
     @Override
@@ -31,16 +29,21 @@ public class Dimensions {
         return dimensionsMap.hashCode();
     }
 
-    public static class Builder {
-        private final Map<String, Object> dimensionsMap = new HashMap<>();
+    @Override
+    public String toString() {
+        return dimensionsMap.toString();
+    }
 
-        public Dimensions.Builder add(String dimensionName, Object dimensionValue) {
+    public static class Builder {
+        private final Map<String, String> dimensionsMap = new HashMap<>();
+
+        public Dimensions.Builder add(String dimensionName, String dimensionValue) {
             dimensionsMap.put(dimensionName, dimensionValue);
             return this;
         }
 
         public Dimensions build() {
-            return new Dimensions(Collections.unmodifiableMap(dimensionsMap));
+            return new Dimensions(Collections.unmodifiableMap(new HashMap<>(dimensionsMap)));
         }
     }
 }
