@@ -387,7 +387,6 @@ public class NodeAgentImplTest {
 
         inOrder.verify(dockerOperations).executeResume(any());
         inOrder.verify(orchestrator).resume(hostName);
-        inOrder.verify(dockerOperations).getContainerStats(nodeSpec.containerName);
         inOrder.verifyNoMoreInteractions();
     }
 
@@ -411,10 +410,10 @@ public class NodeAgentImplTest {
         Optional<String> version = Optional.of("1.2.3");
         ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner("tester", "testapp", "testinstance");
         ContainerNodeSpec.Membership membership = new ContainerNodeSpec.Membership("clustType", "clustId", "grp", 3, false);
-        ContainerNodeSpec nodeSpec = new ContainerNodeSpec(hostName, null, containerName, Node.State.active, "tenants",
+        nodeAgent.lastNodeSpec = new ContainerNodeSpec(hostName, null, containerName, Node.State.active, "tenants",
                 "docker", version, Optional.of(owner), Optional.of(membership), null, null, null, null, null);
 
-        nodeAgent.updateContainerNodeMetrics(nodeSpec);
+        nodeAgent.updateContainerNodeMetrics();
 
         Set<Map<String, Object>> actualMetrics = new HashSet<>();
         for (MetricReceiverWrapper.DimensionMetrics dimensionMetrics : metricReceiver) {

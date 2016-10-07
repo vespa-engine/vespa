@@ -39,7 +39,7 @@ public class CallOrderVerifier {
         boolean inOrder = verifyInOrder(waitForCallOrderTimeout, functionCalls);
         if ( ! inOrder && ! assertMessage.isEmpty())
             System.err.println(assertMessage);
-        assertTrue(callOrder.toString(), inOrder);
+        assertTrue(toString(), inOrder);
     }
 
     /**
@@ -68,11 +68,11 @@ public class CallOrderVerifier {
         int pos = 0;
         synchronized (monitor) {
             for (String functionCall : functionCalls) {
-                int temp = indexOf(callOrder, functionCall, pos);
-                if (temp < pos) {
+                int temp = indexOf(callOrder.listIterator(pos), functionCall);
+                if (temp == -1) {
                     return false;
                 }
-                pos = temp;
+                pos += temp;
             }
         }
 
@@ -81,22 +81,24 @@ public class CallOrderVerifier {
 
     /**
      * Finds the first index of needle in haystack after a given position.
-     * @param haystack List to search for an element in
-     * @param needle Element to find in list
-     * @param startPos Index to start search from
-     * @return Index of the next needle in haystack after startPos, -1 if not found
+     * @param iter Iterator to search in
+     * @param search Element to find in iterator
+     * @return Index of the next search in  after startPos, -1 if not found
      */
-    private int indexOf(List<String> haystack, String needle, int startPos) {
-        synchronized (monitor) {
-            Iterator<String> iter = haystack.listIterator(startPos);
-            for (int i = startPos; iter.hasNext(); i++) {
-                if (needle.equals(iter.next())) {
-                    return i;
-                }
+    private int indexOf(Iterator<String> iter, String search) {
+        for (int i = 0; iter.hasNext(); i++) {
+            if (search.equals(iter.next())) {
+                return i;
             }
         }
 
         return -1;
     }
 
+    @Override
+    public String toString() {
+        synchronized (monitor) {
+            return callOrder.toString();
+        }
+    }
 }

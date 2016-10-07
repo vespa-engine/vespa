@@ -26,10 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Administers a host (for now only docker hosts) and its nodes (docker containers nodes).
@@ -38,6 +43,7 @@ import java.util.stream.Stream;
  */
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
+    private final ScheduledExecutorService metricsFetcherScheduler = Executors.newScheduledThreadPool(1);
 
     private static final long MIN_AGE_IMAGE_GC_MILLIS = Duration.ofMinutes(15).toMillis();
 
@@ -75,6 +81,14 @@ public class NodeAdminImpl implements NodeAdmin {
         this.numberOfContainersInActiveState = metricReceiver.declareGauge(dimensions, "nodes.state.active");
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(dimensions, "nodes.unhandled_exceptions");
+
+        metricsFetcherScheduler.scheduleWithFixedDelay(() -> {
+            try {
+                nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics);
+            } catch (Throwable e) {
+                logger.warning("Metric fetcher scheduler failed", e);
+            }
+        }, 0, 30000, MILLISECONDS);
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
@@ -149,6 +163,15 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void shutdown() {
+        metricsFetcherScheduler.shutdown();
+        try {
+            if (! metricsFetcherScheduler.awaitTermination(30, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Did not manage to shutdown node-agent metrics update metricsFetcherScheduler.");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             nodeAgent.stop();
         }

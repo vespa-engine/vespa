@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -70,7 +71,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
-    private ContainerNodeSpec lastNodeSpec = null;
+    ContainerNodeSpec lastNodeSpec = null;
 
     private final MetricReceiverWrapper metricReceiver;
 
@@ -339,7 +340,6 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
-                updateContainerNodeMetrics(nodeSpec);
                 break;
             case inactive:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
@@ -363,7 +363,13 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @SuppressWarnings("unchecked")
-    void updateContainerNodeMetrics(ContainerNodeSpec nodeSpec) {
+    public void updateContainerNodeMetrics() {
+        ContainerNodeSpec nodeSpec;
+        synchronized (monitor) {
+            nodeSpec = lastNodeSpec;
+        }
+
+        if (nodeSpec == null || nodeSpec.nodeState != Node.State.active) return;
         Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
