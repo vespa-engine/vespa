@@ -82,12 +82,13 @@ public class NodeAdminImpl implements NodeAdmin {
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(dimensions, "nodes.unhandled_exceptions");
 
-        try {
-            metricsFetcherScheduler.scheduleWithFixedDelay(
-                    () -> nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics), 0, 30000, MILLISECONDS);
-        } catch (Throwable e) {
-            logger.warning("Metric fetcher scheduler failed", e);
-        }
+        metricsFetcherScheduler.scheduleWithFixedDelay(() -> {
+            try {
+                nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics);
+            } catch (Throwable e) {
+                logger.warning("Metric fetcher scheduler failed", e);
+            }
+        }, 0, 30000, MILLISECONDS);
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
