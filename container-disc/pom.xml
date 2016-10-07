@@ -131,6 +131,11 @@
     </dependency>
     <!-- end WARNING -->
   </dependencies>
+  <properties>
+    <!-- hk2 version must be the one used by current jersey version. This is just to avoid duplicating it below.
+         Do not move this to the root pom! -->
+    <hk2.version>2.4.0-b06</hk2.version>
+  </properties>
   <build>
     <plugins>
       <plugin>
@@ -165,10 +170,10 @@
                 defaults-jar-with-dependencies.jar,
                 component-jar-with-dependencies.jar,
                 <!-- jersey2 -->
-                aopalliance-repackaged-2.3.0-b10.jar,
-                hk2-api-2.3.0-b10.jar,
-                hk2-locator-2.3.0-b10.jar,
-                hk2-utils-2.3.0-b10.jar,
+                aopalliance-repackaged-${hk2.version}.jar,
+                hk2-api-${hk2.version}.jar,
+                hk2-locator-${hk2.version}.jar,
+                hk2-utils-${hk2.version}.jar,
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,
                 jackson-databind-${jackson2.version}.jar,
