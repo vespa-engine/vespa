@@ -89,6 +89,7 @@ function Start {
                --env "HOSTED_VESPA_REGION=$region" \
                --env "HOSTED_VESPA_ENVIRONMENT=$environment" \
                --env "CONFIG_SERVER_HOSTNAME=$CONFIG_SERVER_HOSTNAME" \
+               --env "VESPA_HOME=$VESPA_HOME" \
                --env "HOST_BRIDGE_IP=$HOST_BRIDGE_IP" \
                --entrypoint /usr/local/bin/start-config-server.sh \
                "$DOCKER_IMAGE")
