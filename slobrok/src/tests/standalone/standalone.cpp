@@ -57,7 +57,7 @@ namespace {
 bool checkOk(FRT_RPCRequest *req)
 {
     if (req == NULL) {
-        fprintf(stderr, "req is null pointer, this is bad");
+        fprintf(stderr, "req is null pointer, this is bad\n");
         return false;
     }
     if (req->IsError()) {
@@ -66,7 +66,7 @@ bool checkOk(FRT_RPCRequest *req)
                 req->GetErrorMessage());
         fprintf(stderr, "req method is: '%s' with params:\n", req->GetMethodName());
         req->GetParams()->Print();
-        fflush(stdout);
+        fflush(stdout); // flushes output from Print() on previous line
         return false;
     } else {
         return true;
