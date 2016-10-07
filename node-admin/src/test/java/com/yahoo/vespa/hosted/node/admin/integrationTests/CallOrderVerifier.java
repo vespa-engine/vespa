@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * Takes in strings representing function calls with their parameters and allows to check whether a subset of calls
  * occurred in a specific order. For example, by calling {@link CallOrderVerifier#add(String)}
@@ -27,6 +29,11 @@ public class CallOrderVerifier {
         }
     }
 
+
+    public void assertInOrder(String... functionCalls) {
+        boolean result = verifyInOrder(1000, functionCalls);
+        assertTrue(callOrder.toString(), result);
+    }
 
     /**
      * Checks if list of function calls occur in order given within a timeout
@@ -83,5 +90,10 @@ public class CallOrderVerifier {
         }
 
         return -1;
+    }
+
+    @Override
+    public String toString() {
+        return callOrder.toString();
     }
 }
