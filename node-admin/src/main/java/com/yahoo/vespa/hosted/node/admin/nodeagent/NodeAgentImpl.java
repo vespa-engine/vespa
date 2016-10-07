@@ -364,26 +364,31 @@ public class NodeAgentImpl implements NodeAgent {
 
     @SuppressWarnings("unchecked")
     public void updateContainerNodeMetrics() {
-        if (lastNodeSpec == null || lastNodeSpec.nodeState != Node.State.active) return;
-        Docker.ContainerStats stats = dockerOperations.getContainerStats(lastNodeSpec.containerName);
+        ContainerNodeSpec nodeSpec;
+        synchronized (monitor) {
+            nodeSpec = lastNodeSpec;
+        }
+
+        if (nodeSpec == null || nodeSpec.nodeState != Node.State.active) return;
+        Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
                 .add("role", "tenants")
-                .add("flavor", lastNodeSpec.nodeFlavor)
-                .add("state", lastNodeSpec.nodeState.toString());
+                .add("flavor", nodeSpec.nodeFlavor)
+                .add("state", nodeSpec.nodeState.toString());
 
-        if (lastNodeSpec.owner.isPresent()) {
+        if (nodeSpec.owner.isPresent()) {
             dimensionsBuilder
-                    .add("tenantName", lastNodeSpec.owner.get().tenant)
-                    .add("app", lastNodeSpec.owner.get().application);
+                    .add("tenantName", nodeSpec.owner.get().tenant)
+                    .add("app", nodeSpec.owner.get().application);
         }
-        if (lastNodeSpec.membership.isPresent()) {
+        if (nodeSpec.membership.isPresent()) {
             dimensionsBuilder
-                    .add("clustertype", lastNodeSpec.membership.get().clusterType)
-                    .add("clusterid", lastNodeSpec.membership.get().clusterId);
+                    .add("clustertype", nodeSpec.membership.get().clusterType)
+                    .add("clusterid", nodeSpec.membership.get().clusterId);
         }
 
-        if (lastNodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", lastNodeSpec.vespaVersion.get());
+        if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
 
         Dimensions dimensions = dimensionsBuilder.build();
         addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
@@ -400,7 +405,7 @@ public class NodeAgentImpl implements NodeAgent {
             addIfNotNull(netDims, "node.network.bytes_sent", interfaceStats, "tx_bytes");
         });
 
-        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(lastNodeSpec.containerName).forEach(
+        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName).forEach(
                 (metricName, metricValue) -> metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue()));
     }
 

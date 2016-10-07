@@ -43,7 +43,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService metricsFetcherScheduler = Executors.newScheduledThreadPool(1);
 
     private static final long MIN_AGE_IMAGE_GC_MILLIS = Duration.ofMinutes(15).toMillis();
 
@@ -82,8 +82,12 @@ public class NodeAdminImpl implements NodeAdmin {
         this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(dimensions, "nodes.image.loading");
         this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(dimensions, "nodes.unhandled_exceptions");
 
-        scheduler.scheduleWithFixedDelay(
-                ()-> nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics), 0, 30000, MILLISECONDS);
+        try {
+            metricsFetcherScheduler.scheduleWithFixedDelay(
+                    () -> nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics), 0, 30000, MILLISECONDS);
+        } catch (Throwable e) {
+            logger.warning("Metric fetcher scheduler failed", e);
+        }
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
@@ -158,10 +162,10 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void shutdown() {
-        scheduler.shutdown();
+        metricsFetcherScheduler.shutdown();
         try {
-            if (! scheduler.awaitTermination(30, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Did not manage to shutdown node-agent metrics update scheduler.");
+            if (! metricsFetcherScheduler.awaitTermination(30, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Did not manage to shutdown node-agent metrics update metricsFetcherScheduler.");
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
