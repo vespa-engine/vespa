@@ -108,7 +108,6 @@ public class RunInContainerTest {
 
         // No nodes to suspend, always successful
         assertThat(doPutCall("suspend"), is(true));
-        ComponentsProviderWithMocks.callOrderVerifier.assertInOrder();
 
         ComponentsProviderWithMocks.nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
                 "hostName",
