@@ -1076,7 +1076,7 @@
     </dependencyManagement>
 
     <properties>
-        <javax.ws.rs-api.version>2.0</javax.ws.rs-api.version>
+        <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version> <!-- must be kept in sync with version used by current jersey2.version -->
         <aries.spifly.version>1.0.8</aries.spifly.version>
         <aries.util.version>1.0.0</aries.util.version>
         <asm-debug-all.version>5.0.3</asm-debug-all.version>
