@@ -2,6 +2,7 @@
 package com.yahoo.prelude.cluster;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -20,6 +21,7 @@ import com.yahoo.search.result.ErrorMessage;
  * @author Steinar Knutsen
  */
 public class ClusterMonitor implements Runnable, Freezable {
+
     // The ping thread wil start using the system, but we cannot be guaranteed that all components
     // in the system is up. As a workaround for not being able to find out when the system
     // is ready to be used, we wait some time before starting the ping thread
@@ -31,7 +33,7 @@ public class ClusterMonitor implements Runnable, Freezable {
 
     private final ClusterSearcher nodeManager;
 
-    private final VipStatus vipStatus;
+    private final Optional<VipStatus> vipStatus;
 
     /** A map from Node to corresponding MonitoredNode */
     private final Map<VespaBackEndSearcher, NodeMonitor> nodeMonitors = new java.util.IdentityHashMap<>();
@@ -39,7 +41,7 @@ public class ClusterMonitor implements Runnable, Freezable {
 
     private boolean isFrozen = false;
 
-    ClusterMonitor(ClusterSearcher manager, QrMonitorConfig monitorConfig, VipStatus vipStatus) {
+    ClusterMonitor(ClusterSearcher manager, QrMonitorConfig monitorConfig, Optional<VipStatus> vipStatus) {
         configuration = new MonitorConfiguration(monitorConfig);
         nodeManager = manager;
         this.vipStatus = vipStatus;
@@ -52,11 +54,9 @@ public class ClusterMonitor implements Runnable, Freezable {
     }
 
     void startPingThread() {
-        if (!isFrozen()) {
-            throw new IllegalStateException(
-                    "Do not start the monitoring thread before the set of"
-                    +" nodes to monitor is complete/the ClusterMonitor is frozen.");
-        }
+        if ( ! isFrozen())
+            throw new IllegalStateException("Do not start the monitoring thread before the set of " +
+                                            "nodes to monitor is complete/the ClusterMonitor is frozen.");
         future = nodeManager.getScheduledExecutor().scheduleAtFixedRate(this, pingThreadInitialDelayMs, configuration.getCheckInterval(), TimeUnit.MILLISECONDS);
     }
 
@@ -64,9 +64,8 @@ public class ClusterMonitor implements Runnable, Freezable {
      * Adds a new node for monitoring.
      */
     void add(VespaBackEndSearcher node) {
-        if (isFrozen()) {
+        if (isFrozen())
             throw new IllegalStateException("Can not add new nodes after ClusterMonitor has been frozen.");
-        }
         nodeMonitors.put(node, new NodeMonitor(node));
     }
 
@@ -76,7 +75,6 @@ public class ClusterMonitor implements Runnable, Freezable {
         boolean wasWorking = monitor.isWorking();
         monitor.failed(error);
         if (wasWorking && !monitor.isWorking()) {
-            // was warning, see VESPA-1922            
             log.info("Failed monitoring node '" + node + "' due to '" + error);
             nodeManager.failed(node);
         }
@@ -84,10 +82,10 @@ public class ClusterMonitor implements Runnable, Freezable {
     }
 
     /** Called when a node responded */
-    void responded(VespaBackEndSearcher node, boolean hasDocumentsOnline) {
+    void responded(VespaBackEndSearcher node, boolean hasSearchNodesOnline) {
         NodeMonitor monitor = nodeMonitors.get(node);
         boolean wasFailing = !monitor.isWorking();
-        monitor.responded(hasDocumentsOnline);
+        monitor.responded(hasSearchNodesOnline);
         if (wasFailing && monitor.isWorking()) {
             log.info("Failed node '" + node + "' started working again.");
             nodeManager.working(monitor.getNode());
@@ -96,6 +94,8 @@ public class ClusterMonitor implements Runnable, Freezable {
     }
 
     private void updateVipStatus() {
+        if ( ! vipStatus.isPresent()) return;
+        
         boolean hasWorkingNodesWithDocumentsOnline = false;
         for (NodeMonitor node : nodeMonitors.values()) {
             if (node.isWorking() && node.searchNodesOnline()) {
@@ -104,9 +104,9 @@ public class ClusterMonitor implements Runnable, Freezable {
             }
         }
         if (hasWorkingNodesWithDocumentsOnline) {
-            vipStatus.addToRotation(this);
+            vipStatus.get().addToRotation(this);
         } else {
-            vipStatus.removeFromRotation(this);
+            vipStatus.get().removeFromRotation(this);
         }
     }
 

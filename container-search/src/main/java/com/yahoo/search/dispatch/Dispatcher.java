@@ -3,11 +3,11 @@ package com.yahoo.search.dispatch;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
+import com.yahoo.container.handler.VipStatus;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -51,10 +51,10 @@ public class Dispatcher extends AbstractComponent {
 
     private final Compressor compressor = new Compressor();
 
-    @Inject
-    public Dispatcher(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool) {
+    public Dispatcher(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
+                      int containerClusterSize, VipStatus vipStatus) {
         this.client = new RpcClient();
-        this.searchCluster = new SearchCluster(dispatchConfig, fs4ResourcePool);
+        this.searchCluster = new SearchCluster(dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus);
 
         // Create node rpc connections, indexed by the legacy "partid", which allows us to bridge
         // between fs4 calls (for search) and rpc calls (for summary fetch)
