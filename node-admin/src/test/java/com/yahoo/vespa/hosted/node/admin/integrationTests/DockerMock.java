@@ -62,6 +62,11 @@ public class DockerMock implements Docker {
     }
 
     @Override
+    public ContainerStats getContainerStats(ContainerName containerName) {
+        return null;
+    }
+
+    @Override
     public void startContainer(ContainerName containerName) {
         synchronized (monitor) {
             callOrder.add("startContainer with ContainerName: " + containerName);

@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -66,9 +68,13 @@ public class NodeAdminImpl implements NodeAdmin {
         this.storageMaintainer = storageMaintainer;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
 
-        this.numberOfContainersInActiveState = metricReceiver.declareGauge("nodes.state.active");
-        this.numberOfContainersInLoadImageState = metricReceiver.declareGauge("nodes.image.loading");
-        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter("nodes.unhandled_exceptions");
+        Dimensions dimensions = new Dimensions.Builder()
+                .add("host", HostName.getLocalhost())
+                .add("role", "docker").build();
+
+        this.numberOfContainersInActiveState = metricReceiver.declareGauge(dimensions, "nodes.state.active");
+        this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(dimensions, "nodes.image.loading");
+        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(dimensions, "nodes.unhandled_exceptions");
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {

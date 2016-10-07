@@ -56,7 +56,6 @@ public class DockerOperationsImpl implements DockerOperations {
     // Map of directories to mount and whether they should be writeable by everyone
     private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
     static {
-        DIRECTORIES_TO_MOUNT.put("/metrics-share", true);
         DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs"), false);
         DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/cache"), false);
@@ -129,19 +128,13 @@ public class DockerOperationsImpl implements DockerOperations {
     private void configureContainer(ContainerNodeSpec nodeSpec) {
         final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
 
-        Path diskUsageCheckPath = Paths.get("/bin/cat");
-        Path diskUsageCheckSchedulePath = yamasAgentFolder.resolve("disk-usage.yaml");
-        String diskUsageCheckSchedule = generateSecretAgentSchedule(nodeSpec, "disk-usage", 60, diskUsageCheckPath,
-                "/metrics-share/disk.usage");
-
         Path vespaCheckPath = Paths.get("/home/y/libexec/yms/yms_check_vespa");
         Path vespaCheckSchedulePath = yamasAgentFolder.resolve("vespa.yaml");
         String vespaCheckSchedule = generateSecretAgentSchedule(nodeSpec, "vespa", 60, vespaCheckPath, "all");
         try {
-            writeSecretAgentSchedule(nodeSpec.containerName, diskUsageCheckSchedulePath, diskUsageCheckSchedule);
             writeSecretAgentSchedule(nodeSpec.containerName, vespaCheckSchedulePath, vespaCheckSchedule);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
         }
 
         docker.executeInContainer(nodeSpec.containerName, "service", "yamas-agent", "restart");
@@ -476,5 +469,10 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void executeResume(ContainerName containerName) {
         executeCommand(containerName, RESUME_NODE_COMMAND);
+    }
+
+    @Override
+    public Docker.ContainerStats getContainerStats(ContainerName containerName) {
+        return docker.getContainerStats(containerName);
     }
 }
