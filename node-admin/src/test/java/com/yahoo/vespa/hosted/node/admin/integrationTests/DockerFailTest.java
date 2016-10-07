@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -33,18 +32,18 @@ import static org.mockito.Mockito.*;
   * @author valerijf
  */
 public class DockerFailTest {
-    private CallOrderVerifier callOrder;
+    private CallOrderVerifier callOrderVerifier;
     private Docker dockerMock;
     private NodeAdminStateUpdater updater;
     private ContainerNodeSpec initialContainerNodeSpec;
 
     @Before
     public void before() throws InterruptedException, UnknownHostException {
-        callOrder = new CallOrderVerifier();
-        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
-        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
-        NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
-        dockerMock = new DockerMock(callOrder);
+        callOrderVerifier = new CallOrderVerifier();
+        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
+        NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+        dockerMock = new DockerMock(callOrderVerifier);
 
         Environment environment = mock(Environment.class);
         when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
@@ -79,7 +78,7 @@ public class DockerFailTest {
             Thread.sleep(10);
         }
 
-        assert callOrder.verifyInOrder(1000,
+        callOrderVerifier.assertInOrder(
                 "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: ContainerName { name=container }",
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
@@ -94,10 +93,10 @@ public class DockerFailTest {
     public void dockerFailTest() throws InterruptedException {
         dockerMock.deleteContainer(initialContainerNodeSpec.containerName);
 
-        assertTrue(callOrder.verifyInOrder(1000,
+        callOrderVerifier.assertInOrder(
                 "deleteContainer with ContainerName: ContainerName { name=container }",
                 "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: ContainerName { name=container }",
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"));
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
     }
 }

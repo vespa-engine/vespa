@@ -21,12 +21,12 @@ import java.util.stream.Collectors;
  */
 public class NodeRepoMock implements NodeRepository {
     private List<ContainerNodeSpec> containerNodeSpecs = new ArrayList<>();
-    private final CallOrderVerifier callOrder;
+    private final CallOrderVerifier callOrderVerifier;
 
     private static final Object monitor = new Object();
 
-    public NodeRepoMock(CallOrderVerifier callOrder) {
-        this.callOrder = callOrder;
+    public NodeRepoMock(CallOrderVerifier callOrderVerifier) {
+        this.callOrderVerifier = callOrderVerifier;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class NodeRepoMock implements NodeRepository {
     @Override
     public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) throws IOException {
         synchronized (monitor) {
-            callOrder.add("updateNodeAttributes with HostName: " + hostName + ", NodeAttributes: " + nodeAttributes);
+            callOrderVerifier.add("updateNodeAttributes with HostName: " + hostName + ", NodeAttributes: " + nodeAttributes);
         }
     }
 
@@ -63,7 +63,7 @@ public class NodeRepoMock implements NodeRepository {
                         cns.get().wantedRestartGeneration, cns.get().currentRestartGeneration,
                         cns.get().minCpuCores, cns.get().minMainMemoryAvailableGb, cns.get().minDiskAvailableGb);
             }
-            callOrder.add("markAsReady with HostName: " + hostName);
+            callOrderVerifier.add("markAsReady with HostName: " + hostName);
         }
     }
 

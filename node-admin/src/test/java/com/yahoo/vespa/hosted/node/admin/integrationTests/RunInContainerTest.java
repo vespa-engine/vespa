@@ -28,7 +28,6 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author dybis
@@ -109,7 +108,6 @@ public class RunInContainerTest {
 
         // No nodes to suspend, always successful
         assertThat(doPutCall("suspend"), is(true));
-        assertTrue(ComponentsProviderWithMocks.callOrder.verifyInOrder(1000));
 
         ComponentsProviderWithMocks.nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
                 "hostName",
@@ -128,9 +126,8 @@ public class RunInContainerTest {
                 Optional.of(1d)));
         ComponentsProviderWithMocks.orchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));
-        assertTrue(ComponentsProviderWithMocks.callOrder
-                           .verifyInOrder(1000,
-                                          "Suspend with parent: localhost and hostnames: [hostName] - Forced response: Optional[Denied]"));
+        ComponentsProviderWithMocks.callOrderVerifier
+                .assertInOrder("Suspend with parent: localhost and hostnames: [hostName] - Forced response: Optional[Denied]");
 
         assertThat(doGetInfoCall(), is("{\"dockerHostHostName\":\"localhost\",\"NodeAdmin\":{\"isFrozen\":true,\"NodeAgents\":[]}}"));
     }

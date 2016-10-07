@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,11 +35,11 @@ public class RestartTest {
 
     @Test
     public void test() throws InterruptedException, UnknownHostException {
-        CallOrderVerifier callOrder = new CallOrderVerifier();
-        NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
-        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
-        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
-        DockerMock dockerMock = new DockerMock(callOrder);
+        CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
+        NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
+        DockerMock dockerMock = new DockerMock(callOrderVerifier);
 
         Environment environment = mock(Environment.class);
         when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
@@ -63,17 +62,15 @@ public class RestartTest {
         }
 
         // Check that the container is started and NodeRepo has received the PATCH update
-        assertTrue(callOrder.verifyInOrder(1000,
-                                           "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                                           "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}"));
+        callOrderVerifier.assertInOrder("createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
+                                        "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}");
 
         wantedRestartGeneration = 2;
         currentRestartGeneration = 1;
         nodeRepositoryMock.updateContainerNodeSpec(createContainerNodeSpec(wantedRestartGeneration, currentRestartGeneration));
 
-        assertTrue(callOrder.verifyInOrder(1000,
-                                           "Suspend for host1",
-                                           "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, restart]"));
+        callOrderVerifier.assertInOrder("Suspend for host1",
+                                        "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, restart]");
         updater.deconstruct();
     }
 

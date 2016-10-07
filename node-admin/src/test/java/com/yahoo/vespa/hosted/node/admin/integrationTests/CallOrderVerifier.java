@@ -20,6 +20,8 @@ import static org.junit.Assert.assertTrue;
  * @author valerijf
  */
 public class CallOrderVerifier {
+    private static final int waitForCallOrderTimeout = 60000; //ms
+
     private final LinkedList<String> callOrder = new LinkedList<>();
     private final Object monitor = new Object();
 
@@ -29,10 +31,15 @@ public class CallOrderVerifier {
         }
     }
 
-
     public void assertInOrder(String... functionCalls) {
-        boolean result = verifyInOrder(1000, functionCalls);
-        assertTrue(callOrder.toString(), result);
+        assertInOrderWithAssertMessage("", functionCalls);
+    }
+
+    public void assertInOrderWithAssertMessage(String assertMessage, String... functionCalls) {
+        boolean inOrder = verifyInOrder(waitForCallOrderTimeout, functionCalls);
+        if ( ! inOrder && ! assertMessage.isEmpty())
+            System.err.println(assertMessage);
+        assertTrue(callOrder.toString(), inOrder);
     }
 
     /**
@@ -41,7 +48,7 @@ public class CallOrderVerifier {
      * @param functionCalls The expected order of function calls
      * @return true if the actual order of calls was equal to the order provided within timeout, false otherwise.
      */
-    public boolean verifyInOrder(long timeout, String... functionCalls) {
+    private boolean verifyInOrder(long timeout, String... functionCalls) {
         final long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < timeout) {
             if (verifyInOrder(functionCalls)) {
@@ -92,8 +99,4 @@ public class CallOrderVerifier {
         return -1;
     }
 
-    @Override
-    public String toString() {
-        return callOrder.toString();
-    }
 }
