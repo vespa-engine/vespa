@@ -89,7 +89,7 @@ public class ResumeTest {
         }
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.of("Orchestrator reject suspend")));
 
-        //Make orchestrator allow suspend callOrderVerifier
+        //Make orchestrator allow suspend requests
         orchestratorMock.setForceGroupSuspendResponse(Optional.empty());
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.empty()));
 
