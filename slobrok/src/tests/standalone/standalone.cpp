@@ -52,30 +52,96 @@ Server::~Server()
     _orb.ShutDown(true);
 }
 
+namespace {
+
+bool checkOk(FRT_RPCRequest *req)
+{
+    if (req == NULL) {
+        fprintf(stderr, "req is null pointer, this is bad\n");
+        return false;
+    }
+    if (req->IsError()) {
+        fprintf(stderr, "req FAILED [code %d]: %s\n",
+                req->GetErrorCode(),
+                req->GetErrorMessage());
+        fprintf(stderr, "req method is: '%s' with params:\n", req->GetMethodName());
+        req->GetParams()->Print();
+        fflush(stdout); // flushes output from Print() on previous line
+        return false;
+    } else {
+        return true;
+    }
+}
+
+template<typename T>
+class SubReferer
+{
+private:
+    T* &_t;
+public:
+    SubReferer(T* &t) : _t(t) {}
+    ~SubReferer() {
+        if (_t != NULL) _t->SubRef();
+    }
+};
+
+
+template<typename T>
+class ShutDowner
+{
+private:
+    T &_t;
+public:
+    ShutDowner(T &t) : _t(t) {}
+    ~ShutDowner() {
+        _t.ShutDown(true);
+    }
+};
+
+
+template<typename T>
+class Stopper
+{
+private:
+    T &_t;
+public:
+    Stopper(T &t) : _t(t) {}
+    ~Stopper() {
+        _t.stop();
+    }
+};
+
+} // namespace <unnamed>
+
 //-----------------------------------------------------------------------------
 
 TEST("standalone") {
     slobrok::SlobrokServer slobrokServer(18541);
+    Stopper<slobrok::SlobrokServer> ssCleaner(slobrokServer);
     FastOS_Thread::Sleep(300);
 
     FRT_Supervisor orb;
     orb.Start();
+    ShutDowner<FRT_Supervisor> orbCleaner(orb);
 
     FRT_Target     *sb  = orb.GetTarget(18541);
+    SubReferer<FRT_Target> sbCleaner(sb);
+
     FRT_RPCRequest *req = NULL;
+    SubReferer<FRT_RPCRequest> reqCleaner(req);
 
     // test ping against slobrok
     req = orb.AllocRPCRequest(req);
     req->SetMethodName("frt.rpc.ping");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
 
     // lookup '*' on empty slobrok
     req = orb.AllocRPCRequest(req);
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("*");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 0);
@@ -84,7 +150,7 @@ TEST("standalone") {
     req = orb.AllocRPCRequest(req);
     req->SetMethodName("slobrok.internal.listManagedRpcServers");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 0);
@@ -97,14 +163,14 @@ TEST("standalone") {
     req->GetParams()->AddString("A");
     req->GetParams()->AddString("tcp/localhost:18542");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
 
     // lookup '*' should give 'A'
     req = orb.AllocRPCRequest(req);
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("*");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 1);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 1);
@@ -116,7 +182,7 @@ TEST("standalone") {
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("A");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 1);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 1);
@@ -128,7 +194,7 @@ TEST("standalone") {
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("B");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 0);
@@ -138,7 +204,7 @@ TEST("standalone") {
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("*/*");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 0);
@@ -160,7 +226,7 @@ TEST("standalone") {
         req->GetParams()->AddString("B");
         req->GetParams()->AddString("tcp/localhost:18543");
         sb->InvokeSync(req, 5.0);
-        ASSERT_TRUE(!req->IsError());
+        ASSERT_TRUE(checkOk(req));
 
         {
             Server a2("A", 18544);
@@ -179,7 +245,7 @@ TEST("standalone") {
         req->SetMethodName("slobrok.lookupRpcServer");
         req->GetParams()->AddString("*");
         sb->InvokeSync(req, 5.0);
-        ASSERT_TRUE(!req->IsError());
+        ASSERT_TRUE(checkOk(req));
         ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
         ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 2);
         ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 2);
@@ -207,7 +273,7 @@ TEST("standalone") {
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("B");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 0);
@@ -225,7 +291,7 @@ TEST("standalone") {
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("A");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 1);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 1);
@@ -238,14 +304,14 @@ TEST("standalone") {
     req->GetParams()->AddString("A");
     req->GetParams()->AddString("tcp/localhost:18542");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
 
     // lookup 'A' should give ''
     req = orb.AllocRPCRequest(req);
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("A");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 0);
@@ -255,7 +321,7 @@ TEST("standalone") {
     req->SetMethodName("slobrok.lookupRpcServer");
     req->GetParams()->AddString("*");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
+    ASSERT_TRUE(checkOk(req));
     ASSERT_TRUE(strcmp(req->GetReturnSpec(), "SS") == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(0)._string_array._len == 0);
     ASSERT_TRUE(req->GetReturn()->GetValue(1)._string_array._len == 0);
@@ -266,13 +332,7 @@ TEST("standalone") {
     req->GetParams()->AddString("A");
     req->GetParams()->AddString("tcp/localhost:18542");
     sb->InvokeSync(req, 5.0);
-    ASSERT_TRUE(!req->IsError());
-
-    sb->SubRef();
-    req->SubRef();
-
-    slobrokServer.stop();
-    orb.ShutDown(true);
+    ASSERT_TRUE(checkOk(req));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
