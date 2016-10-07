@@ -9,6 +9,7 @@ namespace vespalib {
 namespace tensor {
 
 using Address = DenseTensorAddressCombiner::Address;
+using DimensionMeta = DenseTensor::DimensionMeta;
 using DimensionsMeta = DenseTensorAddressCombiner::DimensionsMeta;
 
 namespace {
@@ -88,35 +89,30 @@ DenseTensorAddressCombiner::combine(const CellsIterator &lhsItr,
     return true;
 }
 
-namespace {
-
-void
-validateDimensionsMeta(const DimensionsMeta &dimensionsMeta)
-{
-    for (size_t i = 1; i < dimensionsMeta.size(); ++i) {
-        const auto &prevDimMeta = dimensionsMeta[i-1];
-        const auto &currDimMeta = dimensionsMeta[i];
-        if ((prevDimMeta.dimension() == currDimMeta.dimension()) &&
-                (prevDimMeta.size() != currDimMeta.size()))
-        {
-            throw IllegalArgumentException(make_string(
-                    "Shared dimension '%s' has mis-matching label ranges: "
-                    "[0, %zu> vs [0, %zu>. This is not supported.",
-                    prevDimMeta.dimension().c_str(), prevDimMeta.size(), currDimMeta.size()));
-        }
-    }
-}
-
-}
-
 DimensionsMeta
 DenseTensorAddressCombiner::combineDimensions(const DimensionsMeta &lhs, const DimensionsMeta &rhs)
 {
+    // NOTE: both lhs and rhs are sorted according to dimension names.
     DimensionsMeta result;
-    std::set_union(lhs.cbegin(), lhs.cend(),
-                   rhs.cbegin(), rhs.cend(),
-                   std::back_inserter(result));
-    validateDimensionsMeta(result);
+    auto lhsItr = lhs.cbegin();
+    auto rhsItr = rhs.cbegin();
+    while (lhsItr != lhs.end() && rhsItr != rhs.end()) {
+        if (lhsItr->dimension() == rhsItr->dimension()) {
+            result.emplace_back(DimensionMeta(lhsItr->dimension(), std::min(lhsItr->size(), rhsItr->size())));
+            ++lhsItr;
+            ++rhsItr;
+        } else if (lhsItr->dimension() < rhsItr->dimension()) {
+            result.emplace_back(*lhsItr++);
+        } else {
+            result.emplace_back(*rhsItr++);
+        }
+    }
+    while (lhsItr != lhs.end()) {
+        result.emplace_back(*lhsItr++);
+    }
+    while (rhsItr != rhs.end()) {
+        result.emplace_back(*rhsItr++);
+    }
     return result;
 }
 

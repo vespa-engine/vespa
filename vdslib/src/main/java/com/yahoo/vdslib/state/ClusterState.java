@@ -11,6 +11,9 @@ import java.util.*;
  */
 public class ClusterState implements Cloneable {
 
+    private static final NodeState DEFAULT_STORAGE_UP_NODE_STATE = new NodeState(NodeType.STORAGE, State.UP);
+    private static final NodeState DEFAULT_DISTRIBUTOR_UP_NODE_STATE = new NodeState(NodeType.DISTRIBUTOR, State.UP);
+
     private int version = 0;
     private State state = State.DOWN;
     // nodeStates maps each of the non-up nodes that have an index <= the node count for its type.
@@ -28,6 +31,22 @@ public class ClusterState implements Cloneable {
         nodeCount.add(0);
         nodeCount.add(0);
         deserialize(serialized);
+    }
+
+    /**
+     * Parse a given cluster state string into a returned ClusterState instance, wrapping any
+     * parse exceptions in a RuntimeException.
+     */
+    public static ClusterState stateFromString(final String stateStr) {
+        try {
+            return new ClusterState(stateStr);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static ClusterState emptyState() {
+        return stateFromString("");
     }
 
     public ClusterState clone() {
@@ -61,20 +80,79 @@ public class ClusterState implements Cloneable {
         return true;
     }
 
+    @FunctionalInterface
+    private interface NodeStateCmp {
+        boolean similar(NodeType nodeType, NodeState lhs, NodeState rhs);
+    }
+
     public boolean similarTo(Object o) {
         if (!(o instanceof ClusterState)) { return false; }
-        ClusterState other = (ClusterState) o;
+        final ClusterState other = (ClusterState) o;
 
-        if (state.equals(State.DOWN) && other.state.equals(State.DOWN)) return true; // both down, means equal (why??)
-        if (version != other.version || !state.equals(other.state)) return false;
-        if (distributionBits != other.distributionBits) return false;
-        if ( ! nodeCount.equals(other.nodeCount)) return false;
+        return similarToImpl(other, this::normalizedNodeStateSimilarTo);
+    }
 
-        for (Map.Entry<Node, NodeState> nodeStateEntry : nodeStates.entrySet()) {
-            NodeState otherNodeState = other.nodeStates.get(nodeStateEntry.getKey());
-            if (otherNodeState == null || ! otherNodeState.similarTo(nodeStateEntry.getValue())) return false;
+    public boolean similarToIgnoringInitProgress(final ClusterState other) {
+        return similarToImpl(other, this::normalizedNodeStateSimilarToIgnoringInitProgress);
+    }
+
+    private boolean similarToImpl(final ClusterState other, final NodeStateCmp nodeStateCmp) {
+        // Two cluster states are considered similar if they are both down. When clusters
+        // are down, their individual node states do not matter to ideal state computations
+        // and content nodes therefore do not need to observe them.
+        if (state.equals(State.DOWN) && other.state.equals(State.DOWN)) {
+            return true;
+        }
+        if (!metaInformationSimilarTo(other)) {
+            return false;
+        }
+        // TODO verify behavior of C++ impl against this
+        for (Node node : unionNodeSetWith(other.nodeStates.keySet())) {
+            final NodeState lhs = nodeStates.get(node);
+            final NodeState rhs = other.nodeStates.get(node);
+            if (!nodeStateCmp.similar(node.getType(), lhs, rhs)) {
+                return false;
+            }
         }
         return true;
+    }
+
+    private Set<Node> unionNodeSetWith(final Set<Node> otherNodes) {
+        final Set<Node> unionNodeSet = new TreeSet<Node>(nodeStates.keySet());
+        unionNodeSet.addAll(otherNodes);
+        return unionNodeSet;
+    }
+
+    private boolean metaInformationSimilarTo(final ClusterState other) {
+        if (version != other.version || !state.equals(other.state)) {
+            return false;
+        }
+        if (distributionBits != other.distributionBits) {
+            return false;
+        }
+        return nodeCount.equals(other.nodeCount);
+    }
+
+    private boolean normalizedNodeStateSimilarTo(final NodeType nodeType, final NodeState lhs, final NodeState rhs) {
+        final NodeState lhsNormalized = (lhs != null ? lhs : defaultUpNodeState(nodeType));
+        final NodeState rhsNormalized = (rhs != null ? rhs : defaultUpNodeState(nodeType));
+
+        return lhsNormalized.similarTo(rhsNormalized);
+    }
+
+    private boolean normalizedNodeStateSimilarToIgnoringInitProgress(
+            final NodeType nodeType, final NodeState lhs, final NodeState rhs)
+    {
+        final NodeState lhsNormalized = (lhs != null ? lhs : defaultUpNodeState(nodeType));
+        final NodeState rhsNormalized = (rhs != null ? rhs : defaultUpNodeState(nodeType));
+
+        return lhsNormalized.similarToIgnoringInitProgress(rhsNormalized);
+    }
+
+    private static NodeState defaultUpNodeState(final NodeType nodeType) {
+        return nodeType == NodeType.STORAGE
+                ? DEFAULT_STORAGE_UP_NODE_STATE
+                : DEFAULT_DISTRIBUTOR_UP_NODE_STATE;
     }
 
     /**
@@ -97,7 +175,7 @@ public class ClusterState implements Cloneable {
         public void addNodeState() throws ParseException {
             if (!empty) {
                 NodeState ns = NodeState.deserialize(node.getType(), sb.toString());
-                if (!ns.equals(new NodeState(node.getType(), State.UP))) {
+                if (!ns.equals(defaultUpNodeState(node.getType()))) {
                     nodeStates.put(node, ns);
                 }
                 if (nodeCount.get(node.getType().ordinal()) <= node.getIndex()) {

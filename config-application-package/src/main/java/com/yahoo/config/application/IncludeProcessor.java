@@ -41,7 +41,7 @@ class IncludeProcessor implements PreProcessor {
             Element elem = (Element) list.item(0);
             Element parent = (Element) elem.getParentNode();
             String filename = elem.getAttribute("file");
-            boolean required = elem.hasAttribute("required") ? Boolean.parseBoolean(elem.getAttribute("required")) : true;
+            boolean required = ! elem.hasAttribute("required") || Boolean.parseBoolean(elem.getAttribute("required"));
             File file = new File(currentFolder, filename);
 
             Document subFile = IncludeProcessor.parseIncludeFile(file, parent.getTagName(), required);
@@ -76,4 +76,5 @@ class IncludeProcessor implements PreProcessor {
         w.append(endTag);
         return XML.getDocument(new StringReader(w.toString()));
     }
+
 }

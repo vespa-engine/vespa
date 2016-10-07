@@ -671,10 +671,10 @@ public class FilesApplicationPackage implements ApplicationPackage {
     @Override
     public ApplicationPackage preprocess(Zone zone, RuleConfigDeriver ignored, DeployLogger logger) throws IOException, TransformerException, ParserConfigurationException, SAXException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
-        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> !name.equals(".preprocessed") &&
-                !name.equals(SERVICES) &&
-                !name.equals(HOSTS) &&
-                !name.equals(CONFIG_DEFINITIONS_DIR));
+        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(".preprocessed") &&
+                                                                          ! name.equals(SERVICES) &&
+                                                                          ! name.equals(HOSTS) &&
+                                                                          ! name.equals(CONFIG_DEFINITIONS_DIR));
         preprocessXML(new File(preprocessedDir, SERVICES), getServicesFile(), zone);
         if (getHostsFile().exists()) {
             preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);

@@ -83,7 +83,7 @@ public class XmlPreprocessorTest {
                 "</services>";
 
         Document docUsWest = (new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-west"))).run();
-        System.out.println(Xml.documentAsString(docUsWest));
+        // System.out.println(Xml.documentAsString(docUsWest));
         TestBase.assertDocument(expectedUsWest, docUsWest);
 
         String expectedUsEast = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
@@ -162,4 +162,5 @@ public class XmlPreprocessorTest {
         Document docDev = (new XmlPreProcessor(appDir, new StringReader(input), Environment.prod, RegionName.from("default")).run());
         TestBase.assertDocument(expectedProd, docDev);
     }
+
 }

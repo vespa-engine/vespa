@@ -85,7 +85,12 @@ public:
         auto itr_out = _cellsResult.begin();
         for (size_t outerDim = 0; outerDim < _outerDimSize; ++outerDim) {
             auto saved_itr = itr_out;
-            for (size_t sumDim = 0; sumDim < _sumDimSize; ++sumDim) {
+            for (size_t innerDim = 0; innerDim < _innerDimSize; ++innerDim) {
+                *itr_out = *itr_in;
+                ++itr_out;
+                ++itr_in;
+            }
+            for (size_t sumDim = 1; sumDim < _sumDimSize; ++sumDim) {
                 itr_out = saved_itr;
                 for (size_t innerDim = 0; innerDim < _innerDimSize; ++innerDim) {
                     *itr_out = func(*itr_out, *itr_in);

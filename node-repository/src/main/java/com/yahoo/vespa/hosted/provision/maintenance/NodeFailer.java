@@ -87,7 +87,7 @@ public class NodeFailer extends Maintainer {
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
-            if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node))
+            if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node) && failAllowedFor(node.type()))
                 failActive(node);
         }
     }
@@ -153,6 +153,17 @@ public class NodeFailer extends Maintainer {
         }
     }
 
+    /**
+     * We can attempt to fail any number of *tenant* nodes because the operation will not be effected unless
+     * the node is replaced.
+     * However, nodes of other types are not replaced (because all of the type are used by a single application),
+     * so we only allow one to be in failed at any point in time to protect against runaway failing.
+     */
+    private boolean failAllowedFor(NodeType nodeType) {
+        if (nodeType == NodeType.tenant) return true;
+        return nodeRepository().getNodes(nodeType, Node.State.failed).size() == 0;
+    }
+    
     /**
      * If the node is positively DOWN, and there is no "down" history record, we add it.
      * If the node is positively UP we remove any "down" history record.

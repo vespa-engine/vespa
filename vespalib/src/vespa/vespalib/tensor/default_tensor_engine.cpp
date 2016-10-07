@@ -165,8 +165,13 @@ struct TensorOperationOverride : eval::DefaultOperationVisitor {
     TensorOperationOverride(const tensor::Tensor &lhs_in,
                             const tensor::Tensor &rhs_in)
         : lhs(lhs_in), rhs(rhs_in), result() {}
-    virtual void visitDefault(const eval::Operation &) override {
+    virtual void visitDefault(const eval::Operation &op) override {
         // empty result indicates error
+        const eval::BinaryOperation *binaryOp =
+            dynamic_cast<const eval::BinaryOperation *>(&op);
+        if (binaryOp) {
+            result = lhs.apply(*binaryOp, rhs);
+        }
     }
     virtual void visit(const eval::operation::Add &) override {
         result = lhs.add(rhs);

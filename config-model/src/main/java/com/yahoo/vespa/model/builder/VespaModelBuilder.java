@@ -27,4 +27,5 @@ public abstract class VespaModelBuilder {
      * @param configModelRepo a {@link com.yahoo.config.model.ConfigModelRepo instance}
      */
     public abstract void postProc(AbstractConfigProducer producerRoot, ConfigModelRepo configModelRepo);
+
 }

@@ -25,7 +25,7 @@ TensorSpec::to_string() const
                 out.append(vespalib::make_string("%zu", label.second.index));
             }
         }
-        out.append(vespalib::make_string("]: %g\n", cell.second));
+        out.append(vespalib::make_string("]: %g\n", cell.second.value));
     }
     out.append("}");
     return out;

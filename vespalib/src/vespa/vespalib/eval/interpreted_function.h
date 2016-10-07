@@ -5,6 +5,7 @@
 #include "function.h"
 #include <vespa/vespalib/util/stash.h>
 #include "simple_tensor_engine.h"
+#include "node_types.h"
 
 namespace vespalib {
 namespace eval {
@@ -86,9 +87,9 @@ private:
 
 public:
     typedef std::unique_ptr<InterpretedFunction> UP;
-    InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in);
-    InterpretedFunction(const TensorEngine &engine, const Function &function)
-        : InterpretedFunction(engine, function.root(), function.num_params()) {}
+    InterpretedFunction(const TensorEngine &engine, const nodes::Node &root, size_t num_params_in, const NodeTypes &types);
+    InterpretedFunction(const TensorEngine &engine, const Function &function, const NodeTypes &types)
+        : InterpretedFunction(engine, function.root(), function.num_params(), types) {}
     InterpretedFunction(InterpretedFunction &&rhs) = default;
     size_t num_params() const { return _num_params; }
     const Value &eval(Context &ctx) const;

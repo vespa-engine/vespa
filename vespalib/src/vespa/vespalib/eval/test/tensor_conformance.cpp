@@ -250,7 +250,7 @@ struct Eval {
                 _type = Type::TENSOR;
                 _tensor = value.as_tensor()->engine().to_spec(*value.as_tensor());
                 if (_tensor.type() == "double") {
-                    _number = _tensor.cells().empty() ? 0.0 : _tensor.cells().begin()->second;
+                    _number = _tensor.cells().empty() ? 0.0 : _tensor.cells().begin()->second.value;
                 }
             }
         }
@@ -318,8 +318,10 @@ struct Expr_V : Eval {
     const vespalib::string &expr;
     Expr_V(const vespalib::string &expr_in) : expr(expr_in) {}
     Result eval(const TensorEngine &engine) const override {
+        Function fun = Function::parse(expr);
+        NodeTypes types(fun, {});
+        InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx;
-        InterpretedFunction ifun(engine, Function::parse(expr));
         return Result(ifun.eval(ctx));
     }
 };
@@ -329,9 +331,12 @@ struct Expr_T : Eval {
     const vespalib::string &expr;
     Expr_T(const vespalib::string &expr_in) : expr(expr_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
-        TensorValue va(engine.create(a));
+        Function fun = Function::parse(expr);
+        auto a_type = ValueType::from_spec(a.type());
+        NodeTypes types(fun, {a_type});
+        InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx;
-        InterpretedFunction ifun(engine, Function::parse(expr));
+        TensorValue va(engine.create(a));
         ctx.add_param(va);
         return Result(ifun.eval(ctx));
     }
@@ -342,10 +347,14 @@ struct Expr_TT : Eval {
     const vespalib::string &expr;
     Expr_TT(const vespalib::string &expr_in) : expr(expr_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
+        Function fun = Function::parse(expr);
+        auto a_type = ValueType::from_spec(a.type());
+        auto b_type = ValueType::from_spec(b.type());
+        NodeTypes types(fun, {a_type, b_type});
+        InterpretedFunction ifun(engine, fun, types);
+        InterpretedFunction::Context ctx;
         TensorValue va(engine.create(a));
         TensorValue vb(engine.create(b));
-        InterpretedFunction::Context ctx;
-        InterpretedFunction ifun(engine, Function::parse(expr));
         ctx.add_param(va);
         ctx.add_param(vb);
         return Result(ifun.eval(ctx));

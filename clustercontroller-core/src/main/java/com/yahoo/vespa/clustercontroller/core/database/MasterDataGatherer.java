@@ -51,7 +51,7 @@ public class MasterDataGatherer {
         public void process(WatchedEvent watchedEvent) {
             switch (watchedEvent.getType()) {
                 case NodeChildrenChanged: // Fleetcontrollers have either connected or disconnected to ZooKeeper
-                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": A change occured in the list of registered fleetcontrollers. Requesting new information");
+                    log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": A change occurred in the list of registered fleetcontrollers. Requesting new information");
                     session.getChildren(zooKeeperRoot + "indexes", this, childListener, null);
                     break;
                 case NodeDataChanged: // A fleetcontroller has changed what node it is voting for
@@ -160,7 +160,7 @@ public class MasterDataGatherer {
         }
     }
 
-    /** Calling restart, ignores what we currently know and starts another circly. Typically called after reconnecting to ZooKeeperServer. */
+    /** Calling restart, ignores what we currently know and starts another cycle. Typically called after reconnecting to ZooKeeperServer. */
     public void restart() {
         synchronized (nextMasterData) {
             masterData = new TreeMap<Integer, Integer>();

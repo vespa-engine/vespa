@@ -91,11 +91,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         this.applicationId = params.getApplicationId();
         this.rotations = new Rotations(curator, tenantPath);
         this.rotationsSet = getRotations(params.rotations());
-        this.properties = createModelContextProperties(
-                params.getApplicationId(),
-                configserverConfig,
-                zone,
-                rotationsSet);
+        this.properties = createModelContextProperties(params.getApplicationId(), configserverConfig, zone, rotationsSet);
     }
 
     /** Construct with all dependencies passed separately */

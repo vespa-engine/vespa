@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/tensor/tensor_address_builder.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
+#include <vespa/vespalib/eval/operation.h>
 #include <sstream>
 
 using vespalib::eval::TensorSpec;
@@ -122,6 +123,15 @@ joinDenseTensorsNegated(const DenseTensor &lhs,
                                          std::move(cells));
 }
 
+std::vector<vespalib::string>
+getDimensions(const DenseTensor &tensor)
+{
+    std::vector<vespalib::string> dimensions;
+    for (const auto &dimMeta : tensor.dimensionsMeta()) {
+        dimensions.emplace_back(dimMeta.dimension());
+    }
+    return dimensions;
+}
 
 }
 
@@ -211,10 +221,9 @@ DenseTensor::add(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    checkDimensions(*this, *rhs, "add");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return lhsValue + rhsValue; });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return lhsValue + rhsValue; });
 }
 
 Tensor::UP
@@ -224,11 +233,9 @@ DenseTensor::subtract(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    // Note that - *rhsCellItr is passed to the lambda function, that is why we do addition.
-    checkDimensions(*this, *rhs, "subtract");
-    return joinDenseTensorsNegated(*this, *rhs,
-                                   [](double lhsValue, double rhsValue)
-                                   { return lhsValue + rhsValue; });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return lhsValue - rhsValue; });
 }
 
 Tensor::UP
@@ -249,10 +256,9 @@ DenseTensor::min(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    checkDimensions(*this, *rhs, "min");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return std::min(lhsValue, rhsValue); });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return std::min(lhsValue, rhsValue); });
 }
 
 Tensor::UP
@@ -262,10 +268,9 @@ DenseTensor::max(const Tensor &arg) const
     if (!rhs) {
         return Tensor::UP();
     }
-    checkDimensions(*this, *rhs, "max");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return std::max(lhsValue,rhsValue); });
+    return dense::apply(*this, *rhs,
+                        [](double lhsValue, double rhsValue)
+                        { return std::max(lhsValue, rhsValue); });
 }
 
 Tensor::UP
@@ -405,6 +410,28 @@ operator<<(std::ostream &out, const DenseTensor::DimensionMeta &value)
 {
     out << value.dimension() << ":" << value.size();
     return out;
+}
+
+Tensor::UP
+DenseTensor::apply(const eval::BinaryOperation &op, const Tensor &arg) const
+{
+    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
+    if (!rhs) {
+        return Tensor::UP();
+    }
+    return dense::apply(*this, *rhs,
+                        [&op](double lhsValue, double rhsValue)
+                        { return op.eval(lhsValue, rhsValue); });
+}
+
+Tensor::UP
+DenseTensor::reduce(const eval::BinaryOperation &op,
+                    const std::vector<vespalib::string> &dimensions) const
+{
+    return dense::reduce(*this,
+                         (dimensions.empty() ? getDimensions(*this) : dimensions),
+                         [&op](double lhsValue, double rhsValue)
+                         { return op.eval(lhsValue, rhsValue); });
 }
 
 } // namespace vespalib::tensor

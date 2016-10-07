@@ -100,12 +100,12 @@ public class ApplicationHandlerTest {
                 tenants,
                 HostProvisionerProvider.withProvisioner(provisioner),
                 Zone.defaultZone(),
-                convergeChecker,
-                logServerLogGrabber,
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
                                           new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                          new MockCurator()));
+                                          new MockCurator(),
+                                          logServerLogGrabber,
+                                          convergeChecker));
     }
 
     private ApplicationHandler createApplicationHandler(Tenants tenants) {
@@ -115,12 +115,12 @@ public class ApplicationHandlerTest {
                 tenants,
                 HostProvisionerProvider.withProvisioner(provisioner),
                 Zone.defaultZone(),
-                new ApplicationConvergenceChecker(stateApiFactory),
-                new LogServerLogGrabber(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
                                           new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                                          new MockCurator()));
+                                          new MockCurator(),
+                                          new LogServerLogGrabber(),
+                                          new ApplicationConvergenceChecker(stateApiFactory)));
     }
 
     @Test

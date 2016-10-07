@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/approx.h>
 #include <memory>
 #include <map>
 
@@ -36,8 +37,14 @@ public:
             return (name < rhs.name);
         }
     };
+    struct Value {
+        double value;
+        Value(double value_in) : value(value_in) {}
+        operator double() const { return value; }
+        bool operator==(const Value &rhs) const { return approx_equal(value, rhs.value); }
+    };
     using Address = std::map<vespalib::string,Label>;
-    using Cells = std::map<Address,double>;
+    using Cells = std::map<Address,Value>;
 private:
     vespalib::string _type;
     Cells _cells;

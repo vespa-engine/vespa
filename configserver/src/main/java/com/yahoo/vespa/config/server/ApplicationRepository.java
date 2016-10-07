@@ -6,13 +6,23 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.Deployment;
+import com.yahoo.vespa.config.server.http.ContentHandler;
+import com.yahoo.vespa.config.server.http.SessionHandler;
+import com.yahoo.vespa.config.server.http.v2.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.tenant.Rotations;
@@ -20,6 +30,8 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 
+import java.io.IOException;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
@@ -35,20 +47,29 @@ import java.util.logging.Logger;
 public class ApplicationRepository implements com.yahoo.config.provision.Deployer {
 
     private static final Logger log = Logger.getLogger(ApplicationRepository.class.getName());
-    
+
     private final Tenants tenants;
     private final Optional<Provisioner> hostProvisioner;
     private final ConfigserverConfig configserverConfig;
     private final Curator curator;
+    private final LogServerLogGrabber logServerLogGrabber;
+    private final ApplicationConvergenceChecker convergeChecker;
+    private final ContentHandler contentHandler = new ContentHandler();
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
 
-    public ApplicationRepository(Tenants tenants, HostProvisionerProvider hostProvisionerProvider,
-                                 ConfigserverConfig configserverConfig, Curator curator) {
+    public ApplicationRepository(Tenants tenants,
+                                 HostProvisionerProvider hostProvisionerProvider,
+                                 ConfigserverConfig configserverConfig,
+                                 Curator curator,
+                                 LogServerLogGrabber logServerLogGrabber,
+                                 ApplicationConvergenceChecker applicationConvergenceChecker) {
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.configserverConfig = configserverConfig;
         this.curator = curator;
+        this.logServerLogGrabber = logServerLogGrabber;
+        this.convergeChecker = applicationConvergenceChecker;
         this.clock = Clock.systemUTC();
     }
 
@@ -75,7 +96,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                  configserverConfig,
                                                  hostProvisioner,
                                                  new ActivateLock(curator, tenant.getPath()),
-                                                 timeout, 
+                                                 timeout,
                                                  clock,
                                                  /* already deployed, validate: */ false));
     }
@@ -88,9 +109,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                    timeout, clock);
     }
 
-    /** 
+    /**
      * Removes a previously deployed application
-     * 
+     *
      * @return true if the application was found and removed, false if it was not present
      * @throws RuntimeException if the remove transaction fails. This method is exception safe.
      */
@@ -100,7 +121,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         TenantApplications tenantApplications = owner.get().getApplicationRepo();
         if ( ! tenantApplications.listApplications().contains(applicationId)) return false;
-        
+
         // TODO: Push lookup logic down
         long sessionId = tenantApplications.getSessionIdForApplication(applicationId);
         LocalSessionRepo localSessionRepo = owner.get().getLocalSessionRepo();
@@ -121,6 +142,42 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         transaction.commit();
 
         return true;
+    }
+
+    public String grabLog(Tenant tenant, ApplicationId applicationId) {
+        Application application = getApplication(tenant, applicationId);
+        return logServerLogGrabber.grabLog(application);
+    }
+
+    public HttpResponse nodeConvergenceCheck(Tenant tenant, ApplicationId applicationId, String hostname, URI uri) {
+        Application application = getApplication(tenant, applicationId);
+        return convergeChecker.nodeConvergenceCheck(application, hostname, uri);
+    }
+
+    public void waitForConfigConverged(Tenant tenant, ApplicationId applicationId, TimeoutBudget timeoutBudget) throws IOException {
+        Application application = getApplication(tenant, applicationId);
+        convergeChecker.waitForConfigConverged(application, timeoutBudget);
+    }
+
+    public HttpResponse listConfigConvergence(Tenant tenant, ApplicationId applicationId, URI uri) {
+        Application application = getApplication(tenant, applicationId);
+        return convergeChecker.listConfigConvergence(application, uri);
+    }
+
+    public Long getApplicationGeneration(Tenant tenant, ApplicationId applicationId) {
+        return getApplication(tenant, applicationId).getApplicationGeneration();
+    }
+
+    public HttpResponse getContent(Tenant tenant, ApplicationId applicationId, Zone zone, HttpRequest request) {
+        LocalSession session = SessionHandler.getSessionFromRequest(tenant.getLocalSessionRepo(),
+                                                                    tenant.getApplicationRepo().getSessionIdForApplication(applicationId));
+        return contentHandler.get(ApplicationContentRequest.create(request, session, applicationId, zone));
+    }
+
+    private Application getApplication(Tenant tenant, ApplicationId applicationId) {
+        long sessionId = tenant.getApplicationRepo().getSessionIdForApplication(applicationId);
+        RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
+        return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty());
     }
 
 }

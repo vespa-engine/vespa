@@ -30,62 +30,29 @@ private:
     T _idx;
 public:
     Index() : _idx(0) {}
-    Index(uint32_t values_, uint32_t alternative_, uint64_t offset_)
+    Index(uint32_t values_, uint32_t alternative_, uint32_t offset_)
         : _idx(0)
     {
         _idx += static_cast<T>(values_) << (NUM_ALT_BITS+NUM_OFFSET_BITS);
-        _idx += static_cast<T>((alternative_) &
-                               ((1<<NUM_ALT_BITS) - 1)) << NUM_OFFSET_BITS;
+        _idx += static_cast<T>((alternative_) & ((1<<NUM_ALT_BITS) - 1)) << NUM_OFFSET_BITS;
         _idx += offset_;
     }
 
-    uint32_t
-    values(void) const
-    {
-        return _idx >> (NUM_ALT_BITS+NUM_OFFSET_BITS);
-    }
-
-    uint32_t
-    alternative(void) const
-    {
-        return (_idx >> NUM_OFFSET_BITS) & ((1<<NUM_ALT_BITS) - 1);
-    }
+    uint32_t      values() const { return _idx >> (NUM_ALT_BITS+NUM_OFFSET_BITS); }
+    uint32_t alternative() const { return (_idx >> NUM_OFFSET_BITS) & ((1<<NUM_ALT_BITS) - 1); }
 
     // values and alternative combined
-    uint32_t
-    vectorIdx(void) const
-    {
-        return _idx >> NUM_OFFSET_BITS;
-    }
+    uint32_t   vectorIdx() const { return _idx >> NUM_OFFSET_BITS; }
+    uint64_t      offset() const { return (_idx & ((1ul << NUM_OFFSET_BITS) - 1)); }
+    T                idx() const { return _idx; }
 
-    uint64_t offset(void) const
-    {
-        return (_idx & ((1ul << NUM_OFFSET_BITS) - 1));
-    }
-
-    T idx()                const { return _idx; }
-
-    static uint32_t
-    maxValues(void)
-    {
-        return (1 << NUM_VALUE_BITS) - 1;
-    }
-
-    static uint32_t
-    alternativeSize(void)
-    {
-        return 1 << NUM_ALT_BITS;
-    }
-
-    static uint64_t
-    offsetSize(void)
-    {
-        return 1ul << (NUM_OFFSET_BITS);
-    }
+    static uint32_t       maxValues() { return (1 << NUM_VALUE_BITS) - 1; }
+    static uint32_t alternativeSize() { return 1 << NUM_ALT_BITS; }
+    static uint64_t      offsetSize() { return 1ul << (NUM_OFFSET_BITS); }
 };
 
 typedef Index<uint32_t, 27,4,1> Index32;
-typedef Index<uint64_t, 40,12,1> Index64;
+typedef Index<uint64_t, 32,12,1> Index64;
 
 template <typename T, typename I>
 struct MVMTemplateArg {
@@ -103,26 +70,14 @@ public:
           _dead(0),
           _wantCompact(false),
           _usage()
-    {
-    }
+    { }
 
-    size_t used()                const { return _used; }
-    size_t dead()                const { return _dead; }
-    void incUsed(size_t inc)           { _used += inc; }
-    void incDead(size_t inc)           { _dead += inc; }
-
-    void
-    setWantCompact(void)
-    {
-        _wantCompact = true;
-    }
-
-    bool
-    getWantCompact(void) const
-    {
-        return _wantCompact;
-    }
-
+    size_t used()                  const { return _used; }
+    size_t dead()                  const { return _dead; }
+    void incUsed(uint32_t inc)           { _used += inc; }
+    void incDead(uint32_t inc)           { _dead += inc; }
+    void setWantCompact()                { _wantCompact = true; }
+    bool getWantCompact()          const { return _wantCompact; }
     MemoryUsage & getUsage()             { return _usage; }
     const MemoryUsage & getUsage() const { return _usage; }
 protected:
@@ -192,22 +147,15 @@ public:
     Histogram getHistogram(AttributeVector::ReaderBase & reader) const;
     size_t getTotalValueCnt() const { return _totalValueCnt; }
     static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
+    void clearPendingCompact();
 
-    void
-    clearPendingCompact(void);
+    static size_t computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize);
 
-    static size_t
-    computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize);
-
-    void
-    transferHoldLists(generation_t generation)
-    {
+    void transferHoldLists(generation_t generation) {
         _genHolder.transferHoldLists(generation);
     }
 
-    void
-    trimHoldLists(generation_t firstUsed)
-    {
+    void trimHoldLists(generation_t firstUsed) {
         _genHolder.trimHoldLists(firstUsed);
     }
 };
@@ -238,71 +186,36 @@ private:
 public:
     using IndexCopyVector = vespalib::Array<Index, vespalib::DefaultAlloc>;
 
-    void
-    doneHoldVector(Index idx);
+    void doneHoldVector(Index idx);
 
-    virtual Histogram getEmptyHistogram() const override {
+    Histogram getEmptyHistogram() const override {
         return MultiValueMappingBaseBase::getEmptyHistogram(Index::maxValues());
     }
 
-    virtual MemoryUsage getMemoryUsage() const override;
-
+    MemoryUsage getMemoryUsage() const override;
     AddressSpace getAddressSpaceUsage() const;
+    size_t getNumKeys() const { return _indices.size(); }
+    size_t getCapacityKeys() const { return _indices.capacity(); }
 
-    size_t getNumKeys(void) const
-    {
-        return _indices.size();
-    }
-
-    size_t getCapacityKeys(void) const
-    {
-        return _indices.capacity();
-    }
-
-    IndexCopyVector
-    getIndicesCopy() const
-    {
+    IndexCopyVector getIndicesCopy() const {
         uint32_t size = _committedDocIdLimit;
         assert(size <= _indices.size());
         return IndexCopyVector(&_indices[0], &_indices[0] + size);
     }
 
-    bool
-    hasKey(uint32_t key) const
-    {
-        return key < _indices.size();
-    }
-
-    bool
-    hasReaderKey(uint32_t key) const
-    {
+    bool hasReaderKey(uint32_t key) const {
         return key < _committedDocIdLimit && key < _indices.size();
     }
 
-    bool
-    isFull(void) const
-    {
-        return _indices.isFull();
-    }
-
-    static size_t
-    maxValues(void)
-    {
-        return Index::maxValues();
-    }
-
-    void
-    addKey(uint32_t & key);
-
-    void
-    shrinkKeys(uint32_t newSize);
-
-    void
-    clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
-
+    bool hasKey(uint32_t key) const { return key < _indices.size(); }
+    bool isFull() const { return _indices.isFull(); }
+    void addKey(uint32_t & key);
+    void shrinkKeys(uint32_t newSize);
+    void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
     void holdElem(Index idx, size_t size);
-
     virtual void doneHoldElem(Index idx) = 0;
+
+    static size_t maxValues() { return Index::maxValues(); }
 };
 
 extern template class MultiValueMappingBase<multivalue::Index32>;
@@ -314,18 +227,14 @@ class MultiValueMappingFallbackVectorHold
 {
     V _hold;
 public:
-    MultiValueMappingFallbackVectorHold(size_t size,
-                                        V &rhs)
+    MultiValueMappingFallbackVectorHold(size_t size, V &rhs)
         : vespalib::GenerationHeldBase(size),
           _hold()
     {
         _hold.swap(rhs);
     }
 
-    virtual
-    ~MultiValueMappingFallbackVectorHold(void)
-    {
-    }
+    virtual ~MultiValueMappingFallbackVectorHold() { }
 };
 
 
@@ -1379,4 +1288,3 @@ extern template class MultiValueMappingT<
     multivalue::Index64>;
 
 } // namespace search
-
