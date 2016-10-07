@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -70,7 +71,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
-    private ContainerNodeSpec lastNodeSpec = null;
+    ContainerNodeSpec lastNodeSpec = null;
 
     private final MetricReceiverWrapper metricReceiver;
 
@@ -339,7 +340,6 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
-                updateContainerNodeMetrics(nodeSpec);
                 break;
             case inactive:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
@@ -363,26 +363,27 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @SuppressWarnings("unchecked")
-    void updateContainerNodeMetrics(ContainerNodeSpec nodeSpec) {
-        Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
+    public void updateContainerNodeMetrics() {
+        if (lastNodeSpec == null || lastNodeSpec.nodeState != Node.State.active) return;
+        Docker.ContainerStats stats = dockerOperations.getContainerStats(lastNodeSpec.containerName);
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
                 .add("role", "tenants")
-                .add("flavor", nodeSpec.nodeFlavor)
-                .add("state", nodeSpec.nodeState.toString());
+                .add("flavor", lastNodeSpec.nodeFlavor)
+                .add("state", lastNodeSpec.nodeState.toString());
 
-        if (nodeSpec.owner.isPresent()) {
+        if (lastNodeSpec.owner.isPresent()) {
             dimensionsBuilder
-                    .add("tenantName", nodeSpec.owner.get().tenant)
-                    .add("app", nodeSpec.owner.get().application);
+                    .add("tenantName", lastNodeSpec.owner.get().tenant)
+                    .add("app", lastNodeSpec.owner.get().application);
         }
-        if (nodeSpec.membership.isPresent()) {
+        if (lastNodeSpec.membership.isPresent()) {
             dimensionsBuilder
-                    .add("clustertype", nodeSpec.membership.get().clusterType)
-                    .add("clusterid", nodeSpec.membership.get().clusterId);
+                    .add("clustertype", lastNodeSpec.membership.get().clusterType)
+                    .add("clusterid", lastNodeSpec.membership.get().clusterId);
         }
 
-        if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
+        if (lastNodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", lastNodeSpec.vespaVersion.get());
 
         Dimensions dimensions = dimensionsBuilder.build();
         addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
@@ -399,7 +400,7 @@ public class NodeAgentImpl implements NodeAgent {
             addIfNotNull(netDims, "node.network.bytes_sent", interfaceStats, "tx_bytes");
         });
 
-        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName).forEach(
+        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(lastNodeSpec.containerName).forEach(
                 (metricName, metricValue) -> metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue()));
     }
 

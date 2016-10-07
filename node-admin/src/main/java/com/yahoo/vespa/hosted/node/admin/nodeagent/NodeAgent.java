@@ -59,6 +59,11 @@ public interface NodeAgent {
     Optional<ContainerNodeSpec> getContainerNodeSpec();
 
     /**
+     * Updates metric receiver with the latest node-agent stats
+     */
+    void updateContainerNodeMetrics();
+
+    /**
      * Returns true if NodeAgent is waiting for an image download to finish
      */
     boolean isDownloadingImage();
