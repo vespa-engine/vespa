@@ -3,6 +3,9 @@ vespa_define_module(
     LIBS
     src/vespa/fastos
 
+    APPS
+    src/apps/cpumonitor
+
     TESTS
     src/tests
 )
