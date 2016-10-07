@@ -8,6 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
+ * Helper class to generate and write the secret-agent schedule file.
+ *
  * @author valerijf
  */
 public class SecretAgentScheduleMaker {
