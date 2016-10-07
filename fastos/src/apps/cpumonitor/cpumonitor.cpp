@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 using namespace std::literals;
+using clock = std::steady_clock;
 
 class Task {
 public:
@@ -36,13 +37,16 @@ private:
 
 void
 Task::run() {
-   std::ostringstream fileName;
-   fileName << "cpumonitor-" << _threadId << ".log" << std::ends;
-   std::ofstream log(fileName.str());
-   for (size_t iteration(0); !(*_stopped); iteration++) {
-       double result = loop(_loopWork);
-       log << iteration << " " << result << std::endl;
-   }
+    std::ostringstream fileName;
+    fileName << "cpumonitor-" << _threadId << ".log" << std::ends;
+    std::ofstream log(fileName.str());
+
+    for (size_t iteration(0); !(*_stopped); iteration++) {
+        clock::time_point start = clock::now();
+        double result = loop(_loopWork);
+        clock::time_point stop = clock::now();
+        log << iteration << " " << stop << " " << (stop - end) << result << std::endl;
+    }
 }
 
 double
@@ -74,16 +78,18 @@ int main(int argc, char * argv[]) {
     for (size_t threadId(0); threadId < numThreads; threadId++) {
         tasks.emplace_back(threadId, resolutionMS*1000000);
     }
-    std::cout << "Started" << std::endl;
-    while (true) {
+    clock::time_point start = clock::now();
+    clock::time_point end = start + std::chrono::seconds(runTime);
+    std::cout << start << " Started" << std::endl;
+    while (clock::now() < end) {
         std::this_thread::sleep_for(1s);
     }
-    std::cout << "Stopping" << std::endl;
+    std::cout << clock::now() << " Stopping" << std::endl;
     for (Task & task : tasks) {
         task.stop();
     }
     tasks.clear();
-    std::cout << "Done" << std::endl;
+    std::cout << clock::now() << " Done" << std::endl;
 
     return 0;
 }
