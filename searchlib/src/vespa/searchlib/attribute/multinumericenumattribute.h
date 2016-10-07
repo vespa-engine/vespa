@@ -29,7 +29,7 @@ protected:
     typedef typename B::BaseClass::largeint_t      largeint_t;
     typedef typename B::BaseClass::LoadedNumericValueT LoadedNumericValueT;
     typedef typename B::BaseClass::LoadedVector    LoadedVector;
-    typedef SequentialReadModifyWriteVector<LoadedNumericValueT, vespalib::DefaultAlloc> LoadedVectorR;
+    typedef SequentialReadModifyWriteVector<LoadedNumericValueT> LoadedVectorR;
     typedef typename B::BaseClass::Weighted        Weighted;
     typedef typename B::BaseClass::WeightedInt     WeightedInt;
     typedef typename B::BaseClass::WeightedFloat   WeightedFloat;

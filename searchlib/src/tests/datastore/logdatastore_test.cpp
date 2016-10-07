@@ -19,6 +19,8 @@ LOG_SETUP("datastore_test");
 using document::BucketId;
 using namespace search::docstore;
 using namespace search;
+using namespace vespalib::alloc;
+using vespalib::DefaultAlloc;
 using search::index::DummyFileHeaderContext;
 
 class MyTlSyncer : public transactionlog::SyncProxy {
@@ -144,7 +146,7 @@ TEST("test that DirectIOPadding works accordng to spec") {
     FastOS_File file("directio.test");
     file.EnableDirectIO();
     EXPECT_TRUE(file.OpenReadWrite());
-    vespalib::AlignedHeapAlloc buf(FILE_SIZE, 4096);
+    Alloc buf(DefaultAlloc::create(FILE_SIZE, MemoryAllocator::HUGEPAGE_SIZE, 4096));
     memset(buf.get(), 'a', buf.size());
     EXPECT_EQUAL(FILE_SIZE, file.Write2(buf.get(), FILE_SIZE));
     size_t padBefore(0);
@@ -543,41 +545,41 @@ TEST("test that the integrated visit cache works.") {
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 100, 100, 19774));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 100, 100, 20574));
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774)); // From the individual cache.
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 20574)); // From the individual cache.
 
     vcs.verifyVisit({7,9,17,19,67,88}, false);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 19774));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 100, 100, 20574));
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 101, 101, 20335));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 100, 101, 101, 21135));
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 101, 20335));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 101, 21135));
     vcs.rewrite(8);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, 20130)); // From the individual cache.
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 100, 20922)); // From the individual cache.
     vcs.rewrite(7);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, 19364)); // From the both caches.
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 101, 98, 20148)); // From the both caches.
     vcs.verifyVisit({7,9,17,19,67,88}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 102, 99, 19948));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 102, 99, 20732));
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, 19999));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, 20783));
     vcs.rewrite(17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, 19167));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, 19943));
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 98, 19821));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 98, 20587));
     vcs.remove(17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, 19167));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, 19943));
     vcs.verifyVisit({7,9,17,19,67,88,89}, {7,9,19,67,88,89}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, 19750));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, 20526));
 
     vcs.verifyVisit({41, 42}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 106, 99, 20044));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 106, 99, 20820));
     vcs.verifyVisit({43, 44}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 107, 100, 20348));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 107, 100, 21124));
     vcs.verifyVisit({41, 42, 43, 44}, true);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 108, 99, 20168));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 108, 99, 20944));
 }
 
 TEST("testWriteRead") {

@@ -8,6 +8,7 @@ You should have the docker daemon running and the following environment variable
 ```
 DOCKER_HOST
 CONTAINER_CERT_PATH
+VESPA_HOME
 ```
 
 ## Building

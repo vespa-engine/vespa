@@ -24,15 +24,13 @@ struct MyData {
 };
 
 struct MyDataSerializer : PostingSerializer<MyData> {
-    void serialize(const MyData &data,
-                   vespalib::MMapDataBuffer& buffer) const {
+    void serialize(const MyData &data, vespalib::DataBuffer& buffer) const {
         buffer.writeInt32(data.data);
     }
 };
 
 struct MyDataDeserializer : PostingDeserializer<MyData> {
-    MyData deserialize(vespalib::MMapDataBuffer& buffer) {
-        return {buffer.readInt32()};
+    MyData deserialize(vespalib::DataBuffer& buffer) { return {buffer.readInt32()};
     }
 };
 
@@ -168,7 +166,7 @@ TEST_FF("require that SimpleIndex can be serialized and deserialized.", Fixture,
         f1.addPosting(key, id, {id});
     }
     f1.commit();
-    vespalib::MMapDataBuffer buffer;
+    vespalib::DataBuffer buffer;
     f1.index().serialize(buffer, MyDataSerializer());
     MyObserver observer;
     MyDataDeserializer deserializer;

@@ -237,8 +237,7 @@ handleFillPostings(LoadedVector &loaded)
     uint32_t docIdLimit = _attr.getNumDocs();
     _postingList.resizeBitVectors(docIdLimit, docIdLimit);
     if ( ! loaded.empty() ) {
-        vespalib::Array<typename LoadedVector::Type,
-            vespalib::DefaultAlloc> similarValues;
+        vespalib::Array<typename LoadedVector::Type> similarValues;
         typename LoadedVector::Type v = loaded.read();
         LoadedValueType prev = v.getValue();
         for(size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {

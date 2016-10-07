@@ -69,7 +69,7 @@ SimpleIndex<Posting, Key, DocId>::~SimpleIndex() {
 
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndex<Posting, Key, DocId>::serialize(
-        vespalib::MMapDataBuffer &buffer,
+        vespalib::DataBuffer &buffer,
         const PostingSerializer<Posting> &serializer) const {
     assert(sizeof(Key) <= sizeof(uint64_t));
     assert(sizeof(DocId) <= sizeof(uint32_t));
@@ -90,7 +90,7 @@ void SimpleIndex<Posting, Key, DocId>::serialize(
 
 template <typename Posting, typename Key, typename DocId>
 void SimpleIndex<Posting, Key, DocId>::deserialize(
-        vespalib::MMapDataBuffer &buffer,
+        vespalib::DataBuffer &buffer,
         PostingDeserializer<Posting> &deserializer,
         SimpleIndexDeserializeObserver<Key, DocId> &observer, uint32_t version) {
     typename Dictionary::Builder builder(_dictionary.getAllocator());

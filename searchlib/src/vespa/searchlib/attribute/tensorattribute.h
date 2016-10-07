@@ -29,7 +29,7 @@ private:
 
     void compactWorst();
 public:
-    using RefCopyVector = vespalib::Array<RefType, vespalib::DefaultAlloc>;
+    using RefCopyVector = vespalib::Array<RefType>;
     using Tensor = vespalib::tensor::Tensor;
     TensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg);
     ~TensorAttribute();

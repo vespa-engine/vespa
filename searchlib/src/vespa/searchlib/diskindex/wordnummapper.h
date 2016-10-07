@@ -14,7 +14,7 @@ class WordNumMapper;
 
 class WordNumMapping
 {
-    typedef vespalib::Array<uint64_t, vespalib::DefaultAlloc> Array;
+    typedef vespalib::Array<uint64_t> Array;
 
     static uint64_t
     noWordNumHigh(void)

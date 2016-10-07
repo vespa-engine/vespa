@@ -3,15 +3,16 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("");
-
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/common/bitvector.h>
 
-namespace search
-{
+using vespalib::DefaultAlloc;
+using vespalib::alloc::Alloc;
 
+namespace search {
+
+//Above 32M we hand back to the OS directly.
+constexpr size_t MMAP_LIMIT = 0x2000000;
 
 ResultSet::ResultSet(void)
     : _elemsUsedInRankedHitsArray(0u),
@@ -50,11 +51,9 @@ void
 ResultSet::allocArray(unsigned int arrayAllocated)
 {
     if (arrayAllocated > 0) {
-        ArrayAlloc n(arrayAllocated * sizeof(RankedHit));
-        _rankedHitsArray.swap(n);
+        DefaultAlloc::create(arrayAllocated * sizeof(RankedHit), MMAP_LIMIT).swap(_rankedHitsArray);
     } else {
-        ArrayAlloc n;
-        _rankedHitsArray.swap(n);
+        Alloc().swap(_rankedHitsArray);
     }
     _rankedHitsArrayAllocElements = arrayAllocated;
     _elemsUsedInRankedHitsArray = 0;
@@ -100,7 +99,7 @@ ResultSet::mergeWithBitOverflow(void)
     uint32_t        bidx     = bitVector->getFirstTrueBit();
 
     uint32_t  actualHits = getNumHits();
-    ArrayAlloc newHitsAlloc(actualHits*sizeof(RankedHit));
+    Alloc newHitsAlloc = DefaultAlloc::create(actualHits*sizeof(RankedHit), MMAP_LIMIT);
     RankedHit *newHitsArray = static_cast<RankedHit *>(newHitsAlloc.get());
 
     RankedHit * tgtA    = newHitsArray;

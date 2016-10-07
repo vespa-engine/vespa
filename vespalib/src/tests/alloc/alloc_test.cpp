@@ -8,6 +8,7 @@ LOG_SETUP("alloc_test");
 #include <vespa/vespalib/util/exceptions.h>
 
 using namespace vespalib;
+using namespace vespalib::alloc;
 
 class Test : public TestApp
 {
@@ -36,7 +37,7 @@ Test::testSwap(T & a, T & b)
     void * tmpB(b.get());
     EXPECT_EQUAL(100u, a.size());
     EXPECT_EQUAL(200u, b.size());
-    swap(a, b);
+    std::swap(a, b);
     EXPECT_EQUAL(100u, b.size());
     EXPECT_EQUAL(200u, a.size());
     EXPECT_EQUAL(tmpA, b.get());
@@ -47,31 +48,36 @@ void
 Test::testBasic()
 {
     {
-        HeapAlloc h(100);
+        Alloc h = HeapAllocFactory::create(100);
         EXPECT_EQUAL(100u, h.size());
         EXPECT_TRUE(h.get() != NULL);
     }
     {
-        EXPECT_EXCEPTION(AlignedHeapAlloc(100, 0), IllegalArgumentException, "posix_memalign(100, 0) failed with code 22");
-        AlignedHeapAlloc h(100, 1024);
+        EXPECT_EXCEPTION(AlignedHeapAllocFactory::create(100, 7), IllegalArgumentException, "AlignedHeapAllocFactory::create(100, 7) does not support 7 alignment");
+        Alloc h = AlignedHeapAllocFactory::create(100, 1024);
         EXPECT_EQUAL(100u, h.size());
         EXPECT_TRUE(h.get() != NULL);
     }
     {
-        MMapAlloc h(100);
+        Alloc h = MMapAllocFactory::create(100);
         EXPECT_EQUAL(100u, h.size());
         EXPECT_TRUE(h.get() != NULL);
     }
     {
-        HeapAlloc a(100), b(200);
+        Alloc a = HeapAllocFactory::create(100), b = HeapAllocFactory::create(200);
         testSwap(a, b);
     }
     {
-        MMapAlloc a(100), b(200);
+        Alloc a = MMapAllocFactory::create(100), b = MMapAllocFactory::create(200);
         testSwap(a, b);
     }
     {
-        AlignedHeapAlloc a(100, 1024), b(200, 1024);
+        Alloc a = AlignedHeapAllocFactory::create(100, 1024), b = AlignedHeapAllocFactory::create(200, 1024);
+        testSwap(a, b);
+    }
+    {
+        Alloc a = HeapAllocFactory::create(100);
+        Alloc b = MMapAllocFactory::create(200);
         testSwap(a, b);
     }
 }
@@ -80,13 +86,13 @@ void
 Test::testAlignedAllocation()
 {
     {
-        AutoAlloc<2048, 1024> buf(10);
+        Alloc buf = AutoAllocFactory::create(10, MemoryAllocator::HUGEPAGE_SIZE, 1024);
         EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 1024 == 0);
     }
 
     {
         // Mmapped pointers are page-aligned, but sanity test anyway.
-        AutoAlloc<1024, 512> buf(3000);
+        Alloc buf = AutoAllocFactory::create(3000000, MemoryAllocator::HUGEPAGE_SIZE, 512);
         EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 512 == 0);
     }
 }

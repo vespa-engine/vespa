@@ -345,7 +345,7 @@ protected:
     ssize_t read(uint32_t lid, SubChunkId chunkId, const ChunkInfo & chunkInfo, vespalib::DataBuffer & buffer) const;
     void read(LidInfoWithLidV::const_iterator begin, size_t count, ChunkInfo ci, IBufferVisitor & visitor) const;
 
-    typedef vespalib::Array<ChunkInfo, vespalib::DefaultAlloc> ChunkInfoVector;
+    typedef vespalib::Array<ChunkInfo> ChunkInfoVector;
     const IBucketizer * _bucketizer;
     size_t              _addedBytes;
     TuneFileSummary     _tune;

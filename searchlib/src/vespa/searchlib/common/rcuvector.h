@@ -44,7 +44,7 @@ class RcuVectorBase
                   "Value type must be trivially destructible");
 
 protected:
-    typedef vespalib::Array<T, vespalib::DefaultAlloc> Array;
+    typedef vespalib::Array<T> Array;
     typedef vespalib::GenerationHandler::generation_t generation_t;
     typedef vespalib::GenerationHolder GenerationHolder;
     Array              _data;

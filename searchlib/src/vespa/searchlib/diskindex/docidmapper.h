@@ -12,7 +12,7 @@ class BitVector;
 namespace diskindex
 {
 
-typedef vespalib::Array<uint8_t, vespalib::DefaultAlloc> SelectorArray;
+typedef vespalib::Array<uint8_t> SelectorArray;
 
 class DocIdMapping
 {

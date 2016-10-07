@@ -27,6 +27,7 @@ public class OrchestratorMock implements Orchestrator {
     @Override
     public boolean suspend(String hostName) {
         synchronized (monitor) {
+            callOrder.add("Suspend for " + hostName);
             return forceSingleSuspendResponse;
         }
     }

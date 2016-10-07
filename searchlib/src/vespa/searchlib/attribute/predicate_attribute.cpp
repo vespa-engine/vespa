@@ -13,7 +13,7 @@ LOG_SETUP(".predicate_attribute");
 
 using document::Predicate;
 using document::PredicateFieldValue;
-using vespalib::MMapDataBuffer;
+using vespalib::DataBuffer;
 using namespace search::predicate;
 
 namespace search {
@@ -181,7 +181,7 @@ bool PredicateAttribute::onLoad()
     FileUtil::LoadedBuffer::UP loaded_buffer = loadDAT();
     char *rawBuffer = const_cast<char *>(static_cast<const char *>(loaded_buffer->buffer()));
     size_t size = loaded_buffer->size();
-    MMapDataBuffer buffer(rawBuffer, size);
+    DataBuffer buffer(rawBuffer, size);
     buffer.moveFreeToData(size);
 
     const GenericHeader &header = loaded_buffer->getHeader();

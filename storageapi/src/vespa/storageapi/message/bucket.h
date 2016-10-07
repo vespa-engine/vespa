@@ -409,7 +409,7 @@ public:
             : _bucketId(id), _info(info) {}
         friend std::ostream& operator<<(std::ostream& os, const Entry&);
     };
-    typedef vespalib::Array<Entry, vespalib::DefaultAlloc> EntryVector;
+    typedef vespalib::Array<Entry> EntryVector;
 private:
     EntryVector _buckets;
 

@@ -57,7 +57,7 @@ protected:
         }
     };
 
-    typedef vespalib::Array<ElemHold1ListElem, vespalib::DefaultAlloc> ElemHold1List;
+    typedef vespalib::Array<ElemHold1ListElem> ElemHold1List;
     typedef std::deque<ElemHold2ListElem> ElemHold2List;
 
     class FallbackHold : public vespalib::GenerationHeldBase

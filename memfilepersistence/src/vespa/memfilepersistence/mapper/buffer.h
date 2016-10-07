@@ -19,13 +19,7 @@ namespace memfile {
 
 class Buffer
 {
-    // Use AutoAlloc to transparently use mmap for large buffers.
-    // It is crucial that any backing buffer type returns an address that is
-    // 512-byte aligned, or direct IO will scream at us and fail everything.
-    static constexpr size_t MMapLimit = vespalib::MMapAlloc::HUGEPAGE_SIZE;
-    using BackingType = vespalib::AutoAlloc<MMapLimit, 512>;
-
-    BackingType _buffer;
+    vespalib::alloc::Alloc _buffer;
     // Actual, non-aligned size (as opposed to _buffer.size()).
     size_t _size;
 

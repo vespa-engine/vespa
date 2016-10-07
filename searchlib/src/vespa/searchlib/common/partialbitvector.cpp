@@ -5,13 +5,13 @@
 #include <vespa/fastos/fastos.h>
 #include "partialbitvector.h"
 
-/////////////////////////////////
-namespace search
-{
+using vespalib::DefaultAlloc;
+
+namespace search {
 
 PartialBitVector::PartialBitVector(Index start, Index end) :
     BitVector(),
-    _alloc(numActiveBytes(start, end))
+    _alloc(DefaultAlloc::create(numActiveBytes(start, end), 0x1000000, 0x1000))
 {
     init(_alloc.get(), start, end);
     clear();

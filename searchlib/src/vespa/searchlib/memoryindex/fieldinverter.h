@@ -98,7 +98,7 @@ private:
     FieldInverter &operator=(const FieldInverter &) = delete;
     FieldInverter &operator=(const FieldInverter &&) = delete;
 
-    typedef vespalib::Array<char, vespalib::DefaultAlloc> WordBuffer;
+    typedef vespalib::Array<char> WordBuffer;
 
     class ElemInfo
     {

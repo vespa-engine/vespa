@@ -151,10 +151,10 @@ public:
 
 private:
     JudyArray _judyArray;
-    typedef vespalib::Array<Type0, vespalib::DefaultAlloc> Type0Vector;
-    typedef vespalib::Array<Type1, vespalib::DefaultAlloc> Type1Vector;
-    typedef vespalib::Array<Type2, vespalib::DefaultAlloc> Type2Vector;
-    typedef vespalib::Array<Type3, vespalib::DefaultAlloc> Type3Vector;
+    typedef vespalib::Array<Type0> Type0Vector;
+    typedef vespalib::Array<Type1> Type1Vector;
+    typedef vespalib::Array<Type2> Type2Vector;
+    typedef vespalib::Array<Type3> Type3Vector;
     Type0Vector _values0;
     Type1Vector _values1;
     Type2Vector _values2;

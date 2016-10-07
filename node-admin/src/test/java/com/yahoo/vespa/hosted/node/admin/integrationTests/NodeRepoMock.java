@@ -76,11 +76,15 @@ public class NodeRepoMock implements NodeRepository {
                                                Optional<Double> minCpuCores,
                                                Optional<Double> minMainMemoryAvailableGb,
                                                Optional<Double> minDiskAvailableGb) {
-        addContainerNodeSpec(new ContainerNodeSpec(hostName,
+        updateContainerNodeSpec(new ContainerNodeSpec(hostName,
                 wantedDockerImage, containerName, nodeState, "tenant", "docker",
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 wantedRestartGeneration, currentRestartGeneration,
                 minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb));
+    }
+
+    public void updateContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
+        addContainerNodeSpec(containerNodeSpec);
     }
 
     public void addContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
