@@ -39,7 +39,7 @@ public class CallOrderVerifier {
         boolean inOrder = verifyInOrder(waitForCallOrderTimeout, functionCalls);
         if ( ! inOrder && ! assertMessage.isEmpty())
             System.err.println(assertMessage);
-        assertTrue(callOrder.toString(), inOrder);
+        assertTrue(toString(), inOrder);
     }
 
     /**
