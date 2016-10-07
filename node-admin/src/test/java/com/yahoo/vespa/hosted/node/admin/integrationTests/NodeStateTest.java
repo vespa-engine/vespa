@@ -27,7 +27,6 @@ import java.util.function.Function;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -39,7 +38,7 @@ import static org.mockito.Mockito.when;
  */
 
 public class NodeStateTest {
-    private CallOrderVerifier callOrder;
+    private CallOrderVerifier callOrderVerifier;
     private NodeRepoMock nodeRepositoryMock;
     private DockerMock dockerMock;
     private ContainerNodeSpec initialContainerNodeSpec;
@@ -47,11 +46,11 @@ public class NodeStateTest {
 
     @Before
     public void before() throws InterruptedException, UnknownHostException {
-        callOrder = new CallOrderVerifier();
-        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
-        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
-        nodeRepositoryMock = new NodeRepoMock(callOrder);
-        dockerMock = new DockerMock(callOrder);
+        callOrderVerifier = new CallOrderVerifier();
+        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
+        nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+        dockerMock = new DockerMock(callOrderVerifier);
 
         Environment environment = mock(Environment.class);
         when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
@@ -86,7 +85,7 @@ public class NodeStateTest {
             Thread.sleep(10);
         }
 
-        assert callOrder.verifyInOrder(5000,
+        callOrderVerifier.assertInOrder(
                 "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
@@ -121,9 +120,9 @@ public class NodeStateTest {
 
         assertThat(nodeRepositoryMock.getContainerNodeSpec(initialContainerNodeSpec.hostname).get().nodeState, is(Node.State.ready));
 
-        assertTrue("Node set to dirty, but no stop/delete call received", callOrder.verifyInOrder(1000,
-                "stopContainer with ContainerName: ContainerName { name=container }",
-                "deleteContainer with ContainerName: ContainerName { name=container }"));
+        callOrderVerifier.assertInOrderWithAssertMessage("Node set to dirty, but no stop/delete call received",
+                                                         "stopContainer with ContainerName: ContainerName { name=container }",
+                                                         "deleteContainer with ContainerName: ContainerName { name=container }");
     }
 
     @Test
@@ -142,9 +141,9 @@ public class NodeStateTest {
                 initialContainerNodeSpec.minMainMemoryAvailableGb,
                 initialContainerNodeSpec.minDiskAvailableGb);
 
-        assertTrue("Node set to inactive, but no stop/delete call received", callOrder.verifyInOrder(1000,
-                "stopContainer with ContainerName: ContainerName { name=container }",
-                "deleteContainer with ContainerName: ContainerName { name=container }"));
+        callOrderVerifier.assertInOrderWithAssertMessage("Node set to inactive, but no stop/delete call received",
+                                                         "stopContainer with ContainerName: ContainerName { name=container }",
+                                                         "deleteContainer with ContainerName: ContainerName { name=container }");
 
 
         // Change node state to active
@@ -160,10 +159,10 @@ public class NodeStateTest {
                 initialContainerNodeSpec.minDiskAvailableGb);
 
         // Check that the container is started again after the delete call
-        assertTrue("Node not started again after being put to active state", callOrder.verifyInOrder(1000,
-                "deleteContainer with ContainerName: ContainerName { name=container }",
-                "createContainerCommand with DockerImage: DockerImage { imageId=newDockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"));
+        callOrderVerifier.assertInOrderWithAssertMessage("Node not started again after being put to active state",
+                                                         "deleteContainer with ContainerName: ContainerName { name=container }",
+                                                         "createContainerCommand with DockerImage: DockerImage { imageId=newDockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
+                                                         "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
+                                                         "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
     }
 }

@@ -12,10 +12,10 @@ import java.util.Map;
  * @author valerijf
  */
 public class StorageMaintainerMock extends StorageMaintainer {
-    private final CallOrderVerifier callOrder;
+    private final CallOrderVerifier callOrderVerifier;
 
-    public StorageMaintainerMock(CallOrderVerifier callOrder) {
-        this.callOrder = callOrder;
+    public StorageMaintainerMock(CallOrderVerifier callOrderVerifier) {
+        this.callOrderVerifier = callOrderVerifier;
     }
 
     @Override
@@ -33,6 +33,6 @@ public class StorageMaintainerMock extends StorageMaintainer {
 
     @Override
     public void deleteContainerStorage(ContainerName containerName) throws IOException {
-        callOrder.add("DeleteContainerStorage with ContainerName: " + containerName);
+        callOrderVerifier.add("DeleteContainerStorage with ContainerName: " + containerName);
     }
 }

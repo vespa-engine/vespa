@@ -21,11 +21,11 @@ import java.util.function.Function;
  * @author dybis
  */
 public class ComponentsProviderWithMocks implements ComponentsProvider {
-    static final CallOrderVerifier callOrder = new CallOrderVerifier();
-    static final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
-    static final StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
-    static final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
-    static final Docker dockerMock = new DockerMock(callOrder);
+    static final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
+    static final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+    static final StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
+    static final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
+    static final Docker dockerMock = new DockerMock(callOrderVerifier);
 
     private Environment environment = new Environment();
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
