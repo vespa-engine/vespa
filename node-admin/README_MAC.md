@@ -1,5 +1,5 @@
 # Setting up Docker on OS X
-Install Docker Toolbox according to the procedure on [https://docs.docker.com/mac/step_one](https://docs.docker.com/mac/step_one).
+Install Docker according to the procedure on [https://docs.docker.com/docker-for-mac/](https://docs.docker.com/docker-for-mac/).
 
 # Running Vespa on OS X 
 
