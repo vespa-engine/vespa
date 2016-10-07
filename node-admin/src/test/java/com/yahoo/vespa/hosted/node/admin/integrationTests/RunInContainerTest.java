@@ -109,7 +109,7 @@ public class RunInContainerTest {
 
         // No nodes to suspend, always successful
         assertThat(doPutCall("suspend"), is(true));
-        assertTrue(ComponentsProviderWithMocks.callOrder.verifyInOrder(1000));
+        assertThat(ComponentsProviderWithMocks.callOrder.verifyInOrder(60000), is(""));
 
         ComponentsProviderWithMocks.nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
                 "hostName",
@@ -128,9 +128,9 @@ public class RunInContainerTest {
                 Optional.of(1d)));
         ComponentsProviderWithMocks.orchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));
-        assertTrue(ComponentsProviderWithMocks.callOrder
-                           .verifyInOrder(1000,
-                                          "Suspend with parent: localhost and hostnames: [hostName] - Forced response: Optional[Denied]"));
+        assertThat(ComponentsProviderWithMocks.callOrder
+                           .verifyInOrder(60000,
+                                          "Suspend with parent: localhost and hostnames: [hostName] - Forced response: Optional[Denied]"), is(""));
 
         assertThat(doGetInfoCall(), is("{\"dockerHostHostName\":\"localhost\",\"NodeAdmin\":{\"isFrozen\":true,\"NodeAgents\":[]}}"));
     }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Takes in strings representing function calls with their parameters and allows to check whether a subset of calls
@@ -32,13 +33,13 @@ public class CallOrderVerifier {
      * Checks if list of function calls occur in order given within a timeout
      * @param timeout Max number of milliseconds to check for if function calls occur in order
      * @param functionCalls The expected order of function calls
-     * @return true if the actual order of calls was equal to the order provided within timeout, false otherwise.
+     * @return error message if not verified correctly.
      */
-    public boolean verifyInOrder(long timeout, String... functionCalls) {
+    public String verifyInOrder(long timeout, String... functionCalls) {
         final long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < timeout) {
             if (verifyInOrder(functionCalls)) {
-                return true;
+                return "";
             }
             try {
                 Thread.sleep(10);
@@ -46,8 +47,7 @@ public class CallOrderVerifier {
                 e.printStackTrace();
             }
         }
-
-        return false;
+        return "Verify failed, state is: " + callOrder.toString();
     }
 
     private boolean verifyInOrder(String... functionCalls) {

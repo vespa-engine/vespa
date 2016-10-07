@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -63,17 +65,19 @@ public class RestartTest {
         }
 
         // Check that the container is started and NodeRepo has received the PATCH update
-        assertTrue(callOrder.verifyInOrder(1000,
-                                           "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                                           "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}"));
+        assertThat(callOrder.verifyInOrder(
+                60000,
+                "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
+                "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}"), is(""));
 
         wantedRestartGeneration = 2;
         currentRestartGeneration = 1;
         nodeRepositoryMock.updateContainerNodeSpec(createContainerNodeSpec(wantedRestartGeneration, currentRestartGeneration));
 
-        assertTrue(callOrder.verifyInOrder(1000,
-                                           "Suspend for host1",
-                                           "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, restart]"));
+        assertThat(callOrder.verifyInOrder(
+                60000,
+                "Suspend for host1",
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, restart]"), is(""));
         updater.deconstruct();
     }
 
