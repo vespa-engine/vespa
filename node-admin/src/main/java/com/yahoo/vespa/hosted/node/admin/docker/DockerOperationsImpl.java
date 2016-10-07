@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -23,7 +24,6 @@ import java.io.InputStreamReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -126,13 +126,28 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     private void configureContainer(ContainerNodeSpec nodeSpec) {
-        final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
+        final Path yamasAgentFolder = Maintainer.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
 
         Path vespaCheckPath = Paths.get("/home/y/libexec/yms/yms_check_vespa");
-        Path vespaCheckSchedulePath = yamasAgentFolder.resolve("vespa.yaml");
-        String vespaCheckSchedule = generateSecretAgentSchedule(nodeSpec, "vespa", 60, vespaCheckPath, "all");
+        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+                .withTag("role", "tenants")
+                .withTag("flavor", nodeSpec.nodeFlavor)
+                .withTag("state", nodeSpec.nodeState.toString())
+                .withTag("zone", environment.getZone());
+
+        if (nodeSpec.owner.isPresent()) scheduleMaker
+                .withTag("tenantName", nodeSpec.owner.get().tenant)
+                .withTag("app", nodeSpec.owner.get().application);
+
+        if (nodeSpec.membership.isPresent()) scheduleMaker
+                .withTag("clustertype", nodeSpec.membership.get().clusterType)
+                .withTag("clusterid", nodeSpec.membership.get().clusterId);
+
+        if (nodeSpec.vespaVersion.isPresent()) scheduleMaker
+                .withTag("vespaVersion", nodeSpec.vespaVersion.get());
+
         try {
-            writeSecretAgentSchedule(nodeSpec.containerName, vespaCheckSchedulePath, vespaCheckSchedule);
+            scheduleMaker.writeTo(yamasAgentFolder);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
         }
@@ -140,51 +155,6 @@ public class DockerOperationsImpl implements DockerOperations {
         docker.executeInContainer(nodeSpec.containerName, "service", "yamas-agent", "restart");
     }
 
-    private void writeSecretAgentSchedule(ContainerName containerName, Path schedulePath, String secretAgentSchedule) throws IOException {
-        Path scheduleFilePath = Maintainer.pathInNodeAdminFromPathInNode(containerName, schedulePath.toString());
-        Files.write(scheduleFilePath, secretAgentSchedule.getBytes());
-        scheduleFilePath.toFile().setReadable(true, false); // Give everyone read access to the schedule file
-    }
-
-    String generateSecretAgentSchedule(ContainerNodeSpec nodeSpec, String id, int interval, Path pathToCheck,
-                                       String... args) {
-        StringBuilder stringBuilder = new StringBuilder()
-                .append("- id: ").append(id).append("\n")
-                .append("  interval: ").append(interval).append("\n")
-                .append("  user: nobody").append("\n")
-                .append("  check: ").append(pathToCheck.toFile().getAbsolutePath()).append("\n");
-
-        if (args.length > 0) {
-            stringBuilder.append("  args: \n");
-            for (String arg : args) {
-                stringBuilder.append("    - ").append(arg).append("\n");
-            }
-        }
-
-        stringBuilder.append("  tags:\n").append("    namespace: Vespa\n");
-        if (nodeSpec.owner.isPresent()) {
-            stringBuilder
-                    .append("    tenantName: ").append(nodeSpec.owner.get().tenant).append("\n")
-                    .append("    app: ").append(nodeSpec.owner.get().application).append(".").append(nodeSpec.owner.get().instance).append("\n");
-        }
-
-        if (nodeSpec.membership.isPresent()) {
-            stringBuilder
-                    .append("    clustertype: ").append(nodeSpec.membership.get().clusterType).append("\n")
-                    .append("    clusterid: ").append(nodeSpec.membership.get().clusterId).append("\n");
-        }
-
-        if (nodeSpec.vespaVersion.isPresent())
-            stringBuilder.append("    vespaVersion: ").append(nodeSpec.vespaVersion.get()).append("\n");
-
-        stringBuilder
-                .append("    role: tenants\n")
-                .append("    flavor: ").append(nodeSpec.nodeFlavor).append("\n")
-                .append("    state: ").append(nodeSpec.nodeState).append("\n")
-                .append("    zone: ").append(environment.getZone()).append("\n");
-
-        return stringBuilder.toString();
-    }
 
     // Returns true if scheduling download
     @Override

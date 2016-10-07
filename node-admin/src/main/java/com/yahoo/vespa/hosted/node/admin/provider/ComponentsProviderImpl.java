@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.provider;
 
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
@@ -16,7 +17,11 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -57,6 +62,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
 
         metricReceiverWrapper = metricReceiver;
+        initializeNodeAgentSecretAgent(docker, environment.getZone());
     }
 
     @Override
@@ -67,5 +73,23 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     @Override
     public MetricReceiverWrapper getMetricReceiverWrapper() {
         return metricReceiverWrapper;
+    }
+
+
+    private void initializeNodeAgentSecretAgent(Docker docker, String zone) {
+        ContainerName nodeAdminName = new ContainerName("node-admin");
+        final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
+        docker.executeInContainer(nodeAdminName, "sudo", "chmod", "a+w", yamasAgentFolder.toString());
+
+        Path nodeAdminCheckPath = Paths.get("/usr/bin/curl");
+        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("node-admin", 60, nodeAdminCheckPath,
+                "localhost:4080/rest/metrics").withTag("zone", zone);
+
+        try {
+            scheduleMaker.writeTo(yamasAgentFolder);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write secret-agent schedules for node-admin", e);
+        }
+        docker.executeInContainer(nodeAdminName, "service", "yamas-agent", "restart");
     }
 }
