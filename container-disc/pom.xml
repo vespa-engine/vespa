@@ -132,9 +132,10 @@
     <!-- end WARNING -->
   </dependencies>
   <properties>
-    <!-- hk2 version must be the one used by current jersey version. This is just to avoid duplicating it below.
+    <!-- hk2 version must be the one used by current jersey version.
+         This is just to avoid duplicating it below, _not_ to enforce a particular version of hk2.
          Do not move this to the root pom! -->
-    <hk2.version>2.4.0-b06</hk2.version>
+    <hk2.version>2.4.0-b09</hk2.version>
   </properties>
   <build>
     <plugins>
@@ -187,7 +188,9 @@
                 jersey-common-${jersey2.version}.jar,
                 jersey-container-servlet-${jersey2.version}.jar,
                 jersey-container-servlet-core-${jersey2.version}.jar,
+                jersey-entity-filtering-${jersey2.version}.jar, <!-- new feature from 2.16, provided for convenience -->
                 jersey-guava-${jersey2.version}.jar,
+                jersey-media-jaxb-${jersey2.version}.jar,
                 jersey-media-json-jackson-${jersey2.version}.jar,
                 jersey-media-multipart-${jersey2.version}.jar,
                 mimepull-1.9.3.jar, <!-- needed by media-multipart -->
