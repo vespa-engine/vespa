@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
  * @author valerijf
  */
 public class MultiDockerTest {
-    private CallOrderVerifier callOrder;
+    private CallOrderVerifier callOrderVerifier;
     private NodeRepoMock nodeRepositoryMock;
     private DockerMock dockerMock;
     private NodeAdmin nodeAdmin;
@@ -42,11 +42,11 @@ public class MultiDockerTest {
 
     @Before
     public void before() throws InterruptedException, UnknownHostException {
-        callOrder = new CallOrderVerifier();
-        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrder);
-        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
-        nodeRepositoryMock = new NodeRepoMock(callOrder);
-        dockerMock = new DockerMock(callOrder);
+        callOrderVerifier = new CallOrderVerifier();
+        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
+        nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+        dockerMock = new DockerMock(callOrderVerifier);
 
         Environment environment = mock(Environment.class);
         when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
@@ -90,7 +90,7 @@ public class MultiDockerTest {
 
         addAndWaitForNode("host3", new ContainerName("container3"), Optional.of(new DockerImage("image1")));
 
-        assertTrue(callOrder.verifyInOrder(1000,
+        callOrderVerifier.assertInOrder(
                 "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host1, ContainerName: ContainerName { name=container1 }",
                 "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
                 "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]",
@@ -104,17 +104,17 @@ public class MultiDockerTest {
 
                 "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host3, ContainerName: ContainerName { name=container3 }",
                 "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"));
+                "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
 
-        assertTrue("Maintainer did not receive call to delete application storage", callOrder.verifyInOrder(1000,
-                        "deleteContainer with ContainerName: ContainerName { name=container2 }",
-                        "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }"));
+        assertTrue("Maintainer did not receive call to delete application storage", callOrderVerifier.verifyInOrder(1000,
+                                                                                                            "deleteContainer with ContainerName: ContainerName { name=container2 }",
+                                                                                                            "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }"));
 
-        assertTrue(callOrder.verifyInOrder(1000,
+        callOrderVerifier.assertInOrder(
                 "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}",
                 "updateNodeAttributes with HostName: host2, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image2 }, vespaVersion='null'}",
                 "markAsReady with HostName: host2",
-                "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}"));
+                "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}");
     }
 
     private ContainerNodeSpec addAndWaitForNode(String hostName, ContainerName containerName, Optional<DockerImage> dockerImage) throws InterruptedException {
@@ -140,7 +140,7 @@ public class MultiDockerTest {
             Thread.sleep(10);
         }
 
-        assert callOrder.verifyInOrder(1000,
+        callOrderVerifier.assertInOrder(
                 "createContainerCommand with DockerImage: " + dockerImage.get() + ", HostName: " + hostName + ", ContainerName: " + containerName,
                 "executeInContainer with ContainerName: " + containerName + ", args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
                 "executeInContainer with ContainerName: " + containerName + ", args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
