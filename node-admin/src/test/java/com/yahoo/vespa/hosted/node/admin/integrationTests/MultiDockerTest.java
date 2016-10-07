@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -90,7 +92,7 @@ public class MultiDockerTest {
 
         addAndWaitForNode("host3", new ContainerName("container3"), Optional.of(new DockerImage("image1")));
 
-        assertTrue(callOrder.verifyInOrder(1000,
+        assertThat(callOrder.verifyInOrder(60000,
                 "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host1, ContainerName: ContainerName { name=container1 }",
                 "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
                 "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]",
@@ -104,17 +106,17 @@ public class MultiDockerTest {
 
                 "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host3, ContainerName: ContainerName { name=container3 }",
                 "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"));
+                "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"), is(""));
 
-        assertTrue("Maintainer did not receive call to delete application storage", callOrder.verifyInOrder(1000,
+        assertThat("Maintainer did not receive call to delete application storage", callOrder.verifyInOrder(60000,
                         "deleteContainer with ContainerName: ContainerName { name=container2 }",
-                        "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }"));
+                        "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }"), is(""));
 
-        assertTrue(callOrder.verifyInOrder(1000,
+        assertThat(callOrder.verifyInOrder(60000,
                 "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}",
                 "updateNodeAttributes with HostName: host2, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image2 }, vespaVersion='null'}",
                 "markAsReady with HostName: host2",
-                "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}"));
+                "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}"),is (""));
     }
 
     private ContainerNodeSpec addAndWaitForNode(String hostName, ContainerName containerName, Optional<DockerImage> dockerImage) throws InterruptedException {
@@ -140,10 +142,10 @@ public class MultiDockerTest {
             Thread.sleep(10);
         }
 
-        assert callOrder.verifyInOrder(1000,
+        assertThat(callOrder.verifyInOrder(1000,
                 "createContainerCommand with DockerImage: " + dockerImage.get() + ", HostName: " + hostName + ", ContainerName: " + containerName,
                 "executeInContainer with ContainerName: " + containerName + ", args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: " + containerName + ", args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
+                "executeInContainer with ContainerName: " + containerName + ", args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"), is(""));
 
         return containerNodeSpec;
     }

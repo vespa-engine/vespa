@@ -76,9 +76,9 @@ public class ResumeTest {
         }
 
         // Check that the container is started and NodeRepo has received the PATCH update
-         assertTrue(callOrder.verifyInOrder(1000,
+        assertThat(callOrder.verifyInOrder(60000,
                 "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}"));
+                "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}"), is(""));
 
         // Force orchestrator to reject the suspend
         orchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));
@@ -109,10 +109,10 @@ public class ResumeTest {
             Thread.sleep(10);
         }
 
-        assertTrue(callOrder.verifyInOrder(1000,
+        assertThat(callOrder.verifyInOrder(1000,
                 "Resume for host1",
                 "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional[Orchestrator reject suspend]",
-                "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional.empty"));
+                "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional.empty"), is(""));
 
         updater.deconstruct();
     }

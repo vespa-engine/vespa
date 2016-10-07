@@ -25,7 +25,8 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -79,10 +80,10 @@ public class DockerFailTest {
             Thread.sleep(10);
         }
 
-        assert callOrder.verifyInOrder(1000,
+        assertThat(callOrder.verifyInOrder(60000,
                 "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: ContainerName { name=container }",
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"), is(""));
     }
 
     @After
@@ -94,10 +95,10 @@ public class DockerFailTest {
     public void dockerFailTest() throws InterruptedException {
         dockerMock.deleteContainer(initialContainerNodeSpec.containerName);
 
-        assertTrue(callOrder.verifyInOrder(1000,
+        assertThat(callOrder.verifyInOrder(1000,
                 "deleteContainer with ContainerName: ContainerName { name=container }",
                 "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: hostName, ContainerName: ContainerName { name=container }",
                 "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"));
+                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]"), is(""));
     }
 }
