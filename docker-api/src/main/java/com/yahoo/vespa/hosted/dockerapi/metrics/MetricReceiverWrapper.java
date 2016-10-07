@@ -31,7 +31,8 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
     }
 
     /**
-     *  Declaring the same dimensions and name results in the same CounterWrapper instance (idempotent). **/
+     *  Declaring the same dimensions and name results in the same CounterWrapper instance (idempotent).
+     */
     public CounterWrapper declareCounter(Dimensions dimensions, String name) {
         synchronized (monitor) {
             if (!metricsByDimensions.containsKey(dimensions)) metricsByDimensions.put(dimensions, new HashMap<>());
@@ -45,7 +46,8 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
     }
 
     /**
-     *  Declaring the same dimensions and name results in the same GaugeWrapper instance (idempotent). **/
+     *  Declaring the same dimensions and name results in the same GaugeWrapper instance (idempotent).
+     */
     public GaugeWrapper declareGauge(Dimensions dimensions, String name) {
         synchronized (monitor) {
             if (!metricsByDimensions.containsKey(dimensions))

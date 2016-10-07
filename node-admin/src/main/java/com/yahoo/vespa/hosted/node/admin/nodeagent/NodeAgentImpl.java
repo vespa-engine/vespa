@@ -407,7 +407,11 @@ public class NodeAgentImpl implements NodeAgent {
     private void addIfNotNull(Dimensions dimensions, String yamasName, Object metrics, String metricName) {
         Map<String, Object> metricsMap = (Map<String, Object>) metrics;
         if (metricsMap == null || !metricsMap.containsKey(metricName)) return;
-        metricReceiver.declareGauge(dimensions, yamasName).sample(((Number) metricsMap.get(metricName)).doubleValue());
+        try {
+            metricReceiver.declareGauge(dimensions, yamasName).sample(((Number) metricsMap.get(metricName)).doubleValue());
+        } catch (Throwable e) {
+            logger.warning("Failed to update " + yamasName + " metric with value " + metricsMap.get(metricName), e);
+        }
     }
 
     public Optional<ContainerNodeSpec> getContainerNodeSpec() {
