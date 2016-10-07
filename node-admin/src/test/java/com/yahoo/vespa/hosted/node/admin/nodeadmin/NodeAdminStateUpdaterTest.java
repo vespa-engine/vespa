@@ -49,8 +49,8 @@ public class NodeAdminStateUpdaterTest {
         containersToRun.add(createSample());
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
-        CallOrderVerifier callOrder = new CallOrderVerifier();
-        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
+        CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
         NodeAdminStateUpdater refresher = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, Long.MAX_VALUE, Long.MAX_VALUE, orchestratorMock, "basehostname");
 

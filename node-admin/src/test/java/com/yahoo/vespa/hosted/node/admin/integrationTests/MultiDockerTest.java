@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -106,9 +105,9 @@ public class MultiDockerTest {
                 "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
                 "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
 
-        assertTrue("Maintainer did not receive call to delete application storage", callOrderVerifier.verifyInOrder(1000,
-                                                                                                            "deleteContainer with ContainerName: ContainerName { name=container2 }",
-                                                                                                            "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }"));
+        callOrderVerifier.assertInOrderWithAssertMessage("Maintainer did not receive call to delete application storage",
+                                                         "deleteContainer with ContainerName: ContainerName { name=container2 }",
+                                                         "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }");
 
         callOrderVerifier.assertInOrder(
                 "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}",
