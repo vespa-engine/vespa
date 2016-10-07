@@ -2,6 +2,7 @@
 package com.yahoo.prelude.cluster;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -32,7 +33,7 @@ public class ClusterMonitor implements Runnable, Freezable {
 
     private final ClusterSearcher nodeManager;
 
-    private final VipStatus vipStatus;
+    private final Optional<VipStatus> vipStatus;
 
     /** A map from Node to corresponding MonitoredNode */
     private final Map<VespaBackEndSearcher, NodeMonitor> nodeMonitors = new java.util.IdentityHashMap<>();
@@ -40,7 +41,7 @@ public class ClusterMonitor implements Runnable, Freezable {
 
     private boolean isFrozen = false;
 
-    ClusterMonitor(ClusterSearcher manager, QrMonitorConfig monitorConfig, VipStatus vipStatus) {
+    ClusterMonitor(ClusterSearcher manager, QrMonitorConfig monitorConfig, Optional<VipStatus> vipStatus) {
         configuration = new MonitorConfiguration(monitorConfig);
         nodeManager = manager;
         this.vipStatus = vipStatus;
@@ -93,6 +94,8 @@ public class ClusterMonitor implements Runnable, Freezable {
     }
 
     private void updateVipStatus() {
+        if ( ! vipStatus.isPresent()) return;
+        
         boolean hasWorkingNodesWithDocumentsOnline = false;
         for (NodeMonitor node : nodeMonitors.values()) {
             if (node.isWorking() && node.searchNodesOnline()) {
@@ -101,9 +104,9 @@ public class ClusterMonitor implements Runnable, Freezable {
             }
         }
         if (hasWorkingNodesWithDocumentsOnline) {
-            vipStatus.addToRotation(this);
+            vipStatus.get().addToRotation(this);
         } else {
-            vipStatus.removeFromRotation(this);
+            vipStatus.get().removeFromRotation(this);
         }
     }
 

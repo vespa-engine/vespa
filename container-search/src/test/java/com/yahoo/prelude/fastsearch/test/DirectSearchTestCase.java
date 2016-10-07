@@ -3,6 +3,8 @@ package com.yahoo.prelude.fastsearch.test;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests that FastSearcher will bypass dispatch when the conditions are right
@@ -56,11 +58,14 @@ public class DirectSearchTestCase {
     @Test
     public void testNoDirectSearchWhenLocalNodeIsDown() {
         FastSearcherTester tester = new FastSearcherTester(2, FastSearcherTester.selfHostname + ":9999:0", "otherhost:9999:1");
+        assertTrue(tester.vipStatus().isInRotation());
         tester.setResponding(FastSearcherTester.selfHostname, false);
+        assertFalse(tester.vipStatus().isInRotation());
         assertEquals("1 ping request, 0 search requests", 1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("1 ping request, 0 search requests", 1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.setResponding(FastSearcherTester.selfHostname, true);
+        assertTrue(tester.vipStatus().isInRotation());
         assertEquals("2 ping requests, 0 search request", 2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("2 ping requests, 1 search request", 3, tester.requestCount(FastSearcherTester.selfHostname, 9999));
@@ -81,25 +86,28 @@ public class DirectSearchTestCase {
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("Still 1 ping request, 0 search requests because the default coverage is 97%, and we only have 96% locally",
                      1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        assertFalse(tester.vipStatus().isInRotation());
 
         tester.setActiveDocuments(FastSearcherTester.selfHostname, (long) (99 * k));
         assertEquals("2 ping request, 0 search requests", 2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("2 ping request, 1 search requests because we now have 99% locally",
                      3, tester.requestCount(FastSearcherTester.selfHostname, 9999));
-
+        assertTrue(tester.vipStatus().isInRotation());
 
         tester.setActiveDocuments("host1", (long) (104 * k));
         assertEquals("2 ping request, 1 search requests", 3, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("2 ping request, 2 search requests because 99/((104+100)/2) > 0.97",
                      4, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        assertTrue(tester.vipStatus().isInRotation());
 
         tester.setActiveDocuments("host2", (long) (102 * k));
         assertEquals("2 ping request, 2 search requests", 4, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("Still 2 ping request, 2 search requests because 99/((104+102)/2) < 0.97",
                      4, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        assertFalse(tester.vipStatus().isInRotation());
     }
 
     @Test

@@ -107,13 +107,19 @@ public class ClusterSearcher extends Searcher {
         super(id);
         this.hasher = new Hasher();
         this.fs4ResourcePool = fs4ResourcePool;
-        monitor = new ClusterMonitor(this, monitorConfig, vipStatus);
+
+        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus);
+
+        if (dispatcher.searchCluster().directDispatchTarget().isPresent()) // dispatcher should decide vip status instead
+            monitor = new ClusterMonitor(this, monitorConfig, Optional.empty());
+        else
+            monitor = new ClusterMonitor(this, monitorConfig, Optional.of(vipStatus));
+
         int searchClusterIndex = clusterConfig.clusterId();
         clusterModelName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
         documentTypes = new LinkedHashSet<>();
         failoverToRemote = clusterConfig.failoverToRemote();
-        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus);
 
         String eventName = clusterModelName + ".cache_hit_ratio";
         cacheHitRatio = new Value(eventName, manager, new Value.Parameters().setNameExtension(false)
@@ -239,7 +245,7 @@ public class ClusterSearcher extends Searcher {
         this.hasher = new Hasher();
         this.failoverToRemote = false;
         this.documentTypes = documentTypes;
-        monitor = new ClusterMonitor(this, new QrMonitorConfig(new QrMonitorConfig.Builder()), new VipStatus());
+        monitor = new ClusterMonitor(this, new QrMonitorConfig(new QrMonitorConfig.Builder()), Optional.of(new VipStatus()));
         cacheHitRatio = new Value("com.yahoo.prelude.cluster.ClusterSearcher.ClusterSearcher().dummy",
                                   Statistics.nullImplementation, new Value.Parameters());
         clusterModelName = "testScenario";
