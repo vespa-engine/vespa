@@ -84,7 +84,6 @@ public class StorageMaintainer {
         return diskUsageKB * 1024;
     }
 
-
     public void removeOldFilesFromNode(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
 
