@@ -176,7 +176,7 @@ public class ConstantTensorJsonValidatorTest {
     @Test
     public void ensure_that_non_number_values_are_disallowed() {
         expectedException.expect(InvalidConstantTensor.class);
-        expectedException.expectMessage("Expected a number, but got VALUE_STRING");
+        expectedException.expectMessage("Tensor value is not a number (VALUE_STRING)");
 
         validateTensorJson(
                 TensorType.fromSpec("tensor(x[])"),

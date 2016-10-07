@@ -182,7 +182,7 @@ public class ConstantTensorJsonValidator {
         final JsonToken token = parser.nextToken();
 
         if (token != JsonToken.VALUE_NUMBER_FLOAT && token != JsonToken.VALUE_NUMBER_INT) {
-            throw new InvalidConstantTensor(parser, String.format("Expected a number, but got %s", token.toString()));
+            throw new InvalidConstantTensor(parser, String.format("Tensor value is not a number (%s)", token.toString()));
         }
     }
 
