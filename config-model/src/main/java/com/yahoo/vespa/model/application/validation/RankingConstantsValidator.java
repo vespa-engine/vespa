@@ -19,7 +19,6 @@ import java.io.Reader;
  */
 
 public class RankingConstantsValidator extends Validator {
-
     private static class ExceptionMessageCollector {
         public String combinedMessage;
         public boolean exceptionsOccurred = false;
@@ -61,7 +60,7 @@ public class RankingConstantsValidator extends Validator {
         }
     }
 
-    public void validateRankingConstant(RankingConstant rankingConstant, ApplicationPackage applicationPackage) throws FileNotFoundException {
+    public static void validateRankingConstant(RankingConstant rankingConstant, ApplicationPackage applicationPackage) throws FileNotFoundException {
         final ApplicationFile tensorApplicationFile = applicationPackage.getFile(Path.fromString(rankingConstant.getFileName()));
         final Reader tensorReader = tensorApplicationFile.createReader();
 
