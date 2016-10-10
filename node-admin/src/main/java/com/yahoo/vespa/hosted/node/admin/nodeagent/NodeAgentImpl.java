@@ -292,8 +292,6 @@ public class NodeAgentImpl implements NodeAgent {
                 }
             }
         }
-
-        metricReceiver.unsetMetricsForContainer(hostname);
     }
 
     // Public for testing
@@ -304,6 +302,10 @@ public class NodeAgentImpl implements NodeAgent {
 
         synchronized (monitor) {
             if (!nodeSpec.equals(lastNodeSpec)) {
+                // If we transition from active, to not active state, unset the current metrics
+                if (lastNodeSpec != null && lastNodeSpec.nodeState == Node.State.active && nodeSpec.nodeState != Node.State.active) {
+                    metricReceiver.unsetMetricsForContainer(hostname);
+                }
                 addDebugMessage("Loading new node spec: " + nodeSpec.toString());
                 lastNodeSpec = nodeSpec;
             }
