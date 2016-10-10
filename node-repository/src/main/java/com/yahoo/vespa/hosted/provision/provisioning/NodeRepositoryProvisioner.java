@@ -77,7 +77,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if ( requestedCapacity.type() == NodeType.tenant) {
             int nodeCount = capacityPolicies.decideSize(requestedCapacity);
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
-                logger.log(Level.WARNING, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
+                logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                           ", downscaling to " + nodeCount + " nodes in " + zone.environment());
             Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster);
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
