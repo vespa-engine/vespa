@@ -187,7 +187,10 @@ NodesOfContainerCluster = element nodes {
     attribute allocated-memory { text }? &
     attribute cpu-socket-affinity { xsd:boolean }? &
     (
-      attribute of { xsd:string }
+      (
+        attribute of { xsd:string } &
+        attribute required { xsd:boolean }?
+      )
       |
       attribute type { xsd:string }
       |
