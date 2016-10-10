@@ -191,11 +191,11 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) throws IOException {
-        final String containerVespaVersion = dockerOperations.getVespaVersionOrNull(nodeSpec.containerName);
+        final Optional<String> containerVespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
         final NodeAttributes nodeAttributes = new NodeAttributes()
                 .withRestartGeneration(nodeSpec.wantedRestartGeneration.get())
                 .withDockerImage(nodeSpec.wantedDockerImage.get())
-                .withVespaVersion(containerVespaVersion);
+                .withVespaVersion(containerVespaVersion.orElse(null));
 
         publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
     }

@@ -85,22 +85,22 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public String getVespaVersionOrNull(ContainerName containerName) {
+    public Optional<String> getVespaVersion(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
         ProcessResult result = docker.executeInContainer(containerName, DockerOperationsImpl.GET_VESPA_VERSION_COMMAND);
         if (!result.isSuccess()) {
             logger.warning("Container " + containerName.asString() + ": Command "
                     + Arrays.toString(DockerOperationsImpl.GET_VESPA_VERSION_COMMAND) + " failed: " + result);
-            return null;
+            return Optional.empty();
         }
         Optional<String> vespaVersion = parseVespaVersion(result.getOutput());
         if (vespaVersion.isPresent()) {
-            return vespaVersion.get();
+            return vespaVersion;
         } else {
             logger.warning("Container " + containerName.asString() + ": Failed to parse vespa version from "
                     + result.getOutput());
-            return null;
+            return Optional.empty();
         }
     }
 

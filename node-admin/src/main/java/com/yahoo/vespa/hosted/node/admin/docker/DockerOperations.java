@@ -7,8 +7,10 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
+import java.util.Optional;
+
 public interface DockerOperations {
-    String getVespaVersionOrNull(ContainerName containerName);
+    Optional<String> getVespaVersion(ContainerName containerName);
 
     // Returns true if container is absent on return
     boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)

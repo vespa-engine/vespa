@@ -45,6 +45,7 @@ public class NodeAgentImplTest {
     private static final Optional<Double> MIN_CPU_CORES = Optional.of(1.0);
     private static final Optional<Double> MIN_MAIN_MEMORY_AVAILABLE_GB = Optional.of(1.0);
     private static final Optional<Double> MIN_DISK_AVAILABLE_GB = Optional.of(1.0);
+    private static final Optional<String> vespaVersion = Optional.of("7.8.9");
 
     private final String hostName = "hostname";
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
@@ -76,14 +77,13 @@ public class NodeAgentImplTest {
                 MIN_CPU_CORES,
                 MIN_MAIN_MEMORY_AVAILABLE_GB,
                 MIN_DISK_AVAILABLE_GB);
-        final String vespaVersion = "7.8.9";
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(false);
-        when(dockerOperations.getVespaVersionOrNull(eq(containerName))).thenReturn(vespaVersion);
+        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
         nodeAgent.tick();
@@ -100,7 +100,7 @@ public class NodeAgentImplTest {
                 new NodeAttributes()
                         .withRestartGeneration(restartGeneration)
                         .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
+                        .withVespaVersion(vespaVersion.get()));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -124,14 +124,13 @@ public class NodeAgentImplTest {
                 MIN_CPU_CORES,
                 MIN_MAIN_MEMORY_AVAILABLE_GB,
                 MIN_DISK_AVAILABLE_GB);
-        final String vespaVersion = "7.8.9";
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(true);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(true);
-        when(dockerOperations.getVespaVersionOrNull(eq(containerName))).thenReturn(vespaVersion);
+        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
         nodeAgent.tick();
@@ -145,7 +144,7 @@ public class NodeAgentImplTest {
                 hostName, new NodeAttributes()
                         .withRestartGeneration(restartGeneration)
                         .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion));
+                        .withVespaVersion(vespaVersion.get()));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -358,14 +357,13 @@ public class NodeAgentImplTest {
                 MIN_CPU_CORES,
                 MIN_MAIN_MEMORY_AVAILABLE_GB,
                 MIN_DISK_AVAILABLE_GB);
-        final String vespaVersion = "7.8.9";
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(wantedDockerImage))).thenReturn(false);
         when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(true);
-        when(dockerOperations.getVespaVersionOrNull(eq(containerName))).thenReturn(vespaVersion);
+        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
 
         doThrow(new RuntimeException("Failed 1st time"))
                 .doNothing()
