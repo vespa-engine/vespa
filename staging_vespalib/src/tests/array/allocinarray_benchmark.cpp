@@ -60,7 +60,7 @@ private:
 
 typedef TreeNode<long> N;
 typedef RefTreeNode<long> R;
-typedef AllocInArray<R, vespalib::Array<R, MMapAlloc> > Store;
+typedef AllocInArray<R, vespalib::Array<R> > Store;
 
 void populate(Store & store, uint32_t parent, size_t depth)
 {

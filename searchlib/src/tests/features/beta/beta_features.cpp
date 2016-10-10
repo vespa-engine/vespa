@@ -3,7 +3,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("beta_features_test");
 
-#include <boost/tokenizer.hpp>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/attributevector.h>

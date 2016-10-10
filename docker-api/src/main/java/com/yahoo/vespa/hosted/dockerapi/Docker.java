@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import com.yahoo.vespa.applicationmodel.HostName;
-
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +26,8 @@ public interface Docker {
     CreateContainerCommand createContainerCommand(
             DockerImage dockerImage,
             ContainerName containerName,
-            HostName hostName);
+            String hostName);
+
 
     interface ContainerInfo {
         /** returns Optional.empty() if not running. */
@@ -36,6 +36,16 @@ public interface Docker {
 
     ContainerInfo inspectContainer(ContainerName containerName);
 
+
+    interface ContainerStats {
+        Map<String, Object> getNetworks();
+        Map<String, Object> getCpuStats();
+        Map<String, Object> getMemoryStats();
+        Map<String, Object> getBlkioStats();
+    }
+
+    ContainerStats getContainerStats(ContainerName containerName);
+    
     void startContainer(ContainerName containerName);
 
     void stopContainer(ContainerName containerName);
@@ -44,9 +54,11 @@ public interface Docker {
 
     void connectContainerToNetwork(ContainerName containerName, String networkName);
 
+    void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath);
+
     List<Container> getAllManagedContainers();
 
-    Optional<Container> getContainer(HostName hostname);
+    Optional<Container> getContainer(String hostname);
 
     CompletableFuture<DockerImage> pullImageAsync(DockerImage image);
 

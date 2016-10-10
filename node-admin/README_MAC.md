@@ -1,5 +1,5 @@
 # Setting up Docker on OS X
-Install Docker Toolbox according to the procedure on [https://docs.docker.com/mac/step_one](https://docs.docker.com/mac/step_one).
+Install Docker according to the procedure on [https://docs.docker.com/docker-for-mac/](https://docs.docker.com/docker-for-mac/).
 
 # Running Vespa on OS X 
 
@@ -43,7 +43,7 @@ scripts/setup-route-and-hosts-osx.sh
 The script will prompt you to continue as this will alter your routing table and /etc/hosts file. If your local zone is up and running, the config server should respond to this:
 
 ```
-curl config-server:19071
+curl config-server:4080
 ```
 
 If you don't want your `/etc/hosts` file to be changed, the

@@ -189,8 +189,10 @@ private:
     void ref(const internal_iterator & it);
     insert_result insert(value_type && value);
     void removeOld();
-    class RecordMoves : public noncopyable {
+    class RecordMoves {
     public:
+        RecordMoves(const RecordMoves &) = delete;
+        RecordMoves & operator = (const RecordMoves &) = delete;
         RecordMoves(lrucache_map & lru) :
             _lru(lru)
         {

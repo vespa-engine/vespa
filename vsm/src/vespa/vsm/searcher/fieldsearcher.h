@@ -18,7 +18,7 @@ typedef size_t termsize_t;
 #endif
 
 typedef ucs4_t cmptype_t;
-typedef vespalib::Array<cmptype_t, vespalib::DefaultAlloc> SearcherBuf;
+typedef vespalib::Array<cmptype_t> SearcherBuf;
 typedef std::shared_ptr<SearcherBuf> SharedSearcherBuf;
 typedef std::vector<char> CharVector;
 

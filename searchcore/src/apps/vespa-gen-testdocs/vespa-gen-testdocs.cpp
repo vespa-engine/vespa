@@ -16,6 +16,9 @@ typedef vespalib::hash_set<vespalib::string> StringSet;
 typedef vespalib::hash_set<uint32_t> UIntSet;
 typedef std::vector<vespalib::string> StringArray;
 typedef std::shared_ptr<StringArray> StringArraySP;
+using namespace vespalib::alloc;
+using vespalib::DefaultAlloc;
+using vespalib::string;
 
 void
 usageHeader(void)
@@ -27,9 +30,9 @@ usageHeader(void)
         "USAGE:\n";
 }
 
-vespalib::string
-prependBaseDir(const vespalib::string &baseDir,
-               const vespalib::string &file)
+string
+prependBaseDir(const string &baseDir,
+               const string &file)
 {
     if (baseDir.empty() || baseDir == ".")
         return file;
@@ -38,15 +41,15 @@ prependBaseDir(const vespalib::string &baseDir,
 
 
 void
-shafile(const vespalib::string &baseDir,
-        const vespalib::string &file)
+shafile(const string &baseDir,
+        const string &file)
 {
     unsigned char digest[SHA256_DIGEST_LENGTH];
     SHA256_CTX c; 
-    vespalib::string fullFile(prependBaseDir(baseDir, file));
+    string fullFile(prependBaseDir(baseDir, file));
     FastOS_File f;
     std::ostringstream os;
-    vespalib::AlignedHeapAlloc buf(65536, 4096);
+    Alloc buf = DefaultAlloc::create(65536, MemoryAllocator::HUGEPAGE_SIZE, 0x1000);
     f.EnableDirectIO();
     bool openres = f.OpenReadOnly(fullFile.c_str());
     if (!openres) {
@@ -84,7 +87,7 @@ public:
     StringGenerator(search::Rand48 &rnd);
 
     void
-    rand_string(vespalib::string &res, uint32_t minLen, uint32_t maxLen);
+    rand_string(string &res, uint32_t minLen, uint32_t maxLen);
 
     void
     rand_unique_array(StringArray &res,
@@ -101,7 +104,7 @@ StringGenerator::StringGenerator(search::Rand48 &rnd)
 
 
 void
-StringGenerator::rand_string(vespalib::string &res,
+StringGenerator::rand_string(string &res,
                              uint32_t minLen,
                              uint32_t maxLen)
 {
@@ -121,7 +124,7 @@ StringGenerator::rand_unique_array(StringArray &res,
                                    uint32_t size)
 {
     StringSet set(size * 2);
-    vespalib::string s;
+    string s;
     
     res.reserve(size);
     for (uint32_t i = 0; i < size; ++i) {
@@ -140,10 +143,10 @@ public:
     typedef std::shared_ptr<FieldGenerator> SP;
 
 protected:
-    const vespalib::string _name;
+    const string _name;
 
 public:
-    FieldGenerator(const vespalib::string &name);
+    FieldGenerator(const string &name);
 
     virtual
     ~FieldGenerator(void);
@@ -155,12 +158,12 @@ public:
     clear(void);
 
     virtual void
-    deleteHistogram(const vespalib::string &baseDir,
-                    const vespalib::string &name);
+    deleteHistogram(const string &baseDir,
+                    const string &name);
 
     virtual void
-    writeHistogram(const vespalib::string &baseDir,
-                   const vespalib::string &name);
+    writeHistogram(const string &baseDir,
+                   const string &name);
 
     virtual void
     generate(vespalib::asciistream &doc, uint32_t id) = 0;
@@ -168,7 +171,7 @@ public:
 
 
 
-FieldGenerator::FieldGenerator(const vespalib::string &name)
+FieldGenerator::FieldGenerator(const string &name)
     : _name(name)
 {
 }
@@ -191,8 +194,8 @@ FieldGenerator::clear(void)
 
 
 void
-FieldGenerator::deleteHistogram(const vespalib::string &baseDir,
-                                const vespalib::string &name)
+FieldGenerator::deleteHistogram(const string &baseDir,
+                                const string &name)
 {
     (void) baseDir;
     (void) name;
@@ -200,8 +203,8 @@ FieldGenerator::deleteHistogram(const vespalib::string &baseDir,
 
 
 void
-FieldGenerator::writeHistogram(const vespalib::string &baseDir,
-                               const vespalib::string &name)
+FieldGenerator::writeHistogram(const string &baseDir,
+                               const string &name)
 {
     (void) baseDir;
     (void) name;
@@ -220,7 +223,7 @@ class RandTextFieldGenerator : public FieldGenerator
     uint32_t _randFill;
 
 public:
-    RandTextFieldGenerator(const vespalib::string &name,
+    RandTextFieldGenerator(const string &name,
                            search::Rand48 &rnd,
                            uint32_t numWords,
                            uint32_t minFill,
@@ -236,19 +239,19 @@ public:
     clear(void);
 
     virtual void
-    deleteHistogram(const vespalib::string &baseDir,
-                    const vespalib::string &name);
+    deleteHistogram(const string &baseDir,
+                    const string &name);
 
     virtual void
-    writeHistogram(const vespalib::string &baseDir,
-                   const vespalib::string &name);
+    writeHistogram(const string &baseDir,
+                   const string &name);
 
     virtual void
     generate(vespalib::asciistream &doc, uint32_t id);
 };
 
 
-RandTextFieldGenerator::RandTextFieldGenerator(const vespalib::string &name,
+RandTextFieldGenerator::RandTextFieldGenerator(const string &name,
                                                search::Rand48 &rnd,
                                                uint32_t numWords,
                                                uint32_t minFill,
@@ -295,21 +298,21 @@ RandTextFieldGenerator::clear(void)
 
 
 void
-RandTextFieldGenerator::deleteHistogram(const vespalib::string &baseDir,
-                                        const vespalib::string &name)
+RandTextFieldGenerator::deleteHistogram(const string &baseDir,
+                                        const string &name)
 {
-    vespalib::string fname(prependBaseDir(baseDir, name) + "-" + _name);
+    string fname(prependBaseDir(baseDir, name) + "-" + _name);
     FastOS_File::Delete(fname.c_str());
 }
 
 
 void
-RandTextFieldGenerator::writeHistogram(const vespalib::string &baseDir,
-                                       const vespalib::string &name)
+RandTextFieldGenerator::writeHistogram(const string &baseDir,
+                                       const string &name)
 {
     LOG(info, "%u word collisions for field %s", _colls, _name.c_str());
-    vespalib::string fname(name + "-" + _name);
-    vespalib::string fullName(prependBaseDir(baseDir, fname));
+    string fname(name + "-" + _name);
+    string fullName(prependBaseDir(baseDir, fname));
     LOG(info, "Writing histogram %s", fname.c_str());
     Fast_BufferedFile f(new FastOS_File);
     f.WriteOpen(fullName.c_str());
@@ -344,7 +347,7 @@ RandTextFieldGenerator::generate(vespalib::asciistream &doc, uint32_t id)
             _histogram[wNum]++;
         else
             ++_colls;
-        const vespalib::string &s(_strings[wNum]);
+        const string &s(_strings[wNum]);
         assert(s.size() > 0);
         doc << s;
     }
@@ -358,7 +361,7 @@ class ModTextFieldGenerator : public FieldGenerator
     std::vector<uint32_t> _mods;
 
 public:
-    ModTextFieldGenerator(const vespalib::string &name,
+    ModTextFieldGenerator(const string &name,
                           search::Rand48 &rnd,
                           const std::vector<uint32_t> &mods);
     
@@ -369,14 +372,14 @@ public:
     clear(void);
 
     virtual void
-    writeHistogram(const vespalib::string &name);
+    writeHistogram(const string &name);
 
     virtual void
     generate(vespalib::asciistream &doc, uint32_t id);
 };
 
 
-ModTextFieldGenerator::ModTextFieldGenerator(const vespalib::string &name,
+ModTextFieldGenerator::ModTextFieldGenerator(const string &name,
                                              search::Rand48 &rnd,
                                              const std::vector<uint32_t> &mods)
     : FieldGenerator(name),
@@ -398,7 +401,7 @@ ModTextFieldGenerator::clear(void)
 
 
 void
-ModTextFieldGenerator::writeHistogram(const vespalib::string &name)
+ModTextFieldGenerator::writeHistogram(const string &name)
 {
     (void) name;
 }
@@ -424,7 +427,7 @@ ModTextFieldGenerator::generate(vespalib::asciistream &doc, uint32_t id)
 class IdTextFieldGenerator : public FieldGenerator
 {
 public:
-    IdTextFieldGenerator(const vespalib::string &name);
+    IdTextFieldGenerator(const string &name);
     
     virtual
     ~IdTextFieldGenerator(void);
@@ -433,14 +436,14 @@ public:
     clear(void);
 
     virtual void
-    writeHistogram(const vespalib::string &name);
+    writeHistogram(const string &name);
 
     virtual void
     generate(vespalib::asciistream &doc, uint32_t id);
 };
 
 
-IdTextFieldGenerator::IdTextFieldGenerator(const vespalib::string &name)
+IdTextFieldGenerator::IdTextFieldGenerator(const string &name)
     : FieldGenerator(name)
 {
 }
@@ -458,7 +461,7 @@ IdTextFieldGenerator::clear(void)
 
 
 void
-IdTextFieldGenerator::writeHistogram(const vespalib::string &name)
+IdTextFieldGenerator::writeHistogram(const string &name)
 {
     (void) name;
 }
@@ -480,7 +483,7 @@ class RandIntFieldGenerator : public FieldGenerator
     uint32_t _count;
 
 public:
-    RandIntFieldGenerator(const vespalib::string &name,
+    RandIntFieldGenerator(const string &name,
                           search::Rand48 &rnd,
                           uint32_t low,
                           uint32_t count);
@@ -492,7 +495,7 @@ public:
     clear(void);
 
     virtual void
-    writeHistogram(const vespalib::string &name);
+    writeHistogram(const string &name);
 
     virtual void
     generate(vespalib::asciistream &doc, uint32_t id);
@@ -500,7 +503,7 @@ public:
 
 
 
-RandIntFieldGenerator::RandIntFieldGenerator(const vespalib::string &name,
+RandIntFieldGenerator::RandIntFieldGenerator(const string &name,
                                              search::Rand48 &rnd,
                                              uint32_t low,
                                              uint32_t count)
@@ -524,7 +527,7 @@ RandIntFieldGenerator::clear(void)
 
 
 void
-RandIntFieldGenerator::writeHistogram(const vespalib::string &name)
+RandIntFieldGenerator::writeHistogram(const string &name)
 {
     (void) name;
 }
@@ -542,8 +545,8 @@ RandIntFieldGenerator::generate(vespalib::asciistream &doc, uint32_t id)
 
 class DocumentGenerator
 {
-    vespalib::string _docType;
-    vespalib::string _idPrefix;
+    string _docType;
+    string _idPrefix;
     vespalib::asciistream _doc;
     typedef std::vector<FieldGenerator::SP> FieldVec;
     const FieldVec _fields;
@@ -551,8 +554,8 @@ class DocumentGenerator
     void
     setup(void);
 public:   
-    DocumentGenerator(const vespalib::string &docType,
-                      const vespalib::string &idPrefix,
+    DocumentGenerator(const string &docType,
+                      const string &idPrefix,
                       const FieldVec &fields);
 
     ~DocumentGenerator(void);
@@ -561,26 +564,26 @@ public:
     clear(void);
 
     void
-    deleteHistogram(const vespalib::string &baseDir,
-                    const vespalib::string &name);
+    deleteHistogram(const string &baseDir,
+                    const string &name);
 
     void
-    writeHistogram(const vespalib::string &baseDir,
-                   const vespalib::string &name);
+    writeHistogram(const string &baseDir,
+                   const string &name);
 
     void
     generate(uint32_t id);
 
     void
     generate(uint32_t docMin, uint32_t docCount,
-             const vespalib::string &baseDir,
-             const vespalib::string &feedFileName,
+             const string &baseDir,
+             const string &feedFileName,
              bool headers);
 };
 
 
-DocumentGenerator::DocumentGenerator(const vespalib::string &docType,
-                                     const vespalib::string &idPrefix,
+DocumentGenerator::DocumentGenerator(const string &docType,
+                                     const string &idPrefix,
                                      const FieldVec &fields)
     : _docType(docType),
       _idPrefix(idPrefix),
@@ -630,8 +633,8 @@ DocumentGenerator::generate(uint32_t id)
 
 
 void
-DocumentGenerator::deleteHistogram(const vespalib::string &baseDir,
-                                   const vespalib::string &name)
+DocumentGenerator::deleteHistogram(const string &baseDir,
+                                   const string &name)
 {
     typedef FieldVec::const_iterator FI;
     for (FI i(_fields.begin()), ie(_fields.end()); i != ie; ++i) {
@@ -640,8 +643,8 @@ DocumentGenerator::deleteHistogram(const vespalib::string &baseDir,
 }
                             
 void
-DocumentGenerator::writeHistogram(const vespalib::string &baseDir,
-                                  const vespalib::string &name)
+DocumentGenerator::writeHistogram(const string &baseDir,
+                                  const string &name)
 {
     typedef FieldVec::const_iterator FI;
     for (FI i(_fields.begin()), ie(_fields.end()); i != ie; ++i) {
@@ -651,13 +654,13 @@ DocumentGenerator::writeHistogram(const vespalib::string &baseDir,
                             
 void
 DocumentGenerator::generate(uint32_t docMin, uint32_t docCount,
-                            const vespalib::string &baseDir,
-                            const vespalib::string &feedFileName,
+                            const string &baseDir,
+                            const string &feedFileName,
                             bool headers)
 {
-    vespalib::string fullName(prependBaseDir(baseDir, feedFileName));
+    string fullName(prependBaseDir(baseDir, feedFileName));
     FastOS_File::Delete(fullName.c_str());
-    vespalib::string histname(feedFileName + ".histogram");
+    string histname(feedFileName + ".histogram");
     deleteHistogram(baseDir, histname);
     Fast_BufferedFile f(new FastOS_File);
     f.WriteOpen(fullName.c_str());
@@ -710,8 +713,8 @@ public:
 
 class GenTestDocsApp : public SubApp
 {
-    vespalib::string _baseDir;
-    vespalib::string _docType;
+    string _baseDir;
+    string _docType;
     uint32_t _minDocId;
     uint32_t _docIdLimit;
     bool _verbose;
@@ -720,7 +723,7 @@ class GenTestDocsApp : public SubApp
     std::vector<FieldGenerator::SP> _fields;
     std::vector<uint32_t> _mods;
     search::Rand48 _rnd;
-    vespalib::string _outFile;
+    string _outFile;
     bool _headers;
     
 public:
@@ -901,7 +904,7 @@ int
 GenTestDocsApp::run(void)
 {
     printf("Hello world\n");
-    vespalib::string idPrefix("id:test:");
+    string idPrefix("id:test:");
     idPrefix += _docType;
     idPrefix += "::";
     DocumentGenerator dg(_docType,

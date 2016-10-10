@@ -2,12 +2,8 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2_builder.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
 #include <vespa/vespalib/tensor/types.h>
@@ -41,18 +37,8 @@ template <typename BuilderType>
 struct TensorTFromBuilder;
 
 template <>
-struct TensorTFromBuilder<SimpleTensorBuilder> {
-    using TensorT = SimpleTensor;
-};
-
-template <>
-struct TensorTFromBuilder<CompactTensorBuilder> {
-    using TensorT = CompactTensor;
-};
-
-template <>
-struct TensorTFromBuilder<CompactTensorV2Builder> {
-    using TensorT = CompactTensorV2;
+struct TensorTFromBuilder<SparseTensorBuilder> {
+    using TensorT = SparseTensor;
 };
 
 template <typename BuilderType>
@@ -130,9 +116,7 @@ struct Fixture : public FixtureBase
     }
 };
 
-using SimpleFixture = Fixture<SimpleTensorBuilder>;
-using CompactFixture = Fixture<CompactTensorBuilder>;
-using CompactV2Fixture = Fixture<CompactTensorV2Builder>;
+using SparseFixture = Fixture<SparseTensorBuilder>;
 
 template <typename FixtureType>
 void
@@ -208,17 +192,7 @@ testTensorMapper(FixtureType &f)
                               { "x", "y" }));
 }
 
-TEST_F("test tensor mapper for SimpleTensor", SimpleFixture)
-{
-    testTensorMapper(f);
-}
-
-TEST_F("test tensor mapper for CompactTensor", CompactFixture)
-{
-    testTensorMapper(f);
-}
-
-TEST_F("test tensor mapper for CompactTensorV2", CompactV2Fixture)
+TEST_F("test tensor mapper for SparseTensor", SparseFixture)
 {
     testTensorMapper(f);
 }

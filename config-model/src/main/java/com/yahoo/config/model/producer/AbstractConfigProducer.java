@@ -105,10 +105,10 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         child.setParent(this);
         if (childrenBySubId.get(child.getSubId()) != null) {
             throw new IllegalArgumentException("Multiple services/instances of the id '" + child.getSubId() + "' under the service/instance " +
-                    errorMsgClassName() + " '" + subId + "'. (This is commonly caused by service/node index " +
-                    "collisions in the config.)." +
-                    "\nExisting instance: " + childrenBySubId.get(child.getSubId()) +
-                    "\nAttempted to add:  " + child);
+                                               errorMsgClassName() + " '" + subId + "'. (This is commonly caused by service/node index " +
+                                               "collisions in the config.)." +
+                                               "\nExisting instance: " + childrenBySubId.get(child.getSubId()) +
+                                               "\nAttempted to add:  " + child);
         }
         childrenBySubId.put(child.getSubId(), child);
 

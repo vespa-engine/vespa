@@ -96,10 +96,12 @@ public class Configserver extends AbstractService {
 
     // TODO: Remove this implementation when we are on Hosted Vespa.
     public static class Spec implements ConfigServerSpec {
+
         private final String hostName;
         private final int configServerPort;
         private final int httpPort;
         private final int zooKeeperPort;
+
         public String getHostName() {
             return hostName;
         }
@@ -142,4 +144,5 @@ public class Configserver extends AbstractService {
             this.zooKeeperPort = zooKeeperPort;
         }
     }
+
 }

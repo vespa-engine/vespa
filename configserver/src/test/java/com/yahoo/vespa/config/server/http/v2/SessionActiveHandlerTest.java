@@ -5,8 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Executor;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.*;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
@@ -15,6 +15,8 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.*;
+import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -158,13 +160,17 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
                 .withRemoteSessionRepo(remoteSessionRepo)
                 .withApplicationRepo(applicationRepo)
                 .build();
-        return new SessionActiveHandler(new Executor() {
-            @SuppressWarnings("NullableProblems")
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        }, AccessLog.voidAccessLog(), testTenantBuilder.createTenants(), HostProvisionerProvider.withProvisioner(hostProvisioner), Zone.defaultZone());
+        return new SessionActiveHandler(
+                Runnable::run,
+                AccessLog.voidAccessLog(),
+                testTenantBuilder.createTenants(),
+                Zone.defaultZone(),
+                new ApplicationRepository(testTenantBuilder.createTenants(),
+                                          HostProvisionerProvider.withProvisioner(hostProvisioner),
+                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                          curator,
+                                          new LogServerLogGrabber(),
+                                          new ApplicationConvergenceChecker()));
     }
 
     public static class MockProvisioner implements Provisioner {

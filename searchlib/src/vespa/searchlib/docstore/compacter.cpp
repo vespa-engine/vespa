@@ -24,7 +24,7 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const Compress
     _bucketizer(bucketizer),
     _writeCount(0),
     _lock(),
-    _backingMemory(0x40000000, &_lock),
+    _backingMemory(vespalib::DefaultAlloc::create(0x40000000), &_lock),
     _tmpStore(),
     _lidGuard(ds.getLidReadGuard()),
     _bucketizerGuard(bucketizer.getGuard()),

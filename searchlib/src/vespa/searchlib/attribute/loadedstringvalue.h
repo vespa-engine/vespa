@@ -78,7 +78,7 @@ typedef RadixSortable<LoadedValue<const char *> > LoadedStringValue;
 
 typedef SequentialReadModifyWriteInterface<LoadedStringValue> LoadedStringVector;
 
-typedef SequentialReadModifyWriteVector<LoadedStringValue, vespalib::DefaultAlloc>
+typedef SequentialReadModifyWriteVector<LoadedStringValue>
 LoadedStringVectorReal;
 
 

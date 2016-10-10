@@ -30,7 +30,7 @@ protected:
     typedef typename B::BaseClass::generation_t    generation_t;
     typedef typename B::BaseClass::LoadedNumericValueT LoadedNumericValueT;
     typedef typename B::BaseClass::LoadedVector    LoadedVector;
-    typedef SequentialReadModifyWriteVector<LoadedNumericValueT, vespalib::DefaultAlloc> LoadedVectorR;
+    typedef SequentialReadModifyWriteVector<LoadedNumericValueT> LoadedVectorR;
 
     typedef typename SingleValueEnumAttribute<B>::EnumStore        EnumStore;
     typedef typename SingleValueEnumAttributeBase::EnumIndex       EnumIndex;

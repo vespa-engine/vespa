@@ -5,9 +5,7 @@
 #include "tensor_mapper.h"
 #include "tensor.h"
 #include "tensor_visitor.h"
-#include <vespa/vespalib/tensor/simple/direct_simple_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/direct_compact_tensor_v2_builder.h>
-#include <vespa/vespalib/tensor/compact/direct_compact_tensor_builder.h>
+#include <vespa/vespalib/tensor/sparse/direct_sparse_tensor_builder.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include "tensor_address_element_iterator.h"
 #include "default_tensor.h"
@@ -82,7 +80,7 @@ SparseTensorMapper<TensorT>::build()
 
 template <>
 void
-SparseTensorMapper<CompactTensorV2>::
+SparseTensorMapper<SparseTensor>::
 mapAddress(const TensorAddress &address)
 {
     _addressBuilder.clear();
@@ -94,22 +92,6 @@ mapAddress(const TensorAddress &address)
         } else {
             // output dimension not in input
             _addressBuilder.addUndefined();
-        }
-    }
-}
-
-template <class TensorT>
-void
-SparseTensorMapper<TensorT>::mapAddress(const TensorAddress &address)
-{
-    _addressBuilder.clear();
-    TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    for (const auto &dimension : _builder.dimensions()) {
-        if (addressIterator.skipToDimension(dimension)) {
-            _addressBuilder.add(dimension, addressIterator.label());
-            addressIterator.next();
-        } else {
-            // output dimension not in input
         }
     }
 }
@@ -274,17 +256,7 @@ TensorMapper::map(const Tensor &tensor) const
 
 template
 std::unique_ptr<Tensor>
-TensorMapper::mapToSparse<SimpleTensor>(const Tensor &tensor,
-                                        const ValueType &type);
-
-template
-std::unique_ptr<Tensor>
-TensorMapper::mapToSparse<CompactTensor>(const Tensor &tensor,
-                                         const ValueType &type);
-
-template
-std::unique_ptr<Tensor>
-TensorMapper::mapToSparse<CompactTensorV2>(const Tensor &tensor,
+TensorMapper::mapToSparse<SparseTensor>(const Tensor &tensor,
                                            const ValueType &type);
 
 } // namespace vespalib::tensor

@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * The monitor uses an internal thread for node monitoring.
  * All <i>public</i> methods of this class are multithread safe.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class ClusterMonitor<T> {
 

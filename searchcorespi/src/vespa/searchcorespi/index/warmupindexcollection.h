@@ -49,6 +49,8 @@ public:
                     const Node &term,
                     const IAttributeContext &attrCtx);
     search::SearchableStats getSearchableStats() const override;
+    search::SerialNum getSerialNum() const override;
+    void accept(IndexSearchableVisitor &visitor) const override;
 
     // Implements ISearchableIndexCollection
     void append(uint32_t id, const IndexSearchable::SP &source) override;

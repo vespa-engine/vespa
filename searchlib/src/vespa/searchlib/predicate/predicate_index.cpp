@@ -12,7 +12,7 @@
 LOG_SETUP(".predicate_index");
 
 using search::btree::EntryRef;
-using vespalib::MMapDataBuffer;
+using vespalib::DataBuffer;
 using std::vector;
 
 namespace search {
@@ -63,7 +63,7 @@ class IntervalSerializer : public PostingSerializer<EntryRef> {
 public:
     IntervalSerializer(const PredicateIntervalStore &store) : _store(store) {}
     virtual void serialize(const EntryRef &ref,
-                           vespalib::MMapDataBuffer &buffer) const {
+                           vespalib::DataBuffer &buffer) const {
         uint32_t size;
         IntervalT single_buf;
         const IntervalT *interval = _store.get(ref, size, &single_buf);
@@ -81,7 +81,7 @@ class IntervalDeserializer : public PostingDeserializer<EntryRef> {
     PredicateIntervalStore &_store;
 public:
     IntervalDeserializer(PredicateIntervalStore &store) : _store(store) {}
-    virtual EntryRef deserialize(vespalib::MMapDataBuffer &buffer) {
+    virtual EntryRef deserialize(vespalib::DataBuffer &buffer) {
         std::vector<IntervalT> intervals;
         size_t size = buffer.readInt16();
         for (uint32_t i = 0; i < size; ++i) {
@@ -95,7 +95,7 @@ public:
 
 PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, GenerationHolder &genHolder,
                                const DocIdLimitProvider &limit_provider,
-                               const SimpleIndexConfig &simple_index_config, MMapDataBuffer &buffer,
+                               const SimpleIndexConfig &simple_index_config, DataBuffer &buffer,
                                SimpleIndexDeserializeObserver<> & observer, uint32_t version)
     : _arity(0),
       _generation_handler(generation_handler),
@@ -125,7 +125,7 @@ PredicateIndex::PredicateIndex(GenerationHandler &generation_handler, Generation
     commit();
 }
 
-void PredicateIndex::serialize(MMapDataBuffer &buffer) const {
+void PredicateIndex::serialize(DataBuffer &buffer) const {
     _features_store.serialize(buffer);
     buffer.writeInt16(_arity);
     buffer.writeInt32(_zero_constraint_docs.size());

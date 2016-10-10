@@ -9,7 +9,8 @@ namespace vespalib {
 namespace tensor {
 
 /**
- * TODO
+ * A dense tensor where all dimensions are indexed.
+ * Tensor cells are stored in an underlying array according to the order of the dimensions.
  */
 class DenseTensor : public Tensor
 {
@@ -69,6 +70,7 @@ public:
         void next();
         double cell() const { return _cells[_cellIdx]; }
         const std::vector<size_t> &address() const { return _address; }
+        const DimensionsMeta &dimensions() const { return _dimensionsMeta; }
     };
 
 
@@ -99,10 +101,16 @@ public:
     virtual Tensor::UP match(const Tensor &arg) const override;
     virtual Tensor::UP apply(const CellFunction &func) const override;
     virtual Tensor::UP sum(const vespalib::string &dimension) const override;
+    virtual Tensor::UP apply(const eval::BinaryOperation &op,
+                             const Tensor &arg) const override;
+    virtual Tensor::UP reduce(const eval::BinaryOperation &op,
+                              const std::vector<vespalib::string> &dimensions)
+        const override;
     virtual bool equals(const Tensor &arg) const override;
     virtual void print(std::ostream &out) const override;
     virtual vespalib::string toString() const override;
     virtual Tensor::UP clone() const override;
+    virtual eval::TensorSpec toSpec() const override;
     virtual void accept(TensorVisitor &visitor) const override;
 };
 

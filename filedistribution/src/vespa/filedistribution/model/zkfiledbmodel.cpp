@@ -36,7 +36,7 @@ isEntryForHost(const std::string& host, const std::string& peerEntry) {
 }
 
 std::vector<std::string>
-getSortedChildren(ZKFacade& zk, const ZKFileDBModel::Path& path) {
+getSortedChildren(ZKFacade& zk, const Path& path) {
     std::vector<std::string> children = zk.getChildren(path);
     std::sort(children.begin(), children.end());
     return children;
@@ -44,9 +44,12 @@ getSortedChildren(ZKFacade& zk, const ZKFileDBModel::Path& path) {
 
 } //anonymous namespace
 
-const ZKFileDBModel::Path ZKFileDBModel::_root = "/vespa/filedistribution";
-const ZKFileDBModel::Path ZKFileDBModel::_fileDBPath = _root / "files";
-const ZKFileDBModel::Path ZKFileDBModel::_hostsPath = _root / "hosts";
+VESPA_IMPLEMENT_EXCEPTION(InvalidProgressException, vespalib::Exception);
+VESPA_IMPLEMENT_EXCEPTION(InvalidHostStatusException, vespalib::Exception);
+
+const Path ZKFileDBModel::_root = "/vespa/filedistribution";
+const Path ZKFileDBModel::_fileDBPath = _root / "files";
+const Path ZKFileDBModel::_hostsPath = _root / "hosts";
 
 bool
 ZKFileDBModel::hasFile(const std::string& fileReference) {
@@ -58,12 +61,12 @@ ZKFileDBModel::addFile(const std::string& fileReference, const Buffer& buffer) {
     return _zk->setData(createPath(fileReference), buffer);
 }
 
-Move<Buffer>
+Buffer
 ZKFileDBModel::getFile(const std::string& fileReference) {
     try {
         return _zk->getData(createPath(fileReference));
-    } catch(const ZKNodeDoesNotExistsException&) {
-        throw FileDoesNotExistException();
+    } catch(const ZKNodeDoesNotExistsException & e) {
+        throw FileDoesNotExistException(fileReference, e, VESPA_STRLOC);
     }
 }
 
@@ -221,7 +224,7 @@ ZKFileDBModel::getHostStatus(const std::string& hostName) {
 
             candidate++;
             if (candidate != peerEntries.end() && isEntryForHost(hostName, *candidate))
-                BOOST_THROW_EXCEPTION(InvalidHostStatusException());
+                throw InvalidHostStatusException(path.string(), VESPA_STRLOC);
         }
     }
 
@@ -234,8 +237,7 @@ ZKFileDBModel::getHostStatus(const std::string& hostName) {
 }
 
 void
-ZKFileDBModel::cleanFiles(
-        const std::vector<std::string>& filesToPreserve) {
+ZKFileDBModel::cleanFiles(const std::vector<std::string>& filesToPreserve) {
     _zk->retainOnly(_fileDBPath, filesToPreserve);
 }
 
@@ -257,7 +259,7 @@ ZKFileDBModel::getProgress(const Path& path) {
         else if (buffer.size() == 0)
             return 0;
         else {
-            throw boost::enable_current_exception(InvalidProgressException()) <<errorinfo::Path(path);
+            throw InvalidProgressException(path.string(), VESPA_STRLOC);
         }
     } catch (ZKNodeDoesNotExistsException& e) {
         //progress information deleted
@@ -294,7 +296,7 @@ ZKFileDBModel::getProgress(const std::string& fileReference,
 
 FileDBModel::~FileDBModel() {}
 
-DirectoryGuard::DirectoryGuard(boost::filesystem::path path) :
+DirectoryGuard::DirectoryGuard(Path path) :
     _fd(-1)
 {
     _fd = open(path.c_str(), O_RDONLY);

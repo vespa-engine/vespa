@@ -140,7 +140,7 @@ template <typename T>
 class ChangeVectorT : public ChangeVectorBase {
 private:
     typedef vespalib::hash_map<uint32_t, uint32_t> Map;
-    typedef vespalib::Array<T, vespalib::DefaultAlloc> Vector;
+    typedef vespalib::Array<T> Vector;
 public:
     ChangeVectorT() : _tail(0) { } 
     class const_iterator {

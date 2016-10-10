@@ -8,6 +8,7 @@ package com.yahoo.config.application.api;
  * @author tonytv
  */
 public class ComponentInfo {
+
     final String pathRelativeToAppDir;
 
     public ComponentInfo(String pathRelativeToAppDir) {
@@ -18,4 +19,8 @@ public class ComponentInfo {
     public String getPathRelativeToAppDir() {
         return pathRelativeToAppDir;
     }
+
+    @Override
+    public String toString() { return "component at '" + pathRelativeToAppDir + "'"; }
+
 }

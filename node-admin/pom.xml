@@ -27,7 +27,6 @@
         <groupId>com.yahoo.vespa</groupId>
             <artifactId>node-repository</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -79,12 +78,6 @@
             <artifactId>jaxrs_client_utils</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>application-model</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

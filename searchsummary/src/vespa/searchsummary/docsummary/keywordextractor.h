@@ -135,7 +135,7 @@ public:
      *
      * @return true if the given index name is legal.
      **/
-    bool IsLegalIndex(const char *idxName, size_t idxNameLen) const;
+    bool IsLegalIndex(vespalib::stringref idx) const;
 
 
     /**
@@ -156,7 +156,7 @@ public:
      * @return Pointer to a buffer containing zero-terminated keywords,
      * with an empty word at the end.
      */
-    char *ExtractKeywords(const vespalib::stringref &buf) const;
+    char *ExtractKeywords(vespalib::stringref buf) const;
 };
 
 }

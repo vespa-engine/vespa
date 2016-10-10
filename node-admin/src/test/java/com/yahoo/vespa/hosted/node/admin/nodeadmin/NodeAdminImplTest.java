@@ -2,16 +2,17 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -43,21 +44,22 @@ public class NodeAdminImplTest {
     private static final Optional<Double> MIN_DISK_AVAILABLE_GB = Optional.of(1.0);
 
     // Trick to allow mocking of typed interface without casts/warnings.
-    private interface NodeAgentFactory extends Function<HostName, NodeAgent> {}
+    private interface NodeAgentFactory extends Function<String, NodeAgent> {}
 
     @Test
     public void nodeAgentsAreProperlyLifeCycleManaged() throws Exception {
         final Docker docker = mock(Docker.class);
-        final Function<HostName, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
-        final MaintenanceScheduler maintenanceScheduler = mock(MaintenanceScheduler.class);
+        final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
+        final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
 
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, maintenanceScheduler, 100);
+        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, storageMaintainer, 100,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation));
 
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
-        when(nodeAgentFactory.apply(any(HostName.class))).thenReturn(nodeAgent1).thenReturn(nodeAgent2);
+        when(nodeAgentFactory.apply(any(String.class))).thenReturn(nodeAgent1).thenReturn(nodeAgent2);
 
-        final HostName hostName = new HostName("host");
+        final String hostName = "host";
         final DockerImage dockerImage = new DockerImage("image");
         final ContainerName containerName = new ContainerName("container");
         final boolean isRunning = true;
@@ -66,7 +68,12 @@ public class NodeAdminImplTest {
                 hostName,
                 Optional.of(dockerImage),
                 containerName,
-                NodeState.ACTIVE,
+                Node.State.active,
+                "tenant",
+                "docker",
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 Optional.of(1L),
                 Optional.of(1L),
                 MIN_CPU_CORES,
@@ -84,12 +91,12 @@ public class NodeAdminImplTest {
         inOrder.verify(nodeAgent1, never()).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
-        inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
+        inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         inOrder.verify(nodeAgent1, never()).start(1);
      //   inOrder.verify(nodeAgent1).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent1, never()).stop();
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), asList(existingContainer));
-        inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
+        inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         verify(nodeAgent1).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(asList(nodeSpec), asList(existingContainer));
@@ -98,7 +105,7 @@ public class NodeAdminImplTest {
         inOrder.verify(nodeAgent2, never()).stop();
 
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), Collections.emptyList());
-        inOrder.verify(nodeAgentFactory, never()).apply(any(HostName.class));
+        inOrder.verify(nodeAgentFactory, never()).apply(any(String.class));
         inOrder.verify(nodeAgent2, never()).start(1);
     //    inOrder.verify(nodeAgent2).execute(NodeAgent.Command.RUN_ITERATION_NOW);
         inOrder.verify(nodeAgent2).stop();

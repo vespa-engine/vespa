@@ -2,11 +2,12 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.multivaluemapping");
 #include "multivaluemapping.h"
 #include "multivaluemapping.hpp"
 #include "attributevector.h"
 #include "loadedenumvalue.h"
+
+LOG_SETUP(".searchlib.attribute.multivaluemapping");
 
 namespace search {
 
@@ -43,8 +44,7 @@ MultiValueMappingBaseBase::
 computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize)
 {
     float growRatio = 1.5f;
-    size_t newSize = static_cast<size_t>
-                       ((used - dead + needed) * growRatio);
+    size_t newSize = static_cast<size_t>((used - dead + needed) * growRatio);
     if (newSize <= maxSize)
         return newSize;
     newSize = (used - dead + needed) + 1000000;
@@ -54,14 +54,14 @@ computeNewSize(size_t used, size_t dead, size_t needed, size_t maxSize)
     return 0;
 }
 
-MultiValueMappingBaseBase::Histogram::Histogram(size_t maxValues) :
+MultiValueMappingBaseBase::Histogram::Histogram(uint32_t maxValues) :
     _maxValues(maxValues),
     _histogram()
 {
 }
 
 MultiValueMappingBaseBase::Histogram
-MultiValueMappingBaseBase::getEmptyHistogram(size_t maxValues) const
+MultiValueMappingBaseBase::getEmptyHistogram(uint32_t maxValues) const
 {
     return Histogram(maxValues);
 }
@@ -81,7 +81,7 @@ MultiValueMappingBaseBase::getHistogram(AttributeVector::ReaderBase &reader)
 
 
 void
-MultiValueMappingBaseBase::clearPendingCompact(void)
+MultiValueMappingBaseBase::clearPendingCompact()
 {
     if (!_pendingCompact || _pendingCompactVectorVector ||
         !_pendingCompactSingleVector.empty())
@@ -109,7 +109,7 @@ public:
     }
 
     virtual
-    ~MultiValueMappingHeldVector(void)
+    ~MultiValueMappingHeldVector()
     {
         _mvmb.doneHoldVector(_idx);
     }
@@ -119,11 +119,6 @@ public:
 template <typename I>
 void MultiValueMappingBase<I>::doneHoldVector(Index idx)
 {
-#ifdef LOG_MULTIVALUE_MAPPING
-    LOG(info,
-        "free vector: idx.values() = %u, idx.alternative() = %u",
-        idx.values(), idx.alternative());
-#endif
     clearVector(idx);
     if (idx.values() < Index::maxValues()) {
         _singleVectorsStatus[idx.vectorIdx()] = FREE;
@@ -139,13 +134,13 @@ MultiValueMappingBase<I>::getMemoryUsage() const
 {
     MemoryUsage retval = _indices.getMemoryUsage();
 
-    for (uint32_t i = 0; i < _singleVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < _singleVectorsStatus.size(); ++i) {
         if (_singleVectorsStatus[i] == HOLD)
             continue;
         const MemoryUsage & memUsage(getSingleVectorUsage(i));
         retval.merge(memUsage);
     }
-    for (uint32_t i = 0; i < _vectorVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < _vectorVectorsStatus.size(); ++i) {
         if (_vectorVectorsStatus[i] == HOLD)
             continue;
         const MemoryUsage & memUsage(getVectorVectorUsage(i));
@@ -160,12 +155,12 @@ AddressSpace
 MultiValueMappingBase<I>::getAddressSpaceUsage() const
 {
     size_t addressSpaceUsed = 0;
-    for (uint32_t i = 0; i < _singleVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < _singleVectorsStatus.size(); ++i) {
         if (_singleVectorsStatus[i] == ACTIVE) {
             addressSpaceUsed = std::max(addressSpaceUsed, getSingleVectorAddressSpaceUsed(i));
         }
     }
-    for (uint32_t i = 0; i < _vectorVectorsStatus.size(); ++i) {
+    for (size_t i = 0; i < _vectorVectorsStatus.size(); ++i) {
         if (_vectorVectorsStatus[i] == ACTIVE) {
             addressSpaceUsed = std::max(addressSpaceUsed, getVectorVectorAddressSpaceUsed(i));
         }

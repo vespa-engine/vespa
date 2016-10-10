@@ -3,6 +3,10 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.JDisc;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -24,7 +28,6 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author dybis
@@ -103,10 +106,28 @@ public class RunInContainerTest {
         waitForJdiscContainerToServe();
         assertThat(doPutCall("resume"), is(true));
 
+        // No nodes to suspend, always successful
+        assertThat(doPutCall("suspend"), is(true));
+
+        ComponentsProviderWithMocks.nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
+                "hostName",
+                Optional.of(new DockerImage("dockerImage")),
+                new ContainerName("container"),
+                Node.State.active,
+                "tenant",
+                "docker",
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(1L),
+                Optional.of(1L),
+                Optional.of(1d),
+                Optional.of(1d),
+                Optional.of(1d)));
         ComponentsProviderWithMocks.orchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));
-        assertTrue(ComponentsProviderWithMocks.callOrder.verifyInOrder(1000,
-                "Suspend with parent: localhost and hostnames: [] - Forced response: Optional[Denied]"));
+        ComponentsProviderWithMocks.callOrderVerifier
+                .assertInOrder("Suspend with parent: localhost and hostnames: [hostName] - Forced response: Optional[Denied]");
 
         assertThat(doGetInfoCall(), is("{\"dockerHostHostName\":\"localhost\",\"NodeAdmin\":{\"isFrozen\":true,\"NodeAgents\":[]}}"));
     }

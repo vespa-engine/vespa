@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
 import java.util.List;
@@ -13,7 +12,7 @@ import java.util.Optional;
  * @author dybis
  */
 public class OrchestratorMock implements Orchestrator {
-    private final CallOrderVerifier callOrder;
+    private final CallOrderVerifier callOrderVerifier;
 
     private boolean forceSingleSuspendResponse = true;
     private boolean forceSingleResumeResponse = true;
@@ -21,21 +20,22 @@ public class OrchestratorMock implements Orchestrator {
 
     private static final Object monitor = new Object();
 
-    public OrchestratorMock(CallOrderVerifier callOrder) {
-        this.callOrder = callOrder;
+    public OrchestratorMock(CallOrderVerifier callOrderVerifier) {
+        this.callOrderVerifier = callOrderVerifier;
     }
 
     @Override
-    public boolean suspend(HostName hostName) {
+    public boolean suspend(String hostName) {
         synchronized (monitor) {
+            callOrderVerifier.add("Suspend for " + hostName);
             return forceSingleSuspendResponse;
         }
     }
 
     @Override
-    public boolean resume(HostName hostName) {
+    public boolean resume(String hostName) {
         synchronized (monitor) {
-            callOrder.add("Resume for " + hostName);
+            callOrderVerifier.add("Resume for " + hostName);
             return forceSingleResumeResponse;
         }
     }
@@ -43,8 +43,8 @@ public class OrchestratorMock implements Orchestrator {
     @Override
     public Optional<String> suspend(String parentHostName, List<String> hostNames) {
         synchronized (monitor) {
-            callOrder.add("Suspend with parent: " + parentHostName + " and hostnames: " + hostNames +
-                    " - Forced response: " + forceGroupSuspendResponse);
+            callOrderVerifier.add("Suspend with parent: " + parentHostName + " and hostnames: " + hostNames +
+                                  " - Forced response: " + forceGroupSuspendResponse);
             return forceGroupSuspendResponse;
         }
     }

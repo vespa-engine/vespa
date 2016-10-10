@@ -16,10 +16,7 @@
 
 using namespace filedistribution;
 
-typedef boost::filesystem::path Path;
-
 namespace {
-
 
 struct Fixture {
     ComponentsDeleter _componentsDeleter;

@@ -2,20 +2,20 @@
 #pragma once
 
 #include <vector>
-#include <boost/filesystem/path.hpp>
 #include <libtorrent/create_torrent.hpp>
 
 #include <vespa/filedistribution/common/buffer.h>
+#include <vespa/filedistribution/common/exception.h>
 
 namespace filedistribution {
 
 class CreateTorrent {
-    boost::filesystem::path _path;
+    Path _path;
     libtorrent::entry _entry;
 public:
 
-    CreateTorrent(const boost::filesystem::path& path);
-    const Move<Buffer> bencode() const;
+    CreateTorrent(const Path& path);
+    Buffer bencode() const;
     const std::string fileReference() const;
 };
 

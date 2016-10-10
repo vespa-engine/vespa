@@ -4,6 +4,7 @@ package com.yahoo.search.handler;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.component.Vtag;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.ChainsConfigurer;
 import com.yahoo.component.chain.model.ChainsModel;
@@ -25,7 +26,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
-import com.yahoo.prelude.VespaSVersionRetriever;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
@@ -64,7 +64,7 @@ import java.util.logging.Logger;
 /**
  * Handles search request.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SearchHandler extends LoggingRequestHandler {
 
@@ -106,8 +106,9 @@ public class SearchHandler extends LoggingRequestHandler {
     private final CompiledQueryProfileRegistry queryProfileRegistry;
 
     private final class MeanConnections implements Callback {
+
         @Override
-        public void run(final Handle h, final boolean firstTime) {
+        public void run(Handle h, boolean firstTime) {
             if (firstTime) {
                 metric.set(SEARCH_CONNECTIONS, 0.0d, null);
                 return;
@@ -193,13 +194,11 @@ public class SearchHandler extends LoggingRequestHandler {
         try {
             try {
                 return handleBody(request);
-            } catch (final QueryException e) {
+            } catch (QueryException e) {
                 return (e.getCause() instanceof IllegalArgumentException)
                         ? invalidParameterResponse(request, e)
                         : illegalQueryResponse(request, e);
-            } catch (final RuntimeException e) { // Make sure we generate a valid
-                                                 // XML response even on unexpected
-                                                 // errors
+            } catch (RuntimeException e) { // Make sure we generate a valid XML response even on unexpected errors
                 log.log(Level.WARNING, "Failed handling " + request, e);
                 return internalServerErrorResponse(request, e);
             }
@@ -350,7 +349,6 @@ public class SearchHandler extends LoggingRequestHandler {
         Execution execution = new Execution(searchChain,
                                             new Execution.Context(registry, indexFacts, specialTokens, rendererRegistry, linguistics));
         query.getModel().setExecution(execution);
-        query.getModel().traceLanguage();
         execution.trace().setForceTimestamps(query.properties().getBoolean(FORCE_TIMESTAMPS, false));
         if (query.properties().getBoolean(DETAILED_TIMING_LOGGING, false)) {
             // check and set (instead of set directly) to avoid overwriting stuff from prepareForBreakdownAnalysis()
@@ -365,7 +363,7 @@ public class SearchHandler extends LoggingRequestHandler {
         execution.fill(result, result.getQuery().getPresentation().getSummary());
 
         traceExecutionTimes(query, result);
-        traceVespaSVersion(query);
+        traceVespaVersion(query);
         traceRequestAttributes(query);
         return result;
     }
@@ -379,7 +377,10 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /**
      * For internal use only
+     * 
+     * @deprecated remove on Vespa 7
      */
+    @Deprecated
     public Renderer<Result> getRendererCopy(ComponentSpecification spec) { // TODO: Deprecate this
         Renderer<Result> renderer = rendererRegistry.getRenderer(spec);
         return perRenderingCopy(renderer);
@@ -510,19 +511,15 @@ public class SearchHandler extends LoggingRequestHandler {
         ElapsedTime elapsedTime = result.getElapsedTime();
         long now = System.currentTimeMillis();
         if (elapsedTime.firstFill() != 0) {
-            query.trace("Query time " + query + ": "
-                     + (elapsedTime.firstFill() - elapsedTime.first()) + " ms", false, 3);
-
-            query.trace("Summary fetch time " + query + ": "
-                        + (now - elapsedTime.firstFill()) + " ms", false, 3);
+            query.trace("Query time " + query + ": " + (elapsedTime.firstFill() - elapsedTime.first()) + " ms", false, 3);
+            query.trace("Summary fetch time " + query + ": " + (now - elapsedTime.firstFill()) + " ms", false, 3);
         } else {
-            query.trace("Total search time " + query + ": "
-                        + (now - elapsedTime.first()) + " ms", false, 3);
+            query.trace("Total search time " + query + ": " + (now - elapsedTime.first()) + " ms", false, 3);
         }
     }
 
-    private void traceVespaSVersion(Query query) {
-        query.trace("Vespa version: " + VespaSVersionRetriever.getVersion(), false, 4);
+    private void traceVespaVersion(Query query) {
+        query.trace("Vespa version: " + Vtag.currentVersion.toString(), false, 4);
     }
 
     public SearchChainRegistry getSearchChainRegistry() {

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.monitoring;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -50,10 +51,11 @@ public class ProvisionMetrics extends AbstractComponent {
             log.log(LogLevel.DEBUG, "Running provision metrics task");
             try {
                 for (Node.State state : Node.State.values())
-                    metric.set("hostedVespa." + state.name() + "Hosts", nodeRepository.getNodes(Node.Type.tenant, state).size(), null);
+                    metric.set("hostedVespa." + state.name() + "Hosts", nodeRepository.getNodes(NodeType.tenant, state).size(), null);
             } catch (RuntimeException e) {
                 log.log(LogLevel.INFO, "Failed gathering metrics data: " + e.getMessage());
             }
         }
     }
+
 }

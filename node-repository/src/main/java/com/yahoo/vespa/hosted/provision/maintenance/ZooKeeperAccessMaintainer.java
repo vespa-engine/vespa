@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -31,9 +32,9 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
     protected void maintain() {
         StringBuilder hostList = new StringBuilder();
 
-        for (Node node : nodeRepository().getNodes(Node.Type.tenant))
+        for (Node node : nodeRepository().getNodes(NodeType.tenant))
             hostList.append(node.hostname()).append(",");
-        for (Node node : nodeRepository().getNodes(Node.Type.proxy))
+        for (Node node : nodeRepository().getNodes(NodeType.proxy))
             hostList.append(node.hostname()).append(",");
         for (String hostPort : curator.connectionSpec().split(","))
             hostList.append(hostPort.split(":")[0]).append(",");

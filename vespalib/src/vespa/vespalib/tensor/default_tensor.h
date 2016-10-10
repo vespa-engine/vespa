@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include "compact/compact_tensor_v2.h"
-#include "compact/compact_tensor_v2_builder.h"
+#include "sparse/sparse_tensor.h"
+#include "sparse/sparse_tensor_builder.h"
 
 namespace vespalib {
 namespace tensor {
 
 struct DefaultTensor {
-    using type = CompactTensorV2;
-    using builder = CompactTensorV2Builder;
+    using type = SparseTensor;
+    using builder = SparseTensorBuilder;
 };
 
 } // namespace vespalib::tensor

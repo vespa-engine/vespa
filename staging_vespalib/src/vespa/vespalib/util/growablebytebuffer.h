@@ -85,8 +85,8 @@ public:
 
 private:
     void putReverse(const char* buffer, uint32_t length);
-
-    DefaultAlloc _buffer;
+    using Alloc = vespalib::alloc::Alloc;
+    Alloc _buffer;
 
     uint32_t _position;
     double   _growFactor;

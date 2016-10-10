@@ -11,11 +11,11 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.net.HostName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.GenerationCounter;
+import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistries;
 import com.yahoo.vespa.config.server.MemoryGenerationCounter;
 import com.yahoo.vespa.config.server.PortRangeAllocator;
-import com.yahoo.vespa.config.server.SuperModelController;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.MockTenantProvider;
@@ -82,9 +82,9 @@ public class TestWithRpc {
 
     protected void createAndStartRpcServer(boolean hostedVespa) {
         rpcServer = new RpcServer(new ConfigserverConfig(new ConfigserverConfig.Builder().rpcport(port).numthreads(1).maxgetconfigclients(1).hostedVespa(hostedVespa)),
-                                  new SuperModelController(generationCounter,
-                                                           new TestConfigDefinitionRepo(), 
-                                                           new ConfigserverConfig(new ConfigserverConfig.Builder())),
+                                  new SuperModelRequestHandler(generationCounter,
+                                                               new TestConfigDefinitionRepo(),
+                                                               new ConfigserverConfig(new ConfigserverConfig.Builder())),
                                   Metrics.createTestMetrics(), new HostRegistries(),
                                   hostLivenessTracker);
         rpcServer.onTenantCreate(TenantName.from("default"), tenantProvider);

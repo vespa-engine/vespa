@@ -131,6 +131,12 @@
     </dependency>
     <!-- end WARNING -->
   </dependencies>
+  <properties>
+    <!-- hk2 version must be the one used by current jersey version.
+         This is just to avoid duplicating it below, _not_ to enforce a particular version of hk2.
+         Do not move this to the root pom! -->
+    <hk2.version>2.4.0-b12</hk2.version>
+  </properties>
   <build>
     <plugins>
       <plugin>
@@ -165,10 +171,10 @@
                 defaults-jar-with-dependencies.jar,
                 component-jar-with-dependencies.jar,
                 <!-- jersey2 -->
-                aopalliance-repackaged-2.3.0-b05.jar,
-                hk2-api-2.3.0-b05.jar,
-                hk2-locator-2.3.0-b05.jar,
-                hk2-utils-2.3.0-b05.jar,
+                aopalliance-repackaged-${hk2.version}.jar,
+                hk2-api-${hk2.version}.jar,
+                hk2-locator-${hk2.version}.jar,
+                hk2-utils-${hk2.version}.jar,
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,
                 jackson-databind-${jackson2.version}.jar,
@@ -182,10 +188,12 @@
                 jersey-common-${jersey2.version}.jar,
                 jersey-container-servlet-${jersey2.version}.jar,
                 jersey-container-servlet-core-${jersey2.version}.jar,
+                jersey-entity-filtering-${jersey2.version}.jar, <!-- new feature from 2.16, provided for convenience -->
                 jersey-guava-${jersey2.version}.jar,
+                jersey-media-jaxb-${jersey2.version}.jar,
                 jersey-media-json-jackson-${jersey2.version}.jar,
                 jersey-media-multipart-${jersey2.version}.jar,
-                mimepull-1.9.3.jar, <!-- needed by media-multipart -->
+                mimepull-1.9.5.jar, <!-- needed by media-multipart -->
                 jersey-server-${jersey2.version}.jar,
                 jersey-proxy-client-${jersey2.version}.jar,
                 osgi-resource-locator-1.0.1.jar,

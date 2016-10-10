@@ -11,6 +11,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     benchmark_timer.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
+    classname.cpp
     compress.cpp
     dual_merge_director.cpp
     error.cpp

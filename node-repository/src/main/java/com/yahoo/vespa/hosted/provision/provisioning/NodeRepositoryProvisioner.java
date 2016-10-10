@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
@@ -61,19 +62,33 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * The nodes are ordered by increasing index number.
      */
     @Override
-    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requestedCapacity, int groups, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requestedCapacity, 
+                                  int wantedGroups, ProvisionLogger logger) {
+        if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
+        if (requestedCapacity.nodeCount() > 0 && requestedCapacity.nodeCount() % wantedGroups != 0)
+            throw new IllegalArgumentException("Requested " + requestedCapacity.nodeCount() + " nodes in " + wantedGroups + " groups, " +
+                                               "which doesn't allow the nodes to be divided evenly into groups");
+
         log.log(LogLevel.DEBUG, () -> "Received deploy prepare request for " + requestedCapacity + " in " +
-                                      groups + " groups for application " + application + ", cluster " + cluster);
+                                      wantedGroups + " groups for application " + application + ", cluster " + cluster);
 
-        Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster);
-        int nodeCount = capacityPolicies.decideSize(requestedCapacity);
-        int effectiveGroups = groups > nodeCount ? nodeCount : groups; // cannot have more groups than nodes
+        int effectiveGroups;
+        NodeSpec requestedNodes;
+        if ( requestedCapacity.type() == NodeType.tenant) {
+            int nodeCount = capacityPolicies.decideSize(requestedCapacity);
+            if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
+                logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
+                                          ", downscaling to " + nodeCount + " nodes in " + zone.environment());
+            Flavor flavor = capacityPolicies.decideFlavor(requestedCapacity, cluster);
+            effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
+            requestedNodes = NodeSpec.from(nodeCount, flavor);
+        }
+        else {
+            requestedNodes = NodeSpec.from(requestedCapacity.type());
+            effectiveGroups = 1; // type request with multiple groups is not supported
+        }
 
-        if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
-            logger.log(Level.WARNING, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
-                                      ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-
-        return asSortedHosts(preparer.prepare(application, cluster, nodeCount, flavor, effectiveGroups));
+        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups));
     }
 
     @Override

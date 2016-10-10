@@ -10,6 +10,7 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -105,6 +106,9 @@ class GroupAvailabilityCalculator {
     }
 
     public Set<Integer> nodesThatShouldBeDown(ClusterState state) {
+        if (distribution == null) { // FIXME: for tests that don't set distribution properly!
+            return Collections.emptySet();
+        }
         if (isFlatCluster(distribution.getRootGroup())) {
             // Implicit group takedown only applies to hierarchic cluster setups.
             return new HashSet<>();

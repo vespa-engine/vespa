@@ -20,8 +20,7 @@ namespace memfile {
 class MemFileEnvironment;
 
 class FileSpecification : private Types,
-                          public vespalib::Printable,
-                          public boost::operators<FileSpecification>
+                          public vespalib::Printable
 {
     BucketId _bucketId;
     Directory* _dir;

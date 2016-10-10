@@ -31,13 +31,13 @@ template <typename Posting>
 struct PostingSerializer {
     virtual ~PostingSerializer() {}
     virtual void serialize(const Posting &posting,
-                           vespalib::MMapDataBuffer &buffer) const = 0;
+                           vespalib::DataBuffer &buffer) const = 0;
 };
 
 template <typename Posting>
 struct PostingDeserializer {
     virtual ~PostingDeserializer() {}
-    virtual Posting deserialize(vespalib::MMapDataBuffer &buffer) = 0;
+    virtual Posting deserialize(vespalib::DataBuffer &buffer) = 0;
 };
 
 struct DocIdLimitProvider {
@@ -195,9 +195,9 @@ public:
         : _generation_holder(generation_holder), _config(config), _limit_provider(provider) {}
     ~SimpleIndex();
 
-    void serialize(vespalib::MMapDataBuffer &buffer,
+    void serialize(vespalib::DataBuffer &buffer,
                    const PostingSerializer<Posting> &serializer) const;
-    void deserialize(vespalib::MMapDataBuffer &buffer,
+    void deserialize(vespalib::DataBuffer &buffer,
                      PostingDeserializer<Posting> &deserializer,
                      SimpleIndexDeserializeObserver<Key, DocId> &observer, uint32_t version);
 

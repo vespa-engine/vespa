@@ -3,6 +3,7 @@ package com.yahoo.messagebus;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.network.Identity;
+import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
@@ -17,12 +18,9 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
-public class RPCMessageBus {
+public class RPCMessageBus extends NetworkMessageBus {
 
     private static final Logger log = Logger.getLogger(RPCMessageBus.class.getName());
-    private final AtomicBoolean destroyed = new AtomicBoolean(false);
-    private final MessageBus mbus;
-    private final RPCNetwork net;
     private final ConfigAgent configAgent;
 
     /**
@@ -33,9 +31,16 @@ public class RPCMessageBus {
      * @param routingCfgId The config id for message bus routing specs.
      */
     public RPCMessageBus(MessageBusParams mbusParams, RPCNetworkParams rpcParams, String routingCfgId) {
-        net = new RPCNetwork(rpcParams);
-        mbus = new MessageBus(net, mbusParams);
-        configAgent = new ConfigAgent(routingCfgId != null ? routingCfgId : "client", mbus);
+        this(mbusParams, new RPCNetwork(rpcParams), routingCfgId);
+    }
+    
+    private RPCMessageBus(MessageBusParams mbusParams, RPCNetwork network, String routingCfgId) {
+        this(new MessageBus(network, mbusParams), network, routingCfgId);
+    }
+    
+    private RPCMessageBus(MessageBus messageBus, RPCNetwork network, String routingCfgId) { 
+        super(network, messageBus);
+        configAgent = new ConfigAgent(routingCfgId != null ? routingCfgId : "client", messageBus);
         configAgent.subscribe();
     }
 
@@ -80,33 +85,17 @@ public class RPCMessageBus {
      * Sets the destroyed flag to true. The very first time this method is called, it cleans up all its dependencies.
      * Even if you retain a reference to this object, all of its content is allowed to be garbage collected.
      *
-     * @return True if content existed and was destroyed.
+     * @return true if content existed and was destroyed.
      */
+    @Override
     public boolean destroy() {
-        if (!destroyed.getAndSet(true)) {
+        boolean destroyed = super.destroy();
+        if (destroyed)
             configAgent.shutdown();
-            mbus.destroy();
-            return true;
-        }
-        return false;
+        return destroyed;
     }
 
-    /**
-     * Returns the contained message bus object.
-     *
-     * @return Message bus.
-     */
-    public MessageBus getMessageBus() {
-        return mbus;
-    }
-
-    /**
-     * Returns the contained rpc network object.
-     *
-     * @return RPC network.
-     */
-    public RPCNetwork getRPCNetwork() {
-        return net;
-    }
+    /** Returns the network of this as a RPCNetwork */
+    public RPCNetwork getRPCNetwork() { return (RPCNetwork)getNetwork(); }
 
 }

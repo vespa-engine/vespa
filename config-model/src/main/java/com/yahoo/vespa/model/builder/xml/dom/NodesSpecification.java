@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A common utility class to represent a requirement for some nodes during model building.
- * Such a requirement is commonly specified as a <code>nodes</code> element.
+ * A common utility class to represent a requirement for nodes during model building.
+ * Such a requirement is commonly specified in services.xml as a <code>nodes</code> element.
  *
  * @author bratseth
  */
@@ -25,14 +25,22 @@ public class NodesSpecification {
 
     private final int groups;
 
+    /** 
+     * Whether the capacity amount specified is required or can it be relaxed 
+     * at the discretion of the component fulfilling it
+     */
+    private final boolean required;
+
     private final Optional<String> flavor;
 
     private final Optional<String> dockerImage;
 
-    private NodesSpecification(boolean dedicated, int count, int groups, Optional<String> flavor, Optional<String> dockerImage) {
+    private NodesSpecification(boolean dedicated, int count, int groups, boolean required, 
+                               Optional<String> flavor, Optional<String> dockerImage) {
         this.dedicated = dedicated;
         this.count = count;
         this.groups = groups;
+        this.required = required;
         this.flavor = flavor;
         this.dockerImage = dockerImage;
     }
@@ -41,6 +49,7 @@ public class NodesSpecification {
         this(dedicated,
              nodesElement.requiredIntegerAttribute("count"),
              nodesElement.getIntegerAttribute("groups", 1),
+             nodesElement.getBooleanAttribute("required", false),
              Optional.ofNullable(nodesElement.getStringAttribute("flavor")),
              Optional.ofNullable(nodesElement.getStringAttribute("docker-image")));
     }
@@ -78,7 +87,7 @@ public class NodesSpecification {
 
     /** Returns a requirement from <code>count</code> nondedicated nodes in one group */
     public static NodesSpecification nonDedicated(int count) {
-        return new NodesSpecification(false, count, 1, Optional.empty(), Optional.empty());
+        return new NodesSpecification(false, count, 1, false, Optional.empty(), Optional.empty());
     }
 
     /**
@@ -95,7 +104,7 @@ public class NodesSpecification {
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem, ClusterSpec.Type clusterType, ClusterSpec.Id clusterId, DeployLogger logger) {
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, dockerImage);
-        return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor), groups, logger);
+        return hostSystem.allocateHosts(cluster, Capacity.fromNodeCount(count, flavor, required), groups, logger);
     }
 
     @Override

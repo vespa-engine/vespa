@@ -139,7 +139,7 @@ UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
     termsize_t tsz = qt.term(term);
     const cmptype_t * eterm = term+tsz;
     const byte * e = n + f.size();
-    if ((tsz == f.size()) || ((tsz < f.size()) && qt.isPrefix())) {
+    if (tsz <= f.size()) {
         bool equal(true);
         for (; equal && (n < e) && (term < eterm); term++) {
             if (*term < 0x80) {
@@ -149,7 +149,7 @@ UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
                 equal = (*term == c);
             }
         }
-        if (equal && (qt.isPrefix() || (n == e))) {
+        if (equal && (term == eterm) && (qt.isPrefix() || (n == e))) {
             addHit(qt,0);
         }
     }

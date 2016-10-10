@@ -522,6 +522,7 @@ public class ModelProvisioningTest {
         assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 5 with this feature reactivated
     }
 
+    @Test
     public void testClusterControllersAreNotPlacedOnRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -905,6 +906,26 @@ public class ModelProvisioningTest {
         assertThat(cluster.getRootGroup().getNodes().size(), is(1));
         assertThat(cluster.getRootGroup().getNodes().get(0).getDistributionKey(), is(0));
         assertThat(cluster.getRootGroup().getNodes().get(0).getConfigId(), is("bar/storage/0"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRequiringMoreNodesThanAreAvailable() throws ParseException {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='3' required='true'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 2;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        tester.createModel(services, false);
     }
 
     @Test

@@ -586,9 +586,8 @@ public enum Language {
      * @return the language given by the encoding, or {@link #UNKNOWN} if not determined.
      */
     public static Language fromEncoding(String encoding) {
-        if (encoding == null) {
-            return UNKNOWN;
-        }
+        if (encoding == null) return UNKNOWN;
+
         return fromLowerCasedEncoding(Lowercase.toLowerCase(encoding));
     }
 

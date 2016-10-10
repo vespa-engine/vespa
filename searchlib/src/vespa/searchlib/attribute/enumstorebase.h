@@ -34,8 +34,8 @@ class EnumStoreComparatorWrapper;
 typedef btree::DataStoreT<btree::AlignedEntryRefT<31, 4> >
 EnumStoreDataStoreType;
 typedef EnumStoreDataStoreType::RefType EnumStoreIndex;
-typedef vespalib::Array<EnumStoreIndex, vespalib::DefaultAlloc> EnumStoreIndexVector;
-typedef vespalib::Array<uint32_t, vespalib::DefaultAlloc> EnumStoreEnumVector;
+typedef vespalib::Array<EnumStoreIndex> EnumStoreIndexVector;
+typedef vespalib::Array<uint32_t> EnumStoreEnumVector;
 
 typedef btree::BTreeTraits<32, 32, 7, true> EnumTreeTraits;
 

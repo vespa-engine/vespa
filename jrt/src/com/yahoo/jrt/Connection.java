@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -35,10 +34,8 @@ class Connection extends Target {
     private Buffer        output     = new Buffer(WRITE_SIZE * 2);
     private int           maxInputSize  = 64*1024;
     private int           maxOutputSize = 64*1024;
-    private Map<Integer, ReplyHandler> replyMap
-        = new HashMap<Integer, ReplyHandler>();
-    private Map<TargetWatcher, TargetWatcher> watchers
-        = new IdentityHashMap<TargetWatcher, TargetWatcher>();
+    private Map<Integer, ReplyHandler> replyMap = new HashMap<>();
+    private Map<TargetWatcher, TargetWatcher> watchers = new IdentityHashMap<>();
     private int           activeReqs = 0;
     private int           writeWork  = 0;
     private Transport     parent;
@@ -52,8 +49,7 @@ class Connection extends Target {
 
     private void setState(int state) {
         if (state <= this.state) {
-            log.log(Level.WARNING, "Bogus state transition: "
-                    + this.state + "->" + state);
+            log.log(Level.WARNING, "Bogus state transition: " + this.state + "->" + state);
             return;
         }
         boolean live = (this.state == INITIAL && state == CONNECTED);
@@ -95,8 +91,7 @@ class Connection extends Target {
         owner.sessionInit(this);
     }
 
-    public Connection(Transport parent, Supervisor owner,
-                      Spec spec, Object context) {
+    public Connection(Transport parent, Supervisor owner, Spec spec, Object context) {
         super(context);
         this.parent = parent;
         this.owner = owner;
@@ -400,6 +395,6 @@ class Connection extends Target {
         if (channel != null) {
             return "Connection { " + channel.socket() + " }";
         }
-        return "Connection { no socket }";
+        return "Connection { no socket, spec " + spec + " }";
     }
 }

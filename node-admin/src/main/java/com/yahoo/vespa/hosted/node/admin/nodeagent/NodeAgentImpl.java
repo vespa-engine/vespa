@@ -1,15 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -19,6 +22,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
@@ -41,12 +45,12 @@ public class NodeAgentImpl implements NodeAgent {
 
     private DockerImage imageBeingDownloaded = null;
 
-    private final HostName hostname;
+    private final String hostname;
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
-    private final MaintenanceScheduler maintenanceScheduler;
+    private final StorageMaintainer storageMaintainer;
 
     private final Object monitor = new Object();
 
@@ -54,6 +58,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private long delaysBetweenEachTickMillis;
+    private int numberOfUnhandledException = 0;
 
     private Thread loopThread;
 
@@ -66,21 +71,26 @@ public class NodeAgentImpl implements NodeAgent {
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
-    private ContainerNodeSpec lastNodeSpec = null;
+    ContainerNodeSpec lastNodeSpec = null;
+
+    private final MetricReceiverWrapper metricReceiver;
 
     public NodeAgentImpl(
-            final HostName hostName,
+            final String hostName,
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
-            final MaintenanceScheduler maintenanceScheduler) {
+            final StorageMaintainer storageMaintainer,
+            final MetricReceiverWrapper metricReceiver) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
         this.dockerOperations = dockerOperations;
-        this.maintenanceScheduler = maintenanceScheduler;
+        this.storageMaintainer = storageMaintainer;
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class,
-                NodeRepositoryImpl.containerNameFromHostName(hostName.toString()));
+                NodeRepositoryImpl.containerNameFromHostName(hostName));
+
+        this.metricReceiver = metricReceiver;
     }
 
     @Override
@@ -139,7 +149,7 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not restart a node agent.");
         }
         loopThread = new Thread(this::loop);
-        loopThread.setName("loop-" + hostname.toString());
+        loopThread.setName("loop-" + hostname);
         loopThread.start();
     }
 
@@ -190,7 +200,7 @@ public class NodeAgentImpl implements NodeAgent {
         publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
     }
 
-    private void publishStateToNodeRepoIfChanged(HostName hostName, NodeAttributes currentAttributes) throws IOException {
+    private void publishStateToNodeRepoIfChanged(String hostName, NodeAttributes currentAttributes) throws IOException {
         // TODO: We should only update if the new current values do not match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "
@@ -233,7 +243,7 @@ public class NodeAgentImpl implements NodeAgent {
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
             // Create a signalWorkToBeDone when download is finished.
             dockerOperations.scheduleDownloadOfImage(nodeSpec, this::signalWorkToBeDone);
-        } else {
+        } else if (imageBeingDownloaded != null) { // Image was downloading, but now its ready
             imageBeingDownloaded = null;
         }
     }
@@ -273,6 +283,7 @@ public class NodeAgentImpl implements NodeAgent {
                 try {
                     tick();
                 } catch (Exception e) {
+                    numberOfUnhandledException++;
                     logger.error("Unhandled exception, ignoring.", e);
                     addDebugMessage(e.getMessage());
                 } catch (Throwable t) {
@@ -291,20 +302,24 @@ public class NodeAgentImpl implements NodeAgent {
 
         synchronized (monitor) {
             if (!nodeSpec.equals(lastNodeSpec)) {
+                // If we transition from active, to not active state, unset the current metrics
+                if (lastNodeSpec != null && lastNodeSpec.nodeState == Node.State.active && nodeSpec.nodeState != Node.State.active) {
+                    metricReceiver.unsetMetricsForContainer(hostname);
+                }
                 addDebugMessage("Loading new node spec: " + nodeSpec.toString());
                 lastNodeSpec = nodeSpec;
             }
         }
 
         switch (nodeSpec.nodeState) {
-            case READY:
+            case ready:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
-            case RESERVED:
+            case reserved:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
-            case ACTIVE:
-                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
+            case active:
+                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
@@ -328,19 +343,20 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.info("Call resume against Orchestrator");
                 orchestrator.resume(nodeSpec.hostname);
                 break;
-            case INACTIVE:
-                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
+            case inactive:
+                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
-            case PROVISIONED:
-            case DIRTY:
-                maintenanceScheduler.removeOldFilesFromNode(nodeSpec.containerName);
+            case provisioned:
+            case dirty:
+                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
-                maintenanceScheduler.deleteContainerStorage(nodeSpec.containerName);
+                storageMaintainer.deleteContainerStorage(nodeSpec.containerName);
                 updateNodeRepoAndMarkNodeAsReady(nodeSpec);
                 break;
-            case FAILED:
+            case parked:
+            case failed:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             default:
@@ -348,9 +364,79 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    public ContainerNodeSpec getContainerNodeSpec() {
+    @SuppressWarnings("unchecked")
+    public void updateContainerNodeMetrics() {
+        ContainerNodeSpec nodeSpec;
         synchronized (monitor) {
-            return lastNodeSpec;
+            nodeSpec = lastNodeSpec;
         }
+
+        if (nodeSpec == null || nodeSpec.nodeState != Node.State.active) return;
+        Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
+        Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
+                .add("host", hostname)
+                .add("role", "tenants")
+                .add("flavor", nodeSpec.nodeFlavor)
+                .add("state", nodeSpec.nodeState.toString());
+
+        if (nodeSpec.owner.isPresent()) {
+            dimensionsBuilder
+                    .add("tenantName", nodeSpec.owner.get().tenant)
+                    .add("app", nodeSpec.owner.get().application);
+        }
+        if (nodeSpec.membership.isPresent()) {
+            dimensionsBuilder
+                    .add("clustertype", nodeSpec.membership.get().clusterType)
+                    .add("clusterid", nodeSpec.membership.get().clusterId);
+        }
+
+        if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
+
+        Dimensions dimensions = dimensionsBuilder.build();
+        addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
+        addIfNotNull(dimensions, "node.cpu.total_usage", stats.getCpuStats().get("cpu_usage"), "total_usage");
+        addIfNotNull(dimensions, "node.cpu.system_cpu_usage", stats.getCpuStats(), "system_cpu_usage");
+
+        addIfNotNull(dimensions, "node.memory.limit", stats.getMemoryStats(), "limit");
+        addIfNotNull(dimensions, "node.memory.usage", stats.getMemoryStats(), "usage");
+
+        stats.getNetworks().forEach((interfaceName, interfaceStats) -> {
+            Dimensions netDims = dimensionsBuilder.add("interface", interfaceName).build();
+
+            addIfNotNull(netDims, "node.network.bytes_rcvd", interfaceStats, "rx_bytes");
+            addIfNotNull(netDims, "node.network.bytes_sent", interfaceStats, "tx_bytes");
+        });
+
+        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName).forEach(
+                (metricName, metricValue) -> metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addIfNotNull(Dimensions dimensions, String yamasName, Object metrics, String metricName) {
+        Map<String, Object> metricsMap = (Map<String, Object>) metrics;
+        if (metricsMap == null || !metricsMap.containsKey(metricName)) return;
+        try {
+            metricReceiver.declareGauge(dimensions, yamasName).sample(((Number) metricsMap.get(metricName)).doubleValue());
+        } catch (Throwable e) {
+            logger.warning("Failed to update " + yamasName + " metric with value " + metricsMap.get(metricName), e);
+        }
+    }
+
+    public Optional<ContainerNodeSpec> getContainerNodeSpec() {
+        synchronized (monitor) {
+            return Optional.ofNullable(lastNodeSpec);
+        }
+    }
+
+    @Override
+    public boolean isDownloadingImage() {
+        return imageBeingDownloaded != null;
+    }
+
+    @Override
+    public int getAndResetNumberOfUnhandledExceptions() {
+        int temp = numberOfUnhandledException;
+        numberOfUnhandledException = 0;
+        return temp;
     }
 }

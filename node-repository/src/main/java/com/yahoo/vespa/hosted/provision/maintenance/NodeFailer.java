@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.HostLivenessTracker;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
@@ -86,7 +87,7 @@ public class NodeFailer extends Maintainer {
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
             Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
-            if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node))
+            if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node) && failAllowedFor(node.type()))
                 failActive(node);
         }
     }
@@ -95,7 +96,7 @@ public class NodeFailer extends Maintainer {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
         try (Mutex lock = nodeRepository().lockUnallocated()) {
-            for (Node node : nodeRepository().getNodes(Node.Type.tenant, Node.State.ready)) {
+            for (Node node : nodeRepository().getNodes(Node.State.ready)) {
                 Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
                 if ( ! lastLocalRequest.isPresent()) continue;
 
@@ -118,7 +119,7 @@ public class NodeFailer extends Maintainer {
         // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
         Instant oldestAcceptableRequestTime = clock.instant().minus(downTimeLimit).minus(nodeRequestInterval);
         
-        return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
+        return nodeRepository().getNodes(Node.State.ready).stream()
                 .filter(node -> wasMadeReadyBefore(oldestAcceptableRequestTime, node))
                 .filter(node -> ! hasRecordedRequestAfter(oldestAcceptableRequestTime, node))
                 .collect(Collectors.toList());
@@ -137,7 +138,7 @@ public class NodeFailer extends Maintainer {
     }
 
     private List<Node> readyNodesWithHardwareFailure() {
-        return nodeRepository().getNodes(Node.Type.tenant, Node.State.ready).stream()
+        return nodeRepository().getNodes(Node.State.ready).stream()
                 .filter(node -> node.status().hardwareFailure().isPresent())
                 .collect(Collectors.toList());
     }
@@ -153,6 +154,17 @@ public class NodeFailer extends Maintainer {
     }
 
     /**
+     * We can attempt to fail any number of *tenant* nodes because the operation will not be effected unless
+     * the node is replaced.
+     * However, nodes of other types are not replaced (because all of the type are used by a single application),
+     * so we only allow one to be in failed at any point in time to protect against runaway failing.
+     */
+    private boolean failAllowedFor(NodeType nodeType) {
+        if (nodeType == NodeType.tenant) return true;
+        return nodeRepository().getNodes(nodeType, Node.State.failed).size() == 0;
+    }
+    
+    /**
      * If the node is positively DOWN, and there is no "down" history record, we add it.
      * If the node is positively UP we remove any "down" history record.
      *
@@ -164,7 +176,7 @@ public class NodeFailer extends Maintainer {
             for (ServiceCluster<ServiceMonitorStatus> cluster : application.serviceClusters()) {
                 for (ServiceInstance<ServiceMonitorStatus> service : cluster.serviceInstances()) {
                     Optional<Node> node = nodeRepository().getNode(service.hostName().s(), Node.State.active);
-                    if ( ! node.isPresent()) continue; // we also get status from infrastructure nodes, which are not in the repo
+                    if ( ! node.isPresent()) continue; // we also get status from infrastructure nodes, which are not in the repo. TODO: remove when proxy nodes are in node repo everywhere
 
                     if (service.serviceStatus().equals(ServiceMonitorStatus.DOWN))
                         downNodes.add(recordAsDown(node.get()));

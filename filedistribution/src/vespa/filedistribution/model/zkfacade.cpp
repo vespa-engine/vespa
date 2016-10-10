@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <sstream>
 #include <thread>
-#include <boost/throw_exception.hpp>
 #include <boost/function_output_iterator.hpp>
 
 #include <zookeeper/zookeeper.h>
@@ -21,14 +20,65 @@
 typedef std::unique_lock<std::mutex> UniqueLock;
 
 using filedistribution::ZKFacade;
-using filedistribution::Move;
 using filedistribution::Buffer;
 using filedistribution::ZKGenericException;
+using filedistribution::ZKException;
 using filedistribution::ZKLogging;
-
-typedef ZKFacade::Path Path;
+using filedistribution::Path;
 
 namespace {
+
+std::string
+toErrorMsg(int zkStatus) {
+    switch(zkStatus) {
+      //System errors
+      case ZRUNTIMEINCONSISTENCY:
+        return "Zookeeper: A runtime inconsistency was found(ZRUNTIMEINCONSISTENCY)";
+      case ZDATAINCONSISTENCY:
+        return "Zookeeper: A data inconsistency was found(ZDATAINCONSISTENCY)";
+      case ZCONNECTIONLOSS:
+        return "Zookeeper: Connection to the server has been lost(ZCONNECTIONLOSS)";
+      case ZMARSHALLINGERROR:
+        return "Zookeeper: Error while marshalling or unmarshalling data(ZMARSHALLINGERROR)";
+      case ZUNIMPLEMENTED:
+        return "Zookeeper: Operation is unimplemented(ZUNIMPLEMENTED)";
+      case ZOPERATIONTIMEOUT:
+        return "Zookeeper: Operation timeout(ZOPERATIONTIMEOUT)";
+      case ZBADARGUMENTS:
+        return "Zookeeper: Invalid arguments(ZBADARGUMENTS)";
+      case ZINVALIDSTATE:
+        return "Zookeeper: The connection with the zookeeper servers timed out(ZINVALIDSTATE).";
+
+      //API errors
+      case ZNONODE:
+        return "Zookeeper: Node does not exist(ZNONODE)";
+      case ZNOAUTH:
+        return "Zookeeper: Not authenticated(ZNOAUTH)";
+      case ZBADVERSION:
+        return "Zookeeper: Version conflict(ZBADVERSION)";
+      case ZNOCHILDRENFOREPHEMERALS:
+        return "Zookeeper: Ephemeral nodes may not have children(ZNOCHILDRENFOREPHEMERALS)";
+      case ZNODEEXISTS:
+        return "Zookeeper: The node already exists(ZNODEEXISTS)";
+      case ZNOTEMPTY:
+        return "Zookeeper: The node has children(ZNOTEMPTY)";
+      case ZSESSIONEXPIRED:
+        return "Zookeeper: The session has been expired by the server(ZSESSIONEXPIRED)";
+      case ZINVALIDCALLBACK:
+        return "Zookeeper: Invalid callback specified(ZINVALIDCALLBACK)";
+      case ZINVALIDACL:
+        return "Zookeeper: Invalid ACL specified(ZINVALIDACL)";
+      case ZAUTHFAILED:
+        return "Zookeeper: Client authentication failed(ZAUTHFAILED)";
+      case ZCLOSING:
+        return "Zookeeper: ZooKeeper is closing(ZCLOSING)";
+      case ZNOTHING:
+        return "Zookeeper: No server responses to process(ZNOTHING)";
+      default:
+        std::cerr <<"In ZKGenericException::what(): Invalid error code " << zkStatus <<std::endl;
+        return "Zookeeper: Invalid error code.";
+    }
+}
 
 class RetryController {
     unsigned int _retryCount;
@@ -70,19 +120,22 @@ public:
         return true;
     }
 
-    void throwIfError() {
+    void throwIfError(const Path & path) {
         namespace fd = filedistribution;
 
         switch (_lastStatus) {
           case ZSESSIONEXPIRED:
-            BOOST_THROW_EXCEPTION(fd::ZKSessionExpired());
+            throw fd::ZKSessionExpired(path.string(), VESPA_STRLOC);
           case ZNONODE:
-            BOOST_THROW_EXCEPTION(fd::ZKNodeDoesNotExistsException());
+            throw fd::ZKNodeDoesNotExistsException(path.string(), VESPA_STRLOC);
           case ZNODEEXISTS:
-            BOOST_THROW_EXCEPTION(fd::ZKNodeExistsException());
+            throw fd::ZKNodeExistsException(path.string(), VESPA_STRLOC);
+          case ZCONNECTIONLOSS:
+            throw fd::ZKConnectionLossException(path.string(), VESPA_STRLOC);
           default:
-            if (_lastStatus != ZOK)
-                BOOST_THROW_EXCEPTION(fd::ZKGenericException(_lastStatus));
+            if (_lastStatus != ZOK) {
+                throw fd::ZKGenericException(_lastStatus, toErrorMsg(_lastStatus) + " : " + path.string(), VESPA_STRLOC);
+            }
         }
     }
 };
@@ -106,15 +159,11 @@ setDataForNewFile(ZKFacade& zk, const Path& path, const char* buffer, int length
     const int maxPath = 1024;
     char createdPath[maxPath];
     do {
-        retryController(
-                zoo_create(zhandle, path.string().c_str(),
-                buffer, length,
-                &ZOO_OPEN_ACL_UNSAFE, createFlags,
-                createdPath, maxPath));
+        retryController( zoo_create(zhandle, path.string().c_str(), buffer, length, &ZOO_OPEN_ACL_UNSAFE, createFlags, createdPath, maxPath));
     } while (retryController.shouldRetry());
-
-    retryController.throwIfError();
-    return Path(createdPath);
+    Path newPath(createdPath);
+    retryController.throwIfError(newPath);
+    return newPath;
 }
 
 void
@@ -123,15 +172,24 @@ setDataForExistingFile(ZKFacade& zk, const Path& path, const char* buffer, int l
 
     const int ignoreVersion = -1;
     do {
-        retryController(
-                zoo_set(zhandle, path.string().c_str(),
-                        buffer, length, ignoreVersion));
+        retryController(zoo_set(zhandle, path.string().c_str(), buffer, length, ignoreVersion));
     } while (retryController.shouldRetry());
 
-    retryController.throwIfError();
+    retryController.throwIfError(path);
 }
 
 } //anonymous namespace
+
+namespace filedistribution {
+
+VESPA_IMPLEMENT_EXCEPTION(ZKNodeDoesNotExistsException, ZKException);
+VESPA_IMPLEMENT_EXCEPTION(ZKConnectionLossException, ZKException);
+VESPA_IMPLEMENT_EXCEPTION(ZKNodeExistsException, ZKException);
+VESPA_IMPLEMENT_EXCEPTION(ZKFailedConnecting, ZKException);
+VESPA_IMPLEMENT_EXCEPTION(ZKSessionExpired, ZKException);
+VESPA_IMPLEMENT_EXCEPTION_SPINE(ZKGenericException);
+
+}
 
 /********** Active watchers *******************************************/
 struct ZKFacade::ZKWatcher {
@@ -179,19 +237,23 @@ struct ZKFacade::ZKWatcher {
 
 void
 ZKFacade::stateWatchingFun(zhandle_t*, int type, int state, const char* path, void* context) {
-    (void)path;
     (void)context;
 
     //The ZKFacade won't expire before zookeeper_close has finished.
-    if (type == ZOO_SESSION_EVENT) {
-        LOGFWD(debug, "Zookeeper session event: %d", state);
-        if (state == ZOO_EXPIRED_SESSION_STATE) {
-            throw ZKSessionExpired();
-        } else if (state == ZOO_AUTH_FAILED_STATE) {
-            throw ZKGenericException(ZNOAUTH);
+    try {
+        if (type == ZOO_SESSION_EVENT) {
+            LOGFWD(debug, "Zookeeper session event: %d", state);
+            if (state == ZOO_EXPIRED_SESSION_STATE) {
+                throw ZKSessionExpired(path, VESPA_STRLOC);
+            } else if (state == ZOO_AUTH_FAILED_STATE) {
+                throw ZKGenericException(ZNOAUTH, path, VESPA_STRLOC);
+            }
+        } else {
+            LOGFWD(info, "State watching function: Unexpected event: '%d' -- '%d' ",  type, state);
         }
-    } else {
-        LOGFWD(info, "State watching function: Unexpected event: '%d' -- '%d' ",  type, state);
+    } catch (ZKSessionExpired & e) {
+        LOGFWD(error, "Received ZKSessionExpired exception that I can not handle. Will just exit quietly : %s", e.what());
+        std::quick_exit(11);
     }
 }
 
@@ -248,7 +310,7 @@ ZKFacade::ZKFacade(const std::string& zkservers)
                              0)) //flags
 {
     if (!_zhandle) {
-        BOOST_THROW_EXCEPTION(ZKFailedConnecting());
+        throw ZKFailedConnecting("No zhandle", VESPA_STRLOC);
     }
 }
 
@@ -272,67 +334,46 @@ ZKFacade::getString(const Path& path) {
     return std::string(buffer.begin(), buffer.end());
 }
 
-const Move<Buffer>
+Buffer
 ZKFacade::getData(const Path& path) {
     RetryController retryController(this);
-    try {
-        Buffer buffer(_maxDataSize);
-        int bufferSize = _maxDataSize;
+    Buffer buffer(_maxDataSize);
+    int bufferSize = _maxDataSize;
 
-        const int watchIsOff = 0;
-        do {
-            Stat stat;
-            bufferSize = _maxDataSize;
+    const int watchIsOff = 0;
+    do {
+        Stat stat;
+        bufferSize = _maxDataSize;
 
-            retryController(
-                    zoo_get(_zhandle, path.string().c_str(), watchIsOff,
-                            &*buffer.begin(),
-                            &bufferSize, //in & out
-                            &stat));
-        } while(retryController.shouldRetry());
+        retryController( zoo_get(_zhandle, path.string().c_str(), watchIsOff, &*buffer.begin(), &bufferSize, &stat));
+    } while(retryController.shouldRetry());
 
-        retryController.throwIfError();
-
-        buffer.resize(bufferSize);
-        return move(buffer);
-
-    } catch(boost::exception& e) {
-        e <<errorinfo::Path(path);
-        throw;
-    }
+    retryController.throwIfError(path);
+    buffer.resize(bufferSize);
+    return buffer;
 }
 
-const Move<Buffer>
+Buffer
 ZKFacade::getData(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
     RetryController retryController(this);
 
-    try {
-        Buffer buffer(_maxDataSize);
-        int bufferSize = _maxDataSize;
+    Buffer buffer(_maxDataSize);
+    int bufferSize = _maxDataSize;
 
-        do {
-            Stat stat;
-            bufferSize = _maxDataSize;
+    do {
+        Stat stat;
+        bufferSize = _maxDataSize;
 
-            retryController(
-                    zoo_wget(_zhandle, path.string().c_str(),
-                            &ZKWatcher::watcherFn, watcherContext,
-                            &*buffer.begin(),
-                            &bufferSize, //in & out
-                            &stat));
-        } while(retryController.shouldRetry());
+        retryController( zoo_wget(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &*buffer.begin(), &bufferSize, &stat));
+    } while (retryController.shouldRetry());
 
-        retryController.throwIfError();
+    retryController.throwIfError(path);
 
-        buffer.resize(bufferSize);
-        return move(buffer);
-
-    } catch(boost::exception& e) {
-        unregisterWatcher(watcherContext);
-        e <<errorinfo::Path(path);
-        throw;
-    }
+    buffer.resize(bufferSize);
+    unregisterGuard.release();
+    return buffer;
 }
 
 void
@@ -344,14 +385,10 @@ void
 ZKFacade::setData(const Path& path, const char* buffer, size_t length, bool mustExist) {
     assert (length < _maxDataSize);
 
-    try {
-        if (mustExist || hasNode(path))
-            setDataForExistingFile(*this, path, buffer, length, _zhandle);
-        else
-            setDataForNewFile(*this, path, buffer, length, _zhandle, 0);
-    } catch(boost::exception& e) {
-        e <<errorinfo::Path(path);
-        throw;
+    if (mustExist || hasNode(path)) {
+        setDataForExistingFile(*this, path, buffer, length, _zhandle);
+    } else {
+        setDataForNewFile(*this, path, buffer, length, _zhandle, 0);
     }
 }
 
@@ -365,63 +402,53 @@ ZKFacade::createSequenceNode(const Path& path, const char* buffer, size_t length
 
 bool
 ZKFacade::hasNode(const Path& path) {
-    try {
-        RetryController retryController(this);
-        do {
-            Stat stat;
-            const int noWatch = 0;
-            retryController(
-                    zoo_exists(_zhandle, path.string().c_str(), noWatch, &stat));
-        } while(retryController.shouldRetry());
+    RetryController retryController(this);
+    do {
+        Stat stat;
+        const int noWatch = 0;
+        retryController( zoo_exists(_zhandle, path.string().c_str(), noWatch, &stat));
+    } while(retryController.shouldRetry());
 
-        switch(retryController._lastStatus) {
-          case ZNONODE:
-            return false;
-          case ZOK:
-            return true;
-          default:
-            retryController.throwIfError();
-            //this should never happen:
-            assert(false);
-            return false;
-        }
-
-    } catch (boost::exception &e) {
-        e <<errorinfo::Path(path);
-        throw;
+    switch(retryController._lastStatus) {
+      case ZNONODE:
+        return false;
+      case ZOK:
+        return true;
+      default:
+        retryController.throwIfError(path);
+        //this should never happen:
+        assert(false);
+        return false;
     }
 }
 
 bool
 ZKFacade::hasNode(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
-    try {
-        RetryController retryController(this);
-        do {
-            Stat stat;
-            retryController(
-                    zoo_wexists(_zhandle, path.string().c_str(),
-                            &ZKWatcher::watcherFn, watcherContext,
-                            &stat));
-        } while(retryController.shouldRetry());
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
+    RetryController retryController(this);
+    do {
+        Stat stat;
+        retryController(zoo_wexists(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &stat));
+    } while (retryController.shouldRetry());
 
-        switch(retryController._lastStatus) {
-          case ZNONODE:
-            return false;
-          case ZOK:
-            return true;
-          default:
-            retryController.throwIfError();
-            //this should never happen:
-            assert(false);
-            return false;
-        }
-
-    } catch (boost::exception &e) {
-        unregisterWatcher(watcherContext);
-        e <<errorinfo::Path(path);
-        throw;
+    bool retval(false);
+    switch(retryController._lastStatus) {
+      case ZNONODE:
+        retval = false;
+        break;
+      case ZOK:
+        retval = true;
+        break;
+      default:
+        retryController.throwIfError(path);
+        //this should never happen:
+        assert(false);
+        retval =  false;
+        break;
     }
+    unregisterGuard.release();
+    return retval;
 }
 
 void
@@ -431,9 +458,6 @@ ZKFacade::addEphemeralNode(const Path& path) {
     } catch(const ZKNodeExistsException& e) {
         remove(path);
         addEphemeralNode(path);
-    } catch (boost::exception& e) {
-        e <<errorinfo::Path(path);
-        throw;
     }
 }
 
@@ -444,21 +468,14 @@ ZKFacade::remove(const Path& path) {
         std::for_each(children.begin(), children.end(), [&](const std::string & s){ remove(path / s); });
     }
 
-    try {
-        RetryController retryController(this);
-        do {
-            int ignoreVersion = -1;
+    RetryController retryController(this);
+    do {
+        int ignoreVersion = -1;
+        retryController( zoo_delete(_zhandle, path.string().c_str(), ignoreVersion));
+    } while (retryController.shouldRetry());
 
-            retryController(
-                    zoo_delete(_zhandle, path.string().c_str(),
-                            ignoreVersion));
-        } while (retryController.shouldRetry());
-
-        if (retryController._lastStatus != ZNONODE)
-            retryController.throwIfError();
-
-    } catch(boost::exception& e) {
-        e <<errorinfo::Path(path);
+    if (retryController._lastStatus != ZNONODE) {
+        retryController.throwIfError(path);
     }
 }
 
@@ -490,64 +507,49 @@ ZKFacade::retainOnly(const Path& path, const std::vector<std::string>& childrenT
 
 std::vector< std::string >
 ZKFacade::getChildren(const Path& path) {
-    try {
-        RetryController retryController(this);
-        String_vector children;
-        do {
-            const bool watch = false;
-            retryController(
-                    zoo_get_children(_zhandle, path.string().c_str(), watch, &children));
-        } while(retryController.shouldRetry());
+    RetryController retryController(this);
+    String_vector children;
+    do {
+        const bool watch = false;
+        retryController( zoo_get_children(_zhandle, path.string().c_str(), watch, &children));
+    } while (retryController.shouldRetry());
 
-        retryController.throwIfError();
+    retryController.throwIfError(path);
 
-        DeallocateZKStringVectorGuard deallocateGuard(children);
+    DeallocateZKStringVectorGuard deallocateGuard(children);
 
-        typedef std::vector<std::string> ResultType;
-        ResultType result;
-        result.reserve(children.count);
+    typedef std::vector<std::string> ResultType;
+    ResultType result;
+    result.reserve(children.count);
 
-        std::copy(children.data, children.data + children.count,
-                  std::back_inserter(result));
+    std::copy(children.data, children.data + children.count, std::back_inserter(result));
 
-        return result;
-    } catch (boost::exception& e) {
-        e <<errorinfo::Path(path);
-        throw;
-    }
+    return result;
 }
 
 std::vector< std::string >
 ZKFacade::getChildren(const Path& path, const NodeChangedWatcherSP& watcher) {
-    void* watcherContext = registerWatcher(watcher);
+    RegistrationGuard unregisterGuard(*this, watcher);
+    void* watcherContext = unregisterGuard.get();
 
-    try {
-        RetryController retryController(this);
-        String_vector children;
-        do {
-            retryController(
-                    zoo_wget_children(_zhandle, path.string().c_str(),
-                            &ZKWatcher::watcherFn, watcherContext,
-                            &children));
-        } while(retryController.shouldRetry());
+    RetryController retryController(this);
+    String_vector children;
+    do {
+        retryController( zoo_wget_children(_zhandle, path.string().c_str(), &ZKWatcher::watcherFn, watcherContext, &children));
+    } while (retryController.shouldRetry());
 
-        retryController.throwIfError();
+    retryController.throwIfError(path);
 
-        DeallocateZKStringVectorGuard deallocateGuard(children);
+    DeallocateZKStringVectorGuard deallocateGuard(children);
 
-        typedef std::vector<std::string> ResultType;
-        ResultType result;
-        result.reserve(children.count);
+    typedef std::vector<std::string> ResultType;
+    ResultType result;
+    result.reserve(children.count);
 
-        std::copy(children.data, children.data + children.count,
-                  std::back_inserter(result));
+    std::copy(children.data, children.data + children.count, std::back_inserter(result));
 
-        return result;
-    } catch (boost::exception& e) {
-        unregisterWatcher(watcherContext);
-        e <<errorinfo::Path(path);
-        throw;
-    }
+    unregisterGuard.release();
+    return result;
 }
 
 
@@ -578,69 +580,4 @@ ZKLogging::~ZKLogging()
         std::fclose(_file);
         _file = nullptr;
     }
-}
-
-const char*
-ZKGenericException::what() const throw() {
-    switch(_zkStatus) {
-      //System errors
-      case ZRUNTIMEINCONSISTENCY:
-        return "Zookeeper: A runtime inconsistency was found(ZRUNTIMEINCONSISTENCY)";
-      case ZDATAINCONSISTENCY:
-        return "Zookeeper: A data inconsistency was found(ZDATAINCONSISTENCY)";
-      case ZCONNECTIONLOSS:
-        return "Zookeeper: Connection to the server has been lost(ZCONNECTIONLOSS)";
-      case ZMARSHALLINGERROR:
-        return "Zookeeper: Error while marshalling or unmarshalling data(ZMARSHALLINGERROR)";
-      case ZUNIMPLEMENTED:
-        return "Zookeeper: Operation is unimplemented(ZUNIMPLEMENTED)";
-      case ZOPERATIONTIMEOUT:
-        return "Zookeeper: Operation timeout(ZOPERATIONTIMEOUT)";
-      case ZBADARGUMENTS:
-        return "Zookeeper: Invalid arguments(ZBADARGUMENTS)";
-      case ZINVALIDSTATE:
-        return "Zookeeper: The connection with the zookeeper servers timed out(ZINVALIDSTATE).";
-
-      //API errors
-      case ZNONODE:
-        return "Zookeeper: Node does not exist(ZNONODE)";
-      case ZNOAUTH:
-        return "Zookeeper: Not authenticated(ZNOAUTH)";
-      case ZBADVERSION:
-        return "Zookeeper: Version conflict(ZBADVERSION)";
-      case ZNOCHILDRENFOREPHEMERALS:
-        return "Zookeeper: Ephemeral nodes may not have children(ZNOCHILDRENFOREPHEMERALS)";
-      case ZNODEEXISTS:
-        return "Zookeeper: The node already exists(ZNODEEXISTS)";
-      case ZNOTEMPTY:
-        return "Zookeeper: The node has children(ZNOTEMPTY)";
-      case ZSESSIONEXPIRED:
-        return "Zookeeper: The session has been expired by the server(ZSESSIONEXPIRED)";
-      case ZINVALIDCALLBACK:
-        return "Zookeeper: Invalid callback specified(ZINVALIDCALLBACK)";
-      case ZINVALIDACL:
-        return "Zookeeper: Invalid ACL specified(ZINVALIDACL)";
-      case ZAUTHFAILED:
-        return "Zookeeper: Client authentication failed(ZAUTHFAILED)";
-      case ZCLOSING:
-        return "Zookeeper: ZooKeeper is closing(ZCLOSING)";
-      case ZNOTHING:
-        return "Zookeeper: No server responses to process(ZNOTHING)";
-      default:
-        std::cerr <<"In ZKGenericException::what(): Invalid error code " <<_zkStatus <<std::endl;
-        return "Zookeeper: Invalid error code.";
-    }
-}
-
-const std::string
-filedistribution::diagnosticUserLevelMessage(const ZKException& exception) {
-    const char* indent = "    ";
-    std::ostringstream message;
-    message <<exception.what();
-
-    const errorinfo::Path::value_type* path = boost::get_error_info<errorinfo::Path>(exception);
-    if (path) {
-        message <<std::endl <<indent <<"Path: " <<*path;
-    }
-    return message.str();
 }

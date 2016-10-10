@@ -12,9 +12,7 @@ namespace attribute
 
 template <typename T>
 void
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<T>,
-                                                  vespalib::DefaultAlloc> &
-                  loaded)
+sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<T>> & loaded)
 {
     ShiftBasedRadixSorter<LoadedNumericValue<T>,
         typename LoadedNumericValue<T>::ValueRadix,
@@ -29,9 +27,7 @@ sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<T>,
 
 template <typename T>
 void
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<T>,
-                                                  vespalib::DefaultAlloc> &
-                  loaded)
+sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<T>> & loaded)
 {
     ShiftBasedRadixSorter<LoadedNumericValue<T>,
         typename LoadedNumericValue<T>::DocRadix,
@@ -46,75 +42,51 @@ sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<T>,
 
 template
 void 
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<int8_t>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<int8_t>> & loaded);
 
 template
 void 
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<int16_t>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<int16_t>> & loaded);
 
 template
 void 
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<int32_t>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<int32_t>> & loaded);
 
 template
 void 
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<int64_t>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<int64_t>> & loaded);
 
 template
 void 
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<float>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<float>> & loaded);
 
 template
 void 
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<double>,
-                                                  vespalib::DefaultAlloc> &
-                  loaded);
+sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<double>> & loaded);
                   
 template
 void 
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<int8_t>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<int8_t>> & loaded);
 
 template
 void 
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<int16_t>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<int16_t>> & loaded);
 
 template
 void 
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<int32_t>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<int32_t>> & loaded);
 
 template
 void 
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<int64_t>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<int64_t>> & loaded);
 
 template
 void 
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<float>,
-                                                  vespalib::DefaultAlloc> &
-                                                  loaded);
+sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<float>> & loaded);
 
 template
 void 
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<double>,
-                                                  vespalib::DefaultAlloc> &
-                  loaded);
+sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<double>> & loaded);
                   
 
 

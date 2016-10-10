@@ -4,6 +4,9 @@ namespace=cloud.config
 # Vespa home is prepended if the file is relative
 zooKeeperConfigFile string default="conf/zookeeper/zookeeper.cfg"
 
+# For more info about the values below, see ZooKeeper documentation
+
+# tick time in milliseconds
 tickTime int default=2000
 initLimit int default=20
 syncLimit int default=15
@@ -19,6 +22,7 @@ clientPort int default=2181
 # normal zone, a snapRetainCount of 15 gives 3-4 hours of logs before they're
 # purged.
 snapshotCount int default=50000
+# Purge interval in hours
 autopurge.purgeInterval int default=1
 autopurge.snapRetainCount int default=15
 

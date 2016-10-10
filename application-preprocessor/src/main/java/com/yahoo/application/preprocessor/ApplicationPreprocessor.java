@@ -42,7 +42,7 @@ public class ApplicationPreprocessor {
                 new Zone(environment.orElse(Environment.defaultEnvironment()), region.orElse(RegionName.defaultName())),
                 (a, b) -> {
                 }, logger);
-        preprocessed.validateXML(logger);
+        preprocessed.validateXML();
     }
 
 

@@ -22,7 +22,7 @@ public:
      * @param s size of the data to be created
      **/
     Blob(uint32_t s) :
-        _payload(s),
+        _payload(vespalib::DefaultAlloc::create(s)),
         _sz(s)
     { }
     Blob(Blob && rhs) :
@@ -55,11 +55,11 @@ public:
      **/
     const char *data() const { return static_cast<const char *>(_payload.get()); }
 
-    vespalib::DefaultAlloc & payload() { return _payload; }
-    const vespalib::DefaultAlloc & payload() const { return _payload; }
+    vespalib::alloc::Alloc & payload() { return _payload; }
+    const vespalib::alloc::Alloc & payload() const { return _payload; }
     size_t size() const { return _sz; }
 private:
-    vespalib::DefaultAlloc _payload;
+    vespalib::alloc::Alloc _payload;
     size_t _sz;
 };
 

@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -63,23 +64,23 @@ public class ApplicationMaintainerTest {
         int failedOrParkedInApp2 = 2;
         assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2 - failedOrParkedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed, Node.State.parked).size());
-        assertEquals(3, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
-        assertEquals(2, nodeRepository.getNodes(Node.Type.host, Node.State.ready).size());
+        assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.getNodes(NodeType.tenant, Node.State.failed, Node.State.parked).size());
+        assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+        assertEquals(2, nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
 
         // Cause maintenance deployment which will allocate replacement nodes
         fixture.runApplicationMaintainer();
         assertEquals(fixture.wantedNodesApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.ready).size());
+        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
 
         // Reactivate the previously failed nodes
-        nodeRepository.reactivate(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
-        nodeRepository.reactivate(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).get(0).hostname());
-        nodeRepository.reactivate(nodeRepository.getNodes(Node.Type.tenant, Node.State.parked).get(0).hostname());
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
+        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname());
         int reactivatedInApp1 = 1;
         int reactivatedInApp2 = 2;
-        assertEquals(0, nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).size());
+        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
         assertEquals(fixture.wantedNodesApp1 + reactivatedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2 + reactivatedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
         assertEquals("The reactivated nodes are now active but not part of the application",
@@ -96,7 +97,7 @@ public class ApplicationMaintainerTest {
     private void createReadyNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.tenant));
+            nodes.add(nodeRepository.createNode("node" + i, "host" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
     }
@@ -104,7 +105,7 @@ public class ApplicationMaintainerTest {
     private void createHostNodes(int count, NodeRepository nodeRepository, NodeFlavors nodeFlavors) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = 0; i < count; i++)
-            nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), Node.Type.host));
+            nodes.add(nodeRepository.createNode("hostNode" + i, "realHost" + i, Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
     }
@@ -142,14 +143,16 @@ public class ApplicationMaintainerTest {
 
         void runApplicationMaintainer() {
             Map<ApplicationId, MockDeployer.ApplicationContext> apps = new HashMap<>();
-            apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, wantedNodesApp1, Optional.of("default"), 1));
-            apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, wantedNodesApp2, Optional.of("default"), 1));
+            apps.put(app1, new MockDeployer.ApplicationContext(app1, clusterApp1, 
+                                                               Capacity.fromNodeCount(wantedNodesApp1, Optional.of("default")), 1));
+            apps.put(app2, new MockDeployer.ApplicationContext(app2, clusterApp2, 
+                                                               Capacity.fromNodeCount(wantedNodesApp2, Optional.of("default")), 1));
             MockDeployer deployer = new MockDeployer(provisioner, apps);
             new ApplicationMaintainer(deployer, nodeRepository, Duration.ofMinutes(30)).run();
         }
 
         NodeList getNodes(Node.State ... states) {
-            return new NodeList(nodeRepository.getNodes(Node.Type.tenant, states));
+            return new NodeList(nodeRepository.getNodes(NodeType.tenant, states));
         }
 
     }

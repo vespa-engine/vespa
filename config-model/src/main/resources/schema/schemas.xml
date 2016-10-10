@@ -3,4 +3,5 @@
 <locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
   <documentElement localName="hosts" uri="hosts.rnc"/>
   <documentElement localName="services" uri="services.rnc"/>
+  <documentElement localName="deployment" uri="deployment.rnc"/>
 </locatingRules>

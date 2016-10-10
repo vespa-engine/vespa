@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.feedapi;
 
+import com.yahoo.cloud.config.SlobroksConfig;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
@@ -12,6 +14,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
 import java.util.Collections;
 
@@ -27,12 +30,24 @@ public class MessageBusSessionFactory implements SessionFactory {
         String NUM_UPDATES = "num_updates";
     }
 
+    @SuppressWarnings("unused") // used from extensions
     public MessageBusSessionFactory(MessagePropertyProcessor processor) {
+        this(processor, null, null);
+    }
+    
+    public MessageBusSessionFactory(MessagePropertyProcessor processor, 
+                                    DocumentmanagerConfig documentmanagerConfig,
+                                    SlobroksConfig slobroksConfig) {
         this.processor = processor;
         MessageBusParams params = new MessageBusParams(processor.getLoadTypes());
         params.setTraceLevel(processor.getFeederOptions().getTraceLevel());
-        params.setRPCNetworkParams(processor.getFeederOptions().getNetworkParams());
+        RPCNetworkParams rpcNetworkParams = processor.getFeederOptions().getNetworkParams();
+        if (slobroksConfig != null) // not set: will subscribe
+            rpcNetworkParams.setSlobroksConfig(slobroksConfig);
+        params.setRPCNetworkParams(rpcNetworkParams);
         params.setDocumentManagerConfigId("client");
+        if (documentmanagerConfig != null) // not set: will subscribe
+            params.setDocumentmanagerConfig(documentmanagerConfig);
         access = new MessageBusDocumentAccess(params);
     }
 

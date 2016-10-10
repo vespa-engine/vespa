@@ -13,9 +13,7 @@ import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -23,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
-    private final Environment environment = new Environment();
+    private final Environment environment = mock(Environment.class);
     private final Docker docker = mock(Docker.class);
     private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment);
 

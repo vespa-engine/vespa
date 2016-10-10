@@ -1,24 +1,21 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 import com.yahoo.prelude.semantics.RuleBaseException;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
 import com.yahoo.vespa.hosted.node.admin.integrationTests.OrchestratorMock;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.mockito.Matchers.anyList;
@@ -52,8 +49,8 @@ public class NodeAdminStateUpdaterTest {
         containersToRun.add(createSample());
 
         when(nodeRepository.getContainersToRun()).thenReturn(containersToRun);
-        CallOrderVerifier callOrder = new CallOrderVerifier();
-        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
+        CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
         NodeAdminStateUpdater refresher = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, Long.MAX_VALUE, Long.MAX_VALUE, orchestratorMock, "basehostname");
 
@@ -86,10 +83,15 @@ public class NodeAdminStateUpdaterTest {
 
     private ContainerNodeSpec createSample() {
         return new ContainerNodeSpec(
-                new HostName("hostname"),
+                "hostname",
                 Optional.empty(),
                 new ContainerName("containername"),
-                NodeState.ACTIVE,
+                Node.State.active,
+                "tenant",
+                "docker",
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),

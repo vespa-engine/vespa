@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -24,21 +23,21 @@ import java.util.stream.Collectors;
  */
 public class DockerMock implements Docker {
     private List<Container> containers = new ArrayList<>();
-    public final CallOrderVerifier callOrder;
+    public final CallOrderVerifier callOrderVerifier;
     private static final Object monitor = new Object();
 
-    public DockerMock(CallOrderVerifier callOrder) {
-        this.callOrder = callOrder;
+    public DockerMock(CallOrderVerifier callOrderVerifier) {
+        this.callOrderVerifier = callOrderVerifier;
     }
 
     @Override
     public CreateContainerCommand createContainerCommand(
             DockerImage dockerImage,
             ContainerName containerName,
-            HostName hostName) {
+            String hostName) {
         synchronized (monitor) {
-            callOrder.add("createContainerCommand with DockerImage: " + dockerImage + ", HostName: " + hostName +
-                    ", ContainerName: " + containerName);
+            callOrderVerifier.add("createContainerCommand with DockerImage: " + dockerImage + ", HostName: " + hostName +
+                                  ", ContainerName: " + containerName);
             containers.add(new Container(hostName, dockerImage, containerName, true));
         }
 
@@ -48,8 +47,13 @@ public class DockerMock implements Docker {
     @Override
     public void connectContainerToNetwork(ContainerName containerName, String networkName) {
         synchronized (monitor) {
-            callOrder.add("Connecting " + containerName + " to network: " + networkName);
+            callOrderVerifier.add("Connecting " + containerName + " to network: " + networkName);
         }
+    }
+
+    @Override
+    public void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath) {
+
     }
 
     @Override
@@ -58,16 +62,21 @@ public class DockerMock implements Docker {
     }
 
     @Override
+    public ContainerStats getContainerStats(ContainerName containerName) {
+        return null;
+    }
+
+    @Override
     public void startContainer(ContainerName containerName) {
         synchronized (monitor) {
-            callOrder.add("startContainer with ContainerName: " + containerName);
+            callOrderVerifier.add("startContainer with ContainerName: " + containerName);
         }
     }
 
     @Override
     public void stopContainer(ContainerName containerName) {
         synchronized (monitor) {
-            callOrder.add("stopContainer with ContainerName: " + containerName);
+            callOrderVerifier.add("stopContainer with ContainerName: " + containerName);
             containers = containers.stream()
                     .map(container -> container.name.equals(containerName) ?
                             new Container(container.hostname, container.image, container.name, false) : container)
@@ -78,7 +87,7 @@ public class DockerMock implements Docker {
     @Override
     public void deleteContainer(ContainerName containerName) {
         synchronized (monitor) {
-            callOrder.add("deleteContainer with ContainerName: " + containerName);
+            callOrderVerifier.add("deleteContainer with ContainerName: " + containerName);
             containers = containers.stream()
                     .filter(container -> !container.name.equals(containerName))
                     .collect(Collectors.toList());
@@ -93,7 +102,7 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public Optional<Container> getContainer(HostName hostname) {
+    public Optional<Container> getContainer(String hostname) {
         synchronized (monitor) {
             return containers.stream().filter(container -> container.hostname.equals(hostname)).findFirst();
         }
@@ -102,7 +111,7 @@ public class DockerMock implements Docker {
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(DockerImage image) {
         synchronized (monitor) {
-            callOrder.add("pullImageAsync with DockerImage: " + image);
+            callOrderVerifier.add("pullImageAsync with DockerImage: " + image);
             final CompletableFuture<DockerImage> completableFuture = new CompletableFuture<>();
             new Thread() {
                 public void run() {
@@ -137,8 +146,8 @@ public class DockerMock implements Docker {
     @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
         synchronized (monitor) {
-            callOrder.add("executeInContainer with ContainerName: " + containerName +
-                    ", args: " + Arrays.toString(args));
+            callOrderVerifier.add("executeInContainer with ContainerName: " + containerName +
+                                  ", args: " + Arrays.toString(args));
         }
         return new ProcessResult(0, null, "");
     }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Responsible for management of a single node over its lifecycle.
@@ -55,5 +56,20 @@ public interface NodeAgent {
     /**
      * Returns the {@link ContainerNodeSpec} for this node agent.
      */
-    ContainerNodeSpec getContainerNodeSpec();
+    Optional<ContainerNodeSpec> getContainerNodeSpec();
+
+    /**
+     * Updates metric receiver with the latest node-agent stats
+     */
+    void updateContainerNodeMetrics();
+
+    /**
+     * Returns true if NodeAgent is waiting for an image download to finish
+     */
+    boolean isDownloadingImage();
+
+    /**
+     * Returns and resets number of unhandled exceptions
+     */
+    int getAndResetNumberOfUnhandledExceptions();
 }

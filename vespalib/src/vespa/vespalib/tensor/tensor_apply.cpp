@@ -16,9 +16,7 @@ TensorApply<TensorT>::TensorApply(const TensorImplType &tensor,
     }
 }
 
-template class TensorApply<SimpleTensor>;
-template class TensorApply<CompactTensor>;
-template class TensorApply<CompactTensorV2>;
+template class TensorApply<SparseTensor>;
 
 } // namespace vespalib::tensor
 } // namespace vespalib

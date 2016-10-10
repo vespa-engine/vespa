@@ -28,14 +28,14 @@
 namespace storage {
 
 template<typename Map>
-class LockableMap : public vespalib::Printable,
-                    public boost::operators<LockableMap<Map> >
+class LockableMap : public vespalib::Printable
 {
 public:
     typedef typename Map::key_type key_type;
     typedef typename Map::mapped_type mapped_type;
     typedef typename Map::value_type value_type;
     typedef typename Map::size_type size_type;
+    using BucketId = document::BucketId;
 
     /** Responsible for releasing lock in map when out of scope. */
     class LockKeeper {
@@ -66,8 +66,8 @@ public:
         bool locked() const { return _lockKeeper.get(); }
         const key_type& getKey() const { return _lockKeeper->_key; };
 
-        document::BucketId getBucketId() const {
-            return document::BucketId(document::BucketId::keyToBucketId(getKey()));
+        BucketId getBucketId() const {
+            return BucketId(BucketId::keyToBucketId(getKey()));
         }
 
     protected:
@@ -114,6 +114,9 @@ public:
 
     LockableMap();
     bool operator==(const LockableMap& other) const;
+    bool operator!=(const LockableMap& other) const {
+        return ! (*this == other);
+    }
     bool operator<(const LockableMap& other) const;
     typename Map::size_type size() const;
     size_type getMemoryUsage() const;
@@ -173,15 +176,15 @@ public:
      * bucket. Usually, there should be only one such bucket, but in the case
      * of inconsistent splitting, there may be more than one.
      */
-    std::map<document::BucketId, WrappedEntry>
-    getContained(const document::BucketId& bucketId, const char* clientId);
+    std::map<BucketId, WrappedEntry>
+    getContained(const BucketId& bucketId, const char* clientId);
 
     WrappedEntry
     createAppropriateBucket(uint16_t newBucketBits,
                             const char* clientId,
-                            const document::BucketId& bucket);
+                            const BucketId& bucket);
 
-    typedef std::map<document::BucketId, WrappedEntry> EntryMap;
+    typedef std::map<BucketId, WrappedEntry> EntryMap;
 
     /**
      * Returns all buckets in the bucket database that can contain the given
@@ -189,10 +192,7 @@ public:
      *
      * If sibling is != 0, also fetch that bucket if possible.
      */
-    EntryMap getAll(
-            const document::BucketId& bucketId,
-            const char* clientId,
-            const document::BucketId& sibling = document::BucketId(0));
+    EntryMap getAll(const BucketId& bucketId, const char* clientId, const BucketId& sibling = BucketId(0));
 
     /**
      * Returns true iff bucket has no superbuckets or sub-buckets in the
@@ -270,9 +270,9 @@ private:
     /**
      * Returns the given bucket, its super buckets and its sub buckets.
      */
-    void getAllWithoutLocking(const document::BucketId& bucket,
-                              const document::BucketId& sibling,
-                              std::vector<document::BucketId::Type>& keys);
+    void getAllWithoutLocking(const BucketId& bucket,
+                              const BucketId& sibling,
+                              std::vector<BucketId::Type>& keys);
 
     /**
      * Retrieves the most specific bucket id (highest used bits) that matches
@@ -284,25 +284,25 @@ private:
      * If not found, nextKey is set to the key after one that could have
      * matched and we return false.
      */
-    bool getMostSpecificMatch(const document::BucketId& bucket,
-                              document::BucketId& result,
-                              document::BucketId::Type& keyResult,
-                              document::BucketId::Type& nextKey);
+    bool getMostSpecificMatch(const BucketId& bucket,
+                              BucketId& result,
+                              BucketId::Type& keyResult,
+                              BucketId::Type& nextKey);
 
     /**
      * Finds all buckets that can contain the given bucket, except for the
      * bucket itself (that is, its super buckets)
      */
-    void getAllContaining(const document::BucketId& bucket,
-                          std::vector<document::BucketId::Type>& keys);
+    void getAllContaining(const BucketId& bucket,
+                          std::vector<BucketId::Type>& keys);
 
     /**
      * Find the given list of keys in the map and add them to the map of
      * results, locking them in the process.
      */
-    void addAndLockResults(const std::vector<document::BucketId::Type> keys,
+    void addAndLockResults(const std::vector<BucketId::Type> keys,
                            const char* clientId,
-                           std::map<document::BucketId, WrappedEntry>& results,
+                           std::map<BucketId, WrappedEntry>& results,
                            vespalib::MonitorGuard& guard);
 };
 
@@ -692,12 +692,9 @@ LockableMap<Map>::print(std::ostream& out, bool verbose,
     out << "LockableMap {\n" << indent << "  ";
 
     if (verbose) {
-        for (typename Map::const_iterator iter = _map.begin();
-             iter != _map.end();
-             iter++) {
-            out << "Key: " <<
-                document::BucketId(document::BucketId::keyToBucketId(iter->first))
-                << " Value: " << iter->second << "\n" << indent << "  ";
+        for (const auto & entry : _map) {
+            out << "Key: " << BucketId(BucketId::keyToBucketId(entry.first))
+                << " Value: " << entry.second << "\n" << indent << "  ";
         }
 
         out << "\n" << indent << "  Locked keys: ";
@@ -747,8 +744,7 @@ bool
 checkContains(document::BucketId::Type key, const document::BucketId& bucket,
               document::BucketId& result, document::BucketId::Type& keyResult)
 {
-    document::BucketId id = document::BucketId(
-            document::BucketId::keyToBucketId(key));
+    document::BucketId id = document::BucketId(document::BucketId::keyToBucketId(key));
     if (id.contains(bucket)) {
         result = id;
         keyResult = key;
@@ -772,10 +768,10 @@ checkContains(document::BucketId::Type key, const document::BucketId& bucket,
  */
 template<typename Map>
 bool
-LockableMap<Map>::getMostSpecificMatch(const document::BucketId& bucket,
-                                       document::BucketId& result,
-                                       document::BucketId::Type& keyResult,
-                                       document::BucketId::Type& nextKey)
+LockableMap<Map>::getMostSpecificMatch(const BucketId& bucket,
+                                       BucketId& result,
+                                       BucketId::Type& keyResult,
+                                       BucketId::Type& nextKey)
 {
     typename Map::const_iterator iter = _map.lower_bound(bucket.toKey());
 
@@ -809,17 +805,17 @@ LockableMap<Map>::getMostSpecificMatch(const document::BucketId& bucket,
  */
 template<typename Map>
 void
-LockableMap<Map>::getAllContaining(const document::BucketId& bucket,
-                                   std::vector<document::BucketId::Type>& keys)
+LockableMap<Map>::getAllContaining(const BucketId& bucket,
+                                   std::vector<BucketId::Type>& keys)
 {
-    document::BucketId id = bucket;
+    BucketId id = bucket;
 
     // Find other buckets that contain this bucket.
     // TODO: Optimize?
     while (id.getUsedBits() > 1) {
         id.setUsedBits(id.getUsedBits() - 1);
         id = id.stripUnused();
-        document::BucketId::Type key = id.toKey();
+        BucketId::Type key = id.toKey();
 
         typename Map::const_iterator iter = _map.find(key);
         if (iter != _map.end()) {
@@ -831,9 +827,9 @@ LockableMap<Map>::getAllContaining(const document::BucketId& bucket,
 template<typename Map>
 void
 LockableMap<Map>::addAndLockResults(
-        const std::vector<document::BucketId::Type> keys,
+        const std::vector<BucketId::Type> keys,
         const char* clientId,
-        std::map<document::BucketId, WrappedEntry>& results,
+        std::map<BucketId, WrappedEntry>& results,
         vespalib::MonitorGuard& guard)
 {
     // Wait until all buckets are free to be added, then add them all.
@@ -858,8 +854,7 @@ LockableMap<Map>::addAndLockResults(
                 typename Map::iterator it = _map.find(keys[i]);
                 if (it != _map.end()) {
                     _lockedKeys.insert(LockId(keys[i], clientId));
-                    results[document::BucketId(
-                                document::BucketId::keyToBucketId(keys[i]))]
+                    results[BucketId(BucketId::keyToBucketId(keys[i]))]
                           = WrappedEntry(*this, keys[i], it->second,
                                          clientId, true);
                 }
@@ -873,8 +868,8 @@ namespace {
 
 uint8_t getMinDiffBits(uint16_t minBits, const document::BucketId& a, const document::BucketId& b) {
     for (uint32_t i = minBits; i <= std::min(a.getUsedBits(), b.getUsedBits()); i++) {
-        document::BucketId a1 = document::BucketId(i, a.getRawId());
-        document::BucketId b1 = document::BucketId(i, b.getRawId());
+        document::BucketId a1(i, a.getRawId());
+        document::BucketId b1(i, b.getRawId());
         if (b1.getId() != a1.getId()) {
             return i;
         }
@@ -889,7 +884,7 @@ typename LockableMap<Map>::WrappedEntry
 LockableMap<Map>::createAppropriateBucket(
         uint16_t newBucketBits,
         const char* clientId,
-        const document::BucketId& bucket)
+        const BucketId& bucket)
 {
     vespalib::MonitorGuard guard(_lock);
     typename Map::const_iterator iter = _map.lower_bound(bucket.toKey());
@@ -898,19 +893,17 @@ LockableMap<Map>::createAppropriateBucket(
     // bucket's used bits should be the highest used bits it can be while
     // still being different from both of these.
     if (iter != _map.end()) {
-        newBucketBits = getMinDiffBits(newBucketBits,
-                                       document::BucketId(document::BucketId::keyToBucketId(iter->first)), bucket);
+        newBucketBits = getMinDiffBits(newBucketBits, BucketId(BucketId::keyToBucketId(iter->first)), bucket);
     }
 
     if (iter != _map.begin()) {
         --iter;
-        newBucketBits = getMinDiffBits(newBucketBits,
-                                       document::BucketId(document::BucketId::keyToBucketId(iter->first)), bucket);
+        newBucketBits = getMinDiffBits(newBucketBits, BucketId(BucketId::keyToBucketId(iter->first)), bucket);
     }
 
-    document::BucketId newBucket(newBucketBits, bucket.getRawId());
+    BucketId newBucket(newBucketBits, bucket.getRawId());
     newBucket.setUsedBits(newBucketBits);
-    document::BucketId::Type key = newBucket.stripUnused().toKey();
+    BucketId::Type key = newBucket.stripUnused().toKey();
 
     LockId lid(key, clientId);
     ackquireKey(lid, guard);
@@ -922,17 +915,17 @@ LockableMap<Map>::createAppropriateBucket(
 
 template<typename Map>
 std::map<document::BucketId, typename LockableMap<Map>::WrappedEntry>
-LockableMap<Map>::getContained(const document::BucketId& bucket,
+LockableMap<Map>::getContained(const BucketId& bucket,
                                const char* clientId)
 {
     vespalib::MonitorGuard guard(_lock);
-    std::map<document::BucketId, WrappedEntry> results;
+    std::map<BucketId, WrappedEntry> results;
 
-    document::BucketId result;
-    document::BucketId::Type keyResult;
-    document::BucketId::Type nextKey;
+    BucketId result;
+    BucketId::Type keyResult;
+    BucketId::Type nextKey;
 
-    std::vector<document::BucketId::Type> keys;
+    std::vector<BucketId::Type> keys;
 
     if (getMostSpecificMatch(bucket, result, keyResult, nextKey)) {
         keys.push_back(keyResult);
@@ -955,13 +948,13 @@ LockableMap<Map>::getContained(const document::BucketId& bucket,
 
 template<typename Map>
 void
-LockableMap<Map>::getAllWithoutLocking(const document::BucketId& bucket,
-                                       const document::BucketId& sibling,
-                                       std::vector<document::BucketId::Type>& keys)
+LockableMap<Map>::getAllWithoutLocking(const BucketId& bucket,
+                                       const BucketId& sibling,
+                                       std::vector<BucketId::Type>& keys)
 {
-    document::BucketId result;
-    document::BucketId::Type keyResult;
-    document::BucketId::Type nextKey;
+    BucketId result;
+    BucketId::Type keyResult;
+    BucketId::Type nextKey;
 
     typename Map::iterator it = _map.end();
 
@@ -974,7 +967,7 @@ LockableMap<Map>::getAllWithoutLocking(const document::BucketId& bucket,
         it = _map.find(keyResult);
         if (it != _map.end()) {
             // Skipping nextKey, since it was equal to keyResult
-            it++;
+            ++it;
         }
     } else {
         // Find the super buckets for the input bucket
@@ -986,19 +979,17 @@ LockableMap<Map>::getAllWithoutLocking(const document::BucketId& bucket,
         if (it != _map.end()) {
             // Nextkey might be contained in the imput bucket,
             // e.g. if it is the first bucket in bucketdb
-            document::BucketId id = document::BucketId(
-                    document::BucketId::keyToBucketId(it->first));
+            BucketId id = BucketId(BucketId::keyToBucketId(it->first));
             if (!bucket.contains(id)) {
-                it++;
+                ++it;
             }
         }
     }
 
     // Buckets contained in the found bucket will come immediately after it.
     // Traverse the map to find them.
-    for (; it != _map.end(); it++) {
-        document::BucketId id(
-                document::BucketId(document::BucketId::keyToBucketId(it->first)));
+    for (; it != _map.end(); ++it) {
+        BucketId id(BucketId(BucketId::keyToBucketId(it->first)));
 
         if (bucket.contains(id)) {
             keys.push_back(it->first);
@@ -1017,13 +1008,13 @@ LockableMap<Map>::getAllWithoutLocking(const document::BucketId& bucket,
  */
 template<typename Map>
 std::map<document::BucketId, typename LockableMap<Map>::WrappedEntry>
-LockableMap<Map>::getAll(const document::BucketId& bucket, const char* clientId,
-                         const document::BucketId& sibling)
+LockableMap<Map>::getAll(const BucketId& bucket, const char* clientId,
+                         const BucketId& sibling)
 {
     vespalib::MonitorGuard guard(_lock);
 
-    std::map<document::BucketId, WrappedEntry> results;
-    std::vector<document::BucketId::Type> keys;
+    std::map<BucketId, WrappedEntry> results;
+    std::vector<BucketId::Type> keys;
 
     getAllWithoutLocking(bucket, sibling, keys);
 
@@ -1038,8 +1029,8 @@ LockableMap<Map>::isConsistent(const typename LockableMap<Map>::WrappedEntry& en
 {
     vespalib::MonitorGuard guard(_lock);
 
-    document::BucketId sibling(0);
-    std::vector<document::BucketId::Type> keys;
+    BucketId sibling(0);
+    std::vector<BucketId::Type> keys;
 
     getAllWithoutLocking(entry.getBucketId(), sibling, keys);
     assert(keys.size() >= 1);
@@ -1058,7 +1049,7 @@ LockableMap<Map>::showLockClients(vespalib::asciistream & out) const
          it != _lockedKeys.end(); ++it)
     {
         out << "\n  "
-            << document::BucketId(document::BucketId::keyToBucketId(it->_key))
+            << BucketId(BucketId::keyToBucketId(it->_key))
             << " - " << it->_owner;
     }
     out << "\nClients waiting for keys:";
@@ -1066,7 +1057,7 @@ LockableMap<Map>::showLockClients(vespalib::asciistream & out) const
          it != _lockWaiters.end(); ++it)
     {
         out << "\n  "
-            << document::BucketId(document::BucketId::keyToBucketId(it->second._key))
+            << BucketId(BucketId::keyToBucketId(it->second._key))
             << " - " << it->second._owner;
     }
 }

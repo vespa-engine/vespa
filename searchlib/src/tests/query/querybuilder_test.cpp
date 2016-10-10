@@ -429,12 +429,12 @@ TEST("require that Invalid Trees Cannot Be Built") {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(1);
     ASSERT_TRUE(!builder.build().get());
-    EXPECT_EQUAL("Trying to build incomplete query tree.", builder.error());
+    EXPECT_EQUAL("QueryBuilderBase::build: QueryBuilder got invalid node structure. _nodes are not empty.", builder.error());
 
     // Adding a node after build() and before reset() is a no-op.
     builder.addStringTerm(str[0], view[0], id[0], weight[0]);
     ASSERT_TRUE(!builder.build().get());
-    EXPECT_EQUAL("Trying to build incomplete query tree.", builder.error());
+    EXPECT_EQUAL("QueryBuilderBase::build: QueryBuilder got invalid node structure. _nodes are not empty.", builder.error());
 
     builder.reset();
     EXPECT_TRUE(builder.error().empty());
@@ -444,12 +444,16 @@ TEST("require that Invalid Trees Cannot Be Built") {
     builder.addStringTerm(str[0], view[0], id[0], weight[0]);
     builder.addStringTerm(str[1], view[1], id[1], weight[1]);
     ASSERT_TRUE(!builder.build().get());
-    EXPECT_EQUAL("QueryBuilder got invalid node structure.", builder.error());
+    EXPECT_EQUAL("QueryBuilderBase::addCompleteNode: QueryBuilder got invalid node structure."
+                 " Incomming node is 'search::query::SimpleStringTerm', while root is non-null('search::query::SimpleAnd')",
+                 builder.error());
 
     // Adding an intermediate node after build() is also a no-op.
     builder.addAnd(1);
     ASSERT_TRUE(!builder.build().get());
-    EXPECT_EQUAL("QueryBuilder got invalid node structure.", builder.error());
+    EXPECT_EQUAL("QueryBuilderBase::addCompleteNode: QueryBuilder got invalid node structure."
+                 " Incomming node is 'search::query::SimpleStringTerm', while root is non-null('search::query::SimpleAnd')",
+                 builder.error());
 }
 
 TEST("require that Term Index Can Be Added") {
@@ -608,6 +612,43 @@ TEST("require that empty intermediate node can be added") {
     And *and_node = dynamic_cast<And *>(new_node.get());
     ASSERT_TRUE(and_node);
     EXPECT_EQUAL(0u, and_node->getChildren().size());
+}
+
+TEST("test query parsing error") {
+    const char * STACK =
+         "\001\002\001\003\000\005\002\004\001\034F\001\002\004term\004\004term\002dx\004\004term\002ifD\002\004term\001xD\003\004term\002dxE\004\004term\001\060F\005\002\004term"
+         "\004\004term\006radius\004\004term\002ifD\006\004term\001xD\a\004term\004sizeE\b\004term\001\060D\t\004term\001xF\n\002\004term\004\004term\002dx\004\004term\002ifD\v\004term"
+         "\001xD\f\004term\004sizeE\r\004term\001\060D\016\004term\002dxD\017\004term\004sizeE\020\004term\001\060F\021\002\004term\004\004term\006radius\004\004term\002ifD\022\004term"
+         "\001yD\023\004term\001yF\024\002\004term\004\004term\002dy\004\004term\002ifD\025\004term\001yD\026\004term\002dyE\027\004term\001\060F\030\002\004term\004\004term\006radius"
+         "\004\004term\002ifD\031\004term\001yD\032\004term\004sizeE\033\004term\001\061\004\001 F\034\002\004term\004\004term\001\061\004\004term\001xF\035\002\004term\004\004term"
+         "\001\061\004\004term\001xF\036\002\004term\004\004term\001\061\004\004term\001y\002\004\001\034F\037\002\016term_variation\004\016term_variation\002dx\004\016term_variation"
+         "\002ifD \016term_variation\001xD!\016term_variation\002dxE\"\016term_variation\001\060F#\002\016term_variation\004\016term_variation\006radius\004\016term_variation"
+         "\002ifD$\016term_variation\001xD%\016term_variation\004sizeE&\016term_variation\001\060D'\016term_variation\001xF(\002\016term_variation\004\016term_variation"
+         "\002dx\004\016term_variation\002ifD)\016term_variation\001xD*\016term_variation\004sizeE+\016term_variation\001\060D,\016term_variation\002dxD-\016term_variation\004size"
+         "E.\016term_variation\001\060F/\002\016term_variation\004\016term_variation\006radius\004\016term_variation\002ifD0\016term_variation\001yD1\016term_variation"
+         "\001yF2\002\016term_variation\004\016term_variation\002dy\004\016term_variation\002ifD3\016term_variation\001yD4\016term_variation\002dyE5\016term_variation"
+         "\001\060F6\002\016term_variation\004\016term_variation\006radius\004\016term_variation\002ifD7\016term_variation\001yD8\016term_variation\004sizeE9\016term_variation"
+         "\001\061\004\001 F:\002\016term_variation\004\016term_variation\001\061\004\016term_variation\001xF;\002\016term_variation\004\016term_variation\001\061\004\016term_variation"
+         "\001xF<\002\016term_variation\004\016term_variation\001\061\004\016term_variation\001yD=\000\tvariation\002\004\001\034F>\002\004term\004\004term\002dx\004\004term\002ifD?\004term"
+         "\001xD\200@\004term\002dxE\200A\004term\001\060F\200B\002\004term\004\004term\006radius\004\004term\002ifD\200C\004term\001xD\200D\004term\004sizeE\200E\004term\001\060D\200F\004term"
+         "\001xF\200G\002\004term\004\004term\002dx\004\004term\002ifD\200H\004term\001xD\200I\004term\004sizeE\200J\004term\001\060D\200K\004term\002dxD\200L\004term\004sizeE\200M\004term"
+         "\001\060F\200N\002\004term\004\004term\006radius\004\004term\002ifD\200O\004term\001yD\200P\004term\001yF\200Q\002\004term\004\004term\002dy\004\004term\002ifD\200R\004term"
+         "\001yD\200S\004term\002dyE\200T\004term\001\060F\200U\002\004term\004\004term\006radius\004\004term\002ifD\200V\004term\001yD\200W\004term\004sizeE\200X\004term"
+         "\001\061\004\001 F\200Y\002\004term\004\004term\001\061\004\004term\001xF\200Z\002\004term\004\004term\001\061\004\004term\001xF\200[\002\004term\004\004term\001\061\004\004term"
+         "\001y\002\004\001\034F\200\\\002\016term_variation\004\016term_variation\002dx\004\016term_variation\002ifD\200]\016term_variation\001xD\200^\016term_variation"
+         "\002dxE\200_\016term_variation\001\060F\200`\002\016term_variation\004\016term_variation\006radius\004\016term_variation\002ifD\200a\016term_variation\001xD\200b\016term_variation"
+         "\004sizeE\200c\016term_variation\001\060D\200d\016term_variation\001xF\200e\002\016term_variation\004\016term_variation\002dx\004\016term_variation\002ifD\200f\016term_variation"
+         "\001xD\200g\016term_variation\004sizeE\200h\016term_variation\001\060D\200i\016term_variation\002dxD\200j\016term_variation\004sizeE\200k\016term_variation"
+         "\001\060F\200l\002\016term_variation\004\016term_variation\006radius\004\016term_variation\002ifD\200m\016term_variation\001yD\200n\016term_variation\001yF\200o\002\016term_variation"
+         "\004\016term_variation\002dy\004\016term_variation\002ifD\200p\016term_variation\001yD\200q\016term_variation\002dyE\200r\016term_variation\001\060F\200s\002\016term_variation"
+         "\004\016term_variation\006radius\004\016term_variation\002ifD\200t\016term_variation\001yD\200u\016term_variation\004sizeE\200v\016term_variation"
+         "\001\061\004\001 F\200w\002\016term_variation\004\016term_variation\001\061\004\016term_variation\001xF\200x\002\016term_variation\004\016term_variation\001\061\004\016term_variation"
+         "\001xF\200y\002\016term_variation\004\016term_variation\001\061\004\016term_variation\001yĀz\n\vsource_lang\002jaĀ{\n\vtarget_lang\002en\000\002Ā|\v\alicense"
+         "\017countrycode_allĀ}\v\alicense\016countrycode_tw";
+    string stackDump(STACK, 2936);
+    SimpleQueryStackDumpIterator iterator(stackDump);
+    Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
+    EXPECT_FALSE(new_node);
 }
 
 }  // namespace

@@ -23,6 +23,7 @@ import com.yahoo.document.restapi.RestUri;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
+import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
 import java.io.IOException;
@@ -55,10 +56,12 @@ public class RestApi extends LoggingRequestHandler {
     private AtomicInteger threadsAvailableForApi = new AtomicInteger(20 /*max concurrent requests */);
 
     @Inject
-    public RestApi(Executor executor, AccessLog accessLog, DocumentmanagerConfig documentManagerConfig) {
+    public RestApi(Executor executor, AccessLog accessLog, DocumentmanagerConfig documentManagerConfig, 
+                   LoadTypeConfig loadTypeConfig) {
         super(executor, accessLog);
-        final LoadTypeSet loadTypes = new LoadTypeSet("client");
-        this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(new MessageBusParams(loadTypes)));
+        MessageBusParams params = new MessageBusParams(new LoadTypeSet(loadTypeConfig));
+        params.setDocumentmanagerConfig(documentManagerConfig);
+        this.operationHandler = new OperationHandlerImpl(new MessageBusDocumentAccess(params));
         this.singleDocumentParser = new SingleDocumentParser(new DocumentTypeManager(documentManagerConfig));
     }
 

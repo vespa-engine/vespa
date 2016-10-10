@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <stdarg.h>
-#include <boost/scoped_array.hpp>
 
 #include "logfwd.h"
 
@@ -35,13 +34,14 @@ void filedistribution::logfwd::log_forward(LogLevel level, const char* file, int
 
     if (logger.wants(vespaLogLevel)) {
         const size_t maxSize(0x8000);
-        boost::scoped_array<char> payload(new char[maxSize]);
+        std::vector<char> payload(maxSize);
+        char * buf = &payload[0];
 
         va_list args;
         va_start(args, fmt);
-        vsnprintf(payload.get(), maxSize, fmt, args);
+        vsnprintf(buf, maxSize, fmt, args);
         va_end(args);
 
-        logger.doLog(vespaLogLevel, file, line, "%s", payload.get());
+        logger.doLog(vespaLogLevel, file, line, "%s", buf);
     }
 }

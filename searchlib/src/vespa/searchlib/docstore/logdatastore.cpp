@@ -27,6 +27,7 @@ using std::runtime_error;
 using document::BucketId;
 using docstore::StoreByBucket;
 using docstore::BucketCompacter;
+using namespace std::literals;
 
 LogDataStore::LogDataStore(vespalib::ThreadStackExecutorBase &executor,
                            const vespalib::string &dirName,
@@ -89,8 +90,9 @@ void
 LogDataStore::updateLidMap()
 {
     uint64_t lastSerialNum(0);
+    LockGuard guard(_updateLock);
     for (FileChunk::UP & fc : _fileChunks) {
-        fc->updateLidMap(*this, lastSerialNum);
+        fc->updateLidMap(guard, *this, lastSerialNum);
         lastSerialNum = fc->getLastPersistedSerialNum();
     }
 }
@@ -165,7 +167,7 @@ LogDataStore::write(LockGuard guard, WriteableFileChunk & destination,
                     uint64_t serialNum, uint32_t lid, const void * buffer, size_t len)
 {
     LidInfo lm = destination.append(serialNum, lid, buffer, len);
-    setLid(lid, lm);
+    setLid(guard, lid, lm);
     if (destination.getFileId() == getActiveFileId(guard)) {
         requireSpace(guard, destination);
     }
@@ -463,21 +465,32 @@ void LogDataStore::compactFile(FileId fileId)
         flushFileAndWait(guard, compactTo, 0);
         compactTo.freeze();
     }
+    compacter.reset();
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));;
+    std::this_thread::sleep_for(1s);
+    uint64_t currentGeneration;
+    {
+        LockGuard guard(_updateLock);
+        currentGeneration = _genHandler.getCurrentGeneration();
+        _genHandler.incGeneration();
+    }
+    
     FileChunk::UP toDie;
     for (;;) {
         LockGuard guard(_updateLock);
-        if (_holdFileChunks[fc->getFileId().getId()] == 0u) {
-            toDie = std::move(fc);
-            break;
+        _genHandler.updateFirstUsedGeneration();
+        if (currentGeneration < _genHandler.getFirstUsedGeneration()) {
+            if (_holdFileChunks[fc->getFileId().getId()] == 0u) {
+                toDie = std::move(fc);
+                break;
+            }
         }
         guard.unlock();
         /*
          * Wait for requireSpace() and flush() methods to leave chunk
          * alone.
          */
-        std::this_thread::sleep_for(std::chrono::seconds(1));;
+        std::this_thread::sleep_for(1s);;
     }
     toDie->erase();
     LockGuard guard(_updateLock);
@@ -846,8 +859,9 @@ LogDataStore::scanDir(const vespalib::string &dir, const vespalib::string &suffi
 }
 
 void
-LogDataStore::setLid(uint32_t lid, const LidInfo & meta)
+LogDataStore::setLid(const LockGuard & guard, uint32_t lid, const LidInfo & meta)
 {
+    (void) guard;
     if (lid < _lidInfo.size()) {
         _genHandler.updateFirstUsedGeneration();
         _lidInfo.removeOldGenerations(_genHandler.getFirstUsedGeneration());

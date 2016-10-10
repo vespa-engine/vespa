@@ -5,7 +5,7 @@
 #include <vespa/searchlib/query/queryterm.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/text/utf8.h>
-#include <cxxabi.h>
+#include <vespa/vespalib/util/classname.h>
 
 namespace {
 
@@ -439,13 +439,7 @@ QueryTermSimple::getAsNumericTerm(T & lower, T & upper, D d) const
 vespalib::string
 QueryTermSimple::getClassName() const
 {
-    vespalib::string name(typeid(*this).name());
-    int status = 0;
-    size_t size = 0;
-    char *unmangled = abi::__cxa_demangle(name.c_str(), 0, &size, &status);
-    vespalib::string result(unmangled);
-    free(unmangled);
-    return result;
+    return vespalib::getClassName(*this);
 }
 
 }

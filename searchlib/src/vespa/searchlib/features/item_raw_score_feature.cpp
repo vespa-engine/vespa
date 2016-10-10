@@ -63,7 +63,7 @@ ItemRawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
 }
 
 ItemRawScoreBlueprint::HandleVector
-ItemRawScoreBlueprint::resolve(const search::fef::IQueryEnvironment &env,
+ItemRawScoreBlueprint::resolve(const IQueryEnvironment &env,
                                const vespalib::string &label)
 {
     HandleVector handles;

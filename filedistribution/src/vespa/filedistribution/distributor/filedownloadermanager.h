@@ -23,7 +23,7 @@ class FileDownloaderManager : public FileProvider,
     class SetFinishedDownloadingStatus {
         FileDownloaderManager& _parent;
       public:
-        void operator()(const std::string& fileReference, const boost::filesystem::path&);
+        void operator()(const std::string& fileReference, const Path&);
         SetFinishedDownloadingStatus(FileDownloaderManager*);
     };
 
@@ -49,7 +49,7 @@ public:
     ~FileDownloaderManager();
     void start();
 
-    boost::optional<boost::filesystem::path> getPath(const std::string& fileReference);
+    boost::optional<Path> getPath(const std::string& fileReference);
     void downloadFile(const std::string& fileReference);
 
     //FileProvider overrides

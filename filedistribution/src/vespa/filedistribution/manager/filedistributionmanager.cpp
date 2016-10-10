@@ -58,7 +58,7 @@ std::unique_ptr<ZKLogging> _G_zkLogging;
     } catch(const ZKException& e) {                            \
         std::stringstream ss;                                  \
         ss << "In" << __FUNCTION__ << ": ";                    \
-        ss << diagnosticUserLevelMessage(e);                   \
+        ss << e.what();                   \
         throwRuntimeException(ss.str().c_str(), env);          \
         returnStatement;                                       \
     } catch(const std::exception& e) {                         \

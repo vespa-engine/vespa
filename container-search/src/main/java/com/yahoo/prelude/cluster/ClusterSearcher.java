@@ -107,29 +107,33 @@ public class ClusterSearcher extends Searcher {
         super(id);
         this.hasher = new Hasher();
         this.fs4ResourcePool = fs4ResourcePool;
-        monitor = new ClusterMonitor(this, monitorConfig, vipStatus);
+
+        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus);
+
+        if (dispatcher.searchCluster().directDispatchTarget().isPresent()) // dispatcher should decide vip status instead
+            monitor = new ClusterMonitor(this, monitorConfig, Optional.empty());
+        else
+            monitor = new ClusterMonitor(this, monitorConfig, Optional.of(vipStatus));
+
         int searchClusterIndex = clusterConfig.clusterId();
         clusterModelName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
         documentTypes = new LinkedHashSet<>();
         failoverToRemote = clusterConfig.failoverToRemote();
-        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool);
 
         String eventName = clusterModelName + ".cache_hit_ratio";
-        cacheHitRatio = new Value(eventName, manager, new Value.Parameters()
-                .setNameExtension(false).setLogRaw(false).setLogMean(true));
+        cacheHitRatio = new Value(eventName, manager, new Value.Parameters().setNameExtension(false)
+                                                                            .setLogRaw(false).setLogMean(true));
 
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(),
-                DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
+                                                              DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
         CacheParams cacheParams = new CacheParams(createCache(clusterConfig, clusterModelName));
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
                 .defaultclass());
         
-        int containerClusterSize = clusterInfoConfig.nodeCount();
-
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             String docTypeName = docDb.name();
             documentTypes.add(docTypeName);
@@ -151,7 +155,7 @@ public class ClusterSearcher extends Searcher {
                 Backend b = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
                 FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool, 
                                                        searchClusterConfig, cacheParams, emulationConfig, docSumParams,
-                                                       documentDbConfig, b, dispatcher, dispatcherIndex, containerClusterSize);
+                                                       documentDbConfig, b, dispatcher, dispatcherIndex);
                 try {
                     searcher.setLocalDispatching( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host()));
                 } catch (UnknownHostException e) {
@@ -162,10 +166,10 @@ public class ClusterSearcher extends Searcher {
                 gotExpectedBackend |= searcher.isLocalDispatching();
             }
         }
-        if (!gotExpectedBackend) {
+        if ( ! gotExpectedBackend) {
             log.log(Level.SEVERE, "ClusterSearcher should have a local top level dispatch."
-                    + " The possibility to configure dispatchers explicitly will be removed"
-                    + " in a future release.");
+                                  + " The possibility to configure dispatchers explicitly will be removed"
+                                  + " in a future release.");
         }
         hasher.running = true;
         monitor.freeze();
@@ -210,14 +214,13 @@ public class ClusterSearcher extends Searcher {
                                                DocumentdbInfoConfig documentdbInfoConfig,
                                                Backend backend,
                                                Dispatcher dispatcher,
-                                               int dispatcherIndex,
-                                               int containerClusterSize) {
+                                               int dispatcherIndex) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
                                                         searchClusterConfig,
                                                         emulConfig, 
                                                         dispatcherIndex);
         return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, 
-                                documentdbInfoConfig, containerClusterSize);
+                                documentdbInfoConfig);
     }
 
     private static VdsStreamingSearcher vdsCluster(int searchclusterIndex,
@@ -231,10 +234,8 @@ public class ClusterSearcher extends Searcher {
                                                         emulConfig, 0);
         VdsStreamingSearcher searcher = (VdsStreamingSearcher) VespaBackEndSearcher
                 .getSearcher("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher");
-        searcher.setSearchClusterConfigId(searchClusterConfig
-                .rankprofiles().configid());
-        searcher.setStorageClusterRouteSpec(searchClusterConfig
-                .storagecluster().routespec());
+        searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
+        searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
         searcher.init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         return searcher;
     }
@@ -244,10 +245,9 @@ public class ClusterSearcher extends Searcher {
         this.hasher = new Hasher();
         this.failoverToRemote = false;
         this.documentTypes = documentTypes;
-        monitor = new ClusterMonitor(this, new QrMonitorConfig(new QrMonitorConfig.Builder()), new VipStatus());
-        cacheHitRatio = new Value(
-                "com.yahoo.prelude.cluster.ClusterSearcher.ClusterSearcher().dummy",
-                Statistics.nullImplementation, new Value.Parameters());
+        monitor = new ClusterMonitor(this, new QrMonitorConfig(new QrMonitorConfig.Builder()), Optional.of(new VipStatus()));
+        cacheHitRatio = new Value("com.yahoo.prelude.cluster.ClusterSearcher.ClusterSearcher().dummy",
+                                  Statistics.nullImplementation, new Value.Parameters());
         clusterModelName = "testScenario";
         fs4ResourcePool = null;
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
@@ -268,8 +268,8 @@ public class ClusterSearcher extends Searcher {
 
     private static CacheControl createCache(ClusterConfig config, String clusterModelName) {
         log.log(Level.INFO, "Enabling cache for search cluster "
-                + clusterModelName + " (size=" + config.cacheSize()
-                + ", timeout=" + config.cacheTimeout() + ")");
+                            + clusterModelName + " (size=" + config.cacheSize()
+                            + ", timeout=" + config.cacheTimeout() + ")");
 
         return new CacheControl(config.cacheSize(), config.cacheTimeout());
     }
@@ -311,6 +311,7 @@ public class ClusterSearcher extends Searcher {
      * @return          null if request rank profile is ok for the requested
      *                  doc types, a result with error message if not.
      */
+    // TODO: This should be in a separate searcher
     private Result checkValidRankProfiles(Query query, Set<String> docTypes) {
         String rankProfile = query.getRanking().getProfile();
         Set<String> invalidInDocTypes = null;
@@ -405,8 +406,7 @@ public class ClusterSearcher extends Searcher {
         int tries = 0;
 
         do {
-            // The loop is in case there are other searchers available
-            // able to produce results
+            // The loop is in case there are other searchers available able to produce results
             validateQueryTimeout(query);
             validateQueryCache(query);
             VespaBackEndSearcher searcher = hasher.select(tries++);

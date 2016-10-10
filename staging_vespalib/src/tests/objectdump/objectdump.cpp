@@ -6,12 +6,13 @@ LOG_SETUP("objectdump_test");
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/objects/visit.h>
 
-using namespace vespalib;
-
 #define CID_Base 10000000
 #define CID_Foo  10000001
 #define CID_Bar  10000002
 #define CID_Baz  10000003
+
+using vespalib::ObjectVisitor;
+using vespalib::IdentifiablePtr;
 
 struct Base : public vespalib::Identifiable
 {

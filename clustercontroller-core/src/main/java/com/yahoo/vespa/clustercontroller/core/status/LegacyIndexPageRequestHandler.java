@@ -17,21 +17,22 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
     private final Timer timer;
     private final ContentCluster cluster;
     private final MasterElectionHandler masterElectionHandler;
-    private final SystemStateGenerator systemStateGenerator;
+    private final StateVersionTracker stateVersionTracker;
     private final EventLog eventLog;
     private final long startedTime;
     private final RunDataExtractor data;
     private boolean showLocalSystemStatesInLog = true;
 
     public LegacyIndexPageRequestHandler(Timer timer, boolean showLocalSystemStatesInLog, ContentCluster cluster,
-                                         MasterElectionHandler masterElectionHandler, SystemStateGenerator systemStateGenerator,
+                                         MasterElectionHandler masterElectionHandler,
+                                         StateVersionTracker stateVersionTracker,
                                          EventLog eventLog, long startedTime, RunDataExtractor data)
     {
         this.timer = timer;
         this.showLocalSystemStatesInLog = showLocalSystemStatesInLog;
         this.cluster = cluster;
         this.masterElectionHandler = masterElectionHandler;
-        this.systemStateGenerator = systemStateGenerator;
+        this.stateVersionTracker = stateVersionTracker;
         this.eventLog = eventLog;
         this.startedTime = startedTime;
         this.data = data;
@@ -63,7 +64,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                     new VdsClusterHtmlRendrer(),
                     content,
                     timer,
-                    systemStateGenerator.getClusterState(),
+                    stateVersionTracker.getVersionedClusterState(),
                     data.getOptions().storageDistribution,
                     data.getOptions(),
                     eventLog,
@@ -71,7 +72,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             // Overview of current config
             data.getOptions().writeHtmlState(content, request);
             // Current cluster state and cluster state history
-            writeHtmlState(systemStateGenerator, content, request);
+            writeHtmlState(stateVersionTracker, content, request);
         } else {
             // Overview of current config
             data.getOptions().writeHtmlState(content, request);
@@ -84,7 +85,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         return response;
     }
 
-    public void writeHtmlState(SystemStateGenerator systemStateGenerator, StringBuilder sb, StatusPageServer.HttpRequest request) {
+    public void writeHtmlState(StateVersionTracker stateVersionTracker, StringBuilder sb, StatusPageServer.HttpRequest request) {
         boolean showLocal = showLocalSystemStatesInLog;
         if (request.hasQueryParameter("showlocal")) {
             showLocal = true;
@@ -93,9 +94,9 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         }
 
         sb.append("<h2 id=\"clusterstates\">Cluster states</h2>\n")
-          .append("<p>Current cluster state:<br><code>").append(systemStateGenerator.currentClusterStateView().toString()).append("</code></p>\n");
+          .append("<p>Current cluster state:<br><code>").append(stateVersionTracker.getVersionedClusterState().toString()).append("</code></p>\n");
 
-        if ( ! systemStateGenerator.systemStateHistory().isEmpty()) {
+        if ( ! stateVersionTracker.getClusterStateHistory().isEmpty()) {
             TimeZone tz = TimeZone.getTimeZone("UTC");
             sb.append("<h3 id=\"clusterstatehistory\">Cluster state history</h3>\n");
             if (showLocal) {
@@ -106,10 +107,10 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
               .append("  <th>Cluster state</th>\n")
               .append("</tr>\n");
             // Write cluster state history in reverse order (newest on top)
-            Iterator<SystemStateGenerator.SystemStateHistoryEntry> stateIterator = systemStateGenerator.systemStateHistory().iterator();
-            SystemStateGenerator.SystemStateHistoryEntry current = null;
+            Iterator<ClusterStateHistoryEntry> stateIterator = stateVersionTracker.getClusterStateHistory().iterator();
+            ClusterStateHistoryEntry current = null;
             while (stateIterator.hasNext()) {
-                SystemStateGenerator.SystemStateHistoryEntry nextEntry = stateIterator.next();
+                ClusterStateHistoryEntry nextEntry = stateIterator.next();
                 if (nextEntry.state().isOfficial() || showLocal) {
                     if (current != null) writeClusterStateEntry(current, nextEntry, sb, tz);
                     current = nextEntry;
@@ -120,7 +121,7 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         }
     }
 
-    private void writeClusterStateEntry(SystemStateGenerator.SystemStateHistoryEntry entry, SystemStateGenerator.SystemStateHistoryEntry last, StringBuilder sb, TimeZone tz) {
+    private void writeClusterStateEntry(ClusterStateHistoryEntry entry, ClusterStateHistoryEntry last, StringBuilder sb, TimeZone tz) {
         sb.append("<tr><td>").append(RealTimer.printDate(entry.time(), tz))
                 .append("</td><td>").append(entry.state().isOfficial() ? "" : "<font color=\"grey\">");
         sb.append(entry.state());

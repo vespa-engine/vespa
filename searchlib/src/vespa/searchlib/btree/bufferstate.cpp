@@ -3,12 +3,12 @@
 #include "bufferstate.h"
 #include <limits>
 
-namespace search
-{
+using vespalib::DefaultAlloc;
+using vespalib::alloc::Alloc;
 
-namespace btree
-{
+namespace search {
 
+namespace btree {
 
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
@@ -125,9 +125,8 @@ BufferState::BufferState(void)
       _typeId(0),
       _clusterSize(0),
       _compacting(false),
-      _buffer()
+      _buffer(DefaultAlloc::create())
 {
-      _buffer.reset(new Alloc());
 }
 
 
@@ -150,7 +149,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
                       void *&buffer)
 {
     assert(buffer == NULL);
-    assert(_buffer->get() == NULL);
+    assert(_buffer.get() == NULL);
     assert(_state == FREE);
     assert(_typeHandler == NULL);
     assert(_allocElems == 0);
@@ -163,15 +162,14 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     assert(_freeListList == NULL || _freeListList->_head != this);
 
     size_t initialSizeNeeded = 0;
-    if (bufferId == 0)
+    if (bufferId == 0) {
         initialSizeNeeded = typeHandler->getClusterSize();
-    size_t allocClusters =
-        typeHandler->calcClustersToAlloc(initialSizeNeeded + sizeNeeded,
-                maxClusters);
+    }
+    size_t allocClusters = typeHandler->calcClustersToAlloc(initialSizeNeeded + sizeNeeded, maxClusters);
     size_t allocSize = allocClusters * typeHandler->getClusterSize();
     assert(allocSize >= initialSizeNeeded + sizeNeeded);
-    _buffer.reset(new Alloc(allocSize * typeHandler->elementSize()));
-    buffer = _buffer->get();
+    _buffer.create(allocSize * typeHandler->elementSize()).swap(_buffer);
+    buffer = _buffer.get();
     typeHandler->onActive(&_usedElems);
     assert(buffer != NULL);
     _allocElems = allocSize;
@@ -212,13 +210,13 @@ BufferState::onHold(void)
 void
 BufferState::onFree(void *&buffer)
 {
-    assert(buffer == _buffer->get());
+    assert(buffer == _buffer.get());
     assert(_state == HOLD);
     assert(_typeHandler != NULL);
     assert(_deadElems <= _usedElems);
     assert(_holdElems == _usedElems - _deadElems);
     _typeHandler->destroyElements(buffer, _usedElems);
-    Alloc().swap(*_buffer);
+    DefaultAlloc::create().swap(_buffer);
     _typeHandler->onFree(_usedElems);
     buffer = NULL;
     _usedElems = 0;
@@ -334,13 +332,12 @@ BufferState::fallbackResize(uint64_t newSize,
     size_t allocSize = allocClusters * _typeHandler->getClusterSize();
     assert(allocSize >= newSize);
     assert(allocSize > _allocElems);
-    Alloc::UP newBuffer(std::make_unique<Alloc>
-                        (allocSize * _typeHandler->elementSize()));
-    _typeHandler->fallbackCopy(newBuffer->get(), buffer, _usedElems);
-    holdBuffer.swap(*_buffer);
+    Alloc newBuffer = _buffer.create(allocSize * _typeHandler->elementSize());
+    _typeHandler->fallbackCopy(newBuffer.get(), buffer, _usedElems);
+    holdBuffer.swap(_buffer);
     std::atomic_thread_fence(std::memory_order_release);
     _buffer = std::move(newBuffer);
-    buffer = _buffer->get();
+    buffer = _buffer.get();
     _allocElems = allocSize;
     std::atomic_thread_fence(std::memory_order_release);
 }

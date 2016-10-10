@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * Takes in strings representing function calls with their parameters and allows to check whether a subset of calls
  * occurred in a specific order. For example, by calling {@link CallOrderVerifier#add(String)}
@@ -18,6 +20,8 @@ import java.util.List;
  * @author valerijf
  */
 public class CallOrderVerifier {
+    private static final int waitForCallOrderTimeout = 60000; //ms
+
     private final LinkedList<String> callOrder = new LinkedList<>();
     private final Object monitor = new Object();
 
@@ -27,6 +31,16 @@ public class CallOrderVerifier {
         }
     }
 
+    public void assertInOrder(String... functionCalls) {
+        assertInOrderWithAssertMessage("", functionCalls);
+    }
+
+    public void assertInOrderWithAssertMessage(String assertMessage, String... functionCalls) {
+        boolean inOrder = verifyInOrder(waitForCallOrderTimeout, functionCalls);
+        if ( ! inOrder && ! assertMessage.isEmpty())
+            System.err.println(assertMessage);
+        assertTrue(toString(), inOrder);
+    }
 
     /**
      * Checks if list of function calls occur in order given within a timeout
@@ -34,7 +48,7 @@ public class CallOrderVerifier {
      * @param functionCalls The expected order of function calls
      * @return true if the actual order of calls was equal to the order provided within timeout, false otherwise.
      */
-    public boolean verifyInOrder(long timeout, String... functionCalls) {
+    private boolean verifyInOrder(long timeout, String... functionCalls) {
         final long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < timeout) {
             if (verifyInOrder(functionCalls)) {
@@ -54,11 +68,11 @@ public class CallOrderVerifier {
         int pos = 0;
         synchronized (monitor) {
             for (String functionCall : functionCalls) {
-                int temp = indexOf(callOrder, functionCall, pos);
-                if (temp < pos) {
+                int temp = indexOf(callOrder.listIterator(pos), functionCall);
+                if (temp == -1) {
                     return false;
                 }
-                pos = temp;
+                pos += temp;
             }
         }
 
@@ -67,21 +81,24 @@ public class CallOrderVerifier {
 
     /**
      * Finds the first index of needle in haystack after a given position.
-     * @param haystack List to search for an element in
-     * @param needle Element to find in list
-     * @param startPos Index to start search from
-     * @return Index of the next needle in haystack after startPos, -1 if not found
+     * @param iter Iterator to search in
+     * @param search Element to find in iterator
+     * @return Index of the next search in  after startPos, -1 if not found
      */
-    private int indexOf(List<String> haystack, String needle, int startPos) {
-        synchronized (monitor) {
-            Iterator<String> iter = haystack.listIterator(startPos);
-            for (int i = startPos; iter.hasNext(); i++) {
-                if (needle.equals(iter.next())) {
-                    return i;
-                }
+    private int indexOf(Iterator<String> iter, String search) {
+        for (int i = 0; iter.hasNext(); i++) {
+            if (search.equals(iter.next())) {
+                return i;
             }
         }
 
         return -1;
+    }
+
+    @Override
+    public String toString() {
+        synchronized (monitor) {
+            return callOrder.toString();
+        }
     }
 }

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -9,9 +10,13 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,7 +56,17 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         testTenantBuilder.tenants().get(tenant2).getLocalSessionRepo().addSession(new MockSession(3l, FilesApplicationPackage.fromFile(new File("src/test/apps/content2"))));
         testTenantBuilder.tenants().get(tenant1).getApplicationRepo().createPutApplicationTransaction(idTenant1, 2l).commit();
         testTenantBuilder.tenants().get(tenant2).getApplicationRepo().createPutApplicationTransaction(idTenant2, 3l).commit();
-        handler = new ApplicationHandler(command -> command.run(), AccessLog.voidAccessLog(), testTenantBuilder.createTenants(), HostProvisionerProvider.empty(), Zone.defaultZone(), null, null, null, null);
+        handler = new ApplicationHandler(command -> command.run(),
+                                         AccessLog.voidAccessLog(),
+                                         testTenantBuilder.createTenants(),
+                                         HostProvisionerProvider.empty(),
+                                         Zone.defaultZone(),
+                                         new ApplicationRepository(testTenantBuilder.createTenants(),
+                                                                   HostProvisionerProvider.empty(),
+                                                                   new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                                                   new MockCurator(),
+                                                                   new LogServerLogGrabber(),
+                                                                   new ApplicationConvergenceChecker()));
         pathPrefix = createPath(idTenant1, Zone.defaultZone());
         baseUrl = baseServer + pathPrefix;
     }

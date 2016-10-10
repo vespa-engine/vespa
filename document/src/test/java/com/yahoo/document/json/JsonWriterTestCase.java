@@ -1,16 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.json;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
@@ -26,17 +21,21 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.io.JsonStringEncoder;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.text.Utf8;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 /**
  * Functional tests for com.yahoo.document.json.JsonWriter.

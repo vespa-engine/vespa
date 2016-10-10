@@ -101,7 +101,7 @@ function DeployApp {
     # Create tenant
     echo -n "Creating tenant... "
     local create_tenant_response
-    if create_tenant_response=$(curl --silent --show-error -X PUT "http://$CONFIG_SERVER_HOSTNAME:$CONFIG_SERVER_PORT/application/v2/tenant/$TENANT_NAME" 2>&1)
+    if create_tenant_response=$(curl --silent --show-error -X PUT "http://$CONFIG_SERVER_HOSTNAME:$VESPA_WEB_SERVICE_PORT/application/v2/tenant/$TENANT_NAME" 2>&1)
     then
         if ! [[ "$create_tenant_response" =~ "Tenant $TENANT_NAME created" ]] &&
                 ! [[ "$create_tenant_response" =~ "already exists" ]]
@@ -131,7 +131,7 @@ function UndeployApp {
     local app_name=default
     local output
     echo -n "Removing application $TENANT_NAME:$app_name... "
-    if ! output=$(curl --silent --show-error -X DELETE "http://$CONFIG_SERVER_HOSTNAME:$CONFIG_SERVER_PORT/application/v2/tenant/$TENANT_NAME/application/$app_name")
+    if ! output=$(curl --silent --show-error -X DELETE "http://$CONFIG_SERVER_HOSTNAME:$VESPA_WEB_SERVICE_PORT/application/v2/tenant/$TENANT_NAME/application/$app_name")
     then
         echo
         Fail "Failed to remove application: $output"

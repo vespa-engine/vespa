@@ -28,7 +28,7 @@ public class MockDeployer implements Deployer {
     public int redeployments = 0;
 
     /**
-     * Create a mock deployer which contains a substitute for an application repository, sufficient to
+     * Create a mock deployer which contains a substitute for an application repository, fullfilled to
      * be able to call provision with the right parameters.
      */
     public MockDeployer(NodeRepositoryProvisioner provisioner, Map<ApplicationId, ApplicationContext> applications) {
@@ -76,17 +76,15 @@ public class MockDeployer implements Deployer {
     /** An application context which substitutes for an application repository */
     public static class ApplicationContext {
 
-        private ApplicationId id;
-        private ClusterSpec cluster;
-        private int wantedNodes;
-        private Optional<String> flavor;
-        private int groups;
+        private final ApplicationId id;
+        private final ClusterSpec cluster;
+        private final Capacity capacity;
+        private final int groups;
 
-        public ApplicationContext(ApplicationId id, ClusterSpec cluster, int wantedNodes, Optional<String> flavor, int groups) {
+        public ApplicationContext(ApplicationId id, ClusterSpec cluster, Capacity capacity, int groups) {
             this.id = id;
             this.cluster = cluster;
-            this.wantedNodes = wantedNodes;
-            this.flavor = flavor;
+            this.capacity = capacity;
             this.groups = groups;
         }
 
@@ -96,7 +94,7 @@ public class MockDeployer implements Deployer {
         public ClusterSpec cluster() { return cluster; }
 
         private List<HostSpec> prepare(NodeRepositoryProvisioner provisioner) {
-            return provisioner.prepare(id, cluster, Capacity.fromNodeCount(wantedNodes, flavor), groups, null);
+            return provisioner.prepare(id, cluster, capacity, groups, null);
         }
 
     }

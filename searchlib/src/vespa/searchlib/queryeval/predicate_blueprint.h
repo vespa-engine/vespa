@@ -72,7 +72,7 @@ private:
 
     const PredicateAttribute & _attribute;
     const predicate::PredicateIndex &_index;
-    vespalib::DefaultAlloc _kVBacking;
+    vespalib::alloc::Alloc _kVBacking;
     BitVectorCache::CountVector _kV;
     BitVectorCache::KeySet _cachedFeatures;
 

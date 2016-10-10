@@ -9,7 +9,7 @@
 #include "visit.h"
 #include "objectpredicate.h"
 #include "objectoperation.h"
-#include <cxxabi.h>
+#include <vespa/vespalib/util/classname.h>
 
 namespace vespalib {
 
@@ -187,13 +187,7 @@ Identifiable::UP Identifiable::create(Deserializer & is)
 string
 Identifiable::getNativeClassName() const
 {
-    string name(typeid(*this).name());
-    int status = 0;
-    size_t size = 0;
-    char *unmangled = abi::__cxa_demangle(name.c_str(), 0, &size, &status);
-    string result(unmangled);
-    free(unmangled);
-    return result;
+    return vespalib::getClassName(*this);
 }
 
 string

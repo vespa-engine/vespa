@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -12,20 +11,26 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
+import com.yahoo.vespa.hosted.provision.Node;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -44,27 +49,32 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
+    private static final String[] RESTART_NODE_COMMAND = new String[] {NODE_PROGRAM, "restart"};
 
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
-    private static final List<String> DIRECTORIES_TO_MOUNT = Arrays.asList(
-            getDefaults().underVespaHome("logs"),
-            getDefaults().underVespaHome("var/cache"),
-            getDefaults().underVespaHome("var/crash"),
-            getDefaults().underVespaHome("var/db/jdisc"),
-            getDefaults().underVespaHome("var/db/vespa"),
-            getDefaults().underVespaHome("var/jdisc_container"),
-            getDefaults().underVespaHome("var/jdisc_core"),
-            getDefaults().underVespaHome("var/maven"),
-            getDefaults().underVespaHome("var/run"),
-            getDefaults().underVespaHome("var/scoreboards"),
-            getDefaults().underVespaHome("var/service"),
-            getDefaults().underVespaHome("var/share"),
-            getDefaults().underVespaHome("var/spool"),
-            getDefaults().underVespaHome("var/vespa"),
-            getDefaults().underVespaHome("var/yca"),
-            getDefaults().underVespaHome("var/ycore++"),
-            getDefaults().underVespaHome("var/zookeeper"));
+    // Map of directories to mount and whether they should be writeable by everyone
+    private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
+    static {
+        DIRECTORIES_TO_MOUNT.put("/etc/yamas-agent", true);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("logs"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/cache"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/crash"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/db/jdisc"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/db/vespa"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/jdisc_container"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/jdisc_core"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/maven"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/run"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/scoreboards"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/service"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/share"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/spool"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/vespa"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/yca"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/ycore++"), false);
+        DIRECTORIES_TO_MOUNT.put(getDefaults().underVespaHome("var/zookeeper"), false);
+    }
 
     private final Docker docker;
     private final Environment environment;
@@ -108,11 +118,43 @@ public class DockerOperationsImpl implements DockerOperations {
         final Optional<Container> existingContainer = docker.getContainer(nodeSpec.hostname);
         if (!existingContainer.isPresent()) {
             startContainer(nodeSpec);
+            configureContainer(nodeSpec);
             return true;
         } else {
             return false;
         }
     }
+
+    private void configureContainer(ContainerNodeSpec nodeSpec) {
+        final Path yamasAgentFolder = Maintainer.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
+
+        Path vespaCheckPath = Paths.get("/home/y/libexec/yms/yms_check_vespa");
+        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+                .withTag("role", "tenants")
+                .withTag("flavor", nodeSpec.nodeFlavor)
+                .withTag("state", nodeSpec.nodeState.toString())
+                .withTag("zone", environment.getZone());
+
+        if (nodeSpec.owner.isPresent()) scheduleMaker
+                .withTag("tenantName", nodeSpec.owner.get().tenant)
+                .withTag("app", nodeSpec.owner.get().application);
+
+        if (nodeSpec.membership.isPresent()) scheduleMaker
+                .withTag("clustertype", nodeSpec.membership.get().clusterType)
+                .withTag("clusterid", nodeSpec.membership.get().clusterId);
+
+        if (nodeSpec.vespaVersion.isPresent()) scheduleMaker
+                .withTag("vespaVersion", nodeSpec.vespaVersion.get());
+
+        try {
+            scheduleMaker.writeTo(yamasAgentFolder);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
+        }
+
+        docker.executeInContainer(nodeSpec.containerName, "service", "yamas-agent", "restart");
+    }
+
 
     // Returns true if scheduling download
     @Override
@@ -121,33 +163,46 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, HostName hostname, Orchestrator orchestrator)
+    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
             throws Exception {
         Optional<Container> existingContainer = docker.getContainer(hostname);
         if (! existingContainer.isPresent()) {
             return true;
         }
+
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
         if (removeReason.isPresent()) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
             removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             return true;
         }
+        Optional<String> restartReason = shouldRestartServices(nodeSpec);
+        if (restartReason.isPresent()) {
+            logger.info("Will restart services for container " + existingContainer.get() + ": " + restartReason.get());
+            restartServices(nodeSpec, existingContainer.get(), orchestrator);
+            return true;
+        }
+
         return false;
     }
 
+    private Optional<String> shouldRestartServices(ContainerNodeSpec nodeSpec) {
+        if (nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
+            return Optional.of("Restart requested - wanted restart generation has been bumped: "
+                                       + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration
+                    .get());
+        }
+        return Optional.empty();
+    }
+
     private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
-        if (nodeSpec.nodeState != NodeState.ACTIVE) {
+        if (nodeSpec.nodeState != Node.State.active) {
             return Optional.of("Node no longer active");
         }
         if (!nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
                     + existingContainer.get() + " -> " + nodeSpec.wantedDockerImage.get());
-        }
-        if (nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
-            return Optional.of("Restart requested - wanted restart generation has been bumped: "
-                    + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration.get());
         }
         if (!existingContainer.get().isRunning) {
             return Optional.of("Container no longer running");
@@ -206,10 +261,10 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Starting container " + nodeSpec.containerName);
         try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname.s());
+            InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
             final boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
-            String configServers = environment.getConfigServerHosts().stream().map(HostName::toString).collect(Collectors.joining(","));
+            String configServers = environment.getConfigServerHosts().stream().collect(Collectors.joining(","));
             Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
                     nodeSpec.containerName,
@@ -219,7 +274,7 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers);
 
             command.withVolume("/etc/hosts", "/etc/hosts");
-            for (String pathInNode : DIRECTORIES_TO_MOUNT) {
+            for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
                 String pathInHost = Maintainer.pathInHostFromPathInNode(nodeSpec.containerName, pathInNode).toString();
                 command = command.withVolume(pathInHost, pathInNode);
             }
@@ -231,6 +286,9 @@ public class DockerOperationsImpl implements DockerOperations {
                 long minMainMemoryAvailableMb = (long) (nodeSpec.minMainMemoryAvailableGb.get() * 1024);
                 if (minMainMemoryAvailableMb > 0) {
                     command.withMemoryInMb(minMainMemoryAvailableMb);
+                    // TOTAL_MEMORY_MB is used to make any jdisc container think the machine
+                    // only has this much physical memory (overrides total memory reported by `free -m`).
+                    command.withEnvironment("TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
                 }
             }
 
@@ -244,12 +302,15 @@ public class DockerOperationsImpl implements DockerOperations {
             } else {
                 docker.startContainer(nodeSpec.containerName);
             }
+
+            DIRECTORIES_TO_MOUNT.entrySet().stream().filter(Map.Entry::getValue).forEach(entry ->
+                    docker.executeInContainer(nodeSpec.containerName, "sudo", "chmod", "-R", "a+w", entry.getKey()));
         } catch (UnknownHostException e) {
             throw new RuntimeException("Failed to create container " + nodeSpec.containerName.asString(), e);
         }
     }
 
-    private void setupContainerNetworkingWithScript(ContainerName containerName, HostName hostName) {
+    private void setupContainerNetworkingWithScript(ContainerName containerName, String hostName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
         Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName);
@@ -316,31 +377,9 @@ public class DockerOperationsImpl implements DockerOperations {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {
-            // If we're stopping the node only to upgrade or restart the node or similar, we need to suspend
-            // the services.
-            if (nodeSpec.nodeState == NodeState.ACTIVE) {
-                // TODO: Also skip orchestration if we're downgrading in test/staging
-                // How to implement:
-                //  - test/staging: We need to figure out whether we're in test/staging, by asking Chef!? Or,
-                //    let the Orchestrator handle it - it may know what zone we're in.
-                //  - downgrading: Impossible to know unless we look at the hosted version, which is
-                //    not available in the docker image (nor its name). Not sure how to solve this. Should
-                //    the node repo return the hosted version or a downgrade bit in addition to
-                //    wanted docker image etc?
-                // Should the tenant pipeline instead use BCP tool to upgrade faster!?
-                //
-                // More generally, the node repo response should contain sufficient info on what the docker image is,
-                // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
-                // needs to contain routines for drain and suspend. For many image, these can just be dummy routines.
-
-                logger.info("Ask Orchestrator for permission to suspend node " + nodeSpec.hostname);
-                final boolean suspendAllowed = orchestrator.suspend(nodeSpec.hostname);
-                if (!suspendAllowed) {
-                    logger.info("Orchestrator rejected suspend of node");
-                    // TODO: change suspend() to throw an exception if suspend is denied
-                    throw new OrchestratorException("Failed to get permission to suspend " + nodeSpec.hostname);
-                }
-
+            // If we're stopping the node only to upgrade we need to suspend the services.
+            if (nodeSpec.nodeState == Node.State.active) {
+                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
                 trySuspendNode(containerName);
             }
 
@@ -352,14 +391,58 @@ public class DockerOperationsImpl implements DockerOperations {
         docker.deleteContainer(containerName);
     }
 
+    private void restartServices(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
+            throws Exception {
+        if (existingContainer.isRunning) {
+            ContainerName containerName = existingContainer.name;
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+            if (nodeSpec.nodeState == Node.State.active) {
+                logger.info("Restarting services for " + containerName);
+                // Since we are restarting the services we need to suspend the node.
+                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
+                executeCommand(containerName, RESTART_NODE_COMMAND);
+            }
+        }
+    }
+
+    // TODO: Also skip orchestration if we're downgrading in test/staging
+    // How to implement:
+    //  - test/staging: We need to figure out whether we're in test/staging, zone is available in Environment
+    //  - downgrading: Impossible to know unless we look at the hosted version, which is
+    //    not available in the docker image (nor its name). Not sure how to solve this. Should
+    //    the node repo return the hosted version or a downgrade bit in addition to
+    //    wanted docker image etc?
+    // Should the tenant pipeline instead use BCP tool to upgrade faster!?
+    //
+    // More generally, the node repo response should contain sufficient info on what the docker image is,
+    // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
+    // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
+    private void orchestratorSuspendNode(Orchestrator orchestrator, ContainerNodeSpec nodeSpec, PrefixLogger logger) throws OrchestratorException {
+        final String hostname = nodeSpec.hostname;
+        logger.info("Ask Orchestrator for permission to suspend node " + hostname);
+        if ( ! orchestrator.suspend(hostname)) {
+            logger.info("Orchestrator rejected suspend of node " + hostname);
+            // TODO: change suspend() to throw an exception if suspend is denied
+            throw new OrchestratorException("Failed to get permission to suspend " + hostname);
+        }
+    }
+
+    public void executeCommand(ContainerName containerName, String[] command) {
+        Optional<ProcessResult> result = executeOptionalProgram(containerName, command);
+
+        if (result.isPresent() && !result.get().isSuccess()) {
+            throw new RuntimeException("Container " + containerName.asString()
+                                               + ": command " + Arrays.toString(command) + " failed: " + result.get());
+        }
+    }
 
     @Override
     public void executeResume(ContainerName containerName) {
-        Optional<ProcessResult> result = executeOptionalProgram(containerName, RESUME_NODE_COMMAND);
+        executeCommand(containerName, RESUME_NODE_COMMAND);
+    }
 
-        if (result.isPresent() && !result.get().isSuccess()) {
-            throw new RuntimeException("Container " +containerName.asString()
-                    + ": command " + Arrays.toString(RESUME_NODE_COMMAND) + " failed: " + result.get());
-        }
+    @Override
+    public Docker.ContainerStats getContainerStats(ContainerName containerName) {
+        return docker.getContainerStats(containerName);
     }
 }

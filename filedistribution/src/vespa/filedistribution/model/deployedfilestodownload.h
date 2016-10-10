@@ -1,18 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <boost/filesystem/path.hpp>
 #include "zkfacade.h"
 #include "zkfiledbmodel.h"
 
 namespace filedistribution {
 
-const std::string readApplicationId(ZKFacade & zk, const boost::filesystem::path & deployNode);
+const std::string readApplicationId(ZKFacade & zk, const Path & deployNode);
 
 class DeployedFilesToDownload {
     //includes the current deploy run;
     static const size_t numberOfDeploysToKeepFiles = 2;
-    typedef boost::filesystem::path Path;
 
     ZKFacade& _zk;
 
@@ -22,7 +20,7 @@ class DeployedFilesToDownload {
 
     //Nothrow
     template <typename INSERT_ITERATOR>
-    void readDeployFile(const boost::filesystem::path& path, INSERT_ITERATOR insertionIterator);
+    void readDeployFile(const Path& path, INSERT_ITERATOR insertionIterator);
     void addAppIdToDeployNode(const Path & deployNode, const std::string & appId);
     std::map<std::string, std::vector<std::string> > groupChildrenByAppId(const Path & parentPath, const std::vector<std::string> & children);
     void deleteExpiredDeployNodes(Path parentPath, std::vector<std::string> children);

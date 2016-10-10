@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v1;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -22,7 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 /**
- * The implementation of the /state/v1 API.
+ * The implementation of the /nodes/v1 API.
  * This dumps the content of the node repository on request, possibly with a host filter to return just the single
  * matching node.
  *
@@ -79,7 +80,7 @@ public class
 
         private void toSlime(Node.State state, Cursor object) {
             Cursor nodeArray = null; // create if there are nodes
-            for (Node.Type type : Node.Type.values()) {
+            for (NodeType type : NodeType.values()) {
                 List<Node> nodes = nodeRepository.getNodes(type, state);
                 for (Node node : nodes) {
                     if (hostnameFilter.isPresent() && !node.hostname().equals(hostnameFilter.get())) continue;

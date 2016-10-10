@@ -14,7 +14,9 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
+import com.yahoo.path.Path;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -103,7 +105,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         checkVersion(spec);
 
         this.log = modelContext.getDeployLogger();
-
         ContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
         addBundlesForPlatformComponents(cluster);
@@ -396,9 +397,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
     
     private List<Container> createNodes(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
-        if (nodesElement.hasAttribute("count"))
+        if (nodesElement.hasAttribute("count")) // regular, hosted node spec
             return createNodesFromNodeCount(cluster, nodesElement);
-        else if (nodesElement.hasAttribute("of"))
+        else if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
+            return createNodesFromNodeType(cluster, nodesElement);
+        else if (nodesElement.hasAttribute("of")) // hosted node spec referencing a content cluster
             return createNodesFromContentServiceReference(cluster, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(cluster, nodesElement);
@@ -452,6 +455,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                   log);
         return createNodesFromHosts(hosts, cluster);
     }
+
+    private List<Container> createNodesFromNodeType(ContainerCluster cluster, Element nodesElement) {
+        NodeType type = NodeType.valueOf(nodesElement.getAttribute("type"));
+        ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container, 
+                                                      ClusterSpec.Id.from(cluster.getName()), 
+                                                      Optional.empty());
+        Map<HostResource, ClusterMembership> hosts = 
+                cluster.getRoot().getHostSystem().allocateHosts(clusterSpec, 
+                                                                Capacity.fromRequiredNodeType(type), 1, log);
+        return createNodesFromHosts(hosts, cluster);
+    }
     
     private List<Container> createNodesFromContentServiceReference(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         // Resolve references to content clusters at the XML level because content clusters must be built after container clusters
@@ -475,7 +489,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             context.getDeployLogger());
         return createNodesFromHosts(hosts, cluster);
     }
-    
+
     /** Returns the services element above the given Element, or empty if there is no services element */
     private Optional<Element> servicesRootOf(Element element) {
         Node parent = element.getParentNode();
@@ -502,8 +516,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<Container> nodes = new ArrayList<>();
         int nodeCount = 0;
         for (Element nodeElem: XML.getChildren(nodesElement, "node")) {
-            Container container = new ContainerServiceBuilder("container." + nodeCount, nodeCount).build(cluster, nodeElem);
-            nodes.add(container);
+            nodes.add(new ContainerServiceBuilder("container." + nodeCount, nodeCount).build(cluster, nodeElem));
             nodeCount++;
         }
         return nodes;
@@ -574,9 +587,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private ContainerDocumentApi buildDocumentApi(ContainerCluster cluster, Element spec) {
         Element documentApiElement = XML.getChild(spec, "document-api");
-        if (documentApiElement == null) {
-            return null;
-        }
+        if (documentApiElement == null) return null;
 
         ContainerDocumentApi.Options documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         return new ContainerDocumentApi(cluster, documentApiOptions);

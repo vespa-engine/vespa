@@ -24,6 +24,17 @@ public class EndpointTest {
     }
 
     @Test
+    public void testBasicWithHttpProtocolPrefix() {
+        Endpoint endpoint = Endpoint.create("http://foo");
+        assertThat(endpoint.getHostname(), equalTo("foo"));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testBasicWithHttpsProtocolPrefix() {
+        Endpoint.create("https://foo");
+    }
+
+    @Test
     public void testAdvanced() {
         Endpoint endpoint = Endpoint.create("bar", 1234, true);
 

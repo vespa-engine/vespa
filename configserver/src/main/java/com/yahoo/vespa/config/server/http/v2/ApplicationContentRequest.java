@@ -15,7 +15,7 @@ import com.yahoo.vespa.config.server.session.LocalSession;
  * @author lulf
  * @since 5.3
  */
-class ApplicationContentRequest extends ContentRequest {
+public class ApplicationContentRequest extends ContentRequest {
 
     private static final String uriPattern = "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*";
     private final ApplicationId applicationId;
@@ -27,7 +27,7 @@ class ApplicationContentRequest extends ContentRequest {
         this.zone = zone;
     }
 
-    static ContentRequest create(HttpRequest request, LocalSession session, ApplicationId applicationId, Zone zone) {
+    public static ContentRequest create(HttpRequest request, LocalSession session, ApplicationId applicationId, Zone zone) {
         return new ApplicationContentRequest(request, session, applicationId, zone);
     }
 

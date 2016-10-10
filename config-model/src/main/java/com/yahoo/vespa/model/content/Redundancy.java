@@ -2,19 +2,21 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.vespa.config.content.StorDistributionConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 
 /**
  * Configuration of the redundancy of a content cluster.
  *
  * @author bratseth
  */
-public class Redundancy implements StorDistributionConfig.Producer {
+public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig.Producer {
 
     private final int initialRedundancy ;
     private final int finalRedundancy;
     private final int readyCopies;
 
     private int implicitGroups = 1;
+    private int explicitGroups = 1;
 
     /** The total number of nodes available in this cluster (assigned when this becomes known) */
     private int totalNodes = 0;
@@ -39,6 +41,7 @@ public class Redundancy implements StorDistributionConfig.Producer {
      * values returned in the config.
      */
     public void setImplicitGroups(int implicitGroups) { this.implicitGroups = implicitGroups; }
+    public void setExplicitGroups(int explicitGroups) { this.explicitGroups = explicitGroups; }
 
     public int initialRedundancy() { return initialRedundancy; }
     public int finalRedundancy() { return finalRedundancy; }
@@ -53,5 +56,12 @@ public class Redundancy implements StorDistributionConfig.Producer {
         builder.initial_redundancy(effectiveInitialRedundancy());
         builder.redundancy(effectiveFinalRedundancy());
         builder.ready_copies(effectiveReadyCopies());
+    }
+    @Override
+    public void getConfig(ProtonConfig.Builder builder) {
+        ProtonConfig.Distribution.Builder distBuilder = new ProtonConfig.Distribution.Builder();
+        distBuilder.redundancy(finalRedundancy/explicitGroups);
+        distBuilder.searchablecopies(readyCopies/(explicitGroups*implicitGroups));
+        builder.distribution(distBuilder);
     }
 }

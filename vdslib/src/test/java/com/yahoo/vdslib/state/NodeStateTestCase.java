@@ -165,6 +165,12 @@ public class NodeStateTestCase extends junit.framework.TestCase {
             assertFalse(ns2.similarTo(ns3));
             assertTrue(ns3.similarTo(ns4));
 
+            assertTrue(ns1.similarToIgnoringInitProgress(ns2));
+            assertTrue(ns1.similarToIgnoringInitProgress(ns3));
+            assertTrue(ns3.similarToIgnoringInitProgress(ns1));
+            assertTrue(ns1.similarToIgnoringInitProgress(ns4));
+            assertTrue(ns2.similarToIgnoringInitProgress(ns4));
+
             assertFalse(ns1.equals(ns2));
             assertFalse(ns2.equals(ns3));
             assertFalse(ns3.equals(ns4));
@@ -176,6 +182,7 @@ public class NodeStateTestCase extends junit.framework.TestCase {
             NodeState ns1 = new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(16);
             NodeState ns2 = new NodeState(NodeType.STORAGE, State.UP).setMinUsedBits(18);
             assertTrue(ns1.similarTo(ns2));
+            assertTrue(ns1.similarToIgnoringInitProgress(ns2));
             assertFalse(ns1.equals(ns2));
         }
         {
@@ -184,12 +191,14 @@ public class NodeStateTestCase extends junit.framework.TestCase {
             assertEquals(ns, ns2Disks);
             assertEquals(ns2Disks, ns);
             assertTrue(ns.similarTo(ns2Disks));
+            assertTrue(ns.similarToIgnoringInitProgress(ns2Disks));
             assertTrue(ns2Disks.similarTo(ns));
 
             ns2Disks.getDiskState(0).setState(State.DOWN);
             assertFalse(ns.equals(ns2Disks));
             assertFalse(ns2Disks.equals(ns));
             assertFalse(ns.similarTo(ns2Disks));
+            assertFalse(ns.similarToIgnoringInitProgress(ns2Disks));
             assertFalse(ns2Disks.similarTo(ns));
         }
     }

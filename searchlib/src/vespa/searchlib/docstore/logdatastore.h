@@ -206,7 +206,7 @@ private:
     void waitForUnblock();
 
     // Implements ISetLid API
-    void setLid(uint32_t lid, const LidInfo & lm) override;
+    void setLid(const LockGuard & guard, uint32_t lid, const LidInfo & lm) override;
 
     void compactWorst();
     void compactFile(FileId chunkId);

@@ -29,8 +29,14 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
-import com.yahoo.document.update.*;
+import com.yahoo.document.update.AddValueUpdate;
+import com.yahoo.document.update.ArithmeticValueUpdate;
 import com.yahoo.document.update.ArithmeticValueUpdate.Operator;
+import com.yahoo.document.update.AssignValueUpdate;
+import com.yahoo.document.update.ClearValueUpdate;
+import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.document.update.MapValueUpdate;
+import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.tensor.MapTensor;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
@@ -53,6 +59,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
@@ -60,7 +67,6 @@ import static org.junit.Assert.*;
  * Basic test of JSON streams to Vespa document instances.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @author vegard
  */
 public class JsonReaderTestCase {
     DocumentTypeManager types;
@@ -1009,15 +1015,6 @@ public class JsonReaderTestCase {
 
     static ByteArrayInputStream jsonToInputStream(String json) {
         return new ByteArrayInputStream(Utf8.toBytes(json));
-    }
-
-    /**
-     * Convenience method to input JSON without escaping double quotes and newlines
-     * Each parameter represents a line of JSON encoded data
-     * The lines are joined with newline and single quotes are replaced with double quotes
-     */
-    static String inputJson(String... lines) {
-        return Joiner.on("\n").join(lines).replaceAll("'", "\"");
     }
 
     @Test

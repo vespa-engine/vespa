@@ -5,8 +5,6 @@
 #include <cstdlib>
 
 #include <boost/program_options.hpp>
-#include <boost/exception/diagnostic_information.hpp>
-#include <boost/scope_exit.hpp>
 
 #include <vespa/fastos/app.h>
 #include <vespa/config-zookeepers.h>
@@ -57,7 +55,29 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
         const std::shared_ptr<StateServerImpl> _stateServer;
 
     private:
-        std::thread _downloaderEventLoopThread;
+        class GuardedThread {
+        public:
+            GuardedThread(const GuardedThread &) = delete;
+            GuardedThread & operator = (const GuardedThread &) = delete;
+            GuardedThread(const std::shared_ptr<FileDownloader> & downloader) :
+                _downloader(downloader),
+                _thread([downloader=_downloader] () { downloader->runEventLoop(); })
+            { }
+            ~GuardedThread() {
+                _downloader->close();
+                if (_thread.joinable()) {
+                    _thread.join();
+                }
+                if ( !_downloader->drained() ) {
+                    LOG(error, "The filedownloader did not drain fully. We will just exit quickly and let a restart repair it for us.");
+                    std::quick_exit(67);
+                }
+            }
+        private:
+            std::shared_ptr<FileDownloader> _downloader;
+            std::thread                     _thread;
+        };
+        std::unique_ptr<GuardedThread> _downloaderEventLoopThread;
         config::ConfigFetcher _configFetcher;
 
         template <class T>
@@ -74,22 +94,16 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
                    const FiledistributorConfig& fileDistributorConfig,
                    const FiledistributorrpcConfig& rpcConfig)
             :_zk(track(new ZKFacade(zooKeepersConfig.zookeeperserverlist))),
-             _model(track(new FileDistributionModelImpl(
-                                     fileDistributorConfig.hostname,
-                                     fileDistributorConfig.torrentport,
-                                     _zk))),
+             _model(track(new FileDistributionModelImpl(fileDistributorConfig.hostname, fileDistributorConfig.torrentport, _zk))),
              _tracker(track(new FileDistributorTrackerImpl(_model))),
-             _downloader(track(new FileDownloader(_tracker,
-                                                  fileDistributorConfig.hostname,
-                                                  fileDistributorConfig.torrentport,
-                                                  boost::filesystem::path(fileDistributorConfig.filedbpath)))),
+             _downloader(track(new FileDownloader(_tracker, fileDistributorConfig.hostname, fileDistributorConfig.torrentport, Path(fileDistributorConfig.filedbpath)))),
              _manager(track(new FileDownloaderManager(_downloader, _model))),
              _rpcHandler(track(new FileDistributorRPC(rpcConfig.connectionspec, _manager))),
              _stateServer(track(new StateServerImpl(fileDistributorConfig.stateport))),
-             _downloaderEventLoopThread([downloader=_downloader] () { downloader->runEventLoop(); }),
+             _downloaderEventLoopThread(),
              _configFetcher(configUri.getContext())
-
         {
+            _downloaderEventLoopThread = std::make_unique<GuardedThread>(_downloader);
             _manager->start();
             _rpcHandler->start();
 
@@ -109,8 +123,7 @@ class FileDistributor : public config::IFetcherCallback<ZookeepersConfig>,
             //Do not waste time retrying zookeeper operations when going down.
             _zk->disableRetries();
 
-            _downloader->close();
-            _downloaderEventLoopThread.join();
+            _downloaderEventLoopThread.reset();
         }
 
     };
@@ -274,50 +287,29 @@ FileDistributorApplication::Main() {
         EV_STOPPING(programName, "Clean exit");
         return 0;
     } catch(const FileDoesNotExistException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 1;
     } catch(const ZKNodeDoesNotExistsException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 2;
     } catch(const ZKSessionExpired & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 3;
     } catch(const config::ConfigTimeoutException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 4;
-    } catch(const FailedListeningException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+    } catch(const vespalib::PortListenException & e) {
+        EV_STOPPING(programName, e.what());
         return 5;
+    } catch(const ZKConnectionLossException & e) {
+        EV_STOPPING(programName, e.what());
+        return 6;
+    } catch(const ZKFailedConnecting & e) {
+        EV_STOPPING(programName, e.what());
+        return 7;
     } catch(const ZKGenericException & e) {
-        std::string s = boost::diagnostic_information(e);
-        EV_STOPPING(programName, s.c_str());
+        EV_STOPPING(programName, e.what());
         return 99;
-    } catch(const boost::unknown_exception & e) {
-        std::string s = boost::diagnostic_information(e);
-        LOG(warning, "Caught '%s'", s.c_str());
-        EV_STOPPING(programName, s.c_str());
-        return 255;
-#if 0
-    /*
-     These are kept hanging around for reference as to how it was when we just held our ears
-     singing "na, na, na, na..." no matter if the sun was shining or if the world imploded.
-    */
-    } catch(const boost::exception& e) {
-        std::string s = boost::diagnostic_information(e);
-        LOG(error, "Caught '%s'", s.c_str());
-        EV_STOPPING(programName, s.c_str());
-        return -1;
-    } catch(const std::string& msg) {
-        std::string s = "Error: " + msg;
-        LOG(error, "Caught '%s'", s.c_str());
-        EV_STOPPING(programName, s.c_str());
-        return -1;
-#endif
     }
 }
 

@@ -121,10 +121,6 @@ public:
     void terminate()           { _next = npos; }
     bool valid()         const { return _next != invalid; }
     bool hasNext()       const { return valid() && (_next != npos); }
-    void swap(hash_node & rhs) {
-        std::swap(_next, rhs._next);
-        std::swap(_node, rhs._node);
-    }
 private:
     next_t  _next;
     V       _node;
@@ -136,7 +132,7 @@ class hashtable : public hashtable_base
 private:
     using Node=hash_node<Value>;
 protected:
-    typedef vespalib::Array<Node, vespalib::DefaultAlloc > NodeStore;
+    typedef vespalib::Array<Node> NodeStore;
     virtual void move(NodeStore && oldStore);
 public:
     class const_iterator;
@@ -304,7 +300,7 @@ private:
     next_t hash(const Key & key) const { return modulator(_hasher(key)); }
     template <typename MoveHandler>
     void move(MoveHandler & moveHandler, next_t from, next_t to) {
-        _nodes[to].swap(_nodes[from]);
+        _nodes[to] = std::move(_nodes[from]);
         moveHandler.move(from, to);
     }
     template <typename MoveHandler>

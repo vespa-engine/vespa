@@ -8,9 +8,9 @@
 #include <vespa/filedistribution/common/logfwd.h>
 
 using filedistribution::DeployedFilesToDownload;
+using filedistribution::Path;
 
 typedef std::vector<std::string> StringVector;
-typedef boost::filesystem::path Path;
 
 namespace filedistribution {
 
@@ -27,7 +27,7 @@ readApplicationId(filedistribution::ZKFacade & zk, const Path & deployNode)
 
 }
 
-const DeployedFilesToDownload::Path
+const Path
 DeployedFilesToDownload::addNewDeployNode(Path parentPath, const FileReferences& files) {
     Path path = parentPath / "deploy_";
 

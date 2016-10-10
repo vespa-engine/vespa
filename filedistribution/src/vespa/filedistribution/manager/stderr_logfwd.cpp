@@ -4,7 +4,6 @@
 
 #include <stdarg.h>
 #include <iostream>
-#include <boost/scoped_array.hpp>
 #include <stdio.h>
 
 
@@ -15,12 +14,13 @@ void filedistribution::logfwd::log_forward(LogLevel level, const char* file, int
         return;
 
     const size_t maxSize(0x8000);
-    boost::scoped_array<char> payload(new char[maxSize]);
+    std::vector<char> payload(maxSize);
+    char * buf = &payload[0];
 
     va_list args;
     va_start(args, fmt);
-    vsnprintf(payload.get(), maxSize, fmt, args);
+    vsnprintf(buf, maxSize, fmt, args);
     va_end(args);
 
-    std::cerr <<"Error: " <<payload.get() <<" File: " <<file <<" Line: " <<line <<std::endl;
+    std::cerr <<"Error: " << buf <<" File: " <<file <<" Line: " <<line <<std::endl;
 }

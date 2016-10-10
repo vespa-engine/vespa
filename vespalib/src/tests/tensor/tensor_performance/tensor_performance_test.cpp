@@ -3,12 +3,8 @@
 #include <vespa/vespalib/eval/function.h>
 #include <vespa/vespalib/eval/interpreted_function.h>
 #include <vespa/vespalib/eval/tensor_nodes.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2_builder.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor_builder.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/tensor_builder.h>
@@ -57,9 +53,21 @@ void inject_params(const Function &function, const Params &params,
     }
 }
 
+std::vector<ValueType> extract_param_types(const Function &function, const Params &params) {
+    std::vector<ValueType> result;
+    EXPECT_EQUAL(params.map.size(), function.num_params());
+    for (size_t i = 0; i < function.num_params(); ++i) {
+        auto param = params.map.find(function.param_name(i));
+        ASSERT_TRUE(param != params.map.end());
+        result.push_back(param->second->type());
+    }
+    return result;
+}
+
 double calculate_expression(const vespalib::string &expression, const Params &params) {
     const Function function = Function::parse(expression);
-    const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function);
+    const NodeTypes types(function, extract_param_types(function, params));
+    const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function, types);
     InterpretedFunction::Context context;
     inject_params(function, params, context);
     const Value &result = interpreted.eval(context);
@@ -72,7 +80,8 @@ const Value &dummy_ranking(InterpretedFunction::Context &) { return dummy_result
 
 double benchmark_expression_us(const vespalib::string &expression, const Params &params) {
     const Function function = Function::parse(expression);
-    const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function);
+    const NodeTypes types(function, extract_param_types(function, params));
+    const InterpretedFunction interpreted(tensor::DefaultTensorEngine::ref(), function, types);
     InterpretedFunction::Context context;
     inject_params(function, params, context);
     auto ranking = [&](){ interpreted.eval(context); };
@@ -86,7 +95,7 @@ tensor::Tensor::UP parse_tensor(const vespalib::string &tensor_str) {
     Function function = Function::parse(tensor_str);
     auto tensor = nodes::as<nodes::Tensor>(function.root());
     ASSERT_TRUE(tensor);
-    SimpleTensorBuilder builder;
+    SparseTensorBuilder builder;
     for (const auto &cell: tensor->cells()) {
         for (const auto &dimension: cell.first) {
             builder.add_label(builder.define_dimension(dimension.first), dimension.second);
@@ -117,8 +126,8 @@ TEST("SMOKETEST - require that model match benchmark expression produces expecte
 
 TEST("SMOKETEST - require that matrix product benchmark expression produces expected result") {
     Params params;
-    params.add("query",    parse_tensor("{{x:0}:1.0}"));
-    params.add("document", parse_tensor("{{x:1}:2.0}"));
+    params.add("query",    parse_tensor("{{x:0}:1.0,{x:1}:0.0}"));
+    params.add("document", parse_tensor("{{x:0}:0.0,{x:1}:2.0}"));
     params.add("model",    parse_tensor("{{x:0,y:0}:1.0,{x:0,y:1}:2.0,"
                                         " {x:1,y:0}:3.0,{x:1,y:1}:4.0}"));
     EXPECT_EQUAL(calculate_expression(matrix_product_expr, params), 17.0);
@@ -226,22 +235,18 @@ tensor::Tensor::UP make_tensor_impl(const std::vector<DimensionSpec> &dimensions
 
 //-----------------------------------------------------------------------------
 
-enum class BuilderType { DUMMY, SIMPLE, COMPACT, COMPACTV2, NUMBERDUMMY,
+enum class BuilderType { DUMMY, SPARSE, NUMBERDUMMY,
         DENSE };
 
 const BuilderType DUMMY = BuilderType::DUMMY;
-const BuilderType SIMPLE = BuilderType::SIMPLE;
-const BuilderType COMPACT = BuilderType::COMPACT;
-const BuilderType COMPACTV2 = BuilderType::COMPACTV2;
+const BuilderType SPARSE = BuilderType::SPARSE;
 const BuilderType NUMBERDUMMY = BuilderType::NUMBERDUMMY;
 const BuilderType DENSE = BuilderType::DENSE;
 
 const char *name(BuilderType type) {
     switch (type) {
     case BuilderType::DUMMY:   return "  dummy";
-    case BuilderType::SIMPLE:  return " simple";
-    case BuilderType::COMPACT: return "compact";
-    case BuilderType::COMPACTV2: return "compactv2";
+    case BuilderType::SPARSE: return "sparse";
     case BuilderType::NUMBERDUMMY: return "numberdummy";
     case BuilderType::DENSE: return "dense";
     }
@@ -253,14 +258,8 @@ tensor::Tensor::UP make_tensor(BuilderType type, const std::vector<DimensionSpec
     case BuilderType::DUMMY:
         return make_tensor_impl<DummyBuilder, TensorBuilder, StringBinding>
             (dimensions);
-    case BuilderType::SIMPLE:
-        return make_tensor_impl<SimpleTensorBuilder, TensorBuilder,
-            StringBinding>(dimensions);
-    case BuilderType::COMPACT:
-        return make_tensor_impl<CompactTensorBuilder, TensorBuilder,
-            StringBinding>(dimensions);
-    case BuilderType::COMPACTV2:
-        return make_tensor_impl<CompactTensorV2Builder, TensorBuilder,
+    case BuilderType::SPARSE:
+        return make_tensor_impl<SparseTensorBuilder, TensorBuilder,
             StringBinding>(dimensions);
     case BuilderType::NUMBERDUMMY:
         return make_tensor_impl<DummyDenseTensorBuilder,
@@ -289,7 +288,7 @@ double benchmark_build_us(BuilderType type, const std::vector<DimensionSpec> &sp
 
 TEST("benchmark create/destroy time for 1d tensors") {
     for (size_t size: {5, 10, 25, 50, 100, 250, 500}) {
-        for (auto type: {SIMPLE, COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {SPARSE, DENSE}) {
             double time_us = benchmark_build_us(type, {DimensionSpec("x", size)});
             fprintf(stderr, "-- 1d tensor create/destroy (%s) with size %zu: %g us\n", name(type), size, time_us);
         }
@@ -298,7 +297,7 @@ TEST("benchmark create/destroy time for 1d tensors") {
 
 TEST("benchmark create/destroy time for 2d tensors") {
     for (size_t size: {5, 10, 25, 50, 100}) {
-        for (auto type: {SIMPLE, COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {SPARSE, DENSE}) {
             double time_us = benchmark_build_us(type, {DimensionSpec("x", size), DimensionSpec("y", size)});
             fprintf(stderr, "-- 2d tensor create/destroy (%s) with size %zux%zu: %g us\n", name(type), size, size, time_us);
         }
@@ -309,7 +308,7 @@ TEST("benchmark create/destroy time for 2d tensors") {
 
 TEST("benchmark dot product using match") {
     for (size_t size: {10, 25, 50, 100, 250}) {
-        for (auto type: {SIMPLE, COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {SPARSE, DENSE}) {
             Params params;
             params.add("query",    make_tensor(type, {DimensionSpec("x", size)}));
             params.add("document", make_tensor(type, {DimensionSpec("x", size)}));
@@ -321,7 +320,7 @@ TEST("benchmark dot product using match") {
 
 TEST("benchmark dot product using multiply") {
     for (size_t size: {10, 25, 50, 100, 250}) {
-        for (auto type: {SIMPLE, COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {SPARSE, DENSE}) {
             Params params;
             params.add("query",    make_tensor(type, {DimensionSpec("x", size)}));
             params.add("document", make_tensor(type, {DimensionSpec("x", size)}));
@@ -335,7 +334,7 @@ TEST("benchmark model match") {
     for (size_t model_size: {25, 50, 100}) {
         for (size_t vector_size: {5, 10, 25, 50, 100}) {
             if (vector_size <= model_size) {
-                for (auto type: {SIMPLE, COMPACT, COMPACTV2}) {
+                for (auto type: {SPARSE}) {
                     Params params;
                     params.add("query",    make_tensor(type, {DimensionSpec("x", vector_size)}));
                     params.add("document", make_tensor(type, {DimensionSpec("y", vector_size)}));
@@ -351,14 +350,10 @@ TEST("benchmark model match") {
 TEST("benchmark matrix product") {
     for (size_t vector_size: {5, 10, 25, 50}) {
         size_t matrix_size = vector_size * 2;
-        for (auto type: {SIMPLE, COMPACT, COMPACTV2, DENSE}) {
+        for (auto type: {SPARSE, DENSE}) {
             Params params;
-            size_t document_size = vector_size;
-            if (type == DENSE) {
-                document_size = matrix_size;
-            }
-            params.add("query",    make_tensor(type, {DimensionSpec("x", vector_size, vector_size)}));
-            params.add("document", make_tensor(type, {DimensionSpec("x", document_size)}));
+            params.add("query",    make_tensor(type, {DimensionSpec("x", matrix_size)}));
+            params.add("document", make_tensor(type, {DimensionSpec("x", matrix_size)}));
             params.add("model",    make_tensor(type, {DimensionSpec("x", matrix_size), DimensionSpec("y", matrix_size)}));
             double time_us = benchmark_expression_us(matrix_product_expr, params);
             fprintf(stderr, "-- matrix product (%s) %zu + %zu vs %zux%zu: %g us\n", name(type), vector_size, vector_size, matrix_size, matrix_size, time_us);

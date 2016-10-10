@@ -27,7 +27,7 @@ struct BucketInstance : public vespalib::AsciiPrintable {
 };
 
 class BucketInstanceList : public vespalib::AsciiPrintable {
-    lib::SmallVector<BucketInstance> _instances;
+    std::vector<BucketInstance> _instances;
 
     /**
      * Resolve and return the least specific bucket in the subtree of (and
@@ -73,8 +73,8 @@ public:
 
     OperationTargetList createTargets();
 
-    void print(vespalib::asciistream& out, const PrintProperties& p) const {
-        _instances.print(out, p);
+    void print(vespalib::asciistream& out, const PrintProperties& p) const override {
+        vespalib::print(_instances, out, p);
     }
 };
 

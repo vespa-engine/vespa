@@ -3,60 +3,44 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <mutex>
-#include <boost/filesystem/path.hpp>
-#include <boost/signals2.hpp>
 
 #include <vespa/filedistribution/common/buffer.h>
 #include <vespa/filedistribution/common/exception.h>
+#include <vespa/vespalib/util/exception.h>
 
 struct _zhandle;
 typedef _zhandle zhandle_t;
 
 namespace filedistribution {
 
-namespace errorinfo {
-typedef boost::error_info<struct tag_Path, boost::filesystem::path> Path;
-}
-
-class ZKException : public Exception {
+class ZKException : public vespalib::Exception {
 protected:
-    ZKException() {}
+    using vespalib::Exception::Exception;
 };
 
-struct ZKNodeDoesNotExistsException : public ZKException {
-    const char* what() const throw() {
-        return "Zookeeper: The node does not exist(ZNONODE).";
-    }
-};
+VESPA_DEFINE_EXCEPTION(ZKNodeDoesNotExistsException, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKConnectionLossException, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKNodeExistsException, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKFailedConnecting, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKSessionExpired, ZKException);
 
-struct ZKNodeExistsException : public ZKException {
-    const char* what() const throw() {
-        return "Zookeeper: The node already exists(ZNODEEXISTS).";
-    }
-};
-
-struct ZKGenericException : public ZKException {
+class ZKGenericException : public ZKException {
+public:
+    ZKGenericException(int zkStatus, const vespalib::stringref &msg, const vespalib::stringref &location = "", int skipStack = 0) :
+        ZKException(msg, location, skipStack),
+        _zkStatus(zkStatus)
+    { }
+    ZKGenericException(int zkStatus, const vespalib::Exception &cause, const vespalib::stringref &msg = "",
+                        const vespalib::stringref &location = "", int skipStack = 0) :
+        ZKException(msg, cause, location, skipStack),
+        _zkStatus(zkStatus)
+    { }
+    VESPA_DEFINE_EXCEPTION_SPINE(ZKGenericException);
+private:
     const int _zkStatus;
-    ZKGenericException(int zkStatus)
-        :_zkStatus(zkStatus)
-    {}
-
-    const char* what() const throw();
 };
-
-struct ZKFailedConnecting : public ZKException {
-    const char* what() const throw() {
-        return "Zookeeper: Failed connecting to the zookeeper servers.";
-    }
-};
-
-class ZKSessionExpired : public ZKException {};
-
-const std::string
-diagnosticUserLevelMessage(const ZKException& zk);
-
-
 
 class ZKFacade : public std::enable_shared_from_this<ZKFacade> {
     volatile bool _retriesEnabled;
@@ -85,7 +69,6 @@ public:
     };
 
     typedef std::shared_ptr<NodeChangedWatcher> NodeChangedWatcherSP;
-    typedef boost::filesystem::path Path;
 
     ZKFacade(const ZKFacade &) = delete;
     ZKFacade & operator = (const ZKFacade &) = delete;
@@ -96,9 +79,9 @@ public:
     bool hasNode(const Path&, const NodeChangedWatcherSP&);
 
     const std::string getString(const Path&);
-    const Move<Buffer> getData(const Path&);  //throws ZKNodeDoesNotExistsException
+    Buffer getData(const Path&);  //throws ZKNodeDoesNotExistsException
     //if watcher is specified, it will be set even if the node does not exists
-    const Move<Buffer> getData(const Path&, const NodeChangedWatcherSP&);  //throws ZKNodeDoesNotExistsException
+    Buffer getData(const Path&, const NodeChangedWatcherSP&);  //throws ZKNodeDoesNotExistsException
 
     //Parent path must exist
     void setData(const Path&, const Buffer& buffer, bool mustExist = false);
@@ -122,6 +105,22 @@ public:
     }
 
 private:
+    class RegistrationGuard {
+    public:
+        RegistrationGuard & operator = (const RegistrationGuard &) = delete;
+        RegistrationGuard(const RegistrationGuard &) = delete;
+        RegistrationGuard(ZKFacade & zk, const NodeChangedWatcherSP & watcher) : _zk(zk), _watcherContext(_zk.registerWatcher(watcher)) { }
+        ~RegistrationGuard() {
+            if (_watcherContext) {
+                _zk.unregisterWatcher(_watcherContext);
+            }
+        }
+        void * get() { return _watcherContext; }
+        void release() { _watcherContext = nullptr; }
+    private:
+        ZKFacade & _zk;
+        void     * _watcherContext;
+    };
     void* registerWatcher(const NodeChangedWatcherSP &); //returns watcherContext
     std::shared_ptr<ZKWatcher> unregisterWatcher(void* watcherContext);
     void invokeWatcher(void* watcherContext);

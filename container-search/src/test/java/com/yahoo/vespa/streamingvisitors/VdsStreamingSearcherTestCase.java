@@ -175,7 +175,7 @@ public class VdsStreamingSearcherTestCase {
             for (int i=0; i<result.hits().size(); ++i) {
                 Hit hit = result.hits().get(i);
                 if (idPrefix != null) {
-                    assertEquals("VdsStreamingSearcher", hit.getSource());
+                    assertEquals("clusterName", hit.getSource());
                     assertEquals(idPrefix + i, hit.getId().toString());
                 } else {
                     assertNull(hit.getSource());

@@ -2,14 +2,19 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.net.HostName;
+import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
+import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.node.admin.maintenance.MaintenanceScheduler;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -21,10 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Administers a host (for now only docker hosts) and its nodes (docker containers nodes).
@@ -33,38 +43,79 @@ import java.util.stream.Stream;
  */
 public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
+    private final ScheduledExecutorService metricsFetcherScheduler = Executors.newScheduledThreadPool(1);
 
     private static final long MIN_AGE_IMAGE_GC_MILLIS = Duration.ofMinutes(15).toMillis();
 
     private final Docker docker;
-    private final Function<HostName, NodeAgent> nodeAgentFactory;
-    private final MaintenanceScheduler maintenanceScheduler;
+    private final Function<String, NodeAgent> nodeAgentFactory;
+    private final StorageMaintainer storageMaintainer;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
-    private final Map<HostName, NodeAgent> nodeAgents = new HashMap<>();
+    private final Map<String, NodeAgent> nodeAgents = new HashMap<>();
 
     private Map<DockerImage, Long> firstTimeEligibleForGC = Collections.emptyMap();
 
     private final int nodeAgentScanIntervalMillis;
 
+    private GaugeWrapper numberOfContainersInActiveState;
+    private GaugeWrapper numberOfContainersInLoadImageState;
+    private CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
+
     /**
      * @param docker interface to docker daemon and docker-related tasks
      * @param nodeAgentFactory factory for {@link NodeAgent} objects
      */
-    public NodeAdminImpl(final Docker docker, final Function<HostName, NodeAgent> nodeAgentFactory,
-                         final MaintenanceScheduler maintenanceScheduler, int nodeAgentScanIntervalMillis) {
+    public NodeAdminImpl(final Docker docker, final Function<String, NodeAgent> nodeAgentFactory,
+                         final StorageMaintainer storageMaintainer, int nodeAgentScanIntervalMillis,
+                         final MetricReceiverWrapper metricReceiver) {
         this.docker = docker;
         this.nodeAgentFactory = nodeAgentFactory;
-        this.maintenanceScheduler = maintenanceScheduler;
+        this.storageMaintainer = storageMaintainer;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
+
+        Dimensions dimensions = new Dimensions.Builder()
+                .add("host", HostName.getLocalhost())
+                .add("role", "docker").build();
+
+        this.numberOfContainersInActiveState = metricReceiver.declareGauge(dimensions, "nodes.state.active");
+        this.numberOfContainersInLoadImageState = metricReceiver.declareGauge(dimensions, "nodes.image.loading");
+        this.numberOfUnhandledExceptionsInNodeAgent = metricReceiver.declareCounter(dimensions, "nodes.unhandled_exceptions");
+
+        metricsFetcherScheduler.scheduleWithFixedDelay(() -> {
+            try {
+                nodeAgents.values().forEach(NodeAgent::updateContainerNodeMetrics);
+            } catch (Throwable e) {
+                logger.warning("Metric fetcher scheduler failed", e);
+            }
+        }, 0, 30000, MILLISECONDS);
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = docker.getAllManagedContainers();
 
-        maintenanceScheduler.cleanNodeAdmin();
+        storageMaintainer.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
         garbageCollectDockerImages(containersToRun);
+
+        updateNodeAgentMetrics();
+    }
+
+    private void updateNodeAgentMetrics() {
+        int numberContainersInActive = 0;
+        int numberContainersWaitingImage = 0;
+        int numberOfNewUnhandledExceptions = 0;
+
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            Optional<ContainerNodeSpec> nodeSpec = nodeAgent.getContainerNodeSpec();
+            if (nodeSpec.isPresent() && nodeSpec.get().nodeState == Node.State.active) numberContainersInActive++;
+            if (nodeAgent.isDownloadingImage()) numberContainersWaitingImage++;
+            numberOfNewUnhandledExceptions += nodeAgent.getAndResetNumberOfUnhandledExceptions();
+        }
+
+        numberOfContainersInActiveState.sample(numberContainersInActive);
+        numberOfContainersInLoadImageState.sample(numberContainersWaitingImage);
+        numberOfUnhandledExceptionsInNodeAgent.add(numberOfNewUnhandledExceptions);
     }
 
     public boolean freezeNodeAgentsAndCheckIfAllFrozen() {
@@ -95,7 +146,7 @@ public class NodeAdminImpl implements NodeAdmin {
         this.frozen.set(frozen);
     }
 
-    public Set<HostName> getListOfHosts() {
+    public Set<String> getListOfHosts() {
         return nodeAgents.keySet();
     }
 
@@ -112,6 +163,15 @@ public class NodeAdminImpl implements NodeAdmin {
 
     @Override
     public void shutdown() {
+        metricsFetcherScheduler.shutdown();
+        try {
+            if (! metricsFetcherScheduler.awaitTermination(30, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Did not manage to shutdown node-agent metrics update metricsFetcherScheduler.");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             nodeAgent.stop();
         }
@@ -165,10 +225,10 @@ public class NodeAdminImpl implements NodeAdmin {
                 containersToRun.stream(), nodeSpec -> nodeSpec.hostname,
                 existingContainers.stream(), container -> container.hostname);
 
-        final Set<HostName> nodeHostNames = containersToRun.stream()
+        final Set<String> nodeHostNames = containersToRun.stream()
                 .map(spec -> spec.hostname)
                 .collect(Collectors.toSet());
-        final Set<HostName> obsoleteAgentHostNames = diff(nodeAgents.keySet(), nodeHostNames);
+        final Set<String> obsoleteAgentHostNames = diff(nodeAgents.keySet(), nodeHostNames);
         obsoleteAgentHostNames.forEach(hostName -> nodeAgents.remove(hostName).stop());
 
         nodeSpecContainerPairs.forEach(nodeSpecContainerPair -> {

@@ -1,12 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor.h>
-#include <vespa/vespalib/tensor/simple/simple_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2.h>
-#include <vespa/vespalib/tensor/compact/compact_tensor_v2_builder.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor.h>
+#include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/tensor_function.h>
@@ -124,6 +120,10 @@ struct Fixture
     void assertAdd(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
         assertAddImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
+    void assertAdd(const TensorCells &exp, const TensorDimensions &expDimensions,
+                   const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertAddImpl(*createTensor(exp, expDimensions), *createTensor(lhs), *createTensor(rhs), check_types);
+    }
     void assertSubtractImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::subtract(function::input(lhs.getType(), input.add(lhs)),
@@ -132,6 +132,9 @@ struct Fixture
     }
     void assertSubtract(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
         assertSubtractImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
+    }
+    void assertSubtract(const TensorCells &exp, const TensorDimensions &expDimensions, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertSubtractImpl(*createTensor(exp, expDimensions), *createTensor(lhs), *createTensor(rhs), check_types);
     }
     void assertMinImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
@@ -142,6 +145,9 @@ struct Fixture
     void assertMin(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
         assertMinImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
     }
+    void assertMin(const TensorCells &exp, const TensorDimensions &expDimensions, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertMinImpl(*createTensor(exp, expDimensions), *createTensor(lhs), *createTensor(rhs), check_types);
+    }
     void assertMaxImpl(const Tensor &exp, const Tensor &lhs, const Tensor &rhs, bool check_types) {
         MyInput input;
         function::Node_UP ir = function::max(function::input(lhs.getType(), input.add(lhs)),
@@ -150,6 +156,9 @@ struct Fixture
     }
     void assertMax(const TensorCells &exp, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
         assertMaxImpl(*createTensor(exp), *createTensor(lhs), *createTensor(rhs), check_types);
+    }
+    void assertMax(const TensorCells &exp, const TensorDimensions &expDimensions, const TensorCells &lhs, const TensorCells &rhs, bool check_types = true) {
+        assertMaxImpl(*createTensor(exp, expDimensions), *createTensor(lhs), *createTensor(rhs), check_types);
     }
     void assertSumImpl(double exp, const Tensor &tensor) {
         MyInput input;
@@ -221,9 +230,7 @@ struct Fixture
     }
 };
 
-using SimpleFixture = Fixture<SimpleTensorBuilder>;
-using CompactFixture = Fixture<CompactTensorBuilder>;
-using CompactV2Fixture = Fixture<CompactTensorV2Builder>;
+using SparseFixture = Fixture<SparseTensorBuilder>;
 
 
 template <typename FixtureType>
@@ -258,42 +265,42 @@ void
 testTensorAdd(FixtureType &f)
 {
     f.assertAdd({},{},{}, false);
-    f.assertAdd({ {{{"x","1"}}, 3}, {{{"x","2"}}, 5} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","2"}}, 5} });
-    f.assertAdd({ {{{"x","1"}}, 8} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, 5} });
-    f.assertAdd({ {{{"x","1"}}, -2} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, -5} });
-    f.assertAdd({ {{{"x","1"}}, 0} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, -3} });
-    f.assertAdd({ {{{"x","1"}}, 3}, {{{"y","2"}}, 12}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} });
-    f.assertAdd({ {{{"x","1"}}, 3}, {{{"y","2"}}, 12}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} });
-    f.assertAdd({ {{{"y","2"}}, 12}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} });
-    f.assertAdd({ {{{"y","2"}}, 12}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 5} });
-    f.assertAdd({ {{{"x","1"}}, 3}, {{{"y","2"}}, 12} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7} });
-    f.assertAdd({ {{{"x","1"}}, 3}, {{{"y","2"}}, 12} },
-                { {{{"y","2"}}, 7} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} });
-    f.assertAdd({ {{{"x","1"}}, 3}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3} },
-                { {{{"z","3"}}, 11} });
-    f.assertAdd({ {{{"x","1"}}, 3}, {{{"z","3"}}, 11} },
-                { {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3} });
+    TEST_DO(f.assertAdd({}, { "x" },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","2"}}, 5} }));
+    TEST_DO(f.assertAdd({ {{{"x","1"}}, 8} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, 5} }));
+    TEST_DO(f.assertAdd({ {{{"x","1"}}, -2} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, -5} }));
+    TEST_DO(f.assertAdd({ {{{"x","1"}}, 0} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, -3} }));
+    TEST_DO(f.assertAdd({ {{{"x","1"},{"z","3"}}, 14}, {{{"y","2"}}, 12} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertAdd({ {{{"x","1"},{"z","3"}}, 14}, {{{"y","2"}}, 12} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertAdd({ {{{"y","2"}}, 12} }, { "y", "z" },
+                        { {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertAdd({ {{{"y","2"}}, 12} }, { "y", "z" },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
+                        { {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertAdd({ {{{"y","2"}}, 12} }, { "x", "y" },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7} }));
+    TEST_DO(f.assertAdd({ {{{"y","2"}}, 12} }, { "x", "y" },
+                        { {{{"y","2"}}, 7} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertAdd({ {{{"x","1"},{"z","3"}}, 14} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertAdd({ {{{"x","1"},{"z","3"}}, 14} },
+                        { {{{"z","3"}}, 11} },
+                        { {{{"x","1"}}, 3} }));
 }
 
 template <typename FixtureType>
@@ -301,42 +308,42 @@ void
 testTensorSubtract(FixtureType &f)
 {
     f.assertSubtract({},{},{}, false);
-    f.assertSubtract({ {{{"x","1"}}, 3}, {{{"x","2"}}, -5} },
-                     { {{{"x","1"}}, 3} },
-                     { {{{"x","2"}}, 5} });
-    f.assertSubtract({ {{{"x","1"}}, -2} },
-                     { {{{"x","1"}}, 3} },
-                     { {{{"x","1"}}, 5} });
-    f.assertSubtract({ {{{"x","1"}}, 8} },
-                     { {{{"x","1"}}, 3} },
-                     { {{{"x","1"}}, -5} });
-    f.assertSubtract({ {{{"x","1"}}, 0} },
-                     { {{{"x","1"}}, 3} },
-                     { {{{"x","1"}}, 3} });
-    f.assertSubtract({ {{{"x","1"}}, 3}, {{{"y","2"}},-2}, {{{"z","3"}},-11} },
-                     { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                     { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} });
-    f.assertSubtract({ {{{"x","1"}},-3}, {{{"y","2"}}, 2}, {{{"z","3"}}, 11} },
-                     { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                     { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} });
-    f.assertSubtract({ {{{"y","2"}},-2}, {{{"z","3"}},-11} },
-                     { {{{"y","2"}}, 5} },
-                     { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} });
-    f.assertSubtract({ {{{"y","2"}}, 2}, {{{"z","3"}}, 11} },
-                     { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                     { {{{"y","2"}}, 5} });
-    f.assertSubtract({ {{{"x","1"}}, 3}, {{{"y","2"}},-2} },
-                     { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                     { {{{"y","2"}}, 7} });
-    f.assertSubtract({ {{{"x","1"}},-3}, {{{"y","2"}}, 2} },
-                     { {{{"y","2"}}, 7} },
-                     { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} });
-    f.assertSubtract({ {{{"x","1"}}, 3}, {{{"z","3"}},-11} },
-                     { {{{"x","1"}}, 3} },
-                     { {{{"z","3"}}, 11} });
-    f.assertSubtract({ {{{"x","1"}},-3}, {{{"z","3"}}, 11} },
-                     { {{{"z","3"}}, 11} },
-                     { {{{"x","1"}}, 3} });
+    TEST_DO(f.assertSubtract({}, { "x" },
+                             { {{{"x","1"}}, 3} },
+                             { {{{"x","2"}}, 5} }));
+    TEST_DO(f.assertSubtract({ {{{"x","1"}}, -2} },
+                             { {{{"x","1"}}, 3} },
+                             { {{{"x","1"}}, 5} }));
+    TEST_DO(f.assertSubtract({ {{{"x","1"}}, 8} },
+                             { {{{"x","1"}}, 3} },
+                             { {{{"x","1"}}, -5} }));
+    TEST_DO(f.assertSubtract({ {{{"x","1"}}, 0} },
+                             { {{{"x","1"}}, 3} },
+                             { {{{"x","1"}}, 3} }));
+    TEST_DO(f.assertSubtract({ {{{"x","1"},{"z","3"}}, -8}, {{{"y","2"}},-2} },
+                             { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
+                             { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertSubtract({ {{{"x","1"},{"z","3"}}, 8}, {{{"y","2"}}, 2} },
+                             { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
+                             { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertSubtract({ {{{"y","2"}},-2} }, { "y", "z" },
+                             { {{{"y","2"}}, 5} },
+                             { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertSubtract({ {{{"y","2"}}, 2} }, { "y", "z" },
+                             { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
+                             { {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertSubtract({ {{{"y","2"}},-2} }, { "x", "y" },
+                             { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
+                             { {{{"y","2"}}, 7} }));
+    TEST_DO(f.assertSubtract({ {{{"y","2"}}, 2} }, { "x", "y" },
+                             { {{{"y","2"}}, 7} },
+                             { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertSubtract({ {{{"x","1"},{"z","3"}}, -8} },
+                             { {{{"x","1"}}, 3} },
+                             { {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertSubtract({ {{{"x","1"},{"z","3"}}, 8} },
+                             { {{{"z","3"}}, 11} },
+                             { {{{"x","1"}}, 3} }));
 }
 
 template <typename FixtureType>
@@ -344,42 +351,42 @@ void
 testTensorMin(FixtureType &f)
 {
     f.assertMin({},{},{}, false);
-    f.assertMin({ {{{"x","1"}}, 3}, {{{"x","2"}}, 5} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","2"}}, 5} });
-    f.assertMin({ {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, 5} });
-    f.assertMin({ {{{"x","1"}}, -5} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, -5} });
-    f.assertMin({ {{{"x","1"}}, 3}, {{{"x","2"}}, 0} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","2"}}, 0} });
-    f.assertMin({ {{{"x","1"}}, 3}, {{{"y","2"}}, 5}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} });
-    f.assertMin({ {{{"x","1"}}, 3}, {{{"y","2"}}, 5}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} });
-    f.assertMin({ {{{"y","2"}}, 5}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} });
-    f.assertMin({ {{{"y","2"}}, 5}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 5} });
-    f.assertMin({ {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7} });
-    f.assertMin({ {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} });
-    f.assertMin({ {{{"x","1"}}, 3}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3} },
-                { {{{"z","3"}}, 11} });
-    f.assertMin({ {{{"x","1"}}, 3}, {{{"z","3"}}, 11} },
-                { {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3} });
+    TEST_DO(f.assertMin({}, { "x" },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","2"}}, 5} }));
+    TEST_DO(f.assertMin({ {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, 5} }));
+    TEST_DO(f.assertMin({ {{{"x","1"}}, -5} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, -5} }));
+    TEST_DO(f.assertMin({}, { "x" },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","2"}}, 0} }));
+    TEST_DO(f.assertMin({ {{{"x","1"},{"z","3"}}, 3}, {{{"y","2"}}, 5} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertMin({ {{{"x","1"},{"z","3"}}, 3}, {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertMin({ {{{"y","2"}}, 5} }, { "y", "z" },
+                        { {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertMin({ {{{"y","2"}}, 5} }, { "y", "z" },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
+                        { {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertMin({ {{{"y","2"}}, 5} }, { "x", "y" },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7} }));
+    TEST_DO(f.assertMin({ {{{"y","2"}}, 5} }, { "x", "y" },
+                        { {{{"y","2"}}, 7} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertMin({ {{{"x","1"},{"z","3"}}, 3} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertMin({ {{{"x","1"},{"z","3"}}, 3} },
+                        { {{{"z","3"}}, 11} },
+                        { {{{"x","1"}}, 3} }));
 }
 
 template <typename FixtureType>
@@ -387,45 +394,45 @@ void
 testTensorMax(FixtureType &f)
 {
     f.assertMax({},{},{}, false);
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"x","2"}}, 5} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","2"}}, 5} });
-    f.assertMax({ {{{"x","1"}}, 5} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, 5} });
-    f.assertMax({ {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","1"}}, -5} });
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"x","2"}}, 0} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","2"}}, 0} });
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"x","2"}}, -5} },
-                { {{{"x","1"}}, 3} },
-                { {{{"x","2"}}, -5} });
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} });
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} });
-    f.assertMax({ {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} });
-    f.assertMax({ {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
-                { {{{"y","2"}}, 5} });
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"y","2"}}, 7} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
-                { {{{"y","2"}}, 7} });
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"y","2"}}, 7} },
-                { {{{"y","2"}}, 7} },
-                { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} });
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3} },
-                { {{{"z","3"}}, 11} });
-    f.assertMax({ {{{"x","1"}}, 3}, {{{"z","3"}}, 11} },
-                { {{{"z","3"}}, 11} },
-                { {{{"x","1"}}, 3} });
+    TEST_DO(f.assertMax({}, { "x" },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","2"}}, 5} }));
+    TEST_DO(f.assertMax({ {{{"x","1"}}, 5} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, 5} }));
+    TEST_DO(f.assertMax({ {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","1"}}, -5} }));
+    TEST_DO(f.assertMax({}, { "x" },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","2"}}, 0} }));
+    TEST_DO(f.assertMax({}, { "x" },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"x","2"}}, -5} }));
+    TEST_DO(f.assertMax({ {{{"x","1"},{"z","3"}}, 11}, {{{"y","2"}}, 7} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertMax({ {{{"x","1"},{"z","3"}}, 11}, {{{"y","2"}}, 7} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertMax({ {{{"y","2"}}, 7} }, { "y", "z" },
+                        { {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertMax({ {{{"y","2"}}, 7} }, { "y", "z" },
+                        { {{{"y","2"}}, 7}, {{{"z","3"}}, 11} },
+                        { {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertMax({ {{{"y","2"}}, 7} }, { "x", "y" },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} },
+                        { {{{"y","2"}}, 7} }));
+    TEST_DO(f.assertMax({ {{{"y","2"}}, 7} }, { "x", "y" },
+                        { {{{"y","2"}}, 7} },
+                        { {{{"x","1"}}, 3}, {{{"y","2"}}, 5} }));
+    TEST_DO(f.assertMax({ {{{"x","1"},{"z","3"}}, 11} },
+                        { {{{"x","1"}}, 3} },
+                        { {{{"z","3"}}, 11} }));
+    TEST_DO(f.assertMax({ {{{"x","1"},{"z","3"}}, 11} },
+                        { {{{"z","3"}}, 11} },
+                        { {{{"x","1"}}, 3} }));
 }
 
 template <typename FixtureType>
@@ -616,17 +623,7 @@ testAllTensorOperations(FixtureType &f)
     TEST_DO(testTensorSumDimension(f));
 }
 
-TEST_F("test tensor operations for SimpleTensor", SimpleFixture)
-{
-    testAllTensorOperations(f);
-}
-
-TEST_F("test tensor operations for CompactTensor", CompactFixture)
-{
-    testAllTensorOperations(f);
-}
-
-TEST_F("test tensor operations for CompactTensorV2", CompactV2Fixture)
+TEST_F("test tensor operations for SparseTensor", SparseFixture)
 {
     testAllTensorOperations(f);
 }

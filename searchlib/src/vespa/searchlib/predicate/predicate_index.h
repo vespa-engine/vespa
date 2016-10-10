@@ -82,10 +82,10 @@ public:
     // The observer can be used to gain some insight into what has been added to the index..
     PredicateIndex(GenerationHandler &generation_handler, GenerationHolder &genHolder,
                    const DocIdLimitProvider &limit_provider,
-                   const SimpleIndexConfig &simple_index_config, vespalib::MMapDataBuffer &buffer,
+                   const SimpleIndexConfig &simple_index_config, vespalib::DataBuffer &buffer,
                    SimpleIndexDeserializeObserver<> & observer, uint32_t version);
 
-    void serialize(vespalib::MMapDataBuffer &buffer) const;
+    void serialize(vespalib::DataBuffer &buffer) const;
     void onDeserializationCompleted();
 
     void indexEmptyDocument(uint32_t doc_id);

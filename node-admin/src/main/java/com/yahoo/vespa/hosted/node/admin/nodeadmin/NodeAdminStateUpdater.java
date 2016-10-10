@@ -2,12 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -89,6 +88,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 } catch (IOException e) {
                     return Optional.of("Failed to get nodes from node repo:" + e.getMessage());
                 }
+                // Avoids media type issues (HTTP ERROR: 415 Unsupported Media Type), probably related to having empty node list.
+                if (nodesInActiveState.size() == 0) return Optional.empty();
                 return orchestrator.suspend(dockerHostHostName, nodesInActiveState);
             } else {
                 nodeAdmin.unfreezeNodeAgents();
@@ -143,9 +144,8 @@ public class NodeAdminStateUpdater extends AbstractComponent {
     private List<String> getNodesInActiveState() throws IOException {
         return nodeRepository.getContainersToRun()
                              .stream()
-                             .filter(nodespec -> nodespec.nodeState == NodeState.ACTIVE)
+                             .filter(nodespec -> nodespec.nodeState == Node.State.active)
                              .map(nodespec -> nodespec.hostname)
-                             .map(HostName::toString)
                              .collect(Collectors.toList());
     }
 }

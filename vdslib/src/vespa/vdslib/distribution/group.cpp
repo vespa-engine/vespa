@@ -5,7 +5,6 @@
 
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <boost/lexical_cast.hpp>
 #include <algorithm>
 
 namespace storage {

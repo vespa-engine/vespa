@@ -2,8 +2,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("doctypebuilder_test");
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/index/doctypebuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>

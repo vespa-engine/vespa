@@ -6,9 +6,11 @@
 #include "tensor_address.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/eval/tensor.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
 #include <vespa/vespalib/eval/value_type.h>
 
 namespace vespalib {
+namespace eval { class BinaryOperation; }
 namespace tensor {
 
 class TensorVisitor;
@@ -37,10 +39,16 @@ struct Tensor : public eval::Tensor
     virtual Tensor::UP match(const Tensor &arg) const = 0;
     virtual Tensor::UP apply(const CellFunction &func) const = 0;
     virtual Tensor::UP sum(const vespalib::string &dimension) const = 0;
+    virtual Tensor::UP apply(const eval::BinaryOperation &op,
+                             const Tensor &arg) const = 0;
+    virtual Tensor::UP reduce(const eval::BinaryOperation &op,
+                              const std::vector<vespalib::string> &dimensions)
+        const = 0;
     virtual bool equals(const Tensor &arg) const = 0;
     virtual void print(std::ostream &out) const = 0;
     virtual vespalib::string toString() const = 0;
     virtual Tensor::UP clone() const = 0;
+    virtual eval::TensorSpec toSpec() const = 0;
     virtual void accept(TensorVisitor &visitor) const = 0;
 };
 

@@ -21,6 +21,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.SearchDefinition;
 import org.json.JSONException;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -201,6 +202,28 @@ public class ApplicationDeployTest {
         File sd = new File(sdDir, "testfoo.sd");
         IOUtils.writeFile(sd, "search testfoo { document testfoo { field bar type string { } } }", false);
         assertThat(getSearchDefinitions(app).size(), is(6));
+    }
+
+    @Test
+    public void testThatAppWithDeploymentXmlIsValid() throws IOException {
+        File tmpDir = Files.createTempDir();
+        IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
+        createAppPkg(tmpDir.getAbsolutePath());
+    }
+
+    @Ignore // TODO: Enable when code in ApplicationPackageXmlFilesValidator does validation of deployment.xml
+    @Test(expected = IllegalArgumentException.class)
+    public void testThatAppWithIllegalDeploymentXmlIsNotValid() throws IOException {
+        File tmpDir = Files.createTempDir();
+        IOUtils.copyDirectory(new File(TESTDIR, "app_invalid_deployment_xml"), tmpDir);
+        createAppPkg(tmpDir.getAbsolutePath());
+    }
+
+    @Test
+    public void testThatAppWithIllegalEmptyProdRegion() throws IOException {
+        File tmpDir = Files.createTempDir();
+        IOUtils.copyDirectory(new File(TESTDIR, "empty_prod_region_in_deployment_xml"), tmpDir);
+        createAppPkg(tmpDir.getAbsolutePath());
     }
 
     private List<SearchDefinition> getSearchDefinitions(FilesApplicationPackage app) {

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.persistence;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -30,7 +31,7 @@ public class CuratorDatabaseClientTest {
 
         List<Node> allocatedNodes = zkClient.getNodes(Node.State.ready);
         assertEquals(1, allocatedNodes.size());
-        assertEquals(Node.Type.host, allocatedNodes.get(0).type());
+        assertEquals(NodeType.host, allocatedNodes.get(0).type());
     }
 
     /** Test that locks can be acquired and released */

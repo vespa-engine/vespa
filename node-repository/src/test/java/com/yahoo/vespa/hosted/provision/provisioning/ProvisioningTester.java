@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -71,6 +72,20 @@ public class ProvisioningTester implements AutoCloseable {
         }
     }
 
+    public ProvisioningTester(Zone zone, NodeRepositoryConfig config) {
+        try {
+            nodeFlavors = new NodeFlavors(config);
+            clock = new ManualClock();
+            nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+            provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
+            capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
+            provisionLogger = new NullProvisionLogger();
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private NodeRepositoryConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
@@ -78,7 +93,7 @@ public class ProvisioningTester implements AutoCloseable {
         b.addFlavor("docker1", 1., 1., 10, Flavor.Type.DOCKER_CONTAINER).cost(1);
         b.addFlavor("v-4-8-100", 4., 8., 100, Flavor.Type.VIRTUAL_MACHINE).cost(4);
         b.addFlavor("old-large1", 2., 4., 100, Flavor.Type.BARE_METAL).cost(6);
-        b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(8);
+        b.addFlavor("old-large2", 2., 5., 100, Flavor.Type.BARE_METAL).cost(14);
         NodeRepositoryConfig.Flavor.Builder large = b.addFlavor("large", 4., 8., 100, Flavor.Type.BARE_METAL).cost(10);
         b.addReplaces("old-large1", large);
         b.addReplaces("old-large2", large);
@@ -113,6 +128,7 @@ public class ProvisioningTester implements AutoCloseable {
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return new NodeList(nodeRepository.getNodes(id, inState)); }
+    public NodeFlavors flavors() { return nodeFlavors; }
 
     public void patchNode(Node node) { nodeRepository.write(node); }
 
@@ -120,7 +136,6 @@ public class ProvisioningTester implements AutoCloseable {
         return prepare(application, cluster, Capacity.fromNodeCount(nodeCount, Optional.ofNullable(flavor)), groups);
     }
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity, int groups) {
-        if (capacity.nodeCount() == 0) return Collections.emptyList();
         Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
         Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));
         // prepare twice to ensure idempotence
@@ -166,7 +181,7 @@ public class ProvisioningTester implements AutoCloseable {
     public void fail(HostSpec host) {
         int beforeFailCount = nodeRepository.getNode(host.hostname(), Node.State.active).get().status().failCount();
         Node failedNode = nodeRepository.fail(host.hostname());
-        assertTrue(nodeRepository.getNodes(Node.Type.tenant, Node.State.failed).contains(failedNode));
+        assertTrue(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).contains(failedNode));
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
     }
 
@@ -200,13 +215,17 @@ public class ProvisioningTester implements AutoCloseable {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor) {
+        return makeReadyNodes(n, flavor, NodeType.tenant);
+    }
+
+    public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
         List<Node> nodes = new ArrayList<>(n);
         for (int i = 0; i < n; i++)
             nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(),
                                                 UUID.randomUUID().toString(),
                                                 Optional.empty(),
-                                                nodeFlavors.getFlavorOrThrow(flavor), 
-                                                Node.Type.tenant));
+                                                nodeFlavors.getFlavorOrThrow(flavor),
+                                                type));
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);
         return nodes;
@@ -223,7 +242,7 @@ public class ProvisioningTester implements AutoCloseable {
         for (int i = 0; i < n; i++) {
             final String hostname = UUID.randomUUID().toString();
             nodes.add(nodeRepository.createNode("openstack-id", hostname, parentHostId,
-                      nodeFlavors.getFlavorOrThrow(flavor), Node.Type.tenant));
+                                                nodeFlavors.getFlavorOrThrow(flavor), NodeType.tenant));
         }
         nodes = nodeRepository.addNodes(nodes);
         nodeRepository.setReady(nodes);

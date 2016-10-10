@@ -191,7 +191,7 @@ struct FunctionInfo {
     size_t get_path_len(const TreeList &trees) const {
         size_t path = 0;
         for (const Node *tree: trees) {
-            InterpretedFunction ifun(DefaultTensorEngine::ref(), *tree, params.size());
+            InterpretedFunction ifun(DefaultTensorEngine::ref(), *tree, params.size(), NodeTypes());
             InterpretedFunction::Context ctx;
             for (double param: params) {
                 ctx.add_param(param);

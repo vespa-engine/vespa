@@ -35,7 +35,9 @@ import java.util.Set;
  *
  * @author gjoranv
  */
+// TODO: mockRoot instances can probably be replaced by VespaModel.createIncomplete
 public class MockRoot extends AbstractConfigProducerRoot {
+
     private static final long serialVersionUID = 1L;
     public static final String MOCKHOST = "mockhost";
 

@@ -112,17 +112,27 @@ public class NodeState implements Cloneable {
      * Cluster state will check for that.
      */
     public boolean similarTo(Object o) {
-        if (!(o instanceof NodeState)) { return false; }
-        NodeState other = (NodeState) o;
+        if (!(o instanceof NodeState)) {
+            return false;
+        }
+        return similarToImpl((NodeState)o, true);
+    }
 
+    public boolean similarToIgnoringInitProgress(final NodeState other) {
+        return similarToImpl(other, false);
+    }
+
+    private boolean similarToImpl(final NodeState other, boolean considerInitProgress) {
         if (state != other.state) return false;
         if (Math.abs(capacity - other.capacity) > 0.0000000001) return false;
         if (Math.abs(reliability - other.reliability) > 0.0000000001) return false;
         if (startTimestamp != other.startTimestamp) return false;
 
         // Init progress on different sides of the init progress limit boundary is not similar.
-        if (type.equals(NodeType.STORAGE)
-            && initProgress < getListingBucketsInitProgressLimit() ^ other.initProgress < getListingBucketsInitProgressLimit())
+        if (considerInitProgress
+            && type.equals(NodeType.STORAGE)
+            && (initProgress < getListingBucketsInitProgressLimit()
+                ^ other.initProgress < getListingBucketsInitProgressLimit()))
         {
             return false;
         }

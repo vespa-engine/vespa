@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.orchestrator;
 
-import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchHostSuspendRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
@@ -21,7 +20,7 @@ import static org.mockito.Mockito.*;
  * @author valerijf
  */
 public class OrchestratorImplTest {
-    private static final HostName hostName = new HostName("host123.yahoo.com");
+    private static final String hostName = "host123.yahoo.com";
     private ConfigServerHttpRequestExecutor requestExecutor;
     private OrchestratorImpl orchestrator;
 
@@ -35,10 +34,10 @@ public class OrchestratorImplTest {
     public void testSuspendCall() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.empty(),
                 UpdateHostResponse.class
-        )).thenReturn(new UpdateHostResponse(hostName.s(), null));
+        )).thenReturn(new UpdateHostResponse(hostName, null));
 
         boolean response = orchestrator.suspend(hostName);
         assertTrue("Expected Orchestrator to approve", response);
@@ -48,10 +47,10 @@ public class OrchestratorImplTest {
     public void testSuspendCallWithFailureReason() {
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.empty(),
                 UpdateHostResponse.class
-        )).thenReturn(new UpdateHostResponse(hostName.s(), new HostStateChangeDenialReason("hostname", "service", "fail")));
+        )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "service", "fail")));
 
         boolean response = orchestrator.suspend(hostName);
         assertFalse("Expected Orchestrator to deny when presented with HostChangeDenialReason", response);
@@ -88,9 +87,9 @@ public class OrchestratorImplTest {
     public void testResumeCall() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 UpdateHostResponse.class
-        )).thenReturn(new UpdateHostResponse(hostName.s(), null));
+        )).thenReturn(new UpdateHostResponse(hostName, null));
 
         boolean response = orchestrator.resume(hostName);
         assertTrue("Expected Orchestrator to approve", response);
@@ -100,9 +99,9 @@ public class OrchestratorImplTest {
     public void testResumeCallWithFailureReason() {
         when(requestExecutor.delete(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended",
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 UpdateHostResponse.class
-        )).thenReturn(new UpdateHostResponse(hostName.s(), new HostStateChangeDenialReason("hostname", "service", "fail")));
+        )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "service", "fail")));
 
         boolean response = orchestrator.resume(hostName);
         assertFalse("Expected Orchestrator to deny when presented with HostChangeDenialReason", response);
@@ -141,7 +140,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenReturn(BatchOperationResult.successResult());
@@ -158,7 +157,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenReturn(new BatchOperationResult(failureReason));
@@ -175,7 +174,7 @@ public class OrchestratorImplTest {
 
         when(requestExecutor.put(
                 OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                OrchestratorImpl.HARDCODED_ORCHESTRATOR_PORT,
+                OrchestratorImpl.WEB_SERVICE_PORT,
                 Optional.of(new BatchHostSuspendRequest(parentHostName, hostNames)),
                 BatchOperationResult.class
         )).thenThrow(new RuntimeException(exceptionMessage));

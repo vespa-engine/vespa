@@ -63,4 +63,95 @@ search blog_post {
         }
     }
 
+    constant W_hidden {
+        file: constants/W_hidden.json
+        type: tensor(input[20],hidden[40])
+    }
+
+    constant b_hidden {
+        file: constants/b_hidden.json
+        type: tensor(hidden[40])
+    }
+
+    constant W_final {
+        file: constants/W_final.json
+        type: tensor(hidden[40], final[1])
+    }
+
+    constant b_final {
+        file: constants/b_final.json
+        type: tensor(final[1])
+    }
+
+    constant input_transform_1 {
+        file: constants/input_transform_1.json
+        type: tensor(user_item_cf[10], input[20])
+    }
+
+    constant input_transform_2 {
+        file: constants/input_transform_2.json
+        type: tensor(user_item_cf[10], input[20])
+    }
+
+    rank-profile nn_tensor {
+
+        # Why no work?
+        macro inline matmul(x, y, dim) {
+            expression: sum(x * y, dim)
+        }
+
+        macro matmul_user_item_cf(x, y) {
+            expression: sum(x * y, user_item_cf)
+        }
+
+        macro matmul_hidden(x, y) {
+            expression: sum(x * y, hidden)
+        }
+
+        macro matmul_input(x, y) {
+            expression: sum(x * y, input)
+        }
+
+        macro add(x,y) {
+            expression: x + y
+        }
+
+        # The input to the neural network is the concatenation of the document and query vectors
+        macro nn_input() {
+            expression {
+                matmul_user_item_cf(attribute(user_item_cf), constant(input_transform_1))
+                +
+                matmul_user_item_cf(query(user_item_cf), constant(input_transform_2))
+            }
+        }
+
+        macro hidden_layer() {
+            expression {
+                relu(add(matmul_input(nn_input, constant(W_hidden)), constant(b_hidden)))
+
+                # The '+' causes an error. Why?
+                # relu(matmul(nn_input, constant(W_hidden), "input") + constant(b_hidden))
+            }
+        }
+
+        macro final_layer() {
+            expression{
+                sigmoid(add(matmul_hidden(hidden_layer, constant(W_final)), constant(b_final)))
+
+                # Same as above
+                # sigmoid(matmul(hidden_layer, constant(W_final), "hidden") + constant(b_final))
+            }
+        }
+
+        first-phase {
+            expression: sum(query(user_item_cf) * attribute(user_item_cf))
+        }
+
+        second-phase {
+            rerank-count: 200
+            expression: sum(final_layer)
+        }
+
+    }
+
 }

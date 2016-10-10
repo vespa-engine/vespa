@@ -23,7 +23,7 @@ public:
     private:
         void   * _data;
     };
-    MemoryDataStore(size_t initialSize=256, Lock * lock=nullptr);
+    MemoryDataStore(alloc::Alloc && initialAlloc=DefaultAlloc::create(256), Lock * lock=nullptr);
     MemoryDataStore(const MemoryDataStore &) = delete;
     MemoryDataStore & operator = (const MemoryDataStore &) = delete;
     ~MemoryDataStore();
@@ -38,12 +38,12 @@ public:
         _buffers.clear();
     }
 private:
-    std::vector<DefaultAlloc> _buffers;
+    std::vector<alloc::Alloc> _buffers;
     size_t _writePos;
     Lock * _lock;
 };
 
-class VariableSizeVector : public noncopyable
+class VariableSizeVector
 {
 public:
     class Reference {
@@ -96,6 +96,8 @@ public:
         const vespalib::Array<Reference> * _vector;
         size_t _index;
     };
+    VariableSizeVector(const VariableSizeVector &) = delete;
+    VariableSizeVector & operator = (const VariableSizeVector &) = delete;
     VariableSizeVector(size_t initialSize=256);
     ~VariableSizeVector();
     iterator begin() { return iterator(_vector, 0); }

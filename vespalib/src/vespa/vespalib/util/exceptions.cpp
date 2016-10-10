@@ -39,6 +39,11 @@ void silent_terminate() {
 
 }
 
+const char *
+ExceptionWithPayload::what() const noexcept {
+    return _msg.c_str();
+}
+
 SilenceUncaughtException::SilenceUncaughtException(const std::exception & e) :
     _oldTerminate(std::set_terminate(silent_terminate))
 {

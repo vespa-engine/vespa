@@ -16,7 +16,7 @@ class BufferWriter;
 class IAttributeFileWriter
 {
 public:
-    using BufferBuf = vespalib::MMapDataBuffer;
+    using BufferBuf = vespalib::DataBuffer;
     using Buffer = std::unique_ptr<BufferBuf>;
 
     virtual ~IAttributeFileWriter() = default;

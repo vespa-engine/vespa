@@ -4,6 +4,8 @@ package com.yahoo.config.provision;
 /**
  * @author hmusum
  */
+// TODO: Remove when there is no release older than 6.33 in use
+@SuppressWarnings("unused")
 public class Quota {
 
     private final int numberOfHosts;

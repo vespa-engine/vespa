@@ -293,7 +293,7 @@ public:
     }
 };
 
-typedef vespalib::Array<TmpChunkMeta, vespalib::DefaultAlloc> TmpChunkMetaV;
+typedef vespalib::Array<TmpChunkMeta> TmpChunkMetaV;
 
 namespace {
 
@@ -326,7 +326,7 @@ FileChunk::erase()
 }
 
 size_t
-FileChunk::updateLidMap(ISetLid & ds, uint64_t serialNum)
+FileChunk::updateLidMap(const LockGuard & guard, ISetLid & ds, uint64_t serialNum)
 {
     size_t sz(0);
     assert(_chunkInfo.empty());
@@ -391,7 +391,7 @@ FileChunk::updateLidMap(ISetLid & ds, uint64_t serialNum)
                             bucketMap.recordLid(bucketId);
                             globalBucketMap.recordLid(bucketId);
                         }
-                        ds.setLid(lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
+                        ds.setLid(guard, lidMeta.getLid(), LidInfo(getFileId().getId(), _chunkInfo.size(), lidMeta.size()));
                         incEntries();
                         _addedBytes += adjustSize(lidMeta.size());
                     }

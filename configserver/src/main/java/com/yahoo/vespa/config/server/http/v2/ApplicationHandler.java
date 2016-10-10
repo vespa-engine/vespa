@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostFilter;
@@ -13,28 +12,22 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
+import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
 import com.yahoo.vespa.config.server.application.TenantApplications;
-import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
-import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.RemoteSession;
-import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
-import com.yahoo.vespa.curator.Curator;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
@@ -42,7 +35,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 /**
- * Handler for deleting a currently active application for a tenant.
+ * Operations on applications (delete, wait for config convergence, restart, application content etc.)
  *
  * @author hmusum
  * @since 5.4
@@ -52,25 +45,21 @@ public class ApplicationHandler extends HttpHandler {
 
     private static final String REQUEST_PROPERTY_TIMEOUT = "timeout";
     private final Tenants tenants;
-    private final ContentHandler contentHandler = new ContentHandler();
+
     private final Optional<Provisioner> hostProvisioner;
-    private final ApplicationConvergenceChecker convergeChecker;
     private final Zone zone;
-    private final LogServerLogGrabber logServerLogGrabber;
     private final ApplicationRepository applicationRepository;
 
-    public ApplicationHandler(Executor executor, AccessLog accessLog, Tenants tenants,
-                              HostProvisionerProvider hostProvisionerProvider, Zone zone,
-                              ApplicationConvergenceChecker convergeChecker,
-                              LogServerLogGrabber logServerLogGrabber,
-                              ConfigserverConfig configserverConfig, Curator curator) {
+    public ApplicationHandler(Executor executor, AccessLog accessLog,
+                              Tenants tenants,
+                              HostProvisionerProvider hostProvisionerProvider,
+                              Zone zone,
+                              ApplicationRepository applicationRepository) {
         super(executor, accessLog);
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
-        this.convergeChecker = convergeChecker;
-        this.logServerLogGrabber = logServerLogGrabber;
-        this.applicationRepository = new ApplicationRepository(tenants, hostProvisionerProvider, configserverConfig, curator);
+        this.applicationRepository = applicationRepository;
     }
 
     @Override
@@ -89,27 +78,24 @@ public class ApplicationHandler extends HttpHandler {
         Tenant tenant = verifyTenantAndApplication(applicationId);
 
         if (isServiceConvergeRequest(request)) {
-            Application application = getApplication(tenant, applicationId);
-            return convergeChecker.nodeConvergenceCheck(application, getHostFromRequest(request), request.getUri());
+            return applicationRepository.nodeConvergenceCheck(tenant, applicationId, getHostFromRequest(request), request.getUri());
         }
         if (isContentRequest(request)) {
-            LocalSession session = SessionHandler.getSessionFromRequest(tenant.getLocalSessionRepo(), tenant.getApplicationRepo().getSessionIdForApplication(applicationId));
-            return contentHandler.get(ApplicationContentRequest.create(request, session, applicationId, zone));
+            return applicationRepository.getContent(tenant, applicationId, zone, request);
         }
-        Application application = getApplication(tenant, applicationId);
 
         // TODO: Remove this once the config convergence logic is moved to client and is live for all clusters.
         if (isConvergeRequest(request)) {
             try {
-                convergeChecker.waitForConfigConverged(application, new TimeoutBudget(Clock.systemUTC(), durationFromRequestTimeout(request)));
+                applicationRepository.waitForConfigConverged(tenant, applicationId, new TimeoutBudget(Clock.systemUTC(), durationFromRequestTimeout(request)));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
         if (isServiceConvergeListRequest(request)) {
-             return convergeChecker.listConfigConvergence(application, request.getUri());
+             return applicationRepository.listConfigConvergence(tenant, applicationId, request.getUri());
         }
-        return new GetApplicationResponse(Response.Status.OK, application.getApplicationGeneration());
+        return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(tenant, applicationId));
     }
 
     @Override
@@ -136,8 +122,18 @@ public class ApplicationHandler extends HttpHandler {
         if (getBindingMatch(request).groupCount() != 7)
             throw new NotFoundException("Illegal POST log request '" + request.getUri() +
                     "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );
-        Application application = getApplication(tenant, applicationId);
-        return logServerLogGrabber.grabLog(application);
+        final String response = applicationRepository.grabLog(tenant, applicationId);
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                outputStream.write(response.getBytes(StandardCharsets.UTF_8));
+            }
+
+            @Override
+            public String getContentType() {
+                return HttpConfigResponse.JSON_CONTENT_TYPE;
+            }
+        };
     }
 
     private HostFilter hostFilterFrom(HttpRequest request) {
@@ -164,13 +160,6 @@ public class ApplicationHandler extends HttpHandler {
         return Duration.ofSeconds(timeoutInSeconds);
     }
 
-    private Application getApplication(Tenant tenant, ApplicationId applicationId) {
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        RemoteSessionRepo remoteSessionRepo = tenant.getRemoteSessionRepo();
-        long sessionId = applicationRepo.getSessionIdForApplication(applicationId);
-        RemoteSession session = remoteSessionRepo.getSession(sessionId, 0);
-        return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty());
-    }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();

@@ -18,7 +18,7 @@ import com.yahoo.search.result.ErrorMessage;
  * </ul>
  *
  * @author bratseth
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class NodeMonitor {
 
@@ -65,8 +65,8 @@ public class NodeMonitor {
     public void failed(ErrorMessage error) {
         long respondedAt = System.currentTimeMillis();
 
-        if (error.getCode() == BACKEND_COMMUNICATION_ERROR.code
-                || error.getCode() == NO_ANSWER_WHEN_PINGING_NODE.code) {
+        if (error.getCode() == BACKEND_COMMUNICATION_ERROR.code 
+            || error.getCode() == NO_ANSWER_WHEN_PINGING_NODE.code) {
             // Only count not being able to talk to backend at all
             // as errors we care about
             if ((respondedAt - succeededAt) > 10000) {
@@ -85,9 +85,8 @@ public class NodeMonitor {
         this.searchNodesOnline = searchNodesOnline;
         atStartUp = false;
 
-        if (!isWorking) {
+        if ( ! isWorking)
             setWorking(true, "Responds correctly");
-        }
     }
 
     /** Changes the state of this node if required */
@@ -95,20 +94,15 @@ public class NodeMonitor {
         if (isWorking == working) return; // Old news
 
         String explanationToLog;
-        if (explanation == null) {
+        if (explanation == null)
             explanationToLog = "";
-        } else {
+        else
             explanationToLog = ": " + explanation;
-        }
 
-        if (working) {
+        if (working)
             log.info("Putting " + node + " in service" + explanationToLog);
-        } else {
-            if (!atStartUp) {
-                // was warning, see VESPA-1922
-                log.info("Taking " + node + " out of service" + explanationToLog);
-            }
-        }
+        else if ( ! atStartUp)
+            log.info("Taking " + node + " out of service" + explanationToLog);
 
         isWorking = working;
     }

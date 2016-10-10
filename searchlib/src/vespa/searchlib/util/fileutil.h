@@ -295,11 +295,11 @@ public:
     virtual void rewind() = 0;
 };
 
-template <typename T, typename A=vespalib::HeapAlloc>
-class SequentialReadModifyWriteVector : public SequentialReadModifyWriteInterface<T>, public vespalib::Array<T, A>
+template <typename T>
+class SequentialReadModifyWriteVector : public SequentialReadModifyWriteInterface<T>, public vespalib::Array<T>
 {
 private:
-    typedef vespalib::Array<T, A> Vector;
+    typedef vespalib::Array<T> Vector;
 public:
     SequentialReadModifyWriteVector() : Vector(), _rp(0), _wp(0) { }
     SequentialReadModifyWriteVector(size_t sz) : Vector(sz), _rp(0), _wp(0) { }

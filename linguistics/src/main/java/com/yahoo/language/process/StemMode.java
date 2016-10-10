@@ -6,7 +6,7 @@ package com.yahoo.language.process;
  * Stemming implementation may support a smaller number of modes by mapping a mode to a more
  * inclusive alternative.
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public enum StemMode {
 

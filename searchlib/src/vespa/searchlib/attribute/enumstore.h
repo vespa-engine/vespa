@@ -154,7 +154,7 @@ public:
             uint32_t _refCount;
         };
 
-        typedef vespalib::Array<UniqueEntry, vespalib::DefaultAlloc> Uniques;
+        typedef vespalib::Array<UniqueEntry> Uniques;
     private:
         Uniques _uniques;
         uint64_t _bufferSize;

@@ -23,6 +23,7 @@ import java.util.TreeMap;
  * load types yourself with addType().
  */
 public class LoadTypeSet {
+
     class DualMap {
         Map<String, LoadType> nameMap = new TreeMap<String, LoadType>();
         Map<Integer, LoadType> idMap = new HashMap<Integer, LoadType>();
@@ -47,6 +48,10 @@ public class LoadTypeSet {
 
     public LoadTypeSet(String configId) {
         configure(new ConfigGetter<>(LoadTypeConfig.class).getConfig(configId));
+    }
+
+    public LoadTypeSet(LoadTypeConfig loadTypeConfig) {
+        configure(loadTypeConfig);
     }
 
     public Map<String, LoadType> getNameMap() {

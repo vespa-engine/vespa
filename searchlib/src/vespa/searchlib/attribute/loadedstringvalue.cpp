@@ -3,18 +3,17 @@
 #include <vespa/fastos/fastos.h>
 #include "loadedstringvalue.h"
 
+using vespalib::Array;
+using vespalib::alloc::MMapAllocFactory;
 
-namespace search
-{
+namespace search {
 
-namespace attribute
-{
+namespace attribute {
 
 void
 sortLoadedByValue(LoadedStringVectorReal &loaded)
 {
-    vespalib::Array<unsigned, vespalib::MMapAlloc>
-        radixScratchPad(loaded.size());
+    Array<unsigned> radixScratchPad(loaded.size(), MMapAllocFactory::create());
     for(size_t i(0), m(loaded.size()); i < m; i++) {
         loaded[i].prepareRadixSort();
     }

@@ -376,6 +376,7 @@ TEST("requireThatNumDocsAndDocIdLimitIsReturned")
 
 TEST("requireThatWeUnderstandTheMemoryFootprint")
 {
+    constexpr size_t BASE_SIZE = 118860u;
     {
         Setup setup;
         Index index(setup);
@@ -384,12 +385,12 @@ TEST("requireThatWeUnderstandTheMemoryFootprint")
     }
     {
         Index index(Setup().field("f1"));
-        EXPECT_EQUAL(118852u, index.index.getStaticMemoryFootprint());
+        EXPECT_EQUAL(BASE_SIZE, index.index.getStaticMemoryFootprint());
         EXPECT_EQUAL(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
     }
     {
         Index index(Setup().field("f1").field("f2"));
-        EXPECT_EQUAL(2*118852u, index.index.getStaticMemoryFootprint());
+        EXPECT_EQUAL(2 * BASE_SIZE, index.index.getStaticMemoryFootprint());
         EXPECT_EQUAL(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
     }
 }

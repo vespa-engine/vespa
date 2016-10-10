@@ -6,7 +6,6 @@
 #include <string>
 #include <set>
 
-#include <boost/filesystem/path.hpp>
 #include <boost/signals2.hpp>
 
 #include <libtorrent/peer.hpp>
@@ -16,10 +15,10 @@
 
 namespace filedistribution {
 
+VESPA_DEFINE_EXCEPTION(NotPeer, vespalib::Exception);
+
 class FileDistributionModel {
 public:
-    class NotPeer : public Exception {};
-
     typedef boost::signals2::signal<void ()> FilesToDownloadChangedSignal;
     typedef std::vector<libtorrent::peer_entry> PeerEntries;
 

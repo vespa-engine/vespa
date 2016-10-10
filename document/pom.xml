@@ -78,6 +78,12 @@
         <classifier>no_aop</classifier>
         <scope>provided</scope>
       </dependency>
+      <dependency>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>testutil</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+      </dependency>
     </dependencies>
     <build>
         <plugins>

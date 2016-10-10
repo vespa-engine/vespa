@@ -1,24 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-//************************************************************************
-/**
- * Implmentation of Fast_BufferedInputStream
- *
- * @author  Markus Bjartveit Kr�ger
- * @version $Id$
- */
- /*
- * Creation date    : 2001-10-29
- * Copyright (c)    : 1997-2002 Fast Search & Transfer ASA
- *                    ALL RIGHTS RESERVED
- *************************************************************************/
 #include <vespa/fastos/fastos.h>
 #include "bufferedinputstream.h"
 
-
-
-
-Fast_BufferedInputStream::Fast_BufferedInputStream(Fast_InputStream &in,
-                                                   size_t bufferSize)
+Fast_BufferedInputStream::Fast_BufferedInputStream(Fast_InputStream &in, size_t bufferSize)
   : Fast_FilterInputStream(in),
     _buffer(new char[bufferSize]),
     _bufferSize((_buffer != NULL) ? bufferSize : 0),
@@ -28,89 +12,70 @@ Fast_BufferedInputStream::Fast_BufferedInputStream(Fast_InputStream &in,
 {
 }
 
-
-
-Fast_BufferedInputStream::~Fast_BufferedInputStream(void)
+Fast_BufferedInputStream::~Fast_BufferedInputStream()
 {
   delete [] _buffer;
-};
+}
 
-
-
-ssize_t Fast_BufferedInputStream::Available(void)
+ssize_t
+Fast_BufferedInputStream::Available()
 {
   return _in->Available() + _bufferUsed - _bufferRead;
 }
 
-
-
-bool Fast_BufferedInputStream::Close(void)
+bool
+Fast_BufferedInputStream::Close()
 {
   return _in->Close();
 }
 
-
-
-ssize_t Fast_BufferedInputStream::Skip(size_t skipNBytes)
+ssize_t
+Fast_BufferedInputStream::Skip(size_t skipNBytes)
 {
   ssize_t numBytesSkipped = 0;
 
-  if (_nextWillFail)
-  {
+  if (_nextWillFail) {
     _nextWillFail = false;
     return -1;
   }
 
-  if (skipNBytes > _bufferUsed - _bufferRead)
-  {
+  if (skipNBytes > _bufferUsed - _bufferRead) {
     // First, skip all bytes in buffer
     numBytesSkipped = _bufferUsed - _bufferRead;
     _bufferUsed = _bufferRead = 0;
 
     // Skip rest of bytes in slave stream
     ssize_t slaveSkipped = _in->Skip(skipNBytes - numBytesSkipped);
-    if (slaveSkipped < 0)
-    {
-      if (numBytesSkipped > 0)
-      {
+    if (slaveSkipped < 0) {
+      if (numBytesSkipped > 0) {
         _nextWillFail = true;
-      }
-      else
-      {
+      } else {
         numBytesSkipped = slaveSkipped;
       }
-    }
-    else
-    {
+    } else {
       numBytesSkipped += slaveSkipped;
     }
 
-  }
-  else
-  {
+  } else {
     // Skip all skipNBytes in buffer
     _bufferRead += skipNBytes;
-    if (_bufferRead == _bufferUsed)
-    {
+    if (_bufferRead == _bufferUsed) {
       _bufferUsed = _bufferRead = 0;
     }
     numBytesSkipped = skipNBytes;
   }
 
-
   return numBytesSkipped;
 }
 
-
-
-ssize_t Fast_BufferedInputStream::Read(void *targetBuffer, size_t length)
+ssize_t
+Fast_BufferedInputStream::Read(void *targetBuffer, size_t length)
 {
 
   // This function will under no circumstance read more than once from
   // its slave stream, in order to prevent blocking on input.
 
-  if (_nextWillFail)
-  {
+  if (_nextWillFail) {
     _nextWillFail = false;
     return -1;
   }
@@ -119,22 +84,17 @@ ssize_t Fast_BufferedInputStream::Read(void *targetBuffer, size_t length)
   char* to = static_cast<char*>(targetBuffer);
   size_t bufferRemain = _bufferUsed - _bufferRead;
 
-  if (length <= bufferRemain)
-  {
+  if (length <= bufferRemain) {
     memcpy(to, &_buffer[_bufferRead], length);
     numBytesRead += length;
     _bufferRead  += length;
-    if (_bufferRead == _bufferUsed)
-    {
+    if (_bufferRead == _bufferUsed) {
       _bufferRead = _bufferUsed = 0;
     }
-  }
-  else
-  {
+  } else {
     // Use the data currently in the buffer, then read from slave stream.
 
-    if (bufferRemain > 0)
-    {
+    if (bufferRemain > 0) {
       memcpy(to, &_buffer[_bufferRead], bufferRemain);
       numBytesRead += bufferRemain;
       length       -= bufferRemain;
@@ -146,54 +106,37 @@ ssize_t Fast_BufferedInputStream::Read(void *targetBuffer, size_t length)
 
     // If remaining data to be read can fit in the buffer, put it
     // there, otherwise read directly to receiver and empty the buffer.
-    if (length < _bufferSize)
-    {
+    if (length < _bufferSize) {
       slaveRead = Fast_FilterInputStream::Read(_buffer, _bufferSize);
-    }
-    else
-    {
+    } else {
       slaveRead = Fast_FilterInputStream::Read(to, length);
     }
 
-    if (slaveRead > 0)
-    {
-      if (length < _bufferSize)
-      {
+    if (slaveRead > 0) {
+      if (length < _bufferSize) {
         // We read to buffer, so copy from buffer to receiver.
-        if (length < static_cast<size_t>(slaveRead))
-        {
+        if (length < static_cast<size_t>(slaveRead)) {
           memcpy(to, _buffer, length);
           numBytesRead += length;
           _bufferUsed = slaveRead;
           _bufferRead = length;
-        }
-        else
-        {
+        } else {
           memcpy(to, _buffer, slaveRead);
           numBytesRead += slaveRead;
         }
-      }
-      else
-      {
+      } else {
         // We read directly to receiver, no need to copy.
         numBytesRead += slaveRead;
       }
-    }
-    else if (slaveRead == 0)
-    {
+    } else if (slaveRead == 0) {
       // Do nothing
-    }
-    else
-    {
+    } else {
       // slaveRead < 0, so an error occurred while reading from the
       // slave.  If there was data in the buffer, report success and
       // fail on next operation instead.
-      if (numBytesRead > 0)
-      {
+      if (numBytesRead > 0) {
         _nextWillFail = true;
-      }
-      else
-      {
+      } else {
         numBytesRead = slaveRead;
       }
     }
@@ -203,10 +146,8 @@ ssize_t Fast_BufferedInputStream::Read(void *targetBuffer, size_t length)
   return numBytesRead;
 }
 
-
-ssize_t Fast_BufferedInputStream::ReadBufferFullUntil(void *targetBuffer,
-                                                      size_t maxlength,
-                                                      char stopChar)
+ssize_t
+Fast_BufferedInputStream::ReadBufferFullUntil(void *targetBuffer, size_t maxlength, char stopChar)
 {
 
   if (maxlength > _bufferSize)
@@ -215,8 +156,7 @@ ssize_t Fast_BufferedInputStream::ReadBufferFullUntil(void *targetBuffer,
   // This function will under no circumstance read more than once from
   // its slave stream, in order to prevent blocking on input.
 
-  if (_nextWillFail)
-  {
+  if (_nextWillFail) {
     _nextWillFail = false;
     return -1;
   }
@@ -239,22 +179,17 @@ ssize_t Fast_BufferedInputStream::ReadBufferFullUntil(void *targetBuffer,
     }
   }
 
-  if (maxlength <= bufferRemain)
-  {
+  if (maxlength <= bufferRemain) {
     memcpy(to, &_buffer[_bufferRead], maxlength);
     numBytesRead += maxlength;
     _bufferRead  += maxlength;
-    if (_bufferRead == _bufferUsed)
-    {
+    if (_bufferRead == _bufferUsed) {
       _bufferRead = _bufferUsed = 0;
     }
-  }
-  else
-  {
+  } else {
     // Use the data currently in the buffer, then read from slave stream.
 
-    if (bufferRemain > 0)
-    {
+    if (bufferRemain > 0) {
       memcpy(to, &_buffer[_bufferRead], bufferRemain);
       numBytesRead += bufferRemain;
       maxlength    -= bufferRemain;
@@ -265,8 +200,7 @@ ssize_t Fast_BufferedInputStream::ReadBufferFullUntil(void *targetBuffer,
     ssize_t slaveRead;
 
     slaveRead = Fast_FilterInputStream::Read(_buffer, _bufferSize);
-    if (slaveRead > 0)
-    {
+    if (slaveRead > 0) {
       for (offset = 0; offset < static_cast<uint32_t>(slaveRead); offset++) {
         if(_buffer[offset] == stopChar) {
           break;
@@ -276,42 +210,31 @@ ssize_t Fast_BufferedInputStream::ReadBufferFullUntil(void *targetBuffer,
       if (offset >= maxlength) {
         // Discard data if character was not present
         numBytesRead = -1;
-      }
-      else {
+      } else {
         // Found character in buffer
         if (offset < static_cast<uint32_t>(slaveRead)) {
           maxlength = offset + 1;
         }
         // We read to buffer, so copy from buffer to receiver.
-        if (maxlength < static_cast<size_t>(slaveRead))
-        {
+        if (maxlength < static_cast<size_t>(slaveRead)) {
           memcpy(to, _buffer, maxlength);
           numBytesRead += maxlength;
           _bufferUsed = slaveRead;
           _bufferRead = maxlength;
-        }
-        else
-        {
+        } else {
           memcpy(to, _buffer, slaveRead);
           numBytesRead += slaveRead;
         }
       }
-    }
-    else if (slaveRead == 0)
-    {
+    } else if (slaveRead == 0) {
       // Do nothing
-    }
-    else
-    {
+    } else {
       // slaveRead < 0, so an error occurred while reading from the
       // slave.  If there was data in the buffer, report success and
       // fail on next operation instead.
-      if (numBytesRead > 0)
-      {
+      if (numBytesRead > 0) {
         _nextWillFail = true;
-      }
-      else
-      {
+      } else {
         numBytesRead = slaveRead;
       }
     }

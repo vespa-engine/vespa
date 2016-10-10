@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
-import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
@@ -11,8 +12,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
-import com.yahoo.vespa.hosted.node.admin.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -36,25 +37,31 @@ import static org.mockito.Mockito.when;
 public class ResumeTest {
     @Test
     public void test() throws InterruptedException, UnknownHostException {
-        CallOrderVerifier callOrder = new CallOrderVerifier();
-        NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrder);
-        MaintenanceSchedulerMock maintenanceSchedulerMock = new MaintenanceSchedulerMock(callOrder);
-        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrder);
-        DockerMock dockerMock = new DockerMock(callOrder);
+        CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
+        NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
+        OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
+        DockerMock dockerMock = new DockerMock(callOrderVerifier);
 
         Environment environment = mock(Environment.class);
         when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
         when(environment.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
 
-        Function<HostName, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock);
-        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100);
+        MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+        Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock, mr);
+        NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
         nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
-                new HostName("host1"),
+                "host1",
                 Optional.of(new DockerImage("dockerImage")),
                 new ContainerName("container"),
-                NodeState.ACTIVE,
+                Node.State.active,
+                "tenant",
+                "docker",
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 Optional.of(1L),
                 Optional.of(1L),
                 Optional.of(1d),
@@ -69,9 +76,8 @@ public class ResumeTest {
         }
 
         // Check that the container is started and NodeRepo has received the PATCH update
-         assertTrue(callOrder.verifyInOrder(1000,
-                "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}"));
+        callOrderVerifier.assertInOrder("createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
+                                        "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}");
 
         // Force orchestrator to reject the suspend
         orchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));
@@ -83,7 +89,7 @@ public class ResumeTest {
         }
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.of("Orchestrator reject suspend")));
 
-        //Make orchestrator allow suspend callOrder
+        //Make orchestrator allow suspend requests
         orchestratorMock.setForceGroupSuspendResponse(Optional.empty());
         assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED), is(Optional.empty()));
 
@@ -102,10 +108,9 @@ public class ResumeTest {
             Thread.sleep(10);
         }
 
-        assertTrue(callOrder.verifyInOrder(1000,
-                "Resume for host1",
-                "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional[Orchestrator reject suspend]",
-                "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional.empty"));
+        callOrderVerifier.assertInOrder("Resume for host1",
+                                        "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional[Orchestrator reject suspend]",
+                                        "Suspend with parent: basehostname and hostnames: [host1] - Forced response: Optional.empty");
 
         updater.deconstruct();
     }

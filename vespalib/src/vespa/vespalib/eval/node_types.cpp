@@ -271,6 +271,12 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
 } // namespace vespalib::eval::nodes::<unnamed>
 } // namespace vespalib::eval::nodes
 
+NodeTypes::NodeTypes()
+    : _not_found(ValueType::any_type()),
+      _type_map()
+{
+}
+
 NodeTypes::NodeTypes(const Function &function, const std::vector<ValueType> &input_types)
     : _not_found(ValueType::error_type()),
       _type_map()
@@ -299,7 +305,7 @@ NodeTypes::all_types_are_double() const
             return false;
         }
     }
-    return true;
+    return (_type_map.size() > 0);
 }
 
 } // namespace vespalib::eval

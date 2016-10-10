@@ -100,8 +100,7 @@ public class RpcServer {
             register = new Register(supervisor, slist,
                     new Spec(InetAddress.getLocalHost().getHostName(), acceptor.port()), slobrokBackOffPolicy);
         } else {
-            register = new Register(supervisor, slist,
-                    InetAddress.getLocalHost().getHostName(), acceptor.port());
+            register = new Register(supervisor, slist, InetAddress.getLocalHost().getHostName(), acceptor.port());
         }
         register.registerName(getSlobrokName());
     }

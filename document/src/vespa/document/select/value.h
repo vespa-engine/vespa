@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include <boost/operators.hpp>
 #include <memory>
 #include <map>
 #include <string>

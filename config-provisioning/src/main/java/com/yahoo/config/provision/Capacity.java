@@ -16,11 +16,14 @@ public final class Capacity {
     private final boolean required;
 
     private final Optional<String> flavor;
+    
+    private final NodeType type;
 
-    private Capacity(int nodeCount, boolean required, Optional<String> flavor) {
+    private Capacity(int nodeCount, boolean required, Optional<String> flavor, NodeType type) {
         this.nodeCount = nodeCount;
         this.flavor = flavor;
         this.required = required;
+        this.type = type;
     }
 
     /** Returns the number of nodes requested */
@@ -34,6 +37,13 @@ public final class Capacity {
      * This may be satisfied by the requested flavor or a suitable replacement
      */
     public Optional<String> flavor() { return flavor; }
+
+    /**
+     * Returns the node type (role) requested. This is tenant nodes by default.
+     * If some other type is requested the node count and flavor may be ignored
+     * and all nodes of the requested type returned instead.
+     */
+    public NodeType type() { return type; }
 
     @Override
     public String toString() {
@@ -50,7 +60,7 @@ public final class Capacity {
     }
     /** Creates this from a desired node count: The request may be satisfied with a smaller number of nodes. */
     public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor) {
-        return new Capacity(nodeCount, false, flavor);
+        return new Capacity(nodeCount, false, flavor, NodeType.tenant);
     }
 
     /** Creates this from a required node count: Requests must fail unless the node count can be satisfied exactly */
@@ -63,7 +73,16 @@ public final class Capacity {
     }
     /** Creates this from a required node count: Requests must fail unless the node count can be satisfied exactly */
     public static Capacity fromRequiredNodeCount(int nodeCount, Optional<String> flavor) {
-        return new Capacity(nodeCount, true, flavor);
+        return new Capacity(nodeCount, true, flavor, NodeType.tenant);
+    }
+
+    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required) {
+        return new Capacity(nodeCount, required, flavor, NodeType.tenant);
+    }
+
+    /** Creates this from a node type */
+    public static Capacity fromRequiredNodeType(NodeType type) {
+        return new Capacity(0, true, Optional.empty(), type);
     }
 
 }

@@ -9,6 +9,7 @@ LOG_SETUP(".searchcorespi.index.indexcollection");
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include "indexsearchablevisitor.h"
 
 using namespace search::queryeval;
 using namespace search::query;
@@ -114,6 +115,25 @@ IndexCollection::getSearchableStats() const
         stats.add(_sources[i].source_wrapper->getSearchableStats());
     }
     return stats;
+}
+
+search::SerialNum
+IndexCollection::getSerialNum() const
+{
+    search::SerialNum serialNum = 0;
+    for (auto &source : _sources) {
+        serialNum = std::max(serialNum, source.source_wrapper->getSerialNum());
+    }
+    return serialNum;
+}
+
+
+void
+IndexCollection::accept(IndexSearchableVisitor &visitor) const
+{
+    for (auto &source : _sources) {
+        source.source_wrapper->accept(visitor);
+    }
 }
 
 namespace {

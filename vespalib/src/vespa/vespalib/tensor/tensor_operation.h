@@ -2,11 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/tensor/simple/simple_tensor.h>
 #include "direct_tensor_builder.h"
-#include <vespa/vespalib/tensor/simple/direct_simple_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/direct_compact_tensor_builder.h>
-#include <vespa/vespalib/tensor/compact/direct_compact_tensor_v2_builder.h>
+#include <vespa/vespalib/tensor/sparse/direct_sparse_tensor_builder.h>
 
 namespace vespalib {
 namespace tensor {
@@ -24,7 +21,6 @@ public:
     using Cells = typename TensorImplType::Cells;
     using AddressBuilderType = typename MyTensorBuilder::AddressBuilderType;
     using AddressRefType = typename MyTensorBuilder::AddressRefType;
-    using AddressType = typename MyTensorBuilder::AddressType;
 protected:
     MyTensorBuilder _builder;
     Dimensions &_dimensions;

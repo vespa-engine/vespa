@@ -72,7 +72,7 @@ public:
     size_t getDiskFootprint() const override;
     size_t getMemoryFootprint() const override;
     size_t getMemoryMetaFootprint() const override;
-    size_t updateLidMap(ISetLid & lidMap, uint64_t serialNum) override;
+    size_t updateLidMap(const LockGuard & guard, ISetLid & lidMap, uint64_t serialNum) override;
     void waitForDiskToCatchUpToNow() const;
     void flushPendingChunks(uint64_t serialNum);
     virtual DataStoreFileChunkStats getStats() const override;

@@ -31,6 +31,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
     /** The single, indexed search cluster this sets up (supporting multiple document types), or null if none */
     private IndexedSearchCluster indexedCluster;
+    private Redundancy redundancy;
 
     private final String clusterName;
     Map<String, NewDocumentType> documentDefinitions;
@@ -254,6 +255,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         if (usesHierarchicDistribution()) {
             indexedCluster.setMaxNodesDownPerFixedRow((redundancy.effectiveFinalRedundancy() / groupToSpecMap.size()) - 1);
         }
+        this.redundancy = redundancy;
     }
 
     @Override
@@ -286,6 +288,9 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
         if (tuning != null) {
             tuning.getConfig(builder);
+        }
+        if (redundancy != null) {
+            redundancy.getConfig(builder);
         }
     }
 

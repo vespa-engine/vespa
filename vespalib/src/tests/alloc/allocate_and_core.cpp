@@ -1,14 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/util/alloc.h>
 
-using namespace vespalib;
+using namespace vespalib::alloc;
 
 int main(int argc, char *argv[]) {
     (void) argc;
     (void) argv;
-    MMapAlloc small( 0x400000); //4M
+    Alloc small(MMapAllocFactory::create(0x400000)); //4M
     memset(small.get(), 0x55, small.size());
-    MMapAlloc large(0x4000000); //640M
+    Alloc large(MMapAllocFactory::create(0x4000000)); //640M
     memset(large.get(), 0x66, large.size());
     assert(false);
 }

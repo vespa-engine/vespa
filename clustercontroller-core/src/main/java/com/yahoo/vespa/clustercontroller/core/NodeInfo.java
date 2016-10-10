@@ -35,6 +35,18 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     /** Whether this node has been configured to be retired and should therefore always return retired as its wanted state */
     private boolean configuredRetired;
+    /**
+     * Node has been observed transitioning from Init to Down at least once during the last "premature crash count"
+     * period. Gets reset whenever the crash count is reset to zero after a period of stability.
+     *
+     * Flag can also be explicitly toggled by external code, such as if a reported node state
+     * handler discovers "reverse" init progress. This indicates a "silent" down edge and should be
+     * handled as such.
+     *
+     * It is an explicit choice that we only do this on an edge to Down (and not Stopping). Stopping implies
+     * an administrative action, not that the node itself is unstable.
+     */
+    private boolean recentlyObservedUnstableDuringInit;
 
     /** The time we set the current state last. */
     private long nextAttemptTime;
@@ -97,6 +109,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         this.version = getLatestVersion();
         this.connectionVersion = getLatestVersion();
         this.configuredRetired = configuredRetired;
+        this.recentlyObservedUnstableDuringInit = false;
         this.rpcAddress = rpcAddress;
         this.lastSeenInSlobrok = null;
         this.nextAttemptTime = 0;
@@ -132,7 +145,17 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     public int getConnectionAttemptCount() { return connectionAttemptCount; }
 
+    public boolean recentlyObservedUnstableDuringInit() {
+        return recentlyObservedUnstableDuringInit;
+    }
+    public void setRecentlyObservedUnstableDuringInit(boolean unstable) {
+        recentlyObservedUnstableDuringInit = unstable;
+    }
+
     public void setPrematureCrashCount(int count) {
+        if (count == 0) {
+            recentlyObservedUnstableDuringInit = false;
+        }
         if (prematureCrashCount != count) {
             prematureCrashCount = count;
             log.log(LogLevel.DEBUG, "Premature crash count on " + toString() + " set to " + count);
@@ -213,6 +236,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public ContentCluster getCluster() { return cluster; }
 
     /** Returns true if the node is currentl registered in slobrok */
+    // FIXME why is this called "isRpcAddressOutdated" then???
     public boolean isRpcAddressOutdated() { return lastSeenInSlobrok != null; }
 
     public Long getRpcAddressOutdatedTimestamp() { return lastSeenInSlobrok; }
@@ -277,8 +301,10 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         if (state.getState().equals(State.DOWN) && !reportedState.getState().oneOf("d")) {
             downStableStateTime = time;
             log.log(LogLevel.DEBUG, "Down stable state on " + toString() + " altered to " + time);
-        }
-        else if (state.getState().equals(State.UP) && !reportedState.getState().oneOf("u")) {
+            if (reportedState.getState() == State.INITIALIZING) {
+                recentlyObservedUnstableDuringInit = true;
+            }
+        } else if (state.getState().equals(State.UP) && !reportedState.getState().oneOf("u")) {
             upStableStateTime = time;
             log.log(LogLevel.DEBUG, "Up stable state on " + toString() + " altered to " + time);
         }
@@ -403,7 +429,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public void setSystemStateVersionSent(ClusterState state) {
         if (state == null) throw new Error("Should not clear info for last version sent");
         if (systemStateVersionSent.containsKey(state.getVersion())) {
-            throw new IllegalStateException("We have already sent cluster state version " + version + " to " + node);
+            throw new IllegalStateException("We have already sent cluster state version " + state.getVersion() + " to " + node);
         }
         systemStateVersionSent.put(state.getVersion(), state);
     }

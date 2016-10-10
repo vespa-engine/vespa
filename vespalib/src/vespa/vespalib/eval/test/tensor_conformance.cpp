@@ -3,9 +3,11 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "tensor_conformance.h"
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/eval/simple_tensor_engine.h>
 #include <vespa/vespalib/eval/tensor_spec.h>
 #include <vespa/vespalib/eval/function.h>
+#include <vespa/vespalib/eval/tensor_function.h>
 #include <vespa/vespalib/eval/interpreted_function.h>
 
 namespace vespalib {
@@ -13,33 +15,29 @@ namespace eval {
 namespace test {
 namespace {
 
-//    virtual ValueType type_of(const Tensor &tensor) const = 0;
-//    virtual bool equal(const Tensor &a, const Tensor &b) const = 0;
-
-//    virtual TensorFunction::UP compile(tensor_function::Node_UP expr) const { return std::move(expr); }
-
-//    virtual std::unique_ptr<Tensor> create(const TensorSpec &spec) const = 0;
-
-//    virtual const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;
-//    virtual const Value &map(const UnaryOperation &op, const Tensor &a, Stash &stash) const = 0;
-//    virtual const Value &apply(const BinaryOperation &op, const Tensor &a, const Tensor &b, Stash &stash) const = 0;
-
 // Random access sequence of numbers
 struct Sequence {
-    virtual double get(size_t i) const = 0;
+    virtual double operator[](size_t i) const = 0;
     virtual ~Sequence() {}
 };
 
 // Sequence of natural numbers (starting at 1)
 struct N : Sequence {
-    double get(size_t i) const override { return (1.0 + i); }
+    double operator[](size_t i) const override { return (1.0 + i); }
 };
 
 // Sequence of another sequence divided by 10
 struct Div10 : Sequence {
     const Sequence &seq;
     Div10(const Sequence &seq_in) : seq(seq_in) {}
-    double get(size_t i) const override { return (seq.get(i) / 10.0); }
+    double operator[](size_t i) const override { return (seq[i] / 10.0); }
+};
+
+// Sequence of another sequence minus 2
+struct Sub2 : Sequence {
+    const Sequence &seq;
+    Sub2(const Sequence &seq_in) : seq(seq_in) {}
+    double operator[](size_t i) const override { return (seq[i] - 2.0); }
 };
 
 // Sequence of a unary operator applied to a sequence
@@ -47,120 +45,470 @@ struct OpSeq : Sequence {
     const Sequence &seq;
     const UnaryOperation &op;
     OpSeq(const Sequence &seq_in, const UnaryOperation &op_in) : seq(seq_in), op(op_in) {}
-    double get(size_t i) const override { return op.eval(seq.get(i)); }
+    double operator[](size_t i) const override { return op.eval(seq[i]); }
+};
+
+// Sequence of applying sigmoid to another sequence
+struct Sigmoid : Sequence {
+    const Sequence &seq;
+    Sigmoid(const Sequence &seq_in) : seq(seq_in) {}
+    double operator[](size_t i) const override { return operation::Sigmoid().eval(seq[i]); }
 };
 
 // pre-defined sequence of numbers
 struct Seq : Sequence {
     std::vector<double> seq;
+    Seq() : seq() {}
     Seq(const std::vector<double> &seq_in) : seq(seq_in) {}
-    double get(size_t i) const override {
+    double operator[](size_t i) const override {
         ASSERT_LESS(i, seq.size());
         return seq[i];
     }
 };
 
+// Random access bit mask
+struct Mask {
+    virtual bool operator[](size_t i) const = 0;
+    virtual ~Mask() {}
+};
+
+// Mask with all bits set
+struct All : Mask {
+    bool operator[](size_t) const override { return true; }
+};
+
+// Mask with no bits set
+struct None : Mask {
+    bool operator[](size_t) const override { return false; }
+};
+
+// Mask with false for each Nth index
+struct SkipNth : Mask {
+    size_t n;
+    SkipNth(size_t n_in) : n(n_in) {}
+    bool operator[](size_t i) const override { return (i % n) != 0; }
+};
+
+// pre-defined mask
+struct Bits : Mask {
+    std::vector<bool> bits;
+    Bits(const std::vector<bool> &bits_in) : bits(bits_in) {}
+    bool operator[](size_t i) const override {
+        ASSERT_LESS(i, bits.size());
+        return bits[i];
+    }
+};
+
+// A mask converted to a sequence of two unique values (mapped from true and false)
+struct Mask2Seq : Sequence {
+    const Mask &mask;
+    double true_value;
+    double false_value;
+    Mask2Seq(const Mask &mask_in, double true_value_in = 1.0, double false_value_in = 0.0)
+        : mask(mask_in), true_value(true_value_in), false_value(false_value_in) {}
+    double operator[](size_t i) const override { return mask[i] ? true_value : false_value; }
+};
+
 // custom op1
 struct MyOp : CustomUnaryOperation {
-    double eval(double b) const override { return ((b + 1) * 2); }
+    double eval(double a) const override { return ((a + 1) * 2); }
 };
 
 // A collection of labels for a single dimension
-struct Space {
-    vespalib::string name;
+struct Domain {
+    vespalib::string dimension;
     size_t size; // indexed
     std::vector<vespalib::string> keys; // mapped
-    Space(const vespalib::string &name_in, size_t size_in)
-        : name(name_in), size(size_in), keys() {}
-    Space(const vespalib::string &name_in, const std::vector<vespalib::string> &keys_in)
-        : name(name_in), size(0), keys(keys_in) {}
+    Domain(const vespalib::string &dimension_in, size_t size_in)
+        : dimension(dimension_in), size(size_in), keys() {}
+    Domain(const vespalib::string &dimension_in, const std::vector<vespalib::string> &keys_in)
+        : dimension(dimension_in), size(0), keys(keys_in) {}
 };
+using Layout = std::vector<Domain>;
+
+Domain x() { return Domain("x", {}); }
+Domain x(size_t size) { return Domain("x", size); }
+Domain x(const std::vector<vespalib::string> &keys) { return Domain("x", keys); }
+
+Domain y() { return Domain("y", {}); }
+Domain y(size_t size) { return Domain("y", size); }
+Domain y(const std::vector<vespalib::string> &keys) { return Domain("y", keys); }
+
+Domain z(size_t size) { return Domain("z", size); }
+Domain z(const std::vector<vespalib::string> &keys) { return Domain("z", keys); }
 
 // Infer the tensor type spanned by the given spaces
-vespalib::string infer_type(const std::vector<Space> &spaces) {
-    if (spaces.empty()) {
+vespalib::string infer_type(const Layout &layout) {
+    if (layout.empty()) {
         return "double";
     }
     std::vector<ValueType::Dimension> dimensions;
-    for (const auto &space: spaces) {
-        if (space.size == 0) {
-            dimensions.emplace_back(space.name); // mapped
+    for (const auto &domain: layout) {
+        if (domain.size == 0) {
+            dimensions.emplace_back(domain.dimension); // mapped
         } else {
-            dimensions.emplace_back(space.name, space.size); // indexed
+            dimensions.emplace_back(domain.dimension, domain.size); // indexed
         }
     }
     return ValueType::tensor_type(dimensions).to_spec();
 }
 
-// Mix spaces with a number sequence to make a tensor spec
+// Wrapper for the things needed to generate a tensor
+struct Source {
+    using Address = TensorSpec::Address;
+
+    const Layout   &layout;
+    const Sequence &seq;
+    const Mask     &mask;
+    Source(const Layout &layout_in, const Sequence &seq_in, const Mask &mask_in)
+        : layout(layout_in), seq(seq_in), mask(mask_in) {}
+};
+
+// Mix layout with a number sequence to make a tensor spec
 class TensorSpecBuilder
 {
 private:
     using Label = TensorSpec::Label;
     using Address = TensorSpec::Address;
 
-    const std::vector<Space> &_spaces;
-    const Sequence           &_seq;
-    TensorSpec                _spec;
-    Address                   _addr;
-    size_t                    _gen_idx;
+    Source     _source;
+    TensorSpec _spec;
+    Address    _addr;
+    size_t     _idx;
 
-    void generate(size_t space_idx) {
-        if (space_idx == _spaces.size()) {
-            _spec.add(_addr, _seq.get(_gen_idx++));
+    void generate(size_t layout_idx) {
+        if (layout_idx == _source.layout.size()) {
+            if (_source.mask[_idx]) {
+                _spec.add(_addr, _source.seq[_idx]);
+            }
+            ++_idx;
         } else {
-            const Space &space = _spaces[space_idx];
-            if (space.size > 0) { // indexed
-                for (size_t i = 0; i < space.size; ++i) {
-                    _addr.emplace(space.name, Label(i)).first->second = Label(i);
-                    generate(space_idx + 1);
+            const Domain &domain = _source.layout[layout_idx];
+            if (domain.size > 0) { // indexed
+                for (size_t i = 0; i < domain.size; ++i) {
+                    _addr.emplace(domain.dimension, Label(i)).first->second = Label(i);
+                    generate(layout_idx + 1);
                 }
             } else { // mapped
-                for (const vespalib::string &key: space.keys) {
-                    _addr.emplace(space.name, Label(key)).first->second = Label(key);
-                    generate(space_idx + 1);
+                for (const vespalib::string &key: domain.keys) {
+                    _addr.emplace(domain.dimension, Label(key)).first->second = Label(key);
+                    generate(layout_idx + 1);
                 }
             }
         }
     }
 
 public:
-    TensorSpecBuilder(const std::vector<Space> &spaces, const Sequence &seq)
-        : _spaces(spaces), _seq(seq), _spec(infer_type(spaces)), _addr(), _gen_idx(0) {}
+    TensorSpecBuilder(const Layout &layout, const Sequence &seq, const Mask &mask)
+        : _source(layout, seq, mask), _spec(infer_type(layout)), _addr(), _idx(0) {}
     TensorSpec build() {
         generate(0);
         return _spec;
     }
 };
+TensorSpec spec(const Layout &layout, const Sequence &seq, const Mask &mask) {
+    return TensorSpecBuilder(layout, seq, mask).build();
+}
+TensorSpec spec(const Layout &layout, const Sequence &seq) {
+    return spec(layout, seq, All());
+}
+TensorSpec spec(const Layout &layout) {
+    return spec(layout, Seq(), None());
+}
+TensorSpec spec(const Domain &domain, const Sequence &seq, const Mask &mask) {
+    return spec(Layout({domain}), seq, mask);
+}
+TensorSpec spec(const Domain &domain, const Sequence &seq) {
+    return spec(Layout({domain}), seq);
+}
+TensorSpec spec(const Domain &domain) {
+    return spec(Layout({domain}));
+}
+TensorSpec spec(double value) {
+    return spec(Layout({}), Seq({value}));
+}
+TensorSpec spec() {
+    return spec(Layout({}));
+}
+
+// abstract evaluation wrapper
+struct Eval {
+    // typed result wrapper
+    class Result {
+    private:
+        enum class Type { ERROR, NUMBER, TENSOR };
+        Type _type;
+        double _number;
+        TensorSpec _tensor;
+    public:
+        Result(const Value &value) : _type(Type::ERROR), _number(error_value), _tensor("error") {
+            if (value.is_double()) {
+                _type = Type::NUMBER;
+                _number = value.as_double();
+                _tensor = TensorSpec("double").add({}, _number);
+            } else if (value.is_tensor()) {
+                _type = Type::TENSOR;
+                _tensor = value.as_tensor()->engine().to_spec(*value.as_tensor());
+                if (_tensor.type() == "double") {
+                    _number = _tensor.cells().empty() ? 0.0 : _tensor.cells().begin()->second.value;
+                }
+            }
+        }
+        bool is_error() const { return (_type == Type::ERROR); }
+        bool is_number() const { return (_type == Type::NUMBER); }
+        bool is_tensor() const { return (_type == Type::TENSOR); }
+        double number() const {
+            EXPECT_TRUE(is_number());
+            return _number;
+        }
+        const TensorSpec &tensor() const {
+            EXPECT_TRUE(is_tensor());
+            return _tensor;            
+        }
+    };
+    virtual Result eval(const TensorEngine &) const {
+        TEST_ERROR("wrong signature");
+        return Result(ErrorValue());
+    }
+    virtual Result eval(const TensorEngine &, const TensorSpec &) const {
+        TEST_ERROR("wrong signature");
+        return Result(ErrorValue());
+    }
+    virtual Result eval(const TensorEngine &, const TensorSpec &, const TensorSpec &) const {
+        TEST_ERROR("wrong signature");
+        return Result(ErrorValue());
+    }
+    virtual ~Eval() {}
+};
+
+// catches exceptions trying to keep the test itself safe from eval side-effects
+struct SafeEval : Eval {
+    const Eval &unsafe;
+    SafeEval(const Eval &unsafe_in) : unsafe(unsafe_in) {}
+    Result eval(const TensorEngine &engine) const override {
+        try {
+            return unsafe.eval(engine);
+        } catch (std::exception &e) {
+            TEST_ERROR(e.what());
+            return Result(ErrorValue());
+        }
+    }
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        try {
+            return unsafe.eval(engine, a);
+        } catch (std::exception &e) {
+            TEST_ERROR(e.what());
+            return Result(ErrorValue());
+        }
+
+    }
+    Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
+        try {
+            return unsafe.eval(engine, a, b);
+        } catch (std::exception &e) {
+            TEST_ERROR(e.what());
+            return Result(ErrorValue());
+        }
+    }
+};
+SafeEval safe(const Eval &eval) { return SafeEval(eval); }
+
+// expression(void)
+struct Expr_V : Eval {
+    const vespalib::string &expr;
+    Expr_V(const vespalib::string &expr_in) : expr(expr_in) {}
+    Result eval(const TensorEngine &engine) const override {
+        Function fun = Function::parse(expr);
+        NodeTypes types(fun, {});
+        InterpretedFunction ifun(engine, fun, types);
+        InterpretedFunction::Context ctx;
+        return Result(ifun.eval(ctx));
+    }
+};
+
+// expression(tensor)
+struct Expr_T : Eval {
+    const vespalib::string &expr;
+    Expr_T(const vespalib::string &expr_in) : expr(expr_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        Function fun = Function::parse(expr);
+        auto a_type = ValueType::from_spec(a.type());
+        NodeTypes types(fun, {a_type});
+        InterpretedFunction ifun(engine, fun, types);
+        InterpretedFunction::Context ctx;
+        TensorValue va(engine.create(a));
+        ctx.add_param(va);
+        return Result(ifun.eval(ctx));
+    }
+};
+
+// expression(tensor,tensor)
+struct Expr_TT : Eval {
+    const vespalib::string &expr;
+    Expr_TT(const vespalib::string &expr_in) : expr(expr_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
+        Function fun = Function::parse(expr);
+        auto a_type = ValueType::from_spec(a.type());
+        auto b_type = ValueType::from_spec(b.type());
+        NodeTypes types(fun, {a_type, b_type});
+        InterpretedFunction ifun(engine, fun, types);
+        InterpretedFunction::Context ctx;
+        TensorValue va(engine.create(a));
+        TensorValue vb(engine.create(b));
+        ctx.add_param(va);
+        ctx.add_param(vb);
+        return Result(ifun.eval(ctx));
+    }
+};
+
+// evaluate tensor reduce operation using tensor engine immediate api
+struct ImmediateReduce : Eval {
+    const BinaryOperation &op;
+    std::vector<vespalib::string> dimensions;
+    ImmediateReduce(const BinaryOperation &op_in) : op(op_in), dimensions() {}
+    ImmediateReduce(const BinaryOperation &op_in, const vespalib::string &dimension)
+        : op(op_in), dimensions({dimension}) {}    
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        Stash stash;
+        return Result(engine.reduce(*engine.create(a), op, dimensions, stash));
+    }
+};
+
+// evaluate tensor map operation using tensor engine immediate api
+struct ImmediateMap : Eval {
+    const UnaryOperation &op;
+    ImmediateMap(const UnaryOperation &op_in) : op(op_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        Stash stash;
+        return Result(engine.map(op, *engine.create(a), stash));
+    }
+};
+
+// evaluate tensor apply operation using tensor engine immediate api
+struct ImmediateApply : Eval {
+    const BinaryOperation &op;
+    ImmediateApply(const BinaryOperation &op_in) : op(op_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
+        Stash stash;
+        return Result(engine.apply(op, *engine.create(a), *engine.create(b), stash));
+    }
+};
+
+const size_t tensor_id_a = 11;
+const size_t tensor_id_b = 12;
+const size_t map_operation_id = 22;
+
+// input used when evaluating in retained mode
+struct Input : TensorFunction::Input {
+    std::vector<TensorValue> tensors;
+    const UnaryOperation *map_op;
+    Input(std::unique_ptr<Tensor> a) : tensors(), map_op(nullptr) {
+        tensors.emplace_back(std::move(a));
+    }
+    Input(std::unique_ptr<Tensor> a, const UnaryOperation &op) : tensors(), map_op(&op) {
+        tensors.emplace_back(std::move(a));
+    }
+    Input(std::unique_ptr<Tensor> a, std::unique_ptr<Tensor> b) : tensors(), map_op(nullptr) {
+        tensors.emplace_back(std::move(a));
+        tensors.emplace_back(std::move(b));
+    }
+    const Value &get_tensor(size_t id) const override {
+        size_t offset = (id - tensor_id_a);
+        ASSERT_GREATER(tensors.size(), offset);
+        return tensors[offset];
+    }
+    const UnaryOperation &get_map_operation(size_t id) const {
+        ASSERT_TRUE(map_op != nullptr);
+        ASSERT_EQUAL(id, map_operation_id);
+        return *map_op;
+    }
+};
+
+// evaluate tensor reduce operation using tensor engine retained api
+struct RetainedReduce : Eval {
+    const BinaryOperation &op;
+    std::vector<vespalib::string> dimensions;
+    RetainedReduce(const BinaryOperation &op_in) : op(op_in), dimensions() {}
+    RetainedReduce(const BinaryOperation &op_in, const vespalib::string &dimension)
+        : op(op_in), dimensions({dimension}) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        auto a_type = ValueType::from_spec(a.type());
+        auto ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a), op, dimensions);
+        auto fun = engine.compile(std::move(ir));
+        Input input(engine.create(a));
+        Stash stash;
+        return Result(fun->eval(input, stash));
+    }
+};
+
+// evaluate tensor map operation using tensor engine retained api
+struct RetainedMap : Eval {
+    const UnaryOperation &op;
+    RetainedMap(const UnaryOperation &op_in) : op(op_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
+        auto a_type = ValueType::from_spec(a.type());
+        auto ir = tensor_function::map(map_operation_id, tensor_function::inject(a_type, tensor_id_a));
+        auto fun = engine.compile(std::move(ir));
+        Input input(engine.create(a), op);
+        Stash stash;
+        return Result(fun->eval(input, stash));
+    }
+};
+
+// evaluate tensor apply operation using tensor engine retained api
+struct RetainedApply : Eval {
+    const BinaryOperation &op;
+    RetainedApply(const BinaryOperation &op_in) : op(op_in) {}
+    Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
+        auto a_type = ValueType::from_spec(a.type());
+        auto b_type = ValueType::from_spec(b.type());
+        auto ir = tensor_function::apply(op, tensor_function::inject(a_type, tensor_id_a),
+                                         tensor_function::inject(a_type, tensor_id_b));
+        auto fun = engine.compile(std::move(ir));
+        Input input(engine.create(a), engine.create(b));
+        Stash stash;
+        return Result(fun->eval(input, stash));
+    }
+};
+
+// placeholder used for unused values in a sequence
+const double X = error_value;
+
+// NaN value
+const double my_nan = std::numeric_limits<double>::quiet_NaN();
+
 
 // Test wrapper to avoid passing global test parameters around
 struct TestContext {
-    const TensorEngine &engine;
-    TestContext(const TensorEngine &engine_in) : engine(engine_in) {}
 
-    std::unique_ptr<Tensor> tensor(const std::vector<Space> &spaces, const Sequence &seq) {
-        return engine.create(TensorSpecBuilder(spaces, seq).build());
+    const TensorEngine &ref_engine;
+    const TensorEngine &engine;
+    bool test_mixed_cases;
+    size_t skip_count;
+
+    TestContext(const TensorEngine &engine_in, bool test_mixed_cases_in)
+        : ref_engine(SimpleTensorEngine::ref()), engine(engine_in),
+          test_mixed_cases(test_mixed_cases_in), skip_count(0) {}
+
+    std::unique_ptr<Tensor> tensor(const TensorSpec &spec) {
+        auto result = engine.create(spec);
+        EXPECT_EQUAL(spec.type(), engine.type_of(*result).to_spec());
+        return result;
     }
+
+    bool mixed(size_t n) {
+        if (!test_mixed_cases) {
+            skip_count += n;
+        }
+        return test_mixed_cases;
+    }
+
+    //-------------------------------------------------------------------------
 
     void verify_create_type(const vespalib::string &type_spec) {
         auto tensor = engine.create(TensorSpec(type_spec));
         EXPECT_TRUE(&engine == &tensor->engine());
         EXPECT_EQUAL(type_spec, engine.type_of(*tensor).to_spec());
-    }
-
-    void verify_not_equal(const Tensor &a, const Tensor &b) {
-        EXPECT_FALSE(a == b);
-        EXPECT_FALSE(b == a);
-    }
-
-    void verify_verbatim_tensor(const vespalib::string &tensor_expr, const Tensor &expect) {
-        InterpretedFunction::Context ctx;
-        InterpretedFunction ifun(engine, Function::parse(tensor_expr));
-        const Value &result = ifun.eval(ctx);
-        if (EXPECT_TRUE(result.is_tensor())) {
-            const Tensor *actual = result.as_tensor();
-            EXPECT_EQUAL(*actual, expect);
-        }
     }
 
     void test_tensor_create_type() {
@@ -169,99 +517,286 @@ struct TestContext {
         TEST_DO(verify_create_type("tensor(x{},y{})"));
         TEST_DO(verify_create_type("tensor(x[5])"));
         TEST_DO(verify_create_type("tensor(x[5],y[10])"));
-        TEST_DO(verify_create_type("tensor(x{},y[10])"));
-        TEST_DO(verify_create_type("tensor(x[5],y{})"));
-    }
-
-    void test_tensor_inequality() {
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("double")),
-                                 *engine.create(TensorSpec("tensor(x{})"))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("double")),
-                                 *engine.create(TensorSpec("tensor(x[1])"))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x{})")),
-                                 *engine.create(TensorSpec("tensor(y{})"))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x[1])")),
-                                 *engine.create(TensorSpec("tensor(x[2])"))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x[1])")),
-                                 *engine.create(TensorSpec("tensor(y[1])"))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x{})")),
-                                 *engine.create(TensorSpec("tensor(x[1])"))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("double").add({}, 1)),
-                                 *engine.create(TensorSpec("double").add({}, 2))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x{})").add({{"x", "a"}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x{})").add({{"x", "a"}}, 2))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x{})").add({{"x", "a"}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x{})").add({{"x", "b"}}, 1))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x{})").add({{"x", "a"}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x{},y{})").add({{"x", "a"},{"y", "a"}}, 1))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x[1])").add({{"x", 0}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x[1])").add({{"x", 0}}, 2))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x[1])").add({{"x", 0}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x[2])").add({{"x", 0}}, 1))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x[2])").add({{"x", 0}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x[2])").add({{"x", 1}}, 1))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x[1])").add({{"x", 0}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x[1],y[1])").add({{"x", 0},{"y", 0}}, 1))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x{},y[1])").add({{"x", "a"},{"y", 0}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x{},y[1])").add({{"x", "a"},{"y", 0}}, 2))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x{},y[1])").add({{"x", "a"},{"y", 0}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x{},y[1])").add({{"x", "b"},{"y", 0}}, 1))));
-        TEST_DO(verify_not_equal(*engine.create(TensorSpec("tensor(x[2],y{})").add({{"x", 0},{"y", "a"}}, 1)),
-                                 *engine.create(TensorSpec("tensor(x[2],y{})").add({{"x", 1},{"y", "a"}}, 1))));
-    }
-
-    void test_verbatim_tensors() {
-        TEST_DO(verify_verbatim_tensor("{}", *engine.create(TensorSpec("double"))));
-        TEST_DO(verify_verbatim_tensor("{{}:5}", *engine.create(TensorSpec("double").add({}, 5))));
-        TEST_DO(verify_verbatim_tensor("{{x:foo}:1,{x:bar}:2,{x:baz}:3}", *engine.create(TensorSpec("tensor(x{})")
-                                .add({{"x", "foo"}}, 1)
-                                .add({{"x", "bar"}}, 2)
-                                .add({{"x", "baz"}}, 3))));
-        TEST_DO(verify_verbatim_tensor("{{x:foo,y:a}:1,{y:b,x:bar}:2}", *engine.create(TensorSpec("tensor(x{},y{})")
-                                .add({{"x", "foo"}, {"y", "a"}}, 1)
-                                .add({{"x", "bar"}, {"y", "b"}}, 2))));
-    }
-
-    void verify_map_op(const UnaryOperation &op, const Tensor &input, const Tensor &expect) {
-        Stash stash;
-        const Value &result = engine.map(op, input, stash);
-        if (EXPECT_TRUE(result.is_tensor())) {
-            const Tensor &actual = *result.as_tensor();
-            EXPECT_EQUAL(actual, expect);
+        if (mixed(2)) {
+            TEST_DO(verify_create_type("tensor(x{},y[10])"));
+            TEST_DO(verify_create_type("tensor(x[5],y{})"));
         }
     }
 
-    void test_map_op(const UnaryOperation &op, const Sequence &seq) {
-        TEST_DO(verify_map_op(op,
-                              *tensor({Space("x", 10)}, seq),
-                              *tensor({Space("x", 10)}, OpSeq(seq, op))));
-        TEST_DO(verify_map_op(op,
-                              *tensor({Space("x", {"a", "b", "c"})}, seq),
-                              *tensor({Space("x", {"a", "b", "c"})}, OpSeq(seq, op))));
+    //-------------------------------------------------------------------------
+
+    void verify_equal(const TensorSpec &a, const TensorSpec &b) {
+        auto ta = tensor(a);
+        auto tb = tensor(b);
+        EXPECT_EQUAL(a, b);
+        EXPECT_EQUAL(*ta, *tb);
+        TensorSpec spec = engine.to_spec(*ta);
+        TensorSpec ref_spec = ref_engine.to_spec(*ref_engine.create(a));
+        EXPECT_EQUAL(spec, ref_spec);
+    }
+
+    void test_tensor_equality() {
+        TEST_DO(verify_equal(spec(), spec()));
+        TEST_DO(verify_equal(spec(10.0), spec(10.0)));
+        TEST_DO(verify_equal(spec(x()), spec(x())));
+        TEST_DO(verify_equal(spec(x({"a"}), Seq({1})), spec(x({"a"}), Seq({1}))));
+        TEST_DO(verify_equal(spec({x({"a"}),y({"a"})}, Seq({1})), spec({y({"a"}),x({"a"})}, Seq({1}))));
+        TEST_DO(verify_equal(spec(x(3)), spec(x(3))));
+        TEST_DO(verify_equal(spec({x(1),y(1)}, Seq({1})), spec({y(1),x(1)}, Seq({1}))));
+        if (mixed(2)) {
+            TEST_DO(verify_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({y(1),x({"a"})}, Seq({1}))));
+            TEST_DO(verify_equal(spec({y({"a"}),x(1)}, Seq({1})), spec({x(1),y({"a"})}, Seq({1}))));
+        }
+    }
+
+    //-------------------------------------------------------------------------
+
+    void verify_not_equal(const TensorSpec &a, const TensorSpec &b) {
+        auto ta = tensor(a);
+        auto tb = tensor(b);
+        EXPECT_NOT_EQUAL(a, b);
+        EXPECT_NOT_EQUAL(b, a);
+        EXPECT_NOT_EQUAL(*ta, *tb);
+        EXPECT_NOT_EQUAL(*tb, *ta);
+    }
+
+    void test_tensor_inequality() {
+        TEST_DO(verify_not_equal(spec(1.0), spec(2.0)));
+        TEST_DO(verify_not_equal(spec(), spec(x())));
+        TEST_DO(verify_not_equal(spec(), spec(x(1))));
+        TEST_DO(verify_not_equal(spec(x()), spec(x(1))));
+        TEST_DO(verify_not_equal(spec(x()), spec(y())));
+        TEST_DO(verify_not_equal(spec(x(1)), spec(x(2))));
+        TEST_DO(verify_not_equal(spec(x(1)), spec(y(1))));
+        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec(x({"a"}), Seq({2}))));
+        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec(x({"b"}), Seq({1}))));
+        TEST_DO(verify_not_equal(spec(x({"a"}), Seq({1})), spec({x({"a"}),y({"a"})}, Seq({1}))));
+        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec(x(1), Seq({2}))));
+        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec(x(2), Seq({1}), Bits({1,0}))));
+        TEST_DO(verify_not_equal(spec(x(2), Seq({1,1}), Bits({1,0})),
+                                 spec(x(2), Seq({1,1}), Bits({0,1}))));
+        TEST_DO(verify_not_equal(spec(x(1), Seq({1})), spec({x(1),y(1)}, Seq({1}))));
+        if (mixed(3)) {
+            TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"a"}),y(1)}, Seq({2}))));
+            TEST_DO(verify_not_equal(spec({x({"a"}),y(1)}, Seq({1})), spec({x({"b"}),y(1)}, Seq({1}))));
+            TEST_DO(verify_not_equal(spec({x(2),y({"a"})}, Seq({1}), Bits({1,0})),
+                                     spec({x(2),y({"a"})}, Seq({X,1}), Bits({0,1}))));
+        }
+    }
+
+    //-------------------------------------------------------------------------
+
+    void verify_verbatim_tensor(const vespalib::string &tensor_expr, const TensorSpec &expect) {
+        EXPECT_EQUAL(Expr_V(tensor_expr).eval(engine).tensor(), expect);
+    }
+
+    void test_verbatim_tensors() {
+        TEST_DO(verify_verbatim_tensor("{}", spec(0.0)));
+        TEST_DO(verify_verbatim_tensor("{{}:5}", spec(5.0)));
+        TEST_DO(verify_verbatim_tensor("{{x:foo}:1,{x:bar}:2,{x:baz}:3}", spec(x({"foo","bar","baz"}), Seq({1,2,3}))));
+        TEST_DO(verify_verbatim_tensor("{{x:foo,y:a}:1,{y:b,x:bar}:2}",
+                                       spec({x({"foo","bar"}),y({"a","b"})}, Seq({1,X,X,2}), Bits({1,0,0,1}))));
+    }
+
+    //-------------------------------------------------------------------------
+
+    void verify_reduce_result(const Eval &eval, const TensorSpec &a, const Eval::Result &expect) {
+        if (expect.is_tensor()) {
+            EXPECT_EQUAL(eval.eval(engine, a).tensor(), expect.tensor());
+        } else if (expect.is_number()) {
+            EXPECT_EQUAL(eval.eval(engine, a).number(), expect.number());
+        } else {
+            TEST_FATAL("expected result should be valid");
+        }
+    }
+
+    void test_reduce_op(const vespalib::string &name, const BinaryOperation &op, const Sequence &seq) {
+        std::vector<Layout> layouts = {
+            {x(3)},
+            {x(3),y(5)},
+            {x(3),y(5),z(7)},
+            {x({"a","b","c"})},
+            {x({"a","b","c"}),y({"foo","bar"})},
+            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}
+        };
+        if (mixed(2 * 4)) {
+            layouts.push_back({x(3),y({"foo", "bar"}),z(7)});
+            layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
+        }
+        for (const Layout &layout: layouts) {
+            TensorSpec input = spec(layout, seq);
+            for (const Domain &domain: layout) {
+                Eval::Result expect = ImmediateReduce(op, domain.dimension).eval(ref_engine, input);
+                TEST_STATE(make_string("shape: %s, reduce dimension: %s",
+                                       infer_type(layout).c_str(), domain.dimension.c_str()).c_str());
+                if (!name.empty()) {
+                    vespalib::string expr = make_string("%s(a,%s)", name.c_str(), domain.dimension.c_str());
+                    TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
+                }
+                TEST_DO(verify_reduce_result(ImmediateReduce(op, domain.dimension), input, expect));
+                TEST_DO(verify_reduce_result(RetainedReduce(op, domain.dimension), input, expect));
+            }
+            {
+                Eval::Result expect = ImmediateReduce(op).eval(ref_engine, input);
+                TEST_STATE(make_string("shape: %s, reduce all dimensions",
+                                       infer_type(layout).c_str()).c_str());
+                if (!name.empty()) {
+                    vespalib::string expr = make_string("%s(a)", name.c_str());
+                    TEST_DO(verify_reduce_result(Expr_T(expr), input, expect));
+                }
+                TEST_DO(verify_reduce_result(ImmediateReduce(op), input, expect));
+                TEST_DO(verify_reduce_result(RetainedReduce(op), input, expect));
+            }
+        }
+    }
+
+    void test_tensor_reduce() {
+        TEST_DO(test_reduce_op("sum", operation::Add(), N()));
+        TEST_DO(test_reduce_op("", operation::Mul(), Sigmoid(N())));
+        TEST_DO(test_reduce_op("", operation::Min(), N()));
+        TEST_DO(test_reduce_op("", operation::Max(), N()));
+    }
+
+    //-------------------------------------------------------------------------
+
+    void test_map_op(const Eval &eval, const UnaryOperation &ref_op, const Sequence &seq) {
+        std::vector<Layout> layouts = {
+            {},
+            {x(3)},
+            {x(3),y(5)},
+            {x(3),y(5),z(7)},
+            {x({"a","b","c"})},
+            {x({"a","b","c"}),y({"foo","bar"})},
+            {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}
+        };
+        if (mixed(2)) {
+            layouts.push_back({x(3),y({"foo", "bar"}),z(7)});
+            layouts.push_back({x({"a","b","c"}),y(5),z({"i","j","k","l"})});
+        }
+        for (const Layout &layout: layouts) {
+            EXPECT_EQUAL(eval.eval(engine, spec(layout, seq)).tensor(), spec(layout, OpSeq(seq, ref_op)));
+        }
+    }
+
+    void test_map_op(const vespalib::string &expr, const UnaryOperation &op, const Sequence &seq) {
+        TEST_DO(test_map_op(ImmediateMap(op), op, seq));
+        TEST_DO(test_map_op(RetainedMap(op), op, seq));
+        TEST_DO(test_map_op(Expr_T(expr), op, seq));
     }
 
     void test_tensor_map() {
-        TEST_DO(test_map_op(operation::Floor(), Div10(N())));
-        TEST_DO(test_map_op(operation::Ceil(), Div10(N())));
-        TEST_DO(test_map_op(operation::Sqrt(), Div10(N())));
-        TEST_DO(test_map_op(MyOp(), Div10(N())));
+        TEST_DO(test_map_op("-a", operation::Neg(), Sub2(Div10(N()))));
+        TEST_DO(test_map_op("!a", operation::Not(), Mask2Seq(SkipNth(3))));
+        TEST_DO(test_map_op("cos(a)", operation::Cos(), Div10(N())));
+        TEST_DO(test_map_op("sin(a)", operation::Sin(), Div10(N())));
+        TEST_DO(test_map_op("tan(a)", operation::Tan(), Div10(N())));
+        TEST_DO(test_map_op("cosh(a)", operation::Cosh(), Div10(N())));
+        TEST_DO(test_map_op("sinh(a)", operation::Sinh(), Div10(N())));
+        TEST_DO(test_map_op("tanh(a)", operation::Tanh(), Div10(N())));
+        TEST_DO(test_map_op("acos(a)", operation::Acos(), Sigmoid(Div10(N()))));
+        TEST_DO(test_map_op("asin(a)", operation::Asin(), Sigmoid(Div10(N()))));
+        TEST_DO(test_map_op("atan(a)", operation::Atan(), Div10(N())));
+        TEST_DO(test_map_op("exp(a)", operation::Exp(), Div10(N())));
+        TEST_DO(test_map_op("log10(a)", operation::Log10(), Div10(N())));
+        TEST_DO(test_map_op("log(a)", operation::Log(), Div10(N())));
+        TEST_DO(test_map_op("sqrt(a)", operation::Sqrt(), Div10(N())));
+        TEST_DO(test_map_op("ceil(a)", operation::Ceil(), Div10(N())));
+        TEST_DO(test_map_op("fabs(a)", operation::Fabs(), Div10(N())));
+        TEST_DO(test_map_op("floor(a)", operation::Floor(), Div10(N())));
+        TEST_DO(test_map_op("isNan(a)", operation::IsNan(), Mask2Seq(SkipNth(3), 1.0, my_nan)));
+        TEST_DO(test_map_op("relu(a)", operation::Relu(), Sub2(Div10(N()))));
+        TEST_DO(test_map_op("sigmoid(a)", operation::Sigmoid(), Sub2(Div10(N()))));
+        TEST_DO(test_map_op("(a+1)*2", MyOp(), Div10(N())));
     }
 
-    void run_all_tests() {
+    //-------------------------------------------------------------------------
+
+    void test_apply_op(const Eval &eval, const BinaryOperation &op, const Sequence &seq) {
+        std::vector<Layout> layouts = {
+            {},                                    {},
+            {x(5)},                                {x(5)},
+            {x(5)},                                {x(3)},
+            {x(5)},                                {y(5)},
+            {x(5)},                                {x(5),y(5)},
+            {x(3),y(5)},                           {x(4),y(4)},
+            {x(3),y(5)},                           {y(5),z(7)},
+            {x({"a","b","c"})},                    {x({"a","b","c"})},
+            {x({"a","b","c"})},                    {x({"a","b"})},
+            {x({"a","b","c"})},                    {y({"foo","bar","baz"})},
+            {x({"a","b","c"})},                    {x({"a","b","c"}),y({"foo","bar","baz"})},
+            {x({"a","b"}),y({"foo","bar","baz"})}, {x({"a","b","c"}),y({"foo","bar"})},
+            {x({"a","b"}),y({"foo","bar","baz"})}, {y({"foo","bar"}),z({"i","j","k","l"})}
+        };
+        if (mixed(2)) {
+            layouts.push_back({x(3),y({"foo", "bar"})});
+            layouts.push_back({y({"foo", "bar"}),z(7)});
+            layouts.push_back({x({"a","b","c"}),y(5)});
+            layouts.push_back({y(5),z({"i","j","k","l"})});
+        }
+        ASSERT_TRUE((layouts.size() % 2) == 0);
+        for (size_t i = 0; i < layouts.size(); i += 2) {
+            TensorSpec lhs_input = spec(layouts[i], seq);
+            TensorSpec rhs_input = spec(layouts[i + 1], seq);
+            TEST_STATE(make_string("lhs shape: %s, rhs shape: %s",
+                                   lhs_input.type().c_str(),
+                                   rhs_input.type().c_str()).c_str());
+            TensorSpec expect = ImmediateApply(op).eval(ref_engine, lhs_input, rhs_input).tensor(); 
+            EXPECT_EQUAL(safe(eval).eval(engine, lhs_input, rhs_input).tensor(), expect);
+        }
+    }
+
+    void test_apply_op(const vespalib::string &expr, const BinaryOperation &op, const Sequence &seq) {
+        TEST_DO(test_apply_op(ImmediateApply(op), op, seq));
+        TEST_DO(test_apply_op(RetainedApply(op), op, seq));
+        TEST_DO(test_apply_op(Expr_TT(expr), op, seq));
+    }
+
+    void test_tensor_apply() {
+        TEST_DO(test_apply_op("a+b", operation::Add(), Div10(N())));
+        TEST_DO(test_apply_op("a-b", operation::Sub(), Div10(N())));
+        TEST_DO(test_apply_op("a*b", operation::Mul(), Div10(N())));
+        TEST_DO(test_apply_op("a/b", operation::Div(), Div10(N())));
+        TEST_DO(test_apply_op("a^b", operation::Pow(), Div10(N())));
+        TEST_DO(test_apply_op("pow(a,b)", operation::Pow(), Div10(N())));
+        TEST_DO(test_apply_op("a==b", operation::Equal(), Div10(N())));
+        TEST_DO(test_apply_op("a!=b", operation::NotEqual(), Div10(N())));
+        TEST_DO(test_apply_op("a~=b", operation::Approx(), Div10(N())));
+        TEST_DO(test_apply_op("a<b", operation::Less(), Div10(N())));
+        TEST_DO(test_apply_op("a<=b", operation::LessEqual(), Div10(N())));
+        TEST_DO(test_apply_op("a>b", operation::Greater(), Div10(N())));
+        TEST_DO(test_apply_op("a>=b", operation::GreaterEqual(), Div10(N())));
+        TEST_DO(test_apply_op("a&&b", operation::And(), Mask2Seq(SkipNth(3))));
+        TEST_DO(test_apply_op("a||b", operation::Or(), Mask2Seq(SkipNth(3))));
+        TEST_DO(test_apply_op("atan2(a,b)", operation::Atan2(), Div10(N())));
+        TEST_DO(test_apply_op("ldexp(a,b)", operation::Ldexp(), Div10(N())));
+        TEST_DO(test_apply_op("fmod(a,b)", operation::Fmod(), Div10(N())));
+        TEST_DO(test_apply_op("min(a,b)", operation::Min(), Div10(N())));
+        TEST_DO(test_apply_op("max(a,b)", operation::Max(), Div10(N())));
+    }
+
+    //-------------------------------------------------------------------------
+
+    void run_tests() {
         TEST_DO(test_tensor_create_type());
+        TEST_DO(test_tensor_equality());
         TEST_DO(test_tensor_inequality());
         TEST_DO(test_verbatim_tensors());
+        TEST_DO(test_tensor_reduce());
         TEST_DO(test_tensor_map());
+        TEST_DO(test_tensor_apply());
     }
 };
 
 } // namespace vespalib::eval::test::<unnamed>
 
 void
-TensorConformance::run_tests(const TensorEngine &engine)
+TensorConformance::run_tests(const TensorEngine &engine, bool test_mixed_cases)
 {
-    TestContext ctx(engine);
-    ctx.run_all_tests();
+    TestContext ctx(engine, test_mixed_cases);
+    ctx.run_tests();
+    if (ctx.skip_count > 0) {
+        fprintf(stderr, "WARNING: skipped %zu mixed test cases\n", ctx.skip_count);
+    }
 }
 
 } // namespace vespalib::eval::test

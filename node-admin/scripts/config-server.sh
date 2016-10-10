@@ -89,6 +89,7 @@ function Start {
                --env "HOSTED_VESPA_REGION=$region" \
                --env "HOSTED_VESPA_ENVIRONMENT=$environment" \
                --env "CONFIG_SERVER_HOSTNAME=$CONFIG_SERVER_HOSTNAME" \
+               --env "VESPA_HOME=$VESPA_HOME" \
                --env "HOST_BRIDGE_IP=$HOST_BRIDGE_IP" \
                --entrypoint /usr/local/bin/start-config-server.sh \
                "$DOCKER_IMAGE")
@@ -124,7 +125,7 @@ function Start {
     then
         # Wait for config server to come up
         echo -n "Waiting for healthy Config Server (~30s)"
-        local url="http://$CONFIG_SERVER_HOSTNAME:19071/state/v1/health"
+        local url="http://$CONFIG_SERVER_HOSTNAME:$VESPA_WEB_SERVICE_PORT/state/v1/health"
         while ! curl --silent --fail --max-time 1 "$url" >/dev/null
         do
             echo -n .

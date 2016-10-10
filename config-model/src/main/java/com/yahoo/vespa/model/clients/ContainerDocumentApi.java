@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @since 5.1.11
  */
 public class ContainerDocumentApi implements FeederConfig.Producer {
