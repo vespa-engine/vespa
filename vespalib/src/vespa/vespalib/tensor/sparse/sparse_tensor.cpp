@@ -223,9 +223,7 @@ buildAddress(const SparseTensor::Dimensions &dimensions,
 {
     for (const auto &dimension : dimensions) {
         auto label = decoder.decodeLabel();
-        if (!label.empty()) {
-            address.emplace(std::make_pair(dimension, TensorSpec::Label(label)));
-        }
+        address.emplace(std::make_pair(dimension, TensorSpec::Label(label)));
     }
     assert(!decoder.valid());
 }

@@ -231,6 +231,16 @@ TensorSpec spec() {
     return spec(Layout({}));
 }
 
+TensorSpec spec(const vespalib::string &type,
+                const std::vector<std::pair<TensorSpec::Address, TensorSpec::Value>> &cells) {
+    TensorSpec spec("tensor(" + type + ")");
+
+    for (const auto &cell : cells) {
+        spec.add(cell.first, cell.second);
+    }
+    return spec;
+}
+
 // abstract evaluation wrapper
 struct Eval {
     // typed result wrapper
@@ -711,6 +721,171 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_apply_op(const Eval &eval,
+                       const TensorSpec &expect,
+                       const TensorSpec &lhs,
+                       const TensorSpec &rhs) {
+        EXPECT_EQUAL(safe(eval).eval(engine, lhs, rhs).tensor(), expect);
+    }
+
+    void test_fixed_sparse_cases_apply_op(const Eval &eval,
+                                          const BinaryOperation &op)
+    {
+        TEST_DO(test_apply_op(eval,
+                              spec("x{}", {}),
+                              spec("x{}", { { {{"x","1"}}, 3 } }),
+                              spec("x{}", { { {{"x","2"}}, 5 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{}", { { {{"x","1"}}, op.eval(3,5) } }),
+                              spec("x{}", { { {{"x","1"}}, 3 } }),
+                              spec("x{}", { { {{"x","1"}}, 5 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{}", { { {{"x","1"}}, op.eval(3,-5) } }),
+                              spec("x{}", { { {{"x","1"}},  3 } }),
+                              spec("x{}", { { {{"x","1"}}, -5 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{},z{}",
+                                   {   { {{"x","-"},{"y","2"},{"z","-"}},
+                                               op.eval(5,7) },
+                                       { {{"x","1"},{"y","-"},{"z","3"}},
+                                               op.eval(3,11) } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","-"},{"y","2"}},  5 },
+                                       { {{"x","1"},{"y","-"}},  3 } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","-"},{"z","3"}}, 11 },
+                                       { {{"y","2"},{"z","-"}},  7 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{},z{}",
+                                   {   { {{"x","-"},{"y","2"},{"z","-"}},
+                                               op.eval(7,5) },
+                                       { {{"x","1"},{"y","-"},{"z","3"}},
+                                               op.eval(11,3) } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","-"},{"z","3"}}, 11 },
+                                       { {{"y","2"},{"z","-"}},  7 } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","-"},{"y","2"}},  5 },
+                                       { {{"x","1"},{"y","-"}},  3 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("y{},z{}",
+                                   {   { {{"y","2"},{"z","-"}},
+                                               op.eval(5,7) } }),
+                              spec("y{}", { { {{"y","2"}}, 5 } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","-"},{"z","3"}}, 11 },
+                                       { {{"y","2"},{"z","-"}},  7 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("y{},z{}",
+                                   {   { {{"y","2"},{"z","-"}},
+                                               op.eval(7,5) } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","-"},{"z","3"}}, 11 },
+                                       { {{"y","2"},{"z","-"}},  7 } }),
+                              spec("y{}", { { {{"y","2"}}, 5 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{}",
+                                   {   { {{"x","-"},{"y","2"}},
+                                               op.eval(5,7) } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","-"},{"y","2"}}, 5 },
+                                       { {{"x","1"},{"y","-"}}, 3 } }),
+                              spec("y{}", { { {{"y","2"}}, 7 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{}",
+                                   {   { {{"x","-"},{"y","2"}},
+                                               op.eval(7,5) } }),
+                              spec("y{}", { { {{"y","2"}}, 7 } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","-"},{"y","2"}}, 5 },
+                                       { {{"x","1"},{"y","-"}}, 3 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},z{}",
+                                   {   { {{"x","1"},{"z","3"}},
+                                               op.eval(3,11) } }),
+                              spec("x{}", { { {{"x","1"}},  3 } }),
+                              spec("z{}", { { {{"z","3"}}, 11 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},z{}",
+                                   {   { {{"x","1"},{"z","3"}},
+                                               op.eval(11,3) } }),
+                              spec("z{}",{ { {{"z","3"}}, 11 } }),
+                              spec("x{}",{ { {{"x","1"}},  3 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{}",
+                                   {   { {{"x","1"},{"y","1"}},
+                                               op.eval(3,5) },
+                                       { {{"x","2"},{"y","1"}},
+                                               op.eval(7,5) } }),
+                              spec("x{}",
+                                   {   { {{"x","1"}}, 3 },
+                                       { {{"x","2"}}, 7 } }),
+                              spec("y{}",
+                                   {   { {{"y","1"}}, 5 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{},z{}",
+                                   {   { {{"x","1"},{"y","1"},{"z","1"}},
+                                               op.eval(1,7) },
+                                       { {{"x","1"},{"y","1"},{"z","2"}},
+                                               op.eval(1,13) },
+                                       { {{"x","1"},{"y","2"},{"z","1"}},
+                                               op.eval(5,11) },
+                                       { {{"x","2"},{"y","1"},{"z","1"}},
+                                               op.eval(3,7) },
+                                       { {{"x","2"},{"y","1"},{"z","2"}},
+                                               op.eval(3,13) } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","1"},{"y","1"}},  1 },
+                                       { {{"x","1"},{"y","2"}},  5 },
+                                       { {{"x","2"},{"y","1"}},  3 } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","1"},{"z","1"}},  7 },
+                                       { {{"y","1"},{"z","2"}}, 13 },
+                                       { {{"y","2"},{"z","1"}}, 11 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{},z{}",
+                                   {   { {{"x","1"},{"y","1"},{"z","1"}},
+                                               op.eval(1,7) } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","1"},{"y","-"}},  5 },
+                                       { {{"x","1"},{"y","1"}},  1 } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","1"},{"z","1"}},  7 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{},z{}",
+                                   {   { {{"x","1"},{"y","-"},{"z","1"}},
+                                               op.eval(5,11) },
+                                       { {{"x","1"},{"y","1"},{"z","1"}},
+                                               op.eval(1,7) } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","1"},{"y","-"}},  5 },
+                                       { {{"x","1"},{"y","1"}},  1 } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","-"},{"z","1"}}, 11 },
+                                       { {{"y","1"},{"z","1"}},  7 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{},z{}",
+                                   {   { {{"x","1"},{"y","1"},{"z","1"}},
+                                               op.eval(1,7) } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","-"},{"y","-"}},  5 },
+                                       { {{"x","1"},{"y","1"}},  1 } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","1"},{"z","1"}},  7 } })));
+        TEST_DO(test_apply_op(eval,
+                              spec("x{},y{},z{}",
+                                   {   { {{"x","-"},{"y","-"},{"z", "-"}},
+                                               op.eval(5,11) },
+                                       { {{"x","1"},{"y","1"},{"z","1"}},
+                                               op.eval(1,7) } }),
+                              spec("x{},y{}",
+                                   {   { {{"x","-"},{"y","-"}},  5 },
+                                       { {{"x","1"},{"y","1"}},  1 } }),
+                              spec("y{},z{}",
+                                   {   { {{"y","-"},{"z","-"}}, 11 },
+                                       { {{"y","1"},{"z","1"}},  7 } })));
+    }
+
     void test_apply_op(const Eval &eval, const BinaryOperation &op, const Sequence &seq) {
         std::vector<Layout> layouts = {
             {},                                    {},
@@ -743,6 +918,7 @@ struct TestContext {
             TensorSpec expect = ImmediateApply(op).eval(ref_engine, lhs_input, rhs_input).tensor(); 
             EXPECT_EQUAL(safe(eval).eval(engine, lhs_input, rhs_input).tensor(), expect);
         }
+        TEST_DO(test_fixed_sparse_cases_apply_op(eval, op));
     }
 
     void test_apply_op(const vespalib::string &expr, const BinaryOperation &op, const Sequence &seq) {

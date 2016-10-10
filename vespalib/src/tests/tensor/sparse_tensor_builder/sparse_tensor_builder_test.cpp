@@ -66,8 +66,8 @@ TEST("require that tensor can be converted to tensor spec")
 {
     Tensor::UP tensor = buildTensor();
     TensorSpec expSpec("tensor(a{},b{},c{},d{})");
-    expSpec.add({{"a", "1"}, {"b", "2"}}, 10).
-            add({{"c", "3"}, {"d", "4"}}, 20);
+    expSpec.add({{"a", "1"}, {"b", "2"}, {"c", ""}, {"d", ""}}, 10).
+        add({{"a", ""},{"b",""},{"c", "3"}, {"d", "4"}}, 20);
     TensorSpec actSpec = tensor->toSpec();
     EXPECT_EQUAL(expSpec, actSpec);
 }
