@@ -25,6 +25,10 @@ public class DocumentApiApplicationTest {
     }
 
     private int findRandomOpenPortOnAllLocalInterfaces() throws IOException {
-           return new ServerSocket(0).getLocalPort();
+        ServerSocket socket = new ServerSocket(0);
+        socket.setReuseAddress(true);
+        int port = socket.getLocalPort();
+        socket.close();
+        return port;
     }
 }
