@@ -483,6 +483,16 @@
               <classpathScope>compile</classpathScope>
             </configuration>
           </execution>
+          <execution>
+            <id>test-schema-files</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>test</phase>
+            <configuration>
+              <executable>src/test/sh/test-schema.sh</executable>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
