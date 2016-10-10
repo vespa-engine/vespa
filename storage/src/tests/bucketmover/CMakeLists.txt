@@ -3,6 +3,8 @@ vespa_add_library(storage_testbucketmover TEST
     SOURCES
     bucketmovertest.cpp
     htmltabletest.cpp
+    DEPENDS
+    storage
     AFTER
     storage_storageconfig
 )
