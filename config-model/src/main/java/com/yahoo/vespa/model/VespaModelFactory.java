@@ -16,15 +16,19 @@ import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
+import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -142,9 +146,9 @@ public class VespaModelFactory implements ModelFactory {
                 .build();
     }
 
-
     private static HostProvisioner createHostProvisioner(ModelContext modelContext) {
-        if (isHostedVespaRoutingApplication(modelContext)) {
+        // TODO: Remove this (use only else part of if statement) when zone applications uses nodes in node repo in all zones
+        if (isHostedVespaRoutingApplication(modelContext) && ! useRoutingNodesInNodeRepo(modelContext.applicationPackage().getServices())) {
             //TODO: This belongs in HostedVespaProvisioner.
             //Added here for now since com.yahoo.config.model.api.HostProvisioner is not created per application,
             //and allocation is independent of ApplicationPackage.
@@ -153,6 +157,19 @@ public class VespaModelFactory implements ModelFactory {
             return modelContext.hostProvisioner().orElse(
                     DeployState.getDefaultModelHostProvisioner(modelContext.applicationPackage()));
         }
+    }
+
+    // Returns true if nodes element has an attribute 'type', false otherwise
+    private static boolean useRoutingNodesInNodeRepo(Reader servicesReader) {
+        Document services = XmlHelper.getDocument(servicesReader);
+
+        Element jdisc = XML.getChild(services.getDocumentElement(), "jdisc");
+        if (jdisc == null) return false;
+
+        Element nodes = XML.getChild(jdisc, "nodes");
+        if (nodes == null) return false;
+
+        return nodes.hasAttribute("type");
     }
 
     private static Reader hostsXml(ModelContext modelContext) {
