@@ -532,7 +532,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private RemoteApiVersion initDockerConnection(final DockerConfig config, int connectTimeousMs, boolean fallbackTo123orErrors) {
+    private void initDockerConnection(final DockerConfig config, int connectTimeousMs, boolean fallbackTo123orErrors) {
         dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
                 .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)

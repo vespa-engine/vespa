@@ -70,7 +70,6 @@ public class DockerTest {
 
     @Test
     public void testDockerImagePull() throws ExecutionException, InterruptedException {
-        assumeTrue(isMacOSX);
         assumeTrue(dockerDaemonIsPresent());
         DockerImpl docker = new DockerImpl(dockerConfig);
 
@@ -93,7 +92,6 @@ public class DockerTest {
 
     @Test
     public void testCreateImageStartAndStopContainerDeleteImage() throws IOException, InterruptedException, ExecutionException {
-        assumeTrue(isMacOSX);
         assumeTrue(dockerDaemonIsPresent());
         createDockerImage(docker);
         ContainerName containerName = new ContainerName("foo");
