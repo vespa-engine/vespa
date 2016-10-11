@@ -6,7 +6,6 @@ vespa_add_library(vespalib_vespalib_tensor
     tensor_address.cpp
     tensor_apply.cpp
     tensor_factory.cpp
-    tensor_function.cpp
     tensor_mapper.cpp
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_sparse>
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_dense>

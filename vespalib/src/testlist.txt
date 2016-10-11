@@ -67,7 +67,6 @@ tests/tensor/dense_tensor_builder
 tests/tensor/simple_tensor_builder
 tests/tensor/tensor
 tests/tensor/tensor_address
-tests/tensor/tensor_function
 tests/tensor/tensor_mapper
 tests/tensor/tensor_performance
 tests/tensor/tensor_serialization
