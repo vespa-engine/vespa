@@ -27,9 +27,9 @@ public class RankingConstantsValidator extends Validator {
             this.combinedMessage = messagePrelude;
         }
 
-        public ExceptionMessageCollector add(Throwable throwable) {
+        public ExceptionMessageCollector add(Throwable throwable, String rcName, String rcFilename) {
             exceptionsOccurred = true;
-            combinedMessage += "\n" + throwable.getMessage();
+            combinedMessage += String.format("\nFailed to validate ranking constant %s (%s): %s", rcName, rcFilename, throwable.getMessage());
             return this;
         }
     }
@@ -49,8 +49,8 @@ public class RankingConstantsValidator extends Validator {
             for (RankingConstant rc : sd.getSearch().getRankingConstants()) {
                 try {
                     validateRankingConstant(rc, applicationPackage);
-                } catch (InvalidConstantTensor | FileNotFoundException e) {
-                    exceptionMessageCollector.add(e);
+                } catch (InvalidConstantTensor | FileNotFoundException ex) {
+                    exceptionMessageCollector.add(ex, rc.getName(), rc.getFileName());
                 }
             }
         }

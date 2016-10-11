@@ -19,9 +19,9 @@ public class RankingConstantsValidatorTest {
     @Test
     public void ensure_that_failing_ranking_constants_fails() {
         expectedException.expect(TensorValidationFailed.class);
-        expectedException.expectMessage("Tensor coordinate is not a string (VALUE_NUMBER_INT)");
-        expectedException.expectMessage("Tensor dimension \"cd\" does not exist");
-        expectedException.expectMessage("Tensor dimension \"z\" does not exist");
+        expectedException.expectMessage("Failed to validate ranking constant constant_tensor_2 (tensors/constant_tensor_2.json): Tensor coordinate is not a string (VALUE_NUMBER_INT)");
+        expectedException.expectMessage("Failed to validate ranking constant constant_tensor_3 (tensors/constant_tensor_3.json): Tensor dimension \"cd\" does not exist");
+        expectedException.expectMessage("Failed to validate ranking constant constant_tensor_4 (tensors/constant_tensor_4.json): Tensor dimension \"z\" does not exist");
 
         new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/ranking_constants_fail/").create();
     }
