@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -24,7 +25,6 @@ import java.util.function.Function;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -49,7 +49,9 @@ public class ResumeTest {
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock, mr);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
+                                  new DockerOperationsImpl(dockerMock, environment),
+                                  maintenanceSchedulerMock, mr, new Environment(), new Maintainer());
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
         nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
