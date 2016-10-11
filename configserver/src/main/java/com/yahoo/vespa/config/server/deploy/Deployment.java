@@ -123,7 +123,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             activateLock.acquire(timeoutBudget, ignoreLockFailure);
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(localSessionRepo.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
-            if (hostProvisioner.isPresent() && !session.getApplicationId().isHostedVespaRoutingApplication()) {
+
+            if (hostProvisioner.isPresent()) {
                 ProvisionInfo info = session.getProvisionInfo();
                 hostProvisioner.get().activate(transaction, session.getApplicationId(), info.getHosts());
             }
