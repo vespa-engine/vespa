@@ -93,7 +93,7 @@ public class DockerImpl implements Docker {
                 .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
                 .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
         // Fail fast
-        RemoteApiVersion remoteApiVersion = findCorrectRemoteApiVersion(config, 100 /* connect timeout millis */);
+        RemoteApiVersion remoteApiVersion = getRemoteApiVersion(config, 100 /* connect timeout millis */);
         this.dockerClient = DockerClientImpl.getInstance(
                 buildDockerClientConfig(config)
                         .withApiVersion(remoteApiVersion)
@@ -560,25 +560,6 @@ public class DockerImpl implements Docker {
                 this.stats = stats;
                 onComplete();
             }
-        }
-    }
-
-    private RemoteApiVersion findCorrectRemoteApiVersion(final DockerConfig config, int connectTimeousMillis) {
-        RemoteApiVersion remoteApiVersion;
-        try {
-            // Fail fast
-            remoteApiVersion = getRemoteApiVersion(config, connectTimeousMillis);
-            logger.info("Found version of remote docker API: " + remoteApiVersion);
-            // From version 1.24 a field was removed which causes trouble with the current docker java code.
-            // When this is fixed, we can remove this and do not specify version.
-            if (remoteApiVersion.isGreaterOrEqual(RemoteApiVersion.VERSION_1_24)) {
-                logger.info("Found version 1.24 or newer of remote API, using 1.23.");
-                return RemoteApiVersion.VERSION_1_23;
-            }
-            return remoteApiVersion;
-        } catch (Exception e) {
-            logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);
-            return RemoteApiVersion.VERSION_1_23;
         }
     }
 
