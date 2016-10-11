@@ -64,13 +64,11 @@ tests/stringfmt
 tests/sync
 tests/tensor/sparse_tensor_builder
 tests/tensor/dense_tensor_builder
-tests/tensor/dense_tensor_operations
 tests/tensor/simple_tensor_builder
 tests/tensor/tensor
 tests/tensor/tensor_address
 tests/tensor/tensor_function
 tests/tensor/tensor_mapper
-tests/tensor/tensor_operations
 tests/tensor/tensor_performance
 tests/tensor/tensor_serialization
 tests/tensor/tensor_slime_serialization
