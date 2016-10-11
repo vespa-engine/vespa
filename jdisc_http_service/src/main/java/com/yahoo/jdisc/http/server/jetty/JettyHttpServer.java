@@ -36,13 +36,11 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
 import javax.servlet.DispatcherType;
+import java.net.BindException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -113,6 +111,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     private final ScheduledExecutorService metricReporterExecutor;
     private final Metric metric;
     private final Server server;
+    private final List<Integer> listenedPorts = new ArrayList<>();
 
     @Inject
     public JettyHttpServer(
@@ -140,6 +139,7 @@ public class JettyHttpServer extends AbstractServerProvider {
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ServerSocketChannel preBoundChannel = getChannelFromServiceLayer(connectorFactory.getConnectorConfig().listenPort(), osgiFramework.bundleContext());
             server.addConnector(connectorFactory.createConnector(metric, server, preBoundChannel, keyStoreChannels));
+            listenedPorts.add(connectorFactory.getConnectorConfig().listenPort());
         }
 
         janitor = newJanitor(threadFactory);
@@ -293,6 +293,8 @@ public class JettyHttpServer extends AbstractServerProvider {
     public void start() {
         try {
             server.start();
+        } catch (final BindException e) {
+            throw new RuntimeException("Failed to start server due to BindExecption. ListenPorts = " + listenedPorts.toString() , e);
         } catch (final Exception e) {
             throw new RuntimeException("Failed to start server.", e);
         }
