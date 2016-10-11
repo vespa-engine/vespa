@@ -40,24 +40,6 @@ public final class ClusterSpec {
 
     public ClusterSpec changeGroup(Optional<Group> newGroup) { return new ClusterSpec(type, id, newGroup, dockerImage); }
 
-    /** @deprecated pass a docker image or empty. TODO: Remove when no model older than 6.29 is in use */
-    @Deprecated
-    public static ClusterSpec from(Type type, Id id) {
-        return new ClusterSpec(type, id, Optional.empty(), Optional.empty());
-    }
-
-    /** @deprecated either pass a group or not. TODO: Remove when no model older than 6.29 is in use */
-    @Deprecated 
-    public static ClusterSpec from(Type type, Id id, Optional<Group> groupId) {
-        return new ClusterSpec(type, id, groupId, Optional.empty());
-    }
-
-    /** @deprecated pass a docker image or empty. TODO: Remove when no model older than 6.29 is in use */
-    @Deprecated
-    public static ClusterSpec from(Type type, Id id, Optional<Group> groupId, Optional<String> dockerImage) {
-        return new ClusterSpec(type, id, groupId, dockerImage);
-    }
-
     /** Create a specification <b>specifying</b> an existing cluster group having these attributes */
     public static ClusterSpec from(Type type, Id id, Group groupId, Optional<String> dockerImage) {
         return new ClusterSpec(type, id, Optional.of(groupId), dockerImage);
@@ -156,26 +138,12 @@ public final class ClusterSpec {
 
         private final int index;
 
-        /** @deprecated pass a group index instead. TODO: Remove when no older config models than 6.29 remains */
-        @Deprecated
-        public Group(String id) {
-            this(Integer.parseInt(id));
-        }
-        
         private Group(int index) {
             this.index = index;
         }
 
-        /** @deprecated pass a group index instead. TODO: Remove when no older config models than 6.29 remains */
-        @Deprecated
-        public static Group from(String id) { return new Group(id); }
-        
         public static Group from(int index) { return new Group(index); }
 
-        /** @deprecated use index() instead. TODO: Remove when no older config models than 6.29 remains */
-        @Deprecated
-        public String value() { return String.valueOf(index); }
-        
         public int index() { return index; }
 
         @Override
