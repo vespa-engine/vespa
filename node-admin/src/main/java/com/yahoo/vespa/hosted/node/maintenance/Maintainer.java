@@ -102,7 +102,7 @@ public class Maintainer {
     /**
      * Absolute path in node admin container to the node cleanup directory.
      */
-    public static Path pathInNodeAdminToNodeCleanup(ContainerName containerName) {
+    public Path pathInNodeAdminToNodeCleanup(ContainerName containerName) {
         return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
                 containerName.asString() + "_" + filenameFormatter.format(Date.from(Instant.now())));
     }
@@ -113,7 +113,7 @@ public class Maintainer {
      * @param absolutePathInNode absolute path in that container
      * @return the absolute path in node admin container pointing at the same inode
      */
-    public static Path pathInNodeAdminFromPathInNode(ContainerName containerName, String absolutePathInNode) {
+    public Path pathInNodeAdminFromPathInNode(ContainerName containerName, String absolutePathInNode) {
         Path pathInNode = Paths.get(absolutePathInNode);
         if (! pathInNode.isAbsolute()) {
             throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
@@ -130,7 +130,7 @@ public class Maintainer {
      * @param absolutePathInNode absolute path in that container
      * @return the absolute path in host pointing at the same inode
      */
-    public static Path pathInHostFromPathInNode(ContainerName containerName, String absolutePathInNode) {
+    public Path pathInHostFromPathInNode(ContainerName containerName, String absolutePathInNode) {
         Path pathInNode = Paths.get(absolutePathInNode);
         if (! pathInNode.isAbsolute()) {
             throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);

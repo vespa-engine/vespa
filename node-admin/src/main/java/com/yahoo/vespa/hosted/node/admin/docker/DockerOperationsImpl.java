@@ -78,6 +78,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final Environment environment;
+    private final Maintainer maintainer = new Maintainer(); // TODO: Try to get rid of this one
 
     public DockerOperationsImpl(Docker docker, Environment environment) {
         this.docker = docker;
@@ -126,7 +127,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     private void configureContainer(ContainerNodeSpec nodeSpec) {
-        final Path yamasAgentFolder = Maintainer.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
+        final Path yamasAgentFolder = maintainer.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
 
         Path vespaCheckPath = Paths.get("/home/y/libexec/yms/yms_check_vespa");
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
@@ -275,7 +276,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
-                String pathInHost = Maintainer.pathInHostFromPathInNode(nodeSpec.containerName, pathInNode).toString();
+                String pathInHost = maintainer.pathInHostFromPathInNode(nodeSpec.containerName, pathInNode).toString();
                 command = command.withVolume(pathInHost, pathInNode);
             }
 
