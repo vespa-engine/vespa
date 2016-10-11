@@ -16,8 +16,8 @@ namespace hwaccelrated {
 class Sse2Accelrator : public GenericAccelrator
 {
 public:
-    virtual float dotProduct(const float * a, const float * b, size_t sz) const;
-    virtual double dotProduct(const double * a, const double * b, size_t sz) const;
+    float dotProduct(const float * a, const float * b, size_t sz) const override;
+    double dotProduct(const double * a, const double * b, size_t sz) const override;
 };
 
 }

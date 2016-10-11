@@ -7,6 +7,7 @@
 #include <vespa/vespalib/hwaccelrated/sse2.h>
 #include <vespa/vespalib/hwaccelrated/avx.h>
 #include <vespa/vespalib/hwaccelrated/avx2.h>
+#include <vespa/vespalib/hwaccelrated/avx512.h>
 #include <assert.h>
 
 namespace vespalib {
@@ -39,6 +40,11 @@ public:
 class Avx2Factory :public Factory{
 public:
     virtual IAccelrated::UP create() const { return IAccelrated::UP(new Avx2Accelrator()); }
+};
+
+class Avx512Factory :public Factory{
+public:
+    virtual IAccelrated::UP create() const { return IAccelrated::UP(new Avx512Accelrator()); }
 };
 
 template<typename T>
@@ -95,7 +101,9 @@ Selector::Selector() :
     _factory(new GenericFactory())
 {
     __builtin_cpu_init ();
-    if (__builtin_cpu_supports("avx2")) {
+    if (__builtin_cpu_supports("avx512f")) {
+        _factory.reset(new Avx512Factory());
+    } else if (__builtin_cpu_supports("avx2")) {
         _factory.reset(new Avx2Factory());
     } else if (__builtin_cpu_supports("avx")) {
         _factory.reset(new AvxFactory());
