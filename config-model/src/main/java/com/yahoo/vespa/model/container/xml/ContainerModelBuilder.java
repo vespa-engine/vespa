@@ -16,7 +16,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
-import com.yahoo.path.Path;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
