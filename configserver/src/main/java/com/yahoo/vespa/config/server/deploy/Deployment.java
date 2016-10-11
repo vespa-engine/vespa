@@ -2,12 +2,17 @@
 package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
+import com.yahoo.text.XML;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.tenant.ActivateLock;
@@ -19,7 +24,11 @@ import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+import java.io.FileNotFoundException;
+import java.io.Reader;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
@@ -123,7 +132,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             activateLock.acquire(timeoutBudget, ignoreLockFailure);
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(localSessionRepo.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
-            if (hostProvisioner.isPresent() && !session.getApplicationId().isHostedVespaRoutingApplication()) {
+
+            // TODO: (October 2016) Remove the second part of this if statement as soon as all zone applications stop using hosts.xml for routing nodes
+            if (hostProvisioner.isPresent() &&
+                    (isNotHostedRoutingApplication(session.getApplicationId()) || isHostedRoutingApplicationUsingRoutingNodesInNodeRepo(session))) {
                 ProvisionInfo info = session.getProvisionInfo();
                 hostProvisioner.get().activate(transaction, session.getApplicationId(), info.getHosts());
             }
@@ -207,4 +219,34 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                                currentActiveSessionId + ")");
         }
     }
+
+    private boolean isNotHostedRoutingApplication(ApplicationId applicationId) {
+        return ! applicationId.isHostedVespaRoutingApplication();
+    }
+
+    // Precondition: session is for a hosted routing application
+    boolean isHostedRoutingApplicationUsingRoutingNodesInNodeRepo(LocalSession session) {
+        final Path servicesPath = Path.fromString(ApplicationPackage.SERVICES);
+        ApplicationFile services = session.getApplicationFile(servicesPath, LocalSession.Mode.READ);
+        try {
+            return usesRoutingNodesInNodeRepo(services.createReader());
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Could not create reader for " + servicesPath + " for '" + session.getApplicationId() + "'");
+        }
+    }
+
+    // TODO: Copied verbatim from VespaModelFactory, since we need it know and it is not available for all model versions yet.
+    //       Remove or use the one from VespaModelFactory as soon as possible
+    private boolean usesRoutingNodesInNodeRepo(Reader servicesReader) {
+        Document services = XmlHelper.getDocument(servicesReader);
+
+        Element jdisc = XML.getChild(services.getDocumentElement(), "jdisc");
+        if (jdisc == null) return false;
+
+        Element nodes = XML.getChild(jdisc, "nodes");
+        if (nodes == null) return false;
+
+        return nodes.hasAttribute("type");
+    }
+
 }
