@@ -46,6 +46,7 @@ HitCollector::HitCollector(uint32_t numDocs,
       _maxDocIdVectorSize((numDocs + 31) / 32),
       _hits(),
       _hitsSortOrder(SortOrder::DOC_ID),
+      _unordered(false),
       _docIdVector(),
       _bitVector(),
       _reRankedHits(),
@@ -76,6 +77,7 @@ HitCollector::RankedHitCollector::collect(uint32_t docId, feature_t score)
                               (hc._hitsSortOrder == SortOrder::DOC_ID)), false))
         {
             hc._hitsSortOrder = SortOrder::NONE;
+            hc._unordered = true;
         }
         hc._hits.push_back(std::make_pair(docId, score));
     } else {
@@ -267,6 +269,9 @@ HitCollector::getResultSet()
         }
         rs->setArrayUsed(iSize);
     } else {
+        if (_unordered) {
+            std::sort(_docIdVector.begin(), _docIdVector.end());
+        }
         unsigned int iSize = _hits.size();
         unsigned int jSize = _docIdVector.size();
         rs->allocArray(jSize);
