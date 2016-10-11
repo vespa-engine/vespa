@@ -11,10 +11,15 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
@@ -51,6 +57,9 @@ public class NodeAgentImpl implements NodeAgent {
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
     private final StorageMaintainer storageMaintainer;
+    private final MetricReceiverWrapper metricReceiver;
+    private final Environment environment;
+    private final Maintainer maintainer;
 
     private final Object monitor = new Object();
 
@@ -73,7 +82,6 @@ public class NodeAgentImpl implements NodeAgent {
     private NodeAttributes lastAttributesSet = null;
     ContainerNodeSpec lastNodeSpec = null;
 
-    private final MetricReceiverWrapper metricReceiver;
 
     public NodeAgentImpl(
             final String hostName,
@@ -81,7 +89,9 @@ public class NodeAgentImpl implements NodeAgent {
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
             final StorageMaintainer storageMaintainer,
-            final MetricReceiverWrapper metricReceiver) {
+            final MetricReceiverWrapper metricReceiver,
+            final Environment environment,
+            final Maintainer maintainer) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
@@ -89,8 +99,9 @@ public class NodeAgentImpl implements NodeAgent {
         this.storageMaintainer = storageMaintainer;
         this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class,
                 NodeRepositoryImpl.containerNameFromHostName(hostName));
-
         this.metricReceiver = metricReceiver;
+        this.environment = environment;
+        this.maintainer = maintainer;
     }
 
     @Override
@@ -214,6 +225,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (dockerOperations.startContainerIfNeeded(nodeSpec)) {
+            configureContainerMetrics(nodeSpec);
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
                             RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
             containerState = RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN;
@@ -243,7 +255,7 @@ public class NodeAgentImpl implements NodeAgent {
             imageBeingDownloaded = nodeSpec.wantedDockerImage.get();
             // Create a signalWorkToBeDone when download is finished.
             dockerOperations.scheduleDownloadOfImage(nodeSpec, this::signalWorkToBeDone);
-        } else if (imageBeingDownloaded != null) { // Image was downloading, but now its ready
+        } else if (imageBeingDownloaded != null) { // Image was downloading, but now it's ready
             imageBeingDownloaded = null;
         }
     }
@@ -439,4 +451,35 @@ public class NodeAgentImpl implements NodeAgent {
         numberOfUnhandledException = 0;
         return temp;
     }
+
+    private void configureContainerMetrics(ContainerNodeSpec nodeSpec) {
+        final Path yamasAgentFolder = maintainer.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
+
+        Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
+        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+                .withTag("role", "tenants")
+                .withTag("flavor", nodeSpec.nodeFlavor)
+                .withTag("state", nodeSpec.nodeState.toString())
+                .withTag("zone", environment.getZone());
+
+        if (nodeSpec.owner.isPresent()) scheduleMaker
+                .withTag("tenantName", nodeSpec.owner.get().tenant)
+                .withTag("app", nodeSpec.owner.get().application);
+
+        if (nodeSpec.membership.isPresent()) scheduleMaker
+                .withTag("clustertype", nodeSpec.membership.get().clusterType)
+                .withTag("clusterid", nodeSpec.membership.get().clusterId);
+
+        if (nodeSpec.vespaVersion.isPresent()) scheduleMaker
+                .withTag("vespaVersion", nodeSpec.vespaVersion.get());
+
+        try {
+            scheduleMaker.writeTo(yamasAgentFolder);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
+        }
+        final String[] restartYamasAgent = new String[] {"service" , "yamas-agent", "restart"};
+        dockerOperations.executeCommand(nodeSpec.containerName, restartYamasAgent);
+    }
+
 }

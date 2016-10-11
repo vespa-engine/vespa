@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.After;
 import org.junit.Before;
@@ -51,7 +52,9 @@ public class DockerFailTest {
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, new DockerOperationsImpl(dockerMock, environment), maintenanceSchedulerMock, mr);
+                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
+                                  new DockerOperationsImpl(dockerMock, environment),
+                                  maintenanceSchedulerMock, mr, new Environment(), new Maintainer());
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
         initialContainerNodeSpec = new ContainerNodeSpec(

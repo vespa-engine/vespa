@@ -24,6 +24,8 @@ public interface DockerOperations {
 
     void scheduleDownloadOfImage(ContainerNodeSpec nodeSpec, Runnable callback);
 
+    void executeCommand(ContainerName containerName, String[] command);
+
     void executeResume(ContainerName containerName);
 
     Docker.ContainerStats getContainerStats(ContainerName containerName);

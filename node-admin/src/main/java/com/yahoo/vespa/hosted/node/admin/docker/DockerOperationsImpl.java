@@ -15,17 +15,13 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -116,46 +112,11 @@ public class DockerOperationsImpl implements DockerOperations {
     // Returns true if started
     @Override
     public boolean startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
-        final Optional<Container> existingContainer = docker.getContainer(nodeSpec.hostname);
-        if (!existingContainer.isPresent()) {
-            startContainer(nodeSpec);
-            configureContainer(nodeSpec);
-            return true;
-        } else {
-            return false;
-        }
+        if (docker.getContainer(nodeSpec.hostname).isPresent()) return false;
+
+        startContainer(nodeSpec);
+        return true;
     }
-
-    private void configureContainer(ContainerNodeSpec nodeSpec) {
-        final Path yamasAgentFolder = maintainer.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
-
-        Path vespaCheckPath = Paths.get("/home/y/libexec/yms/yms_check_vespa");
-        SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
-                .withTag("role", "tenants")
-                .withTag("flavor", nodeSpec.nodeFlavor)
-                .withTag("state", nodeSpec.nodeState.toString())
-                .withTag("zone", environment.getZone());
-
-        if (nodeSpec.owner.isPresent()) scheduleMaker
-                .withTag("tenantName", nodeSpec.owner.get().tenant)
-                .withTag("app", nodeSpec.owner.get().application);
-
-        if (nodeSpec.membership.isPresent()) scheduleMaker
-                .withTag("clustertype", nodeSpec.membership.get().clusterType)
-                .withTag("clusterid", nodeSpec.membership.get().clusterId);
-
-        if (nodeSpec.vespaVersion.isPresent()) scheduleMaker
-                .withTag("vespaVersion", nodeSpec.vespaVersion.get());
-
-        try {
-            scheduleMaker.writeTo(yamasAgentFolder);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
-        }
-
-        docker.executeInContainer(nodeSpec.containerName, "service", "yamas-agent", "restart");
-    }
-
 
     // Returns true if scheduling download
     @Override
@@ -428,6 +389,7 @@ public class DockerOperationsImpl implements DockerOperations {
         }
     }
 
+    @Override
     public void executeCommand(ContainerName containerName, String[] command) {
         Optional<ProcessResult> result = executeOptionalProgram(containerName, command);
 

@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -54,8 +55,11 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
         StorageMaintainer storageMaintainer = new StorageMaintainer();
 
-        final Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
-                orchestrator, new DockerOperationsImpl(docker, environment), storageMaintainer, metricReceiver);
+        final Function<String, NodeAgent> nodeAgentFactory =
+                (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
+                                                orchestrator, new DockerOperationsImpl(docker, environment),
+                                                storageMaintainer, metricReceiver,
+                                                environment, new Maintainer());
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(
