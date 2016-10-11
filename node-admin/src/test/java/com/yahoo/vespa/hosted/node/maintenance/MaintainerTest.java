@@ -13,13 +13,14 @@ public class MaintainerTest {
     @Test
     public void testPathInNodeToPathInNodeAdminAndHost() {
         ContainerName containerName = new ContainerName("docker1-1");
+        Maintainer maintainer = new Maintainer();
         assertEquals(
                 "/host/home/docker/container-storage/" + containerName.asString(),
-                Maintainer.pathInNodeAdminFromPathInNode(containerName, "/").toString());
+                maintainer.pathInNodeAdminFromPathInNode(containerName, "/").toString());
 
         assertEquals(
                 "/home/docker/container-storage/" + containerName.asString(),
-                Maintainer.pathInHostFromPathInNode(containerName, "/").toString());
+                maintainer.pathInHostFromPathInNode(containerName, "/").toString());
     }
 
     @Test
@@ -29,12 +30,12 @@ public class MaintainerTest {
         String[] absolutePathsInContainer = {"//home/y/var", "/home/y/var", "/home/y/var/"};
 
         for (String pathInContainer : absolutePathsInContainer) {
-            assertEquals(expected, Maintainer.pathInNodeAdminFromPathInNode(containerName, pathInContainer).toString());
+            assertEquals(expected, new Maintainer().pathInNodeAdminFromPathInNode(containerName, pathInContainer).toString());
         }
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testNonAbsolutePathInNodeConversion() {
-        Maintainer.pathInNodeAdminFromPathInNode(new ContainerName("container-1"), "home/y/var");
+        new Maintainer().pathInNodeAdminFromPathInNode(new ContainerName("container-1"), "home/y/var");
     }
 }
