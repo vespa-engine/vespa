@@ -4,14 +4,14 @@ package com.yahoo.vespa.hosted.node.admin.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
@@ -33,9 +33,20 @@ public class ConfigServerHttpRequestExecutor {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(ConfigServerHttpRequestExecutor.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final HttpClient client;
+    private final CloseableHttpClient client;
     private final Set<String> configServerHosts;
     private final static int MAX_LOOPS = 2;
+
+    @Override
+    public void finalize() throws Throwable {
+        try {
+            client.close();
+        } catch (Exception e) {
+            NODE_ADMIN_LOGGER.warning("Ignoring exception thrown when closing client against " + configServerHosts, e);
+        }
+
+        super.finalize();
+    }
 
     public static ConfigServerHttpRequestExecutor create(Set<String> configServerHosts) {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
@@ -45,7 +56,7 @@ public class ConfigServerHttpRequestExecutor {
                 .setConnectionManager(cm).build());
     }
 
-    public ConfigServerHttpRequestExecutor(Set<String> configServerHosts, HttpClient client) {
+    public ConfigServerHttpRequestExecutor(Set<String> configServerHosts, CloseableHttpClient client) {
         this.configServerHosts = configServerHosts;
         this.client = client;
     }
@@ -65,7 +76,7 @@ public class ConfigServerHttpRequestExecutor {
         Exception lastException = null;
         for (int loopRetry = 0; loopRetry < MAX_LOOPS; loopRetry++) {
             for (String configServer : configServerHosts) {
-                final HttpResponse response;
+                final CloseableHttpResponse response;
                 try {
                     response = client.execute(requestFactory.createRequest(configServer));
                 } catch (Exception e) {
@@ -73,19 +84,28 @@ public class ConfigServerHttpRequestExecutor {
                     NODE_ADMIN_LOGGER.info("Exception while talking to " + configServer + " (will try all config servers):" + e.getMessage());
                     continue;
                 }
-                if (response.getStatusLine().getStatusCode() == Response.Status.NOT_FOUND.getStatusCode()) {
-                    throw new NotFoundException("Not found returned from " + configServer);
-                }
-                if (response.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
-                    String entity = read(response.getEntity());
-                    NODE_ADMIN_LOGGER.info("Non-200 HTTP response code received:\n" + entity);
-                    throw new RuntimeException("Did not get response code 200, but " + response.getStatusLine().getStatusCode() +
-                            entity);
-                }
+
                 try {
-                    return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
-                } catch (IOException e) {
-                    throw new RuntimeException("Response didn't contain nodes element, failed parsing?", e);
+                    if (response.getStatusLine().getStatusCode() == Response.Status.NOT_FOUND.getStatusCode()) {
+                        throw new NotFoundException("Not found returned from " + configServer);
+                    }
+                    if (response.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
+                        String entity = read(response.getEntity());
+                        NODE_ADMIN_LOGGER.info("Non-200 HTTP response code received:\n" + entity);
+                        throw new RuntimeException("Did not get response code 200, but " + response.getStatusLine().getStatusCode() +
+                                entity);
+                    }
+                    try {
+                        return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Response didn't contain nodes element, failed parsing?", e);
+                    }
+                } finally {
+                    try {
+                        response.close();
+                    } catch (IOException e) {
+                        NODE_ADMIN_LOGGER.warning("Ignoring exception from closing response", e);
+                    }
                 }
             }
         }
