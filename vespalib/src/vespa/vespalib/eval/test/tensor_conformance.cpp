@@ -886,6 +886,50 @@ struct TestContext {
                                        { {{"y","1"},{"z","1"}},  7 } })));
     }
 
+    void test_fixed_dense_cases_apply_op(const Eval &eval,
+                                         const BinaryOperation &op)
+    {
+        TEST_DO(test_apply_op(eval,
+                              spec(op.eval(0,0)), spec(0.0), spec(0.0)));
+        TEST_DO(test_apply_op(eval,
+                              spec(x(1), Seq({ op.eval(3,5) })),
+                              spec(x(1), Seq({ 3 })),
+                              spec(x(1), Seq({ 5 }))));
+        TEST_DO(test_apply_op(eval,
+                              spec(x(1), Seq({ op.eval(3,-5) })),
+                              spec(x(1), Seq({ 3 })),
+                              spec(x(1), Seq({ -5 }))));
+        TEST_DO(test_apply_op(eval,
+                              spec(x(2), Seq({ op.eval(3,7), op.eval(5,11) })),
+                              spec(x(2), Seq({ 3, 5 })),
+                              spec(x(2), Seq({ 7, 11 }))));
+        TEST_DO(test_apply_op(eval,
+                              spec({x(1),y(1)}, Seq({ op.eval(3,5) })),
+                              spec({x(1),y(1)}, Seq({ 3 })),
+                              spec({x(1),y(1)}, Seq({ 5 }))));
+        TEST_DO(test_apply_op(eval,
+                              spec(x(1), Seq({ op.eval(3, 0) })),
+                              spec(x(1), Seq({ 3 })),
+                              spec(x(2), Seq({ 0, 7 }))));
+        TEST_DO(test_apply_op(eval,
+                              spec(x(1), Seq({ op.eval(0, 5) })),
+                              spec(x(2), Seq({ 0, 3 })),
+                              spec(x(1), Seq({ 5 }))));
+        TEST_DO(test_apply_op(eval,
+                              spec({x(2),y(2),z(2)},
+                                   Seq({        op.eval(1,  7), op.eval(1, 11),
+                                                op.eval(2, 13), op.eval(2, 17),
+                                                op.eval(3,  7), op.eval(3, 11),
+                                                op.eval(5, 13), op.eval(5, 17)
+                                                })),
+                              spec({x(2),y(2)},
+                                   Seq({         1,  2,
+                                                 3,  5 })),
+                              spec({y(2),z(2)},
+                                   Seq({         7, 11,
+                                                13, 17 }))));
+    }
+
     void test_apply_op(const Eval &eval, const BinaryOperation &op, const Sequence &seq) {
         std::vector<Layout> layouts = {
             {},                                    {},
@@ -919,6 +963,7 @@ struct TestContext {
             EXPECT_EQUAL(safe(eval).eval(engine, lhs_input, rhs_input).tensor(), expect);
         }
         TEST_DO(test_fixed_sparse_cases_apply_op(eval, op));
+        TEST_DO(test_fixed_dense_cases_apply_op(eval, op));
     }
 
     void test_apply_op(const vespalib::string &expr, const BinaryOperation &op, const Sequence &seq) {

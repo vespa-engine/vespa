@@ -41,7 +41,12 @@ public:
         double value;
         Value(double value_in) : value(value_in) {}
         operator double() const { return value; }
-        bool operator==(const Value &rhs) const { return approx_equal(value, rhs.value); }
+        static bool both_nan(double a, double b) {
+            return (std::isnan(a) && std::isnan(b));
+        }
+        bool operator==(const Value &rhs) const {
+            return (both_nan(value, rhs.value) || approx_equal(value, rhs.value));
+        }
     };
     using Address = std::map<vespalib::string,Label>;
     using Cells = std::map<Address,Value>;
