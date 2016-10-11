@@ -16,11 +16,9 @@ import java.util.concurrent.Executor;
  * @author lulf
  */
 public class SessionActiveHandlerBase extends SessionHandler {
-    private final ApplicationRepository applicationRepository;
 
     public SessionActiveHandlerBase(Executor executor, AccessLog accessLog, ApplicationRepository applicationRepository ) {
-        super(executor, accessLog);
-        this.applicationRepository = applicationRepository;
+        super(executor, accessLog, applicationRepository);
     }
 
     protected void activate(HttpRequest request,

@@ -28,7 +28,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
         internalAddSession(session);
     }
 
-    /** Why is this needed? Because of implementation inheritance - see RemoveSessionRepo */
+    /** Why is this needed? Because of implementation inheritance - see RemoteSessionRepo */
     protected synchronized final void internalAddSession(SESSIONTYPE session) {
         if (sessions.containsKey(session.getSessionId()))
             throw new IllegalArgumentException("There already exists a session with id '" + session.getSessionId() + "'");
@@ -39,7 +39,7 @@ public class SessionRepo<SESSIONTYPE extends Session> {
         internalRemoveSessionOrThrow(id);
     }
 
-    /** Why is this needed? Because of implementation inheritance - see RemoveSessionRepo */
+    /** Why is this needed? Because of implementation inheritance - see RemoteSessionRepo */
     protected synchronized final void internalRemoveSessionOrThrow(long id) {
         if ( ! sessions.containsKey(id))
             throw new IllegalArgumentException("No such session exists '" + id + "'");

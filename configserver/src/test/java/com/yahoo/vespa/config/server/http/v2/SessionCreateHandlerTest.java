@@ -7,11 +7,16 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.http.SessionCreateHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.*;
 import com.yahoo.vespa.config.server.tenant.Tenants;
+import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -96,14 +101,22 @@ public class SessionCreateHandlerTest extends SessionCreateHandlerTestBase {
         return null;
     }
 
-    SessionCreateHandler createHandler(Tenants tenants) {
+    SessionCreateHandler createHandler(Tenants tenants) throws Exception {
+        TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
+        final ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder());
         return new SessionCreateHandler(new Executor() {
             @SuppressWarnings("NullableProblems")
             @Override
             public void execute(Runnable command) {
                 command.run();
             }
-        }, AccessLog.voidAccessLog(), tenants, new ConfigserverConfig(new ConfigserverConfig.Builder()));
+        }, AccessLog.voidAccessLog(), tenants, configserverConfig,
+                                        new ApplicationRepository(testTenantBuilder.createTenants(),
+                                                                  HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
+                                                                  configserverConfig,
+                                                                  new MockCurator(),
+                                                                  new LogServerLogGrabber(),
+                                                                  new ApplicationConvergenceChecker()));
     }
 
     @Override

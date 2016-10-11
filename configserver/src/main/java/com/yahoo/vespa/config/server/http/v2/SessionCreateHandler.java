@@ -11,6 +11,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -20,7 +21,6 @@ import com.yahoo.vespa.config.server.http.SessionCreate;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 
 import java.net.URI;
 import java.time.Duration;
@@ -42,8 +42,12 @@ public class SessionCreateHandler extends SessionHandler {
     private final ConfigserverConfig configserverConfig;
 
     @Inject
-    public SessionCreateHandler(Executor executor, AccessLog accessLog, Tenants tenants, ConfigserverConfig configserverConfig) {
-        super(executor, accessLog);
+    public SessionCreateHandler(Executor executor,
+                                AccessLog accessLog,
+                                Tenants tenants,
+                                ConfigserverConfig configserverConfig,
+                                ApplicationRepository applicationRepository) {
+        super(executor, accessLog, applicationRepository);
         this.tenants = tenants;
         this.configserverConfig = configserverConfig;
     }
@@ -65,11 +69,10 @@ public class SessionCreateHandler extends SessionHandler {
         }
     }
 
-    private static LocalSession getExistingSession(Tenant tenant, HttpRequest request) {
+    private LocalSession getExistingSession(Tenant tenant, HttpRequest request) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
-        LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
         ApplicationId applicationId = getFromProperty(request);
-        return SessionHandler.getSessionFromRequest(localSessionRepo, applicationRepo.getSessionIdForApplication(applicationId));
+        return applicationRepository.getLocalSession(tenant, applicationRepo.getSessionIdForApplication(applicationId));
     }
 
     private static ApplicationId getFromProperty(HttpRequest request) {
