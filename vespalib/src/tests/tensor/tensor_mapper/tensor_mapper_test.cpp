@@ -8,7 +8,6 @@
 #include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
-#include <vespa/vespalib/tensor/tensor_function.h>
 #include <vespa/vespalib/tensor/tensor_mapper.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <ostream>
