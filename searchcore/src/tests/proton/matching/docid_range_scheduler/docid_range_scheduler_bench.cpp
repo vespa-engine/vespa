@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/matching/docid_range_scheduler.h>
+#include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -156,7 +157,18 @@ struct SchedulerList {
 
 //-----------------------------------------------------------------------------
 
-void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id) {
+struct WorkTracker {
+    std::vector<DocidRange> ranges;
+    void track(size_t docid) {
+        if (!ranges.empty() && (docid == ranges.back().end)) {
+            ++ranges.back().end;
+        } else {
+            ranges.push_back(DocidRange(docid, docid + 1));
+        }
+    }
+};
+
+void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id, WorkTracker &tracker) {
     IdleObserver observer = scheduler.make_idle_observer();
     if (observer.is_always_zero()) {
         for (DocidRange range = scheduler.first_range(thread_id);
@@ -166,6 +178,7 @@ void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id) 
             do_work(10); // represents init-range cost
             for (uint32_t docid = range.begin; docid < range.end; ++docid) {
                 work.perform(docid);
+                tracker.track(docid);
             }
         }
     } else {
@@ -176,6 +189,7 @@ void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id) 
             do_work(10); // represents init-range cost
             for (uint32_t docid = range.begin; docid < range.end; ++docid) {
                 work.perform(docid);
+                tracker.track(docid);
                 if (observer.get() > 0) {
                     range = scheduler.share_range(thread_id, DocidRange(docid, range.end));
                 }
@@ -186,8 +200,41 @@ void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id) 
 
 //-----------------------------------------------------------------------------
 
-TEST_MT_FFF("benchmark different combinations of schedulers and work loads", 8,
-            DocidRangeScheduler::UP(), SchedulerList(num_threads), WorkList())
+struct RangeChecker : vespalib::Rendezvous<WorkTracker,bool> {
+    size_t docid_limit;
+    RangeChecker(size_t num_threads, size_t docid_limit_in)
+        : vespalib::Rendezvous<WorkTracker,bool>(num_threads), docid_limit(docid_limit_in) {}
+    virtual void mingle() {
+        std::vector<DocidRange> ranges;
+        for (size_t i = 0; i < size(); ++i) {
+            ranges.insert(ranges.end(), in(i).ranges.begin(), in(i).ranges.end());
+        }
+        std::sort(ranges.begin(), ranges.end(), [](const auto &a, const auto &b)
+                  { return (a.begin < b.begin); });
+        bool overlap = false;
+        ASSERT_TRUE(!ranges.empty());
+        auto pos = ranges.begin();
+        DocidRange cover = *pos++;
+        for (; pos != ranges.end(); ++pos) {
+            if (pos->begin < cover.end) {
+                overlap = true;
+            }
+            if (pos->begin == cover.end) {
+                cover.end = pos->end;
+            }
+        }
+        bool valid = !overlap && (cover.begin == 1) && (cover.end == docid_limit);
+        for (size_t i = 0; i < size(); ++i) {
+            out(i) = valid;
+        }
+    }
+};
+
+const size_t my_docid_limit = 100001;
+
+TEST_MT_FFFF("benchmark different combinations of schedulers and work loads", 8,
+             DocidRangeScheduler::UP(), SchedulerList(num_threads), WorkList(),
+             RangeChecker(num_threads, my_docid_limit))
 {
     if (thread_id == 0) {
         fprintf(stderr, "Benchmarking with %zu threads:\n", num_threads);
@@ -201,18 +248,20 @@ TEST_MT_FFF("benchmark different combinations of schedulers and work loads", 8,
             }
             BenchmarkTimer timer(1.0);
             for (size_t i = 0; i < 5; ++i) {
+                WorkTracker tracker;
                 TEST_BARRIER();
                 if (thread_id == 0) {
-                    f1 = f2.factory_list[scheduler]->create(100001);
+                    f1 = f2.factory_list[scheduler]->create(my_docid_limit);
                 }
                 TEST_BARRIER();
                 timer.before();
-                worker(*f1, *f3.work_list[work], thread_id);
+                worker(*f1, *f3.work_list[work], thread_id, tracker);
                 TEST_BARRIER();
                 timer.after();
                 if (thread_id == 0) {
                     fprintf(stderr, ".");
                 }
+                EXPECT_TRUE(f4.rendezvous(tracker));
             }
             if (thread_id == 0) {
                 fprintf(stderr, " real time: %g ms\n", timer.min_time() * 1000.0);
