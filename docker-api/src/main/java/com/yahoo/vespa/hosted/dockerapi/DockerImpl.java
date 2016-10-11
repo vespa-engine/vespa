@@ -72,17 +72,15 @@ public class DockerImpl implements Docker {
     @GuardedBy("monitor")
     private final Map<DockerImage, CompletableFuture<DockerImage>> scheduledPulls = new HashMap<>();
 
-    final DockerClient dockerClient;
+    // Exposed for testing.
+    DockerClient dockerClient;
 
     private GaugeWrapper numberOfRunningContainersGauge;
     private CounterWrapper numberOfDockerDaemonFails;
     private final boolean hackAroundPullImageDueToJerseyConflicts;
 
-    private final JerseyDockerCmdExecFactory dockerFactory =  new JerseyDockerCmdExecFactory()
-            .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
-            .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-            .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
-            .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
+    private JerseyDockerCmdExecFactory dockerFactory;
+    private RemoteApiVersion remoteApiVersion;
 
     // For testing
     DockerImpl(final DockerClient dockerClient) {
@@ -94,39 +92,14 @@ public class DockerImpl implements Docker {
     public DockerImpl(final DockerConfig config) {
         hackAroundPullImageDueToJerseyConflicts = false;
         // Fail fast
-        RemoteApiVersion remoteApiVersion = getRemoteApiVersion(config, 100 /* connect timeout millis */);
-        this.dockerClient = DockerClientImpl.getInstance(
-                buildDockerClientConfig(config)
-                        .withApiVersion(remoteApiVersion)
-                        .build())
-                .withDockerCmdExecFactory(dockerFactory);
+        initDockerConnection(config, 100 /* connect timeout millis */, false /* fallback to 1.23 on errors */);
         setMetrics(new MetricReceiverWrapper(MetricReceiver.nullImplementation));
     }
 
     @Inject
     public DockerImpl(final DockerConfig config, MetricReceiverWrapper metricReceiver) {
         hackAroundPullImageDueToJerseyConflicts = true;
-        RemoteApiVersion remoteApiVersion;
-        try {
-            remoteApiVersion = getRemoteApiVersion(config, DOCKER_CONNECT_TIMEOUT_MILLIS);
-            logger.info("Found version of remote docker API: "+ remoteApiVersion);
-            // From version 1.24 a field was removed which causes trouble with the current docker java code.
-            // When this is fixed, we can remove this and do not specify version.
-            if (remoteApiVersion.isGreaterOrEqual(RemoteApiVersion.VERSION_1_24)) {
-                remoteApiVersion = RemoteApiVersion.VERSION_1_23;
-                logger.info("Found version 1.24 or newer of remote API, using 1.23.");
-            }
-        } catch (Exception e) {
-            logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);
-            remoteApiVersion = RemoteApiVersion.VERSION_1_23;
-        }
-
-        this.dockerClient = DockerClientImpl.getInstance(
-                buildDockerClientConfig(config)
-                        .withApiVersion(remoteApiVersion)
-                        .build())
-                .withDockerCmdExecFactory(dockerFactory);
-
+        initDockerConnection(config, DOCKER_CONNECT_TIMEOUT_MILLIS, true /* fallback to 1.23 on errors */);
         try {
             setupDockerNetworkIfNeeded();
         } catch (Exception e) {
@@ -559,15 +532,35 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private static RemoteApiVersion getRemoteApiVersion(final DockerConfig config, int connectTimeousMs) {
-        JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
+    private RemoteApiVersion initDockerConnection(final DockerConfig config, int connectTimeousMs, boolean fallbackTo123orErrors) {
+        dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
                 .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
                 .withConnectTimeout(connectTimeousMs)
                 .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
-        return RemoteApiVersion.parseConfig(DockerClientImpl.getInstance(
-                buildDockerClientConfig(config).build())
-                .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
+        try {
+            remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance(
+                    buildDockerClientConfig(config).build())
+                    .withDockerCmdExecFactory(dockerFactory).versionCmd().exec().getApiVersion());
+            logger.info("Found version of remote docker API: "+ remoteApiVersion);
+            // From version 1.24 a field was removed which causes trouble with the current docker java code.
+            // When this is fixed, we can remove this and do not specify version.
+            if (remoteApiVersion.isGreaterOrEqual(RemoteApiVersion.VERSION_1_24)) {
+                remoteApiVersion = RemoteApiVersion.VERSION_1_23;
+                logger.info("Found version 1.24 or newer of remote API, using 1.23.");
+            }
+        } catch (Exception e) {
+            if (! fallbackTo123orErrors) {
+                throw e;
+            }
+            logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);
+            remoteApiVersion = RemoteApiVersion.VERSION_1_23;
+        }
+        dockerClient = DockerClientImpl.getInstance(
+                buildDockerClientConfig(config)
+                        .withApiVersion(remoteApiVersion)
+                        .build())
+                .withDockerCmdExecFactory(dockerFactory);
     }
 
     private void setMetrics(MetricReceiverWrapper metricReceiver) {
