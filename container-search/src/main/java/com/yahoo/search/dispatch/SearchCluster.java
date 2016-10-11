@@ -90,15 +90,20 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         for (Node node : nodes)
             nodesByHostBuilder.put(node.hostname(), node);
         nodesByHost = nodesByHostBuilder.build();
+
+        this.directDispatchTarget = findDirectDispatchTarget(HostName.getLocalhost(), size, containerClusterSize,
+                                                             nodesByHost, groups);
         
         // Set up monitoring of the fs4 interface of the nodes
         // We can switch to monitoring the rpc interface instead when we move the query phase to rpc
         clusterMonitor = new ClusterMonitor<>(this);
-        for (Node node : nodes)
+        for (Node node : nodes) {
+            // cluster monitor will only call working() when the
+            // node transitions from down to up, so we need to
+            // register the initial (working) state here:
+            working(node);
             clusterMonitor.add(node, true);
-
-        this.directDispatchTarget = findDirectDispatchTarget(HostName.getLocalhost(), size, containerClusterSize, 
-                                                             nodesByHost, groups);
+        }
     }
 
     private static Optional<Node> findDirectDispatchTarget(String selfHostname, 
