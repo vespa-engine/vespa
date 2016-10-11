@@ -33,7 +33,7 @@ import static org.junit.Assume.assumeTrue;
  *
  * MAC:
  *   1. Install Docker Toolbox, and start it (Docker Quick Start Terminal) (you can close terminal window afterwards)
- *   3. Run tests from IDE/mvn.
+ *   2. Run tests from IDE/mvn.
  *
  * LINUX:
  *  1. Remove Ignore annotations
@@ -91,7 +91,7 @@ public class DockerTest {
     }
 
     @Test
-    public void testCreateImageStartAndStopContainerDeleteImage() throws IOException, InterruptedException, ExecutionException {
+    public void testCreateDeleteImageCreateDeleteContainer() throws IOException, InterruptedException, ExecutionException {
         assumeTrue(dockerDaemonIsPresent());
         createDockerImage(docker);
         ContainerName containerName = new ContainerName("foo");
