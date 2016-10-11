@@ -78,6 +78,12 @@ public class DockerImpl implements Docker {
     private CounterWrapper numberOfDockerDaemonFails;
     private final boolean hackAroundPullImageDueToJerseyConflicts;
 
+    private final JerseyDockerCmdExecFactory dockerFactory =  new JerseyDockerCmdExecFactory()
+            .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
+            .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
+            .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
+            .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
+
     // For testing
     DockerImpl(final DockerClient dockerClient) {
         hackAroundPullImageDueToJerseyConflicts = false;
@@ -87,11 +93,6 @@ public class DockerImpl implements Docker {
     // For testing
     public DockerImpl(final DockerConfig config) {
         hackAroundPullImageDueToJerseyConflicts = false;
-        JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
-                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
-                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
-                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
         // Fail fast
         RemoteApiVersion remoteApiVersion = getRemoteApiVersion(config, 100 /* connect timeout millis */);
         this.dockerClient = DockerClientImpl.getInstance(
@@ -104,11 +105,6 @@ public class DockerImpl implements Docker {
 
     @Inject
     public DockerImpl(final DockerConfig config, MetricReceiverWrapper metricReceiver) {
-        JerseyDockerCmdExecFactory dockerFactory =  new JerseyDockerCmdExecFactory()
-                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
-                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                .withConnectTimeout(DOCKER_CONNECT_TIMEOUT_MILLIS)
-                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
         hackAroundPullImageDueToJerseyConflicts = true;
         RemoteApiVersion remoteApiVersion;
         try {
