@@ -29,7 +29,7 @@ public class RankingConstantsValidator extends Validator {
 
         public ExceptionMessageCollector add(Throwable throwable, String rcName, String rcFilename) {
             exceptionsOccurred = true;
-            combinedMessage += String.format("\nFailed to validate ranking constant %s (%s): %s", rcName, rcFilename, throwable.getMessage());
+            combinedMessage += String.format("\nRanking constant \"%s\" (%s): %s", rcName, rcFilename, throwable.getMessage());
             return this;
         }
     }
