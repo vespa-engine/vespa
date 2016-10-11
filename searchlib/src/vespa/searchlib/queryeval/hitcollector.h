@@ -37,12 +37,13 @@ private:
     const uint32_t _maxReRankHitsSize;
     const uint32_t _maxDocIdVectorSize;
 
-    std::vector<Hit> _hits;  // used as a heap when _hits.size == _maxHitsSize
+    std::vector<Hit>      _hits;  // used as a heap when _hits.size == _maxHitsSize
     std::vector<uint32_t> _scoreOrder; // Holds an indirection to the N best hits
-    SortOrder _hitsSortOrder;
+    SortOrder             _hitsSortOrder;
+    bool                  _unordered;
     std::vector<uint32_t> _docIdVector;
-    BitVector::UP _bitVector;
-    std::vector<Hit> _reRankedHits;
+    BitVector::UP         _bitVector;
+    std::vector<Hit>      _reRankedHits;
 
     std::pair<Scores, Scores> _ranges;
     feature_t _scale;
