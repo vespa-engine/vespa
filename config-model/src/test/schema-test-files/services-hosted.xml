@@ -11,7 +11,7 @@
   </jdisc>
 
   <jdisc id="container1" version="1.0">
-    <nodes of="5" required="true"/>
+    <nodes of="search" required="true"/>
   </jdisc>
   
   <container id="container2" version="1.0">
