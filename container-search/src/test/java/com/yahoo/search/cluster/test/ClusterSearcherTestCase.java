@@ -48,7 +48,7 @@ public class ClusterSearcherTestCase extends TestCase {
 
          public Result search(Query query,Execution execution) {
              Result result = super.search(query,execution);
-             if(blocking) {
+             if (isBlocking()) {
                  result.hits().addError(ErrorMessage.createUnspecifiedError("Dummy error"));
              }
              return result;
@@ -56,10 +56,8 @@ public class ClusterSearcherTestCase extends TestCase {
 
         @Override
         public Pong ping(Ping ping, Execution execution) {
-            //Sleep an hour
             Pong pong = new Pong();
             if (isBlocking()) {
-
                 pong.addError(ErrorMessage.createTimeout("Dummy timeout"));
             }
             return new Pong();
