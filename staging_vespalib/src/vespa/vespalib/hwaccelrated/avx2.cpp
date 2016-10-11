@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/vespalib/hwaccelrated/avx.h>
+#include <vespa/vespalib/hwaccelrated/avx2.h>
 
 namespace vespalib {
 
@@ -43,7 +41,7 @@ struct TypeSpecifics<double> {
 
 template <typename T, unsigned AlignA, unsigned AlignB>
 T
-AvxAccelrator::computeDotProduct(const T * af, const T * bf, size_t sz)
+Avx2Accelrator::computeDotProduct(const T * af, const T * bf, size_t sz)
 {
     using TT = TypeSpecifics<T>;
     constexpr const size_t ChunkSize = TT::V_SZ*4/sizeof(T);
@@ -72,7 +70,7 @@ AvxAccelrator::computeDotProduct(const T * af, const T * bf, size_t sz)
 
 template <typename T>
 T
-AvxAccelrator::dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
+Avx2Accelrator::dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
 {
     if (validAlignment32(af)) {
         if (validAlignment32(bf)) {
@@ -90,13 +88,13 @@ AvxAccelrator::dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
 }
 
 float
-AvxAccelrator::dotProduct(const float * af, const float * bf, size_t sz) const
+Avx2Accelrator::dotProduct(const float * af, const float * bf, size_t sz) const
 {
     return dotProductSelectAlignment(af, bf, sz);
 }
 
 double
-AvxAccelrator::dotProduct(const double * af, const double * bf, size_t sz) const
+Avx2Accelrator::dotProduct(const double * af, const double * bf, size_t sz) const
 {
     return dotProductSelectAlignment(af, bf, sz);
 }

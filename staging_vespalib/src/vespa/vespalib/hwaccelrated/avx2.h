@@ -4,8 +4,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/hwaccelrated/sse2.h>
-#include <vespa/fastos/dynamiclibrary.h>
+#include <vespa/vespalib/hwaccelrated/avx.h>
 
 namespace vespalib {
 
@@ -14,7 +13,7 @@ namespace hwaccelrated {
 /**
  * Generic cpu agnostic implementation.
  */
-class AvxAccelrator : public Sse2Accelrator
+class Avx2Accelrator : public AvxAccelrator
 {
 public:
     virtual float dotProduct(const float * a, const float * b, size_t sz) const;
