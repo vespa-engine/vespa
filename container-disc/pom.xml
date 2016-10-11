@@ -132,10 +132,13 @@
     <!-- end WARNING -->
   </dependencies>
   <properties>
-    <!-- hk2 version must be the one used by current jersey version.
-         This is just to avoid duplicating it below, _not_ to enforce a particular version of hk2.
-         Do not move this to the root pom! -->
-    <hk2.version>2.4.0-b12</hk2.version>
+    <!-- These versions must be the ones used by the current jersey version (see vespa_jersey2/target/dependency).
+         Declared here to clarify what usually needs to be updated after a jersey version upgrade,
+         _not_ to enforce particular versions of these dependencies.
+         Do not move these to the root pom! -->
+    <hk2.version>2.5.0-b05</hk2.version>
+    <javassist.version>3.20.0-GA</javassist.version>
+    <mimepull.version>1.9.6</mimepull.version>
   </properties>
   <build>
     <plugins>
@@ -182,7 +185,7 @@
                 jackson-jaxrs-base-${jackson2.version}.jar,
                 jackson-jaxrs-json-provider-${jackson2.version}.jar,
                 jackson-module-jaxb-annotations-${jackson2.version}.jar,
-                javassist-3.18.1-GA.jar,
+                javassist-${javassist.version}.jar,
                 javax.ws.rs-api-${javax.ws.rs-api.version}.jar,
                 jersey-client-${jersey2.version}.jar,
                 jersey-common-${jersey2.version}.jar,
@@ -193,7 +196,7 @@
                 jersey-media-jaxb-${jersey2.version}.jar,
                 jersey-media-json-jackson-${jersey2.version}.jar,
                 jersey-media-multipart-${jersey2.version}.jar,
-                mimepull-1.9.5.jar, <!-- needed by media-multipart -->
+                mimepull-${mimepull.version}.jar, <!-- needed by media-multipart -->
                 jersey-server-${jersey2.version}.jar,
                 jersey-proxy-client-${jersey2.version}.jar,
                 osgi-resource-locator-1.0.1.jar,
