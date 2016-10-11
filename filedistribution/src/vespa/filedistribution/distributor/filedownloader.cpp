@@ -400,7 +400,7 @@ void FileDownloader::runEventLoop() {
         } catch (const ZKConnectionLossException & e) {
             LOG(info, "Connection loss in downloader event loop, resuming. %s", e.what());
         } catch (const vespalib::PortListenException & e) {
-            LOG(error, "Failed listening to torrent port : %s", e.what());
+            LOG(warning, "Failed listening to torrent port : %s", e.what());
             std::quick_exit(21);
         }
     }
