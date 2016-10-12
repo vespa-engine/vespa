@@ -56,7 +56,7 @@ struct TypeSpecifics<double, 64u> {
     static double sum(const V & v) { return sumT<double, V>(v); }
 };
 
-template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk=4>
+template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
 static T computeDotProduct(const T * af, const T * bf, size_t sz) __attribute__((noinline));
 
 template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
@@ -89,23 +89,23 @@ T computeDotProduct(const T * af, const T * bf, size_t sz)
 
 }
 
-template <typename T, size_t VLEN>
+template <typename T, size_t VLEN, size_t VectorsPerChunk=4>
 VESPA_DLL_LOCAL static T dotProductSelectAlignment(const T * af, const T * bf, size_t sz);
 
-template <typename T, size_t VLEN>
+template <typename T, size_t VLEN, size_t VectorsPerChunk>
 T dotProductSelectAlignment(const T * af, const T * bf, size_t sz)
 {
     if (validAlignment(af, VLEN)) {
         if (validAlignment(bf, VLEN)) {
-            return computeDotProduct<T, VLEN, VLEN, VLEN>(af, bf, sz);
+            return computeDotProduct<T, VLEN, VLEN, VLEN, VectorsPerChunk>(af, bf, sz);
         } else {
-            return computeDotProduct<T, VLEN, VLEN, 1>(af, bf, sz);
+            return computeDotProduct<T, VLEN, VLEN, 1, VectorsPerChunk>(af, bf, sz);
         }
     } else {
         if (validAlignment(bf, VLEN)) {
-            return computeDotProduct<T, VLEN, 1, VLEN>(af, bf, sz);
+            return computeDotProduct<T, VLEN, 1, VLEN, VectorsPerChunk>(af, bf, sz);
         } else {
-            return computeDotProduct<T, VLEN, 1, 1>(af, bf, sz);
+            return computeDotProduct<T, VLEN, 1, 1, VectorsPerChunk>(af, bf, sz);
         }
     }
 }
