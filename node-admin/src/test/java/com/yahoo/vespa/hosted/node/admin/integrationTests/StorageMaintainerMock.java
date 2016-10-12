@@ -32,7 +32,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void deleteContainerStorage(ContainerName containerName) throws IOException {
+    public void archiveNodeData(ContainerName containerName) throws IOException {
         callOrderVerifier.add("DeleteContainerStorage with ContainerName: " + containerName);
     }
 }

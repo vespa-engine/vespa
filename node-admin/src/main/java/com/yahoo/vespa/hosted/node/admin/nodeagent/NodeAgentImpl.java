@@ -364,7 +364,7 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
-                storageMaintainer.deleteContainerStorage(nodeSpec.containerName);
+                storageMaintainer.archiveNodeData(nodeSpec.containerName);
                 updateNodeRepoAndMarkNodeAsReady(nodeSpec);
                 break;
             case parked:

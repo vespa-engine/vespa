@@ -9,12 +9,14 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author valerijf
@@ -194,6 +196,48 @@ public class DeleteOldAppDataTest {
         assertThat(getNumberOfFilesAndDirectoriesIn(folder.getRoot()), is(51));
     }
 
+    @Test
+    public void testRecursivelyDeleteDirectory() throws IOException {
+        initSubDirectories();
+        DeleteOldAppData.recursiveDelete(folder.getRoot());
+        assertTrue(!folder.getRoot().exists());
+    }
+
+    @Test
+    public void testRecursivelyDeleteRegularFile() throws IOException {
+        File file = folder.newFile();
+        assertTrue(file.exists());
+        assertTrue(file.isFile());
+        DeleteOldAppData.recursiveDelete(file);
+        assertTrue(!file.exists());
+    }
+
+    @Test
+    public void testRecursivelyDeleteNonExistingFile() throws IOException {
+        File file = folder.getRoot().toPath().resolve("non-existing-file.json").toFile();
+        assertTrue(!file.exists());
+        DeleteOldAppData.recursiveDelete(file);
+        assertTrue(!file.exists());
+    }
+
+    @Test
+    public void testInitSubDirectories() throws IOException {
+        initSubDirectories();
+        assertTrue(folder.getRoot().exists());
+        assertTrue(folder.getRoot().isDirectory());
+
+        Path test_folder1 = folder.getRoot().toPath().resolve("test_folder1");
+        assertTrue(test_folder1.toFile().exists());
+        assertTrue(test_folder1.toFile().isDirectory());
+
+        Path test_folder2 = folder.getRoot().toPath().resolve("test_folder2");
+        assertTrue(test_folder2.toFile().exists());
+        assertTrue(test_folder2.toFile().isDirectory());
+
+        Path subSubFolder2 = test_folder2.resolve("subSubFolder2");
+        assertTrue(subSubFolder2.toFile().exists());
+        assertTrue(subSubFolder2.toFile().isDirectory());
+    }
 
     private void initSubDirectories() throws IOException {
         File subFolder1 = folder.newFolder("test_folder1");

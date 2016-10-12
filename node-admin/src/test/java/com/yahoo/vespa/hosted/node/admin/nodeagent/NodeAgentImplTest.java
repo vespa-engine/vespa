@@ -317,7 +317,7 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
         inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
         inOrder.verify(dockerOperations, times(1)).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
-        inOrder.verify(storageMaintainer, times(1)).deleteContainerStorage(eq(containerName));
+        inOrder.verify(storageMaintainer, times(1)).archiveNodeData(eq(containerName));
         inOrder.verify(nodeRepository, times(1)).markAsReady(eq(hostName));
 
         verify(dockerOperations, never()).startContainerIfNeeded(any());
