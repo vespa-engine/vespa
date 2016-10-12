@@ -7,7 +7,7 @@
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storage/distributor/visitormetricsset.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/visiting/memory_bounded_trace.h>
 
 namespace document {

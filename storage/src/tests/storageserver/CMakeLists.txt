@@ -11,7 +11,7 @@ vespa_add_library(storage_teststorageserver TEST
     priorityconvertertest.cpp
     statereportertest.cpp
     changedbucketownershiphandlertest.cpp
-    AFTER
-    storage_bucketdb
-    storage_storageconfig
+    DEPENDS
+    storage_storageserver
+    storage_testcommon
 )

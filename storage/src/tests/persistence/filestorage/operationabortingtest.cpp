@@ -4,9 +4,9 @@
 #include <vector>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/persistence/messages.h>
-#include <tests/persistence/persistenceproviderwrapper.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <tests/persistence/filestorage/filestortestfixture.h>
+#include <tests/persistence/common/filestortestfixture.h>
 #include <vespa/vespalib/util/barrier.h>
 #include <vespa/vespalib/util/thread.h>
 

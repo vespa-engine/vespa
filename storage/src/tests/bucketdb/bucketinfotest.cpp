@@ -8,7 +8,7 @@
 #include <map>
 #include <vector>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/storage/distributor/bucketdb/bucketinfo.h>
+#include <vespa/storage/bucketdb/bucketinfo.h>
 
 namespace storage {
 

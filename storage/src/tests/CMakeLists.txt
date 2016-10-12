@@ -15,8 +15,5 @@ vespa_add_executable(storage_testrunner_app TEST
     storage_testfilestorage
     storage_testmemory
     storage_teststatus
-    storage
-    AFTER
-    storage_storageconfig
 )
 vespa_add_test(NAME storage_testrunner_app COMMAND storage_testrunner_app)

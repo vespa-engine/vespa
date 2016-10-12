@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 
 #include <unordered_map>

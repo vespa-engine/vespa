@@ -2264,7 +2264,7 @@ FileStorManagerTest::testDeleteBucketRejectOutdatedBucketInfo()
     {
         std::shared_ptr<api::DeleteBucketCommand> cmd(
                 new api::DeleteBucketCommand(bid));
-        cmd->setBucketInfo(BucketInfo(0xf000baaa, 1, 123, 1, 456));
+        cmd->setBucketInfo(api::BucketInfo(0xf000baaa, 1, 123, 1, 456));
         cmd->setAddress(address);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
@@ -2777,7 +2777,7 @@ FileStorManagerTest::testGetIter()
                     _node->getTestDocMan().createRandomDocumentAtLocation(
                         4000, i, 400, 400)));
     }
-    BucketInfo bucketInfo;
+    api::BucketInfo bucketInfo;
         // Putting all docs to have something to visit
     for (uint32_t i=0; i<docs.size(); ++i) {
         std::shared_ptr<api::PutCommand> cmd(

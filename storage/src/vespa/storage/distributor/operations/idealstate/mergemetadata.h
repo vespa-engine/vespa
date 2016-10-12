@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/storage/distributor/bucketdb/bucketcopy.h>
+#include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {

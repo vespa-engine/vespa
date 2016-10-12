@@ -38,6 +38,8 @@ vespa_add_library(storage_testdistributor TEST
     bucketgctimecalculatortest.cpp
     nodemaintenancestatstrackertest.cpp
     distributor_host_info_reporter_test.cpp
-    AFTER
-    storage_storageconfig
+    DEPENDS
+    storage_distributor
+    storage_testcommon
+    storage_testhostreporter
 )

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/mergelimiter.h>
 #include <vespa/storage/distributor/operations/idealstate/mergemetadata.h>

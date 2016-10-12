@@ -17,7 +17,6 @@ vespa_add_library(storage_distributor
     nodeinfo.cpp
     sentmessagemap.cpp
     operationtargetresolverimpl.cpp
-    distributorconfiguration.cpp
     throttlingoperationstarter.cpp
     blockingoperationstarter.cpp
     distributormessagesender.cpp
@@ -27,9 +26,14 @@ vespa_add_library(storage_distributor
     bucketgctimecalculator.cpp
     distributor_host_info_reporter.cpp
     latency_statistics_provider.cpp
-    $<TARGET_OBJECTS:storage_bucketdatabase>
+    $<TARGET_OBJECTS:storage_distributoroperation>
+    $<TARGET_OBJECTS:storage_distributoroperationexternal>
+    $<TARGET_OBJECTS:storage_distributoroperationidealstate>
+    $<TARGET_OBJECTS:storage_distributormaintenance>
+    $<TARGET_OBJECTS:storage_distributor_bucketdb>
     INSTALL lib64
     DEPENDS
+    storage
     AFTER
     storage_storageconfig
 )

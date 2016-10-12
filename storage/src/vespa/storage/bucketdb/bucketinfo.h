@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/bucketdb/bucketcopy.h>
+#include <vespa/storage/bucketdb/bucketcopy.h>
 
 namespace storage {
 
 namespace distributor {
+    class DistributorTestUtil;
+}
 
 class BucketInfo
 {
@@ -153,8 +155,7 @@ public:
     bool operator==(const BucketInfo& other) const;
 
 private:
-    friend class DistrBucketDBTest;
-    friend class DistributorTestUtil;
+    friend class distributor::DistributorTestUtil;
 
     /**
      * Returns the bucket copy struct for the given node, null if nonexisting
@@ -170,8 +171,6 @@ private:
 
 inline std::ostream& operator<<(std::ostream& out, const BucketInfo& info)
     { info.print(out, false, ""); return out; }
-
-}
 
 }
 

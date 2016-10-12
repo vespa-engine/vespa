@@ -3,5 +3,6 @@ vespa_add_library(storageapi_testbuckets
     SOURCES
     bucketinfotest.cpp
     DEPENDS
+    storageapi
     cppunit
 )

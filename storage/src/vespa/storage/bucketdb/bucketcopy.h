@@ -5,8 +5,6 @@
 
 namespace storage {
 
-namespace distributor {
-
 class BucketCopy {
 private:
     uint64_t _timestamp;
@@ -106,8 +104,6 @@ public:
             _flags == other._flags;
     }
 };
-
-}
 
 }
 

@@ -4,7 +4,7 @@
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/vdslib/container/writabledocumentlist.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 
 namespace document {
 class Document;

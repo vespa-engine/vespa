@@ -12,7 +12,7 @@
 #include <vector>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/metrics/valuemetric.h>
-#include <vespa/storage/distributor/bucketdb/bucketinfo.h>
+#include <vespa/storage/bucketdb/bucketinfo.h>
 
 #if __WORDSIZE == 64
   #define USE_JUDY
@@ -26,19 +26,19 @@ namespace bucketdb {
 
 class DistrBucketDatabase
 #ifdef USE_JUDY
-    : public LockableMap<JudyMultiMap<distributor::BucketInfo> >
+    : public LockableMap<JudyMultiMap<BucketInfo> >
 #else
     : public LockableMap<StdMapWrapper<document::BucketId::Type,
-                                       distributor::BucketInfo> >
+                                       BucketInfo> >
 #endif
 {
 public:
     DistrBucketDatabase() {};
 
-    typedef distributor::BucketInfo Entry;
+    typedef BucketInfo Entry;
 
     void insert(const document::BucketId&,
-                const distributor::BucketInfo&,
+                const BucketInfo&,
                 const char* clientId);
 
     WrappedEntry get(const document::BucketId& bucket,

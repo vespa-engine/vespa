@@ -3,8 +3,8 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <string>
 #include <sstream>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
