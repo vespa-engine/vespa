@@ -125,7 +125,8 @@ public class StorageMaintainer {
 
         File yVarDir = maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
         if (yVarDir.exists()) {
-            DeleteOldAppData.deleteDirectories(yVarDir.getAbsolutePath(), 0, null);
+            logger.info("Recursively deleting " + yVarDir);
+            DeleteOldAppData.recursiveDelete(yVarDir);
         }
 
         Path from = maintainer.pathInNodeAdminFromPathInNode(containerName, "/");

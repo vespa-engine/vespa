@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.node.maintenance;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -107,6 +109,22 @@ public class DeleteOldAppData {
                 }
             }
         }
+    }
+
+    /**
+     * Similar to rm -rf file:
+     *   - It's not an error if file doesn't exist
+     *   - If file is a directory, it and all content is removed
+     *   - For symlinks: Only the symlink is removed, not what the symlink points to
+     */
+    public static void recursiveDelete(File file) throws IOException {
+        if (file.isDirectory()) {
+            for (File childFile : file.listFiles()) {
+                recursiveDelete(childFile);
+            }
+        }
+
+        Files.deleteIfExists(file.toPath());
     }
 
     private static File[] getContentsOfDirectory(String directoryPath) {
