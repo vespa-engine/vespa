@@ -115,9 +115,8 @@ public class MasterDataGatherer {
                         log.log(LogLevel.INFO, "Fleetcontroller " + nodeIndex + ": Node at " + path +
                                 " removed, got no other option than counting it as down.");
                     } else {
-                        log.log(LogLevel.ERROR, "Fleetcontroller " + nodeIndex + ": Failure code " + code +
-                                        " when listening to node at " + path +
-                                ", will assume it's down.");
+                        log.log(LogLevel.WARNING, "Fleetcontroller " + nodeIndex + ": Failure code " + code +
+                                " when listening to node at " + path + ", will assume it's down.");
                     }
                     if (nextMasterData.containsKey(index)) {
                         nextMasterData.remove(index);
