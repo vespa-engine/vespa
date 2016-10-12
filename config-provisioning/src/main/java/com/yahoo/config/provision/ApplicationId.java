@@ -75,6 +75,7 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         .build();
 
 
+    // TODO: Remove this abhorrent layer violation
     public boolean isHostedVespaRoutingApplication() {
         return HOSTED_VESPA_TENANT.equals(tenant) &&
 	    (ROUTING_APPLICATION.equals(application) ||
