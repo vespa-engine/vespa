@@ -65,19 +65,28 @@ private:
     template <bool do_rank, bool do_limit>
     class InnerMatchParams {
     public:
-        InnerMatchParams(MatchTools &matchTools, RankProgram & ranking, DocidRangeScheduler & scheduler, uint32_t num_threads);
-        const double            * score_feature;
-        RankProgram             & ranking;
+        InnerMatchParams(double rankDropLimit, MatchTools &matchTools, RankProgram & ranking, HitCollector & hits,
+                         DocidRangeScheduler & scheduler, uint32_t num_threads) __attribute__((noinline));
+        void rankHit(uint32_t docId);
+        void addHit(uint32_t docId) { _hits.addHit(docId, 0.0); }
+    private:
+        const double            * _score_feature;
+        RankProgram             & _ranking;
+        double                    _rankDropLimit;
+        HitCollector            & _hits;
+    public:
         uint32_t                  matches_limit;
         const Doom              & doom;
         MaybeMatchPhaseLimiter  & limiter;
         IdleObserver              idle_observer;
-    private:
     };
 
     template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    void inner_match_loop(const InnerMatchParams<do_rank, do_limit> & params, IteratorT & search,
-                         HitCollector &hits, uint32_t & matches, uint32_t & docId, DocidRange docid_range) __attribute__((noinline));
+    void inner_match_loop(InnerMatchParams<do_rank, do_limit> & params, IteratorT & search,
+                         uint32_t & matches, uint32_t & docId, DocidRange docid_range) __attribute__((noinline));
+
+    template <typename IteratorT>
+    uint32_t updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT & search) __attribute__((noinline));
 
 public:
     MatchThread(size_t thread_id_in,
