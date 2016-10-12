@@ -64,6 +64,9 @@ public class Presentation implements Cloneable {
     /** The summary class to be shown */
     private String summary = null;
 
+    /** Whether coverage information (how much of the indices was searched should be included in the result */
+    private boolean reportCoverage=false;
+
     /** The name of the renderer to use for rendering the hits. */
     private ComponentSpecification format = RendererRegistry.defaultRendererId.toSpecification();
 
@@ -96,15 +99,11 @@ public class Presentation implements Cloneable {
     /** Sets whether matching query terms should be bolded in the result */
     public void setBolding(boolean bolding) { this.bolding = bolding; }
 
-    /** @deprecated coverage information is always returned */
-    @Deprecated
-    // TODO: Remove on Vespa 7
-    public boolean getReportCoverage() { return true; }
+    /** Returns whether coverage information should be returned in the result, if available. Default is false */
+    public boolean getReportCoverage() { return reportCoverage; }
 
-    /** @deprecated coverage information is always returned */
-    @Deprecated
-    // TODO: Remove on Vespa 7
-    public void setReportCoverage(boolean ignored) { }
+    /** Sets whether coverage information should be returned in the result, if available */
+    public void setReportCoverage(boolean reportCoverage) { this.reportCoverage=reportCoverage; }
 
     /** Get the name of the format desired for result rendering. */
     @NonNull

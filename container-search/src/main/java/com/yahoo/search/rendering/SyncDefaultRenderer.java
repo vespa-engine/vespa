@@ -136,7 +136,9 @@ public final class SyncDefaultRenderer extends Renderer {
         context.setUtf8Output("utf-8".equalsIgnoreCase(getRequestedEncoding(result.getQuery())));
         writer.xmlHeader(getRequestedEncoding(result.getQuery()));
         writer.openTag(RESULT).attribute(TOTAL_HIT_COUNT,String.valueOf(result.getTotalHitCount()));
-        renderCoverageAttributes(result.getCoverage(false), writer);
+        if (result.getQuery().getPresentation().getReportCoverage()) {
+            renderCoverageAttributes(result.getCoverage(false), writer);
+        }
         renderTime(writer, result);
         writer.closeStartTag();
     }
