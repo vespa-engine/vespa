@@ -56,7 +56,9 @@ void build_health_status(JSONStringer &json, const HealthProducer &healthProduce
 vespalib::string get_consumer(const std::map<vespalib::string,vespalib::string> &params) {
     auto consumer_lookup = params.find("consumer");
     if (consumer_lookup == params.end()) {
-        return "";
+        // Using a 'statereporter' consumer removes many uninteresting per-thread
+        // metrics but retains their aggregates.
+        return "statereporter";
     }
     return consumer_lookup->second;
 }
