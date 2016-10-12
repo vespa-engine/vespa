@@ -120,9 +120,7 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
         utf8Output = "utf-8".equalsIgnoreCase(getRequestedEncoding(result.getQuery()));
         writer.xmlHeader(getRequestedEncoding(result.getQuery()));
         writer.openTag(RESULT).attribute(TOTAL_HIT_COUNT, String.valueOf(result.getTotalHitCount()));
-        if (result.getQuery().getPresentation().getReportCoverage()) {
-            renderCoverageAttributes(result.getCoverage(false), writer);
-        }
+        renderCoverageAttributes(result.getCoverage(false), writer);
         renderTime(writer, result);
         writer.closeStartTag();
     }
