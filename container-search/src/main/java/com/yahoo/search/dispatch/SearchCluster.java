@@ -83,20 +83,20 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
         for (Map.Entry<Integer, List<Node>> group : nodes.stream().collect(Collectors.groupingBy(Node::group)).entrySet())
             groupsBuilder.put(group.getKey(), new Group(group.getKey(), group.getValue()));
-        groups = groupsBuilder.build();
+        this.groups = groupsBuilder.build();
 
         // Index nodes by host
         ImmutableMultimap.Builder<String, Node> nodesByHostBuilder = new ImmutableMultimap.Builder<>();
         for (Node node : nodes)
             nodesByHostBuilder.put(node.hostname(), node);
-        nodesByHost = nodesByHostBuilder.build();
+        this.nodesByHost = nodesByHostBuilder.build();
 
         this.directDispatchTarget = findDirectDispatchTarget(HostName.getLocalhost(), size, containerClusterSize,
                                                              nodesByHost, groups);
 
         // Set up monitoring of the fs4 interface of the nodes
         // We can switch to monitoring the rpc interface instead when we move the query phase to rpc
-        clusterMonitor = new ClusterMonitor<>(this);
+        this.clusterMonitor = new ClusterMonitor<>(this);
         for (Node node : nodes) {
             // cluster monitor will only call working() when the
             // node transitions from down to up, so we need to
@@ -192,12 +192,12 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
         // update VIP status if we direct dispatch to this group and coverage status changed
         if (usesDirectDispatchTo(group) && sufficientCoverage != group.hasSufficientCoverage()) {
-            if (sufficientCoverage)
+            if (sufficientCoverage) {
                 vipStatus.addToRotation(this);
-            else
+            } else {
                 vipStatus.removeFromRotation(this);
+            }
         }
-
         group.setHasSufficientCoverage(sufficientCoverage);
     }
 
