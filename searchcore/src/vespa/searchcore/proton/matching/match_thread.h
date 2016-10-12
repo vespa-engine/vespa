@@ -62,31 +62,38 @@ private:
     template <typename IteratorT, bool do_rank>
     void match_loop_helper(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
 
-    template <bool do_rank, bool do_limit>
     class InnerMatchParams {
     public:
         InnerMatchParams(double rankDropLimit, MatchTools &matchTools, RankProgram & ranking, HitCollector & hits,
                          DocidRangeScheduler & scheduler, uint32_t num_threads) __attribute__((noinline));
         void rankHit(uint32_t docId);
         void addHit(uint32_t docId) { _hits.addHit(docId, 0.0); }
+        bool isBelowLimit() const { return matches < _matches_limit; }
+        bool    isAtLimit() const { return matches == _matches_limit; }
+        bool         doom() const { return _doom.doom(); }
+        bool   anyOneIdle() const { return _idle_observer.get() > 0; }
+        MaybeMatchPhaseLimiter & limiter() { return _limiter; }
+        uint32_t                  matches;
     private:
+        uint32_t                  _matches_limit;
         const double            * _score_feature;
         RankProgram             & _ranking;
         double                    _rankDropLimit;
         HitCollector            & _hits;
-    public:
-        uint32_t                  matches_limit;
-        const Doom              & doom;
-        MaybeMatchPhaseLimiter  & limiter;
-        IdleObserver              idle_observer;
+        const Doom              & _doom;
+        MaybeMatchPhaseLimiter  & _limiter;
+        IdleObserver              _idle_observer;
     };
 
     template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    void inner_match_loop(InnerMatchParams<do_rank, do_limit> & params, IteratorT & search,
-                         uint32_t & matches, uint32_t & docId, DocidRange docid_range) __attribute__((noinline));
+    void inner_match_loop(InnerMatchParams & params, IteratorT & search, DocidRange docid_range) __attribute__((noinline));
 
     template <typename IteratorT>
     uint32_t updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT & search) __attribute__((noinline));
+    template <typename IteratorT>
+    void limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));
+
+    double updateEstimates(MaybeMatchPhaseLimiter & limiter, uint32_t matches, uint32_t searchedSoFar, uint32_t left) __attribute__((noinline));
 
 public:
     MatchThread(size_t thread_id_in,

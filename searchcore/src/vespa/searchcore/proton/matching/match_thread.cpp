@@ -75,29 +75,22 @@ MatchThread::updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT
     return nextDocId;
 }
 
-template <bool do_rank, bool do_limit>
-MatchThread::InnerMatchParams<do_rank, do_limit>::InnerMatchParams(double rankDropLimit, MatchTools &matchTools, RankProgram & ranking, HitCollector & hits,
+MatchThread::InnerMatchParams::InnerMatchParams(double rankDropLimit, MatchTools & matchTools, RankProgram & ranking, HitCollector & hits,
                                                                    DocidRangeScheduler & scheduler, uint32_t num_threads) :
-    _score_feature(nullptr),
+    matches(0),
+    _matches_limit(matchTools.match_limiter().sample_hits_per_thread(num_threads)),
+    _score_feature(get_score_feature(_ranking)),
     _ranking(ranking),
     _rankDropLimit(rankDropLimit),
     _hits(hits),
-    matches_limit(0),
-    doom(matchTools.doom()),
-    limiter(matchTools.match_limiter()),
-    idle_observer(scheduler.make_idle_observer())
+    _doom(matchTools.doom()),
+    _limiter(matchTools.match_limiter()),
+    _idle_observer(scheduler.make_idle_observer())
 {
-    if (do_rank) {
-        _score_feature = get_score_feature(_ranking);
-    }
-    if (do_limit) {
-        matches_limit = limiter.sample_hits_per_thread(num_threads);
-    }
 }
 
-template <bool do_rank, bool do_limit>
 void
-MatchThread::InnerMatchParams<do_rank, do_limit>::rankHit(uint32_t docId) {
+MatchThread::InnerMatchParams::rankHit(uint32_t docId) {
     _ranking.run(docId);
     double score = *_score_feature;
     // convert NaN and Inf scores to -Inf
@@ -110,36 +103,39 @@ MatchThread::InnerMatchParams<do_rank, do_limit>::rankHit(uint32_t docId) {
     }
 }
 
+template <typename IteratorT>
+void
+MatchThread::limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId)
+{
+    const size_t local_todo = (endId - docId - 1);
+    const size_t searchedSoFar = (scheduler.total_size(thread_id) - local_todo);
+    const size_t global_todo = scheduler.unassigned_size();
+    double match_freq = updateEstimates(limiter, matches, searchedSoFar, local_todo + (global_todo / num_threads));
+    search.reset(limiter.maybe_limit(SearchIterator::UP(search.release()),
+                                     match_freq, matchParams.numDocs).release());
+    LOG(debug, "Limit=%d has been reached at docid=%d which is after %zu docs.",
+               matches, docId, searchedSoFar);
+    LOG(debug, "SearchIterator after limiter: %s", search->asString().c_str());
+}
+
 template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
 void
-MatchThread::inner_match_loop(InnerMatchParams<do_rank, do_limit> & params, IteratorT & search,
-                              uint32_t & matches, uint32_t & docId, DocidRange docid_range)
+MatchThread::inner_match_loop(InnerMatchParams & params, IteratorT & search, DocidRange docid_range)
 {
-    while ((docId < docid_range.end) && !params.doom.doom()) {
+    search->initRange(docid_range.begin, docid_range.end);
+    uint32_t docId = search->seekFirst(docid_range.begin);
+    while ((docId < docid_range.end) && !params.doom()) {
         if (do_rank) {
             search->unpack(docId);
             params.rankHit(docId);
         } else {
             params.addHit(docId);
         }
-        ++matches;
-        if (do_limit && matches == params.matches_limit) {
-            const size_t local_todo = (docid_range.end - docId - 1);
-            const size_t searchedSoFar = (scheduler.total_size(thread_id) - local_todo);
-
-            IMatchLoopCommunicator::Matches my_matches(matches, searchedSoFar);
-            WaitTimer count_matches_timer(wait_time_s);
-            double match_freq = communicator.estimate_match_frequency(my_matches);
-            const size_t global_todo = scheduler.unassigned_size();
-            params.limiter.updateDocIdSpaceEstimate(searchedSoFar, local_todo + (global_todo / num_threads));
-            count_matches_timer.done();
-
-            search.reset(params.limiter.maybe_limit(SearchIterator::UP(search.release()),
-                         match_freq, matchParams.numDocs).release());
-            LOG(debug, "Limit=%d has been reached at docid=%d which is after %zu docs.", matches, docId, searchedSoFar);
-            LOG(debug, "SearchIterator after limiter: %s", search->asString().c_str());
+        params.matches++;
+        if (do_limit && params.isAtLimit()) {
+            limit(params.limiter(), search, params.matches, docId, docid_range.end);
             docId = search->seekFirst(docId + 1);
-        } else if (do_share_work && (params.idle_observer.get() > 0)) {
+        } else if (do_share_work && params.anyOneIdle()) {
             docId = updateRange(docId + 1, docid_range, search);
         } else {
             docId = search->seekNext(docId + 1);
@@ -152,25 +148,20 @@ void
 MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
                         RankProgram &ranking, HitCollector &hits)
 {
-    InnerMatchParams<do_rank, do_limit> params(matchParams.rankDropLimit, matchTools, ranking, hits, scheduler, num_threads);
-    uint32_t matches = 0;
+    InnerMatchParams params(matchParams.rankDropLimit, matchTools, ranking, hits, scheduler, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
          !docid_range.empty();
          docid_range = scheduler.next_range(thread_id))
     {
-        search->initRange(docid_range.begin, docid_range.end);
-        uint32_t docId = search->seekFirst(docid_range.begin);
-        inner_match_loop<IteratorT, do_rank, do_limit, do_share_work>(params, search, matches, docId, docid_range);
+        inner_match_loop<IteratorT, do_rank, do_limit, do_share_work>(params, search, docid_range);
     }
-    if (do_limit && matches < params.matches_limit) {
+    uint32_t matches = params.matches;
+    if (do_limit && params.isBelowLimit()) {
         const size_t searchedSoFar = scheduler.total_size(thread_id);
         LOG(debug, "Limit not reached (had %d) at docid=%d which is after %zu docs.",
-            matches, scheduler.total_span(thread_id).end, searchedSoFar);
-        IMatchLoopCommunicator::Matches my_matches(matches, searchedSoFar);
-        WaitTimer count_matches_timer(wait_time_s);
-        communicator.estimate_match_frequency(my_matches); // for other threads
-        params.limiter.updateDocIdSpaceEstimate(scheduler.total_size(thread_id), 0);
-        count_matches_timer.done();
+                   matches, scheduler.total_span(thread_id).end, searchedSoFar);
+
+        updateEstimates(params.limiter(), matches, searchedSoFar, 0);
     }
     thread_stats.docsMatched(matches);
     if (do_rank) {
@@ -397,6 +388,17 @@ MatchThread::run()
     total_time_s = total_time.elapsed().sec();
     thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
+}
+
+double
+MatchThread::updateEstimates(MaybeMatchPhaseLimiter & limiter, uint32_t matches, uint32_t searchedSoFar, uint32_t left)
+{
+    IMatchLoopCommunicator::Matches my_matches(matches, searchedSoFar);
+    WaitTimer count_matches_timer(wait_time_s);
+    double match_freq = communicator.estimate_match_frequency(my_matches);
+    limiter.updateDocIdSpaceEstimate(searchedSoFar, left);
+    count_matches_timer.done();
+    return match_freq;
 }
 
 } // namespace proton::matching
