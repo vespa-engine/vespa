@@ -10,16 +10,13 @@ $*
 Usage: build.sh
 Builds the local node-admin docker image used in the local zone.
 
-You must set the NODE_ADMIN_FROM_IMAGE environment variable to point to the
-base image (FROM-line in Dockerfile) you'd like to build the node admin image
-on.
 EOF
     exit 1
 }
 
 if [ -z "$NODE_ADMIN_FROM_IMAGE" ]
 then
-    Usage "NODE_ADMIN_FROM_IMAGE environment variable is not set."
+    Usage "You must set the NODE_ADMIN_FROM_IMAGE environment variable to point to the base image (FROM-line in Dockerfile) you'd like to build the node admin image on."
 elif [[ "$NODE_ADMIN_FROM_IMAGE" =~ % ]]
 then
     Usage "NODE_ADMIN_FROM_IMAGE environment variable cannot contain the %-character."
