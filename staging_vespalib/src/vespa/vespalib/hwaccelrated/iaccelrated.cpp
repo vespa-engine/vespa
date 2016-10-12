@@ -6,22 +6,13 @@
 #include <vespa/vespalib/hwaccelrated/generic.h>
 #include <vespa/vespalib/hwaccelrated/sse2.h>
 #include <vespa/vespalib/hwaccelrated/avx.h>
+#include <vespa/vespalib/hwaccelrated/avx2.h>
+#include <vespa/vespalib/hwaccelrated/avx512.h>
 #include <assert.h>
 
 namespace vespalib {
 
 namespace hwaccelrated {
-
-#if 0
-__attribute__ ((target ("default"), noinline)) 
-vespalib::hwaccelrated::IAccelrated::UP selectAccelrator() { return vespalib::hwaccelrated::IAccelrated::UP(new vespalib::hwaccelrated::GenericAccelrator()); }
-
-__attribute__ ((target ("sse2"), noinline))
-vespalib::hwaccelrated::IAccelrated::UP selectAccelrator() { return vespalib::hwaccelrated::IAccelrated::UP(new vespalib::hwaccelrated::Sse2Accelrator()); }
-
-__attribute__ ((target ("avx"), noinline))
-vespalib::hwaccelrated::IAccelrated::UP selectAccelrator() { return vespalib::hwaccelrated::IAccelrated::UP(new AvxAccelrator()); }
-#endif
 
 namespace {
 
@@ -44,6 +35,16 @@ public:
 class AvxFactory :public Factory{
 public:
     virtual IAccelrated::UP create() const { return IAccelrated::UP(new AvxAccelrator()); }
+};
+
+class Avx2Factory :public Factory{
+public:
+    virtual IAccelrated::UP create() const { return IAccelrated::UP(new Avx2Accelrator()); }
+};
+
+class Avx512Factory :public Factory{
+public:
+    virtual IAccelrated::UP create() const { return IAccelrated::UP(new Avx512Accelrator()); }
 };
 
 template<typename T>
@@ -100,7 +101,11 @@ Selector::Selector() :
     _factory(new GenericFactory())
 {
     __builtin_cpu_init ();
-    if (__builtin_cpu_supports("avx")) {
+    if (__builtin_cpu_supports("avx512f")) {
+        _factory.reset(new Avx512Factory());
+    } else if (__builtin_cpu_supports("avx2")) {
+        _factory.reset(new Avx2Factory());
+    } else if (__builtin_cpu_supports("avx")) {
         _factory.reset(new AvxFactory());
     } else if (__builtin_cpu_supports("sse2")) {
         _factory.reset(new Sse2Factory());

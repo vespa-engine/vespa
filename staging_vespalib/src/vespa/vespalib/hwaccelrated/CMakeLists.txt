@@ -5,6 +5,10 @@ vespa_add_library(staging_vespalib_vespalib_hwaccelrated OBJECT
     generic.cpp
     sse2.cpp
     avx.cpp
+    avx2.cpp
+    avx512.cpp
     DEPENDS
 )
 set_source_files_properties(avx.cpp PROPERTIES COMPILE_FLAGS -march=sandybridge)
+set_source_files_properties(avx2.cpp PROPERTIES COMPILE_FLAGS -march=haswell)
+set_source_files_properties(avx512.cpp PROPERTIES COMPILE_FLAGS -march=skylake-avx512)

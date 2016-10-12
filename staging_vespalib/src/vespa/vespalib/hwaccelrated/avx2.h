@@ -2,16 +2,16 @@
 
 #pragma once
 
-#include <vespa/vespalib/hwaccelrated/sse2.h>
+#include <vespa/vespalib/hwaccelrated/avx.h>
 
 namespace vespalib {
 
 namespace hwaccelrated {
 
 /**
- * Avx-256 implementation.
+ * Avx-512 implementation.
  */
-class AvxAccelrator : public Sse2Accelrator
+class Avx2Accelrator : public AvxAccelrator
 {
 public:
     float dotProduct(const float * a, const float * b, size_t sz) const override;
