@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.maintenance;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import io.airlift.airline.Arguments;
 import io.airlift.airline.Cli;
 import io.airlift.airline.Command;
 import io.airlift.airline.Help;
@@ -9,6 +10,8 @@ import io.airlift.airline.ParseArgumentsUnexpectedException;
 import io.airlift.airline.ParseOptionMissingException;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -19,6 +22,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -34,6 +38,7 @@ public class Maintainer {
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     public static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
+    public static final String JOB_ARCHIVE_APP_DATA = "archive-app-data";
     public static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
     public static final String JOB_CLEAN_HOME = "clean-home";
 
@@ -46,7 +51,11 @@ public class Maintainer {
         Cli.CliBuilder<Runnable> builder = Cli.<Runnable>builder("maintainer.jar")
                 .withDescription("This tool makes it easy to delete old log files and other node-admin app data.")
                 .withDefaultCommand(Help.class)
-                .withCommands(Help.class, DeleteOldAppDataArguments.class, CleanCoreDumpsArguments.class, CleanHomeArguments.class);
+                .withCommands(Help.class,
+                        DeleteOldAppDataArguments.class,
+                        CleanCoreDumpsArguments.class,
+                        CleanHomeArguments.class,
+                        ArchiveApplicationData.class);
 
         Cli<Runnable> gitParser = builder.build();
         try {
@@ -94,6 +103,49 @@ public class Maintainer {
                         DeleteOldAppData.deleteFilesLargerThan(file, 100*MB);
                     }
                 }
+            }
+        }
+    }
+
+    @Command(name = JOB_ARCHIVE_APP_DATA, description = "Move container's container-storage to cleanup")
+    public static class ArchiveApplicationData implements Runnable {
+        @Arguments(description = "Name of container to archive (required)")
+        public String container;
+
+        @Override
+        public void run() {
+            if (container == null) {
+                throw new IllegalArgumentException("<container> is required");
+            }
+            // Note that ContainerName verifies the name, so it cannot
+            // contain / or be equal to "." or "..".
+            ContainerName containerName = new ContainerName(container);
+
+            Logger logger = Logger.getLogger(ArchiveApplicationData.class.getName());
+            Maintainer maintainer = new Maintainer();
+
+            File yVarDir = maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
+            if (yVarDir.exists()) {
+                logger.info("Recursively deleting " + yVarDir);
+                try {
+                    DeleteOldAppData.recursiveDelete(yVarDir);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to delete " + yVarDir, e);
+                }
+            }
+
+            Path from = maintainer.pathInNodeAdminFromPathInNode(containerName, "/");
+            if (!Files.exists(from)) {
+                logger.info("The container storage at " + from + " doesn't exist");
+                return;
+            }
+
+            Path to = maintainer.pathInNodeAdminToNodeCleanup(containerName);
+            logger.info("Moving container storage from " + from + " to " + to);
+            try {
+                Files.move(from, to);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to move " + from + " to " + to, e);
             }
         }
     }

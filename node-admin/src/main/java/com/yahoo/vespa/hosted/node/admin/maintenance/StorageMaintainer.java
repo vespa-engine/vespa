@@ -10,8 +10,6 @@ import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -120,25 +118,9 @@ public class StorageMaintainer {
         DeleteOldAppData.deleteFiles(nodeAdminJDiskLogsPath.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
     }
 
-    public void deleteContainerStorage(ContainerName containerName) throws IOException {
+    public void archiveNodeData(ContainerName containerName) throws IOException {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-
-        File yVarDir = maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
-        if (yVarDir.exists()) {
-            logger.info("Recursively deleting " + yVarDir);
-            DeleteOldAppData.recursiveDelete(yVarDir);
-        }
-
-        Path from = maintainer.pathInNodeAdminFromPathInNode(containerName, "/");
-        if (!Files.exists(from)) {
-            logger.info("The application storage at " + from + " doesn't exist");
-            return;
-        }
-
-        Path to = maintainer.pathInNodeAdminToNodeCleanup(containerName);
-        logger.info("Deleting application storage by moving it from " + from + " to " + to);
-        //TODO: move to maintenance JVM
-        Files.move(from, to);
+        execute(logger, concatenateArrays(baseArguments, Maintainer.JOB_ARCHIVE_APP_DATA, containerName.asString()));
     }
 
     private void execute(PrefixLogger logger, String... params) {
@@ -150,7 +132,7 @@ public class StorageMaintainer {
             if (! output.isEmpty()) logger.info(output);
             if (! errors.isEmpty()) logger.error(errors);
         } catch (IOException e) {
-            NODE_ADMIN_LOGGER.warning("Failed to execute command " + Arrays.toString(params), e);
+            logger.warning("Failed to execute command " + Arrays.toString(params), e);
         }
     }
 
