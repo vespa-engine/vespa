@@ -33,7 +33,6 @@ struct TypeSpecifics<float, 32u> {
     static constexpr const size_t V_SZ = 32u;
     typedef float V __attribute__ ((vector_size (V_SZ)));
     static constexpr const size_t VectorsPerChunk = 4;
-    static constexpr const V zero = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     static float sum(const V & v) { return sumT<float, V>(v); }
 };
 
@@ -42,7 +41,6 @@ struct TypeSpecifics<double, 32u> {
     static constexpr const size_t V_SZ = 32u;
     typedef double V __attribute__ ((vector_size (V_SZ)));
     static constexpr const size_t VectorsPerChunk = 4;
-    static constexpr const V zero = {0.0, 0.0, 0.0, 0.0};
     static double sum(const V & v) { return sumT<double, V>(v); }
 };
 
@@ -51,7 +49,6 @@ struct TypeSpecifics<float, 64u> {
     static constexpr const size_t V_SZ = 64u;
     typedef float V __attribute__ ((vector_size (V_SZ)));
     static constexpr const size_t VectorsPerChunk = 4;
-    static constexpr const V zero = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     static float sum(const V & v) { return sumT<float, V>(v); }
 };
 
@@ -60,20 +57,19 @@ struct TypeSpecifics<double, 64u> {
     static constexpr const size_t V_SZ = 64u;
     typedef double V __attribute__ ((vector_size (V_SZ)));
     static constexpr const size_t VectorsPerChunk = 4;
-    static constexpr const V zero = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     static double sum(const V & v) { return sumT<double, V>(v); }
 };
 
-template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB>
+template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk=4>
 static T computeDotProduct(const T * af, const T * bf, size_t sz) __attribute__((noinline));
 
-template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB>
+template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
 T computeDotProduct(const T * af, const T * bf, size_t sz)
 {
     using TT = TypeSpecifics<T, VLEN>;
-    constexpr const size_t ChunkSize = TT::V_SZ*4/sizeof(T);
-    constexpr const size_t VectorsPerChunk = TT::VectorsPerChunk;
-    typename TT::V partial[VectorsPerChunk] = { TT::zero, TT::zero, TT::zero, TT::zero};
+    constexpr const size_t ChunkSize = TT::V_SZ*VectorsPerChunk/sizeof(T);
+    typename TT::V partial[VectorsPerChunk];
+    memset(partial, 0, sizeof(partial));
     typedef T A __attribute__ ((vector_size (TT::V_SZ), aligned(AlignA)));
     typedef T B __attribute__ ((vector_size (TT::V_SZ), aligned(AlignB)));
     const A * a = reinterpret_cast<const A *>(af);
