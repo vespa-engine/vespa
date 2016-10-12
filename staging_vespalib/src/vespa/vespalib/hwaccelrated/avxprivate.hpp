@@ -25,25 +25,18 @@ T sumT(const V & v) {
     return sum;
 }
 
-template <typename T, size_t VLEN>
-struct TypeSpecifics {
-    static constexpr const size_t V_SZ = VLEN;
-    typedef T V __attribute__ ((vector_size (V_SZ)));
-    static T sum(const V & v) { return sumT<T, V>(v); }
-};
-
 template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
 static T computeDotProduct(const T * af, const T * bf, size_t sz) __attribute__((noinline));
 
 template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
 T computeDotProduct(const T * af, const T * bf, size_t sz)
 {
-    using TT = TypeSpecifics<T, VLEN>;
-    constexpr const size_t ChunkSize = TT::V_SZ*VectorsPerChunk/sizeof(T);
-    typename TT::V partial[VectorsPerChunk];
+    constexpr const size_t ChunkSize = VLEN*VectorsPerChunk/sizeof(T);
+    typedef T V __attribute__ ((vector_size (VLEN)));
+    typedef T A __attribute__ ((vector_size (VLEN), aligned(AlignA)));
+    typedef T B __attribute__ ((vector_size (VLEN), aligned(AlignB)));
+    V partial[VectorsPerChunk];
     memset(partial, 0, sizeof(partial));
-    typedef T A __attribute__ ((vector_size (TT::V_SZ), aligned(AlignA)));
-    typedef T B __attribute__ ((vector_size (TT::V_SZ), aligned(AlignB)));
     const A * a = reinterpret_cast<const A *>(af);
     const B * b = reinterpret_cast<const B *>(bf);
 
@@ -60,7 +53,7 @@ T computeDotProduct(const T * af, const T * bf, size_t sz)
     for (size_t i(1); i < VectorsPerChunk; i++) {
         partial[0] += partial[i];
     }
-    return sum + TT::sum(partial[0]);
+    return sum + sumT<T, V>(partial[0]);
 }
 
 }
