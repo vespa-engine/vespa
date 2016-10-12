@@ -61,7 +61,6 @@ MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
          !docid_range.empty();
          docid_range = scheduler.next_range(thread_id))
     {
-        LOG(spam, "Thread %d Evaluating range [%d, %d]", thread_id, docid_range.begin, docid_range.end);
         search->initRange(docid_range.begin, docid_range.end);
         uint32_t docId = search->seekFirst(docid_range.begin);
         while ((docId < docid_range.end) && !doom.doom()) {
@@ -100,7 +99,6 @@ MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
             } else if (do_share_work && (idle_observer.get() > 0)) {
                 DocidRange todo(docId + 1, docid_range.end);
                 DocidRange my_work = scheduler.share_range(thread_id, todo);
-                LOG(spam, "Thread %d Share range([%d, %d]) = [%d, %d]", thread_id, todo.begin, todo.end, my_work.begin, my_work.end);
                 if (my_work.end < todo.end) {
                     docid_range = my_work;
                     search->initRange(docid_range.begin, docid_range.end);
