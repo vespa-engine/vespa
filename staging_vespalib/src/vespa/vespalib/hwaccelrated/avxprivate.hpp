@@ -26,34 +26,10 @@ T sumT(const V & v) {
 }
 
 template <typename T, size_t VLEN>
-class TypeSpecifics { };
-
-template <>
-struct TypeSpecifics<float, 32u> {
-    static constexpr const size_t V_SZ = 32u;
-    typedef float V __attribute__ ((vector_size (V_SZ)));
-    static float sum(const V & v) { return sumT<float, V>(v); }
-};
-
-template <>
-struct TypeSpecifics<double, 32u> {
-    static constexpr const size_t V_SZ = 32u;
-    typedef double V __attribute__ ((vector_size (V_SZ)));
-    static double sum(const V & v) { return sumT<double, V>(v); }
-};
-
-template <>
-struct TypeSpecifics<float, 64u> {
-    static constexpr const size_t V_SZ = 64u;
-    typedef float V __attribute__ ((vector_size (V_SZ)));
-    static float sum(const V & v) { return sumT<float, V>(v); }
-};
-
-template <>
-struct TypeSpecifics<double, 64u> {
-    static constexpr const size_t V_SZ = 64u;
-    typedef double V __attribute__ ((vector_size (V_SZ)));
-    static double sum(const V & v) { return sumT<double, V>(v); }
+struct TypeSpecifics {
+    static constexpr const size_t V_SZ = VLEN;
+    typedef T V __attribute__ ((vector_size (V_SZ)));
+    static T sum(const V & v) { return sumT<T, V>(v); }
 };
 
 template <typename T, size_t VLEN, unsigned AlignA, unsigned AlignB, size_t VectorsPerChunk>
