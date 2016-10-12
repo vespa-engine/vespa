@@ -7,8 +7,9 @@ import com.yahoo.collections.ArraySet;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 
@@ -22,6 +23,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -41,12 +43,12 @@ public class ConfigServerHttpRequestExecutorTest {
     final StringBuilder mockLog = new StringBuilder();
     int mockReturnCode = 200;
 
-    private HttpClient createClientMock() throws IOException {
-        HttpClient httpMock = mock(HttpClient.class);
+    private CloseableHttpClient createClientMock() throws IOException {
+        CloseableHttpClient httpMock = mock(CloseableHttpClient.class);
         when(httpMock.execute(any())).thenAnswer((Answer<HttpResponse>) invocationOnMock -> {
             HttpGet get = (HttpGet) invocationOnMock.getArguments()[0];
             mockLog.append(get.getMethod()).append(" ").append(get.getURI()).append("  ");
-            HttpResponse response = mock(HttpResponse.class);
+            CloseableHttpResponse response = mock(CloseableHttpResponse.class);
             StatusLine statusLine = mock(StatusLine.class);
             when(statusLine.getStatusCode()).thenReturn(mockReturnCode);
             when(response.getStatusLine()).thenReturn(statusLine);
@@ -57,6 +59,7 @@ public class ConfigServerHttpRequestExecutorTest {
             when(entity.getContent()).thenReturn(stream);
             return response;
         });
+        doNothing().when(httpMock).close();
         return httpMock;
     }
 
