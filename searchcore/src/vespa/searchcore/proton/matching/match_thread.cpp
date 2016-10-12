@@ -75,8 +75,8 @@ MatchThread::updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT
     return nextDocId;
 }
 
-MatchThread::InnerMatchParams::InnerMatchParams(double rankDropLimit, MatchTools & matchTools, RankProgram & ranking, HitCollector & hits,
-                                                                   DocidRangeScheduler & scheduler, uint32_t num_threads) :
+MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, RankProgram & ranking, HitCollector & hits,
+                              DocidRangeScheduler & scheduler, uint32_t num_threads) :
     matches(0),
     _matches_limit(matchTools.match_limiter().sample_hits_per_thread(num_threads)),
     _score_feature(get_score_feature(_ranking)),
@@ -90,7 +90,7 @@ MatchThread::InnerMatchParams::InnerMatchParams(double rankDropLimit, MatchTools
 }
 
 void
-MatchThread::InnerMatchParams::rankHit(uint32_t docId) {
+MatchThread::Context::rankHit(uint32_t docId) {
     _ranking.run(docId);
     double score = *_score_feature;
     // convert NaN and Inf scores to -Inf
@@ -120,22 +120,22 @@ MatchThread::limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_
 
 template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
 void
-MatchThread::inner_match_loop(InnerMatchParams & params, IteratorT & search, DocidRange docid_range)
+MatchThread::inner_match_loop(Context & context, IteratorT & search, DocidRange docid_range)
 {
     search->initRange(docid_range.begin, docid_range.end);
     uint32_t docId = search->seekFirst(docid_range.begin);
-    while ((docId < docid_range.end) && !params.doom()) {
+    while ((docId < docid_range.end) && !context.doom()) {
         if (do_rank) {
             search->unpack(docId);
-            params.rankHit(docId);
+            context.rankHit(docId);
         } else {
-            params.addHit(docId);
+            context.addHit(docId);
         }
-        params.matches++;
-        if (do_limit && params.isAtLimit()) {
-            limit(params.limiter(), search, params.matches, docId, docid_range.end);
+        context.matches++;
+        if (do_limit && context.isAtLimit()) {
+            limit(context.limiter(), search, context.matches, docId, docid_range.end);
             docId = search->seekFirst(docId + 1);
-        } else if (do_share_work && params.anyOneIdle()) {
+        } else if (do_share_work && context.anyOneIdle()) {
             docId = updateRange(docId + 1, docid_range, search);
         } else {
             docId = search->seekNext(docId + 1);
@@ -148,20 +148,20 @@ void
 MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
                         RankProgram &ranking, HitCollector &hits)
 {
-    InnerMatchParams params(matchParams.rankDropLimit, matchTools, ranking, hits, scheduler, num_threads);
+    Context context(matchParams.rankDropLimit, matchTools, ranking, hits, scheduler, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
          !docid_range.empty();
          docid_range = scheduler.next_range(thread_id))
     {
-        inner_match_loop<IteratorT, do_rank, do_limit, do_share_work>(params, search, docid_range);
+        inner_match_loop<IteratorT, do_rank, do_limit, do_share_work>(context, search, docid_range);
     }
-    uint32_t matches = params.matches;
-    if (do_limit && params.isBelowLimit()) {
+    uint32_t matches = context.matches;
+    if (do_limit && context.isBelowLimit()) {
         const size_t searchedSoFar = scheduler.total_size(thread_id);
         LOG(debug, "Limit not reached (had %d) at docid=%d which is after %zu docs.",
                    matches, scheduler.total_span(thread_id).end, searchedSoFar);
 
-        updateEstimates(params.limiter(), matches, searchedSoFar, 0);
+        updateEstimates(context.limiter(), matches, searchedSoFar, 0);
     }
     thread_stats.docsMatched(matches);
     if (do_rank) {
