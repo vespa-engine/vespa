@@ -79,7 +79,7 @@ MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, Ran
                               DocidRangeScheduler & scheduler, uint32_t num_threads) :
     matches(0),
     _matches_limit(matchTools.match_limiter().sample_hits_per_thread(num_threads)),
-    _score_feature(get_score_feature(_ranking)),
+    _score_feature(get_score_feature(ranking)),
     _ranking(ranking),
     _rankDropLimit(rankDropLimit),
     _hits(hits),
