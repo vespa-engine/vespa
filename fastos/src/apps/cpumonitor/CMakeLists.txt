@@ -3,7 +3,7 @@ vespa_add_executable(fastos_cpumonitor
     SOURCES
     cpumonitor.cpp
     OUTPUT_NAME cpumonitor
-    INSTALL sbin
+    INSTALL bin
     DEPENDS
     pthread
 )
