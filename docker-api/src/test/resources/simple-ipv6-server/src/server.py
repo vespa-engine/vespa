@@ -28,14 +28,16 @@ class MyHandler(SimpleHTTPRequestHandler):
             return
 
 
-class HTTPServerV6(HTTPServer):
-    address_family = socket.AF_INET6
+class DualHTTPServer(HTTPServer):
+    def __init__(self, address, handler):
+        self.address_family = socket.AF_INET6 if (':' in address[0]) else socket.AF_INET
+        HTTPServer.__init__(self, address, handler)
 
 
-def main():
-    server = HTTPServerV6(('::', 80), MyHandler)
+def main(ipv6):
+    server = DualHTTPServer(('::' if ipv6 else '', 80), MyHandler)
     server.serve_forever()
 
 
 if __name__ == '__main__':
-    main()
+    main(False)
