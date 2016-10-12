@@ -47,7 +47,7 @@ public class SessionActiveHandler extends SessionActiveHandlerBase {
         TenantName tenantName = Utils.getTenantFromSessionRequest(request);
         log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
         Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        LocalSession localSession = getSessionFromRequestV2(tenant.getLocalSessionRepo(), request);
+        LocalSession localSession = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
         activate(request, tenant.getLocalSessionRepo(), tenant.getActivateLock(), timeoutBudget, localSession);
         return new SessionActiveResponse(localSession.getMetaData().getSlime(), tenantName, request, localSession, zone);
     }

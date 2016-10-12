@@ -11,7 +11,9 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -46,8 +48,9 @@ public class SessionPrepareHandler extends SessionHandler {
     public SessionPrepareHandler(Executor executor,
                                  AccessLog accessLog,
                                  Tenants tenants,
-                                 ConfigserverConfig configserverConfig) {
-        super(executor, accessLog);
+                                 ConfigserverConfig configserverConfig,
+                                 ApplicationRepository applicationRepository) {
+        super(executor, accessLog, applicationRepository);
         this.tenants = tenants;
         this.configserverConfig = configserverConfig;
     }
@@ -56,9 +59,10 @@ public class SessionPrepareHandler extends SessionHandler {
     protected HttpResponse handlePUT(HttpRequest request) {
         TenantName tenantName = Utils.getTenantFromSessionRequest(request);
         Tenant tenantContext = Utils.checkThatTenantExists(tenants, tenantName);
-        LocalSession session = getSessionFromRequestV2(tenantContext.getLocalSessionRepo(), request);
+        long sessionId = getSessionIdV2(request);
+        LocalSession session = applicationRepository.getLocalSession(tenantContext, getSessionIdV2(request));
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
-            throw new IllegalArgumentException("Session is active: " + session.getSessionId());
+            throw new IllegalArgumentException("Session is active: " + sessionId);
         }
         log.log(LogLevel.DEBUG, "session=" + session);
         boolean verbose = request.getBooleanProperty("verbose");
@@ -72,7 +76,7 @@ public class SessionPrepareHandler extends SessionHandler {
                                                       getCurrentActiveApplicationSet(tenantContext, appId), 
                                                       tenantContext.getPath());
         logConfigChangeActions(actions, logger);
-        log.log(LogLevel.INFO, Tenants.logPre(appId)+"Session "+session.getSessionId()+" prepared successfully. ");
+        log.log(LogLevel.INFO, Tenants.logPre(appId) + "Session " + sessionId + " prepared successfully. ");
         return new SessionPrepareResponse(rawDeployLog, tenantContext, request, session, actions);
     }
 
@@ -94,11 +98,12 @@ public class SessionPrepareHandler extends SessionHandler {
         TenantName tenantName = Utils.getTenantFromSessionRequest(request);
         log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
         Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        RemoteSession session = getSessionFromRequestV2(tenant.getRemoteSessionRepo(), request);
+        long sessionId = getSessionIdV2(request);
+        RemoteSession session = applicationRepository.getRemoteSession(tenant, getSessionIdV2(request));
         if (Session.Status.ACTIVATE.equals(session.getStatus()))
-            throw new IllegalArgumentException("Session is active: " + session.getSessionId());
+            throw new IllegalArgumentException("Session is active: " + sessionId);
         if (!Session.Status.PREPARE.equals(session.getStatus()))
-            throw new IllegalArgumentException("Session not prepared: " + session.getSessionId());
+            throw new IllegalArgumentException("Session not prepared: " + sessionId);
         return new SessionPrepareResponse(createDeployLog(), tenant, request, session, new ConfigChangeActions());
     }
 

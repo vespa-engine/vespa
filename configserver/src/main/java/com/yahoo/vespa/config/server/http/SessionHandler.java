@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.session.Session;
@@ -25,8 +26,11 @@ import java.util.concurrent.Executor;
  * @since 5.1.14
  */
 public class SessionHandler extends HttpHandler {
-    public SessionHandler(Executor executor, AccessLog accessLog) {
+    protected final ApplicationRepository applicationRepository;
+
+    public SessionHandler(Executor executor, AccessLog accessLog, ApplicationRepository applicationRepository) {
         super(executor, accessLog);
+        this.applicationRepository = applicationRepository;
     }
 
     /**
@@ -51,7 +55,7 @@ public class SessionHandler extends HttpHandler {
      * @param request a request
      * @return a session id
      */
-    static Long getSessionIdV2(HttpRequest request) {
+    public static Long getSessionIdV2(HttpRequest request) {
         try {
             return Long.parseLong(getRawSessionIdV2(request));
         } catch (NumberFormatException e) {
@@ -62,19 +66,6 @@ public class SessionHandler extends HttpHandler {
     private static BadRequestException createSessionException(HttpRequest request) {
         return new BadRequestException("Session id in request is not a number, request was '" +
                 request.getUri().toString() + "'");
-    }
-
-    public static <SESSIONTYPE extends Session> SESSIONTYPE getSessionFromRequestV2(SessionRepo<SESSIONTYPE> sessionRepo, HttpRequest request) {
-        long sessionId = getSessionIdV2(request);
-        return getSessionFromRequest(sessionRepo, sessionId);
-    }
-
-    public static <SESSIONTYPE extends Session> SESSIONTYPE getSessionFromRequest(SessionRepo<SESSIONTYPE> sessionRepo, long sessionId) {
-        SESSIONTYPE session = sessionRepo.getSession(sessionId);
-        if (session == null) {
-            throw new NotFoundException("Session " + sessionId + " was not found");
-        }
-        return session;
     }
 
     protected static final Duration DEFAULT_ACTIVATE_TIMEOUT = Duration.ofMinutes(2);

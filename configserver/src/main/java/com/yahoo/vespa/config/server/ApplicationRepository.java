@@ -17,7 +17,7 @@ import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.ContentHandler;
-import com.yahoo.vespa.config.server.http.SessionHandler;
+import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.v2.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -169,8 +169,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public HttpResponse getContent(Tenant tenant, ApplicationId applicationId, Zone zone, HttpRequest request) {
-        LocalSession session = SessionHandler.getSessionFromRequest(tenant.getLocalSessionRepo(),
-                                                                    tenant.getApplicationRepo().getSessionIdForApplication(applicationId));
+        LocalSession session = getLocalSession(tenant, tenant.getApplicationRepo().getSessionIdForApplication(applicationId));
         return contentHandler.get(ApplicationContentRequest.create(request, session, applicationId, zone));
     }
 
@@ -178,6 +177,20 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         long sessionId = tenant.getApplicationRepo().getSessionIdForApplication(applicationId);
         RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
         return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty());
+    }
+
+    public LocalSession getLocalSession(Tenant tenant, long sessionId) {
+        LocalSession session = tenant.getLocalSessionRepo().getSession(sessionId);
+        if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
+
+        return session;
+    }
+
+    public RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
+        RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId);
+        if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
+
+        return session;
     }
 
 }

@@ -7,6 +7,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.http.ContentHandler;
@@ -30,8 +31,11 @@ public class SessionContentHandler extends SessionHandler {
     private final ContentHandler contentHandler = new ContentHandler();
 
     @Inject
-    public SessionContentHandler(Executor executor, AccessLog accessLog, Tenants tenants) {
-        super(executor, accessLog);
+    public SessionContentHandler(Executor executor,
+                                 AccessLog accessLog,
+                                 Tenants tenants,
+                                 ApplicationRepository applicationRepository) {
+        super(executor, accessLog, applicationRepository);
         this.tenants = tenants;
     }
 
@@ -40,16 +44,8 @@ public class SessionContentHandler extends SessionHandler {
         TenantName tenantName = Utils.getTenantFromSessionRequest(request);
         log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
         Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        LocalSession session = getLocalSession(request, tenant.getLocalSessionRepo());
+        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
         return contentHandler.get(SessionContentRequestV2.create(request, session));
-    }
-
-    private LocalSession getLocalSession(HttpRequest request, LocalSessionRepo localSessionRepo) {
-        LocalSession session = getSessionFromRequestV2(localSessionRepo, request);
-        if (session == null) {
-            throw new NotFoundException("No valid session id in request " + request.getUri().toString());
-        }
-        return session;
     }
 
     @Override
@@ -57,7 +53,8 @@ public class SessionContentHandler extends SessionHandler {
         TenantName tenantName = Utils.getTenantFromSessionRequest(request);
         log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
         Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        return contentHandler.put(SessionContentRequestV2.create(request, getSessionFromRequestV2(tenant.getLocalSessionRepo(), request)));
+        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+        return contentHandler.put(SessionContentRequestV2.create(request, session));
     }
 
     @Override
@@ -65,6 +62,7 @@ public class SessionContentHandler extends SessionHandler {
         TenantName tenantName = Utils.getTenantFromSessionRequest(request);
         log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
         Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        return contentHandler.delete(SessionContentRequestV2.create(request, getSessionFromRequestV2(tenant.getLocalSessionRepo(), request)));
+        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+        return contentHandler.delete(SessionContentRequestV2.create(request, session));
     }
 }
