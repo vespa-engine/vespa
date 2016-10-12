@@ -11,4 +11,4 @@ vespa_add_library(staging_vespalib_vespalib_hwaccelrated OBJECT
 )
 set_source_files_properties(avx.cpp PROPERTIES COMPILE_FLAGS -march=sandybridge)
 set_source_files_properties(avx2.cpp PROPERTIES COMPILE_FLAGS -march=haswell)
-set_source_files_properties(avx512.cpp PROPERTIES COMPILE_FLAGS -march=skylake) # should be skylake-avx512 when assembler supports it.
+set_source_files_properties(avx512.cpp PROPERTIES COMPILE_FLAGS -march=skylake-avx512)
