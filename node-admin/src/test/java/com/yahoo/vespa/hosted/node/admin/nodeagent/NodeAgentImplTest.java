@@ -417,6 +417,11 @@ public class NodeAgentImplTest {
         nodeAgent.lastNodeSpec = new ContainerNodeSpec(hostName, null, containerName, Node.State.active, "tenants",
                 "docker", version, Optional.of(owner), Optional.of(membership), null, null, null, null, null);
 
+        long totalContainerCpuTime = (long) ((Map) cpu_stats.get("cpu_usage")).get("total_usage");
+        long totalSystemCpuTime = (long) cpu_stats.get("system_cpu_usage");
+        nodeAgent.lastCpuMetric.getCpuUsagePercentage(totalContainerCpuTime - 456_789_123, (long) (totalSystemCpuTime - 1e9));
+        // During the last 10^9 total cpu ns, 456,789,123ns were spent on running the container. That means the expected
+        // cpu usage percentage is 100 * (456,789,123 / 10^9) = 45.6789123%
         nodeAgent.updateContainerNodeMetrics();
 
         Set<Map<String, Object>> actualMetrics = new HashSet<>();
