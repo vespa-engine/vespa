@@ -2,7 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
+#include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/log/log.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
@@ -228,12 +228,12 @@ void logBucketDbErase(uint64_t key, const TypeTag<bucketdb::StorageBucketInfo>&)
 void
 checkAllConsistentNodesImpliesTrusted(
         const document::BucketId& bucket,
-        const distributor::BucketInfo& entry)
+        const BucketInfo& entry)
 {
     // If all copies are consistent, they should also be trusted
     if (entry.validAndConsistent() && entry.getNodeCount() > 1) {
         for (std::size_t i = 0; i < entry.getNodeCount(); ++i) {
-            const distributor::BucketCopy& copy = entry.getNodeRef(i);
+            const BucketCopy& copy = entry.getNodeRef(i);
             if (copy.trusted() == false) {
                 LOG(warning, "Bucket DB entry %s for %s is consistent, but "
                     "contains non-trusted copy %s", entry.toString().c_str(),
@@ -245,7 +245,7 @@ checkAllConsistentNodesImpliesTrusted(
 }
 
 std::size_t
-firstTrustedNode(const distributor::BucketInfo& entry)
+firstTrustedNode(const BucketInfo& entry)
 {
     for (std::size_t i = 0; i < entry.getNodeCount(); ++i) {
         const distributor::BucketCopy& copy = entry.getNodeRef(i);
@@ -259,7 +259,7 @@ firstTrustedNode(const distributor::BucketInfo& entry)
 void
 checkNotInSyncImpliesNotTrusted(
         const document::BucketId& bucket,
-        const distributor::BucketInfo& entry)
+        const BucketInfo& entry)
 {
     // If there are copies out of sync, different copies should not
     // be set to trusted
@@ -267,12 +267,12 @@ checkNotInSyncImpliesNotTrusted(
     if (trustedNode != std::numeric_limits<std::size_t>::max()) {
         // Ensure all other trusted copies match the metadata of the
         // first trusted bucket
-        const distributor::BucketCopy& trustedCopy = entry.getNodeRef(trustedNode);
+        const BucketCopy& trustedCopy = entry.getNodeRef(trustedNode);
         for (std::size_t i = 0; i < entry.getNodeCount(); ++i) {
             if (i == trustedNode) {
                 continue;
             }
-            const distributor::BucketCopy& copy = entry.getNodeRef(i);
+            const BucketCopy& copy = entry.getNodeRef(i);
             const api::BucketInfo& copyInfo = copy.getBucketInfo();
             const api::BucketInfo& trustedInfo = trustedCopy.getBucketInfo();
             if (copy.trusted()
@@ -291,10 +291,10 @@ checkNotInSyncImpliesNotTrusted(
 void
 checkInvalidImpliesNotTrusted(
         const document::BucketId& bucket,
-        const distributor::BucketInfo& entry)
+        const BucketInfo& entry)
 {
     for (std::size_t i = 0; i < entry.getNodeCount(); ++i) {
-        const distributor::BucketCopy& copy = entry.getNodeRef(i);
+        const BucketCopy& copy = entry.getNodeRef(i);
         if (!copy.valid() && copy.trusted()) {
             LOG(warning, "Bucket DB entry %s for %s has invalid copy %s "
                 "marked as trusted", entry.toString().c_str(),
@@ -305,7 +305,7 @@ checkInvalidImpliesNotTrusted(
 }
 
 void
-logBucketDbInsert(uint64_t key, const distributor::BucketInfo& entry)
+logBucketDbInsert(uint64_t key, const BucketInfo& entry)
 {
     document::BucketId bucket(document::BucketId::keyToBucketId(key));
     LOG_BUCKET_OPERATION_NO_LOCK(
@@ -318,7 +318,7 @@ logBucketDbInsert(uint64_t key, const distributor::BucketInfo& entry)
 }
 
 void
-logBucketDbErase(uint64_t key, const TypeTag<distributor::BucketInfo>&)
+logBucketDbErase(uint64_t key, const TypeTag<BucketInfo>&)
 {
     document::BucketId bucket(document::BucketId::keyToBucketId(key));
     LOG_BUCKET_OPERATION_NO_LOCK(bucket, "bucketdb erase");

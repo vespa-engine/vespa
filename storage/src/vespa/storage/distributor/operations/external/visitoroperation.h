@@ -3,7 +3,6 @@
 
 #include <vespa/storageapi/defs.h>
 #include <vespa/storage/distributor/operations/operation.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storage/distributor/visitormetricsset.h>

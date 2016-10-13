@@ -7,9 +7,7 @@
  *
  * This class sets up the entire storage server.
  *
- * @author H?kon Humberset
- * @date 2005-05-13
- * @version $Id: storageserver.h 131081 2011-12-16 18:44:06Z lulf $
+ * @author Håkon Humberset
  */
 
 #pragma once
@@ -25,7 +23,6 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/metrics/metrics.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/storagelink.h>

@@ -4,7 +4,6 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/visitormetricsset.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>

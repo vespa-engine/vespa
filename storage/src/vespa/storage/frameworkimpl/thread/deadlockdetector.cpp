@@ -4,7 +4,6 @@
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
 
 #include <vespa/log/log.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vdslib/state/nodetype.h>

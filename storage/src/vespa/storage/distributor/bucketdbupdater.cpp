@@ -6,7 +6,6 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/log/log.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/multioperation.h>

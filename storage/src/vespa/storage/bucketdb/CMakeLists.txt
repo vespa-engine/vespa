@@ -6,7 +6,6 @@ vespa_add_library(storage_bucketdb OBJECT
     bucketdatabase.cpp
     mapbucketdatabase.cpp
     storagebucketdbinitializer.cpp
-    distrbucketdb.cpp
     storbucketdb.cpp
     judyarray.cpp
     bucketmanager.cpp

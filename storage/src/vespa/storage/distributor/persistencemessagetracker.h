@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/messagetracker.h>
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>

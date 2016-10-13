@@ -19,7 +19,6 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/nodestateupdater.h>

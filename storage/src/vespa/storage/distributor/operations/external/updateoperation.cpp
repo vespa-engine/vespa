@@ -5,7 +5,6 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/log/log.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 
 LOG_SETUP(".distributor.callback.doc.update");
