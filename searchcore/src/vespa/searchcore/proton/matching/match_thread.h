@@ -38,6 +38,7 @@ private:
     const MatchToolsFactory      &matchToolsFactory;
     IMatchLoopCommunicator       &communicator;
     DocidRangeScheduler          &scheduler;
+    IdleObserver                  idle_observer;
     uint32_t                      _distributionKey;
     ResultProcessor              &resultProcessor;
     vespalib::DualMergeDirector  &mergeDirector;
@@ -50,13 +51,12 @@ private:
     class Context {
     public:
         Context(double rankDropLimit, MatchTools &matchTools, RankProgram & ranking, HitCollector & hits,
-                DocidRangeScheduler & scheduler, uint32_t num_threads) __attribute__((noinline));
+                uint32_t num_threads) __attribute__((noinline));
         void rankHit(uint32_t docId);
         void addHit(uint32_t docId) { _hits.addHit(docId, 0.0); }
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
         bool         doom() const { return _doom.doom(); }
-        bool   anyOneIdle() const { return _idle_observer.get() > 0; }
         MaybeMatchPhaseLimiter & limiter() { return _limiter; }
         uint32_t                  matches;
     private:
@@ -67,7 +67,6 @@ private:
         HitCollector            & _hits;
         const Doom              & _doom;
         MaybeMatchPhaseLimiter  & _limiter;
-        IdleObserver              _idle_observer;
     };
 
     double updateEstimates(MaybeMatchPhaseLimiter & limiter, uint32_t matches, uint32_t searchedSoFar, uint32_t left) __attribute__((noinline));
@@ -75,8 +74,8 @@ private:
     template <typename IteratorT>
     void limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));
 
-    template <typename IteratorT>
-    uint32_t updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT & search) __attribute__((noinline));
+    bool any_idle() const { return (idle_observer.get() > 0); }
+    bool try_share(DocidRange &docid_range, uint32_t next_docid) __attribute__((noinline));
 
     template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
     void inner_match_loop(Context & params, IteratorT & search, DocidRange docid_range) __attribute__((noinline));
@@ -110,4 +109,3 @@ public:
 
 } // namespace proton::matching
 } // namespace proton
-

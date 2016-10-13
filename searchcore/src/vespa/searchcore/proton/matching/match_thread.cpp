@@ -97,7 +97,7 @@ const double *get_score_feature(const RankProgram &rankProgram) {
 //-----------------------------------------------------------------------------
 
 MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, RankProgram & ranking, HitCollector & hits,
-                              DocidRangeScheduler & scheduler, uint32_t num_threads) :
+                              uint32_t num_threads) :
     matches(0),
     _matches_limit(matchTools.match_limiter().sample_hits_per_thread(num_threads)),
     _score_feature(get_score_feature(ranking)),
@@ -105,8 +105,7 @@ MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, Ran
     _rankDropLimit(rankDropLimit),
     _hits(hits),
     _doom(matchTools.doom()),
-    _limiter(matchTools.match_limiter()),
-    _idle_observer(scheduler.make_idle_observer())
+    _limiter(matchTools.match_limiter())
 {
 }
 
@@ -152,19 +151,15 @@ MatchThread::limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_
     LOG(debug, "SearchIterator after limiter: %s", search->asString().c_str());
 }
 
-template <typename IteratorT>
-uint32_t
-MatchThread::updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT & search) {
-    DocidRange todo(nextDocId, docid_range.end);
+bool
+MatchThread::try_share(DocidRange &docid_range, uint32_t next_docid) {
+    DocidRange todo(next_docid, docid_range.end);
     DocidRange my_work = scheduler.share_range(thread_id, todo);
     if (my_work.end < todo.end) {
         docid_range = my_work;
-        search->initRange(docid_range.begin, docid_range.end);
-        nextDocId = search->seekFirst(docid_range.begin);
-    } else {
-        nextDocId = search->seekNext(nextDocId);
+        return true;
     }
-    return nextDocId;
+    return false;
 }
 
 template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
@@ -184,8 +179,9 @@ MatchThread::inner_match_loop(Context & context, IteratorT & search, DocidRange 
         if (do_limit && context.isAtLimit()) {
             limit(context.limiter(), search, context.matches, docId, docid_range.end);
             docId = search->seekFirst(docId + 1);
-        } else if (do_share_work && context.anyOneIdle()) {
-            docId = updateRange(docId + 1, docid_range, search);
+        } else if (do_share_work && any_idle() && try_share(docid_range, docId + 1)) {
+            search->initRange(docid_range.begin, docid_range.end);
+            docId = search->seekFirst(docid_range.begin);
         } else {
             docId = search->seekNext(docId + 1);
         }
@@ -197,7 +193,7 @@ void
 MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
                         RankProgram &ranking, HitCollector &hits)
 {
-    Context context(matchParams.rankDropLimit, matchTools, ranking, hits, scheduler, num_threads);
+    Context context(matchParams.rankDropLimit, matchTools, ranking, hits, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
          !docid_range.empty();
          docid_range = scheduler.next_range(thread_id))
@@ -223,7 +219,7 @@ void
 MatchThread::match_loop_helper_2(MatchTools &matchTools, IteratorT search,
                                  RankProgram &ranking, HitCollector &hits)
 {
-    if (scheduler.make_idle_observer().is_always_zero()) {
+    if (idle_observer.is_always_zero()) {
         match_loop<IteratorT, do_rank, do_limit, false>(matchTools, std::move(search), ranking, hits);
     } else {
         match_loop<IteratorT, do_rank, do_limit, true>(matchTools, std::move(search), ranking, hits);
@@ -365,6 +361,7 @@ MatchThread::MatchThread(size_t thread_id_in,
     matchToolsFactory(mtf),
     communicator(com),
     scheduler(sched),
+    idle_observer(scheduler.make_idle_observer()),
     _distributionKey(distributionKey),
     resultProcessor(rp),
     mergeDirector(md),
