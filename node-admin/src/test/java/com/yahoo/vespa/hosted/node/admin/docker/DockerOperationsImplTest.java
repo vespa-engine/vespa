@@ -32,7 +32,7 @@ public class DockerOperationsImplTest {
 
         when(docker.executeInContainer(any(), anyVararg())).thenReturn(new ProcessResult(3, "output", "errors"));
 
-        Optional<ProcessResult> result = dockerOperations.executeOptionalProgram(
+        Optional<ProcessResult> result = dockerOperations.executeOptionalProgramInContainer(
                 containerName,
                 programPath,
                 "arg1",
@@ -62,7 +62,7 @@ public class DockerOperationsImplTest {
                 .thenReturn(new ProcessResult(0, "", "")) // node program exists
                 .thenReturn(actualResult); // output from node program
 
-        Optional<ProcessResult> result = dockerOperations.executeOptionalProgram(
+        Optional<ProcessResult> result = dockerOperations.executeOptionalProgramInContainer(
                 containerName,
                 command);
 

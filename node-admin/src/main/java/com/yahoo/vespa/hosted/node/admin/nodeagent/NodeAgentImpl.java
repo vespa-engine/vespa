@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
@@ -11,6 +13,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
@@ -187,7 +190,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
         addDebugMessage("Starting optional node program resume command");
         logger.info("Starting optional node program resume command");
-        dockerOperations.executeResume(nodeSpec.containerName);
+        dockerOperations.resumeNode(nodeSpec.containerName);
         containerState = RUNNING;
     }
 
@@ -240,11 +243,84 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void removeContainerIfNeededUpdateContainerState(ContainerNodeSpec nodeSpec) throws Exception {
-        if (dockerOperations.removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) {
+        if (removeContainerIfNeeded(nodeSpec, hostname, orchestrator)) {
             addDebugMessage("removeContainerIfNeededUpdateContainerState: containerState " + containerState + " -> ABSENT");
             containerState = ABSENT;
         }
+        Optional<String> restartReason = shouldRestartServices(nodeSpec);
+        if (restartReason.isPresent()) {
+            Optional<Container> existingContainer = dockerOperations.getContainer(hostname);
+            logger.info("Will restart services for container " + existingContainer.get() + ": " + restartReason.get());
+            restartServices(nodeSpec, existingContainer.get(), orchestrator);
+        }
     }
+
+    private Optional<String> shouldRestartServices(ContainerNodeSpec nodeSpec) {
+        if ( ! nodeSpec.wantedRestartGeneration.isPresent()) return Optional.empty();
+
+        if (! nodeSpec.currentRestartGeneration.isPresent() ||
+                nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
+            return Optional.of("Restart requested - wanted restart generation has been bumped: "
+                                       + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration
+                    .get());
+        }
+        return Optional.empty();
+    }
+
+    private void restartServices(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
+            throws Exception {
+        if (existingContainer.isRunning) {
+            ContainerName containerName = existingContainer.name;
+            //PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+            if (nodeSpec.nodeState == Node.State.active) {
+                logger.info("Restarting services for " + containerName);
+                // Since we are restarting the services we need to suspend the node.
+                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
+                dockerOperations.restartServicesOnNode(containerName);
+            }
+        }
+    }
+
+    private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
+        if (nodeSpec.nodeState != Node.State.active) {
+            return Optional.of("Node no longer active");
+        }
+        if (!nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
+            return Optional.of("The node is supposed to run a new Docker image: "
+                                       + existingContainer.get() + " -> " + nodeSpec.wantedDockerImage.get());
+        }
+        if (!existingContainer.get().isRunning) {
+            return Optional.of("Container no longer running");
+        }
+        return Optional.empty();
+    }
+
+    // Returns true if container is absent on return
+    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
+            throws Exception {
+        Optional<Container> existingContainer = dockerOperations.getContainer(hostname);
+        if (!existingContainer.isPresent()) {
+            return true;
+        }
+
+        Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
+        if (removeReason.isPresent()) {
+            logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
+
+            if (existingContainer.get().isRunning) {
+                // If we're stopping the node only to upgrade we need to suspend the services.
+                if (nodeSpec.nodeState == Node.State.active) {
+                    final ContainerName containerName = existingContainer.get().name;
+                    orchestratorSuspendNode(orchestrator, nodeSpec, logger);
+                    dockerOperations.trySuspendNode(containerName);
+                }
+            }
+            dockerOperations.removeContainer(nodeSpec, existingContainer.get(), orchestrator);
+            return true;
+        }
+        return false;
+    }
+
 
     private void scheduleDownLoadIfNeeded(ContainerNodeSpec nodeSpec) {
         if (dockerOperations.shouldScheduleDownloadOfImage(nodeSpec.wantedDockerImage.get())) {
@@ -483,7 +559,7 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
         }
         final String[] restartYamasAgent = new String[] {"service" , "yamas-agent", "restart"};
-        dockerOperations.executeCommand(nodeSpec.containerName, restartYamasAgent);
+        dockerOperations.executeCommandInContainer(nodeSpec.containerName, restartYamasAgent);
     }
 
     class CpuUsageReporter {
@@ -498,6 +574,28 @@ public class NodeAgentImpl implements NodeAgent {
             totalContainerUsage = currentContainerUsage;
             totalSystemUsage = currentSystemUsage;
             return cpuUsagePct;
+        }
+    }
+
+    // TODO: Also skip orchestration if we're downgrading in test/staging
+    // How to implement:
+    //  - test/staging: We need to figure out whether we're in test/staging, zone is available in Environment
+    //  - downgrading: Impossible to know unless we look at the hosted version, which is
+    //    not available in the docker image (nor its name). Not sure how to solve this. Should
+    //    the node repo return the hosted version or a downgrade bit in addition to
+    //    wanted docker image etc?
+    // Should the tenant pipeline instead use BCP tool to upgrade faster!?
+    //
+    // More generally, the node repo response should contain sufficient info on what the docker image is,
+    // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
+    // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
+    private void orchestratorSuspendNode(Orchestrator orchestrator, ContainerNodeSpec nodeSpec, PrefixLogger logger) throws OrchestratorException {
+        final String hostname = nodeSpec.hostname;
+        logger.info("Ask Orchestrator for permission to suspend node " + hostname);
+        if ( ! orchestrator.suspend(hostname)) {
+            logger.info("Orchestrator rejected suspend of node " + hostname);
+            // TODO: change suspend() to throw an exception if suspend is denied
+            throw new OrchestratorException("Failed to get permission to suspend " + hostname);
         }
     }
 }
