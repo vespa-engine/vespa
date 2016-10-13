@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStatsImpl;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -13,7 +14,6 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -84,21 +84,22 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
         when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
-        when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(false);
         when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
         nodeAgent.tick();
 
+        verify(dockerOperations, never()).removeContainer(any(), any(), any());
         verify(orchestrator, never()).suspend(any(String.class));
         verify(dockerOperations, never()).scheduleDownloadOfImage(any(), any());
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         // TODO: Verify this isn't run unless 1st time
-        inOrder.verify(dockerOperations, times(1)).executeResume(eq(containerName));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
         // TODO: This should not happen when nothing is changed. Now it happens 1st time through.
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName,
@@ -131,9 +132,9 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.empty());
         when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
-        when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(true);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(true);
         when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
         when(maintainer.pathInNodeAdminFromPathInNode(any(ContainerName.class), any(String.class))).thenReturn(Files.createTempDirectory("foo"));
@@ -141,11 +142,12 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
+        verify(dockerOperations, never()).removeContainer(any(), any(), any());
         verify(orchestrator, never()).suspend(any(String.class));
         verify(dockerOperations, never()).scheduleDownloadOfImage(any(), any());
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
-        inOrder.verify(dockerOperations, times(1)).executeResume(eq(containerName));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
                         .withRestartGeneration(restartGeneration)
@@ -179,12 +181,13 @@ public class NodeAgentImplTest {
 
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, oldDockerImage, containerName, true)));
 
         nodeAgent.tick();
 
         verify(orchestrator, never()).suspend(any(String.class));
         verify(orchestrator, never()).resume(any(String.class));
-        verify(dockerOperations, never()).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
+        verify(dockerOperations, never()).removeContainer(any(), any(), any());
 
         final InOrder inOrder = inOrder(dockerOperations);
         inOrder.verify(dockerOperations, times(1)).shouldScheduleDownloadOfImage(eq(newDockerImage));
@@ -214,8 +217,6 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
-        when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any()))
-                .thenThrow(new OrchestratorException("Cannot suspend"));
 
         try {
             nodeAgent.tick();
@@ -249,10 +250,12 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
 
         nodeAgent.tick();
 
-        verify(dockerOperations, times(1)).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
+        verify(dockerOperations, times(1)).removeContainer(any(), any(), any());
+        verify(dockerOperations, times(1)).removeContainer(eq(nodeSpec), any(), any());
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
     }
@@ -279,12 +282,13 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
 
         nodeAgent.tick();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations);
         inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
-        inOrder.verify(dockerOperations, times(1)).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
+        inOrder.verify(dockerOperations, times(1)).removeContainer(eq(nodeSpec), any(), any());
 
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
@@ -311,12 +315,14 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(
+                Optional.of(new Container(hostName, dockerImage, containerName, nodeState != Node.State.dirty)));
 
         nodeAgent.tick();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
         inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
-        inOrder.verify(dockerOperations, times(1)).removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any());
+        inOrder.verify(dockerOperations, times(1)).removeContainer(eq(nodeSpec), any(), any());
         inOrder.verify(storageMaintainer, times(1)).archiveNodeData(eq(containerName));
         inOrder.verify(nodeRepository, times(1)).markAsReady(eq(hostName));
 
@@ -366,14 +372,16 @@ public class NodeAgentImplTest {
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, wantedDockerImage, containerName, true)));
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(wantedDockerImage))).thenReturn(false);
-        when(dockerOperations.removeContainerIfNeeded(eq(nodeSpec), eq(hostName), any())).thenReturn(true);
         when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
+
+        verify(dockerOperations, never()).removeContainer(any(), any(), any());
 
         doThrow(new RuntimeException("Failed 1st time"))
                 .doNothing()
-                .when(dockerOperations).executeResume(eq(containerName));
+                .when(dockerOperations).resumeNode(eq(containerName));
 
         final InOrder inOrder = inOrder(orchestrator, dockerOperations, nodeRepository);
 
@@ -383,13 +391,13 @@ public class NodeAgentImplTest {
             fail("Expected to throw an exception");
         } catch (RuntimeException ignored) { }
 
-        inOrder.verify(dockerOperations, times(1)).executeResume(any());
+        inOrder.verify(dockerOperations, times(1)).resumeNode(any());
         inOrder.verifyNoMoreInteractions();
 
         // 2nd try
         nodeAgent.tick();
 
-        inOrder.verify(dockerOperations).executeResume(any());
+        inOrder.verify(dockerOperations).resumeNode(any());
         inOrder.verify(orchestrator).resume(hostName);
         inOrder.verifyNoMoreInteractions();
     }

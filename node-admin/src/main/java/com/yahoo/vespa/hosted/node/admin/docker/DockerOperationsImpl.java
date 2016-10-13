@@ -12,11 +12,9 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
@@ -125,58 +123,15 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
-            throws Exception {
-        Optional<Container> existingContainer = docker.getContainer(hostname);
-        if (! existingContainer.isPresent()) {
-            return true;
-        }
-
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
-        Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
-        if (removeReason.isPresent()) {
-            logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
-            removeContainer(nodeSpec, existingContainer.get(), orchestrator);
-            return true;
-        }
-        Optional<String> restartReason = shouldRestartServices(nodeSpec);
-        if (restartReason.isPresent()) {
-            logger.info("Will restart services for container " + existingContainer.get() + ": " + restartReason.get());
-            restartServices(nodeSpec, existingContainer.get(), orchestrator);
-            return true;
-        }
-
-        return false;
-    }
-
-    private Optional<String> shouldRestartServices(ContainerNodeSpec nodeSpec) {
-        if (nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
-            return Optional.of("Restart requested - wanted restart generation has been bumped: "
-                                       + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration
-                    .get());
-        }
-        return Optional.empty();
-    }
-
-    private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
-        if (nodeSpec.nodeState != Node.State.active) {
-            return Optional.of("Node no longer active");
-        }
-        if (!nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
-            return Optional.of("The node is supposed to run a new Docker image: "
-                    + existingContainer.get() + " -> " + nodeSpec.wantedDockerImage.get());
-        }
-        if (!existingContainer.get().isRunning) {
-            return Optional.of("Container no longer running");
-        }
-        return Optional.empty();
+    public Optional<Container> getContainer(String hostname) {
+        return docker.getContainer(hostname);
     }
 
     /**
      * Executes a program and returns its result, or if it doesn't exist, return a result
      * as-if the program executed with exit status 0 and no output.
      */
-    Optional<ProcessResult> executeOptionalProgram(ContainerName containerName, String... args) {
+    Optional<ProcessResult> executeOptionalProgramInContainer(ContainerName containerName, String... args) {
         assert args.length > 0;
         String[] nodeProgramExistsCommand = programExistsCommand(args[0]);
         if (!docker.executeInContainer(containerName, nodeProgramExistsCommand).isSuccess()) {
@@ -197,13 +152,14 @@ public class DockerOperationsImpl implements DockerOperations {
      *
      * Any failures are logged and ignored.
      */
-    private void trySuspendNode(ContainerName containerName) {
+    @Override
+    public void trySuspendNode(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         Optional<ProcessResult> result;
 
         try {
             // TODO: Change to waiting w/o timeout (need separate thread that we can stop).
-            result = executeOptionalProgram(containerName, SUSPEND_NODE_COMMAND);
+            result = executeOptionalProgramInContainer(containerName, SUSPEND_NODE_COMMAND);
         } catch (RuntimeException e) {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
@@ -334,17 +290,12 @@ public class DockerOperationsImpl implements DockerOperations {
         });
     }
 
-    private void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)
+    @Override
+    public void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)
             throws Exception {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {
-            // If we're stopping the node only to upgrade we need to suspend the services.
-            if (nodeSpec.nodeState == Node.State.active) {
-                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
-                trySuspendNode(containerName);
-            }
-
             logger.info("Stopping container " + containerName);
             docker.stopContainer(containerName);
         }
@@ -353,45 +304,9 @@ public class DockerOperationsImpl implements DockerOperations {
         docker.deleteContainer(containerName);
     }
 
-    private void restartServices(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
-            throws Exception {
-        if (existingContainer.isRunning) {
-            ContainerName containerName = existingContainer.name;
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-            if (nodeSpec.nodeState == Node.State.active) {
-                logger.info("Restarting services for " + containerName);
-                // Since we are restarting the services we need to suspend the node.
-                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
-                executeCommand(containerName, RESTART_NODE_COMMAND);
-            }
-        }
-    }
-
-    // TODO: Also skip orchestration if we're downgrading in test/staging
-    // How to implement:
-    //  - test/staging: We need to figure out whether we're in test/staging, zone is available in Environment
-    //  - downgrading: Impossible to know unless we look at the hosted version, which is
-    //    not available in the docker image (nor its name). Not sure how to solve this. Should
-    //    the node repo return the hosted version or a downgrade bit in addition to
-    //    wanted docker image etc?
-    // Should the tenant pipeline instead use BCP tool to upgrade faster!?
-    //
-    // More generally, the node repo response should contain sufficient info on what the docker image is,
-    // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
-    // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
-    private void orchestratorSuspendNode(Orchestrator orchestrator, ContainerNodeSpec nodeSpec, PrefixLogger logger) throws OrchestratorException {
-        final String hostname = nodeSpec.hostname;
-        logger.info("Ask Orchestrator for permission to suspend node " + hostname);
-        if ( ! orchestrator.suspend(hostname)) {
-            logger.info("Orchestrator rejected suspend of node " + hostname);
-            // TODO: change suspend() to throw an exception if suspend is denied
-            throw new OrchestratorException("Failed to get permission to suspend " + hostname);
-        }
-    }
-
     @Override
-    public void executeCommand(ContainerName containerName, String[] command) {
-        Optional<ProcessResult> result = executeOptionalProgram(containerName, command);
+    public void executeCommandInContainer(ContainerName containerName, String[] command) {
+        Optional<ProcessResult> result = executeOptionalProgramInContainer(containerName, command);
 
         if (result.isPresent() && !result.get().isSuccess()) {
             throw new RuntimeException("Container " + containerName.asString()
@@ -400,8 +315,13 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void executeResume(ContainerName containerName) {
-        executeCommand(containerName, RESUME_NODE_COMMAND);
+    public void resumeNode(ContainerName containerName) {
+        executeCommandInContainer(containerName, RESUME_NODE_COMMAND);
+    }
+
+    @Override
+    public void restartServicesOnNode(ContainerName containerName) {
+        executeCommandInContainer(containerName, RESTART_NODE_COMMAND);
     }
 
     @Override
