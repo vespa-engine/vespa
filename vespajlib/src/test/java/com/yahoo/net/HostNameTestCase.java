@@ -13,4 +13,9 @@ public class HostNameTestCase {
     public void testHostnameIsFound() {
         assertFalse(HostName.getLocalhost().isEmpty());
     }
+
+    @Test
+    public void testSystemHostnameIsFound() throws Exception {
+        assertFalse(HostName.getSystemHostName().isEmpty());
+    }
 }
