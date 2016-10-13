@@ -69,10 +69,10 @@ private:
         MaybeMatchPhaseLimiter  & _limiter;
     };
 
-    double updateEstimates(MaybeMatchPhaseLimiter & limiter, uint32_t matches, uint32_t searchedSoFar, uint32_t left) __attribute__((noinline));
+    double estimate_match_frequency(uint32_t matches, uint32_t local_todo, MaybeMatchPhaseLimiter & limiter) __attribute__((noinline));
 
     template <typename IteratorT>
-    void limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));
+    void maybe_limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));
 
     bool any_idle() const { return (idle_observer.get() > 0); }
     bool try_share(DocidRange &docid_range, uint32_t next_docid) __attribute__((noinline));
