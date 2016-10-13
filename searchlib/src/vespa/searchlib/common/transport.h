@@ -255,9 +255,6 @@ enum packetcode {
     PCODE_MLD_QUERYRESULT2_NOTUSED = 214,
     PCODE_MLD_GETDOCSUMS2_NOTUSED = 215,
 
-    PCODE_QUEUELEN = 216,	/* fdispatch <- fsearch.
-			 * header: queueLen, dispatchers
-			 */
     PCODE_QUERYRESULTX = 217,	/*
 			 *      {uint32_t queryId,}    - only if persistent
                          *      uint32_t featureflags, - see 'queryresult_features'

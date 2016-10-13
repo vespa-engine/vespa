@@ -322,26 +322,6 @@ TEST("testClearCaches") {
     }
 }
 
-TEST("testQueueLen") {
-    FS4Packet_QUEUELEN *src = dynamic_cast<FS4Packet_QUEUELEN*>(FS4PacketFactory::CreateFS4Packet(PCODE_QUEUELEN));
-    ASSERT_TRUE(src != NULL);
-    src->_queueLen = 1u;
-    src->_dispatchers = 2u;
-
-    std::vector<FNET_Packet*> lst { src, testEncodeDecode(*src) };
-
-    for (FNET_Packet * packet : lst) {
-        FS4Packet_QUEUELEN *ptr = dynamic_cast<FS4Packet_QUEUELEN*>(packet);
-        ASSERT_TRUE(ptr != NULL);
-        EXPECT_EQUAL((uint32_t)PCODE_QUEUELEN, ptr->GetPCODE());
-        EXPECT_EQUAL(8u, ptr->GetLength());
-        EXPECT_EQUAL(1u, ptr->_queueLen);
-        EXPECT_EQUAL(2u, ptr->_dispatchers);
-
-        delete ptr;
-    }
-}
-
 TEST("testQueryResultX") {
     FS4Packet_QUERYRESULTX *src = dynamic_cast<FS4Packet_QUERYRESULTX*>(FS4PacketFactory::CreateFS4Packet(PCODE_QUERYRESULTX));
     ASSERT_TRUE(src != NULL);

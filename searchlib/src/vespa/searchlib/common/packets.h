@@ -388,23 +388,6 @@ public:
 
 //==========================================================================
 
-class FS4Packet_QUEUELEN : public FS4Packet
-{
-public:
-    uint32_t _queueLen;
-    uint32_t _dispatchers;
-
-    FS4Packet_QUEUELEN();
-    ~FS4Packet_QUEUELEN();
-    uint32_t GetPCODE() override { return PCODE_QUEUELEN; }
-    uint32_t GetLength() override;
-    void Encode(FNET_DataBuffer *dst) override;
-    bool Decode(FNET_DataBuffer *src, uint32_t len) override;
-    vespalib::string toString(uint32_t indent) const override;
-};
-
-//==========================================================================
-
 class FS4Packet_QUERYRESULTX : public FS4Packet
 {
 private:

@@ -998,60 +998,6 @@ FS4Packet_CLEARCACHES::toString(uint32_t indent) const
 
 //============================================================
 
-FS4Packet_QUEUELEN::FS4Packet_QUEUELEN()
-    : FS4Packet(),
-      _queueLen(0),
-      _dispatchers(0)
-{
-}
-
-
-FS4Packet_QUEUELEN::~FS4Packet_QUEUELEN()
-{
-}
-
-
-uint32_t
-FS4Packet_QUEUELEN::GetLength()
-{
-    return 2 * sizeof(uint32_t);
-}
-
-
-void
-FS4Packet_QUEUELEN::Encode(FNET_DataBuffer *dst)
-{
-    dst->WriteInt32Fast(_queueLen);
-    dst->WriteInt32Fast(_dispatchers);
-}
-
-
-bool
-FS4Packet_QUEUELEN::Decode(FNET_DataBuffer *src, uint32_t len)
-{
-    if (len != 2 * sizeof(uint32_t)) {
-        src->DataToDead(len);
-        return false;
-    }
-    _queueLen = src->ReadInt32();
-    _dispatchers = src->ReadInt32();
-    return true;
-}
-
-
-vespalib::string
-FS4Packet_QUEUELEN::toString(uint32_t indent) const
-{
-    vespalib::string s;
-    s += make_string("%*sFS4Packet_QUEUELEN {\n", indent, "");
-    s += make_string("%*s  queue len   : %d\n", indent, "", _queueLen);
-    s += make_string("%*s  dispatchers : %d\n", indent, "", _dispatchers);
-    s += make_string("%*s}\n", indent, "");
-    return s;
-}
-
-//============================================================
-
 void
 FS4Packet_QUERYRESULTX::AllocateSortIndex(uint32_t cnt)
 {
@@ -2147,8 +2093,7 @@ FS4PacketFactory::CreateFS4Packet(uint32_t pcode)
     case search::fs4transport::PCODE_EOL:
         return new FS4Packet_EOL;
     case search::fs4transport::PCODE_QUERYRESULT:
-        return new FS4Packet_QUERYRESULTX(search::fs4transport::
-                                          PCODE_QUERYRESULT);
+        return new FS4Packet_QUERYRESULTX(search::fs4transport::PCODE_QUERYRESULT);
     case search::fs4transport::PCODE_ERROR:
         return new FS4Packet_ERROR;
     case search::fs4transport::PCODE_GETDOCSUMS:
@@ -2175,8 +2120,6 @@ FS4PacketFactory::CreateFS4Packet(uint32_t pcode)
         return new FS4Packet_CLEARCACHES;
     case search::fs4transport::PCODE_PARSEDQUERY2:
         return new FS4Packet_QUERYX(search::fs4transport::PCODE_PARSEDQUERY2);
-    case search::fs4transport::PCODE_QUEUELEN:
-        return new FS4Packet_QUEUELEN;
     case search::fs4transport::PCODE_QUERYRESULTX:
         return new FS4Packet_QUERYRESULTX;
     case search::fs4transport::PCODE_QUERYX:
