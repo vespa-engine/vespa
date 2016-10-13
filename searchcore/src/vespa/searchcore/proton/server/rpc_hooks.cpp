@@ -266,7 +266,7 @@ RPCHooksBase::triggerFlush(FRT_RPCRequest *req)
 {
     if (_proton.triggerFlush()) {
         req->GetReturn()->AddInt8(1);
-        LOG(info, "RPCHooksBase::Flush finished sucessfully");
+        LOG(info, "RPCHooksBase::Flush finished successfully");
     } else {
         req->GetReturn()->AddInt8(0);
         LOG(warning, "RPCHooksBase::Flush failed");
@@ -279,7 +279,7 @@ RPCHooksBase::prepareRestart(FRT_RPCRequest *req)
 {
     if (_proton.prepareRestart()) {
         req->GetReturn()->AddInt8(1);
-        LOG(info, "RPCHooksBase::prepareRestart finished sucessfully");
+        LOG(info, "RPCHooksBase::prepareRestart finished successfully");
     } else {
         req->GetReturn()->AddInt8(0);
         LOG(warning, "RPCHooksBase::prepareRestart failed");
@@ -447,7 +447,7 @@ void
 RPCHooksBase::wipeHistory(FRT_RPCRequest *req)
 {
     _proton.wipeHistory();
-    LOG(info, "RPCHooksBase::wipeHistory finished sucessfully");
+    LOG(info, "RPCHooksBase::wipeHistory finished successfully");
     req->Return();
 }
 
