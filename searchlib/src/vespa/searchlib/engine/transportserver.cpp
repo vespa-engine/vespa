@@ -35,7 +35,6 @@ TransportServer::SearchHandler::searchDone(SearchReply::UP reply)
             if (r.errorCode == 0) {
                 PacketConverter::QUERYRESULTX *p = new PacketConverter::QUERYRESULTX();
                 PacketConverter::fromSearchReply(r, *p);
-                p->UpdateCompatPCODE();
                 if (shouldLog(DEBUG_SEARCH)) {
                     logPacket("outgoing packet", p, channel, 0);
                 }

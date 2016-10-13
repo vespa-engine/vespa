@@ -372,7 +372,6 @@ private:
     FS4Packet_QUERYRESULTX(const FS4Packet_QUERYRESULTX &);
     FS4Packet_QUERYRESULTX& operator=(const FS4Packet_QUERYRESULTX &);
 
-    uint32_t _pcode;
     uint32_t _distributionKey;
 
 public:
@@ -418,12 +417,9 @@ public:
     void SetGroupDataRef(const char *groupData, uint32_t len);
     void AllocateHits(uint32_t cnt);
 
-    FS4Packet_QUERYRESULTX(uint32_t pcode = PCODE_QUERYRESULTX);
+    FS4Packet_QUERYRESULTX();
     ~FS4Packet_QUERYRESULTX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE() { _pcode = PCODE_QUERYRESULTX; }
-    uint32_t GetPCODE() override { return _pcode; }
+    uint32_t GetPCODE() override { return PCODE_QUERYRESULTX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override ;

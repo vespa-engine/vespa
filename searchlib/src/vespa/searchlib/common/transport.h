@@ -43,11 +43,7 @@ enum queryflags {
  * 'featureflags'. Each bit in that field denotes a separate feature
  * that may be present in the query result packet or not. The comment
  * describing the packet format indicates what data fields depend on
- * what features. Note that after removing the query id and the
- * feature flags from a PCODE_QUERYRESULTX packet it is binary
- * compatible with the PCODE_QUERYRESULT, PCODE_MLD_QUERYRESULT and
- * PCODE_MLD_QUERYRESULT2 packets given the correct set of
- * features. The features present in the 'old' query result packets
+ * what features. The features present in the 'old' query result packets
  * are defined in this enum along with the Query Result Features
  * themselves. The value called QRF_SUPPORTED_MASK denotes which
  * features are supported by the current version. If a packet with
@@ -60,10 +56,7 @@ enum queryresult_features {
     QRF_AGGRDATA              = 0x00000020,
     QRF_COVERAGE              = 0x00000040,
     QRF_GROUPDATA             = 0x00000200,
-    QRF_PROPERTIES            = 0x00000400,
-
-    QRF_QUERYRESULT_MASK      = 0,
-    QRF_MLD_QUERYRESULT_MASK  = QRF_MLD
+    QRF_PROPERTIES            = 0x00000400
 };
 
 
@@ -169,17 +162,7 @@ enum packetcode {
     PCODE_EOL = 200,	/* ..fdispatch <-> ..fsearch.	PacketData:
 			 *0	{uint32_t queryId,}	- only in new format!*/
     PCODE_QUERY_NOTUSED = 201,
-    PCODE_QUERYRESULT = 202,	/* ..fdispatch <-  ..fsearch.	PacketData:
-			 *0	{uint32_t queryId,}	- only in new format!
-			 *1	uint32_t offset,
-			 *2	uint32_t numDocs,
-			 *3	uint32_t totNumDocs,
-			 *4	search::HitRank maxRank,
-			 *5	time_t docstamp,	- sent as Uint32
-			 *6	struct FastS_connhitresult {
-			 *	    uint32_t docid;
-			 *	    search::HitRank metric
-			 *	}[] hits				     */
+    PCODE_QUERYRESULT_NOTUSED = 202,
     PCODE_ERROR = 203,          /* ..fdispatch <-  ..fsearch/..fdispatch
                            *	{uint32_t queryId,}	- only in new format!
                            *      uint32_t  error_code  [see common/errorcodes.h]
@@ -196,11 +179,7 @@ enum packetcode {
                                  */
     PCODE_MONITORQUERY_NOTUSED = 206,
     PCODE_MONITORRESULT_NOTUSED = 207,
-    PCODE_MLD_QUERYRESULT = 208,/* ..fdispatch <-  ..fdispatch.
-                           * header: {queryId,} offset, numdocs, tnumdocs,
-                           *	maxRank, docstamp
-                           * body: (docid, metric, partition, docstamp)*
-                           */
+    PCODE_MLD_QUERYRESULT_NOTUSED = 208,
     PCODE_MLD_GETDOCSUMS = 209,	/* ..fdispatch  -> ..fdispatch.
                                  * header: {queryId,} docstamp
                                  * body: (docid, partition, docstamp)*

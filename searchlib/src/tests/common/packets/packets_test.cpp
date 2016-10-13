@@ -137,6 +137,8 @@ TEST("testPacketFactory") {
         if ((pcode != PCODE_MLD_QUERYRESULT2_NOTUSED) &&
             (pcode != PCODE_QUERY_NOTUSED) &&
             (pcode != PCODE_MONITORQUERY_NOTUSED) &&
+            (pcode != PCODE_QUERYRESULT_NOTUSED) &&
+            (pcode != PCODE_MLD_QUERYRESULT_NOTUSED) &&
             (pcode != PCODE_MONITORRESULT_NOTUSED) &&
             (pcode != PCODE_MLD_MONITORRESULT_NOTUSED) &&
             (pcode != PCODE_CLEARCACHES_NOTUSED) &&
