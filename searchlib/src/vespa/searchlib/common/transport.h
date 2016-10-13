@@ -19,8 +19,6 @@ namespace fs4transport
  * now use this 32-bit number to send 32 flags. The currently defined flags
  * are as follows:
  * <ul>
- *  <li><b>QFLAG_ALLOW_ERRORPACKET</b>: Allow an error packet to be sent as
- *                                response to this query packet.</li>
  *  <li><b>QFLAG_REPORT_QUEUELEN</b>: Send an extra queue length packet before
  *                                query result packets.</li>
  *  <li><b>QFLAG_ESTIMATE</b>: Indicates that the  query is performed to get
@@ -35,7 +33,6 @@ namespace fs4transport
  * </ul>
  **/
 enum queryflags {
-    QFLAG_ALLOW_ERRORPACKET    = 0x00000004,
     QFLAG_REPORT_QUEUELEN      = 0x00000008,
     QFLAG_ESTIMATE             = 0x00000080,
     QFLAG_DROP_SORTDATA        = 0x00004000,

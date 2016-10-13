@@ -61,9 +61,6 @@ public:
     FastS_query &GetQuery(void) { return _query; }
     const char *GetSortSpec() const { return _query.GetSortSpec(); }
     const char *GetLocation() const { return _query.GetLocation(); }
-    bool ErrorPacketsAllowed(void) const {
-        return _query.IsFlagSet(search::fs4transport::QFLAG_ALLOW_ERRORPACKET);
-    }
     bool ShouldDropSortData() const {
         return _query.IsFlagSet(search::fs4transport::QFLAG_DROP_SORTDATA);
     }

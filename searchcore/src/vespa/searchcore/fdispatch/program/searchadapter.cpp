@@ -38,10 +38,8 @@ SearchAdapter::createReply()
     SearchReply &r = *reply;
     r.useWideHits = true; // mld
     if (_search->GetErrorCode() != search::engine::ECODE_NO_ERROR) {
-        if (allowError()) {
-            r.errorCode = _search->GetErrorCode();
-            r.errorMessage = _search->GetErrorMessage();
-        }
+        r.errorCode = _search->GetErrorCode();
+        r.errorMessage = _search->GetErrorMessage();
         return reply;
     }
 

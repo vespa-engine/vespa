@@ -25,16 +25,13 @@ EngineAdapter(FastS_AppContext *appCtx, FastOS_ThreadPool *threadPool)
 EngineAdapter::SearchReply::UP
 EngineAdapter::search(SearchRequest::Source request, SearchClient &client)
 {
-    SearchAdapter *sa = new SearchAdapter(_appCtx, std::move(request), client);
-    if (_mypool == 0 || _mypool->NewThread(sa) == 0) {
+    auto sa = std::make_unique<SearchAdapter>(_appCtx, std::move(request), client);
+    if (_mypool == 0 || _mypool->NewThread(sa.release()) == 0) {
         LOG(error, "could not allocate thread for incoming search request");
         SearchReply::UP reply(new SearchReply());
         reply->useWideHits = true; // mld
-        if (sa->allowError()) {
-            reply->errorCode = search::engine::ECODE_OVERLOADED;
-            reply->errorMessage = "could not allocate thread for query";
-        }
-        delete sa;
+        reply->errorCode = search::engine::ECODE_OVERLOADED;
+        reply->errorMessage = "could not allocate thread for query";
         return reply;
     }
     return SearchReply::UP();
@@ -43,10 +40,9 @@ EngineAdapter::search(SearchRequest::Source request, SearchClient &client)
 EngineAdapter::DocsumReply::UP
 EngineAdapter::getDocsums(DocsumRequest::Source request, DocsumClient &client)
 {
-    DocsumAdapter *da = new DocsumAdapter(_appCtx, std::move(request), client);
-    if (_mypool == 0 || _mypool->NewThread(da) == 0) {
+    auto da = std::make_unique<DocsumAdapter>(_appCtx, std::move(request), client);
+    if (_mypool == 0 || _mypool->NewThread(da.release()) == 0) {
         LOG(error, "could not allocate thread for incoming docsum request");
-        delete da;
         return DocsumReply::UP(new DocsumReply());
     }
     return DocsumReply::UP();

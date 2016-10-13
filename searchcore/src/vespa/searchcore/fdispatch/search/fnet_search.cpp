@@ -1041,7 +1041,7 @@ FastS_FNET_Search::Search(uint32_t searchOffset,
     }
 
     // we support error packets
-    uint32_t qflags = _util.GetQuery().GetQueryFlags() | search::fs4transport::QFLAG_ALLOW_ERRORPACKET;
+    uint32_t qflags = _util.GetQuery().GetQueryFlags();
 
     // propagate drop-sortdata flag only if we have single sub-node
     if (_nodes.size() != 1)

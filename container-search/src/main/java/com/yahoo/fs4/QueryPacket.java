@@ -202,7 +202,6 @@ public class QueryPacket extends Packet {
     /**
      * query flag bits, taken from searchlib/common/transport.h
      **/
-    static final int QFLAG_ALLOW_ERRORPACKET    = 0x00000004;
     static final int QFLAG_ESTIMATE             = 0x00000080;
     static final int QFLAG_DROP_SORTDATA        = 0x00004000;
     static final int QFLAG_REPORT_COVERAGE      = 0x00008000; // always on
@@ -212,8 +211,6 @@ public class QueryPacket extends Packet {
     private int getFlagInt() {
         int flags = getQueryFlags(query);
         queryPacketData.setQueryFlags(flags);
-
-        flags |= QFLAG_ALLOW_ERRORPACKET;
 
         /**
          * QFLAG_DROP_SORTDATA
