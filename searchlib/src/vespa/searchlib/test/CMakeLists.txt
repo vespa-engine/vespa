@@ -8,5 +8,6 @@ vespa_add_library(searchlib_test
     $<TARGET_OBJECTS:searchlib_test_fakedata>
     $<TARGET_OBJECTS:searchlib_searchlib_test_diskindex>
     DEPENDS
+    searchlib
     searchlib_searchlib_test_memoryindex
 )

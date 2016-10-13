@@ -8,6 +8,6 @@ vespa_add_library(storage_testhostreporter TEST
     diskreportertest.cpp
     util.cpp
     hostinfotest.cpp
-    AFTER
-    storage_storageconfig
+    DEPENDS
+    storage
 )

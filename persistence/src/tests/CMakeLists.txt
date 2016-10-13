@@ -5,7 +5,5 @@ vespa_add_executable(persistence_testrunner_app TEST
     DEPENDS
     persistence_testdummyimpl
     persistence_testspi
-    persistence
-    persistence_persistence_conformancetest
 )
 vespa_add_test(NAME persistence_testrunner_app COMMAND persistence_testrunner_app)

@@ -3,12 +3,13 @@ vespa_add_library(persistence_testdummyimpl
     SOURCES
     dummyimpltest.cpp
     DEPENDS
+    persistence_persistence_conformancetest
+    persistence
 )
 vespa_add_executable(persistence_dummypersistence_test_app TEST
     SOURCES
     dummypersistence_test.cpp
     DEPENDS
     persistence
-    persistence_persistence_conformancetest
 )
 vespa_add_test(NAME persistence_dummypersistence_test_app COMMAND persistence_dummypersistence_test_app)

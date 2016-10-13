@@ -3,4 +3,5 @@ vespa_add_library(vdslib_testthread
     SOURCES
     taskschedulertest.cpp
     DEPENDS
+    vdslib
 )

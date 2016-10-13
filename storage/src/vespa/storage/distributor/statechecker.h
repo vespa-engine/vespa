@@ -8,7 +8,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/bucketgctimecalculator.h>
 #include <vespa/storage/distributor/maintenancebucket.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/vespalib/util/linkedptr.h>
 
 #include <unordered_set>
@@ -17,10 +17,11 @@
 
 namespace storage {
 
+class DistributorConfiguration;
+
 namespace distributor {
 
 class DistributorComponent;
-class DistributorConfiguration;
 class NodeMaintenanceStatsTracker;
 
 /**

@@ -7,4 +7,5 @@ vespa_add_library(memfilepersistence_testdevices
     devicemappertest.cpp
     partitionmonitortest.cpp
     DEPENDS
+    memfilepersistence
 )

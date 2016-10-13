@@ -7,7 +7,7 @@
 #include <vespa/storage/distributor/maintenance/bucketprioritydatabase.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/node_maintenance_stats_tracker.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 
 namespace storage {
 namespace distributor {

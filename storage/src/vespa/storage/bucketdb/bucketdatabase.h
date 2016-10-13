@@ -5,11 +5,10 @@
 #pragma once
 
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/storage/distributor/bucketdb/bucketinfo.h>
+#include <vespa/storage/bucketdb/bucketinfo.h>
 #include <vespa/document/bucket/bucketid.h>
 
 namespace storage {
-namespace distributor {
 
 class BucketDatabase : public vespalib::Printable
 {
@@ -117,5 +116,4 @@ public:
 
 std::ostream& operator<<(std::ostream& o, const BucketDatabase::Entry& e);
 
-} // distributor
 } // storage

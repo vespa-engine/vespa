@@ -3,7 +3,7 @@
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <vespa/storage/distributor/bucketdb/mapbucketdatabase.h>
+#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <tests/distributor/bucketdatabasetest.h>
 

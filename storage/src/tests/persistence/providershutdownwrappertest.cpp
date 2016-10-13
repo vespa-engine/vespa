@@ -3,7 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/persistence/persistencetestutils.h>
-#include <tests/persistence/persistenceproviderwrapper.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/storage/persistence/providershutdownwrapper.h>
 
 namespace storage {

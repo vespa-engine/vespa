@@ -17,4 +17,6 @@ vespa_add_library(memfilepersistence_testspi
     buffered_file_writer_test.cpp
     buffer_test.cpp
     DEPENDS
+    memfilepersistence_testhelper
+    memfilepersistence
 )

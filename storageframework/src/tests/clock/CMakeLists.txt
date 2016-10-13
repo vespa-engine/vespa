@@ -3,4 +3,5 @@ vespa_add_library(storageframework_testclock
     SOURCES
     timetest.cpp
     DEPENDS
+    storageframework
 )

@@ -8,4 +8,5 @@ vespa_add_library(storageserver_storageapp STATIC
     rpcservicelayerprocess.cpp
     memfileservicelayerprocess.cpp
     DEPENDS
+    storage_storageserver
 )

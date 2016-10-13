@@ -4,9 +4,9 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
-#include <tests/persistence/persistenceproviderwrapper.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <tests/persistence/filestorage/filestortestfixture.h>
+#include <tests/persistence/common/filestortestfixture.h>
 
 namespace storage {
 

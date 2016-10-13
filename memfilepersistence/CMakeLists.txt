@@ -31,6 +31,7 @@ vespa_define_module(
     src/tests/conformance
     src/tests/device
     src/tests/init
+    src/tests/helper
     src/tests/spi
     src/tests/tools
 )

@@ -6,7 +6,6 @@ vespa_add_library(storage_testcommon TEST
     metricstest.cpp
     storagelinktest.cpp
     teststorageapp.cpp
-    AFTER
-    storage_storageconfig
-    storage_bucketdb
+    DEPENDS
+    storage
 )

@@ -2,7 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <iostream>
 #include <sstream>
-#include <tests/persistence/persistenceproviderwrapper.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
 
 #define LOG_SPI(ops) \
     { \

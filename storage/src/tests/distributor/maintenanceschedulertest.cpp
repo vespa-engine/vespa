@@ -6,7 +6,7 @@
 #include <memory>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
-#include <vespa/storage/distributor/bucketdb/mapbucketdatabase.h>
+#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <tests/distributor/maintenancemocks.h>
 
 namespace storage {

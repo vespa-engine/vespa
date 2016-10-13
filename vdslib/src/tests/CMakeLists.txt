@@ -7,6 +7,5 @@ vespa_add_executable(vdslib_testrunner_app TEST
     vdslib_testdistribution
     vdslib_teststate
     vdslib_testthread
-    vdslib
 )
 vespa_add_test(NAME vdslib_testrunner_app COMMAND vdslib_testrunner_app)

@@ -1,5 +1,5 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(storage_storageserver OBJECT
+vespa_add_library(storage_storageserver
     SOURCES
     priorityconverter.cpp
     bucketintegritychecker.cpp
@@ -21,8 +21,8 @@ vespa_add_library(storage_storageserver OBJECT
     servicelayernode.cpp
     statereporter.cpp
     changedbucketownershiphandler.cpp
+    INSTALL lib64
     DEPENDS
-    AFTER
-    storage_storageconfig
-    storage_visitor
+    storage
+    storage_distributor
 )

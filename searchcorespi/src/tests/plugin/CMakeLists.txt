@@ -3,11 +3,13 @@ vespa_add_library(searchcorespi_tplugin
         SOURCES
         plugin.cpp
         DEPENDS
+        searchcorespi
 )
 vespa_add_library(searchcorespi_illegal-plugin
         SOURCES
         empty.cpp
         DEPENDS
+        searchcorespi
 )
 vespa_add_executable(searchcorespi_plugin_test_app TEST
     SOURCES

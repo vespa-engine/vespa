@@ -11,16 +11,16 @@ namespace bucketdb {
 
 void
 DistrBucketDatabase::insert(const document::BucketId& bucket,
-                            const distributor::BucketInfo& entry,
+                            const BucketInfo& entry,
                             const char* clientId)
 {
     bool preExisted;
 #ifdef USE_JUDY
-    return LockableMap<JudyMultiMap<distributor::BucketInfo> >::insert(
+    return LockableMap<JudyMultiMap<BucketInfo> >::insert(
                 bucket.toKey(), entry, clientId, preExisted);
 #else
     return LockableMap<StdMapWrapper<document::BucketId::Type,
-        distributor::BucketInfo> >::insert(
+        BucketInfo> >::insert(
                 bucket.toKey(), entry, clientId, preExisted);
 #endif
 }
@@ -30,11 +30,11 @@ DistrBucketDatabase::get(const document::BucketId& bucket, const char* clientId,
                          bool createIfNonExisting)
 {
 #ifdef USE_JUDY
-    return LockableMap<JudyMultiMap<distributor::BucketInfo> >::get(
+    return LockableMap<JudyMultiMap<BucketInfo> >::get(
             bucket.stripUnused().toKey(), clientId, createIfNonExisting);
 #else
     return LockableMap<StdMapWrapper<document::BucketId::Type,
-                                     distributor::BucketInfo> >::get(
+                                     BucketInfo> >::get(
             bucket.stripUnused().toKey(), clientId, createIfNonExisting);
 #endif
 }

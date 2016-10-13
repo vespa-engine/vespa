@@ -173,7 +173,7 @@ namespace {
         virtual StorageNode& getNode() { return _process.getNode(); }
         virtual StorageNodeContext& getContext()
             { return _process.getContext(); }
-        distributor::BucketDatabase& getBucketDatabase()
+        BucketDatabase& getBucketDatabase()
             { return _process.getDistributorContext().getComponentRegister().getBucketDatabase(); }
     };
 
@@ -673,7 +673,7 @@ StorageServerTest::testSplitJoinSplitThroughDistributor_Stress()
     }
     dummyLink.reset();
         // Wait until system has split to 7 buckets
-    distributor::BucketDatabase& db(distServer.getBucketDatabase());
+    BucketDatabase& db(distServer.getBucketDatabase());
     for (size_t i(0); (i < 6000) && (7ul != db.size()); i++) {
         FastOS_Thread::Sleep(10);
     }

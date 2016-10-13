@@ -3,5 +3,6 @@ vespa_add_library(storageapi_testmbusprot
     SOURCES
     storageprotocoltest.cpp
     DEPENDS
+    storageapi
     vdstestlib
 )

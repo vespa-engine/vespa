@@ -3,7 +3,6 @@ vespa_add_library(storage_testfilestorage TEST
     SOURCES
     filestormanagertest.cpp
     operationabortingtest.cpp
-    filestortestfixture.cpp
     mergeblockingtest.cpp
     sanitycheckeddeletetest.cpp
     deactivatebucketstest.cpp
@@ -11,7 +10,8 @@ vespa_add_library(storage_testfilestorage TEST
     filestormodifiedbucketstest.cpp
     deletebuckettest.cpp
     singlebucketjointest.cpp
-    AFTER
-    storage_bucketdb
-    storage_storageconfig
+    DEPENDS
+    storage
+    storageapi
+    storage_testpersistence_common
 )

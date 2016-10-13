@@ -2,7 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 #include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/bucketdb/mapbucketdatabase.h>
+#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/distributor/blockingoperationstarter.h>
