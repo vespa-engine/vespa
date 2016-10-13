@@ -132,7 +132,6 @@ TransportServer::MonitorHandler::pingDone(MonitorReply::UP reply)
         const MonitorReply &r = *reply;
         PacketConverter::MONITORRESULTX *p = new PacketConverter::MONITORRESULTX();
         PacketConverter::fromMonitorReply(r, *p);
-        p->UpdateCompatPCODE();
         if (shouldLog(DEBUG_MONITOR)) {
             logPacket("outgoing packet", p, 0, connection);
         }

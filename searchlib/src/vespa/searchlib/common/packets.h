@@ -342,7 +342,6 @@ private:
     FS4Packet_MONITORRESULTX(const FS4Packet_MONITORRESULTX &);
     FS4Packet_MONITORRESULTX& operator=(const FS4Packet_MONITORRESULTX &);
 
-    uint32_t _pcode;
 public:
     uint32_t _features;         // see monitor
     uint32_t _partid;
@@ -356,12 +355,9 @@ public:
     uint32_t _rflags;           // if MRF_RFLAGS
     uint64_t _activeDocs;       // if MRF_ACTIVEDOCS
 
-    FS4Packet_MONITORRESULTX(uint32_t pcode = PCODE_MONITORRESULTX);
+    FS4Packet_MONITORRESULTX();
     ~FS4Packet_MONITORRESULTX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE(void) { _pcode = PCODE_MONITORRESULTX; }
-    uint32_t GetPCODE()  override { return _pcode; }
+    uint32_t GetPCODE()  override { return PCODE_MONITORRESULTX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;

@@ -56,9 +56,6 @@ public class PacketDecoder {
              case 221:
                  return PongPacket.create().decode(buffer);
 
-             case 207:
-                 return SearchNodePongPacket.create().decode(buffer);
-
              default:
                  throw new IllegalArgumentException("No support for packet " + packetCode);
          }
@@ -106,7 +103,7 @@ public class PacketDecoder {
             return false;
          int packetCode = buffer.getInt(buffer.position()+4);
          packetCode &= BasicPacket.CODE_MASK;
-         if (packetCode == 210 || packetCode == 221)
+         if (packetCode == 221)
              return true;
          else
              return false;

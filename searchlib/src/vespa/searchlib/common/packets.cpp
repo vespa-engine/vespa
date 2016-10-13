@@ -773,10 +773,8 @@ FS4Packet_MONITORQUERYX::toString(uint32_t indent) const
 
 //============================================================
 
-FS4Packet_MONITORRESULTX::
-FS4Packet_MONITORRESULTX(uint32_t pcode)
+FS4Packet_MONITORRESULTX::FS4Packet_MONITORRESULTX()
     : FS4Packet(),
-      _pcode(pcode),
       _features(0),
       _partid(0),
       _timestamp(0),
@@ -786,45 +784,16 @@ FS4Packet_MONITORRESULTX(uint32_t pcode)
       _activeParts(0),
       _rflags(0u),
       _activeDocs(0)
-{
-    UpdateCompatFeatures();
-}
+{ }
 
-
-FS4Packet_MONITORRESULTX::~FS4Packet_MONITORRESULTX(void)
-{
-}
-
-
-void
-FS4Packet_MONITORRESULTX::UpdateCompatPCODE(void)
-{
-    if (_features == search::fs4transport::MRF_MONITORRESULT_MASK)
-        _pcode =    search::fs4transport::PCODE_MONITORRESULT;
-    else if (_features == search::fs4transport::MRF_MLD_MONITORRESULT_MASK)
-        _pcode =         search::fs4transport::PCODE_MLD_MONITORRESULT;
-    else
-        _pcode = search::fs4transport::PCODE_MONITORRESULTX;
-}
-
-
-void
-FS4Packet_MONITORRESULTX::UpdateCompatFeatures(void)
-{
-    if (_pcode == search::fs4transport::PCODE_MONITORRESULT)
-        _features =    search::fs4transport::MRF_MONITORRESULT_MASK;
-    else if (_pcode == search::fs4transport::PCODE_MLD_MONITORRESULT)
-        _features =         search::fs4transport::MRF_MLD_MONITORRESULT_MASK;
-}
-
+FS4Packet_MONITORRESULTX::~FS4Packet_MONITORRESULTX() { }
 
 uint32_t
-FS4Packet_MONITORRESULTX::GetLength(void)
+FS4Packet_MONITORRESULTX::GetLength()
 {
     uint32_t plen = 2 * sizeof(uint32_t);
 
-    if (_pcode == search::fs4transport::PCODE_MONITORRESULTX)
-        plen += sizeof(uint32_t);
+    plen += sizeof(uint32_t);
     if ((_features & search::fs4transport::MRF_MLD) != 0)
         plen +=  4 * sizeof(uint32_t);
     if ((_features & search::fs4transport::MRF_RFLAGS) != 0)
@@ -839,8 +808,7 @@ FS4Packet_MONITORRESULTX::GetLength(void)
 void
 FS4Packet_MONITORRESULTX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_MONITORRESULTX)
-        dst->WriteInt32Fast(_features);
+    dst->WriteInt32Fast(_features);
 
     dst->WriteInt32Fast(_partid);
     dst->WriteInt32Fast(_timestamp);
@@ -862,11 +830,9 @@ FS4Packet_MONITORRESULTX::Encode(FNET_DataBuffer *dst)
 bool
 FS4Packet_MONITORRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
-    if (_pcode == search::fs4transport::PCODE_MONITORRESULTX) {
-        if (len < sizeof(uint32_t)) goto error;
-        _features = src->ReadInt32();
-        len -= sizeof(uint32_t);
-    }
+    if (len < sizeof(uint32_t)) goto error;
+    _features = src->ReadInt32();
+    len -= sizeof(uint32_t);
     if ((_features & ~search::fs4transport::FNET_MRF_SUPPORTED_MASK) != 0)
         goto error;
 
@@ -903,7 +869,6 @@ FS4Packet_MONITORRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
     if (len != 0)
         goto error;
 
-    SetRealPCODE();
     return true;			// OK
  error:
     src->DataToDead(len);
@@ -916,7 +881,6 @@ FS4Packet_MONITORRESULTX::toString(uint32_t indent) const
 {
     vespalib::string s;
     s += make_string("%*sFS4Packet_MONITORRESULTX {\n", indent, "");
-    s += make_string("%*s  pcode       : %d\n", indent, "", _pcode);
     s += make_string("%*s  features    : 0x%x\n", indent, "", _features);
     s += make_string("%*s  partid      : %d\n", indent, "", _partid);
     s += make_string("%*s  timestamp   : %d\n", indent, "", _timestamp);
@@ -2005,18 +1969,12 @@ FS4PacketFactory::CreateFS4Packet(uint32_t pcode)
                                          PCODE_GETDOCSUMS);
     case search::fs4transport::PCODE_DOCSUM:
         return new FS4Packet_DOCSUM;
-    case search::fs4transport::PCODE_MONITORRESULT:
-        return new FS4Packet_MONITORRESULTX(search::fs4transport::
-                                            PCODE_MONITORRESULT);
     case search::fs4transport::PCODE_MLD_QUERYRESULT:
         return new FS4Packet_QUERYRESULTX(search::fs4transport::
                                           PCODE_MLD_QUERYRESULT);
     case search::fs4transport::PCODE_MLD_GETDOCSUMS:
         return new FS4Packet_GETDOCSUMSX(search::fs4transport::
                                          PCODE_MLD_GETDOCSUMS);
-    case search::fs4transport::PCODE_MLD_MONITORRESULT:
-        return new FS4Packet_MONITORRESULTX(search::fs4transport::
-                                            PCODE_MLD_MONITORRESULT);
     case search::fs4transport::PCODE_QUERYRESULTX:
         return new FS4Packet_QUERYRESULTX;
     case search::fs4transport::PCODE_QUERYX:

@@ -141,7 +141,6 @@ enum monitorquery_features
 
 enum monitorquery_flags
 {
-    // NOT_USED MQFLAG_REPORT_SOFTOFFLINE = 0x00000010,
     MQFLAG_REPORT_ACTIVEDOCS  = 0x00000020
 };
 
@@ -151,15 +150,11 @@ enum monitorresult_features
     MRF_MLD		    = 0x00000001,
     MRF_RFLAGS		    = 0x00000008,
     MRF_ACTIVEDOCS	    = 0x00000010,
-
-    MRF_MONITORRESULT_MASK  = 0,
-    MRF_MLD_MONITORRESULT_MASK = (MRF_MLD)
 };
 
 
 enum monitorresult_flags
 {
-    // NOT_USED MRFLAG_SOFTOFFLINE       = 0x00000001
 };
 
 
@@ -200,9 +195,7 @@ enum packetcode {
                                  *2	char[] <title, incipit, URL, ...>
                                  */
     PCODE_MONITORQUERY_NOTUSED = 206,
-    PCODE_MONITORRESULT = 207,	/* ..fdispatch <-  ..fsearch.	PacketData:
-                                 *	int partitionId,
-                                 *	time_t timeStamp			     */
+    PCODE_MONITORRESULT_NOTUSED = 207,
     PCODE_MLD_QUERYRESULT = 208,/* ..fdispatch <-  ..fdispatch.
                            * header: {queryId,} offset, numdocs, tnumdocs,
                            *	maxRank, docstamp
@@ -212,14 +205,7 @@ enum packetcode {
                                  * header: {queryId,} docstamp
                                  * body: (docid, partition, docstamp)*
                                  */
-    PCODE_MLD_MONITORRESULT = 210 ,/* ..fdispatch <- ..fdispatch	NB: no queryId!
-                             *	lowest partition id,
-                             *	timestamp,
-                             *	total number of nodes,
-                             *	active nodes,
-                             *	total number of partitions,
-                             *	active partitions
-                             */
+    PCODE_MLD_MONITORRESULT_NOTUSED = 210,
     PCODE_CLEARCACHES_NOTUSED = 211,
     PCODE_QUERY2_NOTUSED = 212,
     PCODE_PARSEDQUERY2_NOTUSED = 213,
