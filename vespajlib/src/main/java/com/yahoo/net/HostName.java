@@ -16,32 +16,33 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Utilities for getting the hostname on a system running with the JVM. This is moved here from the old
- * HostSystem#getHostName in config-model.
+ * Utilities for getting the hostname of the system running the JVM.
  *
  * @author lulf
+ * @author bratseth
+ * @author hakon
  */
 public class HostName {
+
     private static final Logger logger = Logger.getLogger(HostName.class.getName());
 
     private static String cachedHostName = null;
 
     /**
      * Return a fully qualified hostname that resolves to an IP address on a network interface.
-     * Normally this is the same as the 'hostname' command, but on dev machines on WiFi only,
-     * that IP isn't configured while a WiFi network interface IP address is both reachable and
-     * has a DNS entry, enough to .
+     * Normally this is the same as the 'hostname' command, but on dev machines on WiFi,
+     * that IP isn't configured so we prefer a WiFi network interface IP address which is both reachable and
+     * has a DNS entry.
      *
-     * @return the name of localhost.
-     * @throws RuntimeException if executing the command 'hostname' fails.
+     * @return the preferred name of localhost
+     * @throws RuntimeException if accessing the network or the 'hostname' command fails
      */
     public static synchronized String getHostName() {
         if (cachedHostName == null) {
             try {
-                Address preferredAddress = getPreferredAddress();
-                cachedHostName = preferredAddress.canonicalHostName;
+                cachedHostName = getPreferredAddress().canonicalHostName;
             } catch (Exception e) {
-                throw new RuntimeException("Failed to find the preferred hostname", e);
+                throw new RuntimeException("Failed to find a preferred hostname", e);
             }
         }
         return cachedHostName;
@@ -56,7 +57,6 @@ public class HostName {
                 .filter(address -> Objects.equals(address.canonicalHostName, systemHostName))
                 .collect(Collectors.toList());
         if (systemAddresses.size() >= 1) {
-            // Is it OK to pick the first of many?
             return systemAddresses.iterator().next();
         }
 
@@ -65,7 +65,6 @@ public class HostName {
                 .filter(address -> !address.ipAddress.isAnyLocalAddress())
                 .collect(Collectors.toList());
         if (nonLocalAddresses.size() >= 1) {
-            // Is it OK to pick the first of many?
             return nonLocalAddresses.iterator().next();
         }
 
@@ -74,7 +73,6 @@ public class HostName {
                 .filter(address -> address.ipAddress.isAnyLocalAddress())
                 .collect(Collectors.toList());
         if (localAddresses.size() >= 1) {
-            // Is it OK to pick the first of many?
             return localAddresses.iterator().next();
         }
 
@@ -95,6 +93,7 @@ public class HostName {
     }
 
     private static class Address {
+
         public final InetAddress ipAddress;
         public final String canonicalHostName;
 
@@ -102,6 +101,7 @@ public class HostName {
             this.ipAddress = ipAddress;
             this.canonicalHostName = canonicalHostName;
         }
+
     }
 
     private static List<Address> getReachableNetworkInterfaceAddresses() throws SocketException {
@@ -116,12 +116,12 @@ public class HostName {
                 }
 
                 try {
-                    // ping says ~50ms on my Fedora Lenovo, but that seems a lot for pinging oneself
+                    // ping says ~50ms on my Fedora Lenovo, but that seems a lot for pinging oneself  - hakon
                     int timeoutMs = 100;
-                    if (!ipAddress.isReachable(timeoutMs)) {
+                    if ( ! ipAddress.isReachable(timeoutMs)) {
                         // The network interface may be down, ignore address
-                        logger.log(Level.INFO, ipAddress.toString() +
-                                " is unreachable w/" + timeoutMs + "ms timeout, ignoring address");
+                        logger.log(Level.INFO, ipAddress.toString() + 
+                                               " is unreachable w/" + timeoutMs + "ms timeout, ignoring address");
                         continue;
                     }
                 } catch (IOException e) {
@@ -136,4 +136,5 @@ public class HostName {
 
         return addresses;
     }
+
 }
