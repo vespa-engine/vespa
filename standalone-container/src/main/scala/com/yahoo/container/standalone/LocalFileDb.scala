@@ -49,7 +49,7 @@ class LocalFileDb(appPath: Path) extends FileAcquirer with FileRegistry {
   }
 
   def fileSourceHost: String =
-    HostName.getLocalhost
+    HostName.getHostName
 
   def allRelativePaths: java.util.Set[String] = {
     new java.util.HashSet(fileReferenceToFile.values.map(_.getPath))

@@ -192,7 +192,7 @@ public class ClusterSearcher extends Searcher {
         if (InetAddress.getByName(host).isLoopbackAddress())
             return false;
         else
-            return !host.equals(HostName.getLocalhost());
+            return !host.equals(HostName.getHostName());
     }
 
     private static ClusterParams makeClusterParams(int searchclusterIndex,

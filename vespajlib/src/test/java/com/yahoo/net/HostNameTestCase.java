@@ -9,8 +9,15 @@ import static org.junit.Assert.assertFalse;
  * @author lulf
  */
 public class HostNameTestCase {
+
     @Test
     public void testHostnameIsFound() {
-        assertFalse(HostName.getLocalhost().isEmpty());
+        assertFalse(HostName.getHostName().isEmpty());
     }
+
+    @Test
+    public void testSystemHostnameIsFound() throws Exception {
+        assertFalse(HostName.getSystemHostName().isEmpty());
+    }
+
 }
