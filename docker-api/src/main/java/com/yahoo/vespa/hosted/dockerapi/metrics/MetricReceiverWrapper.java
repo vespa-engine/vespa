@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -63,8 +62,9 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
 
     public void unsetMetricsForContainer(String hostname) {
         synchronized (monitor) {
-            Set<Dimensions> dimensions = metricsByDimensions.keySet();
-            for (Dimensions dimension : dimensions) {
+            Iterator<Dimensions> dimensionsIterator = metricsByDimensions.keySet().iterator();
+            while (dimensionsIterator.hasNext()) {
+                Dimensions dimension = dimensionsIterator.next();
                 if (dimension.dimensionsMap.containsKey("host") && dimension.dimensionsMap.get("host").equals(hostname)) {
                     metricsByDimensions.remove(dimension);
                 }

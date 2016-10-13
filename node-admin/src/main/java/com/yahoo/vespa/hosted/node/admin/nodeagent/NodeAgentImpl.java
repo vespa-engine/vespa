@@ -81,7 +81,7 @@ public class NodeAgentImpl implements NodeAgent {
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
     ContainerNodeSpec lastNodeSpec = null;
-
+    CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
 
     public NodeAgentImpl(
             final String hostName,
@@ -384,6 +384,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         if (nodeSpec == null || nodeSpec.nodeState != Node.State.active) return;
+
         Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
@@ -405,10 +406,13 @@ public class NodeAgentImpl implements NodeAgent {
         if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
 
         Dimensions dimensions = dimensionsBuilder.build();
-        addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
-        addIfNotNull(dimensions, "node.cpu.total_usage", stats.getCpuStats().get("cpu_usage"), "total_usage");
-        addIfNotNull(dimensions, "node.cpu.system_cpu_usage", stats.getCpuStats(), "system_cpu_usage");
+        long currentCpuContainerTotalTime = (long) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage");
+        long currentCpuSystemTotalTime = (long) stats.getCpuStats().get("system_cpu_usage");
 
+        double cpuPercentage = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
+        metricReceiver.declareGauge(dimensions, "node.cpu.busy.pct").sample(cpuPercentage);
+
+        addIfNotNull(dimensions, "node.cpu.throttled_time", stats.getCpuStats().get("throttling_data"), "throttled_time");
         addIfNotNull(dimensions, "node.memory.limit", stats.getMemoryStats(), "limit");
         addIfNotNull(dimensions, "node.memory.usage", stats.getMemoryStats(), "usage");
 
@@ -482,4 +486,18 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.executeCommand(nodeSpec.containerName, restartYamasAgent);
     }
 
+    class CpuUsageReporter {
+        private long totalContainerUsage = 0;
+        private long totalSystemUsage = 0;
+
+        double getCpuUsagePercentage(long currentContainerUsage, long currentSystemUsage) {
+            long deltaSystemUsage = currentSystemUsage - totalSystemUsage;
+            double cpuUsagePct = (deltaSystemUsage == 0 || totalSystemUsage == 0) ?
+                    0 : 100.0 * (currentContainerUsage - totalContainerUsage) / deltaSystemUsage;
+
+            totalContainerUsage = currentContainerUsage;
+            totalSystemUsage = currentSystemUsage;
+            return cpuUsagePct;
+        }
+    }
 }
