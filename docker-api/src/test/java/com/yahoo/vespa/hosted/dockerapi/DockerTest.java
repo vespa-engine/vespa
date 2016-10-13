@@ -5,20 +5,23 @@ import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import org.apache.commons.io.IOUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static junit.framework.TestCase.fail;
@@ -32,7 +35,8 @@ import static org.junit.Assume.assumeTrue;
  * Class for testing full integration with docker daemon, requires running daemon. To run these tests:
  *
  * MAC:
- *   1. Install Docker Toolbox, and start it (Docker Quick Start Terminal) (you can close terminal window afterwards)
+ *   1. Install Docker Toolbox, and start it (Docker Quickstart Terminal) (you can close terminal window afterwards)
+ *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.0.0.0/8 192.168.99.100
  *   2. Run tests from IDE/mvn.
  *
  * LINUX:
@@ -45,10 +49,19 @@ import static org.junit.Assume.assumeTrue;
  *      $ sudo docker build -t "simple-ipv6-server:Dockerfile" .
  *  5. (Temporary) Comment out createDockerImage() and shutdown()
  *
+ *
+ * TIPS:
+ *   For cleaning up your local docker machine (DON'T DO THIS ON PROD)
+ *     docker stop $(docker ps -a -q)
+ *     docker rm $(docker ps -a -q)
+ *
  * @author valerijf
  * @author dybdahl
  */
 public class DockerTest {
+    public static final String SUBNET_CONTAINER = "172.18.7.2/24";
+    public static final String IP_ADDRESS_FOR_CONTAINER = "172.18.7.32";
+
     private DockerImpl docker;
     private static final boolean isMacOSX = System.getProperty("os.name").equals("Mac OS X");
     private static final String prefix = "/Users/" + System.getProperty("user.name") + "/.docker/machine/machines/default/";
@@ -68,10 +81,11 @@ public class DockerTest {
         assertThat(containers.isEmpty(), is(true));
     }
 
+    // It is ignored since it is a bit slow and unstable, at least on Mac.
+    @Ignore
     @Test
     public void testDockerImagePull() throws ExecutionException, InterruptedException {
         assumeTrue(dockerDaemonIsPresent());
-        DockerImpl docker = new DockerImpl(dockerConfig);
 
         docker.getAllManagedContainers();
         DockerImage dockerImage = new DockerImage("busybox:1.24.0");
@@ -91,35 +105,79 @@ public class DockerTest {
     }
 
     @Test
-    public void testCreateDeleteImageCreateDeleteContainer() throws IOException, InterruptedException, ExecutionException {
+    public void testContainerCycle() throws IOException, InterruptedException, ExecutionException {
         assumeTrue(dockerDaemonIsPresent());
-        createDockerImage(docker);
-        ContainerName containerName = new ContainerName("foo");
+
+        DockerImage busyBoxImage = new DockerImage("busybox:1.24.0");
+        // Pull the image and wait for the pull to complete
+        System.out.print("Pulling image.");
+        docker.pullImageAsync(busyBoxImage).get();
+        System.out.println("... done");
+
+        ContainerName containerName = new ContainerName("DummyWebServer");
+
+        try { // Stop any old container
+            docker.stopContainer(containerName);
+            System.out.println("Stopped an old container with same name");
+        } catch (Exception e) {
+            System.out.println("Did not manage to stop container " + e.getMessage());
+        }
+        try { // Delete any remaining container
+            docker.deleteContainer(containerName);
+            System.out.println("Deleted an old container with same name");
+        } catch (Exception e) {
+            System.out.println("Did not manage to delete container " + e.getMessage());
+        }
+
+        int webPortForContainer = 6342;
+
+        InetAddress inetAddress1 = Inet6Address.getByName(IP_ADDRESS_FOR_CONTAINER);
+        docker.createContainerCommand(busyBoxImage, containerName, "hostName1")
+                .withNetworkMode("vespa-macvlan")
+                .withIpAddress(inetAddress1)
+                .withCmd("sleep").withCmd("55555").create();
+
+        System.out.print("Starting container with sleep running.");
+        docker.startContainer(containerName);
+        System.out.println("..done");
+
+
+        // TODO: Get the container to start with httpd instead of hacking it here.
+        new Thread(() -> {
+            try {
+                // This call is blocking
+                docker.executeInContainer(containerName, "/bin/sh", "-c", "/bin/httpd -f -p " + webPortForContainer).getOutput();
+            } catch (RuntimeException e) {
+                // ignore, fails on shut down
+            }
+        }).start();
+
+        boolean success = false;
+        for (int x = 0; x < 600; x++) {
+            try {
+                URL url = new URL("http://" + IP_ADDRESS_FOR_CONTAINER + ":" + webPortForContainer);
+                InputStream is = url.openStream();
+                String containerServer = IOUtils.toString(is);
+                assertThat(containerServer, is("sdf"));
+            } catch (FileNotFoundException e) {
+                System.out.println("Managed to talk to web server in container.");
+                success = true;
+                break;
+            } catch (Throwable t) {
+                System.err.println(t.getMessage());
+                Thread.sleep(100);
+            }
+        }
         docker.stopContainer(containerName);
         docker.deleteContainer(containerName);
-        assertThat(docker.getAllManagedContainers().isEmpty(), is(true));
-        docker.createContainerCommand(dockerImage, containerName, "hostName1").create();
-        List<Container> containers = docker.getAllManagedContainers();
-        assertThat(containers.size(), is(1));
-        docker.deleteContainer(containerName);
-
-        docker.pullImageAsync(dockerImage).get();
-
-        // Translate the human readable ID to sha256-hash ID that is returned by getUnusedDockerImages()
-        DockerImage targetImage = new DockerImage(docker.dockerClient.inspectImageCmd(dockerImage.asString()).exec().getId());
-        Set<DockerImage> except = new HashSet<>();
-        List<DockerImage> x = docker.getUnusedDockerImages(except);
-
-        // Remove the image
-        docker.deleteImage(dockerImage);
-        List<DockerImage> y = docker.getUnusedDockerImages(except);
-
-        assertFalse("Failed to delete " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
+        // Do not bother, it takes forever to load it again.. docker.deleteImage(busyBoxImage);
+        assertThat(success, is(true));
     }
 
+    // TODO: Does not work on Mac OSx
     @Ignore
     @Test
-    public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
+    public void testDockerIPv6Networking() throws InterruptedException, ExecutionException, IOException {
         String hostName1 = "docker10.test.yahoo.com";
         String hostName2 = "docker11.test.yahoo.com";
         ContainerName containerName1 = new ContainerName("test-container-1");
@@ -157,12 +215,23 @@ public class DockerTest {
             return false;
         }
         try {
-            docker = new DockerImpl(dockerConfig, new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+            setDocker();
             return true;
         } catch (Exception e) {
             System.out.println("Please install Docker Toolbox and start Docker Quick Start Terminal once, ignoring test.");
             return false;
         }
+    }
+
+    private void setDocker() {
+        docker = new DockerImpl(
+                dockerConfig,
+                false, /* fallback to 1.23 on errors */
+                false, /* try setup netowork */
+                isMacOSX ? Optional.of(SUBNET_CONTAINER) : Optional.empty(), /* subnetwork */
+                false, /* hackAroundPullImageDueToJerseyConflicts */
+                100 /* dockerConnectTimeoutMillis */,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation));
     }
 
     private void testReachabilityFromHost(ContainerName containerName, InetAddress target) throws IOException, InterruptedException {
