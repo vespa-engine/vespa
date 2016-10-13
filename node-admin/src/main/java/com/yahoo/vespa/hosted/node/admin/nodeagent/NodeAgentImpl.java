@@ -81,7 +81,7 @@ public class NodeAgentImpl implements NodeAgent {
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
     ContainerNodeSpec lastNodeSpec = null;
-    LastCpuMetric lastCpuMetric = new LastCpuMetric();
+    CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
 
     public NodeAgentImpl(
             final String hostName,
@@ -486,13 +486,15 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.executeCommand(nodeSpec.containerName, restartYamasAgent);
     }
 
-    class LastCpuMetric {
+    class CpuUsageReporter {
         private long totalContainerUsage = 0;
         private long totalSystemUsage = 0;
 
         double getCpuUsagePercentage(long currentContainerUsage, long currentSystemUsage) {
-            double cpuUsagePct = totalSystemUsage == 0 ? 0 :
-                    100.0 * (currentContainerUsage - totalContainerUsage) / (currentSystemUsage - totalSystemUsage);
+            long deltaSystemUsage = currentSystemUsage - totalSystemUsage;
+            double cpuUsagePct = (deltaSystemUsage == 0 || totalSystemUsage == 0) ?
+                    0 : 100.0 * (currentContainerUsage - totalContainerUsage) / deltaSystemUsage;
+
             totalContainerUsage = currentContainerUsage;
             totalSystemUsage = currentSystemUsage;
             return cpuUsagePct;
