@@ -390,10 +390,6 @@ public class Container extends AbstractService implements
 
     @Override
     public void getConfig(ContainerHttpConfig.Builder builder) {
-        builder
-                .enabled(httpServerEnabled)
-                .port(new ContainerHttpConfig.Port.Builder()
-                        .search(getSearchPort()));
         if (hostResponseHeaderKey.isPresent())
             builder.hostResponseHeaderKey(hostResponseHeaderKey.get());
     }

@@ -4,9 +4,7 @@ package com.yahoo.vespa.model.clients.test;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrConfig.Builder;
-import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Test;
@@ -18,9 +16,10 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 /**
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  */
 public class Gateway20TestCase {
+
     private static String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
 
     @Test
@@ -30,10 +29,6 @@ public class Gateway20TestCase {
         assertEquals(qrConfig.rpc().enabled(), true);
         assertEquals("filedistribution/" + hostname, qrConfig.filedistributor().configid());
         assertEquals("container.container.0", qrConfig.discriminator());
-
-        ContainerHttpConfig cHConfig = new ContainerHttpConfig((ContainerHttpConfig.Builder) model.getConfig(new ContainerHttpConfig.Builder(), "container/container.0"));
-        assertTrue(cHConfig.enabled());
-        assertEquals(Defaults.getDefaults().vespaWebServicePort(), cHConfig.port().search());
 
         ComponentsConfig componentsConfig = new ComponentsConfig((ComponentsConfig.Builder) model.getConfig(new ComponentsConfig.Builder(), "container/container.0"));
         ArrayList<String> components = new ArrayList<>();
@@ -62,17 +57,9 @@ public class Gateway20TestCase {
         assertEquals(qrConfig.filedistributor().configid(), "filedistribution/" + hostname);
         assertEquals("container.container.0", qrConfig.discriminator());
 
-        ContainerHttpConfig cHConfig = new ContainerHttpConfig((ContainerHttpConfig.Builder) model.getConfig(new ContainerHttpConfig.Builder(), "container/container.0"));
-        assertTrue(cHConfig.enabled());
-        assertEquals(Defaults.getDefaults().vespaWebServicePort(), cHConfig.port().search());
-
         qrConfig = new QrConfig((Builder) model.getConfig(new QrConfig.Builder(), "container/container.0"));
         assertEquals(qrConfig.rpc().enabled(), true);
         assertEquals(qrConfig.filedistributor().configid(), "filedistribution/" + hostname);
-
-        cHConfig = new ContainerHttpConfig((ContainerHttpConfig.Builder) model.getConfig(new ContainerHttpConfig.Builder(), "container/container.0"));
-        assertEquals(cHConfig.enabled(), true);
-        assertEquals(Defaults.getDefaults().vespaWebServicePort(), cHConfig.port().search());
     }
 
 }
