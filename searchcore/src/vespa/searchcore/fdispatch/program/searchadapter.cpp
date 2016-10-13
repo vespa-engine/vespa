@@ -43,13 +43,6 @@ SearchAdapter::createReply()
         return reply;
     }
 
-    if ((_request->queryFlags &
-         search::fs4transport::QFLAG_REPORT_QUEUELEN) != 0) {
-        // FIXME
-        r.useQueueLen = true;
-        r.queueLen    = 1;
-    }
-
     uint32_t hitcnt = _queryResult->_hitCount;
     r.offset = _searchInfo->_searchOffset;
     r.totalHitCount = _queryResult->_totalHitCount;

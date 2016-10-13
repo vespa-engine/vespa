@@ -32,15 +32,6 @@ TransportServer::SearchHandler::searchDone(SearchReply::UP reply)
     if (reply.get() != 0) {
         const SearchReply &r = *reply;
         if (r.valid) {
-            if (r.useQueueLen) {
-                PacketConverter::QUEUELEN *p = new PacketConverter::QUEUELEN();
-                p->_queueLen = r.queueLen;
-                p->_dispatchers = clientCnt;
-                if (shouldLog(DEBUG_SEARCH)) {
-                    logPacket("outgoing packet", p, 0, channel->GetConnection());
-                }
-                channel->GetConnection()->PostPacket(p, FNET_NOID);
-            }
             if (r.errorCode == 0) {
                 PacketConverter::QUERYRESULTX *p = new PacketConverter::QUERYRESULTX();
                 PacketConverter::fromSearchReply(r, *p);

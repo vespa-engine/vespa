@@ -66,9 +66,6 @@ public:
     uint32_t              errorCode;
     vespalib::string      errorMessage;
 
-    // piggyback monitoring
-    bool                  useQueueLen;
-    uint32_t              queueLen;
     SearchRequest::UP     request;
 
     SearchReply();

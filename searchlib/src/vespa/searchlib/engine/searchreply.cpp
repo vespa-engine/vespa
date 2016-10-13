@@ -23,8 +23,6 @@ SearchReply::SearchReply()
       hits(),
       errorCode(0),
       errorMessage(),
-      useQueueLen(false),
-      queueLen(0),
       request()
 {
 }
@@ -44,8 +42,6 @@ SearchReply::SearchReply(const SearchReply &rhs)
     hits         (rhs.hits),
     errorCode    (rhs.errorCode),
     errorMessage (rhs.errorMessage),
-    useQueueLen  (rhs.useQueueLen),
-    queueLen     (rhs.queueLen),
     request() // NB not copied
 {
 }
