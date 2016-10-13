@@ -72,10 +72,7 @@ enum queryresult_features {
  * 'featureflags'. Each bit in that field denotes a separate feature
  * that may be present in the query packet or not. The comment
  * describing the packet format indicates what data fields depend on
- * what features. Note that after removing the query id and the
- * feature flags from a PCODE_QUERYX packet it is binary compatible
- * with the PCODE_PARSEDQUERY2 packets
- * given the correct set of features. The features present in the
+ * what features. The features present in the
  * 'old' query packets are defined in this enum along with the Query
  * Features themselves. The values called
  * QF_SUPPORTED_[FSEARCH/FDISPATCH]_MASK denotes which features are
@@ -92,9 +89,7 @@ enum query_features {
     QF_PROPERTIES             = 0x00100000,
     QF_WARMUP		      = 0x00200000, // Deprecated, do not use!
     QF_GROUPSPEC              = 0x00400000,
-    QF_SESSIONID              = 0x00800000,
-
-    QF_PARSEDQUERY2_MASK      = (QF_PARSEDQUERY | QF_RANKP)
+    QF_SESSIONID              = 0x00800000
 };
 
 
@@ -230,27 +225,7 @@ enum packetcode {
                              */
     PCODE_CLEARCACHES_NOTUSED = 211,
     PCODE_QUERY2_NOTUSED = 212,
-    PCODE_PARSEDQUERY2 = 213,	/* ..fdispatch  -> ..fsearch.	PacketData:
-			 *0	{uint32_t queryId,}	- only in new format!
-			 *1	..query::querytypes searchType,	- all/any/exact
-			 *2	uint32_t offset,
-			 *3	uint32_t maxhits,
-			 *4	uint32_t qflags,	(including usehardware)
-			 *5     uint32_t rankprofile,   - enum
-			 *6     uint32_t numStackItems,
-			 *7	multiple encoded stackitems:
-                         - uint32_t OR|AND|NOT|RANK
-                         uint32_t arity
-                         - uint32_t PHRASE
-                         uint32_t arity
-                         uint32_t indexNameLen
-                         char[]   indexName
-                         - uint32_t TERM
-                         uint32_t indexNameLen
-                         char[]   indexName
-                         uint32_t termLen
-                         char[]   term
-                        */
+    PCODE_PARSEDQUERY2_NOTUSED = 213,
     PCODE_MLD_QUERYRESULT2_NOTUSED = 214,
     PCODE_MLD_GETDOCSUMS2_NOTUSED = 215,
     PCODE_QUEUELEN_NOTUSED = 216,

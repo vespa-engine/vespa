@@ -448,7 +448,6 @@ private:
     FS4Packet_QUERYX(const FS4Packet_QUERYX &);
     FS4Packet_QUERYX& operator=(const FS4Packet_QUERYX &);
 
-    uint32_t  _pcode;
     uint32_t  _timeout;
 
 public:
@@ -477,12 +476,9 @@ public:
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp getTimeout() const;
 
-    explicit FS4Packet_QUERYX(uint32_t pcode = PCODE_QUERYX);
+    explicit FS4Packet_QUERYX();
     ~FS4Packet_QUERYX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE() { _pcode = PCODE_QUERYX; }
-    uint32_t GetPCODE() override { return _pcode; }
+    uint32_t GetPCODE() override { return PCODE_QUERYX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;

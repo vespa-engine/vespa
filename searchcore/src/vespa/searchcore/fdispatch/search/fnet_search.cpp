@@ -1130,7 +1130,7 @@ FNET_Packet::UP
 FastS_FNET_Search::setupQueryPacket(uint32_t hitsPerNode, uint32_t qflags,
                                     const search::engine::PropertiesMap &properties)
 {
-    FNET_Packet::UP ret(new FS4Packet_QUERYX(search::fs4transport::PCODE_QUERYX));
+    FNET_Packet::UP ret(new FS4Packet_QUERYX());
     FS4Packet_QUERYX & qx = static_cast<FS4Packet_QUERYX &>(*ret);
     qx._features      = search::fs4transport::QF_PARSEDQUERY | search::fs4transport::QF_RANKP;
     qx._offset        = _util.GetAlignedSearchOffset();
@@ -1167,7 +1167,6 @@ FastS_FNET_Search::setupQueryPacket(uint32_t hitsPerNode, uint32_t qflags,
 
     qx._numStackItems = _queryArgs->stackItems;
     qx.setStackDump(_queryArgs->getStackRef());
-    qx.UpdateCompatPCODE();
     return ret;
 }
 

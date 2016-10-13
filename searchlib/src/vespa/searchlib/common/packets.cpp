@@ -46,7 +46,6 @@ FS4PersistentPacketStreamer::HasChannelID(uint32_t pcode)
     case search::fs4transport::PCODE_DOCSUM:
     case search::fs4transport::PCODE_MLD_QUERYRESULT:
     case search::fs4transport::PCODE_MLD_GETDOCSUMS:
-    case search::fs4transport::PCODE_PARSEDQUERY2:
     case search::fs4transport::PCODE_QUERYRESULTX:
     case search::fs4transport::PCODE_QUERYX:
     case search::fs4transport::PCODE_GETDOCSUMSX:
@@ -1367,9 +1366,8 @@ FS4Packet_QUERYRESULTX::toString(uint32_t indent) const
 //============================================================
 
 
-FS4Packet_QUERYX::FS4Packet_QUERYX(uint32_t pcode)
+FS4Packet_QUERYX::FS4Packet_QUERYX()
     : FS4Packet(),
-      _pcode(pcode),
       _timeout(0),
       _features(0),
       _offset(0),
@@ -1385,7 +1383,6 @@ FS4Packet_QUERYX::FS4Packet_QUERYX(uint32_t pcode)
       _numStackItems(0),
       _stackDump()
 {
-    UpdateCompatFeatures();
 }
 
 
@@ -1393,33 +1390,13 @@ FS4Packet_QUERYX::~FS4Packet_QUERYX()
 {
 }
 
-
-void
-FS4Packet_QUERYX::UpdateCompatPCODE()
-{
-    if (_features == search::fs4transport::QF_PARSEDQUERY2_MASK)
-        _pcode =         search::fs4transport::PCODE_PARSEDQUERY2;
-    else
-        _pcode = search::fs4transport::PCODE_QUERYX;
-}
-
-
-void
-FS4Packet_QUERYX::UpdateCompatFeatures()
-{
-    if (_pcode == search::fs4transport::PCODE_PARSEDQUERY2)
-        _features =         search::fs4transport::QF_PARSEDQUERY2_MASK;
-}
-
-
 uint32_t
 FS4Packet_QUERYX::GetLength()
 {
     uint32_t plen = 2 * sizeof(uint32_t);
     plen += FNET_DataBuffer::getCompressedPositiveLength(_offset);
     plen += FNET_DataBuffer::getCompressedPositiveLength(_maxhits);
-    if (_pcode == search::fs4transport::PCODE_QUERYX)
-        plen += sizeof(uint32_t);
+    plen += sizeof(uint32_t);
 
     if ((_features & search::fs4transport::QF_PARSEDQUERY) != 0) {
         plen += sizeof(uint32_t)*2;
@@ -1463,8 +1440,7 @@ FS4Packet_QUERYX::GetLength()
 void
 FS4Packet_QUERYX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_QUERYX)
-        dst->WriteInt32Fast(_features);
+    dst->WriteInt32Fast(_features);
 
     dst->writeCompressedPositive(_offset);
     dst->writeCompressedPositive(_maxhits);
@@ -1575,9 +1551,7 @@ FS4Packet_QUERYX::getTimeout() const
 bool
 FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
-    if (_pcode == search::fs4transport::PCODE_QUERYX) {
-        _features = readUInt32(*src, len, "features");
-    }
+    _features = readUInt32(*src, len, "features");
 
     if (((_features & ~search::fs4transport::FNET_QF_SUPPORTED_MASK) != 0)) {
         throwUnsupportedFeatures(_features, search::fs4transport::FNET_QF_SUPPORTED_MASK);
@@ -1663,8 +1637,7 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         throwNotEnoughData(*src, len, 0, "eof");
     }
 
-    SetRealPCODE();
-    return true;            // OK
+    return true;
 }
 
 
@@ -1673,7 +1646,6 @@ FS4Packet_QUERYX::toString(uint32_t indent) const
 {
     vespalib::string s;
     s += make_string("%*sFS4Packet_QUERYX {\n", indent, "");
-    s += make_string("%*s  pcode       : %d\n", indent, "", _pcode);
     s += make_string("%*s  features    : 0x%x\n", indent, "", _features);
     s += make_string("%*s  offset      : %d\n", indent, "", _offset);
     s += make_string("%*s  maxhits     : %d\n", indent, "", _maxhits);
@@ -1736,7 +1708,6 @@ FS4Packet_GETDOCSUMSX::FS4Packet_GETDOCSUMSX(uint32_t pcode)
       _docid(NULL),
       _docidCnt(0)
 {
-    UpdateCompatFeatures();
 }
 
 
@@ -2075,10 +2046,6 @@ FS4PacketFactory::CreateFS4Packet(uint32_t pcode)
     case search::fs4transport::PCODE_MLD_MONITORRESULT:
         return new FS4Packet_MONITORRESULTX(search::fs4transport::
                                             PCODE_MLD_MONITORRESULT);
-    case search::fs4transport::PCODE_CLEARCACHES:
-        return new FS4Packet_CLEARCACHES;
-    case search::fs4transport::PCODE_PARSEDQUERY2:
-        return new FS4Packet_QUERYX(search::fs4transport::PCODE_PARSEDQUERY2);
     case search::fs4transport::PCODE_QUERYRESULTX:
         return new FS4Packet_QUERYRESULTX;
     case search::fs4transport::PCODE_QUERYX:
