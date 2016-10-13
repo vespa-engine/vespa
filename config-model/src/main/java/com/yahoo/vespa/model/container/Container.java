@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static com.yahoo.container.QrConfig.Filedistributor;
 import static com.yahoo.container.QrConfig.Rpc;
@@ -65,11 +67,13 @@ public class Container extends AbstractService implements
     private final String name;
     private String clusterName = null;
     private boolean rpcServerEnabled = true;
+    
+    private Optional<String> hostResponseHeaderKey = Optional.empty();
 
     // TODO: move these up to cluster
     private boolean httpServerEnabled = true;
     private boolean messageBusEnabled = true;
-
+    
     /** Whether this node has been marked as retired (e.g, will be removed) */
     private final boolean retired;
     /** The index of this node. Non-critical: This is persisted on hosted, just a counter otherwise. */
@@ -133,6 +137,16 @@ public class Container extends AbstractService implements
 
     public void addHandler(Handler h) {
         handlers.addComponent(h);
+    }
+    
+    /** 
+     * If present, this container should emit this header key with the value set to the local hostname 
+     * in HTTP responses
+     */
+    @SuppressWarnings("unused") // used by amenders
+    public void setHostResponseHeaderKey(Optional<String> hostResponseheaderKey) {
+        Objects.requireNonNull(hostResponseheaderKey, "HostResponseheaderKey cannot be null");
+        this.hostResponseHeaderKey = hostResponseheaderKey;
     }
 
     public Http getHttp() {
@@ -380,6 +394,8 @@ public class Container extends AbstractService implements
                 .enabled(httpServerEnabled)
                 .port(new ContainerHttpConfig.Port.Builder()
                         .search(getSearchPort()));
+        if (hostResponseHeaderKey.isPresent())
+            builder.hostResponseHeaderKey(hostResponseHeaderKey.get());
     }
 
     @Override
