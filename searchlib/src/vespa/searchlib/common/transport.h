@@ -8,11 +8,9 @@
 
 #include <vespa/fastos/fastos.h>
 
-namespace search
-{
+namespace search {
 
-namespace fs4transport
-{
+namespace fs4transport {
 
 /**
  * Instead of using a 32-bit number to send the 'usehardware' flag, we
@@ -108,8 +106,7 @@ enum getdocsums_features {
 };
 
 
-enum getdocsums_flags
-{
+enum getdocsums_flags {
     GDFLAG_IGNORE_ROW         = 0x00000001,
     GDFLAG_ALLOW_SLIME        = 0x00000002
 };
@@ -117,30 +114,19 @@ enum getdocsums_flags
 // docsum class for slime tunneling
 const uint32_t SLIME_MAGIC_ID = 0x55555555;
 
-enum monitorquery_features
-{
+enum monitorquery_features {
     MQF_QFLAGS		    = 0x00000002,			
 };
 
-
-enum monitorquery_flags
-{
+enum monitorquery_flags {
     MQFLAG_REPORT_ACTIVEDOCS  = 0x00000020
 };
 
-
-enum monitorresult_features
-{
+enum monitorresult_features {
     MRF_MLD		    = 0x00000001,
     MRF_RFLAGS		    = 0x00000008,
     MRF_ACTIVEDOCS	    = 0x00000010,
 };
-
-
-enum monitorresult_flags
-{
-};
-
 
 /**
  * Codes for packets between dispatch nodes and search nodes.
