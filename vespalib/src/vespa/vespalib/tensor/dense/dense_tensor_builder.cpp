@@ -13,8 +13,6 @@ using vespalib::make_string;
 namespace vespalib {
 namespace tensor {
 
-using DimensionMeta = DenseTensor::DimensionMeta;
-
 namespace {
 
 constexpr size_t UNDEFINED_LABEL = std::numeric_limits<size_t>::max();
@@ -39,14 +37,21 @@ validateLabelNotSpecified(size_t oldLabel, const vespalib::string &dimension)
     }
 }
 
+eval::ValueType
+makeValueType(const std::vector<eval::ValueType::Dimension> &&dimensions) {
+    return (dimensions.empty() ?
+            eval::ValueType::double_type() :
+            eval::ValueType::tensor_type(std::move(dimensions)));
+}
+
 }
 
 void
 DenseTensorBuilder::allocateCellsStorage()
 {
     size_t cellsSize = 1;
-    for (const auto &dimensionMeta : _dimensionsMeta) {
-        cellsSize *= dimensionMeta.size();
+    for (const auto &dimension : _dimensions) {
+        cellsSize *= dimension.size;
     }
     _cells.resize(cellsSize, 0);
 }
@@ -55,13 +60,14 @@ DenseTensorBuilder::allocateCellsStorage()
 void
 DenseTensorBuilder::sortDimensions()
 {
-    std::sort(_dimensionsMeta.begin(), _dimensionsMeta.end(),
-              [](const DimensionMeta &lhs, const DimensionMeta &rhs)
-              { return lhs.dimension() < rhs.dimension(); });
-    _dimensionsMapping.resize(_dimensionsMeta.size());
+    std::sort(_dimensions.begin(), _dimensions.end(),
+              [](const eval::ValueType::Dimension &lhs,
+                 const eval::ValueType::Dimension &rhs)
+              { return lhs.name < rhs.name; });
+    _dimensionsMapping.resize(_dimensions.size());
     Dimension dim = 0;
-    for (const auto &dimension : _dimensionsMeta) {
-        auto itr = _dimensionsEnum.find(dimension.dimension());
+    for (const auto &dimension : _dimensions) {
+        auto itr = _dimensionsEnum.find(dimension.name);
         assert(itr != _dimensionsEnum.end());
         _dimensionsMapping[itr->second] = dim;
         ++dim;
@@ -75,14 +81,14 @@ DenseTensorBuilder::calculateCellAddress()
     size_t multiplier = 1;
     for (int64_t i = (_addressBuilder.size() - 1); i >= 0; --i) {
         const size_t label = _addressBuilder[i];
-        const auto &dimMeta = _dimensionsMeta[i];
+        const auto &dim = _dimensions[i];
         if (label == UNDEFINED_LABEL) {
             throw IllegalArgumentException(make_string("Label for dimension '%s' is undefined. "
                     "Expected a value in the range [0, %zu>",
-                    dimMeta.dimension().c_str(), dimMeta.size()));
+                    dim.name.c_str(), dim.size));
         }
         result += (label * multiplier);
-        multiplier *= dimMeta.size();
+        multiplier *= dim.size;
         _addressBuilder[i] = UNDEFINED_LABEL;
     }
     return result;
@@ -90,7 +96,7 @@ DenseTensorBuilder::calculateCellAddress()
 
 DenseTensorBuilder::DenseTensorBuilder()
     : _dimensionsEnum(),
-      _dimensionsMeta(),
+      _dimensions(),
       _cells(),
       _addressBuilder(),
       _dimensionsMapping()
@@ -108,9 +114,9 @@ DenseTensorBuilder::defineDimension(const vespalib::string &dimension,
     assert(_cells.empty());
     Dimension result = _dimensionsEnum.size();
     _dimensionsEnum.insert(std::make_pair(dimension, result));
-    _dimensionsMeta.emplace_back(dimension, dimensionSize);
+    _dimensions.emplace_back(dimension, dimensionSize);
     _addressBuilder.push_back(UNDEFINED_LABEL);
-    assert(_dimensionsMeta.size() == (result + 1));
+    assert(_dimensions.size() == (result + 1));
     assert(_addressBuilder.size() == (result + 1));
     return result;
 }
@@ -122,13 +128,13 @@ DenseTensorBuilder::addLabel(Dimension dimension, size_t label)
         sortDimensions();
         allocateCellsStorage();
     }
-    assert(dimension < _dimensionsMeta.size());
+    assert(dimension < _dimensions.size());
     assert(dimension < _addressBuilder.size());
     Dimension mappedDimension = _dimensionsMapping[dimension];
-    const auto &dimMeta = _dimensionsMeta[mappedDimension];
-    validateLabelInRange(label, dimMeta.size(), dimMeta.dimension());
+    const auto &dim = _dimensions[mappedDimension];
+    validateLabelInRange(label, dim.size, dim.name);
     validateLabelNotSpecified(_addressBuilder[mappedDimension],
-                              dimMeta.dimension());
+                              dim.name);
     _addressBuilder[mappedDimension] = label;
     return *this;
 }
@@ -152,10 +158,10 @@ DenseTensorBuilder::build()
     if (_cells.empty()) {
         allocateCellsStorage();
     }
-    Tensor::UP result = std::make_unique<DenseTensor>(std::move(_dimensionsMeta),
-            std::move(_cells));
+    Tensor::UP result = std::make_unique<DenseTensor>(makeValueType(std::move(_dimensions)),
+                                                      std::move(_cells));
     _dimensionsEnum.clear();
-    _dimensionsMeta.clear();
+    _dimensions.clear();
     DenseTensor::Cells().swap(_cells);
     _addressBuilder.clear();
     _dimensionsMapping.clear();

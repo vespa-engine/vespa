@@ -118,7 +118,7 @@ SparseTensorMapper<TensorT>::map(const Tensor &tensor,
 
 class DenseTensorMapper : public TensorVisitor
 {
-    DenseTensor::DimensionsMeta _dimensionsMeta;
+    eval::ValueType _type;
     DenseTensor::Cells _cells;
     static constexpr uint32_t BAD_LABEL = std::numeric_limits<uint32_t>::max();
     static constexpr uint32_t BAD_ADDRESS =
@@ -138,14 +138,12 @@ public:
 };
 
 DenseTensorMapper::DenseTensorMapper(const ValueType &type)
-    : _dimensionsMeta(),
+    : _type(type),
       _cells()
 {
-    _dimensionsMeta.reserve(type.dimensions().size());
     size_t size = 1;
     for (const auto &dimension : type.dimensions()) {
         size *= dimension.size;
-        _dimensionsMeta.emplace_back(dimension.name, dimension.size);
     }
     _cells.resize(size);
 }
@@ -157,7 +155,7 @@ DenseTensorMapper::~DenseTensorMapper()
 std::unique_ptr<Tensor>
 DenseTensorMapper::build()
 {
-    return std::make_unique<DenseTensor>(std::move(_dimensionsMeta),
+    return std::make_unique<DenseTensor>(std::move(_type),
                                          std::move(_cells));
 }
 
@@ -182,17 +180,17 @@ DenseTensorMapper::mapAddressToIndex(const TensorAddress &address)
 {
     uint32_t idx = 0;
     TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    for (const auto &dimension : _dimensionsMeta) {
-        if (addressIterator.skipToDimension(dimension.dimension())) {
+    for (const auto &dimension : _type.dimensions()) {
+        if (addressIterator.skipToDimension(dimension.name)) {
             uint32_t label = mapLabelToNumber(addressIterator.label());
-            if (label == BAD_LABEL || label >= dimension.size()) {
+            if (label == BAD_LABEL || label >= dimension.size) {
                 return BAD_ADDRESS;
             }
-            idx = idx * dimension.size() + label;
+            idx = idx * dimension.size + label;
             addressIterator.next();
         } else {
             // output dimension not in input
-            idx = idx * dimension.size();
+            idx = idx * dimension.size;
         }
     }
     return idx;

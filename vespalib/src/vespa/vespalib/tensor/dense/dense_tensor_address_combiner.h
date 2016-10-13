@@ -16,7 +16,6 @@ class DenseTensorAddressCombiner
 {
 public:
     using Address = std::vector<size_t>;
-    using DimensionsMeta = DenseTensor::DimensionsMeta;
 
 private:
     enum class AddressOp {
@@ -31,14 +30,14 @@ private:
     Address _combinedAddress;
 
 public:
-    DenseTensorAddressCombiner(const DimensionsMeta &lhs,
-                               const DimensionsMeta &rhs);
+    DenseTensorAddressCombiner(const eval::ValueType &lhs,
+                               const eval::ValueType &rhs);
 
     bool combine(const CellsIterator &lhsItr,
                  const CellsIterator &rhsItr);
     const Address &address() const { return _combinedAddress; }
 
-    static DimensionsMeta combineDimensions(const DimensionsMeta &lhs, const DimensionsMeta &rhs);
+    static eval::ValueType combineDimensions(const eval::ValueType &lhs, const eval::ValueType &rhs);
 
 };
 
