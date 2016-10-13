@@ -204,7 +204,6 @@ public class QueryPacket extends Packet {
      **/
     static final int QFLAG_ESTIMATE             = 0x00000080;
     static final int QFLAG_DROP_SORTDATA        = 0x00004000;
-    static final int QFLAG_REPORT_COVERAGE      = 0x00008000; // always on
     static final int QFLAG_NO_RESULTCACHE       = 0x00010000;
     static final int QFLAG_DUMP_FEATURES        = 0x00040000;
 
@@ -240,7 +239,7 @@ public class QueryPacket extends Packet {
     }
 
     static int getQueryFlags(Query query) {
-        int flags = QFLAG_REPORT_COVERAGE;
+        int flags = 0;
 
         flags |= query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE) ? QFLAG_ESTIMATE : 0;
         flags |= query.getNoCache() ? QFLAG_NO_RESULTCACHE : 0;
