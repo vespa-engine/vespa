@@ -91,11 +91,7 @@ enum query_features {
  * 'featureflags'. Each bit in that field denotes a separate feature
  * that may be present in the getdocsums packet or not. The comment
  * describing the packet format indicates what data fields depend on
- * what features. Note that after removing the query id and the
- * feature flags from a PCODE_GETDOCSUMSX packet it is binary
- * compatible with the PCODE_GETDOCSUMS, PCODE_MLD_GETDOCSUMS and
- * PCODE_MLD_GETDOCSUMS2 packets given the correct set of
- * features. The features present in the 'old' getdocsums packets are
+ * what features. The features present in the 'old' getdocsums packets are
  * defined in this enum along with the GetDocsums Features
  * themselves. The values called
  * GDF_SUPPORTED_[FSEARCH/FDISPATCH]_MASK denotes which features are
@@ -110,10 +106,7 @@ enum getdocsums_features {
     GDF_LOCATION              = 0x00000080,
     GDF_RESCLASSNAME          = 0x00000800,
     GDF_PROPERTIES            = 0x00001000,
-    GDF_FLAGS                 = 0x00002000,
-
-    GDF_GETDOCSUMS_MASK       = 0,
-    GDF_MLD_GETDOCSUMS_MASK   = (GDF_MLD)
+    GDF_FLAGS                 = 0x00002000
 };
 
 
@@ -168,10 +161,7 @@ enum packetcode {
                            *      uint32_t  error_code  [see common/errorcodes.h]
                            *      uint32_t  message_len
                            *      char[]    message     (UTF-8)   */
-    PCODE_GETDOCSUMS = 204,	/* ..fdispatch  -> ..fsearch.	PacketData:
-			 *0	{uint32_t queryId,}	- only in new format!
-			 *	time_t docstamp		- header
-			 * 	uint32_t[] docid	- body	  	   */
+    PCODE_GETDOCSUMS_NOTUSED = 204,
     PCODE_DOCSUM = 205,		/* ..fdispatch <-  ..fsearch.
                                  *0	{uint32_t queryId,}	- only in new format!
                                  *1	uint32_t location
@@ -180,10 +170,7 @@ enum packetcode {
     PCODE_MONITORQUERY_NOTUSED = 206,
     PCODE_MONITORRESULT_NOTUSED = 207,
     PCODE_MLD_QUERYRESULT_NOTUSED = 208,
-    PCODE_MLD_GETDOCSUMS = 209,	/* ..fdispatch  -> ..fdispatch.
-                                 * header: {queryId,} docstamp
-                                 * body: (docid, partition, docstamp)*
-                                 */
+    PCODE_MLD_GETDOCSUMS_NOTUSED = 209,
     PCODE_MLD_MONITORRESULT_NOTUSED = 210,
     PCODE_CLEARCACHES_NOTUSED = 211,
     PCODE_QUERY2_NOTUSED = 212,

@@ -41,9 +41,7 @@ FS4PersistentPacketStreamer::HasChannelID(uint32_t pcode)
     switch(pcode & PCODE_MASK) {
     case search::fs4transport::PCODE_EOL:
     case search::fs4transport::PCODE_ERROR:
-    case search::fs4transport::PCODE_GETDOCSUMS:
     case search::fs4transport::PCODE_DOCSUM:
-    case search::fs4transport::PCODE_MLD_GETDOCSUMS:
     case search::fs4transport::PCODE_QUERYRESULTX:
     case search::fs4transport::PCODE_QUERYX:
     case search::fs4transport::PCODE_GETDOCSUMSX:
@@ -1587,14 +1585,12 @@ FS4Packet_GETDOCSUMSX::AllocateDocIDs(uint32_t cnt)
     if (cnt == 0)
         return;
 
-    _docid = new FS4_docid[cnt];
-    _docidCnt = cnt;
+    _docid.resize(cnt);
 }
 
 
-FS4Packet_GETDOCSUMSX::FS4Packet_GETDOCSUMSX(uint32_t pcode)
+FS4Packet_GETDOCSUMSX::FS4Packet_GETDOCSUMSX()
     : FS4Packet(),
-      _pcode(pcode),
       _timeout(0),
       _features(0),
       _ranking(),
@@ -1605,51 +1601,25 @@ FS4Packet_GETDOCSUMSX::FS4Packet_GETDOCSUMSX(uint32_t pcode)
       _stackDump(),
       _location(),
       _flags(0u),
-      _docid(NULL),
-      _docidCnt(0)
+      _docid()
 {
 }
 
 
 FS4Packet_GETDOCSUMSX::~FS4Packet_GETDOCSUMSX()
 {
-    delete [] _docid;
 }
-
-
-void
-FS4Packet_GETDOCSUMSX::UpdateCompatPCODE()
-{
-    if (_features == search::fs4transport::GDF_GETDOCSUMS_MASK)
-        _pcode     = search::fs4transport::PCODE_GETDOCSUMS;
-    else if (_features == search::fs4transport::GDF_MLD_GETDOCSUMS_MASK)
-        _pcode          = search::fs4transport::PCODE_MLD_GETDOCSUMS;
-    else
-        _pcode = search::fs4transport::PCODE_GETDOCSUMSX;
-}
-
-
-void
-FS4Packet_GETDOCSUMSX::UpdateCompatFeatures()
-{
-    if (_pcode == search::fs4transport::PCODE_GETDOCSUMS)
-        _features   = search::fs4transport::GDF_GETDOCSUMS_MASK;
-    else if (_pcode == search::fs4transport::PCODE_MLD_GETDOCSUMS)
-        _features        = search::fs4transport::GDF_MLD_GETDOCSUMS_MASK;
-}
-
 
 uint32_t
 FS4Packet_GETDOCSUMSX::GetLength()
 {
     uint32_t plen = 2 * sizeof(uint32_t) +
-        + _docidCnt * (sizeof(document::GlobalId));
+        + _docid.size() * (sizeof(document::GlobalId));
 
-    if (_pcode == search::fs4transport::PCODE_GETDOCSUMSX)
-        plen += sizeof(uint32_t);
+    plen += sizeof(uint32_t);
 
     if ((_features & search::fs4transport::GDF_MLD) != 0)
-        plen += 2 * _docidCnt * sizeof(uint32_t);
+        plen += 2 * _docid.size() * sizeof(uint32_t);
 
     if ((_features & search::fs4transport::GDF_QUERYSTACK) != 0)
         plen += 2 * sizeof(uint32_t) + _stackDump.size();
@@ -1671,8 +1641,7 @@ FS4Packet_GETDOCSUMSX::GetLength()
     }
 
     if ((_features & search::fs4transport::GDF_LOCATION) != 0)
-        plen += sizeof(uint32_t)
-                + _location.size();
+        plen += sizeof(uint32_t) + _location.size();
 
     if ((_features & search::fs4transport::GDF_FLAGS) != 0)
         plen += sizeof(uint32_t);
@@ -1684,8 +1653,7 @@ FS4Packet_GETDOCSUMSX::GetLength()
 void
 FS4Packet_GETDOCSUMSX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_GETDOCSUMSX)
-        dst->WriteInt32Fast(_features);
+    dst->WriteInt32Fast(_features);
 
     dst->WriteInt32Fast(0);
     dst->WriteInt32Fast(_timeout);
@@ -1720,11 +1688,11 @@ FS4Packet_GETDOCSUMSX::Encode(FNET_DataBuffer *dst)
         dst->WriteInt32Fast(_flags);
     }
 
-    for (uint32_t i = 0; i < _docidCnt; i++) {
-        dst->WriteBytesFast(_docid[i]._gid.get(), document::GlobalId::LENGTH);
+    for (const auto & docid : _docid) {
+        dst->WriteBytesFast(docid._gid.get(), document::GlobalId::LENGTH);
 
         if ((_features & search::fs4transport::GDF_MLD) != 0) {
-            dst->WriteInt32Fast(_docid[i]._partid);
+            dst->WriteInt32Fast(docid._partid);
             dst->WriteInt32Fast(0);
         }
     }
@@ -1736,9 +1704,7 @@ FS4Packet_GETDOCSUMSX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
     uint32_t docidSize = sizeof(document::GlobalId);
 
-    if (_pcode == search::fs4transport::PCODE_GETDOCSUMSX) {
-        _features = readUInt32(*src, len, "features");
-    }
+    _features = readUInt32(*src, len, "features");
 
     if ((_features & ~search::fs4transport::FNET_GDF_SUPPORTED_MASK) != 0) {
         throwUnsupportedFeatures(_features, search::fs4transport::FNET_GDF_SUPPORTED_MASK);
@@ -1799,28 +1765,26 @@ FS4Packet_GETDOCSUMSX::Decode(FNET_DataBuffer *src, uint32_t len)
     if ((_features & search::fs4transport::GDF_MLD) != 0)
         docidSize += 2 * sizeof(uint32_t);
 
-    _docidCnt = len / docidSize;
-    AllocateDocIDs(_docidCnt);
+    AllocateDocIDs(len / docidSize);
 
     unsigned char rawGid[document::GlobalId::LENGTH];
-    for (uint32_t i = 0; i < _docidCnt; i++) {
+    for (auto & docid : _docid) {
         src->ReadBytes(rawGid, document::GlobalId::LENGTH);
-        _docid[i]._gid.set(rawGid);
+        docid._gid.set(rawGid);
 
         if ((_features & search::fs4transport::GDF_MLD) != 0) {
-            _docid[i]._partid   = src->ReadInt32();
+            docid._partid   = src->ReadInt32();
             src->ReadInt32();  // unused
         } else {
-            _docid[i]._partid   = 0; // partid not available
+            docid._partid   = 0; // partid not available
         }
     }
-    len -= _docidCnt * docidSize;
+    len -= _docid.size() * docidSize;
 
     if (len != 0) {
         throwNotEnoughData(*src, len, 0, "eof");
     }
 
-    SetRealPCODE();
     return true;            // OK
 }
 
@@ -1852,9 +1816,9 @@ FS4Packet_GETDOCSUMSX::toString(uint32_t indent) const
         }
         if ((i % 16) != 0) s += make_string("\n");
     }
-    for (i = 0; i < _docidCnt; i++) {
+    for (const auto & docId : _docid) {
         s += make_string("%*s  gid=%s, partid=%d\n", indent, "",
-                         _docid[i]._gid.toString().c_str(), _docid[i]._partid);
+                         docId._gid.toString().c_str(), docId._partid);
     }
     s += make_string("%*s  location       : %s\n", indent, "", _location.c_str());
     s += make_string("%*s  timeout        : %d\n", indent, "", _timeout);
@@ -1924,14 +1888,8 @@ FS4PacketFactory::CreateFS4Packet(uint32_t pcode)
         return new FS4Packet_EOL;
     case search::fs4transport::PCODE_ERROR:
         return new FS4Packet_ERROR;
-    case search::fs4transport::PCODE_GETDOCSUMS:
-        return new FS4Packet_GETDOCSUMSX(search::fs4transport::
-                                         PCODE_GETDOCSUMS);
     case search::fs4transport::PCODE_DOCSUM:
         return new FS4Packet_DOCSUM;
-    case search::fs4transport::PCODE_MLD_GETDOCSUMS:
-        return new FS4Packet_GETDOCSUMSX(search::fs4transport::
-                                         PCODE_MLD_GETDOCSUMS);
     case search::fs4transport::PCODE_QUERYRESULTX:
         return new FS4Packet_QUERYRESULTX;
     case search::fs4transport::PCODE_QUERYX:

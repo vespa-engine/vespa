@@ -128,12 +128,11 @@ void
 FastS_FNET_SearchNode::
 allocGDX(search::docsummary::GetDocsumArgs *args, const search::engine::PropertiesMap &props)
 {
-    FS4Packet_GETDOCSUMSX *gdx = new FS4Packet_GETDOCSUMSX(search::fs4transport::PCODE_GETDOCSUMSX);
-    FastS_assert(gdx != NULL);
+    FS4Packet_GETDOCSUMSX *gdx = new FS4Packet_GETDOCSUMSX();
 
     gdx->AllocateDocIDs(_docidCnt);
     _gdx = gdx;
-    _docsum_offsets.resize(_gdx->_docidCnt);
+    _docsum_offsets.resize(_gdx->_docid.size());
     _docsum_offsets_idx = 0;
     if (args == NULL)
         return;
@@ -177,11 +176,10 @@ void
 FastS_FNET_SearchNode::postGDX(uint32_t *pendingDocsums, uint32_t *docsumNodes)
 {
     FS4Packet_GETDOCSUMSX *gdx = _gdx;
-    FastS_assert(gdx->_docidCnt == _docsum_offsets_idx);
+    FastS_assert(gdx->_docid.size() == _docsum_offsets_idx);
     if (_flags._docsumMld) {
         gdx->_features |= search::fs4transport::GDF_MLD;
     }
-    gdx->UpdateCompatPCODE();
     if (PostPacket(gdx)) {
         _pendingDocsums = _docsum_offsets_idx;
         *pendingDocsums += _pendingDocsums;

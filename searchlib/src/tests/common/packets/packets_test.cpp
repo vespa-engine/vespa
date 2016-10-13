@@ -137,6 +137,8 @@ TEST("testPacketFactory") {
         if ((pcode != PCODE_MLD_QUERYRESULT2_NOTUSED) &&
             (pcode != PCODE_QUERY_NOTUSED) &&
             (pcode != PCODE_MONITORQUERY_NOTUSED) &&
+            (pcode != PCODE_GETDOCSUMS_NOTUSED) &&
+            (pcode != PCODE_MLD_GETDOCSUMS_NOTUSED) &&
             (pcode != PCODE_QUERYRESULT_NOTUSED) &&
             (pcode != PCODE_MLD_QUERYRESULT_NOTUSED) &&
             (pcode != PCODE_MONITORRESULT_NOTUSED) &&
@@ -617,9 +619,8 @@ TEST("testGetDocsumsX") {
         } else {
             EXPECT_EQUAL(0u, ptr->_flags);
         }
-        EXPECT_EQUAL(2u, ptr->_docidCnt);
-        ASSERT_TRUE(ptr->_docid != NULL);
-        for (uint32_t i = 0; i < ptr->_docidCnt; ++i) {
+        EXPECT_EQUAL(2u, ptr->_docid.size());
+        for (uint32_t i = 0; i < ptr->_docid.size(); ++i) {
             EXPECT_EQUAL(i == 0u ? gid0 : gid1, ptr->_docid[i]._gid);
             EXPECT_EQUAL(ptr->_features & GDF_MLD ? 2u + i : 0u, ptr->_docid[i]._partid);
         }

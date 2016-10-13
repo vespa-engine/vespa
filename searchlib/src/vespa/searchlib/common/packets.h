@@ -481,7 +481,6 @@ private:
     FS4Packet_GETDOCSUMSX(const FS4Packet_GETDOCSUMSX &);
     FS4Packet_GETDOCSUMSX& operator=(const FS4Packet_GETDOCSUMSX &);
 
-    uint32_t       _pcode;
     uint32_t       _timeout;
 public:
     uint32_t       _features;          // see getdocsums_features
@@ -498,9 +497,8 @@ public:
         FS4_docid() : _gid(), _partid(0) { }
         document::GlobalId _gid;
         uint32_t _partid;           // if GDF_MLD
-    } *_docid;
-
-    uint32_t       _docidCnt;
+    };
+    std::vector<FS4_docid> _docid;
 
     void AllocateDocIDs(uint32_t cnt);
 
@@ -511,12 +509,9 @@ public:
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp getTimeout() const;
 
-    FS4Packet_GETDOCSUMSX(uint32_t pcode = PCODE_GETDOCSUMSX);
+    FS4Packet_GETDOCSUMSX();
     ~FS4Packet_GETDOCSUMSX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE() { _pcode = PCODE_GETDOCSUMSX; }
-    uint32_t GetPCODE() override { return _pcode; }
+    uint32_t GetPCODE() override { return PCODE_GETDOCSUMSX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;

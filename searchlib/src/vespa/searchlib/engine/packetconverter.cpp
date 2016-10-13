@@ -159,7 +159,7 @@ PacketConverter::toDocsumRequest(const GETDOCSUMSX &packet, DocsumRequest &reque
     request.location = packet._location;
     request._flags = packet._flags;
     request.useWideHits = checkFeature(packet._features, GDF_MLD);
-    uint32_t hitCnt = packet._docidCnt;
+    uint32_t hitCnt = packet._docid.size();
     request.hits.resize(hitCnt);
     for (uint32_t i = 0; i < hitCnt; ++i) {
         request.hits[i].gid      = packet._docid[i]._gid;
