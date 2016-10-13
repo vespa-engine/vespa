@@ -136,6 +136,10 @@ TEST("testPacketFactory") {
     for (uint32_t pcode = PCODE_BEGIN; pcode < PCODE_END; ++pcode) {
         if ((pcode != PCODE_MLD_QUERYRESULT2_NOTUSED) &&
             (pcode != PCODE_QUERY_NOTUSED) &&
+            (pcode != PCODE_MONITORQUERY_NOTUSED) &&
+            (pcode != PCODE_CLEARCACHES_NOTUSED) &&
+            (pcode != PCODE_PARSEDQUERY2_NOTUSED) &&
+            (pcode != PCODE_QUEUELEN_NOTUSED) &&
             (pcode != PCODE_QUERY2_NOTUSED) &&
             (pcode != PCODE_MLD_GETDOCSUMS2_NOTUSED))
         {

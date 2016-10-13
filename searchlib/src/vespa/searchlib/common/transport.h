@@ -136,8 +136,6 @@ const uint32_t SLIME_MAGIC_ID = 0x55555555;
 enum monitorquery_features
 {
     MQF_QFLAGS		    = 0x00000002,			
-
-    MQF_MONITORQUERY_MASK   = 0
 };
 
 
@@ -201,8 +199,7 @@ enum packetcode {
                                  *1	uint32_t location
                                  *2	char[] <title, incipit, URL, ...>
                                  */
-    PCODE_MONITORQUERY = 206,	/* ..fdispatch  -> ..fsearch.	No packet data.
-			 */
+    PCODE_MONITORQUERY_NOTUSED = 206,
     PCODE_MONITORRESULT = 207,	/* ..fdispatch <-  ..fsearch.	PacketData:
                                  *	int partitionId,
                                  *	time_t timeStamp			     */

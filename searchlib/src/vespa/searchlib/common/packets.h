@@ -321,17 +321,13 @@ class FS4Packet_MONITORQUERYX : public FS4Packet
     FS4Packet_MONITORQUERYX(const FS4Packet_MONITORQUERYX &);
     FS4Packet_MONITORQUERYX& operator=(const FS4Packet_MONITORQUERYX &);
 
-    uint32_t _pcode;
 public:
     uint32_t _features;         // see monitorquery_features
     uint32_t _qflags;           // if MQF_QFLAGS
 
-    FS4Packet_MONITORQUERYX(uint32_t pcode = PCODE_MONITORQUERYX);
+    FS4Packet_MONITORQUERYX();
     ~FS4Packet_MONITORQUERYX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE(void) { _pcode = PCODE_MONITORQUERYX; }
-    uint32_t GetPCODE() override { return _pcode; }
+    uint32_t GetPCODE() override { return PCODE_MONITORQUERYX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;

@@ -698,13 +698,11 @@ FS4Packet_DOCSUM::toString(uint32_t indent) const
 
 //============================================================
 
-FS4Packet_MONITORQUERYX::FS4Packet_MONITORQUERYX(uint32_t pcode)
+FS4Packet_MONITORQUERYX::FS4Packet_MONITORQUERYX()
     : FS4Packet(),
-      _pcode(pcode),
       _features(0),
       _qflags(0u)
 {
-    UpdateCompatFeatures();
 }
 
 
@@ -713,31 +711,12 @@ FS4Packet_MONITORQUERYX::~FS4Packet_MONITORQUERYX()
 }
 
 
-void
-FS4Packet_MONITORQUERYX::UpdateCompatPCODE(void)
-{
-    if (_features == search::fs4transport::MQF_MONITORQUERY_MASK)
-        _pcode =    search::fs4transport::PCODE_MONITORQUERY;
-    else
-        _pcode = search::fs4transport::PCODE_MONITORQUERYX;
-}
-
-
-void
-FS4Packet_MONITORQUERYX::UpdateCompatFeatures(void)
-{
-    if (_pcode == search::fs4transport::PCODE_MONITORQUERY)
-        _features =    search::fs4transport::MQF_MONITORQUERY_MASK;
-}
-
-
 uint32_t
 FS4Packet_MONITORQUERYX::GetLength()
 {
     uint32_t plen = 0;
 
-    if (_pcode == search::fs4transport::PCODE_MONITORQUERYX)
-        plen += sizeof(uint32_t);
+    plen += sizeof(uint32_t);
     if (_features & search::fs4transport::MQF_QFLAGS)
         plen += sizeof(uint32_t);
     return plen;
@@ -747,8 +726,7 @@ FS4Packet_MONITORQUERYX::GetLength()
 void
 FS4Packet_MONITORQUERYX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_MONITORQUERYX)
-        dst->WriteInt32Fast(_features);
+    dst->WriteInt32Fast(_features);
 
     if ((_features & search::fs4transport::MQF_QFLAGS) != 0)
         dst->WriteInt32Fast(_qflags);
@@ -758,12 +736,10 @@ FS4Packet_MONITORQUERYX::Encode(FNET_DataBuffer *dst)
 bool
 FS4Packet_MONITORQUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
-    if (_pcode == search::fs4transport::PCODE_MONITORQUERYX) {
-        if (len < sizeof(uint32_t))
-            goto error;
-        _features = src->ReadInt32();
-        len -= sizeof(uint32_t);
-    }
+    if (len < sizeof(uint32_t))
+        goto error;
+    _features = src->ReadInt32();
+    len -= sizeof(uint32_t);
     if ((_features & ~search::fs4transport::FNET_MQF_SUPPORTED_MASK) != 0)
         goto error;
 
@@ -777,8 +753,7 @@ FS4Packet_MONITORQUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
     if (len != 0)
         goto error;
 
-    SetRealPCODE();
-    return true;			// OK
+    return true;
  error:
     src->DataToDead(len);
     return false;			// FAIL
@@ -790,7 +765,6 @@ FS4Packet_MONITORQUERYX::toString(uint32_t indent) const
 {
     vespalib::string s;
     s += make_string("%*sFS4Packet_MONITORQUERYX {\n", indent, "");
-    s += make_string("%*s  pcode       : %d\n", indent, "", _pcode);
     s += make_string("%*s  features    : 0x%x\n", indent, "", _features);
     s += make_string("%*s  qflags      : %d\n", indent, "", _qflags);
     s += make_string("%*s}\n", indent, "");
@@ -2031,9 +2005,6 @@ FS4PacketFactory::CreateFS4Packet(uint32_t pcode)
                                          PCODE_GETDOCSUMS);
     case search::fs4transport::PCODE_DOCSUM:
         return new FS4Packet_DOCSUM;
-    case search::fs4transport::PCODE_MONITORQUERY:
-        return new FS4Packet_MONITORQUERYX(search::fs4transport::
-                                           PCODE_MONITORQUERY);
     case search::fs4transport::PCODE_MONITORRESULT:
         return new FS4Packet_MONITORRESULTX(search::fs4transport::
                                             PCODE_MONITORRESULT);
