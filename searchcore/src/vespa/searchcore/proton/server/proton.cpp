@@ -865,7 +865,7 @@ Proton::prepareRestart()
             std::make_shared<PrepareRestartFlushStrategy>(
                     createPrepareRestartConfig(configSnapshot->getProtonConfig()));
     _flushEngine->setStrategy(strategy);
-    return false;
+    return true;
 }
 
 void
