@@ -1175,8 +1175,7 @@ FastS_FNET_Search::setupQueryPacket(uint32_t hitsPerNode, uint32_t qflags,
 FastS_ISearch::RetCode
 FastS_FNET_Search::ProcessQueryDone()
 {
-    if (_util.IsQueryFlagSet(search::fs4transport::QFLAG_REPORT_COVERAGE))
-        CheckCoverage();
+    CheckCoverage();
 
     if (_errorCode == search::engine::ECODE_NO_ERROR) {
         MergeHits();

@@ -66,12 +66,8 @@ SearchAdapter::createReply()
                              _queryResult->_groupResult + _queryResult->_groupResultLen);
     }
 
-    if ((_request->queryFlags &
-         search::fs4transport::QFLAG_REPORT_COVERAGE) != 0)
-    {
-        r.useCoverage = true;
-        r.coverage = SearchReply::Coverage(_searchInfo->_activeDocs, _searchInfo->_coverageDocs);
-    }
+    r.useCoverage = true;
+    r.coverage = SearchReply::Coverage(_searchInfo->_activeDocs, _searchInfo->_coverageDocs);
 
     FastS_hitresult *hitbuf = _queryResult->_hitbuf;
     r.hits.resize(hitcnt);
