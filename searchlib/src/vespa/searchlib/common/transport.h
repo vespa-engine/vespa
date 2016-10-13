@@ -41,12 +41,7 @@ enum queryflags {
     QFLAG_DROP_SORTDATA        = 0x00004000,
     QFLAG_REPORT_COVERAGE      = 0x00008000,
     QFLAG_NO_RESULTCACHE       = 0x00010000,
-    QFLAG_DUMP_FEATURES        = 0x00040000,
-
-    QFLAG_CACHE_MASK           = (// which flags affect the cache
-                                  QFLAG_ESTIMATE |
-                                  QFLAG_DROP_SORTDATA |
-                                  QFLAG_REPORT_COVERAGE)
+    QFLAG_DUMP_FEATURES        = 0x00040000
 };
 
 

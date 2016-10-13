@@ -83,52 +83,6 @@ FastS_query::StackDumpHashKey() const
     return res;
 }
 
-unsigned int
-FastS_query::HashKey(void) const
-{
-    unsigned int res;
-
-    res = StackDumpHashKey();
-    res += hash_str_check((const unsigned char *) _location.c_str());
-    res += _rankProperties.hashCode();
-    res += _featureOverrides.hashCode();
-    res += (_flags & search::fs4transport::QFLAG_CACHE_MASK);
-    return res;
-}
-
-
-bool
-FastS_query::Similar(const FastS_query &other) const
-{
-    if (((_flags ^ other._flags) &
-         search::fs4transport::QFLAG_CACHE_MASK) != 0 ||
-        _stackDump.size() != other._stackDump.size() ||
-        !cmp_str_ref(_stackDump, other._stackDump) ||
-        !(_location == other._location) ||
-        !(_rankProperties == other._rankProperties) ||
-        !(_featureOverrides == other._featureOverrides))
-        return false;
-    return true;
-}
-
-bool
-FastS_query::Equal(const FastS_query &other) const
-{
-    if (_dataset != other._dataset ||
-        ((_flags ^ other._flags) &
-         search::fs4transport::QFLAG_CACHE_MASK) != 0 ||
-        _stackDump.size() != other._stackDump.size() ||
-        !cmp_str_ref(_stackDump, other._stackDump) ||
-        !(_sortSpec == other._sortSpec) ||
-        _groupSpec != other._groupSpec ||
-        !(_location == other._location) ||
-        !(_rankProperties == other._rankProperties) ||
-        !(_featureOverrides == other._featureOverrides))
-        return false;
-    return true;
-}
-
-
 namespace
 {
 
