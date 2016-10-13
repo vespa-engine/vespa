@@ -8,6 +8,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author lulf
@@ -30,6 +32,14 @@ public class DedicatedAdminV4Test {
                 "  <admin version='4.0'>" +
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
+                "    <yamas systemname='vespa.routing' interval='60' />" +
+                "    <metric-consumers>" +
+                "      <consumer name='yamas'>" +
+                "        <metric name='upstreams_generated' />" +
+                "        <metric name='upstreams_nginx_reloads' />" +
+                "        <metric name='nginx.upstreams.down.last' output-name='nginx.upstreams.down'/>" +
+                "      </consumer>" +
+                "    </metric-consumers>" +
                 "  </admin>" +
                 "</services>";
 
@@ -67,6 +77,17 @@ public class DedicatedAdminV4Test {
         assertTrue(serviceNames2.contains("logserver"));
         assertTrue(serviceNames2.contains("logd"));
         assertTrue(serviceNames2.contains("filedistributorservice"));
+        
+        Yamas yamas = model.getAdmin().getYamas();
+        assertEquals("vespa.routing", yamas.getClustername());
+        assertEquals(60L, (long)yamas.getIntervalSeconds());
+        
+        MetricsConsumer consumer = model.getAdmin().getUserMetricsConsumers().get("yamas");
+        assertNotNull(consumer);
+        assertEquals(3, consumer.getMetrics().size());
+        Metric metric = consumer.getMetrics().get("nginx.upstreams.down.last");
+        assertNotNull(metric);
+        assertEquals("nginx.upstreams.down", metric.getOutputName());
     }
 
     private Set<String> serviceNames(SentinelConfig config) {

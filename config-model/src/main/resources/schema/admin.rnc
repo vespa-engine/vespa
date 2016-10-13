@@ -25,7 +25,9 @@ AdminV4 =
   element admin {
     attribute version { "4.0"  } &
     AdminV4Slobroks? &
-    AdminV4LogServers?
+    AdminV4LogServers? &
+    AdminYamas? &
+    MetricConsumers?
   }
 
 AdminV4Slobroks =

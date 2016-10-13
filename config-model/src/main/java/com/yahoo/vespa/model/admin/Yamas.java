@@ -11,9 +11,11 @@ import java.util.Objects;
  * @since 5.1.20
  */
 public class Yamas extends AbstractMonitoringSystem implements Serializable {
+
     public Yamas(String clustername, Integer interval) {
         super(clustername, interval);
     }
+
 }
 
 

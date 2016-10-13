@@ -87,12 +87,11 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     private Integer getMonitoringInterval(Element monitoringE) {
         Integer minutes = null;
         String seconds = monitoringE.getAttribute("interval").trim();
-        if (!seconds.isEmpty()) {
-            minutes = Integer.parseInt(seconds);
-            minutes = minutes / 60;
+        if ( ! seconds.isEmpty()) {
+            minutes = Integer.parseInt(seconds) / 60;
             if (!(minutes == 1 || minutes == 5)) {
                 throw new IllegalArgumentException("The only allowed values for 'interval' attribute in '" + monitoringE.getTagName() +
-                        "' element is 60 or 300.");
+                                                   "' element is 60 or 300.");
             }
         }
         return minutes;
