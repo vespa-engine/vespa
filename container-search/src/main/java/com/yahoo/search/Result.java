@@ -311,10 +311,6 @@ public final class Result extends com.yahoo.processing.Response implements Clone
 
     public void setCoverage(Coverage coverage) { this.coverage = coverage; }
 
-    // Coverage a part of tracing?
-    // Coverage logic might me moved around, but it should not be a part of tracing.
-    // Coverage is status information about access to a corpus, tracing is voluntary,
-    // diagnostic search status.
     /**
      * Returns coverage information
      *
