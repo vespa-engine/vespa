@@ -27,27 +27,131 @@ LOG_SETUP(".proton.matching.match_thread");
 namespace proton {
 namespace matching {
 
-using search::queryeval::OptimizedAndNotForBlackListing;
-using search::queryeval::SearchIterator;
-using search::fef::TermFieldHandle;
-using search::fef::MatchData;
-using search::fef::RankProgram;
-
 namespace {
 
-struct WaitTimer {
-    double &wait_time_s;
-    fastos::StopWatch wait_time;
-    WaitTimer(double &wait_time_s_in)
-        : wait_time_s(wait_time_s_in), wait_time()
+using search::fef::FeatureHandle;
+using search::fef::IllegalHandle;
+using search::fef::RankProgram;
+
+const double *get_score_feature(const RankProgram &rankProgram) {
+    std::vector<vespalib::string> featureNames;
+    std::vector<FeatureHandle> featureHandles;
+    rankProgram.get_seed_handles(featureNames, featureHandles);
+    assert(featureNames.size() == 1);
+    assert(featureHandles.size() == 1);
+    return rankProgram.match_data().resolveFeature(featureHandles.front());
+}
+
+}
+
+using vespalib::Doom;
+using search::queryeval::OptimizedAndNotForBlackListing;
+
+template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
+void
+MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
+                        RankProgram &ranking, HitCollector &hits)
+{
+    const Doom &doom = matchTools.doom();
+    const double *score_feature = do_rank ? get_score_feature(ranking) : nullptr;
+    uint32_t matches = 0;
+    uint32_t matches_limit = (do_limit) ? matchTools.match_limiter().sample_hits_per_thread(num_threads) : 0;
+    IdleObserver idle_observer = scheduler.make_idle_observer();
+    for (DocidRange docid_range = scheduler.first_range(thread_id);
+         !docid_range.empty();
+         docid_range = scheduler.next_range(thread_id))
     {
-        wait_time.start();
+        search->initRange(docid_range.begin, docid_range.end);
+        uint32_t docId = search->seekFirst(docid_range.begin);
+        while ((docId < docid_range.end) && !doom.doom()) {
+            if (do_rank) {
+                search->unpack(docId);
+                ranking.run(docId);
+                double score = *score_feature;
+                // convert NaN and Inf scores to -Inf
+                if (__builtin_expect(std::isnan(score) || std::isinf(score), false)) {
+                    score = -HUGE_VAL;
+                }
+                // invert test since default drop limit is -NaN (keep all hits)
+                if (!(score <= matchParams.rankDropLimit)) {
+                    hits.addHit(docId, score);
+                }
+            } else {
+                hits.addHit(docId, 0.0);
+            }
+            ++matches;
+            if (do_limit && matches == matches_limit) {
+                const size_t local_todo = (docid_range.end - docId - 1);
+                const size_t searchedSoFar = (scheduler.total_size(thread_id) - local_todo);
+                IMatchLoopCommunicator::Matches my_matches(matches, searchedSoFar);
+                WaitTimer count_matches_timer(wait_time_s);
+                double match_freq = communicator.estimate_match_frequency(my_matches);
+                const size_t global_todo = scheduler.unassigned_size();
+                count_matches_timer.done();
+                search.reset(matchTools.match_limiter().maybe_limit(SearchIterator::UP(search.release()),
+                                match_freq,
+                                matchParams.numDocs).release());
+                matchTools.match_limiter().updateDocIdSpaceEstimate(searchedSoFar, local_todo + (global_todo / num_threads));
+                LOG(debug, "Limit=%d has been reached at docid=%d which is after %zu docs.",
+                    matches, docId, searchedSoFar);
+                LOG(debug, "SearchIterator after limiter: %s", search->asString().c_str());
+                docId = search->seekFirst(docId + 1);
+            } else if (do_share_work && (idle_observer.get() > 0)) {
+                DocidRange todo(docId + 1, docid_range.end);
+                DocidRange my_work = scheduler.share_range(thread_id, todo);
+                if (my_work.end < todo.end) {
+                    docid_range = my_work;
+                    search->initRange(docid_range.begin, docid_range.end);
+                    docId = search->seekFirst(docid_range.begin);
+                } else {
+                    docId = search->seekNext(docId + 1);
+                }
+            } else {
+                docId = search->seekNext(docId + 1);
+            }
+        }
     }
-    void done() {
-        wait_time.stop();
-        wait_time_s += wait_time.elapsed().sec();
+    if (do_limit && matches < matches_limit) {
+        IMatchLoopCommunicator::Matches my_matches(matches, scheduler.total_size(thread_id));
+        WaitTimer count_matches_timer(wait_time_s);
+        LOG(debug, "Limit not reached (had %d) at docid=%d which is after %zu docs.",
+            matches, scheduler.total_span(thread_id).end, scheduler.total_size(thread_id));
+        communicator.estimate_match_frequency(my_matches); // for other threads
+        matchTools.match_limiter().updateDocIdSpaceEstimate(scheduler.total_size(thread_id), 0);
+        count_matches_timer.done();
     }
-};
+    thread_stats.docsMatched(matches);
+    if (do_rank) {
+        thread_stats.docsRanked(matches);
+    }
+}
+
+template <typename IteratorT, bool do_rank, bool do_limit>
+void
+MatchThread::match_loop_helper_2(MatchTools &matchTools, IteratorT search,
+                                 RankProgram &ranking, HitCollector &hits)
+{
+    if (scheduler.make_idle_observer().is_always_zero()) {
+        match_loop<IteratorT, do_rank, do_limit, false>(matchTools, std::move(search), ranking, hits);
+    } else {
+        match_loop<IteratorT, do_rank, do_limit, true>(matchTools, std::move(search), ranking, hits);
+    }
+}
+
+template <typename IteratorT, bool do_rank>
+void
+MatchThread::match_loop_helper(MatchTools &matchTools, IteratorT search,
+                               RankProgram &ranking, HitCollector &hits)
+{
+    if (matchTools.match_limiter().is_enabled()) {
+        match_loop_helper_2<IteratorT, do_rank, true>(matchTools, std::move(search), ranking, hits);
+    } else {
+        match_loop_helper_2<IteratorT, do_rank, false>(matchTools, std::move(search), ranking, hits);
+    }
+}
+
+using search::fef::TermFieldHandle;
+using search::fef::MatchData;
 
 class FastSeekWrapper
 {
@@ -84,172 +188,31 @@ private:
     std::unique_ptr<OptimizedAndNotForBlackListing> _search;
 };
 
-const double *get_score_feature(const RankProgram &rankProgram) {
-    std::vector<vespalib::string> featureNames;
-    std::vector<search::fef::FeatureHandle> featureHandles;
-    rankProgram.get_seed_handles(featureNames, featureHandles);
-    assert(featureNames.size() == 1);
-    assert(featureHandles.size() == 1);
-    return rankProgram.match_data().resolveFeature(featureHandles.front());
-}
-
-} // namespace proton::matching::<unnamed>
-
-//-----------------------------------------------------------------------------
-
-MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, RankProgram & ranking, HitCollector & hits,
-                              uint32_t num_threads) :
-    matches(0),
-    _matches_limit(matchTools.match_limiter().sample_hits_per_thread(num_threads)),
-    _score_feature(get_score_feature(ranking)),
-    _ranking(ranking),
-    _rankDropLimit(rankDropLimit),
-    _hits(hits),
-    _doom(matchTools.doom()),
-    _limiter(matchTools.match_limiter())
+MatchThread::MatchThread(size_t thread_id_in,
+                         size_t num_threads_in,
+                         const MatchParams &mp,
+                         const MatchToolsFactory &mtf,
+                         IMatchLoopCommunicator &com,
+                         DocidRangeScheduler &sched,
+                         ResultProcessor &rp,
+                         vespalib::DualMergeDirector &md,
+                         uint32_t distributionKey) :
+    thread_id(thread_id_in),
+    num_threads(num_threads_in),
+    matchParams(mp),
+    matchToolsFactory(mtf),
+    communicator(com),
+    scheduler(sched),
+    _distributionKey(distributionKey),
+    resultProcessor(rp),
+    mergeDirector(md),
+    resultContext(),
+    thread_stats(),
+    total_time_s(0.0),
+    match_time_s(0.0),
+    wait_time_s(0.0)
 {
 }
-
-void
-MatchThread::Context::rankHit(uint32_t docId) {
-    _ranking.run(docId);
-    double score = *_score_feature;
-    // convert NaN and Inf scores to -Inf
-    if (__builtin_expect(std::isnan(score) || std::isinf(score), false)) {
-        score = -HUGE_VAL;
-    }
-    // invert test since default drop limit is -NaN (keep all hits)
-    if (!(score <= _rankDropLimit)) {
-        _hits.addHit(docId, score);
-    }
-}
-
-//-----------------------------------------------------------------------------
-
-/**
- * Estimates the match frequency across all threads. Also needs the
- * match phase limiter because it is used to track search coverage
- * statistics.
- **/
-double
-MatchThread::estimate_match_frequency(uint32_t matches, uint32_t local_todo, MaybeMatchPhaseLimiter &limiter)
-{
-    const size_t searchedSoFar = (scheduler.total_size(thread_id) - local_todo);
-    IMatchLoopCommunicator::Matches my_matches(matches, searchedSoFar);
-    WaitTimer count_matches_timer(wait_time_s);
-    double match_freq = communicator.estimate_match_frequency(my_matches);
-    const size_t global_todo = scheduler.unassigned_size();
-    count_matches_timer.done();
-    size_t left = local_todo + (global_todo / num_threads);
-    limiter.updateDocIdSpaceEstimate(searchedSoFar, left);
-    return match_freq;
-}
-
-template <typename IteratorT>
-void
-MatchThread::maybe_limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId)
-{
-    const uint32_t local_todo = (endId - docId - 1);
-    double match_freq = estimate_match_frequency(matches, local_todo, limiter);
-    search = limiter.maybe_limit(std::move(search), match_freq, matchParams.numDocs);
-    LOG(debug, "Limit=%d has been reached at docid=%d which is after %zu docs.",
-               matches, docId, (scheduler.total_size(thread_id) - local_todo));
-    LOG(debug, "SearchIterator after limiter: %s", search->asString().c_str());
-}
-
-template <>
-void
-MatchThread::maybe_limit(MaybeMatchPhaseLimiter &, FastSeekWrapper &, uint32_t, uint32_t, uint32_t)
-{
-    abort(); // We cannot replace the iterator if we inline the loop.
-}
-
-bool
-MatchThread::try_share(DocidRange &docid_range, uint32_t next_docid) {
-    DocidRange todo(next_docid, docid_range.end);
-    DocidRange my_work = scheduler.share_range(thread_id, todo);
-    if (my_work.end < todo.end) {
-        docid_range = my_work;
-        return true;
-    }
-    return false;
-}
-
-template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-void
-MatchThread::inner_match_loop(Context & context, IteratorT & search, DocidRange docid_range)
-{
-    search->initRange(docid_range.begin, docid_range.end);
-    uint32_t docId = search->seekFirst(docid_range.begin);
-    while ((docId < docid_range.end) && !context.doom()) {
-        if (do_rank) {
-            search->unpack(docId);
-            context.rankHit(docId);
-        } else {
-            context.addHit(docId);
-        }
-        context.matches++;
-        if (do_limit && context.isAtLimit()) {
-            maybe_limit(context.limiter(), search, context.matches, docId, docid_range.end);
-            docId = search->seekFirst(docId + 1);
-        } else if (do_share_work && any_idle() && try_share(docid_range, docId + 1)) {
-            search->initRange(docid_range.begin, docid_range.end);
-            docId = search->seekFirst(docid_range.begin);
-        } else {
-            docId = search->seekNext(docId + 1);
-        }
-    }
-}
-
-template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-void
-MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
-                        RankProgram &ranking, HitCollector &hits)
-{
-    Context context(matchParams.rankDropLimit, matchTools, ranking, hits, num_threads);
-    for (DocidRange docid_range = scheduler.first_range(thread_id);
-         !docid_range.empty();
-         docid_range = scheduler.next_range(thread_id))
-    {
-        inner_match_loop<IteratorT, do_rank, do_limit, do_share_work>(context, search, docid_range);
-    }
-    uint32_t matches = context.matches;
-    if (do_limit && context.isBelowLimit()) {
-        LOG(debug, "Limit not reached (had %d) at docid=%d which is after %zu docs.",
-            matches, scheduler.total_span(thread_id).end, scheduler.total_size(thread_id));
-        estimate_match_frequency(matches, 0, context.limiter());
-    }
-    thread_stats.docsMatched(matches);
-    if (do_rank) {
-        thread_stats.docsRanked(matches);
-    }
-}
-
-template <typename IteratorT, bool do_rank, bool do_limit>
-void
-MatchThread::match_loop_helper_2(MatchTools &matchTools, IteratorT search,
-                                 RankProgram &ranking, HitCollector &hits)
-{
-    if (idle_observer.is_always_zero()) {
-        match_loop<IteratorT, do_rank, do_limit, false>(matchTools, std::move(search), ranking, hits);
-    } else {
-        match_loop<IteratorT, do_rank, do_limit, true>(matchTools, std::move(search), ranking, hits);
-    }
-}
-
-template <typename IteratorT, bool do_rank>
-void
-MatchThread::match_loop_helper(MatchTools &matchTools, IteratorT search,
-                               RankProgram &ranking, HitCollector &hits)
-{
-    if (matchTools.match_limiter().is_enabled()) {
-        match_loop_helper_2<IteratorT, do_rank, true>(matchTools, std::move(search), ranking, hits);
-    } else {
-        match_loop_helper_2<IteratorT, do_rank, false>(matchTools, std::move(search), ranking, hits);
-    }
-}
-
-//-----------------------------------------------------------------------------
 
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &matchTools)
@@ -265,9 +228,9 @@ MatchThread::findMatches(MatchTools &matchTools)
         match_loop_helper<SearchIterator::UP, true>(matchTools, std::move(search), *ranking, hits);
     } else {
         if ((dynamic_cast<const OptimizedAndNotForBlackListing *>(search.get()) != 0) &&
-            ! matchTools.match_limiter().is_enabled()) // We cannot replace the iterator if we inline the loop.
+            ! matchTools.match_limiter().is_enabled())  // We cannot replace the iterator if we inline the loop.
         {
-            match_loop_helper_2<FastSeekWrapper, false, false>(matchTools, FastSeekWrapper(std::move(search)), *ranking, hits);
+            match_loop_helper<FastSeekWrapper, false>(matchTools, FastSeekWrapper(std::move(search)), *ranking, hits);
         } else {
             match_loop_helper<SearchIterator::UP, false>(matchTools, std::move(search), *ranking, hits);
         }
@@ -353,35 +316,6 @@ MatchThread::processResult(const Doom & doom,
     if (hasGrouping) {
         context.grouping->setDistributionKey(_distributionKey);
     }
-}
-
-//-----------------------------------------------------------------------------
-
-MatchThread::MatchThread(size_t thread_id_in,
-                         size_t num_threads_in,
-                         const MatchParams &mp,
-                         const MatchToolsFactory &mtf,
-                         IMatchLoopCommunicator &com,
-                         DocidRangeScheduler &sched,
-                         ResultProcessor &rp,
-                         vespalib::DualMergeDirector &md,
-                         uint32_t distributionKey) :
-    thread_id(thread_id_in),
-    num_threads(num_threads_in),
-    matchParams(mp),
-    matchToolsFactory(mtf),
-    communicator(com),
-    scheduler(sched),
-    idle_observer(scheduler.make_idle_observer()),
-    _distributionKey(distributionKey),
-    resultProcessor(rp),
-    mergeDirector(md),
-    resultContext(),
-    thread_stats(),
-    total_time_s(0.0),
-    match_time_s(0.0),
-    wait_time_s(0.0)
-{
 }
 
 void

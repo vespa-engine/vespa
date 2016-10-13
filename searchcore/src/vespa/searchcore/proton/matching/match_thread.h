@@ -24,12 +24,11 @@ namespace matching {
 class MatchThread : public vespalib::Runnable
 {
 public:
-    using UP = std::unique_ptr<MatchThread>;
-    using SearchIterator = search::queryeval::SearchIterator;
-    using MatchData = search::fef::MatchData;
-    using HitCollector = search::queryeval::HitCollector;
-    using RankProgram = search::fef::RankProgram;
-    using Doom = vespalib::Doom;
+    typedef std::unique_ptr<MatchThread> UP;
+    typedef search::queryeval::SearchIterator SearchIterator;
+    typedef search::fef::MatchData MatchData;
+    typedef search::queryeval::HitCollector HitCollector;
+    typedef search::fef::RankProgram RankProgram;
 
 private:
     size_t                        thread_id;
@@ -38,7 +37,6 @@ private:
     const MatchToolsFactory      &matchToolsFactory;
     IMatchLoopCommunicator       &communicator;
     DocidRangeScheduler          &scheduler;
-    IdleObserver                  idle_observer;
     uint32_t                      _distributionKey;
     ResultProcessor              &resultProcessor;
     vespalib::DualMergeDirector  &mergeDirector;
@@ -48,50 +46,38 @@ private:
     double                        match_time_s;
     double                        wait_time_s;
 
-    class Context {
-    public:
-        Context(double rankDropLimit, MatchTools &matchTools, RankProgram & ranking, HitCollector & hits,
-                uint32_t num_threads) __attribute__((noinline));
-        void rankHit(uint32_t docId);
-        void addHit(uint32_t docId) { _hits.addHit(docId, 0.0); }
-        bool isBelowLimit() const { return matches < _matches_limit; }
-        bool    isAtLimit() const { return matches == _matches_limit; }
-        bool         doom() const { return _doom.doom(); }
-        MaybeMatchPhaseLimiter & limiter() { return _limiter; }
-        uint32_t                  matches;
-    private:
-        uint32_t                  _matches_limit;
-        const double            * _score_feature;
-        RankProgram             & _ranking;
-        double                    _rankDropLimit;
-        HitCollector            & _hits;
-        const Doom              & _doom;
-        MaybeMatchPhaseLimiter  & _limiter;
+    struct WaitTimer {
+        double &wait_time_s;
+        fastos::StopWatch wait_time;
+        WaitTimer(double &wait_time_s_in)
+            : wait_time_s(wait_time_s_in), wait_time()
+        {
+            wait_time.start();
+        }
+        void done() {
+            wait_time.stop();
+            wait_time_s += wait_time.elapsed().sec();
+        }
     };
 
-    double estimate_match_frequency(uint32_t matches, uint32_t local_todo, MaybeMatchPhaseLimiter & limiter) __attribute__((noinline));
-
-    template <typename IteratorT>
-    void maybe_limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));
-
-    bool any_idle() const { return (idle_observer.get() > 0); }
-    bool try_share(DocidRange &docid_range, uint32_t next_docid) __attribute__((noinline));
-
     template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    void inner_match_loop(Context & params, IteratorT & search, DocidRange docid_range) __attribute__((noinline));
-
-    template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    void match_loop(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits) __attribute__((noinline));
+    void match_loop(MatchTools &matchTools, IteratorT search,
+                    RankProgram &ranking, HitCollector &hits) __attribute__((noinline));
 
     template <typename IteratorT, bool do_rank, bool do_limit>
-    void match_loop_helper_2(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
+    void match_loop_helper_2(MatchTools &matchTools, IteratorT search,
+                             RankProgram &ranking, HitCollector &hits);
 
     template <typename IteratorT, bool do_rank>
-    void match_loop_helper(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
+    void match_loop_helper(MatchTools &matchTools, IteratorT search,
+                           RankProgram &ranking, HitCollector &hits);
 
     search::ResultSet::UP findMatches(MatchTools &matchTools);
 
-    void processResult(const Doom & doom, search::ResultSet::UP result, ResultProcessor::Context &context);
+    void processResult(const vespalib::Doom & doom,
+                       search::ResultSet::UP result,
+                       ResultProcessor::Context &context);
+
 public:
     MatchThread(size_t thread_id_in,
                 size_t num_threads_in,
@@ -109,3 +95,4 @@ public:
 
 } // namespace proton::matching
 } // namespace proton
+
