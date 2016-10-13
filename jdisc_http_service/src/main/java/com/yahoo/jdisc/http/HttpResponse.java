@@ -23,10 +23,8 @@ import java.util.List;
 public class HttpResponse extends Response implements ServletOrJdiscHttpResponse {
 
     private final HeaderFields trailers = new HeaderFields();
-    private final StringBuffer accessLogExtra = new StringBuffer();
     private boolean chunkedEncodingEnabled = true;
     private String message;
-    private final Request request;
 
     public interface Status extends Response.Status {
 
@@ -37,7 +35,6 @@ public class HttpResponse extends Response implements ServletOrJdiscHttpResponse
     protected HttpResponse(Request request, int status, String message, Throwable error) {
         super(status, error);
         this.message = message;
-        this.request = request;
     }
 
     public boolean isChunkedEncodingEnabled() {

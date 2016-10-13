@@ -11,6 +11,7 @@ import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.net.HostName;
 import com.yahoo.processing.handler.ResponseStatus;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -33,6 +34,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -49,6 +52,9 @@ import static org.junit.Assert.assertTrue;
 public class SearchHandlerTestCase {
 
     private static final String testDir = "src/test/java/com/yahoo/search/handler/test/config";
+    private static final String myHostnameHeader = "my-hostname-header";
+    private static final String selfHostname = HostName.getLocalhost();
+
     private static String tempDir = "";
     private static String configId = null;
 
@@ -102,13 +108,6 @@ public class SearchHandlerTestCase {
                      "</result>\n",
                      driver.sendRequest("http://localhost?format=xml").readAll()
             );
-    }
-
-    private String render(AsyncHttpResponse response) throws Exception {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        response.render(stream, null, null);
-        response.complete();
-        return stream.toString();
     }
 
     @Test
@@ -314,6 +313,7 @@ public class SearchHandlerTestCase {
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
         assertEquals(expected, response.readAll());
         assertEquals(200, response.getStatus());
+        assertEquals(selfHostname, response.getResponse().headers().get(myHostnameHeader).get(0));
     }
 
     @Test

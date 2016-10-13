@@ -35,7 +35,6 @@ public class SearchChainConfigurerTestCase {
 
     private static final String testDir = "src/test/java/com/yahoo/search/searchchain/config/test/";
 
-
     public void cleanup(File cfgDir) {
         if (cfgDir.exists()) {
             for (File f : cfgDir.listFiles()) {
@@ -137,6 +136,7 @@ public class SearchChainConfigurerTestCase {
         copyFile(testDir + "index-info.cfg", cfgDir +  "/index-info.cfg");
         copyFile(testDir + "specialtokens.cfg", cfgDir +  "/specialtokens.cfg");
         copyFile(testDir + "three-searchers.cfg", cfgDir +  "/chains.cfg");
+        copyFile(testDir + "container-http.cfg", cfgDir +  "/container-http.cfg");
         createComponentsConfig(testDir + "three-searchers.cfg", testDir + "handlers.cfg", cfgDir +  "/components.cfg");
         printFile(new File(cfgDir + "/int.cfg"), "intVal 16\n");
         printFile(new File(cfgDir + "/string.cfg"), "stringVal \"testSearcherConfigUpdate\"\n");
@@ -189,6 +189,7 @@ public class SearchChainConfigurerTestCase {
         copyFile(testDir + "index-info.cfg", cfgDir +  "/index-info.cfg");
         copyFile(testDir + "specialtokens.cfg", cfgDir +  "/specialtokens.cfg");
         copyFile(testDir + "chainsConfigUpdate_1.cfg", cfgDir +  "/chains.cfg");
+        copyFile(testDir + "container-http.cfg", cfgDir +  "/container-http.cfg");
         createComponentsConfig(testDir + "chainsConfigUpdate_1.cfg", testDir + "handlers.cfg", cfgDir +  "/components.cfg");
 
         HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + cfgDir);
