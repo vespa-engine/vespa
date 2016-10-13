@@ -37,4 +37,5 @@ class AbstractMonitoringSystem implements MonitoringSystem {
     public String getClustername() {
         return clustername;
     }
+
 }
