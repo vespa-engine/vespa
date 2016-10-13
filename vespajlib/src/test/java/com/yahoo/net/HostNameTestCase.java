@@ -11,7 +11,7 @@ import static org.junit.Assert.assertFalse;
 public class HostNameTestCase {
     @Test
     public void testHostnameIsFound() {
-        assertFalse(HostName.getLocalhost().isEmpty());
+        assertFalse(HostName.getHostName().isEmpty());
     }
 
     @Test

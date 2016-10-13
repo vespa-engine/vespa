@@ -91,7 +91,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
             nodesByHostBuilder.put(node.hostname(), node);
         this.nodesByHost = nodesByHostBuilder.build();
 
-        this.directDispatchTarget = findDirectDispatchTarget(HostName.getLocalhost(), size, containerClusterSize,
+        this.directDispatchTarget = findDirectDispatchTarget(HostName.getHostName(), size, containerClusterSize,
                                                              nodesByHost, groups);
 
         // Set up monitoring of the fs4 interface of the nodes

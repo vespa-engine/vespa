@@ -94,7 +94,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         this.dispatchBackend = dispatchBackend;
         this.fs4ResourcePool = fs4ResourcePool;
         this.dispatcher = dispatcher;
-        this.selfHostname = HostName.getLocalhost();
+        this.selfHostname = HostName.getHostName();
     }
 
     private static SimpleDateFormat isoDateFormat;
