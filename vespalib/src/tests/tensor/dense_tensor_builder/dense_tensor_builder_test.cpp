@@ -9,14 +9,15 @@ using namespace vespalib::tensor;
 using vespalib::IllegalArgumentException;
 using Builder = DenseTensorBuilder;
 using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
 
 void
-assertTensor(const DenseTensor::DimensionsMeta &expDims,
+assertTensor(const std::vector<ValueType::Dimension> &expDims,
              const DenseTensor::Cells &expCells,
              const Tensor &tensor)
 {
     const DenseTensor &realTensor = dynamic_cast<const DenseTensor &>(tensor);
-    EXPECT_EQUAL(expDims, realTensor.dimensionsMeta());
+    EXPECT_EQUAL(ValueType::tensor_type(expDims), realTensor.type());
     EXPECT_EQUAL(expCells, realTensor.cells());
 }
 

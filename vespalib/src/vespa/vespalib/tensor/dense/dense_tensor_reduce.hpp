@@ -8,31 +8,15 @@ namespace tensor {
 namespace dense {
 
 using Cells = DenseTensor::Cells;
-using DimensionsMeta = DenseTensor::DimensionsMeta;
 
 namespace {
 
-DimensionsMeta
-removeDimension(const DimensionsMeta &dimensionsMeta,
-                const string &dimensionToRemove)
-{
-    DimensionsMeta result = dimensionsMeta;
-    auto itr = std::lower_bound(result.begin(), result.end(), dimensionToRemove,
-                                [](const auto &dimMeta, const auto &dimension_in) {
-                                    return dimMeta.dimension() < dimension_in;
-                                });
-    if ((itr != result.end()) && (itr->dimension() == dimensionToRemove)) {
-        result.erase(itr);
-    }
-    return result;
-}
-
 size_t
-calcCellsSize(const DimensionsMeta &dimensionsMeta)
+calcCellsSize(const eval::ValueType &type)
 {
     size_t cellsSize = 1;
-    for (const auto &dimMeta : dimensionsMeta) {
-        cellsSize *= dimMeta.size();
+    for (const auto &dim : type.dimensions()) {
+        cellsSize *= dim.size;
     }
     return cellsSize;
 }
@@ -41,41 +25,42 @@ calcCellsSize(const DimensionsMeta &dimensionsMeta)
 class DimensionReducer
 {
 private:
-    DimensionsMeta _dimensionsResult;
+    eval::ValueType _type;
     Cells _cellsResult;
     size_t _innerDimSize;
     size_t _sumDimSize;
     size_t _outerDimSize;
 
-    void setup(const DimensionsMeta &dimensions,
+    void setup(const eval::ValueType &oldType,
                const vespalib::string &dimensionToRemove) {
-        auto itr = std::lower_bound(dimensions.cbegin(), dimensions.cend(), dimensionToRemove,
-                                    [](const auto &dimMeta, const auto &dimension) {
-                                        return dimMeta.dimension() < dimension;
-                                    });
-        if ((itr != dimensions.end()) && (itr->dimension() == dimensionToRemove)) {
-            for (auto outerItr = dimensions.cbegin(); outerItr != itr; ++outerItr) {
-                _outerDimSize *= outerItr->size();
+        auto itr = std::lower_bound(oldType.dimensions().cbegin(),
+                                    oldType.dimensions().cend(),
+                                    dimensionToRemove,
+                                    [](const auto &dim, const auto &dimension)
+                                    { return dim.name < dimension; });
+        if ((itr != oldType.dimensions().end()) && (itr->name == dimensionToRemove)) {
+            for (auto outerItr = oldType.dimensions().cbegin(); outerItr != itr; ++outerItr) {
+                _outerDimSize *= outerItr->size;
             }
-            _sumDimSize = itr->size();
-            for (++itr; itr != dimensions.cend(); ++itr) {
-                _innerDimSize *= itr->size();
+            _sumDimSize = itr->size;
+            for (++itr; itr != oldType.dimensions().cend(); ++itr) {
+                _innerDimSize *= itr->size;
             }
         } else {
-            _outerDimSize = calcCellsSize(dimensions);
+            _outerDimSize = calcCellsSize(oldType);
         }
     }
 
 public:
-    DimensionReducer(const DimensionsMeta &dimensions,
+    DimensionReducer(const eval::ValueType &oldType,
                      const string &dimensionToRemove)
-        : _dimensionsResult(removeDimension(dimensions, dimensionToRemove)),
-          _cellsResult(calcCellsSize(_dimensionsResult)),
+        : _type(oldType.remove_dimensions({ dimensionToRemove })),
+          _cellsResult(calcCellsSize(_type)),
           _innerDimSize(1),
           _sumDimSize(1),
           _outerDimSize(1)
     {
-        setup(dimensions, dimensionToRemove);
+        setup(oldType, dimensionToRemove);
     }
 
     template <typename Function>
@@ -101,7 +86,7 @@ public:
         }
         assert(itr_out == _cellsResult.end());
         assert(itr_in == cellsIn.cend());
-        return std::make_unique<DenseTensor>(std::move(_dimensionsResult), std::move(_cellsResult));
+        return std::make_unique<DenseTensor>(std::move(_type), std::move(_cellsResult));
     }
 };
 
@@ -109,7 +94,7 @@ template <typename Function>
 DenseTensor::UP
 reduce(const DenseTensor &tensor, const vespalib::string &dimensionToRemove, Function &&func)
 {
-    DimensionReducer reducer(tensor.dimensionsMeta(), dimensionToRemove);
+    DimensionReducer reducer(tensor.type(), dimensionToRemove);
     return reducer.reduceCells(tensor.cells(), func);
 }
 

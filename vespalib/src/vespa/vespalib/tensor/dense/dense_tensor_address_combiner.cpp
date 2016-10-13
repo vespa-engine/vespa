@@ -9,8 +9,6 @@ namespace vespalib {
 namespace tensor {
 
 using Address = DenseTensorAddressCombiner::Address;
-using DimensionMeta = DenseTensor::DimensionMeta;
-using DimensionsMeta = DenseTensorAddressCombiner::DimensionsMeta;
 
 namespace {
 
@@ -35,19 +33,19 @@ public:
 
 }
 
-DenseTensorAddressCombiner::DenseTensorAddressCombiner(const DimensionsMeta &lhs,
-                                                       const DimensionsMeta &rhs)
+DenseTensorAddressCombiner::DenseTensorAddressCombiner(const eval::ValueType &lhs,
+                                                       const eval::ValueType &rhs)
     : _ops(),
       _combinedAddress()
 {
-    auto rhsItr = rhs.cbegin();
-    auto rhsItrEnd = rhs.cend();
-    for (const auto &lhsDim : lhs) {
-        while ((rhsItr != rhsItrEnd) && (rhsItr->dimension() < lhsDim.dimension())) {
+    auto rhsItr = rhs.dimensions().cbegin();
+    auto rhsItrEnd = rhs.dimensions().cend();
+    for (const auto &lhsDim : lhs.dimensions()) {
+        while ((rhsItr != rhsItrEnd) && (rhsItr->name < lhsDim.name)) {
             _ops.push_back(AddressOp::RHS);
             ++rhsItr;
         }
-        if ((rhsItr != rhsItrEnd) && (rhsItr->dimension() == lhsDim.dimension())) {
+        if ((rhsItr != rhsItrEnd) && (rhsItr->name == lhsDim.name)) {
             _ops.push_back(AddressOp::BOTH);
             ++rhsItr;
         } else {
@@ -89,31 +87,36 @@ DenseTensorAddressCombiner::combine(const CellsIterator &lhsItr,
     return true;
 }
 
-DimensionsMeta
-DenseTensorAddressCombiner::combineDimensions(const DimensionsMeta &lhs, const DimensionsMeta &rhs)
+eval::ValueType
+DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs,
+                                              const eval::ValueType &rhs)
 {
     // NOTE: both lhs and rhs are sorted according to dimension names.
-    DimensionsMeta result;
-    auto lhsItr = lhs.cbegin();
-    auto rhsItr = rhs.cbegin();
-    while (lhsItr != lhs.end() && rhsItr != rhs.end()) {
-        if (lhsItr->dimension() == rhsItr->dimension()) {
-            result.emplace_back(DimensionMeta(lhsItr->dimension(), std::min(lhsItr->size(), rhsItr->size())));
+    std::vector<eval::ValueType::Dimension> result;
+    auto lhsItr = lhs.dimensions().cbegin();
+    auto rhsItr = rhs.dimensions().cbegin();
+    while (lhsItr != lhs.dimensions().end() &&
+           rhsItr != rhs.dimensions().end()) {
+        if (lhsItr->name == rhsItr->name) {
+            result.emplace_back(lhsItr->name,
+                                std::min(lhsItr->size, rhsItr->size));
             ++lhsItr;
             ++rhsItr;
-        } else if (lhsItr->dimension() < rhsItr->dimension()) {
+        } else if (lhsItr->name < rhsItr->name) {
             result.emplace_back(*lhsItr++);
         } else {
             result.emplace_back(*rhsItr++);
         }
     }
-    while (lhsItr != lhs.end()) {
+    while (lhsItr != lhs.dimensions().end()) {
         result.emplace_back(*lhsItr++);
     }
-    while (rhsItr != rhs.end()) {
+    while (rhsItr != rhs.dimensions().end()) {
         result.emplace_back(*rhsItr++);
     }
-    return result;
+    return (result.empty() ?
+            eval::ValueType::double_type() :
+            eval::ValueType::tensor_type(result));
 }
 
 } // namespace vespalib::tensor

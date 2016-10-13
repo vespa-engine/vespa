@@ -20,28 +20,28 @@ namespace tensor {
 namespace {
 
 string
-dimensionsMetaAsString(const DenseTensor::DimensionsMeta &dimensionsMeta)
+dimensionsAsString(const eval::ValueType &type)
 {
     std::ostringstream oss;
     bool first = true;
     oss << "[";
-    for (const auto &dimMeta : dimensionsMeta) {
+    for (const auto &dim : type.dimensions()) {
         if (!first) {
             oss << ",";
         }
         first = false;
-        oss << dimMeta;
+        oss << dim.name << ":" << dim.size;
     }
     oss << "]";
     return oss.str();
 }
 
 size_t
-calcCellsSize(const DenseTensor::DimensionsMeta &dimensionsMeta)
+calcCellsSize(const eval::ValueType &type)
 {
     size_t cellsSize = 1;
-    for (const auto &dimMeta : dimensionsMeta) {
-        cellsSize *= dimMeta.size();
+    for (const auto &dim : type.dimensions()) {
+        cellsSize *= dim.size;
     }
     return cellsSize;
 }
@@ -50,7 +50,7 @@ calcCellsSize(const DenseTensor::DimensionsMeta &dimensionsMeta)
 void
 checkCellsSize(const DenseTensor &arg)
 {
-    auto cellsSize = calcCellsSize(arg.dimensionsMeta());
+    auto cellsSize = calcCellsSize(arg.type());
     if (arg.cells().size() != cellsSize) {
         throw IllegalStateException(make_string("wrong cell size, "
                                                 "expected=%zu, "
@@ -64,14 +64,14 @@ void
 checkDimensions(const DenseTensor &lhs, const DenseTensor &rhs,
                 vespalib::stringref operation)
 {
-    if (lhs.dimensionsMeta() != rhs.dimensionsMeta()) {
-        throw IllegalStateException(make_string("mismatching dimensions meta for "
+    if (lhs.type() != rhs.type()) {
+        throw IllegalStateException(make_string("mismatching dimensions for "
                                                 "dense tensor %s, "
-                                                "lhs dimensions meta = '%s', "
-                                                "rhs dimensions meta = '%s'",
+                                                "lhs dimensions = '%s', "
+                                                "rhs dimensions = '%s'",
                                                 operation.c_str(),
-                                                dimensionsMetaAsString(lhs.dimensionsMeta()).c_str(),
-                                                dimensionsMetaAsString(rhs.dimensionsMeta()).c_str()));
+                                                dimensionsAsString(lhs.type()).c_str(),
+                                                dimensionsAsString(rhs.type()).c_str()));
     }
     checkCellsSize(lhs);
     checkCellsSize(rhs);
@@ -87,7 +87,7 @@ checkDimensions(const DenseTensor &lhs, const DenseTensor &rhs,
 template <typename Function>
 Tensor::UP
 joinDenseTensors(const DenseTensor &lhs, const DenseTensor &rhs,
-                     Function &&func)
+                 Function &&func)
 {
     DenseTensor::Cells cells;
     cells.reserve(lhs.cells().size());
@@ -97,40 +97,8 @@ joinDenseTensors(const DenseTensor &lhs, const DenseTensor &rhs,
         ++rhsCellItr;
     }
     assert(rhsCellItr == rhs.cells().cend());
-    return std::make_unique<DenseTensor>(lhs.dimensionsMeta(),
+    return std::make_unique<DenseTensor>(lhs.type(),
                                          std::move(cells));
-}
-
-/*
- * Join the cells of two tensors, where the rhs values are treated as negated values.
- * The given function is used to calculate the resulting cell value for overlapping cells.
- */
-template <typename Function>
-Tensor::UP
-joinDenseTensorsNegated(const DenseTensor &lhs,
-                        const DenseTensor &rhs,
-                        Function &&func)
-{
-    DenseTensor::Cells cells;
-    cells.reserve(lhs.cells().size());
-    auto rhsCellItr = rhs.cells().cbegin();
-    for (const auto &lhsCell : lhs.cells()) {
-        cells.push_back(func(lhsCell, - *rhsCellItr));
-        ++rhsCellItr;
-    }
-    assert(rhsCellItr == rhs.cells().cend());
-    return std::make_unique<DenseTensor>(lhs.dimensionsMeta(),
-                                         std::move(cells));
-}
-
-std::vector<vespalib::string>
-getDimensions(const DenseTensor &tensor)
-{
-    std::vector<vespalib::string> dimensions;
-    for (const auto &dimMeta : tensor.dimensionsMeta()) {
-        dimensions.emplace_back(dimMeta.dimension());
-    }
-    return dimensions;
 }
 
 }
@@ -142,7 +110,7 @@ DenseTensor::CellsIterator::next()
     ++_cellIdx;
     if (valid()) {
         for (int64_t i = (_address.size() - 1); i >= 0; --i) {
-            _address[i] = (_address[i] + 1) % _dimensionsMeta[i].size();
+            _address[i] = (_address[i] + 1) % _type.dimensions()[i].size;
             if (_address[i] != 0) {
                 // Outer dimension labels can only be increased when this label wraps around.
                 break;
@@ -152,31 +120,31 @@ DenseTensor::CellsIterator::next()
 }
 
 DenseTensor::DenseTensor()
-    : _dimensionsMeta(),
+    : _type(eval::ValueType::double_type()),
       _cells(1)
 {
 }
 
-DenseTensor::DenseTensor(const DimensionsMeta &dimensionsMeta_in,
+DenseTensor::DenseTensor(const eval::ValueType &type_in,
                          const Cells &cells_in)
-    : _dimensionsMeta(dimensionsMeta_in),
+    : _type(type_in),
       _cells(cells_in)
 {
     checkCellsSize(*this);
 }
 
 
-DenseTensor::DenseTensor(const DimensionsMeta &dimensionsMeta_in,
+DenseTensor::DenseTensor(const eval::ValueType &type_in,
                          Cells &&cells_in)
-    : _dimensionsMeta(dimensionsMeta_in),
+    : _type(type_in),
       _cells(std::move(cells_in))
 {
     checkCellsSize(*this);
 }
 
-DenseTensor::DenseTensor(DimensionsMeta &&dimensionsMeta_in,
+DenseTensor::DenseTensor(eval::ValueType &&type_in,
                          Cells &&cells_in)
-    : _dimensionsMeta(std::move(dimensionsMeta_in)),
+    : _type(std::move(type_in)),
       _cells(std::move(cells_in))
 {
     checkCellsSize(*this);
@@ -185,23 +153,14 @@ DenseTensor::DenseTensor(DimensionsMeta &&dimensionsMeta_in,
 bool
 DenseTensor::operator==(const DenseTensor &rhs) const
 {
-    return (_dimensionsMeta == rhs._dimensionsMeta) &&
+    return (_type == rhs._type) &&
             (_cells == rhs._cells);
 }
 
 eval::ValueType
 DenseTensor::getType() const
 {
-    if (_dimensionsMeta.empty()) {
-        return eval::ValueType::double_type();
-    }
-    std::vector<eval::ValueType::Dimension> dimensions;
-    dimensions.reserve(_dimensionsMeta.size());
-    for (const auto &dimensionMeta : _dimensionsMeta) {
-        dimensions.emplace_back(dimensionMeta.dimension(),
-                                dimensionMeta.size());
-    }
-    return eval::ValueType::tensor_type(dimensions);
+    return _type;
 }
 
 double
@@ -296,7 +255,7 @@ DenseTensor::apply(const CellFunction &func) const
         ++itr;
     }
     assert(itr == newCells.end());
-    return std::make_unique<DenseTensor>(_dimensionsMeta,
+    return std::make_unique<DenseTensor>(_type,
                                          std::move(newCells));
 }
 
@@ -329,7 +288,7 @@ DenseTensor::toString() const
 Tensor::UP
 DenseTensor::clone() const
 {
-    return std::make_unique<DenseTensor>(_dimensionsMeta, _cells);
+    return std::make_unique<DenseTensor>(_type, _cells);
 }
 
 namespace {
@@ -338,8 +297,8 @@ void
 buildAddress(const DenseTensor::CellsIterator &itr, TensorSpec::Address &address)
 {
     auto addressItr = itr.address().begin();
-    for (const auto &dim : itr.dimensions()) {
-        address.emplace(std::make_pair(dim.dimension(), TensorSpec::Label(*addressItr++)));
+    for (const auto &dim : itr.type().dimensions()) {
+        address.emplace(std::make_pair(dim.name, TensorSpec::Label(*addressItr++)));
     }
     assert(addressItr == itr.address().end());
 }
@@ -351,7 +310,7 @@ DenseTensor::toSpec() const
 {
     TensorSpec result(getType().to_spec());
     TensorSpec::Address address;
-    for (CellsIterator itr(_dimensionsMeta, _cells); itr.valid(); itr.next()) {
+    for (CellsIterator itr(_type, _cells); itr.valid(); itr.next()) {
         buildAddress(itr, address);
         result.add(address, itr.cell());
         address.clear();
@@ -365,11 +324,11 @@ DenseTensor::print(std::ostream &out) const
     // TODO (geirst): print on common format.
     out << "[ ";
     bool first = true;
-    for (const auto &dimMeta : _dimensionsMeta) {
+    for (const auto &dim : _type.dimensions()) {
         if (!first) {
             out << ", ";
         }
-        out << dimMeta;
+        out << dim.name << ":" << dim.size;
         first = false;
     }
     out << " ] { ";
@@ -387,29 +346,22 @@ DenseTensor::print(std::ostream &out) const
 void
 DenseTensor::accept(TensorVisitor &visitor) const
 {
-    DenseTensor::CellsIterator iterator(_dimensionsMeta, _cells);
+    DenseTensor::CellsIterator iterator(_type, _cells);
     TensorAddressBuilder addressBuilder;
     TensorAddress address;
     vespalib::string label;
     while (iterator.valid()) {
         addressBuilder.clear();
         auto rawIndex = iterator.address().begin();
-        for (const auto &dimension : _dimensionsMeta) {
+        for (const auto &dimension : _type.dimensions()) {
             label = vespalib::make_string("%zu", *rawIndex);
-            addressBuilder.add(dimension.dimension(), label);
+            addressBuilder.add(dimension.name, label);
             ++rawIndex;
         }
         address = addressBuilder.build();
         visitor.visit(address, iterator.cell());
         iterator.next();
     }
-}
-
-std::ostream &
-operator<<(std::ostream &out, const DenseTensor::DimensionMeta &value)
-{
-    out << value.dimension() << ":" << value.size();
-    return out;
 }
 
 Tensor::UP
@@ -429,7 +381,7 @@ DenseTensor::reduce(const eval::BinaryOperation &op,
                     const std::vector<vespalib::string> &dimensions) const
 {
     return dense::reduce(*this,
-                         (dimensions.empty() ? getDimensions(*this) : dimensions),
+                         (dimensions.empty() ? _type.dimension_names() : dimensions),
                          [&op](double lhsValue, double rhsValue)
                          { return op.eval(lhsValue, rhsValue); });
 }

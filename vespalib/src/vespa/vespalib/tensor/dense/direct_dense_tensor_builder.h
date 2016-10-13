@@ -13,16 +13,15 @@ namespace tensor {
 class DirectDenseTensorBuilder
 {
 public:
-    using DimensionsMeta = DenseTensor::DimensionsMeta;
     using Cells = DenseTensor::Cells;
     using Address = std::vector<size_t>;
 
 private:
-    DimensionsMeta _dimensionsMeta;
+    eval::ValueType _type;
     Cells _cells;
 
 public:
-    DirectDenseTensorBuilder(const DimensionsMeta &dimensionsMeta);
+    DirectDenseTensorBuilder(const eval::ValueType &type_in);
     void insertCell(const Address &address, double cellValue);
     Tensor::UP build();
 };
