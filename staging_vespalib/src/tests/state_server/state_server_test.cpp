@@ -322,13 +322,20 @@ struct EchoConsumer : MetricsProducer {
     }
 };
 
-TEST_FFFF("require that empty metrics consumer defaults to 'statereporter'",
+TEST_FFFF("require that empty v1 metrics consumer defaults to 'statereporter'",
           SimpleHealthProducer(), EchoConsumer(), SimpleComponentConfigProducer(),
           StateApi(f1, f2, f3))
 {
     std::map<vespalib::string,vespalib::string> my_params;
     EXPECT_EQUAL("{\"status\":{\"code\":\"up\"},\"metrics\":[\"statereporter\"]}", f4.get(host_tag, metrics_path, empty_params));
-    EXPECT_EQUAL("[\"statereporter\"]", f4.get(host_tag, total_metrics_path, empty_params));
+}
+
+TEST_FFFF("require that empty total metrics consumer defaults to the empty string",
+          SimpleHealthProducer(), EchoConsumer(), SimpleComponentConfigProducer(),
+          StateApi(f1, f2, f3))
+{
+    std::map<vespalib::string,vespalib::string> my_params;
+    EXPECT_EQUAL("[\"\"]", f4.get(host_tag, total_metrics_path, empty_params));
 }
 
 TEST_FFFF("require that metrics consumer is passed correctly",

@@ -53,12 +53,12 @@ void build_health_status(JSONStringer &json, const HealthProducer &healthProduce
     json.endObject();
 }
 
-vespalib::string get_consumer(const std::map<vespalib::string,vespalib::string> &params) {
+vespalib::string get_consumer(const std::map<vespalib::string,vespalib::string> &params,
+                              vespalib::stringref default_consumer)
+{
     auto consumer_lookup = params.find("consumer");
     if (consumer_lookup == params.end()) {
-        // Using a 'statereporter' consumer removes many uninteresting per-thread
-        // metrics but retains their aggregates.
-        return "statereporter";
+        return default_consumer;
     }
     return consumer_lookup->second;
 }
@@ -144,11 +144,13 @@ StateApi::get(const vespalib::string &host,
     } else if (path == "/state/v1/health") {
         return respond_health(_healthProducer);
     } else if (path == "/state/v1/metrics") {
-        return respond_metrics(get_consumer(params), _healthProducer, _metricsProducer);
+        // Using a 'statereporter' consumer by default removes many uninteresting per-thread
+        // metrics but retains their aggregates.
+        return respond_metrics(get_consumer(params, "statereporter"), _healthProducer, _metricsProducer);
     } else if (path == "/state/v1/config") {
         return respond_config(_componentConfigProducer);
     } else if (path == "/metrics/total") {
-        return _metricsProducer.getTotalMetrics(get_consumer(params));
+        return _metricsProducer.getTotalMetrics(get_consumer(params, ""));
     } else {
         return _handler_repo.get(host, path, params);
     }
