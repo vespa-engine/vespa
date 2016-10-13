@@ -46,13 +46,9 @@ public class PacketDecoder {
              case 205:
                  return DocsumPacket.create().decode(buffer);
 
-             case 202:
-             case 208:
-             case 214:
              case 217:
                  return QueryResultPacket.create().decode(buffer);
 
-             case 210:
              case 221:
                  return PongPacket.create().decode(buffer);
 
