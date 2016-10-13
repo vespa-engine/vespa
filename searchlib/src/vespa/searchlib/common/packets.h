@@ -374,20 +374,6 @@ public:
 
 //==========================================================================
 
-class FS4Packet_CLEARCACHES : public FS4Packet
-{
-public:
-    FS4Packet_CLEARCACHES();
-    ~FS4Packet_CLEARCACHES();
-    uint32_t GetPCODE() override { return PCODE_CLEARCACHES; }
-    uint32_t GetLength() override;
-    void Encode(FNET_DataBuffer *dst) override;
-    bool Decode(FNET_DataBuffer *src, uint32_t len) override;
-    vespalib::string toString(uint32_t indent) const override;
-};
-
-//==========================================================================
-
 class FS4Packet_QUERYRESULTX : public FS4Packet
 {
 private:

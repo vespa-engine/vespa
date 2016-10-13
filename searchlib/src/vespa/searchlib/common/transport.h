@@ -228,8 +228,7 @@ enum packetcode {
                              *	total number of partitions,
                              *	active partitions
                              */
-    PCODE_CLEARCACHES = 211,	/* ..fdispatch -> ..fdispatch.  No packet data/ NotUsed
-			 */
+    PCODE_CLEARCACHES_NOTUSED = 211,
     PCODE_QUERY2_NOTUSED = 212,
     PCODE_PARSEDQUERY2 = 213,	/* ..fdispatch  -> ..fsearch.	PacketData:
 			 *0	{uint32_t queryId,}	- only in new format!
@@ -254,6 +253,7 @@ enum packetcode {
                         */
     PCODE_MLD_QUERYRESULT2_NOTUSED = 214,
     PCODE_MLD_GETDOCSUMS2_NOTUSED = 215,
+    PCODE_QUEUELEN_NOTUSED = 216,
 
     PCODE_QUERYRESULTX = 217,	/*
 			 *      {uint32_t queryId,}    - only if persistent

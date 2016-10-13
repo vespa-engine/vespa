@@ -957,47 +957,6 @@ FS4Packet_MONITORRESULTX::toString(uint32_t indent) const
 
 //============================================================
 
-FS4Packet_CLEARCACHES::FS4Packet_CLEARCACHES()
-    : FS4Packet()
-{
-}
-
-
-FS4Packet_CLEARCACHES::~FS4Packet_CLEARCACHES()
-{
-}
-
-
-uint32_t
-FS4Packet_CLEARCACHES::GetLength()
-{
-    return 0;
-}
-
-
-void
-FS4Packet_CLEARCACHES::Encode(FNET_DataBuffer *dst)
-{
-    (void) dst;
-}
-
-
-bool
-FS4Packet_CLEARCACHES::Decode(FNET_DataBuffer *src, uint32_t len)
-{
-    src->DataToDead(len);
-    return (len == 0);
-}
-
-
-vespalib::string
-FS4Packet_CLEARCACHES::toString(uint32_t indent) const
-{
-    return make_string("%*sFS4Packet_CLEARCACHES {}\n", indent, "");
-}
-
-//============================================================
-
 void
 FS4Packet_QUERYRESULTX::AllocateSortIndex(uint32_t cnt)
 {

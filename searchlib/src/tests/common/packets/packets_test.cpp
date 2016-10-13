@@ -306,22 +306,6 @@ TEST("testMonitorResultX") {
     }
 }
 
-TEST("testClearCaches") {
-    FS4Packet_CLEARCACHES *src = dynamic_cast<FS4Packet_CLEARCACHES*>(FS4PacketFactory::CreateFS4Packet(PCODE_CLEARCACHES));
-    ASSERT_TRUE(src != NULL);
-
-    std::vector<FNET_Packet*> lst { src, testEncodeDecode(*src) };
-
-    for (FNET_Packet * packet : lst) {
-        FS4Packet_CLEARCACHES *ptr = dynamic_cast<FS4Packet_CLEARCACHES*>(packet);
-        ASSERT_TRUE(ptr != NULL);
-        EXPECT_EQUAL((uint32_t)PCODE_CLEARCACHES, ptr->GetPCODE());
-        EXPECT_EQUAL(0u, ptr->GetLength());
-
-        delete ptr;
-    }
-}
-
 TEST("testQueryResultX") {
     FS4Packet_QUERYRESULTX *src = dynamic_cast<FS4Packet_QUERYRESULTX*>(FS4PacketFactory::CreateFS4Packet(PCODE_QUERYRESULTX));
     ASSERT_TRUE(src != NULL);
