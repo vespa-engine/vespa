@@ -133,7 +133,6 @@ Test::convertFromReply()
     src.sortData.push_back(11);
     src.sortData.push_back(22);
     src.groupResult.push_back(2);
-    src.useCoverage = true;
     src.coverage = SearchReply::Coverage(5, 3);
     src.useWideHits = true;
     src.hits.resize(2);
@@ -213,16 +212,6 @@ Test::convertFromReply()
         EXPECT_TRUE(checkFeature(dst._features, QRF_COVERAGE));
         EXPECT_EQUAL(dst._coverageDocs, 3u);
         EXPECT_EQUAL(dst._activeDocs, 5u);
-    }
-    { // not coverage
-        SearchReply cpy = src;
-        cpy.useCoverage = false;
-
-        FS4Packet_QUERYRESULTX dst0;
-        PacketConverter::fromSearchReply(cpy, dst0);
-        FS4Packet_QUERYRESULTX dst;
-        copyPacket(dst0, dst);
-        EXPECT_TRUE(checkNotFeature(dst._features, QRF_COVERAGE));
     }
     { // non-mld
         SearchReply cpy = src;

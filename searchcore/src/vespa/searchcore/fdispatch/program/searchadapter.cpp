@@ -66,7 +66,6 @@ SearchAdapter::createReply()
                              _queryResult->_groupResult + _queryResult->_groupResultLen);
     }
 
-    r.useCoverage = true;
     r.coverage = SearchReply::Coverage(_searchInfo->_activeDocs, _searchInfo->_coverageDocs);
 
     FastS_hitresult *hitbuf = _queryResult->_hitbuf;

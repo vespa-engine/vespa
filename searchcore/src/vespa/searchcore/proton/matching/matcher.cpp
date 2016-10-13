@@ -243,7 +243,6 @@ Matcher::match(const SearchRequest &request,
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
-        reply->useCoverage = true;
         reply->coverage.setActive(metaStore.getNumActiveLids());
         reply->coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
                                             (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));

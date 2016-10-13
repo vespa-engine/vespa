@@ -38,7 +38,6 @@ EmptySearchView::match(const ISearchHandler::SP &,
                        const SearchRequest &,
                        vespalib::ThreadBundle &) const {
     SearchReply::UP reply(new SearchReply);
-    reply->useCoverage = true;
     return reply;
 }
 
