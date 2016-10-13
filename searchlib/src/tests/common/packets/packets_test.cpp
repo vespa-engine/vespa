@@ -327,7 +327,6 @@ TEST("testQueryResultX") {
     src->_activeDocs = 7u;
     uint32_t sortIndex[3] = { 0u, 1u, 3u /* size of data */}; // numDocs + 1
     src->SetSortDataRef(2, sortIndex, "foo");
-    src->SetAggrDataRef("bar", 3u);
     src->SetGroupDataRef("baz", 3u);
     src->AllocateHits(2);
     src->_hits[0]._gid = gid0;
@@ -370,12 +369,6 @@ TEST("testQueryResultX") {
             EXPECT_EQUAL((void*)NULL, ptr->_sortIndex);
             EXPECT_EQUAL((void*)NULL, ptr->_sortData);
         }
-        if (ptr->_features & QRF_AGGRDATA) {
-            EXPECT_EQUAL("bar", std::string(ptr->_aggrData, ptr->_aggrDataLen));
-        } else {
-            EXPECT_EQUAL(0u, ptr->_aggrDataLen);
-            EXPECT_EQUAL((void*)NULL, ptr->_aggrData);
-        }
         if (ptr->_features & QRF_GROUPDATA) {
             EXPECT_EQUAL("baz", std::string(ptr->_groupData, ptr->_groupDataLen));
         } else {
@@ -414,7 +407,6 @@ createAndFill_QUERYX()
     fillProperties(src->_propsVector[0], "foo", 8);
     fillProperties(src->_propsVector[1], "bar", 16);
     src->setSortSpec("sortspec");
-    src->setAggrSpec("aggrspec");
     src->setGroupSpec("groupspec");
     src->setLocation("location");
     src->setStackDump("stackdump");
@@ -447,11 +439,6 @@ verifyQueryX(FS4Packet_QUERYX & queryX, uint32_t features)
         EXPECT_EQUAL("sortspec", queryX._sortSpec);
     } else {
         EXPECT_EQUAL(0u, queryX._sortSpec.size());
-    }
-    if (queryX._features & QF_AGGRSPEC) {
-        EXPECT_EQUAL("aggrspec", queryX._aggrSpec);
-    } else {
-        EXPECT_EQUAL(0u, queryX._aggrSpec.size());
     }
     if (queryX._features & QF_GROUPSPEC) {
         EXPECT_EQUAL("groupspec", queryX._groupSpec);

@@ -53,7 +53,6 @@ enum queryflags {
 enum queryresult_features {
     QRF_MLD                   = 0x00000001,
     QRF_SORTDATA              = 0x00000010,
-    QRF_AGGRDATA              = 0x00000020,
     QRF_COVERAGE              = 0x00000040,
     QRF_GROUPDATA             = 0x00000200,
     QRF_PROPERTIES            = 0x00000400
@@ -77,7 +76,6 @@ enum query_features {
     QF_PARSEDQUERY            = 0x00000002,
     QF_RANKP                  = 0x00000004,
     QF_SORTSPEC               = 0x00000080,
-    QF_AGGRSPEC               = 0x00000100,
     QF_LOCATION               = 0x00000800,
     QF_PROPERTIES             = 0x00100000,
     QF_WARMUP		      = 0x00200000, // Deprecated, do not use!
@@ -189,8 +187,6 @@ enum packetcode {
 			 *      uint32_t docstamp,
                          *      uint32_t[numDocs] sortIndex   - if QRF_SORTDATA
                          *      char[sidx[n - 1]] sortData    - if QRF_SORTDATA
-                         *      uint32_t          aggrDataLen - if QRF_AGGRDATA
-                         *      char[aggrDataLen] aggrData    - if QRF_AGGRDATA
                          *      uint32_t           groupDataLen - if QRF_GROUPDATA
                          *      char[groupDataLen] groupData    - if QRF_GROUPDATA
                          *      uint64_t coverageDocs  - if QRF_COVERAGE
@@ -224,8 +220,6 @@ enum packetcode {
                                  *      }
                                  *      uint32_t sortSpecLen         - if QF_SORTSPEC
                                  *      char[sortSpecLen] sortSpec   - if QF_SORTSPEC
-                                 *      uint32_t aggrSpecLen         - if QF_AGGRSPEC
-                                 *      char[aggrSpecLen] aggrSpec   - if QF_AGGRSPEC
                                  *      uint32_t groupSpecLen         - if QF_GROUPSPEC
                                  *      char[groupSpecLen] groupSpec  - if QF_GROUPSPEC
                                  *      uint32_t locationLen         - if QF_LOCATION

@@ -137,7 +137,6 @@ public class QueryResultPacket extends Packet {
      */
     public static final int QRF_MLD        = 0x00000001;
     public static final int QRF_SORTDATA   = 0x00000010;
-    public static final int QRF_AGGRDATA   = 0x00000020;
     public static final int QRF_COVERAGE   = 0x00000040;
     public static final int QRF_GROUPDATA  = 0x00000200;
     public static final int QRF_PROPERTIES = 0x00000400;
@@ -149,18 +148,6 @@ public class QueryResultPacket extends Packet {
      */
     private void decodeFeatures(IntBuffer buffer) {
         switch (getCode()) {
-            case 202:
-                mldFeature=false;
-                datasetFeature=false;
-                break;
-            case 208:
-                mldFeature=true;
-                datasetFeature=false;
-                break;
-            case 214:
-                mldFeature=true;
-                datasetFeature=true;
-                break;
         case 217:
                 int features=buffer.get();
                 mldFeature       = (QRF_MLD & features) != 0;

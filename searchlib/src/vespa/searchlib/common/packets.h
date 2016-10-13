@@ -21,7 +21,6 @@ using vespalib::string;
 enum fnet_feature_masks {
     FNET_QRF_SUPPORTED_MASK = (QRF_MLD |
                                QRF_SORTDATA |
-                               QRF_AGGRDATA |
                                QRF_COVERAGE |
                                QRF_GROUPDATA |
                                QRF_PROPERTIES),
@@ -29,7 +28,6 @@ enum fnet_feature_masks {
     FNET_QF_SUPPORTED_MASK  = (QF_PARSEDQUERY |
                                QF_RANKP |
                                QF_SORTSPEC |
-                               QF_AGGRSPEC |
                                QF_LOCATION |
                                QF_PROPERTIES |
                                QF_GROUPSPEC |
@@ -382,8 +380,6 @@ public:
     search::HitRank _maxRank;
     uint32_t *_sortIndex;    // if QRF_SORTDATA
     char     *_sortData;     // if QRF_SORTDATA
-    uint32_t _aggrDataLen;   // if QRF_AGGRDATA
-    char    *_aggrData;      // if QRF_AGGRDATA
     uint32_t _groupDataLen;  // if QRF_GROUPDATA
     char    *_groupData;     // if QRF_GROUPDATA
     uint64_t _coverageDocs;  // if QRF_COVERAGE
@@ -411,8 +407,6 @@ public:
     void AllocateSortIndex(uint32_t cnt);
     void AllocateSortData(uint32_t len);
     void SetSortDataRef(uint32_t cnt, uint32_t *sortIndex, const char *sortData);
-    void AllocateAggrData(uint32_t len);
-    void SetAggrDataRef(const char *aggrData, uint32_t len);
     void AllocateGroupData(uint32_t len);
     void SetGroupDataRef(const char *groupData, uint32_t len);
     void AllocateHits(uint32_t cnt);
@@ -446,7 +440,6 @@ public:
     string    _ranking;       // if QF_RANKP
     PropsVector _propsVector; // if QF_PROPERTIES
     string    _sortSpec;      // if QF_SORTSPEC
-    string    _aggrSpec;      // if QF_AGGRSPEC
     string    _groupSpec;     // if QF_GROUPSPEC
     string    _sessionId;     // if QF_SESSIONID
     string    _location;      // if QF_LOCATION
@@ -456,7 +449,6 @@ public:
 
     void setRanking(const vespalib::stringref &ranking) { _ranking = ranking; }
     void setSortSpec(const vespalib::stringref &spec) { _sortSpec = spec; }
-    void setAggrSpec(const vespalib::stringref &spec) { _aggrSpec = spec; }
     void setGroupSpec(const vespalib::stringref &spec) { _groupSpec = spec; }
     void setSessionId(const vespalib::stringref &sid) { _sessionId = sid; }
     void setLocation(const vespalib::stringref &loc) { _location = loc; }

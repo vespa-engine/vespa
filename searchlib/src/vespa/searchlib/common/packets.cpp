@@ -927,29 +927,6 @@ FS4Packet_QUERYRESULTX::SetSortDataRef(uint32_t cnt,
 
 
 void
-FS4Packet_QUERYRESULTX::AllocateAggrData(uint32_t len)
-{
-    if (len == 0)
-        return;
-
-    _aggrData = (char *) malloc(len);
-    _aggrDataLen = len;
-}
-
-
-void
-FS4Packet_QUERYRESULTX::SetAggrDataRef(const char *aggrData,
-                                       uint32_t len)
-{
-    if (len == 0)
-        return;
-
-    AllocateAggrData(len);
-    memcpy(_aggrData, aggrData, len);
-}
-
-
-void
 FS4Packet_QUERYRESULTX::AllocateGroupData(uint32_t len)
 {
     if (len == 0)
@@ -993,8 +970,6 @@ FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX()
       _maxRank(0),
       _sortIndex(NULL),
       _sortData(NULL),
-      _aggrDataLen(0),
-      _aggrData(NULL),
       _groupDataLen(0),
       _groupData(NULL),
       _coverageDocs(0),
@@ -1009,7 +984,6 @@ FS4Packet_QUERYRESULTX::~FS4Packet_QUERYRESULTX()
 {
     if (_sortIndex) { delete [] _sortIndex; }
     if (_sortData) { free(_sortData); }
-    if (_aggrData) { free(_aggrData); }
     if (_groupData) { free(_groupData); }
     if (_hits) { delete [] _hits; }
 }
@@ -1030,9 +1004,6 @@ FS4Packet_QUERYRESULTX::GetLength()
 
     if (((_features & QRF_SORTDATA) != 0) && (_numDocs > 0)) 
         plen += _numDocs * sizeof(uint32_t) + (_sortIndex[_numDocs] - _sortIndex[0]);
-
-    if ((_features & QRF_AGGRDATA) != 0)
-        plen += sizeof(uint32_t) + _aggrDataLen;
 
     if ((_features & QRF_GROUPDATA) != 0)
         plen += sizeof(uint32_t) + _groupDataLen;
@@ -1074,11 +1045,6 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
         }
         dst->WriteBytesFast(_sortData + idx0,
                             _sortIndex[_numDocs] - idx0);
-    }
-
-    if ((_features & QRF_AGGRDATA) != 0) {
-        dst->WriteInt32Fast(_aggrDataLen);
-        dst->WriteBytesFast(_aggrData, _aggrDataLen);
     }
 
     if ((_features & QRF_GROUPDATA) != 0) {
@@ -1151,17 +1117,6 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
         AllocateSortData(sortDataLen);
         src->ReadBytes(_sortData, sortDataLen);
         len -= sortDataLen;
-    }
-
-    if ((_features & QRF_AGGRDATA) != 0) {
-        if (len < sizeof(uint32_t)) goto error;
-        _aggrDataLen = src->ReadInt32();
-        len -= sizeof(uint32_t);
-
-        if (len < _aggrDataLen) goto error;
-        AllocateAggrData(_aggrDataLen);
-        src->ReadBytes(_aggrData, _aggrDataLen);
-        len -= _aggrDataLen;
     }
 
     if ((_features & QRF_GROUPDATA) != 0) {
@@ -1246,7 +1201,6 @@ FS4Packet_QUERYRESULTX::toString(uint32_t indent) const
             s += make_string(" }\n");
         }
     }
-    s += make_string("%*s  aggrData      : %d bytes\n", indent, "", _aggrDataLen);
     s += make_string("%*s  groupData     : %d bytes\n", indent, "", _groupDataLen);
     s += make_string("%*s  coverageDocs  : %" PRIu64 "\n", indent, "", _coverageDocs);
     s += make_string("%*s  activeDocs    : %" PRIu64 "\n", indent, "", _activeDocs);
@@ -1274,7 +1228,6 @@ FS4Packet_QUERYX::FS4Packet_QUERYX()
       _ranking(),
       _propsVector(),
       _sortSpec(),
-      _aggrSpec(),
       _groupSpec(),
       _sessionId(),
       _location(),
@@ -1314,9 +1267,6 @@ FS4Packet_QUERYX::GetLength()
     if ((_features & QF_SORTSPEC) != 0)
         plen += sizeof(uint32_t) + _sortSpec.size();
 
-    if ((_features & QF_AGGRSPEC) != 0)
-        plen += sizeof(uint32_t) + _aggrSpec.size();
-
     if ((_features & QF_GROUPSPEC) != 0)
         plen += sizeof(uint32_t) + _groupSpec.size();
 
@@ -1355,11 +1305,6 @@ FS4Packet_QUERYX::Encode(FNET_DataBuffer *dst)
     if ((_features & QF_SORTSPEC) != 0) {
         dst->WriteInt32Fast(_sortSpec.size());
         dst->WriteBytesFast(_sortSpec.c_str(), _sortSpec.size());
-    }
-
-    if ((_features & QF_AGGRSPEC) != 0) {
-        dst->WriteInt32Fast(_aggrSpec.size());
-        dst->WriteBytesFast(_aggrSpec.c_str(), _aggrSpec.size());
     }
 
     if ((_features & QF_GROUPSPEC) != 0) {
@@ -1483,14 +1428,6 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         src->DataToDead(sortSpecLen);
     }
 
-    if ((_features & QF_AGGRSPEC) != 0) {
-        uint32_t aggrSpecLen = readUInt32(*src, len, "aggrspec length");
-
-        VERIFY_LEN(aggrSpecLen, "aggrspec string");
-        setAggrSpec(stringref(src->GetData(), aggrSpecLen));
-        src->DataToDead(aggrSpecLen);
-    }
-
     if ((_features & QF_GROUPSPEC) != 0) {
         uint32_t groupSpecLen = readUInt32(*src, len, "groupspec length");
 
@@ -1548,7 +1485,6 @@ FS4Packet_QUERYX::toString(uint32_t indent) const
         s += _propsVector[i].toString(indent + 2);
     }
     s += make_string("%*s  sortspec    : %s\n", indent, "", _sortSpec.c_str());
-    s += make_string("%*s  aggrspec    : %s\n", indent, "", _aggrSpec.c_str());
     s += make_string("%*s  groupspec   : (%d bytes)\n", indent, "", (int)_groupSpec.size());
     s += make_string("%*s  sessionId   : (%d bytes)\n", indent, "", (int)_sessionId.size());
     s += make_string("%*s  location    : %s\n", indent, "", _location.c_str());

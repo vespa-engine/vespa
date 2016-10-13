@@ -74,8 +74,6 @@ Test::convertToRequest()
     src._propsVector[1].setValue(1, "p2v2", strlen("p2v2"));
     src._features |= QF_SORTSPEC;
     src.setSortSpec("sortspec");
-    src._features |= QF_AGGRSPEC;
-    src.setAggrSpec("aggrspec");
     src._features |= QF_GROUPSPEC;
     src.setGroupSpec("groupspec");
     src._features |= QF_SESSIONID;
