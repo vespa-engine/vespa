@@ -28,21 +28,11 @@ namespace proton {
 namespace matching {
 
 using search::queryeval::OptimizedAndNotForBlackListing;
-
-namespace {
-
-using search::fef::FeatureHandle;
-using search::fef::IllegalHandle;
+using search::fef::TermFieldHandle;
+using search::fef::MatchData;
 using search::fef::RankProgram;
 
-const double *get_score_feature(const RankProgram &rankProgram) {
-    std::vector<vespalib::string> featureNames;
-    std::vector<FeatureHandle> featureHandles;
-    rankProgram.get_seed_handles(featureNames, featureHandles);
-    assert(featureNames.size() == 1);
-    assert(featureHandles.size() == 1);
-    return rankProgram.match_data().resolveFeature(featureHandles.front());
-}
+namespace {
 
 struct WaitTimer {
     double &wait_time_s;
@@ -58,22 +48,53 @@ struct WaitTimer {
     }
 };
 
+class FastSeekWrapper
+{
+private:
+    typedef search::queryeval::SearchIterator SearchIterator;
+public:
+    FastSeekWrapper(SearchIterator::UP iterator)
+    {
+        reset(iterator.release());
+    }
+    void initRange(uint32_t begin_id, uint32_t end_id) {
+        _search->initRange(begin_id, end_id);
+    }
+    uint32_t seekFirst(uint32_t docId) {
+        return _search->seekFirst(docId);
+    }
+    uint32_t seekNext(uint32_t docId) {
+        return _search->seekFast(docId);
+    }
+    vespalib::string asString() const {
+        return _search->asString();
+    }
+    void unpack(uint32_t docId) {
+        _search->unpack(docId);
+    }
+    void reset(SearchIterator * search) {
+        _search.reset(&dynamic_cast<OptimizedAndNotForBlackListing &>(*search));
+    }
+    OptimizedAndNotForBlackListing * release() {
+        return _search.release();
+    }
+    FastSeekWrapper * operator ->() { return this; }
+private:
+    std::unique_ptr<OptimizedAndNotForBlackListing> _search;
+};
+
+const double *get_score_feature(const RankProgram &rankProgram) {
+    std::vector<vespalib::string> featureNames;
+    std::vector<search::fef::FeatureHandle> featureHandles;
+    rankProgram.get_seed_handles(featureNames, featureHandles);
+    assert(featureNames.size() == 1);
+    assert(featureHandles.size() == 1);
+    return rankProgram.match_data().resolveFeature(featureHandles.front());
 }
 
-template <typename IteratorT>
-uint32_t
-MatchThread::updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT & search) {
-    DocidRange todo(nextDocId, docid_range.end);
-    DocidRange my_work = scheduler.share_range(thread_id, todo);
-    if (my_work.end < todo.end) {
-        docid_range = my_work;
-        search->initRange(docid_range.begin, docid_range.end);
-        nextDocId = search->seekFirst(docid_range.begin);
-    } else {
-        nextDocId = search->seekNext(nextDocId);
-    }
-    return nextDocId;
-}
+} // namespace proton::matching::<unnamed>
+
+//-----------------------------------------------------------------------------
 
 MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, RankProgram & ranking, HitCollector & hits,
                               DocidRangeScheduler & scheduler, uint32_t num_threads) :
@@ -103,6 +124,19 @@ MatchThread::Context::rankHit(uint32_t docId) {
     }
 }
 
+//-----------------------------------------------------------------------------
+
+double
+MatchThread::updateEstimates(MaybeMatchPhaseLimiter & limiter, uint32_t matches, uint32_t searchedSoFar, uint32_t left)
+{
+    IMatchLoopCommunicator::Matches my_matches(matches, searchedSoFar);
+    WaitTimer count_matches_timer(wait_time_s);
+    double match_freq = communicator.estimate_match_frequency(my_matches);
+    limiter.updateDocIdSpaceEstimate(searchedSoFar, left);
+    count_matches_timer.done();
+    return match_freq;
+}
+
 template <typename IteratorT>
 void
 MatchThread::limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId)
@@ -116,6 +150,21 @@ MatchThread::limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_
     LOG(debug, "Limit=%d has been reached at docid=%d which is after %zu docs.",
                matches, docId, searchedSoFar);
     LOG(debug, "SearchIterator after limiter: %s", search->asString().c_str());
+}
+
+template <typename IteratorT>
+uint32_t
+MatchThread::updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT & search) {
+    DocidRange todo(nextDocId, docid_range.end);
+    DocidRange my_work = scheduler.share_range(thread_id, todo);
+    if (my_work.end < todo.end) {
+        docid_range = my_work;
+        search->initRange(docid_range.begin, docid_range.end);
+        nextDocId = search->seekFirst(docid_range.begin);
+    } else {
+        nextDocId = search->seekNext(nextDocId);
+    }
+    return nextDocId;
 }
 
 template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
@@ -193,69 +242,7 @@ MatchThread::match_loop_helper(MatchTools &matchTools, IteratorT search,
     }
 }
 
-using search::fef::TermFieldHandle;
-using search::fef::MatchData;
-
-class FastSeekWrapper
-{
-private:
-    typedef search::queryeval::SearchIterator SearchIterator;
-public:
-    FastSeekWrapper(SearchIterator::UP iterator)
-    {
-        reset(iterator.release());
-    }
-    void initRange(uint32_t begin_id, uint32_t end_id) {
-        _search->initRange(begin_id, end_id);
-    }
-    uint32_t seekFirst(uint32_t docId) {
-        return _search->seekFirst(docId);
-    }
-    uint32_t seekNext(uint32_t docId) {
-        return _search->seekFast(docId);
-    }
-    vespalib::string asString() const {
-        return _search->asString();
-    }
-    void unpack(uint32_t docId) {
-        _search->unpack(docId);
-    }
-    void reset(SearchIterator * search) {
-        _search.reset(&dynamic_cast<OptimizedAndNotForBlackListing &>(*search));
-    }
-    OptimizedAndNotForBlackListing * release() {
-        return _search.release();
-    }
-    FastSeekWrapper * operator ->() { return this; }
-private:
-    std::unique_ptr<OptimizedAndNotForBlackListing> _search;
-};
-
-MatchThread::MatchThread(size_t thread_id_in,
-                         size_t num_threads_in,
-                         const MatchParams &mp,
-                         const MatchToolsFactory &mtf,
-                         IMatchLoopCommunicator &com,
-                         DocidRangeScheduler &sched,
-                         ResultProcessor &rp,
-                         vespalib::DualMergeDirector &md,
-                         uint32_t distributionKey) :
-    thread_id(thread_id_in),
-    num_threads(num_threads_in),
-    matchParams(mp),
-    matchToolsFactory(mtf),
-    communicator(com),
-    scheduler(sched),
-    _distributionKey(distributionKey),
-    resultProcessor(rp),
-    mergeDirector(md),
-    resultContext(),
-    thread_stats(),
-    total_time_s(0.0),
-    match_time_s(0.0),
-    wait_time_s(0.0)
-{
-}
+//-----------------------------------------------------------------------------
 
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &matchTools)
@@ -361,6 +348,34 @@ MatchThread::processResult(const Doom & doom,
     }
 }
 
+//-----------------------------------------------------------------------------
+
+MatchThread::MatchThread(size_t thread_id_in,
+                         size_t num_threads_in,
+                         const MatchParams &mp,
+                         const MatchToolsFactory &mtf,
+                         IMatchLoopCommunicator &com,
+                         DocidRangeScheduler &sched,
+                         ResultProcessor &rp,
+                         vespalib::DualMergeDirector &md,
+                         uint32_t distributionKey) :
+    thread_id(thread_id_in),
+    num_threads(num_threads_in),
+    matchParams(mp),
+    matchToolsFactory(mtf),
+    communicator(com),
+    scheduler(sched),
+    _distributionKey(distributionKey),
+    resultProcessor(rp),
+    mergeDirector(md),
+    resultContext(),
+    thread_stats(),
+    total_time_s(0.0),
+    match_time_s(0.0),
+    wait_time_s(0.0)
+{
+}
+
 void
 MatchThread::run()
 {
@@ -388,17 +403,6 @@ MatchThread::run()
     total_time_s = total_time.elapsed().sec();
     thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);
-}
-
-double
-MatchThread::updateEstimates(MaybeMatchPhaseLimiter & limiter, uint32_t matches, uint32_t searchedSoFar, uint32_t left)
-{
-    IMatchLoopCommunicator::Matches my_matches(matches, searchedSoFar);
-    WaitTimer count_matches_timer(wait_time_s);
-    double match_freq = communicator.estimate_match_frequency(my_matches);
-    limiter.updateDocIdSpaceEstimate(searchedSoFar, left);
-    count_matches_timer.done();
-    return match_freq;
 }
 
 } // namespace proton::matching

@@ -29,6 +29,7 @@ public:
     using MatchData = search::fef::MatchData;
     using HitCollector = search::queryeval::HitCollector;
     using RankProgram = search::fef::RankProgram;
+    using Doom = vespalib::Doom;
 
 private:
     size_t                        thread_id;
@@ -45,22 +46,6 @@ private:
     double                        total_time_s;
     double                        match_time_s;
     double                        wait_time_s;
-
-    search::ResultSet::UP findMatches(MatchTools &matchTools);
-
-    using Doom = vespalib::Doom;
-    void processResult(const Doom & doom,
-                       search::ResultSet::UP result,
-                       ResultProcessor::Context &context);
-
-    template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    void match_loop(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits) __attribute__((noinline));
-
-    template <typename IteratorT, bool do_rank, bool do_limit>
-    void match_loop_helper_2(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
-
-    template <typename IteratorT, bool do_rank>
-    void match_loop_helper(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
 
     class Context {
     public:
@@ -85,16 +70,29 @@ private:
         IdleObserver              _idle_observer;
     };
 
-    template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-    void inner_match_loop(Context & params, IteratorT & search, DocidRange docid_range) __attribute__((noinline));
+    double updateEstimates(MaybeMatchPhaseLimiter & limiter, uint32_t matches, uint32_t searchedSoFar, uint32_t left) __attribute__((noinline));
 
-    template <typename IteratorT>
-    uint32_t updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT & search) __attribute__((noinline));
     template <typename IteratorT>
     void limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));
 
-    double updateEstimates(MaybeMatchPhaseLimiter & limiter, uint32_t matches, uint32_t searchedSoFar, uint32_t left) __attribute__((noinline));
+    template <typename IteratorT>
+    uint32_t updateRange(uint32_t nextDocId, DocidRange & docid_range, IteratorT & search) __attribute__((noinline));
 
+    template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
+    void inner_match_loop(Context & params, IteratorT & search, DocidRange docid_range) __attribute__((noinline));
+
+    template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
+    void match_loop(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits) __attribute__((noinline));
+
+    template <typename IteratorT, bool do_rank, bool do_limit>
+    void match_loop_helper_2(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
+
+    template <typename IteratorT, bool do_rank>
+    void match_loop_helper(MatchTools &matchTools, IteratorT search, RankProgram &ranking, HitCollector &hits);
+
+    search::ResultSet::UP findMatches(MatchTools &matchTools);
+
+    void processResult(const Doom & doom, search::ResultSet::UP result, ResultProcessor::Context &context);
 public:
     MatchThread(size_t thread_id_in,
                 size_t num_threads_in,
