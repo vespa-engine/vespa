@@ -460,6 +460,8 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         if (nodeSpec == null || nodeSpec.nodeState != Node.State.active) return;
+        final Optional<Container> container = dockerOperations.getContainer(nodeSpec.hostname);
+        if ( ! container.isPresent() || ! container.get().isRunning ) return;
 
         Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
