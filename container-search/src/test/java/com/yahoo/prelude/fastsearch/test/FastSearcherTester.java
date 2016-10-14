@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
  */
 class FastSearcherTester {
 
-    public static final String selfHostname = HostName.getHostName();
+    public static final String selfHostname = HostName.getLocalhost();
 
     private final MockFS4ResourcePool mockFS4ResourcePool;
     private final FastSearcher fastSearcher;

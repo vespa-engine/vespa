@@ -1,7 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.network;
 
+import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
+import com.yahoo.net.LinuxInetAddress;
+
+import java.net.Inet6Address;
+import java.net.InetAddress;
 
 /**
  * This class encapsulates the identity of the application that uses this instance of message bus. This identity
@@ -23,7 +28,11 @@ public class Identity {
      * @param configId The config identifier for the application.
      */
     public Identity(String configId) {
-        hostname = HostName.getHostName(); // ... but fallback to hostname if we get an IPv6 address
+        InetAddress addr = LinuxInetAddress.getLocalHost(); // try hard to get a resolvable address
+        if (addr instanceof Inet6Address) // 
+            hostname = HostName.getLocalhost(); // ... but fallback to hostname if we get an IPv6 address
+        else
+            hostname = addr.getCanonicalHostName();
         servicePrefix = configId;
     }
 

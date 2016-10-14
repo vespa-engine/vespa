@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 public class TestWithRpc {
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochMilli(100));
-    private final String myHostname = HostName.getHostName();
+    private final String myHostname = HostName.getLocalhost();
     private final HostLivenessTracker hostLivenessTracker = new ConfigRequestHostLivenessTracker(clock);
 
     protected RpcServer rpcServer;
