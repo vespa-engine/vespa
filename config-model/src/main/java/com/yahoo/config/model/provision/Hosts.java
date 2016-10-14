@@ -2,7 +2,6 @@
 package com.yahoo.config.model.provision;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.net.HostName;
 import com.yahoo.text.XML;
