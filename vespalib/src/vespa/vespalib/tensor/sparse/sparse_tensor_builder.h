@@ -24,9 +24,10 @@ class SparseTensorBuilder : public TensorBuilder
     Stash _stash;
     vespalib::hash_map<vespalib::string, uint32_t> _dimensionsEnum;
     std::vector<vespalib::string> _dimensions;
-    std::vector<vespalib::string> _sortedDimensions;
+    eval::ValueType _type;
+    bool _type_made;
 
-    void makeSortedDimensions();
+    void makeType();
 public:
     SparseTensorBuilder();
     virtual ~SparseTensorBuilder();

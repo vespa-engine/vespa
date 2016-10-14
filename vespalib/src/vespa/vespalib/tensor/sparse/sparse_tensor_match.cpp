@@ -19,17 +19,17 @@ enum class AddressOp
 
 void
 buildTransformOps(std::vector<AddressOp> &ops,
-                  const TensorDimensions &lhs,
-                  const TensorDimensions &rhs)
+                  const eval::ValueType &lhs,
+                  const eval::ValueType &rhs)
 {
-    auto rhsItr = rhs.cbegin();
-    auto rhsItrEnd = rhs.cend();
-    for (auto &lhsDim : lhs) {
-        while (rhsItr != rhsItrEnd && *rhsItr < lhsDim) {
+    auto rhsItr = rhs.dimensions().cbegin();
+    auto rhsItrEnd = rhs.dimensions().cend();
+    for (auto &lhsDim : lhs.dimensions()) {
+        while (rhsItr != rhsItrEnd && rhsItr->name < lhsDim.name) {
             ops.push_back(AddressOp::PAD);
             ++rhsItr;
         }
-        if (rhsItr != rhsItrEnd && *rhsItr == lhsDim) {
+        if (rhsItr != rhsItrEnd && rhsItr->name == lhsDim.name) {
             ops.push_back(AddressOp::COPY);
             ++rhsItr;
         } else {
@@ -92,9 +92,9 @@ SparseTensorMatch::slowMatch(const TensorImplType &lhs,
 {
     std::vector<AddressOp> ops;
     SparseTensorAddressBuilder addressBuilder;
-    SparseTensorAddressPadder addressPadder(_builder.dimensions(),
-                                               lhs.dimensions());
-    buildTransformOps(ops, lhs.dimensions(), rhs.dimensions());
+    SparseTensorAddressPadder addressPadder(_builder.type(),
+                                            lhs.type());
+    buildTransformOps(ops, lhs.type(), rhs.type());
     for (const auto &lhsCell : lhs.cells()) {
         if (!transformAddress(addressBuilder, lhsCell.first, ops)) {
             continue;
@@ -112,8 +112,8 @@ SparseTensorMatch::SparseTensorMatch(const TensorImplType &lhs,
                                            const TensorImplType &rhs)
     : Parent(lhs.combineDimensionsWith(rhs))
 {
-    if ((lhs.dimensions().size() == rhs.dimensions().size()) &&
-        (lhs.dimensions().size() == _builder.dimensions().size())) {
+    if ((lhs.type().dimensions().size() == rhs.type().dimensions().size()) &&
+        (lhs.type().dimensions().size() == _builder.type().dimensions().size())) {
         fastMatch(lhs, rhs);
     } else {
         slowMatch(lhs, rhs);

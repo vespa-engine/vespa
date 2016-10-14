@@ -3,22 +3,23 @@
 #include <vespa/fastos/fastos.h>
 #include "sparse_tensor_address_combiner.h"
 #include "sparse_tensor_address_decoder.h"
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace vespalib {
 namespace tensor {
 namespace sparse {
 
-TensorAddressCombiner::TensorAddressCombiner(const TensorDimensions &lhs,
-                                             const TensorDimensions &rhs)
+TensorAddressCombiner::TensorAddressCombiner(const eval::ValueType &lhs,
+                                             const eval::ValueType &rhs)
 {
-    auto rhsItr = rhs.cbegin();
-    auto rhsItrEnd = rhs.cend();
-    for (auto &lhsDim : lhs) {
-        while (rhsItr != rhsItrEnd && *rhsItr < lhsDim) {
+    auto rhsItr = rhs.dimensions().cbegin();
+    auto rhsItrEnd = rhs.dimensions().cend();
+    for (auto &lhsDim : lhs.dimensions()) {
+        while (rhsItr != rhsItrEnd && rhsItr->name < lhsDim.name) {
             _ops.push_back(AddressOp::RHS);
             ++rhsItr;
         }
-        if (rhsItr != rhsItrEnd && *rhsItr == lhsDim) {
+        if (rhsItr != rhsItrEnd && rhsItr->name == lhsDim.name) {
             _ops.push_back(AddressOp::BOTH);
             ++rhsItr;
         } else {
