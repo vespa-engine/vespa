@@ -29,16 +29,14 @@ SparseTensorBuilder::makeType()
 {
     assert(!_type_made);
     assert(_cells.empty());
-    std::vector<eval::ValueType::Dimension> sortedDimensions;
-    sortedDimensions.reserve(_dimensions.size());
+    std::vector<eval::ValueType::Dimension> dimensions;
+    dimensions.reserve(_dimensions.size());
     for (const auto &dim : _dimensions) {
-        sortedDimensions.emplace_back(dim);
+        dimensions.emplace_back(dim);
     }
-    std::sort(sortedDimensions.begin(), sortedDimensions.end(),
-              [](const eval::ValueType::Dimension &lhs,
-                 const eval::ValueType::Dimension &rhs)
-              { return lhs.name < rhs.name; });
-    _type = eval::ValueType::tensor_type(sortedDimensions);
+    _type = (dimensions.empty() ?
+             eval::ValueType::double_type() :
+             eval::ValueType::tensor_type(dimensions));
     _type_made = true;
 }
 
