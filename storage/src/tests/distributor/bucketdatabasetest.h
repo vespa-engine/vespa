@@ -2,10 +2,11 @@
 #pragma once
 
 #include <vespa/fastos/fastos.h>
+#include <vespa/document/bucket/bucketid.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <vespa/storage/distributor/bucketdb/judybucketdatabase.h>
 #include <vespa/storage/storageutil/utils.h>
 
 #define SETUP_DATABASE_TESTS() \

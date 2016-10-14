@@ -5,7 +5,6 @@
 #include <memory>
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
 #include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/bucketsplitting.h>

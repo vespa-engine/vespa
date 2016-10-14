@@ -6,7 +6,6 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageframework/storageframework.h>

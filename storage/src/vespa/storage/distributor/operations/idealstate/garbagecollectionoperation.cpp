@@ -3,7 +3,6 @@
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>

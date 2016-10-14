@@ -4,7 +4,6 @@
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>

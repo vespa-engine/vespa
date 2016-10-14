@@ -5,7 +5,6 @@
 #include <queue>
 #include <vespa/storage/distributor/operationtargetresolver.h>
 #include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
 namespace storage {

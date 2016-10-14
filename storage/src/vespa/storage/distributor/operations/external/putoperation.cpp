@@ -4,7 +4,6 @@
 
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/log/log.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/activecopy.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
