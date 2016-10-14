@@ -16,10 +16,10 @@ import com.yahoo.jdisc.http.HttpResponse.Status;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSessionParams;
-import com.yahoo.net.HostName;
-import com.yahoo.yolean.Exceptions;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.vespa.http.client.core.OperationStatus;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -270,7 +270,7 @@ public class FeedHandler extends LoggingRequestHandler {
     }
 
     private static String resolveLocalHostname() {
-        String hostname = HostName.getLocalhost();
+        String hostname = getDefaults().canonicalHostName();
         if (hostname.equals("localhost")) {
             return "";
         }
