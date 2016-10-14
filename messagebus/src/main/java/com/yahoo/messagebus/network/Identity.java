@@ -23,7 +23,7 @@ public class Identity {
      * @param configId The config identifier for the application.
      */
     public Identity(String configId) {
-        hostname = HostName.getHostName(); // ... but fallback to hostname if we get an IPv6 address
+        hostname = HostName.getLocalhost(); // ... but fallback to hostname if we get an IPv6 address
         servicePrefix = configId;
     }
 

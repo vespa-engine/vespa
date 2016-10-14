@@ -37,7 +37,7 @@ public class HostName {
      * @return the preferred name of localhost
      * @throws RuntimeException if accessing the network or the 'hostname' command fails
      */
-    public static synchronized String getHostName() {
+    public static synchronized String getLocalhost() {
         if (cachedHostName == null) {
             try {
                 cachedHostName = getPreferredAddress().canonicalHostName;

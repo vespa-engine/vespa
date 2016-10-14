@@ -71,7 +71,7 @@ public class ConfigserverClusterTest {
         assertThat(config.configModelPluginDir().get(0), is(Defaults.getDefaults().vespaHome() + "lib/jars/config-models"));
         assertThat(config.rpcport(), is(12345));
         assertThat(config.httpport(), is(1337));
-        assertThat(config.serverId(), is(HostName.getHostName()));
+        assertThat(config.serverId(), is(HostName.getLocalhost()));
         assertTrue(config.useVespaVersionInRequest());
         assertThat(config.numParallelTenantLoaders(), is(4));
         assertFalse(config.multitenant());

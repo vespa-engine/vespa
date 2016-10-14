@@ -75,7 +75,7 @@ public class Hosts {
                 throw new RuntimeException("Missing 'name' attribute for host.");
             }
             if ("localhost".equals(name)) {
-                name = HostName.getHostName();
+                name = HostName.getLocalhost();
             }
             final List<String> hostAliases = VespaDomBuilder.getHostAliases(hostE.getChildNodes());
             if (hostAliases.isEmpty()) {

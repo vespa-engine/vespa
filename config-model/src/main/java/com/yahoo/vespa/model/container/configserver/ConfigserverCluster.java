@@ -52,7 +52,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
 
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
-        String myhostname = HostName.getHostName();
+        String myhostname = HostName.getLocalhost();
         int myid = 0;
         int i = 0;
         for (ConfigServer server : getConfigServers()) {
@@ -115,7 +115,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
             builder.defaultContentFlavor(options.defaultContentFlavor().get());
         }
 
-        builder.serverId(HostName.getHostName());
+        builder.serverId(HostName.getLocalhost());
         if (!containerCluster.getHttp().getHttpServer().getConnectorFactories().isEmpty()) {
             builder.httpport(containerCluster.getHttp().getHttpServer().getConnectorFactories().get(0).getListenPort());
         }
@@ -144,7 +144,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.allConfigServers().length > 0) {
             return options.allConfigServers();
         } else {
-            return new ConfigServer[]{new ConfigServer(HostName.getHostName(), Optional.<Integer>empty()) };
+            return new ConfigServer[]{new ConfigServer(HostName.getLocalhost(), Optional.<Integer>empty()) };
         }
     }
 

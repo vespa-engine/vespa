@@ -12,7 +12,7 @@ public class HostNameTestCase {
 
     @Test
     public void testHostnameIsFound() {
-        assertFalse(HostName.getHostName().isEmpty());
+        assertFalse(HostName.getLocalhost().isEmpty());
     }
 
     @Test
