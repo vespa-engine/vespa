@@ -7,6 +7,7 @@
 #include <vespa/vespalib/tensor/types.h>
 
 namespace vespalib {
+namespace eval { class ValueType; }
 namespace tensor {
 
 class SparseTensorAddressBuilder;
@@ -72,7 +73,7 @@ public:
      * tensor address builder in sorted order.
      */
     void buildTo(SparseTensorAddressBuilder &builder,
-                 const TensorDimensions &dimensions);
+                 const eval::ValueType &type);
     void clear() { _elementStrings.clear(); _elements.clear(); }
 };
 

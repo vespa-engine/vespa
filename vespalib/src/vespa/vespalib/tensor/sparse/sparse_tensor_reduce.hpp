@@ -45,11 +45,11 @@ reduce(const SparseTensor &tensor,
     if (dimensions.empty()) {
         return reduceAll(tensor, func);
     }
-    DirectTensorBuilder<SparseTensor> builder(TensorAddressReducer::remainingDimensions(tensor.dimensions(), dimensions));
-    if (builder.dimensions().empty()) {
+    DirectTensorBuilder<SparseTensor> builder(tensor.type().remove_dimensions(dimensions));
+    if (builder.type().dimensions().empty()) {
         return reduceAll(tensor, builder, func);
     }
-    TensorAddressReducer addressReducer(tensor.dimensions(), dimensions);
+    TensorAddressReducer addressReducer(tensor.type(), dimensions);
     for (const auto &cell : tensor.cells()) {
         addressReducer.reduce(cell.first);
         builder.insertCell(addressReducer.getAddressRef(), cell.second, func);

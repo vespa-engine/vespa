@@ -18,14 +18,13 @@ template <> class DirectTensorBuilder<SparseTensor>
 {
 public:
     using TensorImplType = SparseTensor;
-    using Dimensions = typename TensorImplType::Dimensions;
     using Cells = typename TensorImplType::Cells;
     using AddressBuilderType = SparseTensorAddressBuilder;
     using AddressRefType = SparseTensorAddressRef;
 
 private:
     Stash _stash;
-    Dimensions _dimensions;
+    eval::ValueType _type;
     Cells _cells;
 
 public:
@@ -40,10 +39,10 @@ public:
     }
 
     void
-    copyCells(const Cells &cells_in, const Dimensions &cells_in_dimensions)
+    copyCells(const Cells &cells_in, const eval::ValueType &cells_in_type)
     {
-        SparseTensorAddressPadder addressPadder(_dimensions,
-                                                   cells_in_dimensions);
+        SparseTensorAddressPadder addressPadder(_type,
+                                                cells_in_type);
         for (const auto &cell : cells_in) {
             addressPadder.padAddress(cell.first);
             SparseTensorAddressRef oldRef = addressPadder.getAddressRef();
@@ -54,43 +53,43 @@ public:
 
     DirectTensorBuilder()
         : _stash(TensorImplType::STASH_CHUNK_SIZE),
-          _dimensions(),
+          _type(eval::ValueType::double_type()),
           _cells()
     {
     }
 
-    DirectTensorBuilder(const Dimensions &dimensions_in)
+    DirectTensorBuilder(const eval::ValueType &type_in)
         : _stash(TensorImplType::STASH_CHUNK_SIZE),
-          _dimensions(dimensions_in),
+          _type(type_in),
           _cells()
     {
     }
 
-    DirectTensorBuilder(const Dimensions &dimensions_in,
+    DirectTensorBuilder(const eval::ValueType &type_in,
                         const Cells &cells_in)
         : _stash(TensorImplType::STASH_CHUNK_SIZE),
-          _dimensions(dimensions_in),
+          _type(type_in),
           _cells()
     {
         copyCells(cells_in);
     }
 
-    DirectTensorBuilder(const Dimensions &dimensions_in,
+    DirectTensorBuilder(const eval::ValueType &type_in,
                         const Cells &cells_in,
-                        const Dimensions &cells_dimensions)
+                        const eval::ValueType &cells_in_type)
         : _stash(TensorImplType::STASH_CHUNK_SIZE),
-          _dimensions(dimensions_in),
+          _type(type_in),
           _cells()
     {
-        if (dimensions_in.size() == cells_dimensions.size()) {
+        if (type_in.dimensions().size() == cells_in_type.dimensions().size()) {
             copyCells(cells_in);
         } else {
-            copyCells(cells_in, cells_dimensions);
+            copyCells(cells_in, cells_in_type);
         }
     }
 
     Tensor::UP build() {
-        return std::make_unique<SparseTensor>(std::move(_dimensions),
+        return std::make_unique<SparseTensor>(std::move(_type),
                                                  std::move(_cells),
                                                  std::move(_stash));
     }
@@ -126,7 +125,7 @@ public:
         insertCell(address.getAddressRef(), value, [](double, double) -> double { abort(); });
     }
 
-    Dimensions &dimensions() { return _dimensions; }
+    eval::ValueType &type() { return _type; }
     Cells &cells() { return _cells; }
 };
 

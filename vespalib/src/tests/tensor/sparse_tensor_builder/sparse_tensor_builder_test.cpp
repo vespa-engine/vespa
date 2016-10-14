@@ -6,21 +6,22 @@
 
 using namespace vespalib::tensor;
 using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
 
 void
 assertCellValue(double expValue, const TensorAddress &address,
-                const TensorDimensions &dimensions,
+                const ValueType &type,
                 const SparseTensor::Cells &cells)
 {
     SparseTensorAddressBuilder addressBuilder;
-    auto dimsItr = dimensions.cbegin();
-    auto dimsItrEnd = dimensions.cend();
+    auto dimsItr = type.dimensions().cbegin();
+    auto dimsItrEnd = type.dimensions().cend();
     for (const auto &element : address.elements()) {
-        while ((dimsItr < dimsItrEnd) && (*dimsItr < element.dimension())) {
+        while ((dimsItr < dimsItrEnd) && (dimsItr->name < element.dimension())) {
             addressBuilder.add("");
             ++dimsItr;
         }
-        assert((dimsItr != dimsItrEnd) && (*dimsItr == element.dimension()));
+        assert((dimsItr != dimsItrEnd) && (dimsItr->name == element.dimension()));
         addressBuilder.add(element.label());
         ++dimsItr;
     }
@@ -53,13 +54,13 @@ TEST("require that tensor can be constructed")
 {
     Tensor::UP tensor = buildTensor();
     const SparseTensor &sparseTensor = dynamic_cast<const SparseTensor &>(*tensor);
-    const TensorDimensions &dimensions = sparseTensor.dimensions();
+    const ValueType &type = sparseTensor.type();
     const SparseTensor::Cells &cells = sparseTensor.cells();
     EXPECT_EQUAL(2u, cells.size());
     assertCellValue(10, TensorAddress({{"a","1"},{"b","2"}}),
-                    dimensions, cells);
+                    type, cells);
     assertCellValue(20, TensorAddress({{"c","3"},{"d","4"}}),
-                    dimensions, cells);
+                    type, cells);
 }
 
 TEST("require that tensor can be converted to tensor spec")
@@ -85,11 +86,11 @@ TEST("require that dimensions are extracted")
         add_label(builder.define_dimension("c"), "4").add_cell(20);
     Tensor::UP tensor = builder.build();
     const SparseTensor &sparseTensor = dynamic_cast<const SparseTensor &>(*tensor);
-    const TensorDimensions &dims = sparseTensor.dimensions();
+    const auto &dims = sparseTensor.type().dimensions();
     EXPECT_EQUAL(3u, dims.size());
-    EXPECT_EQUAL("a", dims[0]);
-    EXPECT_EQUAL("b", dims[1]);
-    EXPECT_EQUAL("c", dims[2]);
+    EXPECT_EQUAL("a", dims[0].name);
+    EXPECT_EQUAL("b", dims[1].name);
+    EXPECT_EQUAL("c", dims[2].name);
     EXPECT_EQUAL("tensor(a{},b{},c{})", sparseTensor.getType().to_spec());
 }
 

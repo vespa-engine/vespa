@@ -17,25 +17,8 @@ namespace tensor {
 
 namespace {
 
-class SparseTensorMapperBase
-{
-protected:
-    static TensorDimensions mapDimensions(const ValueType &type);
-};
-
-TensorDimensions
-SparseTensorMapperBase::mapDimensions(const ValueType &type)
-{
-    TensorDimensions dimensions;
-    dimensions.reserve(type.dimensions().size());
-    for (const auto &dimension :  type.dimensions()) {
-        dimensions.emplace_back(dimension.name);
-    }
-    return dimensions;
-}
-
 template <class TensorT>
-class SparseTensorMapper : public TensorVisitor, public SparseTensorMapperBase
+class SparseTensorMapper : public TensorVisitor
 {
     using Builder = DirectTensorBuilder<TensorT>;
     using AddressBuilderType = typename Builder::AddressBuilderType;
@@ -60,8 +43,7 @@ template <class TensorT>
 SparseTensorMapper<TensorT>::
 SparseTensorMapper(const ValueType &type)
     : TensorVisitor(),
-      SparseTensorMapperBase(),
-      _builder(mapDimensions(type)),
+      _builder(type),
       _addressBuilder()
 {
 }
@@ -85,8 +67,8 @@ mapAddress(const TensorAddress &address)
 {
     _addressBuilder.clear();
     TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    for (const auto &dimension : _builder.dimensions()) {
-        if (addressIterator.skipToDimension(dimension)) {
+    for (const auto &dimension : _builder.type().dimensions()) {
+        if (addressIterator.skipToDimension(dimension.name)) {
             _addressBuilder.add(addressIterator.label());
             addressIterator.next();
         } else {

@@ -23,24 +23,23 @@ class SparseTensor : public Tensor
 {
 public:
     typedef vespalib::hash_map<SparseTensorAddressRef, double> Cells;
-    typedef TensorDimensions Dimensions;
 
     static constexpr size_t STASH_CHUNK_SIZE = 16384u;
 
 private:
+    eval::ValueType _type;
     Cells _cells;
-    Dimensions _dimensions;
     Stash _stash;
 
 public:
-    explicit SparseTensor(const Dimensions &dimensions_in,
+    explicit SparseTensor(const eval::ValueType &type_in,
                              const Cells &cells_in);
-    SparseTensor(Dimensions &&dimensions_in,
+    SparseTensor(eval::ValueType &&type_in,
                     Cells &&cells_in, Stash &&stash_in);
     const Cells &cells() const { return _cells; }
-    const Dimensions &dimensions() const { return _dimensions; }
+    const eval::ValueType &type() const { return _type; }
     bool operator==(const SparseTensor &rhs) const;
-    Dimensions combineDimensionsWith(const SparseTensor &rhs) const;
+    eval::ValueType combineDimensionsWith(const SparseTensor &rhs) const;
 
     virtual eval::ValueType getType() const override;
     virtual double sum() const override;

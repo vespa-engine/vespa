@@ -9,7 +9,7 @@ namespace tensor {
 template <class TensorT>
 TensorApply<TensorT>::TensorApply(const TensorImplType &tensor,
                                   const CellFunction &func)
-    : Parent(tensor.dimensions())
+    : Parent(tensor.type())
 {
     for (const auto &cell : tensor.cells()) {
         _builder.insertCell(cell.first, func.apply(cell.second));
