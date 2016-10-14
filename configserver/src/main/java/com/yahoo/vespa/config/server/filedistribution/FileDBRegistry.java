@@ -35,7 +35,7 @@ public class FileDBRegistry implements FileRegistry {
 
     @Override
     public String fileSourceHost() {
-        return HostName.getHostName();
+        return HostName.getLocalhost();
     }
 
     @Override

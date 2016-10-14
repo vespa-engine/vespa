@@ -424,7 +424,7 @@ public class ConfigUtils {
     }
 
     public static String getCanonicalHostName() {
-        return HostName.getHostName();
+        return HostName.getLocalhost();
     }
 
     /**

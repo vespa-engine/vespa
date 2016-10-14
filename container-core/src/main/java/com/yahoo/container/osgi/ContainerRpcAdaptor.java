@@ -43,7 +43,7 @@ public class ContainerRpcAdaptor extends AbstractRpcAdaptor {
     public ContainerRpcAdaptor(Osgi osgi) {
         this.osgi = osgi;
         this.supervisor = new Supervisor(new Transport());
-        this.hostname = HostName.getHostName();
+        this.hostname = HostName.getLocalhost();
 
         bindCommands(supervisor);
     }

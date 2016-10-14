@@ -270,7 +270,7 @@ public class FeedHandler extends LoggingRequestHandler {
     }
 
     private static String resolveLocalHostname() {
-        String hostname = HostName.getHostName();
+        String hostname = HostName.getLocalhost();
         if (hostname.equals("localhost")) {
             return "";
         }

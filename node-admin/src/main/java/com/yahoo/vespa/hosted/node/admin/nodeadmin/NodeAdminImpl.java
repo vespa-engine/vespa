@@ -75,7 +75,7 @@ public class NodeAdminImpl implements NodeAdmin {
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
 
         Dimensions dimensions = new Dimensions.Builder()
-                .add("host", HostName.getHostName())
+                .add("host", HostName.getLocalhost())
                 .add("role", "docker").build();
 
         this.numberOfContainersInActiveState = metricReceiver.declareGauge(dimensions, "nodes.state.active");
