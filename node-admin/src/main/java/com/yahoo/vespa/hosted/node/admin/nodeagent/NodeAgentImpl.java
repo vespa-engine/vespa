@@ -393,6 +393,7 @@ public class NodeAgentImpl implements NodeAgent {
                 // If we transition from active, to not active state, unset the current metrics
                 if (lastNodeSpec != null && lastNodeSpec.nodeState == Node.State.active && nodeSpec.nodeState != Node.State.active) {
                     metricReceiver.unsetMetricsForContainer(hostname);
+                    lastCpuMetric = new CpuUsageReporter();
                 }
                 addDebugMessage("Loading new node spec: " + nodeSpec.toString());
                 lastNodeSpec = nodeSpec;
