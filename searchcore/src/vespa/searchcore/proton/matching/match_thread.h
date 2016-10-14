@@ -69,7 +69,7 @@ private:
         MaybeMatchPhaseLimiter  & _limiter;
     };
 
-    double estimate_match_frequency(uint32_t matches, uint32_t local_todo, MaybeMatchPhaseLimiter & limiter) __attribute__((noinline));
+    double estimate_match_frequency(uint32_t matches, uint32_t searchedSoFar) __attribute__((noinline));
 
     template <typename IteratorT>
     void maybe_limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId) __attribute__((noinline));

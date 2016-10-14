@@ -126,22 +126,13 @@ MatchThread::Context::rankHit(uint32_t docId) {
 
 //-----------------------------------------------------------------------------
 
-/**
- * Estimates the match frequency across all threads. Also needs the
- * match phase limiter because it is used to track search coverage
- * statistics.
- **/
 double
-MatchThread::estimate_match_frequency(uint32_t matches, uint32_t local_todo, MaybeMatchPhaseLimiter &limiter)
+MatchThread::estimate_match_frequency(uint32_t matches, uint32_t searchedSoFar)
 {
-    const size_t searchedSoFar = (scheduler.total_size(thread_id) - local_todo);
     IMatchLoopCommunicator::Matches my_matches(matches, searchedSoFar);
     WaitTimer count_matches_timer(wait_time_s);
     double match_freq = communicator.estimate_match_frequency(my_matches);
-    const size_t global_todo = scheduler.unassigned_size();
     count_matches_timer.done();
-    size_t left = local_todo + (global_todo / num_threads);
-    limiter.updateDocIdSpaceEstimate(searchedSoFar, left);
     return match_freq;
 }
 
@@ -150,8 +141,12 @@ void
 MatchThread::maybe_limit(MaybeMatchPhaseLimiter & limiter, IteratorT & search, uint32_t matches, uint32_t docId, uint32_t endId)
 {
     const uint32_t local_todo = (endId - docId - 1);
-    double match_freq = estimate_match_frequency(matches, local_todo, limiter);
+    const size_t searchedSoFar = (scheduler.total_size(thread_id) - local_todo);
+    double match_freq = estimate_match_frequency(matches, searchedSoFar);
+    const size_t global_todo = scheduler.unassigned_size();
     search = limiter.maybe_limit(std::move(search), match_freq, matchParams.numDocs);
+    size_t left = local_todo + (global_todo / num_threads);
+    limiter.updateDocIdSpaceEstimate(searchedSoFar, left);
     LOG(debug, "Limit=%d has been reached at docid=%d which is after %zu docs.",
                matches, docId, (scheduler.total_size(thread_id) - local_todo));
     LOG(debug, "SearchIterator after limiter: %s", search->asString().c_str());
@@ -215,9 +210,11 @@ MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
     }
     uint32_t matches = context.matches;
     if (do_limit && context.isBelowLimit()) {
+        const size_t searchedSoFar = scheduler.total_size(thread_id);
         LOG(debug, "Limit not reached (had %d) at docid=%d which is after %zu docs.",
-            matches, scheduler.total_span(thread_id).end, scheduler.total_size(thread_id));
-        estimate_match_frequency(matches, 0, context.limiter());
+            matches, scheduler.total_span(thread_id).end, searchedSoFar);
+        estimate_match_frequency(matches, searchedSoFar);
+        context.limiter().updateDocIdSpaceEstimate(searchedSoFar, 0);
     }
     thread_stats.docsMatched(matches);
     if (do_rank) {
