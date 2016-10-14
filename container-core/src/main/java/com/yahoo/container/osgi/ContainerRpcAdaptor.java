@@ -12,9 +12,9 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import com.yahoo.net.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.Osgi;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import com.yahoo.yolean.Exceptions;
 import org.osgi.framework.Bundle;
 
@@ -43,7 +43,7 @@ public class ContainerRpcAdaptor extends AbstractRpcAdaptor {
     public ContainerRpcAdaptor(Osgi osgi) {
         this.osgi = osgi;
         this.supervisor = new Supervisor(new Transport());
-        this.hostname = HostName.getLocalhost();
+        this.hostname = getDefaults().canonicalHostName();
 
         bindCommands(supervisor);
     }
