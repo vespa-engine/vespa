@@ -76,7 +76,6 @@ enum query_features {
     QF_SORTSPEC               = 0x00000080,
     QF_LOCATION               = 0x00000800,
     QF_PROPERTIES             = 0x00100000,
-    QF_WARMUP		      = 0x00200000, // Deprecated, do not use!
     QF_GROUPSPEC              = 0x00400000,
     QF_SESSIONID              = 0x00800000
 };

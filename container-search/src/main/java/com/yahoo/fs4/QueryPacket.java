@@ -180,7 +180,6 @@ public class QueryPacket extends Packet {
     static final int QF_SORTSPEC        = 0x00000080;
     static final int QF_LOCATION        = 0x00000800;
     static final int QF_PROPERTIES      = 0x00100000;
-    static final int QF_WARMUP          = 0x00200000;
     static final int QF_GROUPSPEC       = 0x00400000;
     static final int QF_SESSIONID       = 0x00800000;
 

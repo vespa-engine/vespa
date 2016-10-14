@@ -1025,8 +1025,7 @@ FS4Packet_QUERYRESULTX::GetLength()
 void
 FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
 {
-    // Never provide QF_WARMUP downwards
-    dst->WriteInt32Fast(_features & ~QF_WARMUP);
+    dst->WriteInt32Fast(_features);
     dst->WriteInt32Fast(_offset);
     dst->WriteInt32Fast(_numDocs);
     dst->WriteInt64Fast(_totNumDocs);
@@ -1449,10 +1448,6 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         VERIFY_LEN(locationLen, "location string");
         setLocation(stringref(src->GetData(), locationLen));
         src->DataToDead(locationLen);
-    }
-
-    if ((_features & QF_WARMUP) != 0) {
-        (void) readUInt32(*src, len, "warmup");
     }
 
     if ((_features & QF_PARSEDQUERY) != 0) {
