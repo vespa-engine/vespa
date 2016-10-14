@@ -2,11 +2,7 @@
 package com.yahoo.messagebus.network;
 
 import com.yahoo.log.LogLevel;
-import com.yahoo.net.HostName;
-import com.yahoo.net.LinuxInetAddress;
-
-import java.net.Inet6Address;
-import java.net.InetAddress;
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * This class encapsulates the identity of the application that uses this instance of message bus. This identity
@@ -28,11 +24,7 @@ public class Identity {
      * @param configId The config identifier for the application.
      */
     public Identity(String configId) {
-        InetAddress addr = LinuxInetAddress.getLocalHost(); // try hard to get a resolvable address
-        if (addr instanceof Inet6Address) // 
-            hostname = HostName.getLocalhost(); // ... but fallback to hostname if we get an IPv6 address
-        else
-            hostname = addr.getCanonicalHostName();
+        hostname = getDefaults().canonicalHostName();
         servicePrefix = configId;
     }
 
