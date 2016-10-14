@@ -124,7 +124,7 @@ public class DockerImpl implements Docker {
         if (! dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
         // Use IPv6 address if there is a mix of IP4 and IPv6 by taking the longest address.
-        List<InetAddress> hostAddresses = Arrays.asList(InetAddress.getAllByName(com.yahoo.net.HostName.getLocalhost()));
+        List<InetAddress> hostAddresses = Arrays.asList(InetAddress.getAllByName(com.yahoo.net.HostName.getHostName()));
         InetAddress hostAddress = Collections.max(hostAddresses,
                 (o1, o2) -> o1.getAddress().length - o2.getAddress().length);
 
@@ -563,7 +563,7 @@ public class DockerImpl implements Docker {
 
     private void setMetrics(MetricReceiverWrapper metricReceiver) {
         Dimensions dimensions = new Dimensions.Builder()
-                .add("host", HostName.getLocalhost())
+                .add("host", HostName.getHostName())
                 .add("role", "docker").build();
 
         numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");

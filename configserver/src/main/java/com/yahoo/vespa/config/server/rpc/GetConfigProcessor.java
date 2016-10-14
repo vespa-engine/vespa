@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 class GetConfigProcessor implements Runnable {
 
     private static final Logger log = Logger.getLogger(GetConfigProcessor.class.getName());
-    private static final String localHostName = HostName.getLocalhost();
+    private static final String localHostName = HostName.getHostName();
 
     private final JRTServerConfigRequest request;
     /* True only when this request has expired its server timeout and we need to respond to the client */

@@ -1,9 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.fs4.mplex;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.yahoo.container.search.Fs4Config;
+import com.yahoo.fs4.BasicPacket;
+import com.yahoo.fs4.ChannelTimeoutException;
+import com.yahoo.fs4.PacketListener;
+import com.yahoo.fs4.PingPacket;
+import com.yahoo.fs4.QueryPacket;
+import com.yahoo.fs4.mplex.Backend.BackendStatistics;
+import com.yahoo.prelude.fastsearch.FS4ResourcePool;
+import com.yahoo.search.Query;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -13,21 +22,9 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
-import com.yahoo.container.search.Fs4Config;
-import com.yahoo.net.HostName;
-import com.yahoo.net.LinuxInetAddress;
-import com.yahoo.prelude.fastsearch.FS4ResourcePool;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.yahoo.fs4.BasicPacket;
-import com.yahoo.fs4.ChannelTimeoutException;
-import com.yahoo.fs4.PacketListener;
-import com.yahoo.fs4.PingPacket;
-import com.yahoo.fs4.QueryPacket;
-import com.yahoo.fs4.mplex.Backend.BackendStatistics;
-import com.yahoo.search.Query;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test networking code for talking to dispatch.
@@ -114,7 +111,6 @@ public class BackendTestCase {
 
         public MockServer() throws IOException {
             ServerSocket socket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
-            //ServerSocket socket = new ServerSocket(0, 50, LinuxInetAddress.getLocalHost());
             host = (InetSocketAddress) socket.getLocalSocketAddress();
             dispatch = new MockDispatch(socket);
             worker = new Thread(dispatch);

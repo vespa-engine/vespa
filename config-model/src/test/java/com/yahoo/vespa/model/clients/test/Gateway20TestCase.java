@@ -21,7 +21,7 @@ import static org.junit.Assert.*;
  * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
  */
 public class Gateway20TestCase {
-    private static String hostname = HostName.getLocalhost();  // Using the same way of getting hostname as filedistribution model
+    private static String hostname = HostName.getHostName();  // Using the same way of getting hostname as filedistribution model
 
     @Test
     public void testSimpleDocprocV3() throws Exception {
