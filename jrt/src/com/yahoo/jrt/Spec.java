@@ -2,8 +2,6 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.net.HostName;
-
 import java.net.SocketAddress;
 import java.net.InetSocketAddress;
 
