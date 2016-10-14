@@ -3,6 +3,8 @@ package com.yahoo.vespa.defaults;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author arnej27959
@@ -17,4 +19,11 @@ public class DefaultsTestCase {
         assertEquals("./my/explicit/relative/path", Defaults.getDefaults().underVespaHome("./my/explicit/relative/path"));
     }
 
+    @Test
+    public void testHostNameNotEmpty() {
+        String h = Defaults.getDefaults().canonicalHostName();
+        assertNotNull(h);
+        assertEquals(h, h.trim());
+        assertFalse(h.isEmpty());
+    }
 }

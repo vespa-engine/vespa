@@ -3,6 +3,8 @@ package com.yahoo.vespa.defaults;
 
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 /**
  * The defaults of basic Vespa configuration variables.
@@ -19,11 +21,36 @@ public class Defaults {
     private final String vespaHome;
     private final int vespaWebServicePort;
     private final int vespaPortBase;
+    private final String hostName;
 
     private Defaults() {
         vespaHome = findVespaHome();
         vespaWebServicePort = findVespaWebServicePort();
         vespaPortBase = 19000; // TODO
+        hostName = findHostName();
+    }
+
+    private String findHostName() {
+        Optional<String> vespaHostName = Optional.ofNullable(System.getenv("VESPA_HOSTNAME"));
+        if (vespaHostName.isPresent() && ! vespaHostName.get().trim().isEmpty()) {
+            return vespaHostName.get().trim();
+        }
+        try {
+            Process p = Runtime.getRuntime().exec("hostname");
+            BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String myHost = in.readLine();
+            p.waitFor();
+            if (p.exitValue() != 0) {
+                log.warning("Command 'hostname' failed: exit("+p.exitValue()+")");
+            } else if (myHost.trim().isEmpty()) {
+                log.warning("Command 'hostname' did not give any output");
+            } else {
+                return myHost.trim();
+            }
+        } catch (Exception e) {
+            log.warning("Failure executing command 'hostname': " + e);
+        }
+        return "localhost";
     }
 
     private String findVespaHome() {
@@ -52,6 +79,12 @@ public class Defaults {
                                                vespaWebServicePortString.get() + "'");
         }
     }
+
+    /**
+     * Returns the canonical (FQDN) name of the host,
+     * which should work for other hosts to connect to
+     **/
+    public String canonicalHostName() { return hostName; }
 
     /**
      * Returns the path to the root under which Vespa should read and write files, ending by "/".
