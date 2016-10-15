@@ -47,13 +47,17 @@ public:
         _sz(rhs._sz),
         _allocator(rhs._allocator)
     {
-        rhs._buf = nullptr;
-        rhs._sz = 0;
-        rhs._allocator = 0;
+        rhs.clear();
     }
     Alloc & operator=(Alloc && rhs) {
         if (this != & rhs) {
-            swap(rhs);
+            if (_buf != nullptr) {
+                _allocator->free(_buf, _sz);
+            }
+            _sz = rhs._sz;
+            _buf = rhs._buf;
+            _allocator = rhs._allocator;
+            rhs.clear();
         }
         return *this;
     }
@@ -73,7 +77,12 @@ public:
     Alloc create(size_t sz) const {
         return Alloc(_allocator, sz);
     }
-protected:
+private:
+    void clear() {
+        _buf = nullptr;
+        _sz = 0;
+        _allocator = 0;
+    }
     void                  * _buf;
     size_t                  _sz;
     const MemoryAllocator * _allocator;
