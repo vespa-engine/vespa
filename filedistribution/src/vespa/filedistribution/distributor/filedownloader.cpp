@@ -402,6 +402,9 @@ void FileDownloader::runEventLoop() {
         } catch (const vespalib::PortListenException & e) {
             LOG(warning, "Failed listening to torrent port : %s", e.what());
             std::quick_exit(21);
+        } catch (const boost::filesystem_error & e) {
+            LOG(warning, "Some boost file operations failed : %s", e.what());
+            std::quick_exit(22);
         }
     }
     drain();
