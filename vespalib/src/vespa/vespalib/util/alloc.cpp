@@ -116,17 +116,17 @@ namespace alloc {
 
 class HeapAllocator : public MemoryAllocator {
 public:
-    void * alloc(size_t sz) const override;
-    void free(void * buf, size_t sz) const override;
-    static void * salloc(size_t sz);
-    static void sfree(void * buf, size_t sz);
+    PtrAndSize alloc(size_t sz) const override;
+    void free(PtrAndSize alloc) const override;
+    static PtrAndSize salloc(size_t sz);
+    static void sfree(PtrAndSize alloc);
     static MemoryAllocator & getDefault();
 };
 
 class AlignedHeapAllocator : public HeapAllocator {
 public:
     AlignedHeapAllocator(size_t alignment) : _alignment(alignment) { }
-    void * alloc(size_t sz) const override;
+    PtrAndSize alloc(size_t sz) const override;
     static MemoryAllocator & get4K();
     static MemoryAllocator & get1K();
     static MemoryAllocator & get512B();
@@ -136,18 +136,18 @@ private:
 
 class MMapAllocator : public MemoryAllocator {
 public:
-    void * alloc(size_t sz) const override;
-    void free(void * buf, size_t sz) const override;
-    static void * salloc(size_t sz);
-    static void sfree(void * buf, size_t sz);
+    PtrAndSize alloc(size_t sz) const override;
+    void free(PtrAndSize alloc) const override;
+    static PtrAndSize salloc(size_t sz);
+    static void sfree(PtrAndSize alloc);
     static MemoryAllocator & getDefault();
 };
 
 class AutoAllocator : public MemoryAllocator {
 public:
     AutoAllocator(size_t mmapLimit, size_t alignment) : _mmapLimit(mmapLimit), _alignment(alignment) { }
-    void * alloc(size_t sz) const override;
-    void free(void * buf, size_t sz) const override;
+    PtrAndSize alloc(size_t sz) const override;
+    void free(PtrAndSize alloc) const override;
     static MemoryAllocator & getDefault();
     static MemoryAllocator & getAllocator(size_t mmapLimit, size_t alignment);
 private:
@@ -226,37 +226,42 @@ MemoryAllocator & AutoAllocator::getAllocator(size_t mmapLimit, size_t alignment
     return *(found->second);
 }
 
-void * HeapAllocator::alloc(size_t sz) const {
+MemoryAllocator::PtrAndSize
+HeapAllocator::alloc(size_t sz) const {
     return salloc(sz);
 }
 
-void * HeapAllocator::salloc(size_t sz) {
-    return (sz > 0) ? malloc(sz) : 0;
+MemoryAllocator::PtrAndSize
+HeapAllocator::salloc(size_t sz) {
+    return PtrAndSize((sz > 0) ? malloc(sz) : nullptr, sz);
 }
 
-void HeapAllocator::free(void * p, size_t sz) const {
-    sfree(p, sz);
+void HeapAllocator::free(PtrAndSize alloc) const {
+    sfree(alloc);
 }
 
-void HeapAllocator::sfree(void * p, size_t sz) {
-    (void) sz; if (p) { ::free(p); }
+void HeapAllocator::sfree(PtrAndSize alloc) {
+    if (alloc.first) { ::free(alloc.first); }
 }
 
-void * AlignedHeapAllocator::alloc(size_t sz) const {
-    if (!sz) { return 0; }
+MemoryAllocator::PtrAndSize
+AlignedHeapAllocator::alloc(size_t sz) const {
+    if (!sz) { return PtrAndSize(nullptr, 0); }
     void* ptr;
     int result = posix_memalign(&ptr, _alignment, sz);
     if (result != 0) {
         throw IllegalArgumentException(make_string("posix_memalign(%zu, %zu) failed with code %d", sz, _alignment, result));
     }
-    return ptr;
+    return PtrAndSize(ptr, sz);
 }
 
-void * MMapAllocator::alloc(size_t sz) const {
+MemoryAllocator::PtrAndSize
+MMapAllocator::alloc(size_t sz) const {
     return salloc(sz);
 }
 
-void * MMapAllocator::salloc(size_t sz)
+MemoryAllocator::PtrAndSize
+MMapAllocator::salloc(size_t sz)
 {
     void * buf(nullptr);
     if (sz > 0) {
@@ -304,29 +309,31 @@ void * MMapAllocator::salloc(size_t sz)
             LOG(info, "%ld mappings of accumulated size %ld", _G_HugeMappings.size(), sum(_G_HugeMappings));
         }
     }
-    return buf;
+    return PtrAndSize(buf, sz);
 }
 
-void MMapAllocator::free(void * buf, size_t sz) const {
-    sfree(buf, sz);
+void MMapAllocator::free(PtrAndSize alloc) const {
+    sfree(alloc);
 }
 
-void MMapAllocator::sfree(void * buf, size_t sz)
+void MMapAllocator::sfree(PtrAndSize alloc)
 {
-    if (buf != nullptr) {
-        madvise(buf, sz, MADV_DONTNEED);
-        munmap(buf, sz);
-        if (sz >= _G_MMapLogLimit) {
+    if (alloc.first != nullptr) {
+        madvise(alloc.first, alloc.second, MADV_DONTNEED);
+        munmap(alloc.first, alloc.second);
+        if (alloc.second >= _G_MMapLogLimit) {
             LockGuard guard(_G_lock);
-            MMapInfo info = _G_HugeMappings[buf];
-            _G_HugeMappings.erase(buf);
+            MMapInfo info = _G_HugeMappings[alloc.first];
+            assert(alloc.second == info._sz);
+            _G_HugeMappings.erase(alloc.first);
             LOG(info, "munmap %ld of size %ld", info._id, info._sz);
             LOG(info, "%ld mappings of accumulated size %ld", _G_HugeMappings.size(), sum(_G_HugeMappings));
         }
     }
 }
 
-void * AutoAllocator::alloc(size_t sz) const {
+MMapAllocator::PtrAndSize
+AutoAllocator::alloc(size_t sz) const {
     if (useMMap(sz)) {
         sz = roundUpToHugePages(sz);
         return MMapAllocator::salloc(sz);
@@ -339,11 +346,12 @@ void * AutoAllocator::alloc(size_t sz) const {
     }
 }
 
-void AutoAllocator::free(void *p, size_t sz) const {
-    if (useMMap(sz)) {
-        return MMapAllocator::sfree(p, sz);
+void
+AutoAllocator::free(PtrAndSize alloc) const {
+    if (useMMap(alloc.second)) {
+        return MMapAllocator::sfree(alloc);
     } else {
-        return HeapAllocator::sfree(p, sz);
+        return HeapAllocator::sfree(alloc);
     }
 }
 
