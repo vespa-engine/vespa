@@ -4,7 +4,7 @@
 #include "loadedstringvalue.h"
 
 using vespalib::Array;
-using vespalib::alloc::MMapAllocFactory;
+using vespalib::alloc::Alloc;
 
 namespace search {
 
@@ -13,7 +13,7 @@ namespace attribute {
 void
 sortLoadedByValue(LoadedStringVectorReal &loaded)
 {
-    Array<unsigned> radixScratchPad(loaded.size(), MMapAllocFactory::create());
+    Array<unsigned> radixScratchPad(loaded.size(), Alloc::allocMMap());
     for(size_t i(0), m(loaded.size()); i < m; i++) {
         loaded[i].prepareRadixSort();
     }

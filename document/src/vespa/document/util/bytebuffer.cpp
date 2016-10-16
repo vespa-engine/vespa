@@ -22,7 +22,6 @@
 #define LOG_DEBUG4(a,b,c,d) LOG_DEBUG1(vespalib::make_string(a,b,c,d));
 
 using vespalib::alloc::Alloc;
-using vespalib::DefaultAlloc;
 
 namespace document {
 
@@ -60,7 +59,7 @@ ByteBuffer::ByteBuffer() :
 }
 
 ByteBuffer::ByteBuffer(size_t len) :
-    ByteBuffer(DefaultAlloc::create(len), len)
+    ByteBuffer(Alloc::alloc(len), len)
 {
 }
 
@@ -115,7 +114,7 @@ ByteBuffer& ByteBuffer::operator=(const ByteBuffer & org)
     if (this != & org) {
         cleanUp();
         if (org._len > 0 && org._buffer) {
-            DefaultAlloc::create(org._len + 1).swap(_ownedBuffer);
+            Alloc::alloc(org._len + 1).swap(_ownedBuffer);
             _buffer = static_cast<char *>(_ownedBuffer.get());
             memcpy(_buffer,org._buffer,org._len);
             _buffer[org._len] = 0;
@@ -190,7 +189,7 @@ ByteBuffer::sliceFrom(const ByteBuffer& buf, size_t from, size_t to) // throw (B
         // Slicing from someone that doesn't own their buffer, must make own copy.
         if (( buf._ownedBuffer.get() == NULL ) && (buf._bufHolder == NULL)) {
             cleanUp();
-            DefaultAlloc::create(to-from + 1).swap(_ownedBuffer);
+            Alloc::alloc(to-from + 1).swap(_ownedBuffer);
             _buffer = static_cast<char *>(_ownedBuffer.get());
             memcpy(_buffer, buf._buffer + from, to-from);
             _buffer[to-from] = 0;
@@ -219,7 +218,7 @@ ByteBuffer::sliceFrom(const ByteBuffer& buf, size_t from, size_t to) // throw (B
 ByteBuffer* ByteBuffer::copyBuffer(const char* buffer, size_t len)
 {
     if (buffer && len) {
-        Alloc newBuf = DefaultAlloc::create(len + 1);
+        Alloc newBuf = Alloc::alloc(len + 1);
         memcpy(newBuf.get(), buffer, len);
         static_cast<char *>(newBuf.get())[len] = 0;
         return new ByteBuffer(std::move(newBuf), len);

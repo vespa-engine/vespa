@@ -159,6 +159,7 @@ private:
     class WrapVisitorProgress;
     class Value {
     public:
+        using Alloc = vespalib::alloc::Alloc;
         typedef std::unique_ptr<Value> UP;
         Value() : _compressedSize(0), _uncompressedSize(0), _compression(document::CompressionConfig::NONE) { }
 
@@ -173,7 +174,7 @@ private:
             _compressedSize(rhs._compressedSize),
             _uncompressedSize(rhs._uncompressedSize),
             _compression(rhs._compression),
-            _buf(vespalib::DefaultAlloc::create(rhs.size()))
+            _buf(Alloc::alloc(rhs.size()))
         {
             memcpy(get(), rhs.get(), size());
         }
@@ -213,7 +214,7 @@ private:
         size_t _compressedSize;
         size_t _uncompressedSize;
         document::CompressionConfig::Type _compression;
-        vespalib::alloc::Alloc _buf;
+        Alloc  _buf;
     };
     class BackingStore {
     public:

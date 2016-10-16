@@ -59,7 +59,7 @@ const Memory RESPONSE_COMPRESSION_INFO_UNCOMPRESSED_SIZE = "uncompressedSize";
 DecompressedData
 decompress_lz4(const char * input, uint32_t inputLen, int uncompressedLength)
 {
-    Alloc memory( DefaultAlloc::create(uncompressedLength));
+    Alloc memory( Alloc::alloc(uncompressedLength));
     int sz = LZ4_decompress_safe(input, static_cast<char *>(memory.get()), inputLen, uncompressedLength);
     if (sz >= 0 && sz != uncompressedLength) {
         if (LOG_WOULD_LOG(debug)) {

@@ -392,7 +392,7 @@ size_t computeBufLen(size_t buflen)
 Fast_BufferedFile::Fast_BufferedFile(FastOS_FileInterface *file, size_t bufferSize) :
     FastOS_FileInterface(),
     _fileleft(static_cast<uint64_t>(-1)),
-    _buf(vespalib::alloc::MMapAllocFactory::create(computeBufLen(bufferSize))),
+    _buf(vespalib::alloc::Alloc::allocMMap(computeBufLen(bufferSize))),
     _bufi(NULL),
     _bufe(NULL),
     _filepos(0),

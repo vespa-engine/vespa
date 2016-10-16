@@ -9,6 +9,8 @@ LOG_SETUP(".searchlib.docstore.compacter");
 namespace search {
 namespace docstore {
 
+using vespalib::alloc::Alloc;
+
 void
 Compacter::write(LockGuard guard, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz) {
     (void) chunkId;
@@ -24,7 +26,7 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const Compress
     _bucketizer(bucketizer),
     _writeCount(0),
     _lock(),
-    _backingMemory(vespalib::DefaultAlloc::create(0x40000000), &_lock),
+    _backingMemory(Alloc::alloc(0x40000000), &_lock),
     _tmpStore(),
     _lidGuard(ds.getLidReadGuard()),
     _bucketizerGuard(bucketizer.getGuard()),

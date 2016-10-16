@@ -3,7 +3,6 @@
 
 #include <sys/types.h>
 #include <algorithm>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/optimized.h>
 
 namespace vespalib {
@@ -14,12 +13,13 @@ class MemoryAllocator {
 public:
     enum {HUGEPAGE_SIZE=0x200000};
     using UP = std::unique_ptr<MemoryAllocator>;
+    using PtrAndSize = std::pair<void *, size_t>;
     MemoryAllocator(const MemoryAllocator &) = delete;
     MemoryAllocator & operator = (const MemoryAllocator &) = delete;
     MemoryAllocator() { }
     virtual ~MemoryAllocator() { }
-    virtual void * alloc(size_t sz) const = 0;
-    virtual void free(void * buf, size_t sz) const = 0;
+    virtual PtrAndSize alloc(size_t sz) const = 0;
+    virtual void free(PtrAndSize alloc) const = 0;
     static size_t roundUpToHugePages(size_t sz) {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
     }
@@ -33,80 +33,65 @@ public:
 **/
 class Alloc
 {
+private:
+    using PtrAndSize = MemoryAllocator::PtrAndSize;;
 public:
-    using MemoryAllocator = alloc::MemoryAllocator;
-    size_t size() const { return _sz; }
-    void * get() { return _buf; }
-    const void * get() const { return _buf; }
-    void * operator -> () { return _buf; }
-    const void * operator -> () const { return _buf; }
+    size_t size() const { return _alloc.second; }
+    void * get() { return _alloc.first; }
+    const void * get() const { return _alloc.first; }
+    void * operator -> () { return _alloc.first; }
+    const void * operator -> () const { return _alloc.first; }
     Alloc(const Alloc &) = delete;
     Alloc & operator = (const Alloc &) = delete;
     Alloc(Alloc && rhs) :
-        _buf(rhs._buf),
-        _sz(rhs._sz),
+        _alloc(rhs._alloc),
         _allocator(rhs._allocator)
     {
-        rhs._buf = nullptr;
-        rhs._sz = 0;
-        rhs._allocator = 0;
+        rhs.clear();
     }
     Alloc & operator=(Alloc && rhs) {
         if (this != & rhs) {
-            swap(rhs);
+            if (_alloc.first != nullptr) {
+                _allocator->free(_alloc);
+            }
+            _alloc = rhs._alloc;
+            _allocator = rhs._allocator;
+            rhs.clear();
         }
         return *this;
     }
-    Alloc() : _buf(nullptr), _sz(0), _allocator(nullptr) { }
-    Alloc(const MemoryAllocator * allocator, size_t sz) : _buf(allocator->alloc(sz)), _sz(sz), _allocator(allocator) { }
+    Alloc() : _alloc(nullptr, 0), _allocator(nullptr) { }
     ~Alloc() { 
-        if (_buf != nullptr) {
-            _allocator->free(_buf, _sz);
-            _buf = nullptr;
+        if (_alloc.first != nullptr) {
+            _allocator->free(_alloc);
+            _alloc.first = nullptr;
         }
     }
     void swap(Alloc & rhs) {
-        std::swap(_buf, rhs._buf);
-        std::swap(_sz, rhs._sz);
+        std::swap(_alloc, rhs._alloc);
         std::swap(_allocator, rhs._allocator);
     }
     Alloc create(size_t sz) const {
         return Alloc(_allocator, sz);
     }
-protected:
-    void                  * _buf;
-    size_t                  _sz;
+
+    static Alloc allocAlignedHeap(size_t sz, size_t alignment);
+    static Alloc allocHeap(size_t sz=0);
+    static Alloc allocMMap(size_t sz=0);
+    /**
+     * Optional alignment is assumed to be <= system page size, since mmap
+     * is always used when size is above limit.
+     */
+    static Alloc alloc(size_t sz=0, size_t mmapLimit=MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
+private:
+    Alloc(const MemoryAllocator * allocator, size_t sz) : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
+    void clear() {
+        _alloc.first = nullptr;
+        _alloc.second = 0;
+        _allocator = nullptr;
+    }
+    PtrAndSize              _alloc;
     const MemoryAllocator * _allocator;
-};
-
-class HeapAllocFactory
-{
-public:
-    static Alloc create(size_t sz=0);
-};
-
-class AlignedHeapAllocFactory
-{
-public:
-    static Alloc create(size_t sz, size_t alignment);
-};
-
-class MMapAllocFactory
-{
-public:
-    enum {HUGEPAGE_SIZE=0x200000};
-    static Alloc create(size_t sz=0);
-};
-
-/**
- * Optional alignment is assumed to be <= system page size, since mmap
- * is always used when size is above limit.
- */
-
-class AutoAllocFactory 
-{
-public:
-    static Alloc create(size_t sz=0, size_t mmapLimit=MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
 };
 
 }
@@ -114,7 +99,5 @@ public:
 inline size_t roundUp2inN(size_t minimum) {
     return 2ul << Optimized::msbIdx(minimum - 1);
 }
-
-using DefaultAlloc = alloc::AutoAllocFactory;
 
 }

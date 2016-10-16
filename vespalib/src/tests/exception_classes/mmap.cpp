@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     assert(setrlimit(RLIMIT_AS, &virtualLimit) == 0);
     std::vector<Alloc> mappings;
     for (size_t i(0); i < numBlocks; i++) {
-        mappings.emplace_back(MMapAllocFactory::create(blockSize));
+        mappings.emplace_back(Alloc::allocMMap(blockSize));
         memset(mappings.back().get(), 0xa5, mappings.back().size());
     }
     return 0;

@@ -16,9 +16,7 @@ using search::common::SortSpec;
 using search::common::SortInfo;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
-
-using vespalib::DefaultAlloc;
-
+using vespalib::alloc::Alloc;
 namespace {
 
 constexpr size_t MMAP_LIMIT = 0x2000000;
@@ -29,8 +27,7 @@ class RadixHelper
 public:
     typedef vespalib::convertForSort<T, true> C;
     inline typename C::UIntType
-    operator()(typename C::InputType v) const
-    {
+    operator()(typename C::InputType v) const {
         return C::convert(v);
     }
 };
@@ -46,12 +43,10 @@ FastS_insertion_sort(RankedHit a[], uint32_t n)
     typedef RadixHelper<search::HitRank> RT;
     RT R;
 
-    for (i=1; i<n ; i++)
-    {
+    for (i=1; i<n ; i++) {
         swap = a[i];
         j = i;
-        while (R(swap._rankValue) > R(a[j-1]._rankValue))
-        {
+        while (R(swap._rankValue) > R(a[j-1]._rankValue)) {
             a[j] = a[j-1];
             if (!(--j)) break;;
         }
@@ -87,24 +82,20 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
     sorted = (cnt[0]==n);
     ptr[0] = n-cnt[0];
     last[0] = n;
-    for(i=1; i<256; i++)
-    {
+    for(i=1; i<256; i++) {
         ptr[i] = (last[i]=ptr[i-1]) - cnt[i];
         sorted |= (cnt[i]==n);
     }
 
-    if (!sorted)
-    {
+    if (!sorted) {
         // Go through all permutation cycles until all
         // elements are moved or found to be already in place
         i = 255;
         remain = n;
 
-        while(remain>0)
-        {
+        while(remain>0) {
             // Find first uncompleted class
-            while(ptr[i]==last[i])
-            {
+            while(ptr[i]==last[i]) {
                 i--;
             }
 
@@ -117,10 +108,8 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
             k = (R(swap._rankValue) >> SHIFT) & 0xFF;
 
             // Swap into correct class until cycle completed
-            if (i!=k)
-            {
-                do
-                {
+            if (i!=k) {
+                do {
                     temp = a[ptr[k]];
                     a[ptr[k]++] = swap;
                     k = (R((swap = temp)._rankValue) >> SHIFT) & 0xFF;
@@ -137,10 +126,9 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
         return;
     }
 
-    if (SHIFT>0)
-    {
+    if (SHIFT>0) {
         // Sort on next key
-        for(i=0; i<256 ; i++)
+        for(i=0; i<256 ; i++) {
             if ((last[i]-cnt[i])<ntop) {
                 if (cnt[i]>INSERT_SORT_LEVEL) {
                     if (last[i]<ntop) {
@@ -153,6 +141,7 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
                 } else if (cnt[i]>1) {
                         FastS_insertion_sort(&a[last[i]-cnt[i]], cnt[i]);
                 }
+            }
         }
     }
 }
@@ -428,12 +417,10 @@ FastS_insertion_sort(T a[], uint32_t n, Compare *compobj)
     uint32_t i, j;
     T swap;
 
-    for (i=1; i<n ; i++)
-    {
+    for (i=1; i<n ; i++) {
         swap = a[i];
         j = i;
-        while (Compare::Compare(compobj, swap, a[j-1]) < 0)
-        {
+        while (Compare::Compare(compobj, swap, a[j-1]) < 0) {
             a[j] = a[j-1];
             if (!(--j)) break;;
         }
@@ -502,7 +489,7 @@ FastS_SortSpec::sortResults(RankedHit a[], uint32_t n, uint32_t topn)
     } else if (_method == 1) {
         std::sort(sortData, sortData + n, StdSortDataCompare(&_binarySortData[0]));
     } else {
-        vespalib::Array<uint32_t> radixScratchPad(n, DefaultAlloc::create(0, MMAP_LIMIT));
+        vespalib::Array<uint32_t> radixScratchPad(n, Alloc::alloc(0, MMAP_LIMIT));
         search::radix_sort(SortDataRadix(&_binarySortData[0]), StdSortDataCompare(&_binarySortData[0]), SortDataEof(), 1, sortData, n, &radixScratchPad[0], 0, 96, topn);
     }
     for (uint32_t i(0), m(_sortDataArray.size()); i < m; ++i) {

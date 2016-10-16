@@ -6,7 +6,6 @@
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/common/bitvector.h>
 
-using vespalib::DefaultAlloc;
 using vespalib::alloc::Alloc;
 
 namespace search {
@@ -51,7 +50,7 @@ void
 ResultSet::allocArray(unsigned int arrayAllocated)
 {
     if (arrayAllocated > 0) {
-        DefaultAlloc::create(arrayAllocated * sizeof(RankedHit), MMAP_LIMIT).swap(_rankedHitsArray);
+        Alloc::alloc(arrayAllocated * sizeof(RankedHit), MMAP_LIMIT).swap(_rankedHitsArray);
     } else {
         Alloc().swap(_rankedHitsArray);
     }
@@ -99,7 +98,7 @@ ResultSet::mergeWithBitOverflow(void)
     uint32_t        bidx     = bitVector->getFirstTrueBit();
 
     uint32_t  actualHits = getNumHits();
-    Alloc newHitsAlloc = DefaultAlloc::create(actualHits*sizeof(RankedHit), MMAP_LIMIT);
+    Alloc newHitsAlloc = Alloc::alloc(actualHits*sizeof(RankedHit), MMAP_LIMIT);
     RankedHit *newHitsArray = static_cast<RankedHit *>(newHitsAlloc.get());
 
     RankedHit * tgtA    = newHitsArray;

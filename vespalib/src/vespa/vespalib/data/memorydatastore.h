@@ -23,7 +23,7 @@ public:
     private:
         void   * _data;
     };
-    MemoryDataStore(alloc::Alloc && initialAlloc=DefaultAlloc::create(256), Lock * lock=nullptr);
+    MemoryDataStore(alloc::Alloc && initialAlloc=alloc::Alloc::alloc(256), Lock * lock=nullptr);
     MemoryDataStore(const MemoryDataStore &) = delete;
     MemoryDataStore & operator = (const MemoryDataStore &) = delete;
     ~MemoryDataStore();
