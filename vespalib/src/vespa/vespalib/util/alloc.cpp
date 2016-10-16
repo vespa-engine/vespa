@@ -373,7 +373,7 @@ Alloc::allocAlignedHeap(size_t sz, size_t alignment)
     } else if (alignment == 0x1000) {
         return Alloc(&AlignedHeapAllocator::get4K(), sz);
     } else {
-        throw IllegalArgumentException(make_string("Alloc::allocAlignedHeap::create(%zu, %zu) does not support %zu alignment", sz, alignment, alignment));
+        throw IllegalArgumentException(make_string("Alloc::allocAlignedHeap(%zu, %zu) does not support %zu alignment", sz, alignment, alignment));
     }
 }
 
