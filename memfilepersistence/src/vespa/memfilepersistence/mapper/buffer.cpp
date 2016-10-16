@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <stdlib.h>
 
-using vespalib::DefaultAlloc;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::Alloc;
 
@@ -16,7 +15,7 @@ namespace memfile {
 // It is crucial that any backing buffer type returns an address that is
 // 512-byte aligned, or direct IO will scream at us and fail everything.
 Buffer::Buffer(size_t size)
-    : _buffer(DefaultAlloc::create(size, MemoryAllocator::HUGEPAGE_SIZE, 512)),
+    : _buffer(Alloc::alloc(size, MemoryAllocator::HUGEPAGE_SIZE, 512)),
       _size(size)
 {
 }

@@ -3,7 +3,6 @@
 #include "bufferstate.h"
 #include <limits>
 
-using vespalib::DefaultAlloc;
 using vespalib::alloc::Alloc;
 
 namespace search {
@@ -125,7 +124,7 @@ BufferState::BufferState(void)
       _typeId(0),
       _clusterSize(0),
       _compacting(false),
-      _buffer(DefaultAlloc::create())
+      _buffer(Alloc::alloc())
 {
 }
 
@@ -216,7 +215,7 @@ BufferState::onFree(void *&buffer)
     assert(_deadElems <= _usedElems);
     assert(_holdElems == _usedElems - _deadElems);
     _typeHandler->destroyElements(buffer, _usedElems);
-    DefaultAlloc::create().swap(_buffer);
+    Alloc::alloc().swap(_buffer);
     _typeHandler->onFree(_usedElems);
     buffer = NULL;
     _usedElems = 0;

@@ -108,12 +108,12 @@ public:
     typedef T value_type;
     typedef size_t size_type;
 
-    Array(const Alloc & initial=DefaultAlloc::create()) : _array(initial.create(0)), _sz(0) { }
-    Array(size_t sz, const Alloc & initial=DefaultAlloc::create());
+    Array(const Alloc & initial=Alloc::alloc()) : _array(initial.create(0)), _sz(0) { }
+    Array(size_t sz, const Alloc & initial=Alloc::alloc());
     Array(Alloc && buf, size_t sz);
     Array(Array &&rhs);
-    Array(size_t sz, T value, const Alloc & initial=DefaultAlloc::create());
-    Array(const_iterator begin, const_iterator end, const Alloc & initial=DefaultAlloc::create());
+    Array(size_t sz, T value, const Alloc & initial=Alloc::alloc());
+    Array(const_iterator begin, const_iterator end, const Alloc & initial=Alloc::alloc());
     Array(const Array & rhs);
     Array & operator =(const Array & rhs) {
         if (&rhs != this) {

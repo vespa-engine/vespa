@@ -48,13 +48,13 @@ void
 Test::testBasic()
 {
     {
-        Alloc h = HeapAllocFactory::create(100);
+        Alloc h = Alloc::allocHeap(100);
         EXPECT_EQUAL(100u, h.size());
         EXPECT_TRUE(h.get() != nullptr);
     }
     {
-        EXPECT_EXCEPTION(AlignedHeapAllocFactory::create(100, 7), IllegalArgumentException, "AlignedHeapAllocFactory::create(100, 7) does not support 7 alignment");
-        Alloc h = AlignedHeapAllocFactory::create(100, 1024);
+        EXPECT_EXCEPTION(Alloc::allocAlignedHeap(100, 7), IllegalArgumentException, "Alloc::allocAlignedHeapAlloc(100, 7) does not support 7 alignment");
+        Alloc h = Alloc::allocAlignedHeapAlloc(100, 1024);
         EXPECT_EQUAL(100u, h.size());
         EXPECT_TRUE(h.get() != nullptr);
     }
@@ -64,7 +64,7 @@ Test::testBasic()
         EXPECT_TRUE(h.get() != nullptr);
     }
     {
-        Alloc a = HeapAllocFactory::create(100), b = HeapAllocFactory::create(200);
+        Alloc a = Alloc::allocHeap(100), b = Alloc::allocHeap(200);
         testSwap(a, b);
     }
     {
@@ -72,17 +72,17 @@ Test::testBasic()
         testSwap(a, b);
     }
     {
-        Alloc a = AlignedHeapAllocFactory::create(100, 1024), b = AlignedHeapAllocFactory::create(200, 1024);
+        Alloc a = Alloc::allocAlignedHeap(100, 1024), b = Alloc::allocAlignedHeap(200, 1024);
         testSwap(a, b);
     }
     {
-        Alloc a = HeapAllocFactory::create(100);
+        Alloc a = Alloc::allocHeap(100);
         Alloc b = MMapAllocFactory::create(200);
         testSwap(a, b);
     }
     {
-        Alloc a = HeapAllocFactory::create(100);
-        Alloc b = HeapAllocFactory::create(100);
+        Alloc a = Alloc::allocHeap(100);
+        Alloc b = Alloc::allocHeap(100);
         a = std::move(b);
         EXPECT_TRUE(b.get() == nullptr);
     }

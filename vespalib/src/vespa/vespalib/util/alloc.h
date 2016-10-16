@@ -61,7 +61,6 @@ public:
         return *this;
     }
     Alloc() : _alloc(nullptr, 0), _allocator(nullptr) { }
-    Alloc(const MemoryAllocator * allocator, size_t sz) : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
     ~Alloc() { 
         if (_alloc.first != nullptr) {
             _allocator->free(_alloc);
@@ -75,7 +74,17 @@ public:
     Alloc create(size_t sz) const {
         return Alloc(_allocator, sz);
     }
+
+    static Alloc allocAlignedHeap(size_t sz, size_t alignment);
+    static Alloc allocHeap(size_t sz=0);
+    static Alloc allocMMap(size_t sz=0);
+    /**
+     * Optional alignment is assumed to be <= system page size, since mmap
+     * is always used when size is above limit.
+     */
+    static Alloc alloc(size_t sz=0, size_t mmapLimit=MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
 private:
+    Alloc(const MemoryAllocator * allocator, size_t sz) : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
     void clear() {
         _alloc.first = nullptr;
         _alloc.second = 0;
@@ -85,42 +94,10 @@ private:
     const MemoryAllocator * _allocator;
 };
 
-class HeapAllocFactory
-{
-public:
-    static Alloc create(size_t sz=0);
-};
-
-class AlignedHeapAllocFactory
-{
-public:
-    static Alloc create(size_t sz, size_t alignment);
-};
-
-class MMapAllocFactory
-{
-public:
-    enum {HUGEPAGE_SIZE=0x200000};
-    static Alloc create(size_t sz=0);
-};
-
-/**
- * Optional alignment is assumed to be <= system page size, since mmap
- * is always used when size is above limit.
- */
-
-class AutoAllocFactory 
-{
-public:
-    static Alloc create(size_t sz=0, size_t mmapLimit=MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
-};
-
 }
 
 inline size_t roundUp2inN(size_t minimum) {
     return 2ul << Optimized::msbIdx(minimum - 1);
 }
-
-using DefaultAlloc = alloc::AutoAllocFactory;
 
 }

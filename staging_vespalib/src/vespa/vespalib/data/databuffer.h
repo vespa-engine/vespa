@@ -33,7 +33,7 @@ namespace vespalib {
 class DataBuffer
 {
 private:
-    using Alloc = vespalib::alloc::Alloc;
+    using Alloc = alloc::Alloc;
     size_t         _alignment;
     char          *_externalBuf;
     char          *_bufstart;
@@ -53,7 +53,7 @@ public:
      * @param len the initial size of the buffer.
      * @param alignment required memory alignment for data start
      **/
-    DataBuffer(size_t len = 1024, size_t alignment = 1, const Alloc & initial = vespalib::DefaultAlloc::create(0));
+    DataBuffer(size_t len = 1024, size_t alignment = 1, const Alloc & initial = Alloc::alloc(0));
 
     /**
      * Construct a databuffer using externally allocated memory. Note
@@ -70,7 +70,7 @@ public:
         _bufend(buf + len),
         _datapt(_bufstart),
         _freept(_bufstart),
-        _buffer(vespalib::DefaultAlloc::create(0))
+        _buffer(Alloc::alloc(0))
     { }
 
     DataBuffer(const char *buf, size_t len) :
@@ -80,7 +80,7 @@ public:
         _bufend(_bufstart + len),
         _datapt(_bufstart),
         _freept(_bufend),
-        _buffer(vespalib::DefaultAlloc::create(0))
+        _buffer(Alloc::alloc(0))
     { }
 
     /**

@@ -233,7 +233,7 @@ decompress_buckets_from(char *buffer, uint32_t size) {
 template <int BucketBits, typename HashT>
 void NormalSketch<BucketBits, HashT>::
 serialize(vespalib::Serializer &os) const {
-    vespalib::alloc::Alloc backing(vespalib::DefaultAlloc::create(LZ4_compressBound(BUCKET_COUNT)));
+    vespalib::alloc::Alloc backing(vespalib::alloc::Alloc::alloc(LZ4_compressBound(BUCKET_COUNT)));
     char * compress_array(static_cast<char *>(backing.get()));
     uint32_t size = compress_buckets_into(compress_array, backing.size());
     os << BUCKET_COUNT << size;

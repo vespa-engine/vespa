@@ -77,7 +77,7 @@ public:
 
         typedef vespalib::LinkedPtr<SharedBuffer> LP;
         explicit SharedBuffer(size_t totalSize)
-            : _buf(vespalib::alloc::MMapAllocFactory::create(totalSize)),
+            : _buf(vespalib::alloc::Alloc::allocMMap(totalSize)),
               _usedSize(0)
         {
         }

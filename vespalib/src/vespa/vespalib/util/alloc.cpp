@@ -356,13 +356,13 @@ AutoAllocator::free(PtrAndSize alloc) const {
 }
 
 Alloc
-HeapAllocFactory::create(size_t sz)
+Alloc::allocHeap(size_t sz)
 {
     return Alloc(&HeapAllocator::getDefault(), sz);
 }
 
 Alloc
-AlignedHeapAllocFactory::create(size_t sz, size_t alignment)
+Alloc::allocAlignedHeap(size_t sz, size_t alignment)
 {
     if (alignment == 0) {
         return Alloc(&AlignedHeapAllocator::getDefault(), sz);
@@ -373,18 +373,18 @@ AlignedHeapAllocFactory::create(size_t sz, size_t alignment)
     } else if (alignment == 0x1000) {
         return Alloc(&AlignedHeapAllocator::get4K(), sz);
     } else {
-        throw IllegalArgumentException(make_string("AlignedHeapAllocFactory::create(%zu, %zu) does not support %zu alignment", sz, alignment, alignment));
+        throw IllegalArgumentException(make_string("Alloc::allocAlignedHeap::create(%zu, %zu) does not support %zu alignment", sz, alignment, alignment));
     }
 }
 
 Alloc
-MMapAllocFactory::create(size_t sz)
+Alloc::allocMMap(size_t sz)
 {
     return Alloc(&MMapAllocator::getDefault(), sz);
 }
 
 Alloc
-AutoAllocFactory::create(size_t sz, size_t mmapLimit, size_t alignment)
+Alloc::alloc(size_t sz, size_t mmapLimit, size_t alignment)
 {
     return Alloc(&AutoAllocator::getAllocator(mmapLimit, alignment), sz);
 }

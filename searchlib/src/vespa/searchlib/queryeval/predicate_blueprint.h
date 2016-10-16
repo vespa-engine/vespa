@@ -58,6 +58,7 @@ private:
     using VectorIterator = predicate::SimpleIndex<btree::EntryRef>::VectorIterator;
     template <typename T>
     using optional = std::experimental::optional<T>;
+    using Alloc = vespalib::alloc::Alloc;
 
     const PredicateAttribute & predicate_attribute() const {
         return _attribute;
@@ -72,7 +73,7 @@ private:
 
     const PredicateAttribute & _attribute;
     const predicate::PredicateIndex &_index;
-    vespalib::alloc::Alloc _kVBacking;
+    Alloc _kVBacking;
     BitVectorCache::CountVector _kV;
     BitVectorCache::KeySet _cachedFeatures;
 

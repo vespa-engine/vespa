@@ -41,7 +41,7 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
 
 VariableSizeVector::VariableSizeVector(size_t initialSize) :
     _vector(),
-    _store(DefaultAlloc::create(initialSize))
+    _store(Alloc::alloc(initialSize))
 {
 }
 
