@@ -2,35 +2,31 @@
 
 #pragma once
 
+#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/tensor/types.h>
+#include <vespa/vespalib/eval/value_type.h>
 #include "dense_tensor_base.h"
 
 namespace vespalib {
 namespace tensor {
 
+class DenseTensor;
+
 /**
- * A dense tensor where all dimensions are indexed.
+ * A view to a dense tensor where all dimensions are indexed.
  * Tensor cells are stored in an underlying array according to the order of the dimensions.
  */
-class DenseTensor : public Tensor, public DenseTensorBase
+class DenseTensorView : public Tensor, public DenseTensorBase
 {
-public:
-    typedef std::unique_ptr<DenseTensor> UP;
-
 private:
-    eval::ValueType _type;
-    Cells _cells;
+    const eval::ValueType &_type;
+    CellsRef               _cells;
 
 public:
-    DenseTensor();
-    DenseTensor(const eval::ValueType &type_in,
-                const Cells &cells_in);
-    DenseTensor(const eval::ValueType &type_in,
-                Cells &&cells_in);
-    DenseTensor(eval::ValueType &&type_in,
-                Cells &&cells_in);
+    explicit DenseTensorView(const DenseTensor &rhs);
     const eval::ValueType &type() const { return _type; }
-    const Cells &cells() const { return _cells; }
-    bool operator==(const DenseTensor &rhs) const;
+    const CellsRef &cells() const { return _cells; }
+    bool operator==(const DenseTensorView &rhs) const;
     CellsIterator cellsIterator() const { return CellsIterator(_type, _cells); }
 
     virtual eval::ValueType getType() const override;

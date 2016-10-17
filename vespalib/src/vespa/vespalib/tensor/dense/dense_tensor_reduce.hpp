@@ -8,6 +8,7 @@ namespace tensor {
 namespace dense {
 
 using Cells = DenseTensor::Cells;
+using CellsRef = DenseTensor::CellsRef;
 
 namespace {
 
@@ -65,7 +66,7 @@ public:
 
     template <typename Function>
     DenseTensor::UP
-    reduceCells(const Cells &cellsIn, Function &&func) {
+    reduceCells(CellsRef cellsIn, Function &&func) {
         auto itr_in = cellsIn.cbegin();
         auto itr_out = _cellsResult.begin();
         for (size_t outerDim = 0; outerDim < _outerDimSize; ++outerDim) {
@@ -92,7 +93,7 @@ public:
 
 template <typename Function>
 DenseTensor::UP
-reduce(const DenseTensor &tensor, const vespalib::string &dimensionToRemove, Function &&func)
+reduce(const DenseTensorView &tensor, const vespalib::string &dimensionToRemove, Function &&func)
 {
     DimensionReducer reducer(tensor.type(), dimensionToRemove);
     return reducer.reduceCells(tensor.cells(), func);
@@ -102,14 +103,15 @@ reduce(const DenseTensor &tensor, const vespalib::string &dimensionToRemove, Fun
 
 template <typename Function>
 std::unique_ptr<Tensor>
-reduce(const DenseTensor &tensor, const std::vector<vespalib::string> &dimensions, Function &&func)
+reduce(const DenseTensorView &tensor, const std::vector<vespalib::string> &dimensions, Function &&func)
 {
     if (dimensions.size() == 1) {
         return reduce(tensor, dimensions[0], func);
     } else if (dimensions.size() > 0) {
         DenseTensor::UP result = reduce(tensor, dimensions[0], func);
         for (size_t i = 1; i < dimensions.size(); ++i) {
-            DenseTensor::UP tmpResult = reduce(*result, dimensions[i], func);
+            DenseTensor::UP tmpResult = reduce(DenseTensorView(*result),
+                                               dimensions[i], func);
             result = std::move(tmpResult);
         }
         return result;

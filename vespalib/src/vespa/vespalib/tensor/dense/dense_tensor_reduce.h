@@ -14,7 +14,7 @@ namespace dense {
  */
 template<typename Function>
 std::unique_ptr<Tensor>
-reduce(const DenseTensor &tensor, const std::vector<vespalib::string> &dimensions, Function &&func);
+reduce(const DenseTensorView &tensor, const std::vector<vespalib::string> &dimensions, Function &&func);
 
 } // namespace dense
 } // namespace tensor

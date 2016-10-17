@@ -12,7 +12,7 @@ namespace dense {
 
 template <typename Function>
 std::unique_ptr<Tensor>
-apply(const DenseTensor &lhs, const DenseTensor &rhs, Function &&func)
+apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func)
 {
     DenseTensorAddressCombiner combiner(lhs.type(), rhs.type());
     DirectDenseTensorBuilder builder(DenseTensorAddressCombiner::combineDimensions(lhs.type(), rhs.type()));
@@ -25,6 +25,21 @@ apply(const DenseTensor &lhs, const DenseTensor &rhs, Function &&func)
         }
     }
     return builder.build();
+}
+
+template <typename Function>
+std::unique_ptr<Tensor>
+apply(const DenseTensorView &lhs, const Tensor &rhs, Function &&func)
+{
+    const DenseTensorView *view = dynamic_cast<const DenseTensorView *>(&rhs);
+    if (view) {
+        return apply(lhs, *view, func);
+    }
+    const DenseTensor *dense = dynamic_cast<const DenseTensor *>(&rhs);
+    if (dense) {
+        return apply(lhs, DenseTensorView(*dense), func);
+    }
+    return Tensor::UP();
 }
 
 } // namespace vespalib::tensor::dense
