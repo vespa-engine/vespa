@@ -18,7 +18,6 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static junit.framework.TestCase.fail;
@@ -61,7 +60,6 @@ public class DockerTest {
 
     @Test
     public void testGetAllManagedContainersNoContainersRunning() {
-        assumeTrue(operatingSystem != OS.Unsupported);
         assumeTrue(dockerDaemonIsPresent());
 
         List<Container> containers = docker.getAllManagedContainers();
@@ -212,6 +210,7 @@ public class DockerTest {
 
         try {
             setDocker();
+            createDockerTestNetworkIfNeeded();
             return true;
         } catch (Exception e) {
             System.out.println("Please install Docker Toolbox and start Docker Quick Start Terminal once, ignoring test.");
@@ -224,9 +223,7 @@ public class DockerTest {
         docker = new DockerImpl(
                 dockerConfig,
                 false, /* fallback to 1.23 on errors */
-                false, /* try setup netowork */
-                operatingSystem == OS.Mac_OS_X ? Optional.of(SUBNET_CONTAINER) : Optional.empty(), /* subnetwork */
-                false, /* hackAroundPullImageDueToJerseyConflicts */
+                false, /* try setup network */
                 100 /* dockerConnectTimeoutMillis */,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation));
     }
@@ -259,6 +256,14 @@ public class DockerTest {
         p.destroy();
 
         return ret.toString();
+    }
+
+    private void createDockerTestNetworkIfNeeded() {
+        if (! docker.dockerClient.listNetworksCmd().withNameFilter(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
+
+        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config().withSubnet("172.18.0.0/16"));
+        docker.dockerClient.createNetworkCmd()
+                .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
     }
 
     private void createDockerImage(DockerImpl docker) throws IOException, ExecutionException, InterruptedException {

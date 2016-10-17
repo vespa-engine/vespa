@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateNetworkCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
@@ -20,12 +19,8 @@ import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
-import com.yahoo.collections.Pair;
 import com.yahoo.log.LogLevel;
-import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.net.HostName;
-import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
@@ -36,9 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.SocketException;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,26 +73,28 @@ public class DockerImpl implements Docker {
 
     private GaugeWrapper numberOfRunningContainersGauge;
     private CounterWrapper numberOfDockerDaemonFails;
-    private final boolean hackAroundPullImageDueToJerseyConflicts;
 
     // For testing
     DockerImpl(final DockerClient dockerClient) {
-        hackAroundPullImageDueToJerseyConflicts = false;
         this.dockerClient = dockerClient;
     }
 
-    public DockerImpl(
+    DockerImpl(
             final DockerConfig config,
             boolean fallbackTo123OnErrors,
-            boolean trySetupNetowork,
-            Optional<String> subnetwork,
-            boolean hackAroundPullImageDueToJerseyConflicts,
+            boolean trySetupNetwork,
             int dockerConnectTimeoutMillis,
             MetricReceiverWrapper metricReceiverWrapper) {
-        this.hackAroundPullImageDueToJerseyConflicts = hackAroundPullImageDueToJerseyConflicts;
         initDockerConnection(config, dockerConnectTimeoutMillis, fallbackTo123OnErrors);
         setMetrics(metricReceiverWrapper);
-        if (trySetupNetowork) setupDockerNetworkIfNeeded(subnetwork);
+
+        if (trySetupNetwork) {
+            try {
+                setupDockerNetworkIfNeeded();
+            } catch (Exception e) {
+                throw new RuntimeException("Could not setup docker network", e);
+            }
+        }
     }
 
     @Inject
@@ -107,9 +102,7 @@ public class DockerImpl implements Docker {
         this(
                 config,
                 true, /* fallback to 1.23 on errors */
-                true, /* try setup netowork */
-                Optional.empty(), /* isLinux */
-                true, /* hackAroundPullImageDueToJerseyConflicts */
+                true, /* try setup network */
                 DOCKER_CONNECT_TIMEOUT_MILLIS /* dockerConnectTimeoutMillis */,
                 metricReceiver);
     }
@@ -129,57 +122,32 @@ public class DockerImpl implements Docker {
         return dockerConfigBuilder;
     }
 
-    private void setupDockerNetworkIfNeeded(Optional<String> subnetwork)  {
+    private void setupDockerNetworkIfNeeded() throws IOException, InterruptedException {
         if (! dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
         // Use IPv6 address if there is a mix of IP4 and IPv6 by taking the longest address.
-        final List<InetAddress> hostAddresses;
-        try {
-            hostAddresses = Arrays.asList(InetAddress.getAllByName(HostName.getLocalhost()));
-        } catch (UnknownHostException e) {
-            throw new RuntimeException("Could not get hostAddresses", e);
-        }
-
+        List<InetAddress> hostAddresses = Arrays.asList(InetAddress.getAllByName(com.yahoo.net.HostName.getLocalhost()));
         InetAddress hostAddress = Collections.max(hostAddresses,
                 (o1, o2) -> o1.getAddress().length - o2.getAddress().length);
 
-        final NetworkAddressInterface networkAddressInterface;
-        try {
-            networkAddressInterface = DockerNetworkCreator.getInterfaceForAddress(hostAddress);
-        } catch (SocketException|UnknownHostException e) {
-            throw new RuntimeException("Could not get getInterfaceForAddress for " + hostAddress, e);
-        }
+        NetworkAddressInterface networkAddressInterface = DockerNetworkCreator.getInterfaceForAddress(hostAddress);
         boolean isIPv6 = networkAddressInterface.interfaceAddress.getAddress() instanceof Inet6Address;
-
-        final String defaultGateway;
-        try {
-            defaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(isIPv6).getHostAddress();
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Could not find default gateway, isIpv6 is " + isIPv6, e);
-        }
 
         Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
                 .withSubnet(hostAddress.getHostAddress() + "/" + networkAddressInterface.interfaceAddress.getNetworkPrefixLength())
-                .withGateway(defaultGateway));
-
-        if (subnetwork.isPresent()) {
-            ipam = new Network.Ipam().withConfig(new Network.Ipam.Config().withSubnet(subnetwork.get()));
-        }
+                .withGateway(DockerNetworkCreator.getDefaultGatewayLinux(isIPv6).getHostAddress()));
 
         Map<String, String> dockerNetworkOptions = new HashMap<>();
         dockerNetworkOptions.put("parent", networkAddressInterface.networkInterface.getDisplayName());
         dockerNetworkOptions.put("macvlan_mode", "bridge");
 
-        CreateNetworkCmd createNetworkCmd = dockerClient.createNetworkCmd()
+        dockerClient.createNetworkCmd()
+                .withName(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
+                .withDriver("macvlan")
+                .withEnableIpv6(isIPv6)
                 .withIpam(ipam)
-                .withName(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
-        if (! subnetwork.isPresent()) {
-            createNetworkCmd
-                    .withDriver("macvlan")
-                    .withEnableIpv6(isIPv6)
-                    .withOptions(dockerNetworkOptions);
-        }
-        createNetworkCmd.exec();
+                .withOptions(dockerNetworkOptions)
+                .exec();
     }
 
     @Override
@@ -199,37 +167,9 @@ public class DockerImpl implements Docker {
             completionListener = new CompletableFuture<>();
             scheduledPulls.put(image, completionListener);
         }
-        if (hackAroundPullImageDueToJerseyConflicts) {
-            // TODO: Need to call out to a command-line tool due to conflicting jackson dependencies between
-            // docker-java and pre-installed bundles in jdisc container
-            pullImageWithCommandTool(image, new ImagePullCallback(image), completionListener);
-        } else {
-            dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
-        }
 
+        dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
         return completionListener;
-    }
-
-    private void pullImageWithCommandTool(DockerImage image, ImagePullCallback callback, CompletableFuture<DockerImage> completionListener) {
-        String jarFile = Defaults.getDefaults().vespaHome() + "lib/jars/docker-tools-jar-with-dependencies.jar";
-        Pair<Integer, String> result = null;
-        try {
-            result = new ProcessExecuter().exec(String.format(
-                    "java -cp %s com.yahoo.vespa.hosted.dockerapi.tool.PullImageCommand pull-image %s",
-                    jarFile,
-                    image.asString()));
-        } catch (IOException e) {
-            logger.log(LogLevel.ERROR, "Failed pulling image " + image.asString(), e);
-            callback.onError(e);
-        }
-        if (result != null && result.getFirst() != 0) {
-            logger.log(LogLevel.WARNING, "Failed pulling image " + image.asString() +
-                    ", exit code " + result.getFirst() + ", output: " + result.getSecond());
-        } else {
-            logger.log(LogLevel.INFO, "Successfully pulled image " + image.asString());
-        }
-        callback.onComplete();
-        completionListener.complete(image);
     }
 
     private CompletableFuture<DockerImage> removeScheduledPoll(final DockerImage image) {
@@ -313,18 +253,16 @@ public class DockerImpl implements Docker {
 
     public ContainerStats getContainerStats(ContainerName containerName) {
         try {
-            // TODO: Uncomment this to get container stats through docker-java when the jersey issues are resolved
-            // DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
-            // statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
+             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
+             statsCallback.awaitCompletion(10, TimeUnit.SECONDS);
 
-            Statistics stats = DockerStatsCmd.getContainerStatistics(containerName);
-            return new ContainerStatsImpl(stats.getNetworks(), stats.getCpuStats(),
-                    stats.getMemoryStats(), stats.getBlkioStats());
+            return new ContainerStatsImpl(statsCallback.stats.getNetworks(), statsCallback.stats.getCpuStats(),
+                    statsCallback.stats.getMemoryStats(), statsCallback.stats.getBlkioStats());
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to get container stats", e);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to get container stats", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Failed to get container stats in time", e);
         }
     }
 
