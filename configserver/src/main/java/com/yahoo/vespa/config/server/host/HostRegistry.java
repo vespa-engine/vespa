@@ -31,7 +31,8 @@ public class HostRegistry<T> implements HostValidator<T> {
 
     public void update(T key, Collection<String> newHosts) {
         verifyHosts(key, newHosts);
-        log.log(LogLevel.DEBUG, "Setting hosts for key(" + key + "), newHosts(" + newHosts + "), currentHosts(" + getCurrentHosts(key) + ")");
+        log.log(LogLevel.DEBUG, "Setting hosts for key(" + key + "), newHosts(" + newHosts + "), " +
+                                "currentHosts(" + getCurrentHosts(key) + ")");
         Collection<String> removedHosts = getRemovedHosts(newHosts, getCurrentHosts(key));
         removeHosts(removedHosts);
         addHosts(key, newHosts);
@@ -40,7 +41,8 @@ public class HostRegistry<T> implements HostValidator<T> {
     public void verifyHosts(T key, Collection<String> newHosts) {
         for (String host : newHosts) {
             if (hostAlreadyTaken(host, key)) {
-                throw new IllegalArgumentException("'" + key + "' tried to allocate host '" + host + "', but the host is already taken by '" + host2KeyMap.get(host) + "'");
+                throw new IllegalArgumentException("'" + key + "' tried to allocate host '" + host + 
+                                                   "', but the host is already taken by '" + host2KeyMap.get(host) + "'");
             }
         }
     }

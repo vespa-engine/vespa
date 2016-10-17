@@ -40,7 +40,7 @@ public class NodeFlavors {
     public Flavor getFlavorOrThrow(String flavorName) {
         Optional<Flavor> flavor = getFlavor(flavorName);
         if ( flavor.isPresent()) return flavor.get();
-        throw new IllegalArgumentException("Unknown flavor '" + flavorName + "' Flavors are " + canonicalFlavorNames());
+        throw new IllegalArgumentException("Unknown flavor '" + flavorName + "'. Flavors are " + canonicalFlavorNames());
     }
 
     private List<String> canonicalFlavorNames() {
@@ -58,8 +58,8 @@ public class NodeFlavors {
             Flavor flavor = flavors.get(flavorConfig.name());
             for (NodeRepositoryConfig.Flavor.Replaces flavorReplacesConfig : flavorConfig.replaces()) {
                 if (! flavors.containsKey(flavorReplacesConfig.name())) {
-                    throw new IllegalStateException("Replaces for "
-                            + flavor.name() + " pointing to a non existing flavor: " + flavorReplacesConfig.name());
+                    throw new IllegalStateException("Replaces for " + flavor.name() + 
+                                                    " pointing to a non existing flavor: " + flavorReplacesConfig.name());
                 }
                 flavor.replaces().add(flavors.get(flavorReplacesConfig.name()));
             }

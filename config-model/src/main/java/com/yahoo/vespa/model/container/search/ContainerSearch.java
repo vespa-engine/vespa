@@ -48,15 +48,13 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
-    private final boolean hostedVespa;
-    private final boolean isCombinedCluster;
+    private final ContainerCluster owningCluster;
     private final Optional<Integer> memoryPercentage;
 
     public ContainerSearch(ContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
         this.options = options;
-        this.hostedVespa  = cluster.isHostedVespa();
-        this.isCombinedCluster = cluster.getHostClusterId().isPresent();
+        this.owningCluster = cluster;
         this.memoryPercentage = cluster.getMemoryPercentage();
         cluster.addComponent(getFS4ResourcePool());
     }
@@ -128,8 +126,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         if (memoryPercentage.isPresent()) {
             internalBuilder.heapSizeAsPercentageOfPhysicalMemory(memoryPercentage.get());
         }
-    	else if (hostedVespa) {
-            if (isCombinedCluster)
+    	else if (owningCluster.isHostedVespa()) {
+            if (owningCluster.getHostClusterId().isPresent())
                 internalBuilder.heapSizeAsPercentageOfPhysicalMemory(17);
             else
         	    internalBuilder.heapSizeAsPercentageOfPhysicalMemory(33);
