@@ -20,7 +20,6 @@ import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Ignore;
