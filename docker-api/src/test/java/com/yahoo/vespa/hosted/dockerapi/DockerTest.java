@@ -6,14 +6,12 @@ import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import org.apache.commons.io.IOUtils;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URL;
 import java.util.HashSet;
@@ -24,7 +22,6 @@ import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -35,7 +32,7 @@ import static org.junit.Assume.assumeTrue;
  *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.0.0.0/8 192.168.99.100
  *   2. Run tests from IDE/mvn.
  *
-
+ *
  * TIPS:
  *   For cleaning up your local docker machine (DON'T DO THIS ON PROD)
  *     docker stop $(docker ps -a -q)
@@ -45,9 +42,6 @@ import static org.junit.Assume.assumeTrue;
  * @author dybdahl
  */
 public class DockerTest {
-    public static final String SUBNET_CONTAINER = "172.18.7.2/24";
-    public static final String IP_ADDRESS_FOR_CONTAINER = "172.18.7.32";
-
     private DockerImpl docker;
     private static final OS operatingSystem = getSystemOS();
     private static final String prefix = "/Users/" + System.getProperty("user.name") + "/.docker/machine/machines/default/";
@@ -58,31 +52,18 @@ public class DockerTest {
             .uri(operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376"));
     private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
 
-    @Test
-    public void testGetAllManagedContainersNoContainersRunning() {
-        assumeTrue(dockerDaemonIsPresent());
-
-        List<Container> containers = docker.getAllManagedContainers();
-        assertThat(containers.isEmpty(), is(true));
-    }
-
     // It is ignored since it is a bit slow and unstable, at least on Mac.
     @Ignore
     @Test
     public void testDockerImagePull() throws ExecutionException, InterruptedException {
-        assumeTrue(dockerDaemonIsPresent());
-
-        docker.getAllManagedContainers();
         DockerImage dockerImage = new DockerImage("busybox:1.24.0");
 
         // Pull the image and wait for the pull to complete
         docker.pullImageAsync(dockerImage).get();
 
-        // Translate the human readable ID to sha256-hash ID that is returned by getUnusedDockerImages()
-        DockerImage targetImage = new DockerImage(docker.dockerClient.inspectImageCmd(dockerImage.asString()).exec().getId());
         List<DockerImage> unusedDockerImages = docker.getUnusedDockerImages(new HashSet<>());
         if (! unusedDockerImages.contains(dockerImage)) {
-            fail("Did not find image as unused, here are all images; " + unusedDockerImages);
+            fail("Did not find image as unused, here are all the unused images; " + unusedDockerImages);
         }
         // Remove the image
         docker.deleteImage(dockerImage);
@@ -91,80 +72,31 @@ public class DockerTest {
 
     @Test
     public void testContainerCycle() throws IOException, InterruptedException, ExecutionException {
-        assumeTrue(dockerDaemonIsPresent());
+        ContainerName containerName = new ContainerName("foo");
+        docker.createContainerCommand(dockerImage, containerName, "hostName1").create();
+        List<Container> managedContainers = docker.getAllManagedContainers();
+        assertThat(managedContainers.size(), is(1));
+        assertThat(managedContainers.get(0).name, is(containerName));
+        assertThat(managedContainers.get(0).isRunning, is(false));
 
-        DockerImage busyBoxImage = new DockerImage("busybox:1.24.0");
-        // Pull the image and wait for the pull to complete
-        System.out.print("Pulling image.");
-        docker.pullImageAsync(busyBoxImage).get();
-        System.out.println("... done");
-
-        ContainerName containerName = new ContainerName("DummyWebServer");
-
-        try { // Stop any old container
-            docker.stopContainer(containerName);
-            System.out.println("Stopped an old container with same name");
-        } catch (Exception e) {
-            System.out.println("Did not manage to stop container " + e.getMessage());
-        }
-        try { // Delete any remaining container
-            docker.deleteContainer(containerName);
-            System.out.println("Deleted an old container with same name");
-        } catch (Exception e) {
-            System.out.println("Did not manage to delete container " + e.getMessage());
-        }
-
-        int webPortForContainer = 6342;
-
-        InetAddress inetAddress1 = Inet6Address.getByName(IP_ADDRESS_FOR_CONTAINER);
-        docker.createContainerCommand(busyBoxImage, containerName, "hostName1")
-                .withNetworkMode("vespa-macvlan")
-                .withIpAddress(inetAddress1)
-                .withCmd("sleep").withCmd("55555").create();
-
-        System.out.print("Starting container with sleep running.");
         docker.startContainer(containerName);
-        System.out.println("..done");
+        managedContainers = docker.getAllManagedContainers();
+        assertThat(managedContainers.size(), is(1));
+        assertThat(managedContainers.get(0).name, is(containerName));
+        assertThat(managedContainers.get(0).isRunning, is(true));
 
-
-        // TODO: Get the container to start with httpd instead of hacking it here.
-        new Thread(() -> {
-            try {
-                // This call is blocking
-                docker.executeInContainer(containerName, "/bin/sh", "-c", "/bin/httpd -f -p " + webPortForContainer).getOutput();
-            } catch (RuntimeException e) {
-                // ignore, fails on shut down
-            }
-        }).start();
-
-        boolean success = false;
-        for (int x = 0; x < 600; x++) {
-            try {
-                URL url = new URL("http://" + IP_ADDRESS_FOR_CONTAINER + ":" + webPortForContainer);
-                InputStream is = url.openStream();
-                String containerServer = IOUtils.toString(is);
-                assertThat(containerServer, is("sdf"));
-            } catch (FileNotFoundException e) {
-                System.out.println("Managed to talk to web server in container.");
-                success = true;
-                break;
-            } catch (Throwable t) {
-                System.err.println(t.getMessage());
-                Thread.sleep(100);
-            }
-        }
         docker.stopContainer(containerName);
-        docker.deleteContainer(containerName);
-        // Do not bother, it takes forever to load it again.. docker.deleteImage(busyBoxImage);
-        assertThat(success, is(true));
-    }
+        managedContainers = docker.getAllManagedContainers();
+        assertThat(managedContainers.size(), is(1));
+        assertThat(managedContainers.get(0).name, is(containerName));
+        assertThat(managedContainers.get(0).isRunning, is(false));
 
+        docker.deleteContainer(containerName);
+        assertThat(docker.getAllManagedContainers().isEmpty(), is(true));
+    }
 
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
-        assumeTrue(dockerDaemonIsPresent());
-        createDockerImage(docker);
-
         String hostName1 = "docker10.test.yahoo.com";
         String hostName2 = "docker11.test.yahoo.com";
         ContainerName containerName1 = new ContainerName("test-container-1");
@@ -174,31 +106,36 @@ public class DockerTest {
 
         docker.createContainerCommand(dockerImage, containerName1, hostName1)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress1).create();
+        docker.startContainer(containerName1);
 
         docker.createContainerCommand(dockerImage, containerName2, hostName2)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress2).create();
-
-        docker.startContainer(containerName1);
         docker.startContainer(containerName2);
 
-        try {
-            testReachabilityFromHost(containerName1, inetAddress1);
-            testReachabilityFromHost(containerName2, inetAddress2);
+        testReachabilityFromHost("http://" + inetAddress1.getHostAddress() + "/ping");
+        testReachabilityFromHost("http://" + inetAddress2.getHostAddress() + "/ping");
 
-            String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://" + inetAddress2 + "/ping"};
-            while (! docker.executeInContainer(containerName1, curlFromNodeToNode).isSuccess()) {
-                Thread.sleep(20);
-            }
-            ProcessResult result = docker.executeInContainer(containerName1, curlFromNodeToNode);
-            assertTrue("Could not reach " + containerName2.asString() + " from " + containerName1.asString(),
-                    result.getOutput().equals("pong\n"));
-        } finally {
-            docker.stopContainer(containerName1);
-            docker.deleteContainer(containerName1);
+        String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://" + inetAddress2.getHostAddress() + "/ping"};
+        ProcessResult result = docker.executeInContainer(containerName1, curlFromNodeToNode);
+        assertThat("Could not reach " + containerName2.asString() + " from " + containerName1.asString(),
+                result.getOutput(), is("pong\n"));
 
-            docker.stopContainer(containerName2);
-            docker.deleteContainer(containerName2);
-        }
+        docker.stopContainer(containerName1);
+        docker.deleteContainer(containerName1);
+
+        docker.stopContainer(containerName2);
+        docker.deleteContainer(containerName2);
+    }
+
+    @Before
+    public void setup() throws InterruptedException, ExecutionException, IOException {
+        assumeTrue(dockerDaemonIsPresent());
+
+        // Clean up any non deleted containers from previous tests
+        docker.getAllManagedContainers().forEach(container -> {
+            if (container.isRunning) docker.stopContainer(container.name);
+            docker.deleteContainer(container.name);
+        });
     }
 
     private boolean dockerDaemonIsPresent() {
@@ -211,6 +148,7 @@ public class DockerTest {
         try {
             setDocker();
             createDockerTestNetworkIfNeeded();
+            createDockerImage();
             return true;
         } catch (Exception e) {
             System.out.println("Please install Docker Toolbox and start Docker Quick Start Terminal once, ignoring test.");
@@ -228,34 +166,10 @@ public class DockerTest {
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation));
     }
 
-    private void testReachabilityFromHost(ContainerName containerName, InetAddress target) throws IOException, InterruptedException {
-        String[] curlNodeFromHost = {"curl", "-g", "http://" + target.getHostAddress() + "/ping"};
-        while (!exec(curlNodeFromHost).equals("pong\n")) {
-            Thread.sleep(20);
-        }
-        assertTrue("Could not reach " + containerName.asString() + " from host", exec(curlNodeFromHost).equals("pong\n"));
-    }
-
-    /**
-     * Synchronously executes a system process and returns its stdout. Based of {@link com.yahoo.system.ProcessExecuter}
-     * but could not be reused because of import errors.
-     */
-    private static String exec(String[] command) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder(command);
-        StringBuilder ret = new StringBuilder();
-
-        Process p = pb.start();
-        InputStream is = p.getInputStream();
-        while (true) {
-            int b = is.read();
-            if (b==-1) break;
-            ret.append((char) b);
-        }
-
-        p.waitFor();
-        p.destroy();
-
-        return ret.toString();
+    private void testReachabilityFromHost(String target) throws IOException, InterruptedException {
+        URL url = new URL(target);
+        String containerServer = IOUtils.toString(url.openStream());
+        assertThat(containerServer, is("pong\n"));
     }
 
     private void createDockerTestNetworkIfNeeded() {
@@ -266,7 +180,7 @@ public class DockerTest {
                 .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
     }
 
-    private void createDockerImage(DockerImpl docker) throws IOException, ExecutionException, InterruptedException {
+    private void createDockerImage() throws IOException, ExecutionException, InterruptedException {
         try {
             docker.deleteImage(new DockerImage(dockerImage.asString()));
         } catch (Exception e) {
