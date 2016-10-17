@@ -79,9 +79,6 @@ public class DockerImpl implements Docker {
     private CounterWrapper numberOfDockerDaemonFails;
     private final boolean hackAroundPullImageDueToJerseyConflicts;
 
-    private JerseyDockerCmdExecFactory dockerFactory;
-    private RemoteApiVersion remoteApiVersion;
-
     // For testing
     DockerImpl(final DockerClient dockerClient) {
         hackAroundPullImageDueToJerseyConflicts = false;
@@ -89,7 +86,7 @@ public class DockerImpl implements Docker {
     }
 
     // For testing
-    public DockerImpl(final DockerConfig config) {
+    DockerImpl(final DockerConfig config) {
         hackAroundPullImageDueToJerseyConflicts = false;
         // Fail fast
         initDockerConnection(config, 100 /* connect timeout millis */, false /* fallback to 1.23 on errors */);
@@ -532,12 +529,13 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private void initDockerConnection(final DockerConfig config, int connectTimeousMs, boolean fallbackTo123orErrors) {
-        dockerFactory = new JerseyDockerCmdExecFactory()
+    private void initDockerConnection(final DockerConfig config, int connectTimeoutMs, boolean fallbackTo123orErrors) {
+        JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
                 .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                .withConnectTimeout(connectTimeousMs)
+                .withConnectTimeout(connectTimeoutMs)
                 .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
+        RemoteApiVersion remoteApiVersion;
         try {
             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance(
                     buildDockerClientConfig(config).build())
@@ -571,7 +569,7 @@ public class DockerImpl implements Docker {
         numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");
         numberOfDockerDaemonFails = metricReceiver.declareCounter(dimensions, "daemon.api_fails");
 
-        // Some containers could already be running, count them and intialize to that value
+        // Some containers could already be running, count them and initialize to that value
         numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 }

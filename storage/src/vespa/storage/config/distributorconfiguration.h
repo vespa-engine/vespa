@@ -7,8 +7,10 @@
 #include <vespa/storage/common/storagecomponent.h>
 
 namespace storage {
-namespace distributor {
 
+namespace distributor {
+    class Distributor_Test;
+}
 
 class DistributorConfiguration {
 public: 
@@ -263,14 +265,13 @@ private:
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     
-    friend class Distributor_Test;
+    friend class distributor::Distributor_Test;
     
     bool containsTimeStatement(const std::string& documentSelection) const; 
     void configureMaintenancePriorities(
             const vespa::config::content::core::StorDistributormanagerConfig&);
 };
 
-}
 }
 
 

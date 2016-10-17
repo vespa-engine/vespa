@@ -287,8 +287,6 @@ public class SearchHandler extends LoggingRequestHandler {
         Query query = new Query(request, queryProfile);
 
         boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
-        if (benchmarkCoverage)
-            query.getPresentation().setReportCoverage(true);
 
         // Find and execute search chain if we have a valid query
         String invalidReason = query.validate();

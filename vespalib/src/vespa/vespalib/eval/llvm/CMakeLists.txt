@@ -7,5 +7,6 @@ vespa_add_library(vespalib_vespalib_eval_llvm
     llvm_wrapper.cpp
     INSTALL lib64
     DEPENDS
+    vespalib
     LLVM-3.4
 )

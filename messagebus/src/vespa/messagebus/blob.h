@@ -14,6 +14,7 @@ namespace mbus {
  **/
 class Blob
 {
+    using Alloc = vespalib::alloc::Alloc;
 public:
     /**
      * Create a blob that will contain uninitialized memory with the
@@ -22,7 +23,7 @@ public:
      * @param s size of the data to be created
      **/
     Blob(uint32_t s) :
-        _payload(vespalib::DefaultAlloc::create(s)),
+        _payload(Alloc::alloc(s)),
         _sz(s)
     { }
     Blob(Blob && rhs) :
@@ -55,11 +56,11 @@ public:
      **/
     const char *data() const { return static_cast<const char *>(_payload.get()); }
 
-    vespalib::alloc::Alloc & payload() { return _payload; }
-    const vespalib::alloc::Alloc & payload() const { return _payload; }
+    Alloc & payload() { return _payload; }
+    const Alloc & payload() const { return _payload; }
     size_t size() const { return _sz; }
 private:
-    vespalib::alloc::Alloc _payload;
+    Alloc  _payload;
     size_t _sz;
 };
 

@@ -4,7 +4,6 @@
 #include <deque>
 #include <map>
 #include <set>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/statechecker.h>
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>

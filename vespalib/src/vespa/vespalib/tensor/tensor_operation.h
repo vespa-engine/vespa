@@ -17,29 +17,28 @@ class TensorOperation
 public:
     using TensorImplType = TensorT;
     using MyTensorBuilder = DirectTensorBuilder<TensorT>;
-    using Dimensions = typename TensorImplType::Dimensions;
     using Cells = typename TensorImplType::Cells;
     using AddressBuilderType = typename MyTensorBuilder::AddressBuilderType;
     using AddressRefType = typename MyTensorBuilder::AddressRefType;
 protected:
     MyTensorBuilder _builder;
-    Dimensions &_dimensions;
+    eval::ValueType &_type;
     Cells &_cells;
 
 public:
     TensorOperation()
         : _builder(),
-          _dimensions(_builder.dimensions()),
+          _type(_builder.type()),
           _cells(_builder.cells())
     {}
-    TensorOperation(const Dimensions &dimensions)
-        : _builder(dimensions),
-          _dimensions(_builder.dimensions()),
+    TensorOperation(const eval::ValueType &type)
+        : _builder(type),
+          _type(_builder.type()),
           _cells(_builder.cells())
     {}
-    TensorOperation(const Dimensions &dimensions, const Cells &cells)
-        : _builder(dimensions, cells),
-          _dimensions(_builder.dimensions()),
+    TensorOperation(const eval::ValueType &type, const Cells &cells)
+        : _builder(type, cells),
+          _type(_builder.type()),
           _cells(_builder.cells())
     {}
     Tensor::UP result() {

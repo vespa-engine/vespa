@@ -3,19 +3,12 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
-import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,33 +28,23 @@ import static org.junit.Assume.assumeTrue;
  *   1. Install Docker Toolbox, and start it (Docker Quick Start Terminal) (you can close terminal window afterwards)
  *   2. Run tests from IDE/mvn.
  *
- * LINUX:
- *  1. Remove Ignore annotations
- *  2. Change ownership of docker.sock
- *      $ sudo chown <your username> /var/run/docker.sock
- *  3. (Temporary) Manually create the docker network used by DockerImpl by running:
- *      $ sudo docker network create --ipv6 --gateway=<your local IPv6 address> --subnet=fe80::1/16 habla
- *  4. (Temporary) Manually build docker test image. Inside src/test/resources/simple-ipv6-server run:
- *      $ sudo docker build -t "simple-ipv6-server:Dockerfile" .
- *  5. (Temporary) Comment out createDockerImage() and shutdown()
- *
  * @author valerijf
  * @author dybdahl
  */
 public class DockerTest {
     private DockerImpl docker;
-    private static final boolean isMacOSX = System.getProperty("os.name").equals("Mac OS X");
+    private static final OS operatingSystem = getSystemOS();
     private static final String prefix = "/Users/" + System.getProperty("user.name") + "/.docker/machine/machines/default/";
     private static final DockerConfig dockerConfig = new DockerConfig(new DockerConfig.Builder()
-            .caCertPath(isMacOSX ? prefix + "ca.pem" : "")
-            .clientCertPath(isMacOSX ? prefix + "cert.pem" : "")
-            .clientKeyPath(isMacOSX ? prefix + "key.pem" : "")
-            .uri(isMacOSX ? "tcp://192.168.99.100:2376" : "unix:///var/run/docker.sock"));
+            .caCertPath(operatingSystem == OS.Mac_OS_X ? prefix + "ca.pem" : "")
+            .clientCertPath(operatingSystem == OS.Mac_OS_X ? prefix + "cert.pem" : "")
+            .clientKeyPath(operatingSystem == OS.Mac_OS_X ? prefix + "key.pem" : "")
+            .uri(operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376"));
     private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
 
     @Test
     public void testGetAllManagedContainersNoContainersRunning() {
-        assumeTrue(isMacOSX);
+        assumeTrue(operatingSystem != OS.Unsupported);
         assumeTrue(dockerDaemonIsPresent());
 
         List<Container> containers = docker.getAllManagedContainers();
@@ -94,6 +77,7 @@ public class DockerTest {
     public void testCreateDeleteImageCreateDeleteContainer() throws IOException, InterruptedException, ExecutionException {
         assumeTrue(dockerDaemonIsPresent());
         createDockerImage(docker);
+
         ContainerName containerName = new ContainerName("foo");
         docker.stopContainer(containerName);
         docker.deleteContainer(containerName);
@@ -117,25 +101,32 @@ public class DockerTest {
         assertFalse("Failed to delete " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
     }
 
-    @Ignore
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
+        assumeTrue(dockerDaemonIsPresent());
+        createDockerImage(docker);
+
         String hostName1 = "docker10.test.yahoo.com";
         String hostName2 = "docker11.test.yahoo.com";
         ContainerName containerName1 = new ContainerName("test-container-1");
         ContainerName containerName2 = new ContainerName("test-container-2");
-        InetAddress inetAddress1 = Inet6Address.getByName("fe80::10");
-        InetAddress inetAddress2 = Inet6Address.getByName("fe80::11");
-        DockerImpl docker = new DockerImpl(dockerConfig, new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+        InetAddress inetAddress1 = InetAddress.getByName("172.18.0.10");
+        InetAddress inetAddress2 = InetAddress.getByName("172.18.0.11");
 
-         docker.createContainerCommand(dockerImage, containerName1, hostName1).withIpAddress(inetAddress1).create();
-         docker.createContainerCommand(dockerImage, containerName2, hostName2).withIpAddress(inetAddress2).create();
+        docker.createContainerCommand(dockerImage, containerName1, hostName1)
+                .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress1).create();
+
+        docker.createContainerCommand(dockerImage, containerName2, hostName2)
+                .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress2).create();
+
+        docker.startContainer(containerName1);
+        docker.startContainer(containerName2);
 
         try {
             testReachabilityFromHost(containerName1, inetAddress1);
             testReachabilityFromHost(containerName2, inetAddress2);
 
-            String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://[" + inetAddress2 + "%eth0]/ping"};
+            String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://" + inetAddress2 + "/ping"};
             while (! docker.executeInContainer(containerName1, curlFromNodeToNode).isSuccess()) {
                 Thread.sleep(20);
             }
@@ -151,39 +142,38 @@ public class DockerTest {
         }
     }
 
+    private void createDockerTestNetworkIfNeeded() {
+        if (! docker.dockerClient.listNetworksCmd().withNameFilter(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
+
+        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config().withSubnet("172.18.0.0/16"));
+        docker.dockerClient.createNetworkCmd()
+                .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
+    }
+
     private boolean dockerDaemonIsPresent() {
-        if (!isMacOSX) {
+        if (docker != null) return true;
+        if (operatingSystem == OS.Unsupported) {
             System.out.println("This test does not support " + System.getProperty("os.name") + " yet, ignoring test.");
             return false;
         }
+
         try {
-            docker = new DockerImpl(dockerConfig, new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+            docker = new DockerImpl(dockerConfig);
+            createDockerTestNetworkIfNeeded();
             return true;
         } catch (Exception e) {
             System.out.println("Please install Docker Toolbox and start Docker Quick Start Terminal once, ignoring test.");
+            e.printStackTrace();
             return false;
         }
     }
 
     private void testReachabilityFromHost(ContainerName containerName, InetAddress target) throws IOException, InterruptedException {
-        String[] curlNodeFromHost = {"curl", "-g", "http://[" + target.getHostAddress() + "%" + getInterfaceName() + "]/ping"};
+        String[] curlNodeFromHost = {"curl", "-g", "http://" + target.getHostAddress() + "/ping"};
         while (!exec(curlNodeFromHost).equals("pong\n")) {
             Thread.sleep(20);
         }
         assertTrue("Could not reach " + containerName.asString() + " from host", exec(curlNodeFromHost).equals("pong\n"));
-    }
-
-
-    /**
-     * Returns the display name of the bridge used by our custom docker network. This is used for routing in the
-     * network tests. The bridge is assumed to be the only IPv6 interface starting with "br-"
-     */
-    private static String getInterfaceName() throws SocketException {
-        return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
-                .filter(networkInterface -> networkInterface.getDisplayName().startsWith("br-") &&
-                        networkInterface.getInterfaceAddresses().stream()
-                                .anyMatch(ip -> ip.getAddress() instanceof Inet6Address))
-                .findFirst().orElseThrow(RuntimeException::new).getDisplayName();
     }
 
     /**
@@ -208,38 +198,11 @@ public class DockerTest {
         return ret.toString();
     }
 
-    /**
-     * Returns IPv6 address of on the "docker0" interface that can be reached by the containers
-     */
-    private static String getLocalIPv6Address() throws SocketException {
-        return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
-                .filter(networkInterface -> networkInterface.getDisplayName().equals("docker0"))
-                .flatMap(i -> Collections.list(i.getInetAddresses()).stream())
-                .filter(ip -> ip instanceof Inet6Address && ip.isLinkLocalAddress())
-                .findFirst().orElseThrow(RuntimeException::new)
-                .getHostAddress().split("%")[0];
-    }
-
-    private void createSomeNetork() throws SocketException {
-        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
-                .withSubnet("fe80::1/16").withGateway(getLocalIPv6Address()));
-        // TODO: This needs to match the network name in DockerOperations!?
-        docker.dockerClient.createNetworkCmd().withDriver("bridge").withName("habla")
-                .withIpam(ipam).exec();
-    }
-
-    private void remoteNetwork() {
-        // Remove the network we created earlier
-        // TODO: This needs to match the network name in DockerOperations!?
-        docker.dockerClient.removeNetworkCmd("habla").exec();
-    }
-
-    // TODO: Do we need this? Rather use network created by DockerImpl, right?
-    void createDockerImage(DockerImpl docker) throws IOException, ExecutionException, InterruptedException {
+    private void createDockerImage(DockerImpl docker) throws IOException, ExecutionException, InterruptedException {
         try {
             docker.deleteImage(new DockerImage(dockerImage.asString()));
         } catch (Exception e) {
-            assertThat(e.getMessage(), is("Failed to delete docker image simple-ipv6-server:Dockerfile"));
+            assertThat(e.getMessage(), is("Failed to delete docker image " + dockerImage.asString()));
         }
 
         // Build the image locally
@@ -247,5 +210,15 @@ public class DockerTest {
         docker.dockerClient
                 .buildImageCmd(dockerFilePath)
                 .withTag(dockerImage.asString()).exec(new BuildImageResultCallback()).awaitCompletion();
+    }
+
+    private enum OS {Linux, Mac_OS_X, Unsupported}
+
+    private static OS getSystemOS() {
+        switch (System.getProperty("os.name").toLowerCase()) {
+            case "linux": return OS.Linux;
+            case "mac os x": return OS.Mac_OS_X;
+            default: return OS.Unsupported;
+        }
     }
 }

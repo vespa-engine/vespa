@@ -66,7 +66,7 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
             while (dimensionsIterator.hasNext()) {
                 Dimensions dimension = dimensionsIterator.next();
                 if (dimension.dimensionsMap.containsKey("host") && dimension.dimensionsMap.get("host").equals(hostname)) {
-                    metricsByDimensions.remove(dimension);
+                    dimensionsIterator.remove();
                 }
             }
         }

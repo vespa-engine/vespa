@@ -63,6 +63,7 @@ vespa_define_module(
     src/tests/frameworkimpl/memory
     src/tests/frameworkimpl/status
     src/tests/persistence
+    src/tests/persistence/common
     src/tests/persistence/filestorage
     src/tests/storageserver
     src/tests/storageutil

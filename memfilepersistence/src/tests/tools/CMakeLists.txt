@@ -4,4 +4,6 @@ vespa_add_library(memfilepersistence_testtools
     dumpslotfiletest.cpp
     vdsdisktooltest.cpp
     DEPENDS
+    memfilepersistence_testspi
+    memfilepersistence
 )

@@ -4,13 +4,13 @@
 
 #include <vespa/log/log.h>
 #include <vespa/storage/distributor/activecopy.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/joinoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 

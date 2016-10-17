@@ -393,6 +393,7 @@ public class NodeAgentImpl implements NodeAgent {
                 // If we transition from active, to not active state, unset the current metrics
                 if (lastNodeSpec != null && lastNodeSpec.nodeState == Node.State.active && nodeSpec.nodeState != Node.State.active) {
                     metricReceiver.unsetMetricsForContainer(hostname);
+                    lastCpuMetric = new CpuUsageReporter();
                 }
                 addDebugMessage("Loading new node spec: " + nodeSpec.toString());
                 lastNodeSpec = nodeSpec;
@@ -460,6 +461,8 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         if (nodeSpec == null || nodeSpec.nodeState != Node.State.active) return;
+        final Optional<Container> container = dockerOperations.getContainer(nodeSpec.hostname);
+        if ( ! container.isPresent() || ! container.get().isRunning ) return;
 
         Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()

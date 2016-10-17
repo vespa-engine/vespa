@@ -13,7 +13,7 @@
 #pragma once
 
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
-#include <tests/testhelper.h>
+#include <tests/helper/testhelper.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
 #include <vespa/document/base/testdocman.h>

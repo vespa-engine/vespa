@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,7 +22,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class StorageMaintainer {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(StorageMaintainer.class);
-    private static final String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
     private static final long intervalSec = 1000;
 
     private final Object monitor = new Object();
@@ -106,12 +104,12 @@ public class StorageMaintainer {
             DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
         }
 
-        execute(logger, concatenateArrays(baseArguments, Maintainer.JOB_CLEAN_CORE_DUMPS));
+        Maintainer.cleanCoreDumps(logger);
     }
 
     public void cleanNodeAdmin() {
-        execute(NODE_ADMIN_LOGGER, concatenateArrays(baseArguments, Maintainer.JOB_DELETE_OLD_APP_DATA));
-        execute(NODE_ADMIN_LOGGER, concatenateArrays(baseArguments, Maintainer.JOB_CLEAN_HOME));
+        Maintainer.deleteOldAppData(NODE_ADMIN_LOGGER);
+        Maintainer.cleanHome(NODE_ADMIN_LOGGER);
 
         File nodeAdminJDiskLogsPath = maintainer.pathInNodeAdminFromPathInNode(new ContainerName("node-admin"),
                 "/home/y/logs/jdisc_core/").toFile();
@@ -120,27 +118,7 @@ public class StorageMaintainer {
 
     public void archiveNodeData(ContainerName containerName) throws IOException {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-        execute(logger, concatenateArrays(baseArguments, Maintainer.JOB_ARCHIVE_APP_DATA, containerName.asString()));
-    }
-
-    private void execute(PrefixLogger logger, String... params) {
-        try {
-            Process p = Runtime.getRuntime().exec(params);
-            String output = IOUtils.readAll(new InputStreamReader(p.getInputStream()));
-            String errors = IOUtils.readAll(new InputStreamReader(p.getErrorStream()));
-
-            if (! output.isEmpty()) logger.info(output);
-            if (! errors.isEmpty()) logger.error(errors);
-        } catch (IOException e) {
-            logger.warning("Failed to execute command " + Arrays.toString(params), e);
-        }
-    }
-
-    private static String[] concatenateArrays(String[] ar1, String... ar2) {
-        String[] concatenated = new String[ar1.length + ar2.length];
-        System.arraycopy(ar1, 0, concatenated, 0, ar1.length);
-        System.arraycopy(ar2, 0, concatenated, ar1.length, ar2.length);
-        return concatenated;
+        Maintainer.archiveAppData(logger, containerName);
     }
 
     private static class MetricsCache {

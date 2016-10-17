@@ -2,6 +2,7 @@
 vespa_add_library(storage_teststatus TEST
     SOURCES
     statustest.cpp
-    AFTER
-    storage_storageconfig
+    DEPENDS
+    storage
+    storage_testcommon
 )

@@ -48,37 +48,43 @@ void
 Test::testBasic()
 {
     {
-        Alloc h = HeapAllocFactory::create(100);
+        Alloc h = Alloc::allocHeap(100);
         EXPECT_EQUAL(100u, h.size());
-        EXPECT_TRUE(h.get() != NULL);
+        EXPECT_TRUE(h.get() != nullptr);
     }
     {
-        EXPECT_EXCEPTION(AlignedHeapAllocFactory::create(100, 7), IllegalArgumentException, "AlignedHeapAllocFactory::create(100, 7) does not support 7 alignment");
-        Alloc h = AlignedHeapAllocFactory::create(100, 1024);
+        EXPECT_EXCEPTION(Alloc::allocAlignedHeap(100, 7), IllegalArgumentException, "Alloc::allocAlignedHeap(100, 7) does not support 7 alignment");
+        Alloc h = Alloc::allocAlignedHeap(100, 1024);
         EXPECT_EQUAL(100u, h.size());
-        EXPECT_TRUE(h.get() != NULL);
+        EXPECT_TRUE(h.get() != nullptr);
     }
     {
-        Alloc h = MMapAllocFactory::create(100);
+        Alloc h = Alloc::allocMMap(100);
         EXPECT_EQUAL(100u, h.size());
-        EXPECT_TRUE(h.get() != NULL);
+        EXPECT_TRUE(h.get() != nullptr);
     }
     {
-        Alloc a = HeapAllocFactory::create(100), b = HeapAllocFactory::create(200);
+        Alloc a = Alloc::allocHeap(100), b = Alloc::allocHeap(200);
         testSwap(a, b);
     }
     {
-        Alloc a = MMapAllocFactory::create(100), b = MMapAllocFactory::create(200);
+        Alloc a = Alloc::allocMMap(100), b = Alloc::allocMMap(200);
         testSwap(a, b);
     }
     {
-        Alloc a = AlignedHeapAllocFactory::create(100, 1024), b = AlignedHeapAllocFactory::create(200, 1024);
+        Alloc a = Alloc::allocAlignedHeap(100, 1024), b = Alloc::allocAlignedHeap(200, 1024);
         testSwap(a, b);
     }
     {
-        Alloc a = HeapAllocFactory::create(100);
-        Alloc b = MMapAllocFactory::create(200);
+        Alloc a = Alloc::allocHeap(100);
+        Alloc b = Alloc::allocMMap(200);
         testSwap(a, b);
+    }
+    {
+        Alloc a = Alloc::allocHeap(100);
+        Alloc b = Alloc::allocHeap(100);
+        a = std::move(b);
+        EXPECT_TRUE(b.get() == nullptr);
     }
 }
 
@@ -86,13 +92,13 @@ void
 Test::testAlignedAllocation()
 {
     {
-        Alloc buf = AutoAllocFactory::create(10, MemoryAllocator::HUGEPAGE_SIZE, 1024);
+        Alloc buf = Alloc::alloc(10, MemoryAllocator::HUGEPAGE_SIZE, 1024);
         EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 1024 == 0);
     }
 
     {
         // Mmapped pointers are page-aligned, but sanity test anyway.
-        Alloc buf = AutoAllocFactory::create(3000000, MemoryAllocator::HUGEPAGE_SIZE, 512);
+        Alloc buf = Alloc::alloc(3000000, MemoryAllocator::HUGEPAGE_SIZE, 512);
         EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 512 == 0);
     }
 }

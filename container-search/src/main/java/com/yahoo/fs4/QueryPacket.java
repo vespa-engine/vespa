@@ -205,7 +205,7 @@ public class QueryPacket extends Packet {
     static final int QFLAG_ALLOW_ERRORPACKET    = 0x00000004;
     static final int QFLAG_ESTIMATE             = 0x00000080;
     static final int QFLAG_DROP_SORTDATA        = 0x00004000;
-    static final int QFLAG_REPORT_COVERAGE      = 0x00008000;
+    static final int QFLAG_REPORT_COVERAGE      = 0x00008000; // always on
     static final int QFLAG_NO_RESULTCACHE       = 0x00010000;
     static final int QFLAG_DUMP_FEATURES        = 0x00040000;
 

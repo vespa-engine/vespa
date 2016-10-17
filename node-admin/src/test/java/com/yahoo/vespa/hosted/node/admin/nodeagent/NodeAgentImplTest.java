@@ -419,6 +419,9 @@ public class NodeAgentImplTest {
         final ContainerName containerName = new ContainerName("cont-name");
         when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(stats);
 
+        when(dockerOperations.getContainer(eq(hostName)))
+                .thenReturn(Optional.of(new Container(hostName, new DockerImage("wantedDockerImage"), containerName, true)));
+
         Optional<String> version = Optional.of("1.2.3");
         ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner("tester", "testapp", "testinstance");
         ContainerNodeSpec.Membership membership = new ContainerNodeSpec.Membership("clustType", "clustId", "grp", 3, false);

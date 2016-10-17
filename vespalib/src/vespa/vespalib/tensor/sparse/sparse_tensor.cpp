@@ -33,18 +33,18 @@ copyCells(Cells &cells, const Cells &cells_in, Stash &stash)
 
 void
 printAddress(std::ostream &out, const SparseTensorAddressRef &ref,
-             const TensorDimensions &dimensions)
+             const eval::ValueType &type)
 {
     out << "{";
     bool first = true;
     SparseTensorAddressDecoder addr(ref);
-    for (auto &dim : dimensions) {
+    for (auto &dim : type.dimensions()) {
         auto label = addr.decodeLabel();
         if (label.size() != 0u) {
             if (!first) {
                 out << ",";
             }
-            out << dim << ":" << label;
+            out << dim.name << ":" << label;
             first = false;
         }
     }
@@ -54,20 +54,20 @@ printAddress(std::ostream &out, const SparseTensorAddressRef &ref,
 
 }
 
-SparseTensor::SparseTensor(const Dimensions &dimensions_in,
-                                 const Cells &cells_in)
-    : _cells(),
-      _dimensions(dimensions_in),
+SparseTensor::SparseTensor(const eval::ValueType &type_in,
+                           const Cells &cells_in)
+    : _type(type_in),
+      _cells(),
       _stash(STASH_CHUNK_SIZE)
 {
     copyCells(_cells, cells_in, _stash);
 }
 
 
-SparseTensor::SparseTensor(Dimensions &&dimensions_in,
-                                 Cells &&cells_in, Stash &&stash_in)
-    : _cells(std::move(cells_in)),
-      _dimensions(std::move(dimensions_in)),
+SparseTensor::SparseTensor(eval::ValueType &&type_in,
+                           Cells &&cells_in, Stash &&stash_in)
+    : _type(std::move(type_in)),
+      _cells(std::move(cells_in)),
       _stash(std::move(stash_in))
 {
 }
@@ -76,29 +76,29 @@ SparseTensor::SparseTensor(Dimensions &&dimensions_in,
 bool
 SparseTensor::operator==(const SparseTensor &rhs) const
 {
-    return _dimensions == rhs._dimensions && _cells == rhs._cells;
+    return _type == rhs._type && _cells == rhs._cells;
 }
 
 
-SparseTensor::Dimensions
+eval::ValueType
 SparseTensor::combineDimensionsWith(const SparseTensor &rhs) const
 {
-    Dimensions result;
-    std::set_union(_dimensions.cbegin(), _dimensions.cend(),
-                   rhs._dimensions.cbegin(), rhs._dimensions.cend(),
-                   std::back_inserter(result));
-    return result;
+    std::vector<eval::ValueType::Dimension> result;
+    std::set_union(_type.dimensions().cbegin(), _type.dimensions().cend(),
+                   rhs._type.dimensions().cbegin(), rhs._type.dimensions().cend(),
+                   std::back_inserter(result),
+                   [](const eval::ValueType::Dimension &lhsDim,
+                      const eval::ValueType::Dimension &rhsDim)
+                   { return lhsDim.name < rhsDim.name; });
+    return (result.empty() ?
+            eval::ValueType::double_type() :
+            eval::ValueType::tensor_type(result));
 }
 
 eval::ValueType
 SparseTensor::getType() const
 {
-    if (_dimensions.empty()) {
-        return eval::ValueType::double_type();
-    }
-    std::vector<eval::ValueType::Dimension> dimensions;
-    std::copy(_dimensions.begin(), _dimensions.end(), std::back_inserter(dimensions));
-    return eval::ValueType::tensor_type(dimensions);
+    return _type;
 }
 
 double
@@ -211,19 +211,19 @@ SparseTensor::toString() const
 Tensor::UP
 SparseTensor::clone() const
 {
-    return std::make_unique<SparseTensor>(_dimensions, _cells);
+    return std::make_unique<SparseTensor>(_type, _cells);
 }
 
 namespace {
 
 void
-buildAddress(const SparseTensor::Dimensions &dimensions,
+buildAddress(const eval::ValueType &type,
              SparseTensorAddressDecoder &decoder,
              TensorSpec::Address &address)
 {
-    for (const auto &dimension : dimensions) {
+    for (const auto &dimension : type.dimensions()) {
         auto label = decoder.decodeLabel();
-        address.emplace(std::make_pair(dimension, TensorSpec::Label(label)));
+        address.emplace(std::make_pair(dimension.name, TensorSpec::Label(label)));
     }
     assert(!decoder.valid());
 }
@@ -237,11 +237,11 @@ SparseTensor::toSpec() const
     TensorSpec::Address address;
     for (const auto &cell : _cells) {
         SparseTensorAddressDecoder decoder(cell.first);
-        buildAddress(_dimensions, decoder, address);
+        buildAddress(_type, decoder, address);
         result.add(address, cell.second);
         address.clear();
     }
-    if (_dimensions.empty() && _cells.empty()) {
+    if (_type.dimensions().empty() && _cells.empty()) {
         result.add(address, 0.0);
     }
     return result;
@@ -256,7 +256,7 @@ SparseTensor::print(std::ostream &out) const
         if (!first) {
             out << ", ";
         }
-        printAddress(out, cell.first, _dimensions);
+        printAddress(out, cell.first, _type);
         out << ":" << cell.second;
         first = false;
     }
@@ -271,10 +271,10 @@ SparseTensor::accept(TensorVisitor &visitor) const
     for (const auto &cell : _cells) {
         SparseTensorAddressDecoder decoder(cell.first);
         addrBuilder.clear();
-        for (const auto &dimension : _dimensions) {
+        for (const auto &dimension : _type.dimensions()) {
             auto label = decoder.decodeLabel();
             if (label.size() != 0u) {
-                addrBuilder.add(dimension, label);
+                addrBuilder.add(dimension.name, label);
             }
         }
         assert(!decoder.valid());
@@ -300,7 +300,7 @@ SparseTensor::reduce(const eval::BinaryOperation &op,
                      const std::vector<vespalib::string> &dimensions) const
 {
     return sparse::reduce(*this,
-                          (dimensions.empty() ? _dimensions : dimensions),
+                          dimensions,
                           [&op](double lhsValue, double rhsValue)
                           { return op.eval(lhsValue, rhsValue); });
 }

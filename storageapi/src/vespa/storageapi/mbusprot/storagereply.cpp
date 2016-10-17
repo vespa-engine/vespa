@@ -4,7 +4,6 @@
 
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 
-using vespalib::DefaultAlloc;
 using vespalib::alloc::Alloc;
 using vespalib::IllegalStateException;
 
@@ -14,7 +13,7 @@ namespace mbusprot {
 StorageReply::StorageReply(const mbus::BlobRef& data,
                            const ProtocolSerialization& serializer)
     : _serializer(&serializer),
-      _buffer(DefaultAlloc::create(data.size())),
+      _buffer(Alloc::alloc(data.size())),
       _mbusType(0),
       _reply()
 {

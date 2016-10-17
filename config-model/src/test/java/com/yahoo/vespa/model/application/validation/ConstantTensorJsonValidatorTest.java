@@ -133,7 +133,24 @@ public class ConstantTensorJsonValidatorTest {
                         "        }",
                         "   ]",
                         "}"));
+    }
 
+    @Test
+    public void ensure_that_tensor_coordinates_are_strings() {
+        expectedException.expect(InvalidConstantTensor.class);
+        expectedException.expectMessage("Tensor coordinate is not a string (VALUE_NUMBER_INT)");
+
+        validateTensorJson(
+                TensorType.fromSpec("tensor(x[])"),
+                inputJsonToReader(
+                        "{",
+                        "   'cells': [",
+                        "        {",
+                        "            'address': { 'x': 47 },",
+                        "            'value': 33.0",
+                        "        }",
+                        "   ]",
+                        "}"));
     }
 
     @Test
@@ -152,7 +169,6 @@ public class ConstantTensorJsonValidatorTest {
                         "        }",
                         "   ]",
                         "}"));
-
     }
 
     @Test

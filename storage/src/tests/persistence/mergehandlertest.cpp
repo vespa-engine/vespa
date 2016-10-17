@@ -7,7 +7,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/log/log.h>
 #include <tests/persistence/persistencetestutils.h>
-#include <tests/persistence/persistenceproviderwrapper.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/distributor/messagesenderstub.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <cmath>

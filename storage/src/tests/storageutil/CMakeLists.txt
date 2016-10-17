@@ -4,6 +4,6 @@ vespa_add_library(storage_teststorageutil TEST
     functortest.cpp
     charttest.cpp
     palettetest.cpp
-    AFTER
-    storage_storageconfig
+    DEPENDS
+    storage
 )

@@ -4,7 +4,6 @@
 #include <vespa/storageapi/messageapi/bucketcommand.h>
 #include <vespa/storageapi/messageapi/bucketreply.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/common/messagesender.h>
 
 namespace storage {

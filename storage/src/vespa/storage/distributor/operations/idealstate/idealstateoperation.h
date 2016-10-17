@@ -6,7 +6,6 @@
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 
 namespace storage

@@ -3,8 +3,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/fnet/fnet.h>
 
-using vespalib::DefaultAlloc;
-
 FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
     : _bufstart(NULL),
       _bufend(NULL),
@@ -15,7 +13,7 @@ FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
         len = 256;
 
     if (len > 0) {
-       DefaultAlloc::create(len).swap(_ownedBuf);
+       Alloc::alloc(len).swap(_ownedBuf);
        memset(_ownedBuf.get(), 0x55, len);
         _bufstart = static_cast<char *>(_ownedBuf.get());
         assert(_bufstart != NULL);
@@ -72,7 +70,7 @@ FNET_DataBuffer::Shrink(uint32_t newsize)
         return false;
     }
     
-    Alloc newBuf(DefaultAlloc::create(newsize));
+    Alloc newBuf(Alloc::alloc(newsize));
     memset(newBuf.get(), 0x55, newsize);
     memcpy(newBuf.get(), _datapt, GetDataLen());
     _ownedBuf.swap(newBuf);
@@ -97,7 +95,7 @@ FNET_DataBuffer::Pack(uint32_t needbytes)
         while (bufsize - GetDataLen() < needbytes)
             bufsize *= 2;
 
-        Alloc newBuf(DefaultAlloc::create(bufsize));
+        Alloc newBuf(Alloc::alloc(bufsize));
         memset(newBuf.get(), 0x55, bufsize);
         memcpy(newBuf.get(), _datapt, GetDataLen());
         _ownedBuf.swap(newBuf);

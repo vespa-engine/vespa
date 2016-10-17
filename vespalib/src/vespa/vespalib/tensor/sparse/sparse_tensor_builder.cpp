@@ -14,7 +14,8 @@ SparseTensorBuilder::SparseTensorBuilder()
       _stash(SparseTensor::STASH_CHUNK_SIZE),
       _dimensionsEnum(),
       _dimensions(),
-      _sortedDimensions()
+      _type(eval::ValueType::double_type()),
+      _type_made(false)
 {
 }
 
@@ -24,12 +25,19 @@ SparseTensorBuilder::~SparseTensorBuilder()
 
 
 void
-SparseTensorBuilder::makeSortedDimensions()
+SparseTensorBuilder::makeType()
 {
-    assert(_sortedDimensions.empty());
+    assert(!_type_made);
     assert(_cells.empty());
-    _sortedDimensions = _dimensions;
-    std::sort(_sortedDimensions.begin(), _sortedDimensions.end());
+    std::vector<eval::ValueType::Dimension> dimensions;
+    dimensions.reserve(_dimensions.size());
+    for (const auto &dim : _dimensions) {
+        dimensions.emplace_back(dim);
+    }
+    _type = (dimensions.empty() ?
+             eval::ValueType::double_type() :
+             eval::ValueType::tensor_type(dimensions));
+    _type_made = true;
 }
 
 
@@ -40,6 +48,7 @@ SparseTensorBuilder::define_dimension(const vespalib::string &dimension)
     if (it != _dimensionsEnum.end()) {
         return it->second;
     }
+    assert(!_type_made);
     Dimension res = _dimensionsEnum.size();
     auto insres = _dimensionsEnum.insert(std::make_pair(dimension, res));
     assert(insres.second);
@@ -61,10 +70,10 @@ SparseTensorBuilder::add_label(Dimension dimension,
 TensorBuilder &
 SparseTensorBuilder::add_cell(double value)
 {
-    if (_dimensions.size() != _sortedDimensions.size()) {
-        makeSortedDimensions();
+    if (!_type_made) {
+        makeType();
     }
-    _addressBuilder.buildTo(_normalizedAddressBuilder, _sortedDimensions);
+    _addressBuilder.buildTo(_normalizedAddressBuilder, _type);
     SparseTensorAddressRef taddress(_normalizedAddressBuilder.getAddressRef());
     // Make a persistent copy of sparse tensor address owned by _stash
     SparseTensorAddressRef address(taddress, _stash);
@@ -79,18 +88,17 @@ Tensor::UP
 SparseTensorBuilder::build()
 {
     assert(_addressBuilder.empty());
-    if (_dimensions.size() != _sortedDimensions.size()) {
-        makeSortedDimensions();
+    if (!_type_made) {
+        makeType();
     }
-    SparseTensor::Dimensions dimensions(_sortedDimensions.begin(),
-                                           _sortedDimensions.end());
-    Tensor::UP ret = std::make_unique<SparseTensor>(std::move(dimensions),
-                                                       std::move(_cells),
-                                                       std::move(_stash));
+    Tensor::UP ret = std::make_unique<SparseTensor>(std::move(_type),
+                                                    std::move(_cells),
+                                                    std::move(_stash));
     SparseTensor::Cells().swap(_cells);
     _dimensionsEnum.clear();
     _dimensions.clear();
-    _sortedDimensions.clear();
+    _type = eval::ValueType::double_type();
+    _type_made = false;
     return ret;
 }
 

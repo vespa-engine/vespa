@@ -7,6 +7,5 @@ vespa_add_executable(storageframework_testrunner_app TEST
     storageframework_teststatus
     storageframework_testmemory
     storageframework_testthread
-    storageframework
 )
 vespa_add_test(NAME storageframework_testrunner_app COMMAND storageframework_testrunner_app)

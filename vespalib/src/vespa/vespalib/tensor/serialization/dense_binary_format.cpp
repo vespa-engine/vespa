@@ -11,16 +11,26 @@ using vespalib::nbostream;
 namespace vespalib {
 namespace tensor {
 
+namespace {
+
+eval::ValueType
+makeValueType(const std::vector<eval::ValueType::Dimension> &&dimensions) {
+    return (dimensions.empty() ?
+            eval::ValueType::double_type() :
+            eval::ValueType::tensor_type(std::move(dimensions)));
+}
+
+}
 
 void
 DenseBinaryFormat::serialize(nbostream &stream, const DenseTensor &tensor)
 {
-    stream.putInt1_4Bytes(tensor.dimensionsMeta().size());
+    stream.putInt1_4Bytes(tensor.type().dimensions().size());
     size_t cellsSize = 1;
-    for (const auto &dimension : tensor.dimensionsMeta()) {
-        stream.writeSmallString(dimension.dimension());
-        stream.putInt1_4Bytes(dimension.size());
-        cellsSize *= dimension.size();
+    for (const auto &dimension : tensor.type().dimensions()) {
+        stream.writeSmallString(dimension.name);
+        stream.putInt1_4Bytes(dimension.size);
+        cellsSize *= dimension.size;
     }
     const DenseTensor::Cells &cells = tensor.cells();
     assert(cells.size() == cellsSize);
@@ -34,15 +44,15 @@ std::unique_ptr<DenseTensor>
 DenseBinaryFormat::deserialize(nbostream &stream)
 {
     vespalib::string dimensionName;
-    DenseTensor::DimensionsMeta dimensionsMeta;
+    std::vector<eval::ValueType::Dimension> dimensions;
     DenseTensor::Cells cells;
     size_t dimensionsSize = stream.getInt1_4Bytes();
     size_t dimensionSize;
     size_t cellsSize = 1;
-    while (dimensionsMeta.size() < dimensionsSize) {
+    while (dimensions.size() < dimensionsSize) {
         stream.readSmallString(dimensionName);
         dimensionSize = stream.getInt1_4Bytes();
-        dimensionsMeta.emplace_back(dimensionName, dimensionSize);
+        dimensions.emplace_back(dimensionName, dimensionSize);
         cellsSize *= dimensionSize;
     }
     cells.reserve(cellsSize);
@@ -51,7 +61,7 @@ DenseBinaryFormat::deserialize(nbostream &stream)
         stream >> cellValue;
         cells.emplace_back(cellValue);
     }
-    return std::make_unique<DenseTensor>(std::move(dimensionsMeta),
+    return std::make_unique<DenseTensor>(makeValueType(std::move(dimensions)),
                                          std::move(cells));
 }
 

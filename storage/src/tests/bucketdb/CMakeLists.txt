@@ -8,7 +8,7 @@ vespa_add_library(storage_testbucketdb TEST
     lockablemaptest.cpp
     bucketinfotest.cpp
     distribution_hash_normalizer_test.cpp
-    AFTER
-    storage_storageconfig
-    storage_bucketdb
+    DEPENDS
+    storage
+    storage_testcommon
 )

@@ -12,7 +12,6 @@ LOG_SETUP(".document.compressor");
 #include <lz4hc.h>
 
 using vespalib::alloc::Alloc;
-using vespalib::DefaultAlloc;
 using vespalib::ConstBufferRef;
 using vespalib::DataBuffer;
 using vespalib::make_string;
@@ -30,10 +29,10 @@ LZ4Compressor::process(const CompressionConfig& config, const void * inputV, siz
     char * output(static_cast<char *>(outputV));
     int sz(-1);
     if (config.compressionLevel > 6) {
-        Alloc state = DefaultAlloc::create(LZ4_sizeofStateHC());
+        Alloc state = Alloc::alloc(LZ4_sizeofStateHC());
         sz = LZ4_compressHC2_withStateHC(state.get(), input, output, inputLen, config.compressionLevel);
     } else {
-        Alloc state = DefaultAlloc::create(LZ4_sizeofState());
+        Alloc state = Alloc::alloc(LZ4_sizeofState());
         sz = LZ4_compress_withState(state.get(), input, output, inputLen);
     }
     if (sz != 0) {

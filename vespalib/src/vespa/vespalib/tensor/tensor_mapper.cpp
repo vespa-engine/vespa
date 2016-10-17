@@ -17,25 +17,8 @@ namespace tensor {
 
 namespace {
 
-class SparseTensorMapperBase
-{
-protected:
-    static TensorDimensions mapDimensions(const ValueType &type);
-};
-
-TensorDimensions
-SparseTensorMapperBase::mapDimensions(const ValueType &type)
-{
-    TensorDimensions dimensions;
-    dimensions.reserve(type.dimensions().size());
-    for (const auto &dimension :  type.dimensions()) {
-        dimensions.emplace_back(dimension.name);
-    }
-    return dimensions;
-}
-
 template <class TensorT>
-class SparseTensorMapper : public TensorVisitor, public SparseTensorMapperBase
+class SparseTensorMapper : public TensorVisitor
 {
     using Builder = DirectTensorBuilder<TensorT>;
     using AddressBuilderType = typename Builder::AddressBuilderType;
@@ -60,8 +43,7 @@ template <class TensorT>
 SparseTensorMapper<TensorT>::
 SparseTensorMapper(const ValueType &type)
     : TensorVisitor(),
-      SparseTensorMapperBase(),
-      _builder(mapDimensions(type)),
+      _builder(type),
       _addressBuilder()
 {
 }
@@ -85,8 +67,8 @@ mapAddress(const TensorAddress &address)
 {
     _addressBuilder.clear();
     TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    for (const auto &dimension : _builder.dimensions()) {
-        if (addressIterator.skipToDimension(dimension)) {
+    for (const auto &dimension : _builder.type().dimensions()) {
+        if (addressIterator.skipToDimension(dimension.name)) {
             _addressBuilder.add(addressIterator.label());
             addressIterator.next();
         } else {
@@ -118,7 +100,7 @@ SparseTensorMapper<TensorT>::map(const Tensor &tensor,
 
 class DenseTensorMapper : public TensorVisitor
 {
-    DenseTensor::DimensionsMeta _dimensionsMeta;
+    eval::ValueType _type;
     DenseTensor::Cells _cells;
     static constexpr uint32_t BAD_LABEL = std::numeric_limits<uint32_t>::max();
     static constexpr uint32_t BAD_ADDRESS =
@@ -138,14 +120,12 @@ public:
 };
 
 DenseTensorMapper::DenseTensorMapper(const ValueType &type)
-    : _dimensionsMeta(),
+    : _type(type),
       _cells()
 {
-    _dimensionsMeta.reserve(type.dimensions().size());
     size_t size = 1;
     for (const auto &dimension : type.dimensions()) {
         size *= dimension.size;
-        _dimensionsMeta.emplace_back(dimension.name, dimension.size);
     }
     _cells.resize(size);
 }
@@ -157,7 +137,7 @@ DenseTensorMapper::~DenseTensorMapper()
 std::unique_ptr<Tensor>
 DenseTensorMapper::build()
 {
-    return std::make_unique<DenseTensor>(std::move(_dimensionsMeta),
+    return std::make_unique<DenseTensor>(std::move(_type),
                                          std::move(_cells));
 }
 
@@ -182,17 +162,17 @@ DenseTensorMapper::mapAddressToIndex(const TensorAddress &address)
 {
     uint32_t idx = 0;
     TensorAddressElementIterator<TensorAddress> addressIterator(address);
-    for (const auto &dimension : _dimensionsMeta) {
-        if (addressIterator.skipToDimension(dimension.dimension())) {
+    for (const auto &dimension : _type.dimensions()) {
+        if (addressIterator.skipToDimension(dimension.name)) {
             uint32_t label = mapLabelToNumber(addressIterator.label());
-            if (label == BAD_LABEL || label >= dimension.size()) {
+            if (label == BAD_LABEL || label >= dimension.size) {
                 return BAD_ADDRESS;
             }
-            idx = idx * dimension.size() + label;
+            idx = idx * dimension.size + label;
             addressIterator.next();
         } else {
             // output dimension not in input
-            idx = idx * dimension.size();
+            idx = idx * dimension.size;
         }
     }
     return idx;

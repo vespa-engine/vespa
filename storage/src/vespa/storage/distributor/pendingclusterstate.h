@@ -4,10 +4,9 @@
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlserializable.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/clusterinformation.h>
 #include <unordered_set>
 

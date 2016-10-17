@@ -23,7 +23,6 @@
 
 using vespalib::FieldBase;
 using vespalib::nbostream;
-using vespalib::DefaultAlloc;
 
 namespace document {
 

@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/storage/distributor/distributorconfiguration.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/log/log.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/node.h>
@@ -9,8 +9,6 @@
 LOG_SETUP(".distributorconfiguration");
 
 namespace storage {
-
-namespace distributor {
 
 DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
     : _component(component),
@@ -171,6 +169,5 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorVisi
     _maxVisitorsPerNodePerClientVisitor = config.maxvisitorspernodeperclientvisitor;
 }
 
-} // distributor
 } // storage
 

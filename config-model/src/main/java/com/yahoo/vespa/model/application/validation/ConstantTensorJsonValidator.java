@@ -141,7 +141,10 @@ public class ConstantTensorJsonValidator {
      * additionally, those for indexed bounded dimensions needs to fall within the dimension size.
      */
     private void validateTensorCoordinate(TensorType.Dimension dimension) throws IOException {
-        assertNextTokenIs(JsonToken.VALUE_STRING);
+        final JsonToken token = parser.nextToken();
+        if (token != JsonToken.VALUE_STRING) {
+            throw new InvalidConstantTensor(parser, String.format("Tensor coordinate is not a string (%s)", token.toString()));
+        }
 
         if (dimension instanceof TensorType.IndexedBoundDimension) {
             validateBoundedCoordinate((TensorType.IndexedBoundDimension) dimension);

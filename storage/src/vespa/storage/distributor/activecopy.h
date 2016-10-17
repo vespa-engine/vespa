@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 
 namespace storage {
 namespace lib {

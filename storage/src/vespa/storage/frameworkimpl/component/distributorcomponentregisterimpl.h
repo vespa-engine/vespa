@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include <vespa/storage/distributor/bucketdb/mapbucketdatabase.h>
+#include <vespa/storage/bucketdb/mapbucketdatabase.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
@@ -26,7 +26,7 @@ class DistributorComponentRegisterImpl
     std::vector<DistributorManagedComponent*> _components;
 
     UniqueTimeCalculator* _timeCalculator;
-    distributor::MapBucketDatabase _bucketDatabase;
+    MapBucketDatabase _bucketDatabase;
     DistributorConfig _distributorConfig;
     VisitorConfig _visitorConfig;
     lib::ClusterState _clusterState;
@@ -37,7 +37,7 @@ public:
 
     DistributorComponentRegisterImpl();
 
-    distributor::BucketDatabase& getBucketDatabase() { return _bucketDatabase; }
+    BucketDatabase& getBucketDatabase() { return _bucketDatabase; }
 
     virtual void registerDistributorComponent(DistributorManagedComponent&);
 

@@ -5,7 +5,7 @@ vespa_add_library(storage_testvisiting TEST
     visitormanagertest.cpp
     visitortest.cpp
     memory_bounded_trace_test.cpp
-    AFTER
-    storage_storageconfig
-    storage_visitor
+    DEPENDS
+    storage
+    storage_teststorageserver
 )

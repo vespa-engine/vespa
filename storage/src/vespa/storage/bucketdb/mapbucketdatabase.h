@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <map>
 
 namespace storage {
-
-namespace distributor {
 
 class MapBucketDatabase : public BucketDatabase
 {
@@ -104,8 +102,6 @@ private:
     std::vector<BucketDatabase::Entry> _values;
     std::vector<uint32_t> _freeValues;
 };
-
-}
 
 }
 

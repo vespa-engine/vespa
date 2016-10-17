@@ -27,8 +27,8 @@
 
 #include <vespa/storageapi/defs.h>
 #include <vespa/storage/common/storagecomponent.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
-#include <vespa/storage/distributor/distributorconfiguration.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
 
@@ -55,7 +55,7 @@ struct DistributorManagedComponent
 
     virtual void setIdealNodeCalculator(lib::IdealNodeCalculator&) = 0;
     virtual void setTimeCalculator(UniqueTimeCalculator&) = 0;
-    virtual void setBucketDatabase(distributor::BucketDatabase&) = 0;
+    virtual void setBucketDatabase(BucketDatabase&) = 0;
     virtual void setDistributorConfig(const DistributorConfig&)= 0;
     virtual void setVisitorConfig(const VisitorConfig&) = 0;
 };
@@ -70,14 +70,14 @@ class DistributorComponent : public StorageComponent,
                              private DistributorManagedComponent
 {
     lib::IdealNodeCalculator* _idealNodeCalculator;
-    distributor::BucketDatabase* _bucketDatabase;
+    BucketDatabase* _bucketDatabase;
     mutable UniqueTimeCalculator* _timeCalculator;
     DistributorConfig _distributorConfig;
     VisitorConfig _visitorConfig;
-    distributor::DistributorConfiguration _totalConfig;
+    DistributorConfiguration _totalConfig;
 
         // DistributorManagedComponent implementation
-    virtual void setBucketDatabase(distributor::BucketDatabase& db)
+    virtual void setBucketDatabase(BucketDatabase& db)
         { _bucketDatabase = &db; }
     virtual void setIdealNodeCalculator(lib::IdealNodeCalculator& c)
         { _idealNodeCalculator = &c; }
@@ -109,11 +109,11 @@ public:
     const VisitorConfig& getVisitorConfig() const {
         return _visitorConfig;
     }
-    const distributor::DistributorConfiguration&
+    const DistributorConfiguration&
     getTotalDistributorConfig() const {
         return _totalConfig;
     }
-    distributor::BucketDatabase& getBucketDatabase() {
+    BucketDatabase& getBucketDatabase() {
         assert(_bucketDatabase); return *_bucketDatabase;
     }
     lib::IdealNodeCalculator& getIdealNodeCalculator() const {

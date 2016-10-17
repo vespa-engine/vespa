@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/bucketgctimecalculator.h>
 #include <vespa/storage/distributor/maintenancebucket.h>
-#include <vespa/storage/distributor/bucketdb/bucketdatabase.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/vespalib/util/linkedptr.h>
 
 #include <unordered_set>
@@ -17,10 +16,11 @@
 
 namespace storage {
 
+class DistributorConfiguration;
+
 namespace distributor {
 
 class DistributorComponent;
-class DistributorConfiguration;
 class NodeMaintenanceStatsTracker;
 
 /**

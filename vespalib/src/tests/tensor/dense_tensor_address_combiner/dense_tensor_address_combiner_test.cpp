@@ -5,32 +5,28 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 
 using namespace vespalib::tensor;
-using DimensionsMeta = DenseTensor::DimensionsMeta;
+using vespalib::eval::ValueType;
 
-std::ostream &
-operator<<(std::ostream &out, const DenseTensor::DimensionMeta &dimMeta)
+ValueType
+combine(const std::vector<ValueType::Dimension> &lhs,
+        const std::vector<ValueType::Dimension> &rhs)
 {
-    out << dimMeta.dimension() << "[" << dimMeta.size() << "]";
-    return out;
-}
-
-DimensionsMeta
-combine(const DimensionsMeta &lhs, const DimensionsMeta &rhs)
-{
-    return DenseTensorAddressCombiner::combineDimensions(lhs, rhs);
+    return DenseTensorAddressCombiner::combineDimensions(
+            ValueType::tensor_type(lhs),
+            ValueType::tensor_type(rhs));
 }
 
 TEST("require that dimensions can be combined")
 {
-    EXPECT_EQUAL(DimensionsMeta({{"a", 3}, {"b", 5}}), combine({{"a", 3}}, {{"b", 5}}));
-    EXPECT_EQUAL(DimensionsMeta({{"a", 3}, {"b", 5}}), combine({{"a", 3}, {"b", 5}}, {{"b", 5}}));
-    EXPECT_EQUAL(DimensionsMeta({{"a", 3}, {"b", 5}}), combine({{"a", 3}, {"b", 7}}, {{"b", 5}}));
-    EXPECT_EQUAL(DimensionsMeta({{"a", 3}, {"b", 11}, {"c", 5}, {"d", 7}, {"e", 17}}),
+    EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 5}}), combine({{"a", 3}}, {{"b", 5}}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 5}}), combine({{"a", 3}, {"b", 5}}, {{"b", 5}}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 5}}), combine({{"a", 3}, {"b", 7}}, {{"b", 5}}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 11}, {"c", 5}, {"d", 7}, {"e", 17}}),
                                 combine({{"a", 3}, {"c", 5}, {"d", 7}},
                                         {{"b", 11}, {"c", 13}, {"e", 17}}));
-    EXPECT_EQUAL(DimensionsMeta({{"a", 3}, {"b", 11}, {"c", 5}, {"d", 7}, {"e", 17}}),
-                                combine({{"b", 11}, {"c", 13}, {"e", 17}},
-                                        {{"a", 3}, {"c", 5}, {"d", 7}}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"a", 3}, {"b", 11}, {"c", 5}, {"d", 7}, {"e", 17}}),
+                 combine({{"b", 11}, {"c", 13}, {"e", 17}},
+                         {{"a", 3}, {"c", 5}, {"d", 7}}));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

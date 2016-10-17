@@ -19,7 +19,6 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -100,7 +99,7 @@ private:
     // Storage server interface implementation (until we can remove it)
     virtual api::Timestamp getUniqueTimestamp() { assert(0); throw; }
     virtual StorBucketDatabase& getStorageBucketDatabase() { assert(0); throw; }
-    virtual distributor::BucketDatabase& getBucketDatabase() { assert(0); throw; }
+    virtual BucketDatabase& getBucketDatabase() { assert(0); throw; }
     virtual uint16_t getDiskCount() const { assert(0); throw; }
 };
 
@@ -151,7 +150,7 @@ public:
 
     DistributorComponentRegisterImpl& getComponentRegister()
         { return _compReg; }
-    virtual distributor::BucketDatabase& getBucketDatabase()
+    virtual BucketDatabase& getBucketDatabase()
         { return _compReg.getBucketDatabase(); }
 
     virtual api::Timestamp getUniqueTimestamp();

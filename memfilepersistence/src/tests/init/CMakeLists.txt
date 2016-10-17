@@ -3,4 +3,5 @@ vespa_add_library(memfilepersistence_testinit
     SOURCES
     filescannertest.cpp
     DEPENDS
+    memfilepersistence
 )

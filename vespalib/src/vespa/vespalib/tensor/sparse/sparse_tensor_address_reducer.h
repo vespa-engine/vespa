@@ -7,6 +7,7 @@
 #include "sparse_tensor_address_decoder.h"
 
 namespace vespalib {
+namespace eval { class ValueType; }
 namespace tensor {
 namespace sparse {
 
@@ -26,14 +27,10 @@ class TensorAddressReducer : public SparseTensorAddressBuilder
     AddressOps _ops;
 
 public:
-    TensorAddressReducer(const TensorDimensions &dims,
+    TensorAddressReducer(const eval::ValueType &type,
                          const std::vector<vespalib::string> &removeDimensions);
 
     ~TensorAddressReducer();
-
-    static TensorDimensions
-    remainingDimensions(const TensorDimensions &dimensions,
-                        const std::vector<vespalib::string> &removeDimensions);
 
     void reduce(SparseTensorAddressRef ref)
     {

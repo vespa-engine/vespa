@@ -4,7 +4,6 @@
 #include <vespa/log/log.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 
 LOG_SETUP(".distributorstoragelink");

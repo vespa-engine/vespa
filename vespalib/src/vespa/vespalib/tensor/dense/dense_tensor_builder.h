@@ -19,7 +19,7 @@ public:
 
 private:
     vespalib::hash_map<vespalib::string, size_t> _dimensionsEnum;
-    DenseTensor::DimensionsMeta _dimensionsMeta;
+    std::vector<eval::ValueType::Dimension> _dimensions;
     DenseTensor::Cells _cells;
     std::vector<size_t> _addressBuilder;
     std::vector<Dimension> _dimensionsMapping;

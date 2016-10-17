@@ -24,19 +24,21 @@ class SparseTensorAddressPadder : public SparseTensorAddressBuilder
     std::vector<PadOp> _padOps;
 
 public:
-    SparseTensorAddressPadder(const TensorDimensions &resultDims,
-                                 const TensorDimensions &inputDims)
+    SparseTensorAddressPadder(const eval::ValueType &resultType,
+                              const eval::ValueType &inputType)
         : SparseTensorAddressBuilder(),
           _padOps()
     {
-        auto resultDimsItr = resultDims.cbegin();
-        auto resultDimsItrEnd = resultDims.cend();
-        for (auto &dim : inputDims) {
-            while (resultDimsItr != resultDimsItrEnd && *resultDimsItr < dim) {
+        auto resultDimsItr = resultType.dimensions().cbegin();
+        auto resultDimsItrEnd = resultType.dimensions().cend();
+        for (auto &dim : inputType.dimensions()) {
+            while (resultDimsItr != resultDimsItrEnd &&
+                   resultDimsItr->name < dim.name) {
                 _padOps.push_back(PadOp::PAD);
                 ++resultDimsItr;
             }
-            assert(resultDimsItr != resultDimsItrEnd && *resultDimsItr == dim);
+            assert(resultDimsItr != resultDimsItrEnd &&
+                   resultDimsItr->name == dim.name);
             _padOps.push_back(PadOp::COPY);
             ++resultDimsItr;
         }

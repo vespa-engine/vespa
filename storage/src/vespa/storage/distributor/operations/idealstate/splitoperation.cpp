@@ -3,7 +3,6 @@
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/common/bucketoperationlogger.h>

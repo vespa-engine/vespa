@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <vespa/document/util/bytebuffer.h>
 
-using vespalib::DefaultAlloc;
-
 namespace document {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(Serializable, vespalib::Identifiable);

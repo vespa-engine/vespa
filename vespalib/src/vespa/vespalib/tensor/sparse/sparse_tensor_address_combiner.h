@@ -6,6 +6,7 @@
 #include <vespa/vespalib/tensor/types.h>
 
 namespace vespalib {
+namespace eval { class ValueType; }
 namespace tensor {
 namespace sparse {
 
@@ -25,8 +26,8 @@ class TensorAddressCombiner : public SparseTensorAddressBuilder
     std::vector<AddressOp> _ops;
 
 public:
-    TensorAddressCombiner(const TensorDimensions &lhs,
-                          const TensorDimensions &rhs);
+    TensorAddressCombiner(const eval::ValueType &lhs,
+                          const eval::ValueType &rhs);
 
     ~TensorAddressCombiner();
 

@@ -17,7 +17,6 @@ typedef vespalib::hash_set<uint32_t> UIntSet;
 typedef std::vector<vespalib::string> StringArray;
 typedef std::shared_ptr<StringArray> StringArraySP;
 using namespace vespalib::alloc;
-using vespalib::DefaultAlloc;
 using vespalib::string;
 
 void
@@ -49,7 +48,7 @@ shafile(const string &baseDir,
     string fullFile(prependBaseDir(baseDir, file));
     FastOS_File f;
     std::ostringstream os;
-    Alloc buf = DefaultAlloc::create(65536, MemoryAllocator::HUGEPAGE_SIZE, 0x1000);
+    Alloc buf = Alloc::alloc(65536, MemoryAllocator::HUGEPAGE_SIZE, 0x1000);
     f.EnableDirectIO();
     bool openres = f.OpenReadOnly(fullFile.c_str());
     if (!openres) {

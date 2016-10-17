@@ -12,4 +12,5 @@ vespa_add_library(vespalib_vespalib_tensor
     $<TARGET_OBJECTS:vespalib_vespalib_tensor_serialization>
     INSTALL lib64
     DEPENDS
+    vespalib
 )

@@ -21,18 +21,16 @@ using vespalib::getLastErrorString;
 using vespalib::IllegalHeaderException;
 using vespalib::LockGuard;
 using vespalib::nbostream;
+using vespalib::alloc::Alloc;
 using search::common::FileHeaderContext;
 using std::runtime_error;
 
-namespace search
-{
+namespace search {
 
-namespace transactionlog
-{
+namespace transactionlog {
 
+namespace {
 
-namespace
-{
 
 void
 handleSync(FastOS_FileInterface &file) __attribute__ ((noinline));
@@ -221,7 +219,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
         SerialNum lastSerial(0);
         int64_t firstPos(currPos);
         bool full(false);
-        vespalib::alloc::Alloc buf;
+        Alloc buf;
         for(size_t i(0); !full && (currPos < fSize); i++) {
             Packet::Entry e;
             if (read(transLog, e, buf, allowTruncate)) {
@@ -552,7 +550,7 @@ DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)
     }
     if (retval) {
         Packet newPacket;
-        vespalib::alloc::Alloc buf;
+        Alloc buf;
         for (bool full(false);!full && retval && (r.from() < r.to());) {
             Packet::Entry e;
             int64_t fPos = file.GetPosition();
@@ -612,7 +610,7 @@ DomainPart::write(FastOS_FileInterface &file, const Packet::Entry &entry)
 bool
 DomainPart::read(FastOS_FileInterface &file,
                  Packet::Entry &entry,
-                 vespalib::alloc::Alloc & buf,
+                 Alloc & buf,
                  bool allowTruncate)
 {
     bool retval(true);
@@ -625,7 +623,7 @@ DomainPart::read(FastOS_FileInterface &file,
     his >> version >> len;
     if ((retval = (rlen == sizeof(tmp)))) {
         if ( ! (retval = (version == ccitt_crc32) || version == xxh64)) {
-            vespalib::string msg(make_string("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2',"
+            string msg(make_string("Version mismatch. Expected 'ccitt_crc32=1' or 'xxh64=2',"
                                              " got %d from '%s' at position %ld",
                                              version, file.GetFileName(), lastKnownGoodPos));
             if ((version == 0) && (len == 0) && tailOfFileIsZero(file, lastKnownGoodPos)) {
@@ -636,7 +634,7 @@ DomainPart::read(FastOS_FileInterface &file,
             }
         }
         if (len > buf.size()) {
-            vespalib::DefaultAlloc::create(len).swap(buf);
+            Alloc::alloc(len).swap(buf);
         }
         rlen = file.Read(buf.get(), len);
         retval = rlen == len;

@@ -11,14 +11,13 @@ using vespalib::nbostream;
 using vespalib::GenerationHeldBase;
 using vespalib::GenerationHeldAlloc;
 using vespalib::GenerationHolder;
-using vespalib::DefaultAlloc;
 
 void AllocatedBitVector::alloc()
 {
     uint32_t words = capacityWords();
     words += (-words & 15);	// Pad to 64 byte alignment
     const size_t sz(words * sizeof(Word));
-    DefaultAlloc::create(sz).swap(_alloc);
+    Alloc::alloc(sz).swap(_alloc);
     assert(_alloc.size()/sizeof(Word) >= words);
     // Clear padding
     memset(static_cast<char *>(_alloc.get()) + sizeBytes(), 0, sz - sizeBytes());

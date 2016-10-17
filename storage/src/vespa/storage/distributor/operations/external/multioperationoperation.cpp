@@ -2,7 +2,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/log/log.h>
-#include <vespa/storage/bucketdb/distrbucketdb.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/operations/external/multioperationoperation.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>

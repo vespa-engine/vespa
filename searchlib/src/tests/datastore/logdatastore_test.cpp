@@ -20,7 +20,6 @@ using document::BucketId;
 using namespace search::docstore;
 using namespace search;
 using namespace vespalib::alloc;
-using vespalib::DefaultAlloc;
 using search::index::DummyFileHeaderContext;
 
 class MyTlSyncer : public transactionlog::SyncProxy {
@@ -146,7 +145,7 @@ TEST("test that DirectIOPadding works accordng to spec") {
     FastOS_File file("directio.test");
     file.EnableDirectIO();
     EXPECT_TRUE(file.OpenReadWrite());
-    Alloc buf(DefaultAlloc::create(FILE_SIZE, MemoryAllocator::HUGEPAGE_SIZE, 4096));
+    Alloc buf(Alloc::alloc(FILE_SIZE, MemoryAllocator::HUGEPAGE_SIZE, 4096));
     memset(buf.get(), 'a', buf.size());
     EXPECT_EQUAL(FILE_SIZE, file.Write2(buf.get(), FILE_SIZE));
     size_t padBefore(0);
