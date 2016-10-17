@@ -506,13 +506,13 @@ TEST("test pre serializing packets no compression") {
     queryX->_features=FNET_QF_SUPPORTED_MASK;
     FNET_Packet::UP decoded(testEncodeDecode(*src));
     verifyQueryX(*static_cast<FS4Packet_QUERYX *>(decoded.get()), FNET_QF_SUPPORTED_MASK);
-    EXPECT_EQUAL(512u, src->GetLength());
+    EXPECT_EQUAL(500u, src->GetLength());
     EXPECT_EQUAL(src->GetLength(), decoded->GetLength());
     FS4Packet_PreSerialized serialized(*src);
     EXPECT_EQUAL(218u, serialized.GetPCODE());
-    EXPECT_EQUAL(512u, serialized.GetLength());
+    EXPECT_EQUAL(500u, serialized.GetLength());
     FNET_Packet::UP decoded2(testEncodeDecode(serialized));
-    EXPECT_EQUAL(512u, decoded2->GetLength());
+    EXPECT_EQUAL(500u, decoded2->GetLength());
     verifyQueryX(*static_cast<FS4Packet_QUERYX *>(decoded2.get()), FNET_QF_SUPPORTED_MASK);
 }
 
@@ -522,14 +522,14 @@ TEST("test pre serializing packets with compression") {
     queryX->_features=FNET_QF_SUPPORTED_MASK;
     FNET_Packet::UP decoded(testEncodeDecode(*src));
     verifyQueryX(*static_cast<FS4Packet_QUERYX *>(decoded.get()), FNET_QF_SUPPORTED_MASK);
-    EXPECT_EQUAL(512u, src->GetLength());
+    EXPECT_EQUAL(500u, src->GetLength());
     EXPECT_EQUAL(src->GetLength(), decoded->GetLength());
     FS4PersistentPacketStreamer::Instance.SetCompressionLimit(100);
     FS4Packet_PreSerialized serialized(*src);
     EXPECT_EQUAL(218u | (document::CompressionConfig::LZ4 << 24), serialized.GetPCODE());
     EXPECT_GREATER_EQUAL(321u, serialized.GetLength());
     FNET_Packet::UP decoded2(testEncodeDecode(serialized));
-    EXPECT_EQUAL(512u, decoded2->GetLength());
+    EXPECT_EQUAL(500u, decoded2->GetLength());
     verifyQueryX(*static_cast<FS4Packet_QUERYX *>(decoded2.get()), FNET_QF_SUPPORTED_MASK);
 }
     
