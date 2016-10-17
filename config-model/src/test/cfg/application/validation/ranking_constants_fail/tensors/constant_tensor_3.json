@@ -1,0 +1,12 @@
+{
+  "cells": [
+    {
+      "address": { "cpp": "bjarne stroustrup", "d": "andrei alexandrescu" },
+      "value": 99.5
+    },
+    {
+      "address": { "cpp": "stephan lavavej", "cd": "walter bright" },
+      "value": 47.0
+    }
+  ]
+}

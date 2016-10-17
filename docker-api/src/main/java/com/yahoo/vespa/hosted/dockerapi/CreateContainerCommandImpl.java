@@ -139,7 +139,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         List<String> labelList = labels.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue()).collect(Collectors.toList());
 
-        return "--name " + containerName + " "
+        return "--name " + containerName.asString() + " "
                 + "--hostname " + hostName + " "
                 + toRepeatedOption("--label", labelList)
                 + toRepeatedOption("--env", environmentAssignments)
@@ -148,7 +148,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 + toOptionalOption("--net", networkMode)
                 + toOptionalOption("--ip", ipv4Address)
                 + toOptionalOption("--ip6", ipv6Address)
-                + dockerImage;
+                + dockerImage.asString();
     }
 
     private String generateRandomMACAddress() {
