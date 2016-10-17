@@ -6,6 +6,7 @@ import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import org.apache.commons.io.IOUtils;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -159,11 +160,9 @@ public class DockerTest {
         assertThat(success, is(true));
     }
 
-
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
         assumeTrue(dockerDaemonIsPresent());
-        createDockerImage(docker);
 
         String hostName1 = "docker10.test.yahoo.com";
         String hostName2 = "docker11.test.yahoo.com";
@@ -174,31 +173,36 @@ public class DockerTest {
 
         docker.createContainerCommand(dockerImage, containerName1, hostName1)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress1).create();
+        docker.startContainer(containerName1);
 
         docker.createContainerCommand(dockerImage, containerName2, hostName2)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress2).create();
-
-        docker.startContainer(containerName1);
         docker.startContainer(containerName2);
 
-        try {
-            testReachabilityFromHost(containerName1, inetAddress1);
-            testReachabilityFromHost(containerName2, inetAddress2);
+        testReachabilityFromHost("http://" + inetAddress1.getHostAddress() + "/ping");
+        testReachabilityFromHost("http://" + inetAddress2.getHostAddress() + "/ping");
 
-            String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://" + inetAddress2 + "/ping"};
-            while (! docker.executeInContainer(containerName1, curlFromNodeToNode).isSuccess()) {
-                Thread.sleep(20);
-            }
-            ProcessResult result = docker.executeInContainer(containerName1, curlFromNodeToNode);
-            assertTrue("Could not reach " + containerName2.asString() + " from " + containerName1.asString(),
-                    result.getOutput().equals("pong\n"));
-        } finally {
-            docker.stopContainer(containerName1);
-            docker.deleteContainer(containerName1);
+        String[] curlFromNodeToNode = new String[]{"curl", "-g", "http://" + inetAddress2.getHostAddress() + "/ping"};
+        ProcessResult result = docker.executeInContainer(containerName1, curlFromNodeToNode);
+        assertThat("Could not reach " + containerName2.asString() + " from " + containerName1.asString(),
+                result.getOutput(), is("pong\n"));
 
-            docker.stopContainer(containerName2);
-            docker.deleteContainer(containerName2);
-        }
+        docker.stopContainer(containerName1);
+        docker.deleteContainer(containerName1);
+
+        docker.stopContainer(containerName2);
+        docker.deleteContainer(containerName2);
+    }
+
+    @Before
+    public void setup() throws InterruptedException, ExecutionException, IOException {
+        assumeTrue(dockerDaemonIsPresent());
+
+        // Clean up any non deleted containers from previous tests
+        docker.getAllManagedContainers().forEach(container -> {
+            if (container.isRunning) docker.stopContainer(container.name);
+            docker.deleteContainer(container.name);
+        });
     }
 
     private boolean dockerDaemonIsPresent() {
@@ -211,6 +215,7 @@ public class DockerTest {
         try {
             setDocker();
             createDockerTestNetworkIfNeeded();
+            createDockerImage();
             return true;
         } catch (Exception e) {
             System.out.println("Please install Docker Toolbox and start Docker Quick Start Terminal once, ignoring test.");
@@ -228,34 +233,10 @@ public class DockerTest {
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation));
     }
 
-    private void testReachabilityFromHost(ContainerName containerName, InetAddress target) throws IOException, InterruptedException {
-        String[] curlNodeFromHost = {"curl", "-g", "http://" + target.getHostAddress() + "/ping"};
-        while (!exec(curlNodeFromHost).equals("pong\n")) {
-            Thread.sleep(20);
-        }
-        assertTrue("Could not reach " + containerName.asString() + " from host", exec(curlNodeFromHost).equals("pong\n"));
-    }
-
-    /**
-     * Synchronously executes a system process and returns its stdout. Based of {@link com.yahoo.system.ProcessExecuter}
-     * but could not be reused because of import errors.
-     */
-    private static String exec(String[] command) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder(command);
-        StringBuilder ret = new StringBuilder();
-
-        Process p = pb.start();
-        InputStream is = p.getInputStream();
-        while (true) {
-            int b = is.read();
-            if (b==-1) break;
-            ret.append((char) b);
-        }
-
-        p.waitFor();
-        p.destroy();
-
-        return ret.toString();
+    private void testReachabilityFromHost(String target) throws IOException, InterruptedException {
+        URL url = new URL(target);
+        String containerServer = IOUtils.toString(url.openStream());
+        assertThat(containerServer, is("pong\n"));
     }
 
     private void createDockerTestNetworkIfNeeded() {
@@ -266,7 +247,7 @@ public class DockerTest {
                 .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
     }
 
-    private void createDockerImage(DockerImpl docker) throws IOException, ExecutionException, InterruptedException {
+    private void createDockerImage() throws IOException, ExecutionException, InterruptedException {
         try {
             docker.deleteImage(new DockerImage(dockerImage.asString()));
         } catch (Exception e) {
