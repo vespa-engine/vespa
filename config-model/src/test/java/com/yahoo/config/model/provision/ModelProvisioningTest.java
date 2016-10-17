@@ -13,12 +13,14 @@ import java.util.stream.Collectors;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.deploy.DeployProperties;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import org.junit.Ignore;
@@ -151,11 +153,38 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testSeparateClusters() {
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <container version='1.0' id='container1'>" +
+                "     <search/>" +
+                "     <nodes count='1'/>" +
+                "  </container>" +
+                "  <content version='1.0' id='content1'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2'/>" +
+                "   </content>" +
+                "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(3);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+
+        assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container1", 1, model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Heap size is lowered with combined clusters",
+                     33, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+    }
+    @Test
     public void testCombinedCluster() {
         String xmlWithNodes =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<services>" +
                 "  <container version='1.0' id='container1'>" +
+                "     <search/>" +
                 "     <nodes of='content1'/>" +
                 "  </container>" +
                 "  <content version='1.0' id='content1'>" +
@@ -172,6 +201,8 @@ public class ModelProvisioningTest {
 
         assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
         assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Heap size is lowered with combined clusters", 
+                     17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
     }
 
     @Test
@@ -1262,4 +1293,10 @@ public class ModelProvisioningTest {
         }
     }
 
+    private int physicalMemoryPercentage(ContainerCluster cluster) {
+        QrStartConfig.Builder b = new QrStartConfig.Builder();
+        cluster.getSearch().getConfig(b);
+        return new QrStartConfig(b).jvm().heapSizeAsPercentageOfPhysicalMemory();
+    }
+    
 }
