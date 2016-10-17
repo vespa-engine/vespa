@@ -297,16 +297,5 @@ NodeTypes::get_type(const nodes::Node &node) const
     return pos->second;
 }
 
-bool
-NodeTypes::all_types_are_double() const
-{
-    for (const auto &entry: _type_map) {
-        if (!entry.second.is_double()) {
-            return false;
-        }
-    }
-    return (_type_map.size() > 0);
-}
-
 } // namespace vespalib::eval
 } // namespace vespalib

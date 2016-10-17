@@ -27,7 +27,19 @@ public:
     NodeTypes();
     NodeTypes(const Function &function, const std::vector<ValueType> &input_types);
     const ValueType &get_type(const nodes::Node &node) const;
-    bool all_types_are_double() const;
+    template <typename P>
+    bool check_types(const P &pred) const {
+        for (const auto &entry: _type_map) {
+            if (!pred(entry.second)) {
+                return false;
+            }
+        }
+        return (_type_map.size() > 0);
+    }
+    bool all_types_are_double() const {
+        return check_types([](const ValueType &type)
+                           { return type.is_double(); });
+    }
 };
 
 } // namespace vespalib::eval
