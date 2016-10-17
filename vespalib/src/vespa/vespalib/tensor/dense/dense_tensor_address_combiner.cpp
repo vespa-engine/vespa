@@ -116,7 +116,7 @@ DenseTensorAddressCombiner::combineDimensions(const eval::ValueType &lhs,
     }
     return (result.empty() ?
             eval::ValueType::double_type() :
-            eval::ValueType::tensor_type(result));
+            eval::ValueType::tensor_type(std::move(result)));
 }
 
 } // namespace vespalib::tensor

@@ -14,7 +14,7 @@ namespace tensor {
 namespace {
 
 eval::ValueType
-makeValueType(const std::vector<eval::ValueType::Dimension> &&dimensions) {
+makeValueType(std::vector<eval::ValueType::Dimension> &&dimensions) {
     return (dimensions.empty() ?
             eval::ValueType::double_type() :
             eval::ValueType::tensor_type(std::move(dimensions)));

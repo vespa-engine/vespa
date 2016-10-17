@@ -36,7 +36,7 @@ SparseTensorBuilder::makeType()
     }
     _type = (dimensions.empty() ?
              eval::ValueType::double_type() :
-             eval::ValueType::tensor_type(dimensions));
+             eval::ValueType::tensor_type(std::move(dimensions)));
     _type_made = true;
 }
 

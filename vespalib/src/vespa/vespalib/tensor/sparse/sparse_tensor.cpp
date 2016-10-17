@@ -92,7 +92,7 @@ SparseTensor::combineDimensionsWith(const SparseTensor &rhs) const
                    { return lhsDim.name < rhsDim.name; });
     return (result.empty() ?
             eval::ValueType::double_type() :
-            eval::ValueType::tensor_type(result));
+            eval::ValueType::tensor_type(std::move(result)));
 }
 
 eval::ValueType
