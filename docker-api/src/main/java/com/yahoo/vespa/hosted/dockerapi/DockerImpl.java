@@ -155,7 +155,7 @@ public class DockerImpl implements Docker {
         try {
             defaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(isIPv6).getHostAddress();
         } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Could find default gateway, isIpv6 is " + isIPv6, e);
+            throw new RuntimeException("Could not find default gateway, isIpv6 is " + isIPv6, e);
         }
 
         Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
