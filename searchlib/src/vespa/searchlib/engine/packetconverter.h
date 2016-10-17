@@ -35,7 +35,6 @@ private:
 public:
     typedef search::fs4transport::FS4Packet_QUERYX         QUERYX;
     typedef search::fs4transport::FS4Packet_QUERYRESULTX   QUERYRESULTX;
-    typedef search::fs4transport::FS4Packet_QUEUELEN       QUEUELEN;
     typedef search::fs4transport::FS4Packet_ERROR          ERROR;
     typedef search::fs4transport::FS4Packet_GETDOCSUMSX    GETDOCSUMSX;
     typedef search::fs4transport::FS4Packet_DOCSUM         DOCSUM;

@@ -133,11 +133,11 @@ public class FastSearcher extends VespaBackEndSearcher {
         // com.yahoo.prelude.cluster.TrafficNodeMonitor.failed(ErrorMessage)
         try {
             PingPacket pingPacket = new PingPacket();
-            pingPacket.enableActivedocsReporting();
             try {
                 boolean couldSend = channel.sendPacket(pingPacket);
-                if ( ! couldSend)
+                if ( ! couldSend) {
                     return new Pong(ErrorMessage.createBackendCommunicationError("Could not ping " + name));
+                }
             } catch (InvalidChannelException e) {
                 return new Pong(ErrorMessage.createBackendCommunicationError("Invalid channel " + name));
             } catch (IllegalStateException e) {
@@ -157,8 +157,9 @@ public class FastSearcher extends VespaBackEndSearcher {
                 return new Pong(ErrorMessage.createBackendCommunicationError("Invalid channel for " + name));
             }
 
-            if (packets.length == 0)
+            if (packets.length == 0) {
                 return new Pong(ErrorMessage.createBackendCommunicationError(name + " got no packets back"));
+            }
 
             try {
                 ensureInstanceOf(PongPacket.class, packets[0], name);
@@ -169,8 +170,9 @@ public class FastSearcher extends VespaBackEndSearcher {
             }
             return new Pong((PongPacket)packets[0]);
         } finally {
-            if (channel != null)
+            if (channel != null) {
                 channel.close();
+            }
         }
     }
 

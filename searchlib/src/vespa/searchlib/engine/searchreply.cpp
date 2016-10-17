@@ -18,14 +18,11 @@ SearchReply::SearchReply()
       sortIndex(),
       sortData(),
       groupResult(),
-      useCoverage(false),
       coverage(),
       useWideHits(false),
       hits(),
       errorCode(0),
       errorMessage(),
-      useQueueLen(false),
-      queueLen(0),
       request()
 {
 }
@@ -40,14 +37,11 @@ SearchReply::SearchReply(const SearchReply &rhs)
     sortIndex    (rhs.sortIndex),
     sortData     (rhs.sortData),
     groupResult  (rhs.groupResult),
-    useCoverage  (rhs.useCoverage),
     coverage     (rhs.coverage),
     useWideHits  (rhs.useWideHits),
     hits         (rhs.hits),
     errorCode    (rhs.errorCode),
     errorMessage (rhs.errorMessage),
-    useQueueLen  (rhs.useQueueLen),
-    queueLen     (rhs.queueLen),
     request() // NB not copied
 {
 }

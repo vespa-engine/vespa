@@ -39,18 +39,13 @@ bool
 FS4PersistentPacketStreamer::HasChannelID(uint32_t pcode)
 {
     switch(pcode & PCODE_MASK) {
-    case search::fs4transport::PCODE_EOL:
-    case search::fs4transport::PCODE_QUERYRESULT:
-    case search::fs4transport::PCODE_ERROR:
-    case search::fs4transport::PCODE_GETDOCSUMS:
-    case search::fs4transport::PCODE_DOCSUM:
-    case search::fs4transport::PCODE_MLD_QUERYRESULT:
-    case search::fs4transport::PCODE_MLD_GETDOCSUMS:
-    case search::fs4transport::PCODE_PARSEDQUERY2:
-    case search::fs4transport::PCODE_QUERYRESULTX:
-    case search::fs4transport::PCODE_QUERYX:
-    case search::fs4transport::PCODE_GETDOCSUMSX:
-    case search::fs4transport::PCODE_TRACEREPLY:
+    case PCODE_EOL:
+    case PCODE_ERROR:
+    case PCODE_DOCSUM:
+    case PCODE_QUERYRESULTX:
+    case PCODE_QUERYX:
+    case PCODE_GETDOCSUMSX:
+    case PCODE_TRACEREPLY:
         return true;
     default:
         return false;
@@ -668,7 +663,7 @@ FS4Packet_DOCSUM::toString(uint32_t indent) const
     s += make_string("%*sFS4Packet_DOCSUM {\n", indent, "");
     s += make_string("%*s  gid       : %s\n", indent, "", _gid.toString().c_str());
 
-    uint32_t magic = ::search::fs4transport::SLIME_MAGIC_ID;
+    uint32_t magic = SLIME_MAGIC_ID;
     if (_buf.size() >= sizeof(magic) &&
         memcmp(_buf.c_str(), &magic, sizeof(magic)) == 0) {
         vespalib::Slime slime;
@@ -699,13 +694,11 @@ FS4Packet_DOCSUM::toString(uint32_t indent) const
 
 //============================================================
 
-FS4Packet_MONITORQUERYX::FS4Packet_MONITORQUERYX(uint32_t pcode)
+FS4Packet_MONITORQUERYX::FS4Packet_MONITORQUERYX()
     : FS4Packet(),
-      _pcode(pcode),
       _features(0),
       _qflags(0u)
 {
-    UpdateCompatFeatures();
 }
 
 
@@ -714,32 +707,13 @@ FS4Packet_MONITORQUERYX::~FS4Packet_MONITORQUERYX()
 }
 
 
-void
-FS4Packet_MONITORQUERYX::UpdateCompatPCODE(void)
-{
-    if (_features == search::fs4transport::MQF_MONITORQUERY_MASK)
-        _pcode =    search::fs4transport::PCODE_MONITORQUERY;
-    else
-        _pcode = search::fs4transport::PCODE_MONITORQUERYX;
-}
-
-
-void
-FS4Packet_MONITORQUERYX::UpdateCompatFeatures(void)
-{
-    if (_pcode == search::fs4transport::PCODE_MONITORQUERY)
-        _features =    search::fs4transport::MQF_MONITORQUERY_MASK;
-}
-
-
 uint32_t
 FS4Packet_MONITORQUERYX::GetLength()
 {
     uint32_t plen = 0;
 
-    if (_pcode == search::fs4transport::PCODE_MONITORQUERYX)
-        plen += sizeof(uint32_t);
-    if (_features & search::fs4transport::MQF_QFLAGS)
+    plen += sizeof(uint32_t);
+    if (_features & MQF_QFLAGS)
         plen += sizeof(uint32_t);
     return plen;
 }
@@ -748,10 +722,9 @@ FS4Packet_MONITORQUERYX::GetLength()
 void
 FS4Packet_MONITORQUERYX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_MONITORQUERYX)
-        dst->WriteInt32Fast(_features);
+    dst->WriteInt32Fast(_features);
 
-    if ((_features & search::fs4transport::MQF_QFLAGS) != 0)
+    if ((_features & MQF_QFLAGS) != 0)
         dst->WriteInt32Fast(_qflags);
 }
 
@@ -759,16 +732,14 @@ FS4Packet_MONITORQUERYX::Encode(FNET_DataBuffer *dst)
 bool
 FS4Packet_MONITORQUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
-    if (_pcode == search::fs4transport::PCODE_MONITORQUERYX) {
-        if (len < sizeof(uint32_t))
-            goto error;
-        _features = src->ReadInt32();
-        len -= sizeof(uint32_t);
-    }
-    if ((_features & ~search::fs4transport::FNET_MQF_SUPPORTED_MASK) != 0)
+    if (len < sizeof(uint32_t))
+        goto error;
+    _features = src->ReadInt32();
+    len -= sizeof(uint32_t);
+    if ((_features & ~FNET_MQF_SUPPORTED_MASK) != 0)
         goto error;
 
-    if ((_features & search::fs4transport::MQF_QFLAGS) != 0) {
+    if ((_features & MQF_QFLAGS) != 0) {
         if (len < sizeof(uint32_t))
             goto error;
         _qflags = src->ReadInt32();
@@ -778,8 +749,7 @@ FS4Packet_MONITORQUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
     if (len != 0)
         goto error;
 
-    SetRealPCODE();
-    return true;			// OK
+    return true;
  error:
     src->DataToDead(len);
     return false;			// FAIL
@@ -791,7 +761,6 @@ FS4Packet_MONITORQUERYX::toString(uint32_t indent) const
 {
     vespalib::string s;
     s += make_string("%*sFS4Packet_MONITORQUERYX {\n", indent, "");
-    s += make_string("%*s  pcode       : %d\n", indent, "", _pcode);
     s += make_string("%*s  features    : 0x%x\n", indent, "", _features);
     s += make_string("%*s  qflags      : %d\n", indent, "", _qflags);
     s += make_string("%*s}\n", indent, "");
@@ -800,10 +769,8 @@ FS4Packet_MONITORQUERYX::toString(uint32_t indent) const
 
 //============================================================
 
-FS4Packet_MONITORRESULTX::
-FS4Packet_MONITORRESULTX(uint32_t pcode)
+FS4Packet_MONITORRESULTX::FS4Packet_MONITORRESULTX()
     : FS4Packet(),
-      _pcode(pcode),
       _features(0),
       _partid(0),
       _timestamp(0),
@@ -813,50 +780,21 @@ FS4Packet_MONITORRESULTX(uint32_t pcode)
       _activeParts(0),
       _rflags(0u),
       _activeDocs(0)
-{
-    UpdateCompatFeatures();
-}
+{ }
 
-
-FS4Packet_MONITORRESULTX::~FS4Packet_MONITORRESULTX(void)
-{
-}
-
-
-void
-FS4Packet_MONITORRESULTX::UpdateCompatPCODE(void)
-{
-    if (_features == search::fs4transport::MRF_MONITORRESULT_MASK)
-        _pcode =    search::fs4transport::PCODE_MONITORRESULT;
-    else if (_features == search::fs4transport::MRF_MLD_MONITORRESULT_MASK)
-        _pcode =         search::fs4transport::PCODE_MLD_MONITORRESULT;
-    else
-        _pcode = search::fs4transport::PCODE_MONITORRESULTX;
-}
-
-
-void
-FS4Packet_MONITORRESULTX::UpdateCompatFeatures(void)
-{
-    if (_pcode == search::fs4transport::PCODE_MONITORRESULT)
-        _features =    search::fs4transport::MRF_MONITORRESULT_MASK;
-    else if (_pcode == search::fs4transport::PCODE_MLD_MONITORRESULT)
-        _features =         search::fs4transport::MRF_MLD_MONITORRESULT_MASK;
-}
-
+FS4Packet_MONITORRESULTX::~FS4Packet_MONITORRESULTX() { }
 
 uint32_t
-FS4Packet_MONITORRESULTX::GetLength(void)
+FS4Packet_MONITORRESULTX::GetLength()
 {
     uint32_t plen = 2 * sizeof(uint32_t);
 
-    if (_pcode == search::fs4transport::PCODE_MONITORRESULTX)
-        plen += sizeof(uint32_t);
-    if ((_features & search::fs4transport::MRF_MLD) != 0)
+    plen += sizeof(uint32_t);
+    if ((_features & MRF_MLD) != 0)
         plen +=  4 * sizeof(uint32_t);
-    if ((_features & search::fs4transport::MRF_RFLAGS) != 0)
+    if ((_features & MRF_RFLAGS) != 0)
         plen += sizeof(uint32_t);
-    if ((_features & search::fs4transport::MRF_ACTIVEDOCS) != 0)
+    if ((_features & MRF_ACTIVEDOCS) != 0)
         plen += sizeof(uint64_t);
 
     return plen;
@@ -866,21 +804,20 @@ FS4Packet_MONITORRESULTX::GetLength(void)
 void
 FS4Packet_MONITORRESULTX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_MONITORRESULTX)
-        dst->WriteInt32Fast(_features);
+    dst->WriteInt32Fast(_features);
 
     dst->WriteInt32Fast(_partid);
     dst->WriteInt32Fast(_timestamp);
-    if ((_features & search::fs4transport::MRF_MLD) != 0) {
+    if ((_features & MRF_MLD) != 0) {
         dst->WriteInt32Fast(_totalNodes);
         dst->WriteInt32Fast(_activeNodes);
         dst->WriteInt32Fast(_totalParts);
         dst->WriteInt32Fast(_activeParts);
     }
-    if ((_features & search::fs4transport::MRF_RFLAGS) != 0) {
+    if ((_features & MRF_RFLAGS) != 0) {
         dst->WriteInt32Fast(_rflags);
     }
-    if ((_features & search::fs4transport::MRF_ACTIVEDOCS) != 0) {
+    if ((_features & MRF_ACTIVEDOCS) != 0) {
         dst->WriteInt64Fast(_activeDocs);
     }
 }
@@ -889,12 +826,10 @@ FS4Packet_MONITORRESULTX::Encode(FNET_DataBuffer *dst)
 bool
 FS4Packet_MONITORRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
-    if (_pcode == search::fs4transport::PCODE_MONITORRESULTX) {
-        if (len < sizeof(uint32_t)) goto error;
-        _features = src->ReadInt32();
-        len -= sizeof(uint32_t);
-    }
-    if ((_features & ~search::fs4transport::FNET_MRF_SUPPORTED_MASK) != 0)
+    if (len < sizeof(uint32_t)) goto error;
+    _features = src->ReadInt32();
+    len -= sizeof(uint32_t);
+    if ((_features & ~FNET_MRF_SUPPORTED_MASK) != 0)
         goto error;
 
     if (len < 2 * sizeof(uint32_t))
@@ -903,7 +838,7 @@ FS4Packet_MONITORRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
     _timestamp   = src->ReadInt32();
     len -= 2 * sizeof(uint32_t);
 
-    if ((_features & search::fs4transport::MRF_MLD) != 0) {
+    if ((_features & MRF_MLD) != 0) {
         if (len < 4 * sizeof(uint32_t))
             goto error;
         _totalNodes  = src->ReadInt32();
@@ -913,14 +848,14 @@ FS4Packet_MONITORRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
         len -= 4 * sizeof(uint32_t);
     }
 
-    if ((_features & search::fs4transport::MRF_RFLAGS) != 0) {
+    if ((_features & MRF_RFLAGS) != 0) {
         if (len < sizeof(uint32_t))
             goto error;
         _rflags = src->ReadInt32();
         len -= sizeof(uint32_t);
     }
 
-    if ((_features & search::fs4transport::MRF_ACTIVEDOCS) != 0) {
+    if ((_features & MRF_ACTIVEDOCS) != 0) {
         if (len < sizeof(uint64_t))
             goto error;
         _activeDocs = src->ReadInt64();
@@ -930,7 +865,6 @@ FS4Packet_MONITORRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
     if (len != 0)
         goto error;
 
-    SetRealPCODE();
     return true;			// OK
  error:
     src->DataToDead(len);
@@ -943,7 +877,6 @@ FS4Packet_MONITORRESULTX::toString(uint32_t indent) const
 {
     vespalib::string s;
     s += make_string("%*sFS4Packet_MONITORRESULTX {\n", indent, "");
-    s += make_string("%*s  pcode       : %d\n", indent, "", _pcode);
     s += make_string("%*s  features    : 0x%x\n", indent, "", _features);
     s += make_string("%*s  partid      : %d\n", indent, "", _partid);
     s += make_string("%*s  timestamp   : %d\n", indent, "", _timestamp);
@@ -951,101 +884,6 @@ FS4Packet_MONITORRESULTX::toString(uint32_t indent) const
     s += make_string("%*s  activenodes : %d\n", indent, "", _activeNodes);
     s += make_string("%*s  totalparts  : %d\n", indent, "", _totalParts);
     s += make_string("%*s  activeparts : %d\n", indent, "", _activeParts);
-    s += make_string("%*s}\n", indent, "");
-    return s;
-}
-
-//============================================================
-
-FS4Packet_CLEARCACHES::FS4Packet_CLEARCACHES()
-    : FS4Packet()
-{
-}
-
-
-FS4Packet_CLEARCACHES::~FS4Packet_CLEARCACHES()
-{
-}
-
-
-uint32_t
-FS4Packet_CLEARCACHES::GetLength()
-{
-    return 0;
-}
-
-
-void
-FS4Packet_CLEARCACHES::Encode(FNET_DataBuffer *dst)
-{
-    (void) dst;
-}
-
-
-bool
-FS4Packet_CLEARCACHES::Decode(FNET_DataBuffer *src, uint32_t len)
-{
-    src->DataToDead(len);
-    return (len == 0);
-}
-
-
-vespalib::string
-FS4Packet_CLEARCACHES::toString(uint32_t indent) const
-{
-    return make_string("%*sFS4Packet_CLEARCACHES {}\n", indent, "");
-}
-
-//============================================================
-
-FS4Packet_QUEUELEN::FS4Packet_QUEUELEN()
-    : FS4Packet(),
-      _queueLen(0),
-      _dispatchers(0)
-{
-}
-
-
-FS4Packet_QUEUELEN::~FS4Packet_QUEUELEN()
-{
-}
-
-
-uint32_t
-FS4Packet_QUEUELEN::GetLength()
-{
-    return 2 * sizeof(uint32_t);
-}
-
-
-void
-FS4Packet_QUEUELEN::Encode(FNET_DataBuffer *dst)
-{
-    dst->WriteInt32Fast(_queueLen);
-    dst->WriteInt32Fast(_dispatchers);
-}
-
-
-bool
-FS4Packet_QUEUELEN::Decode(FNET_DataBuffer *src, uint32_t len)
-{
-    if (len != 2 * sizeof(uint32_t)) {
-        src->DataToDead(len);
-        return false;
-    }
-    _queueLen = src->ReadInt32();
-    _dispatchers = src->ReadInt32();
-    return true;
-}
-
-
-vespalib::string
-FS4Packet_QUEUELEN::toString(uint32_t indent) const
-{
-    vespalib::string s;
-    s += make_string("%*sFS4Packet_QUEUELEN {\n", indent, "");
-    s += make_string("%*s  queue len   : %d\n", indent, "", _queueLen);
-    s += make_string("%*s  dispatchers : %d\n", indent, "", _dispatchers);
     s += make_string("%*s}\n", indent, "");
     return s;
 }
@@ -1089,29 +927,6 @@ FS4Packet_QUERYRESULTX::SetSortDataRef(uint32_t cnt,
 
 
 void
-FS4Packet_QUERYRESULTX::AllocateAggrData(uint32_t len)
-{
-    if (len == 0)
-        return;
-
-    _aggrData = (char *) malloc(len);
-    _aggrDataLen = len;
-}
-
-
-void
-FS4Packet_QUERYRESULTX::SetAggrDataRef(const char *aggrData,
-                                       uint32_t len)
-{
-    if (len == 0)
-        return;
-
-    AllocateAggrData(len);
-    memcpy(_aggrData, aggrData, len);
-}
-
-
-void
 FS4Packet_QUERYRESULTX::AllocateGroupData(uint32_t len)
 {
     if (len == 0)
@@ -1145,9 +960,8 @@ FS4Packet_QUERYRESULTX::AllocateHits(uint32_t cnt)
 }
 
 
-FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX(uint32_t pcode)
+FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX()
     : FS4Packet(),
-      _pcode(pcode),
       _distributionKey(0),
       _features(0),
       _offset(0),
@@ -1156,8 +970,6 @@ FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX(uint32_t pcode)
       _maxRank(0),
       _sortIndex(NULL),
       _sortData(NULL),
-      _aggrDataLen(0),
-      _aggrData(NULL),
       _groupDataLen(0),
       _groupData(NULL),
       _coverageDocs(0),
@@ -1165,7 +977,6 @@ FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX(uint32_t pcode)
       _hits(NULL),
       _propsVector()
 {
-    UpdateCompatFeatures();
 }
 
 
@@ -1173,31 +984,8 @@ FS4Packet_QUERYRESULTX::~FS4Packet_QUERYRESULTX()
 {
     if (_sortIndex) { delete [] _sortIndex; }
     if (_sortData) { free(_sortData); }
-    if (_aggrData) { free(_aggrData); }
     if (_groupData) { free(_groupData); }
     if (_hits) { delete [] _hits; }
-}
-
-
-void
-FS4Packet_QUERYRESULTX::UpdateCompatPCODE()
-{
-    if (_features == search::fs4transport::QRF_QUERYRESULT_MASK)
-        _pcode =     search::fs4transport::PCODE_QUERYRESULT;
-    else if (_features == search::fs4transport::QRF_MLD_QUERYRESULT_MASK)
-        _pcode =          search::fs4transport::PCODE_MLD_QUERYRESULT;
-    else
-        _pcode = search::fs4transport::PCODE_QUERYRESULTX;
-}
-
-
-void
-FS4Packet_QUERYRESULTX::UpdateCompatFeatures()
-{
-    if (_pcode == search::fs4transport::PCODE_QUERYRESULT)
-        _features =   search::fs4transport::QRF_QUERYRESULT_MASK;
-    else if (_pcode == search::fs4transport::PCODE_MLD_QUERYRESULT)
-        _features =        search::fs4transport::QRF_MLD_QUERYRESULT_MASK;
 }
 
 
@@ -1209,30 +997,21 @@ FS4Packet_QUERYRESULTX::GetLength()
                     sizeof(search::HitRank) +
                     _numDocs * (sizeof(document::GlobalId) + sizeof(search::HitRank));
 
-    if (_pcode == search::fs4transport::PCODE_QUERYRESULTX)
-        plen += sizeof(uint32_t);
+    plen += sizeof(uint32_t);
 
-    if ((_features & search::fs4transport::QRF_MLD) != 0)
+    if ((_features & QRF_MLD) != 0)
         plen += _numDocs * 2 * sizeof(uint32_t);
 
-    if (((_features & search::fs4transport::QRF_SORTDATA) != 0) &&
-        (_numDocs > 0))
-        plen += _numDocs * sizeof(uint32_t)
-                + (_sortIndex[_numDocs] - _sortIndex[0]);
+    if (((_features & QRF_SORTDATA) != 0) && (_numDocs > 0)) 
+        plen += _numDocs * sizeof(uint32_t) + (_sortIndex[_numDocs] - _sortIndex[0]);
 
-    if ((_features & search::fs4transport::QRF_AGGRDATA) != 0)
-        plen += sizeof(uint32_t)
-                + _aggrDataLen;
+    if ((_features & QRF_GROUPDATA) != 0)
+        plen += sizeof(uint32_t) + _groupDataLen;
 
-    if ((_features & search::fs4transport::QRF_GROUPDATA) != 0)
-        plen += sizeof(uint32_t)
-                + _groupDataLen;
+    if ((_features & QRF_COVERAGE) != 0)
+        plen += sizeof(uint64_t) + 2 * sizeof(uint32_t);
 
-    if ((_features & search::fs4transport::QRF_COVERAGE) != 0)
-        plen += sizeof(uint64_t)
-                + 2 * sizeof(uint32_t);
-
-    if ((_features & search::fs4transport::QRF_PROPERTIES) != 0) {
+    if ((_features & QRF_PROPERTIES) != 0) {
         plen += sizeof(uint32_t);
         for (uint32_t i = 0; i < _propsVector.size(); ++i) {
             plen += _propsVector[i].getLength();
@@ -1246,10 +1025,7 @@ FS4Packet_QUERYRESULTX::GetLength()
 void
 FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_QUERYRESULTX) {
-        // Never provide QF_WARMUP downwards
-        dst->WriteInt32Fast(_features & ~QF_WARMUP);
-    }
+    dst->WriteInt32Fast(_features);
     dst->WriteInt32Fast(_offset);
     dst->WriteInt32Fast(_numDocs);
     dst->WriteInt64Fast(_totNumDocs);
@@ -1258,7 +1034,7 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
     dst->WriteInt64Fast(mrval.INT64);
     dst->WriteInt32Fast(_distributionKey);
 
-    if (((_features & search::fs4transport::QRF_SORTDATA) != 0) &&
+    if (((_features & QRF_SORTDATA) != 0) &&
         (_numDocs > 0))
     {
         uint32_t idx0 = _sortIndex[0];
@@ -1270,17 +1046,12 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
                             _sortIndex[_numDocs] - idx0);
     }
 
-    if ((_features & search::fs4transport::QRF_AGGRDATA) != 0) {
-        dst->WriteInt32Fast(_aggrDataLen);
-        dst->WriteBytesFast(_aggrData, _aggrDataLen);
-    }
-
-    if ((_features & search::fs4transport::QRF_GROUPDATA) != 0) {
+    if ((_features & QRF_GROUPDATA) != 0) {
         dst->WriteInt32Fast(_groupDataLen);
         dst->WriteBytesFast(_groupData, _groupDataLen);
     }
 
-    if ((_features & search::fs4transport::QRF_COVERAGE) != 0) {
+    if ((_features & QRF_COVERAGE) != 0) {
         dst->WriteInt64Fast(_coverageDocs);
         dst->WriteInt64Fast(_activeDocs);
     }
@@ -1290,13 +1061,13 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
         union { uint64_t INT64; double DOUBLE; } val;
         val.DOUBLE = _hits[i]._metric;
         dst->WriteInt64Fast(val.INT64);
-        if ((_features & search::fs4transport::QRF_MLD) != 0) {
+        if ((_features & QRF_MLD) != 0) {
             dst->WriteInt32Fast(_hits[i]._partid);
             dst->WriteInt32Fast(_hits[i].getDistributionKey());
         }
     }
 
-    if ((_features & search::fs4transport::QRF_PROPERTIES) != 0) {
+    if ((_features & QRF_PROPERTIES) != 0) {
         dst->WriteInt32Fast(_propsVector.size());
         for (uint32_t i = 0; i < _propsVector.size(); ++i) {
             _propsVector[i].encode(*dst);
@@ -1309,17 +1080,14 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
 bool
 FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
-    uint32_t i;
     uint32_t hitSize = sizeof(document::GlobalId);
 
-    if (_pcode == search::fs4transport::PCODE_QUERYRESULTX) {
-        if (len < sizeof(uint32_t)) goto error;
-        _features = src->ReadInt32();
-        len -= sizeof(uint32_t);
-    }
+    if (len < sizeof(uint32_t)) goto error;
+    _features = src->ReadInt32();
+    len -= sizeof(uint32_t);
 
-    if ((_features & ~search::fs4transport::FNET_QRF_SUPPORTED_MASK) != 0) {
-        throwUnsupportedFeatures(_features, search::fs4transport::FNET_QRF_SUPPORTED_MASK);
+    if ((_features & ~FNET_QRF_SUPPORTED_MASK) != 0) {
+        throwUnsupportedFeatures(_features, FNET_QRF_SUPPORTED_MASK);
     }
     hitSize += sizeof(uint64_t);
 
@@ -1333,13 +1101,14 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
     _distributionKey   = src->ReadInt32();
     len -= 3 * sizeof(uint32_t) + sizeof(uint64_t) + sizeof(search::HitRank);
 
-    if (((_features & search::fs4transport::QRF_SORTDATA) != 0) &&
+    if (((_features & QRF_SORTDATA) != 0) &&
         (_numDocs > 0)) {
         if (len < _numDocs * sizeof(uint32_t)) goto error;
         AllocateSortIndex(_numDocs);
         _sortIndex[0] = 0; // implicit
-        for (i = 1; i <= _numDocs; i++)
+        for (uint32_t i = 1; i <= _numDocs; i++) {
             _sortIndex[i] = src->ReadInt32();
+        }
         len -= _numDocs * sizeof(uint32_t);
         uint32_t sortDataLen = _sortIndex[_numDocs];
 
@@ -1349,18 +1118,7 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
         len -= sortDataLen;
     }
 
-    if ((_features & search::fs4transport::QRF_AGGRDATA) != 0) {
-        if (len < sizeof(uint32_t)) goto error;
-        _aggrDataLen = src->ReadInt32();
-        len -= sizeof(uint32_t);
-
-        if (len < _aggrDataLen) goto error;
-        AllocateAggrData(_aggrDataLen);
-        src->ReadBytes(_aggrData, _aggrDataLen);
-        len -= _aggrDataLen;
-    }
-
-    if ((_features & search::fs4transport::QRF_GROUPDATA) != 0) {
+    if ((_features & QRF_GROUPDATA) != 0) {
         if (len < sizeof(uint32_t)) goto error;
         _groupDataLen = src->ReadInt32();
         len -= sizeof(uint32_t);
@@ -1371,26 +1129,26 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
         len -= _groupDataLen;
     }
 
-    if ((_features & search::fs4transport::QRF_COVERAGE) != 0) {
+    if ((_features & QRF_COVERAGE) != 0) {
         if (len < 2 * sizeof(uint64_t)) goto error;
         _coverageDocs  = src->ReadInt64();
         _activeDocs = src->ReadInt64();
         len -= 2 * sizeof(uint64_t);
     }
 
-    if ((_features & search::fs4transport::QRF_MLD) != 0)
+    if ((_features & QRF_MLD) != 0)
         hitSize += 2 * sizeof(uint32_t);
 
     if (len < _numDocs * hitSize) goto error;
     AllocateHits(_numDocs);
     unsigned char rawGid[document::GlobalId::LENGTH];
-    for (i = 0; i < _numDocs; i++) {
+    for (uint32_t i = 0; i < _numDocs; i++) {
         src->ReadBytes(rawGid, document::GlobalId::LENGTH);
         _hits[i]._gid.set(rawGid);
         union { uint64_t INT64; double DOUBLE; } val;
         val.INT64 = src->ReadInt64();
         _hits[i]._metric = val.DOUBLE;
-        if ((_features & search::fs4transport::QRF_MLD) != 0) {
+        if ((_features & QRF_MLD) != 0) {
             _hits[i]._partid   = src->ReadInt32();
             _hits[i].setDistributionKey(src->ReadInt32());
         } else {
@@ -1400,18 +1158,17 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
     }
     len -= _numDocs * hitSize;
 
-    if ((_features & search::fs4transport::QRF_PROPERTIES) != 0) {
+    if ((_features & QRF_PROPERTIES) != 0) {
         uint32_t sz = src->ReadInt32();
         _propsVector.resize(sz);
         len -= sizeof(uint32_t);
-        for (i = 0; i < sz; ++i) {
+        for (uint32_t i = 0; i < sz; ++i) {
             if (! _propsVector[i].decode(*src, len)) goto error;
         }
     }
 
     if (len != 0) goto error;
 
-    SetRealPCODE();
     return true;            // OK
 
  error:
@@ -1427,7 +1184,6 @@ FS4Packet_QUERYRESULTX::toString(uint32_t indent) const
     uint32_t i;
 
     s += make_string("%*sFS4Packet_QUERYRESULTX {\n", indent, "");
-    s += make_string("%*s  pcode         : %d\n", indent, "", _pcode);
     s += make_string("%*s  features      : 0x%x\n", indent, "", _features);
     s += make_string("%*s  offset        : %d\n", indent, "", _offset);
     s += make_string("%*s  numDocs       : %d\n", indent, "", _numDocs);
@@ -1444,7 +1200,6 @@ FS4Packet_QUERYRESULTX::toString(uint32_t indent) const
             s += make_string(" }\n");
         }
     }
-    s += make_string("%*s  aggrData      : %d bytes\n", indent, "", _aggrDataLen);
     s += make_string("%*s  groupData     : %d bytes\n", indent, "", _groupDataLen);
     s += make_string("%*s  coverageDocs  : %" PRIu64 "\n", indent, "", _coverageDocs);
     s += make_string("%*s  activeDocs    : %" PRIu64 "\n", indent, "", _activeDocs);
@@ -1462,9 +1217,8 @@ FS4Packet_QUERYRESULTX::toString(uint32_t indent) const
 //============================================================
 
 
-FS4Packet_QUERYX::FS4Packet_QUERYX(uint32_t pcode)
+FS4Packet_QUERYX::FS4Packet_QUERYX()
     : FS4Packet(),
-      _pcode(pcode),
       _timeout(0),
       _features(0),
       _offset(0),
@@ -1473,14 +1227,12 @@ FS4Packet_QUERYX::FS4Packet_QUERYX(uint32_t pcode)
       _ranking(),
       _propsVector(),
       _sortSpec(),
-      _aggrSpec(),
       _groupSpec(),
       _sessionId(),
       _location(),
       _numStackItems(0),
       _stackDump()
 {
-    UpdateCompatFeatures();
 }
 
 
@@ -1488,68 +1240,40 @@ FS4Packet_QUERYX::~FS4Packet_QUERYX()
 {
 }
 
-
-void
-FS4Packet_QUERYX::UpdateCompatPCODE()
-{
-    if (_features == search::fs4transport::QF_PARSEDQUERY2_MASK)
-        _pcode =         search::fs4transport::PCODE_PARSEDQUERY2;
-    else
-        _pcode = search::fs4transport::PCODE_QUERYX;
-}
-
-
-void
-FS4Packet_QUERYX::UpdateCompatFeatures()
-{
-    if (_pcode == search::fs4transport::PCODE_PARSEDQUERY2)
-        _features =         search::fs4transport::QF_PARSEDQUERY2_MASK;
-}
-
-
 uint32_t
 FS4Packet_QUERYX::GetLength()
 {
     uint32_t plen = 2 * sizeof(uint32_t);
     plen += FNET_DataBuffer::getCompressedPositiveLength(_offset);
     plen += FNET_DataBuffer::getCompressedPositiveLength(_maxhits);
-    if (_pcode == search::fs4transport::PCODE_QUERYX)
-        plen += sizeof(uint32_t);
+    plen += sizeof(uint32_t);
 
-    if ((_features & search::fs4transport::QF_PARSEDQUERY) != 0) {
+    if ((_features & QF_PARSEDQUERY) != 0) {
         plen += sizeof(uint32_t)*2;
         plen += _stackDump.size();
     }
-    if ((_features & search::fs4transport::QF_RANKP) != 0) {
+    if ((_features & QF_RANKP) != 0) {
         plen += FNET_DataBuffer::getCompressedPositiveLength(_ranking.size());
         plen += _ranking.size();
     }
-    if ((_features & search::fs4transport::QF_PROPERTIES) != 0) {
+    if ((_features & QF_PROPERTIES) != 0) {
         plen += sizeof(uint32_t);
         for (uint32_t i = 0; i < _propsVector.size(); ++i) {
             plen += _propsVector[i].getLength();
         }
     }
 
-    if ((_features & search::fs4transport::QF_SORTSPEC) != 0)
-        plen += sizeof(uint32_t)
-                + _sortSpec.size();
+    if ((_features & QF_SORTSPEC) != 0)
+        plen += sizeof(uint32_t) + _sortSpec.size();
 
-    if ((_features & search::fs4transport::QF_AGGRSPEC) != 0)
-        plen += sizeof(uint32_t)
-                + _aggrSpec.size();
+    if ((_features & QF_GROUPSPEC) != 0)
+        plen += sizeof(uint32_t) + _groupSpec.size();
 
-    if ((_features & search::fs4transport::QF_GROUPSPEC) != 0)
-        plen += sizeof(uint32_t)
-                + _groupSpec.size();
+    if ((_features & QF_SESSIONID) != 0)
+        plen += sizeof(uint32_t) + _sessionId.size();
 
-    if ((_features & search::fs4transport::QF_SESSIONID) != 0)
-        plen += sizeof(uint32_t)
-                + _sessionId.size();
-
-    if ((_features & search::fs4transport::QF_LOCATION) != 0)
-        plen += sizeof(uint32_t)
-                + _location.size();
+    if ((_features & QF_LOCATION) != 0)
+        plen += sizeof(uint32_t) + _location.size();
 
     return plen;
 }
@@ -1558,52 +1282,46 @@ FS4Packet_QUERYX::GetLength()
 void
 FS4Packet_QUERYX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_QUERYX)
-        dst->WriteInt32Fast(_features);
+    dst->WriteInt32Fast(_features);
 
     dst->writeCompressedPositive(_offset);
     dst->writeCompressedPositive(_maxhits);
     dst->WriteInt32Fast(_timeout);
     dst->WriteInt32Fast(_qflags);
 
-    if ((_features & search::fs4transport::QF_RANKP) != 0) {
+    if ((_features & QF_RANKP) != 0) {
         dst->writeCompressedPositive(_ranking.size());
         dst->WriteBytesFast(_ranking.c_str(), _ranking.size());
     }
 
-    if ((_features & search::fs4transport::QF_PROPERTIES) != 0) {
+    if ((_features & QF_PROPERTIES) != 0) {
         dst->WriteInt32Fast(_propsVector.size());
         for (uint32_t i = 0; i < _propsVector.size(); ++i) {
             _propsVector[i].encode(*dst);
         }
     }
 
-    if ((_features & search::fs4transport::QF_SORTSPEC) != 0) {
+    if ((_features & QF_SORTSPEC) != 0) {
         dst->WriteInt32Fast(_sortSpec.size());
         dst->WriteBytesFast(_sortSpec.c_str(), _sortSpec.size());
     }
 
-    if ((_features & search::fs4transport::QF_AGGRSPEC) != 0) {
-        dst->WriteInt32Fast(_aggrSpec.size());
-        dst->WriteBytesFast(_aggrSpec.c_str(), _aggrSpec.size());
-    }
-
-    if ((_features & search::fs4transport::QF_GROUPSPEC) != 0) {
+    if ((_features & QF_GROUPSPEC) != 0) {
         dst->WriteInt32Fast(_groupSpec.size());
         dst->WriteBytesFast(_groupSpec.c_str(), _groupSpec.size());
     }
 
-    if ((_features & search::fs4transport::QF_SESSIONID) != 0) {
+    if ((_features & QF_SESSIONID) != 0) {
         dst->WriteInt32Fast(_sessionId.size());
         dst->WriteBytesFast(_sessionId.c_str(), _sessionId.size());
     }
 
-    if ((_features & search::fs4transport::QF_LOCATION) != 0) {
+    if ((_features & QF_LOCATION) != 0) {
         dst->WriteInt32Fast(_location.size());
         dst->WriteBytesFast(_location.c_str(), _location.size());
     }
 
-    if ((_features & search::fs4transport::QF_PARSEDQUERY) != 0) {
+    if ((_features & QF_PARSEDQUERY) != 0) {
         dst->WriteInt32Fast(_numStackItems);
         dst->WriteInt32Fast(_stackDump.size());
         dst->WriteBytesFast(_stackDump.c_str(), _stackDump.size());
@@ -1670,12 +1388,10 @@ FS4Packet_QUERYX::getTimeout() const
 bool
 FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
-    if (_pcode == search::fs4transport::PCODE_QUERYX) {
-        _features = readUInt32(*src, len, "features");
-    }
+    _features = readUInt32(*src, len, "features");
 
-    if (((_features & ~search::fs4transport::FNET_QF_SUPPORTED_MASK) != 0)) {
-        throwUnsupportedFeatures(_features, search::fs4transport::FNET_QF_SUPPORTED_MASK);
+    if (((_features & ~FNET_QF_SUPPORTED_MASK) != 0)) {
+        throwUnsupportedFeatures(_features, FNET_QF_SUPPORTED_MASK);
     }
     _offset  = src->readCompressedPositiveInteger();
     len -= FNET_DataBuffer::getCompressedPositiveLength(_offset);
@@ -1685,7 +1401,7 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
     _timeout = src->ReadInt32();
     _qflags  = src->ReadInt32();
 
-    if ((_features & search::fs4transport::QF_RANKP) != 0) {
+    if ((_features & QF_RANKP) != 0) {
         uint32_t rankingLen = src->readCompressedPositiveInteger();
         len -= FNET_DataBuffer::getCompressedPositiveLength(rankingLen);
         VERIFY_LEN(rankingLen, "ranking blob");
@@ -1693,7 +1409,7 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         src->DataToDead(rankingLen);
     }
 
-    if ((_features & search::fs4transport::QF_PROPERTIES) != 0) {
+    if ((_features & QF_PROPERTIES) != 0) {
         uint32_t cnt = readUInt32(*src, len, "#properties");
         _propsVector.resize(cnt);
         for (uint32_t i = 0; i < cnt; ++i) {
@@ -1703,7 +1419,7 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         }
     }
 
-    if ((_features & search::fs4transport::QF_SORTSPEC) != 0) {
+    if ((_features & QF_SORTSPEC) != 0) {
         uint32_t sortSpecLen = readUInt32(*src, len, "sortspec length");
 
         VERIFY_LEN(sortSpecLen, "sortspec string");
@@ -1711,15 +1427,7 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         src->DataToDead(sortSpecLen);
     }
 
-    if ((_features & search::fs4transport::QF_AGGRSPEC) != 0) {
-        uint32_t aggrSpecLen = readUInt32(*src, len, "aggrspec length");
-
-        VERIFY_LEN(aggrSpecLen, "aggrspec string");
-        setAggrSpec(stringref(src->GetData(), aggrSpecLen));
-        src->DataToDead(aggrSpecLen);
-    }
-
-    if ((_features & search::fs4transport::QF_GROUPSPEC) != 0) {
+    if ((_features & QF_GROUPSPEC) != 0) {
         uint32_t groupSpecLen = readUInt32(*src, len, "groupspec length");
 
         VERIFY_LEN(groupSpecLen, "groupspec string");
@@ -1727,14 +1435,14 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         src->DataToDead(groupSpecLen);
     }
 
-    if ((_features & search::fs4transport::QF_SESSIONID) != 0) {
+    if ((_features & QF_SESSIONID) != 0) {
         uint32_t sessionIdLen = readUInt32(*src, len, "sessionid length");
         VERIFY_LEN(sessionIdLen, "sessionid string");
         setSessionId(stringref(src->GetData(), sessionIdLen));
         src->DataToDead(sessionIdLen);
     }
 
-    if ((_features & search::fs4transport::QF_LOCATION) != 0) {
+    if ((_features & QF_LOCATION) != 0) {
         uint32_t locationLen = readUInt32(*src, len, "location length");
 
         VERIFY_LEN(locationLen, "location string");
@@ -1742,11 +1450,7 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         src->DataToDead(locationLen);
     }
 
-    if ((_features & search::fs4transport::QF_WARMUP) != 0) {
-        (void) readUInt32(*src, len, "warmup");
-    }
-
-    if ((_features & search::fs4transport::QF_PARSEDQUERY) != 0) {
+    if ((_features & QF_PARSEDQUERY) != 0) {
         _numStackItems = readUInt32(*src, len, "# querystack items");
 
         uint32_t stackDumpLen = readUInt32(*src, len, "stackdump length");
@@ -1758,8 +1462,7 @@ FS4Packet_QUERYX::Decode(FNET_DataBuffer *src, uint32_t len)
         throwNotEnoughData(*src, len, 0, "eof");
     }
 
-    SetRealPCODE();
-    return true;            // OK
+    return true;
 }
 
 
@@ -1768,7 +1471,6 @@ FS4Packet_QUERYX::toString(uint32_t indent) const
 {
     vespalib::string s;
     s += make_string("%*sFS4Packet_QUERYX {\n", indent, "");
-    s += make_string("%*s  pcode       : %d\n", indent, "", _pcode);
     s += make_string("%*s  features    : 0x%x\n", indent, "", _features);
     s += make_string("%*s  offset      : %d\n", indent, "", _offset);
     s += make_string("%*s  maxhits     : %d\n", indent, "", _maxhits);
@@ -1778,7 +1480,6 @@ FS4Packet_QUERYX::toString(uint32_t indent) const
         s += _propsVector[i].toString(indent + 2);
     }
     s += make_string("%*s  sortspec    : %s\n", indent, "", _sortSpec.c_str());
-    s += make_string("%*s  aggrspec    : %s\n", indent, "", _aggrSpec.c_str());
     s += make_string("%*s  groupspec   : (%d bytes)\n", indent, "", (int)_groupSpec.size());
     s += make_string("%*s  sessionId   : (%d bytes)\n", indent, "", (int)_sessionId.size());
     s += make_string("%*s  location    : %s\n", indent, "", _location.c_str());
@@ -1810,14 +1511,12 @@ FS4Packet_GETDOCSUMSX::AllocateDocIDs(uint32_t cnt)
     if (cnt == 0)
         return;
 
-    _docid = new FS4_docid[cnt];
-    _docidCnt = cnt;
+    _docid.resize(cnt);
 }
 
 
-FS4Packet_GETDOCSUMSX::FS4Packet_GETDOCSUMSX(uint32_t pcode)
+FS4Packet_GETDOCSUMSX::FS4Packet_GETDOCSUMSX()
     : FS4Packet(),
-      _pcode(pcode),
       _timeout(0),
       _features(0),
       _ranking(),
@@ -1828,77 +1527,49 @@ FS4Packet_GETDOCSUMSX::FS4Packet_GETDOCSUMSX(uint32_t pcode)
       _stackDump(),
       _location(),
       _flags(0u),
-      _docid(NULL),
-      _docidCnt(0)
+      _docid()
 {
-    UpdateCompatFeatures();
 }
 
 
 FS4Packet_GETDOCSUMSX::~FS4Packet_GETDOCSUMSX()
 {
-    delete [] _docid;
 }
-
-
-void
-FS4Packet_GETDOCSUMSX::UpdateCompatPCODE()
-{
-    if (_features == search::fs4transport::GDF_GETDOCSUMS_MASK)
-        _pcode     = search::fs4transport::PCODE_GETDOCSUMS;
-    else if (_features == search::fs4transport::GDF_MLD_GETDOCSUMS_MASK)
-        _pcode          = search::fs4transport::PCODE_MLD_GETDOCSUMS;
-    else
-        _pcode = search::fs4transport::PCODE_GETDOCSUMSX;
-}
-
-
-void
-FS4Packet_GETDOCSUMSX::UpdateCompatFeatures()
-{
-    if (_pcode == search::fs4transport::PCODE_GETDOCSUMS)
-        _features   = search::fs4transport::GDF_GETDOCSUMS_MASK;
-    else if (_pcode == search::fs4transport::PCODE_MLD_GETDOCSUMS)
-        _features        = search::fs4transport::GDF_MLD_GETDOCSUMS_MASK;
-}
-
 
 uint32_t
 FS4Packet_GETDOCSUMSX::GetLength()
 {
     uint32_t plen = 2 * sizeof(uint32_t) +
-        + _docidCnt * (sizeof(document::GlobalId));
+        + _docid.size() * (sizeof(document::GlobalId));
 
-    if (_pcode == search::fs4transport::PCODE_GETDOCSUMSX)
-        plen += sizeof(uint32_t);
+    plen += sizeof(uint32_t);
 
-    if ((_features & search::fs4transport::GDF_MLD) != 0)
-        plen += 2 * _docidCnt * sizeof(uint32_t);
+    if ((_features & GDF_MLD) != 0)
+        plen += 2 * _docid.size() * sizeof(uint32_t);
 
-    if ((_features & search::fs4transport::GDF_QUERYSTACK) != 0)
+    if ((_features & GDF_QUERYSTACK) != 0)
         plen += 2 * sizeof(uint32_t) + _stackDump.size();
 
-    if ((_features & search::fs4transport::GDF_RESCLASSNAME) != 0)
+    if ((_features & GDF_RESCLASSNAME) != 0)
         plen += sizeof(uint32_t) + _resultClassName.size();
 
-    if ((_features & search::fs4transport::GDF_PROPERTIES) != 0) {
+    if ((_features & GDF_PROPERTIES) != 0) {
         plen += sizeof(uint32_t);
         for (uint32_t i = 0; i < _propsVector.size(); ++i) {
             plen += _propsVector[i].getLength();
         }
     }
 
-    if ((_features & search::fs4transport::GDF_RANKP_QFLAGS) != 0) {
+    if ((_features & GDF_RANKP_QFLAGS) != 0) {
         plen += FNET_DataBuffer::getCompressedPositiveLength(_ranking.size());
         plen += _ranking.size();
         plen += sizeof(uint32_t);
     }
 
-    if ((_features & search::fs4transport::GDF_LOCATION) != 0)
-        plen += sizeof(uint32_t)
-                + _location.size();
+    if ((_features & GDF_LOCATION) != 0)
+        plen += sizeof(uint32_t) + _location.size();
 
-    if ((_features & search::fs4transport::GDF_FLAGS) != 0)
+    if ((_features & GDF_FLAGS) != 0)
         plen += sizeof(uint32_t);
 
     return plen;
@@ -1908,47 +1579,46 @@ FS4Packet_GETDOCSUMSX::GetLength()
 void
 FS4Packet_GETDOCSUMSX::Encode(FNET_DataBuffer *dst)
 {
-    if (_pcode == search::fs4transport::PCODE_GETDOCSUMSX)
-        dst->WriteInt32Fast(_features);
+    dst->WriteInt32Fast(_features);
 
     dst->WriteInt32Fast(0);
     dst->WriteInt32Fast(_timeout);
 
-    if ((_features & search::fs4transport::GDF_RANKP_QFLAGS) != 0) {
+    if ((_features & GDF_RANKP_QFLAGS) != 0) {
         dst->writeCompressedPositive(_ranking.size());
         dst->WriteBytesFast(_ranking.c_str(), _ranking.size());
         dst->WriteInt32Fast(_qflags);
     }
 
-    if ((_features & search::fs4transport::GDF_RESCLASSNAME) != 0) {
+    if ((_features & GDF_RESCLASSNAME) != 0) {
         writeLenString(dst, _resultClassName);
     }
 
-    if ((_features & search::fs4transport::GDF_PROPERTIES) != 0) {
+    if ((_features & GDF_PROPERTIES) != 0) {
         dst->WriteInt32Fast(_propsVector.size());
         for (uint32_t i = 0; i < _propsVector.size(); ++i) {
             _propsVector[i].encode(*dst);
         }
     }
 
-    if ((_features & search::fs4transport::GDF_QUERYSTACK) != 0) {
+    if ((_features & GDF_QUERYSTACK) != 0) {
         dst->WriteInt32Fast(_stackItems);
         writeLenString(dst, _stackDump);
     }
 
-    if ((_features & search::fs4transport::GDF_LOCATION) != 0) {
+    if ((_features & GDF_LOCATION) != 0) {
         writeLenString(dst, _location);
     }
 
-    if ((_features & search::fs4transport::GDF_FLAGS) != 0) {
+    if ((_features & GDF_FLAGS) != 0) {
         dst->WriteInt32Fast(_flags);
     }
 
-    for (uint32_t i = 0; i < _docidCnt; i++) {
-        dst->WriteBytesFast(_docid[i]._gid.get(), document::GlobalId::LENGTH);
+    for (const auto & docid : _docid) {
+        dst->WriteBytesFast(docid._gid.get(), document::GlobalId::LENGTH);
 
-        if ((_features & search::fs4transport::GDF_MLD) != 0) {
-            dst->WriteInt32Fast(_docid[i]._partid);
+        if ((_features & GDF_MLD) != 0) {
+            dst->WriteInt32Fast(docid._partid);
             dst->WriteInt32Fast(0);
         }
     }
@@ -1960,19 +1630,17 @@ FS4Packet_GETDOCSUMSX::Decode(FNET_DataBuffer *src, uint32_t len)
 {
     uint32_t docidSize = sizeof(document::GlobalId);
 
-    if (_pcode == search::fs4transport::PCODE_GETDOCSUMSX) {
-        _features = readUInt32(*src, len, "features");
-    }
+    _features = readUInt32(*src, len, "features");
 
-    if ((_features & ~search::fs4transport::FNET_GDF_SUPPORTED_MASK) != 0) {
-        throwUnsupportedFeatures(_features, search::fs4transport::FNET_GDF_SUPPORTED_MASK);
+    if ((_features & ~FNET_GDF_SUPPORTED_MASK) != 0) {
+        throwUnsupportedFeatures(_features, FNET_GDF_SUPPORTED_MASK);
     }
 
     VERIFY_LEN(2*sizeof(uint32_t), "unused and timeout");
     src->ReadInt32();  // unused
     _timeout = src->ReadInt32();
 
-    if ((_features & search::fs4transport::GDF_RANKP_QFLAGS) != 0) {
+    if ((_features & GDF_RANKP_QFLAGS) != 0) {
         uint32_t rankingLen = src->readCompressedPositiveInteger();
         len -= FNET_DataBuffer::getCompressedPositiveLength(rankingLen);
 
@@ -1983,7 +1651,7 @@ FS4Packet_GETDOCSUMSX::Decode(FNET_DataBuffer *src, uint32_t len)
         _qflags = readUInt32(*src, len, "qflags");
     }
 
-    if ((_features & search::fs4transport::GDF_RESCLASSNAME) != 0) {
+    if ((_features & GDF_RESCLASSNAME) != 0) {
         uint32_t resultClassNameLen = readUInt32(*src, len, "result class name length");
 
         VERIFY_LEN(resultClassNameLen, "result class");
@@ -1991,7 +1659,7 @@ FS4Packet_GETDOCSUMSX::Decode(FNET_DataBuffer *src, uint32_t len)
         src->DataToDead(resultClassNameLen);
     }
 
-    if ((_features & search::fs4transport::GDF_PROPERTIES) != 0) {
+    if ((_features & GDF_PROPERTIES) != 0) {
         uint32_t cnt = readUInt32(*src, len, "#properties");
         _propsVector.resize(cnt);
         for (uint32_t i = 0; i < cnt; ++i) {
@@ -2001,7 +1669,7 @@ FS4Packet_GETDOCSUMSX::Decode(FNET_DataBuffer *src, uint32_t len)
         }
     }
 
-    if ((_features & search::fs4transport::GDF_QUERYSTACK) != 0) {
+    if ((_features & GDF_QUERYSTACK) != 0) {
         _stackItems = readUInt32(*src, len, "num stack items");
         uint32_t stackDumpLen = readUInt32(*src, len, "stackdump length");
         VERIFY_LEN(stackDumpLen, "stackdump");
@@ -2009,42 +1677,40 @@ FS4Packet_GETDOCSUMSX::Decode(FNET_DataBuffer *src, uint32_t len)
         src->DataToDead(stackDumpLen);
     }
 
-    if ((_features & search::fs4transport::GDF_LOCATION) != 0) {
+    if ((_features & GDF_LOCATION) != 0) {
         uint32_t locationLen = readUInt32(*src, len, "location length");
         VERIFY_LEN(locationLen, "location string");
         setLocation(stringref(src->GetData(), locationLen));
         src->DataToDead(locationLen);
     }
 
-    if ((_features & search::fs4transport::GDF_FLAGS) != 0) {
+    if ((_features & GDF_FLAGS) != 0) {
         _flags = readUInt32(*src, len, "flags");
     }
 
-    if ((_features & search::fs4transport::GDF_MLD) != 0)
+    if ((_features & GDF_MLD) != 0)
         docidSize += 2 * sizeof(uint32_t);
 
-    _docidCnt = len / docidSize;
-    AllocateDocIDs(_docidCnt);
+    AllocateDocIDs(len / docidSize);
 
     unsigned char rawGid[document::GlobalId::LENGTH];
-    for (uint32_t i = 0; i < _docidCnt; i++) {
+    for (auto & docid : _docid) {
         src->ReadBytes(rawGid, document::GlobalId::LENGTH);
-        _docid[i]._gid.set(rawGid);
+        docid._gid.set(rawGid);
 
-        if ((_features & search::fs4transport::GDF_MLD) != 0) {
-            _docid[i]._partid   = src->ReadInt32();
+        if ((_features & GDF_MLD) != 0) {
+            docid._partid   = src->ReadInt32();
             src->ReadInt32();  // unused
         } else {
-            _docid[i]._partid   = 0; // partid not available
+            docid._partid   = 0; // partid not available
         }
     }
-    len -= _docidCnt * docidSize;
+    len -= _docid.size() * docidSize;
 
     if (len != 0) {
         throwNotEnoughData(*src, len, 0, "eof");
     }
 
-    SetRealPCODE();
     return true;            // OK
 }
 
@@ -2076,9 +1742,9 @@ FS4Packet_GETDOCSUMSX::toString(uint32_t indent) const
         }
         if ((i % 16) != 0) s += make_string("\n");
     }
-    for (i = 0; i < _docidCnt; i++) {
+    for (const auto & docId : _docid) {
         s += make_string("%*s  gid=%s, partid=%d\n", indent, "",
-                         _docid[i]._gid.toString().c_str(), _docid[i]._partid);
+                         docId._gid.toString().c_str(), docId._partid);
     }
     s += make_string("%*s  location       : %s\n", indent, "", _location.c_str());
     s += make_string("%*s  timeout        : %d\n", indent, "", _timeout);
@@ -2144,50 +1810,23 @@ FNET_Packet*
 FS4PacketFactory::CreateFS4Packet(uint32_t pcode)
 {
     switch(pcode) {
-    case search::fs4transport::PCODE_EOL:
+    case PCODE_EOL:
         return new FS4Packet_EOL;
-    case search::fs4transport::PCODE_QUERYRESULT:
-        return new FS4Packet_QUERYRESULTX(search::fs4transport::
-                                          PCODE_QUERYRESULT);
-    case search::fs4transport::PCODE_ERROR:
+    case PCODE_ERROR:
         return new FS4Packet_ERROR;
-    case search::fs4transport::PCODE_GETDOCSUMS:
-        return new FS4Packet_GETDOCSUMSX(search::fs4transport::
-                                         PCODE_GETDOCSUMS);
-    case search::fs4transport::PCODE_DOCSUM:
+    case PCODE_DOCSUM:
         return new FS4Packet_DOCSUM;
-    case search::fs4transport::PCODE_MONITORQUERY:
-        return new FS4Packet_MONITORQUERYX(search::fs4transport::
-                                           PCODE_MONITORQUERY);
-    case search::fs4transport::PCODE_MONITORRESULT:
-        return new FS4Packet_MONITORRESULTX(search::fs4transport::
-                                            PCODE_MONITORRESULT);
-    case search::fs4transport::PCODE_MLD_QUERYRESULT:
-        return new FS4Packet_QUERYRESULTX(search::fs4transport::
-                                          PCODE_MLD_QUERYRESULT);
-    case search::fs4transport::PCODE_MLD_GETDOCSUMS:
-        return new FS4Packet_GETDOCSUMSX(search::fs4transport::
-                                         PCODE_MLD_GETDOCSUMS);
-    case search::fs4transport::PCODE_MLD_MONITORRESULT:
-        return new FS4Packet_MONITORRESULTX(search::fs4transport::
-                                            PCODE_MLD_MONITORRESULT);
-    case search::fs4transport::PCODE_CLEARCACHES:
-        return new FS4Packet_CLEARCACHES;
-    case search::fs4transport::PCODE_PARSEDQUERY2:
-        return new FS4Packet_QUERYX(search::fs4transport::PCODE_PARSEDQUERY2);
-    case search::fs4transport::PCODE_QUEUELEN:
-        return new FS4Packet_QUEUELEN;
-    case search::fs4transport::PCODE_QUERYRESULTX:
+    case PCODE_QUERYRESULTX:
         return new FS4Packet_QUERYRESULTX;
-    case search::fs4transport::PCODE_QUERYX:
+    case PCODE_QUERYX:
         return new FS4Packet_QUERYX;
-    case search::fs4transport::PCODE_GETDOCSUMSX:
+    case PCODE_GETDOCSUMSX:
         return new FS4Packet_GETDOCSUMSX;
-    case search::fs4transport::PCODE_MONITORQUERYX:
+    case PCODE_MONITORQUERYX:
         return new FS4Packet_MONITORQUERYX;
-    case search::fs4transport::PCODE_MONITORRESULTX:
+    case PCODE_MONITORRESULTX:
         return new FS4Packet_MONITORRESULTX;
-    case search::fs4transport::PCODE_TRACEREPLY:
+    case PCODE_TRACEREPLY:
         return new FS4Packet_TRACEREPLY;
     default:
         return NULL;

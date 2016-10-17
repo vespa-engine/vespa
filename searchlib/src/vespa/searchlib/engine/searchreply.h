@@ -57,7 +57,6 @@ public:
     std::vector<uint32_t> sortIndex;
     std::vector<char>     sortData;
     vespalib::Array<char> groupResult;
-    bool                  useCoverage;
     Coverage              coverage;
     bool                  useWideHits;
     std::vector<Hit>      hits;
@@ -67,9 +66,6 @@ public:
     uint32_t              errorCode;
     vespalib::string      errorMessage;
 
-    // piggyback monitoring
-    bool                  useQueueLen;
-    uint32_t              queueLen;
     SearchRequest::UP     request;
 
     SearchReply();

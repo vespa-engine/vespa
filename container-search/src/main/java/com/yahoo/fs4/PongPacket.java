@@ -5,8 +5,8 @@ import java.nio.ByteBuffer;
 import java.util.Optional;
 
 /**
- * A pong packet for FS4. It maps to PCODE_MLD_MONITORRESULT
- * and PCODE_MONITORRESULTX in the C++ implementation of the protocol.
+ * A pong packet for FS4. It maps to PCODE_MONITORRESULTX
+ * in the C++ implementation of the protocol.
  *
  * @author Steinar Knutsen
  */
@@ -39,10 +39,7 @@ public class PongPacket extends BasicPacket {
     public int getCode() { return code; }
 
     public void decodeBody(ByteBuffer buffer) {
-        int features = MRF_MLD;
-        if (code == PCODE_MONITORRESULTX) {
-            features = buffer.getInt();
-        }
+        int features = buffer.getInt();
         lowPartitionId = buffer.getInt();
         dispatchTimestamp = buffer.getInt();
         if ((features & MRF_MLD) != 0) {
@@ -93,7 +90,6 @@ public class PongPacket extends BasicPacket {
     static final int MRF_ACTIVEDOCS = 0x00000010;
 
     /** packet codes, taken from searchlib/common/transport.h */
-    static final int PCODE_MLD_MONITORRESULT = 210;
     static final int PCODE_MONITORRESULTX    = 221;
 
 }

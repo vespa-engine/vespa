@@ -39,11 +39,17 @@ public class BackendTestCase {
         public volatile Socket connection;
         volatile int channelId;
 
-        public byte[] packetData = new byte[] { 0, 0, 0, 76, 0, 0, 0, 202 - 256, 0, 0,
-                                                0, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 5, 0x40,
-                                                0x39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 111, 1, 1, 1, 1, 1, 1, 1, 1,
-                                                1, 1, 1, 1, 0x40, 0x37, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2,
-                                                2, 2, 2, 2, 2, 0x40, 0x35, 0, 0, 0, 0, 0, 0 };
+        public byte[] packetData = new byte[] {0,0,0,104,
+                0,0,0,217-256,
+                0,0,0,1,
+                0,0,0,0,
+                0,0,0,2,
+                0,0,0,0,0,0,0,5,
+                0x40,0x39,0,0,0,0,0,0,
+                0,0,0,111,
+                0,0,0,97,
+                0,0,0,3, 1,1,1,1,1,1,1,1,1,1,1,1, 0x40,0x37,0,0,0,0,0,23, 0,0,0,7, 0,0,0,36,
+                0,0,0,4, 2,2,2,2,2,2,2,2,2,2,2,2, 0x40,0x35,0,0,0,0,0,21, 0,0,0,8, 0,0,0,37};
 
         public MockDispatch(ServerSocket socket) {
             this.socket = socket;
@@ -91,6 +97,9 @@ public class BackendTestCase {
                 e.printStackTrace();
             }
         }
+        public void setNoChannel() {
+            channelId = -1;
+        }
 
     }
 
@@ -125,8 +134,8 @@ public class BackendTestCase {
     private boolean initUseParent;
     FS4ResourcePool listeners;
 
-    public static final byte[] PONG = new byte[] { 0, 0, 0, 28, 0, 0, 0, 210 - 256,
-                                                   0, 0, 0, 42, 0, 0, 0, 127, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0,
+    public static final byte[] PONG = new byte[] { 0, 0, 0, 32, 0, 0, 0, 221 - 256,
+                                                   0,0,0,1, 0, 0, 0, 42, 0, 0, 0, 127, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0,
                                                    0, 0, 1 };
 
     @Before
@@ -164,7 +173,7 @@ public class BackendTestCase {
             fail("Could not get packets from simulated backend.");
         }
         assertEquals(1, b.length);
-        assertEquals(202, b[0].getCode());
+        assertEquals(217, b[0].getCode());
         channel.close();
     }
 
@@ -172,7 +181,7 @@ public class BackendTestCase {
     public void testPinging() throws IOException, InvalidChannelException {
         FS4Channel channel = backend.openPingChannel();
         BasicPacket[] b = null;
-        server.dispatch.channelId = -1;
+        server.dispatch.setNoChannel();
         server.dispatch.packetData = PONG;
 
         assertTrue(channel.sendPacket(new PingPacket()));
@@ -182,7 +191,7 @@ public class BackendTestCase {
             fail("Could not get packets from simulated backend.");
         }
         assertEquals(1, b.length);
-        assertEquals(210, b[0].getCode());
+        assertEquals(221, b[0].getCode());
         channel.close();
     }
 

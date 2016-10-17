@@ -128,12 +128,11 @@ void
 FastS_FNET_SearchNode::
 allocGDX(search::docsummary::GetDocsumArgs *args, const search::engine::PropertiesMap &props)
 {
-    FS4Packet_GETDOCSUMSX *gdx = new FS4Packet_GETDOCSUMSX(search::fs4transport::PCODE_GETDOCSUMSX);
-    FastS_assert(gdx != NULL);
+    FS4Packet_GETDOCSUMSX *gdx = new FS4Packet_GETDOCSUMSX();
 
     gdx->AllocateDocIDs(_docidCnt);
     _gdx = gdx;
-    _docsum_offsets.resize(_gdx->_docidCnt);
+    _docsum_offsets.resize(_gdx->_docid.size());
     _docsum_offsets_idx = 0;
     if (args == NULL)
         return;
@@ -177,11 +176,10 @@ void
 FastS_FNET_SearchNode::postGDX(uint32_t *pendingDocsums, uint32_t *docsumNodes)
 {
     FS4Packet_GETDOCSUMSX *gdx = _gdx;
-    FastS_assert(gdx->_docidCnt == _docsum_offsets_idx);
+    FastS_assert(gdx->_docid.size() == _docsum_offsets_idx);
     if (_flags._docsumMld) {
         gdx->_features |= search::fs4transport::GDF_MLD;
     }
-    gdx->UpdateCompatPCODE();
     if (PostPacket(gdx)) {
         _pendingDocsums = _docsum_offsets_idx;
         *pendingDocsums += _pendingDocsums;
@@ -1041,7 +1039,7 @@ FastS_FNET_Search::Search(uint32_t searchOffset,
     }
 
     // we support error packets
-    uint32_t qflags = _util.GetQuery().GetQueryFlags() | search::fs4transport::QFLAG_ALLOW_ERRORPACKET;
+    uint32_t qflags = _util.GetQuery().GetQueryFlags();
 
     // propagate drop-sortdata flag only if we have single sub-node
     if (_nodes.size() != 1)
@@ -1130,7 +1128,7 @@ FNET_Packet::UP
 FastS_FNET_Search::setupQueryPacket(uint32_t hitsPerNode, uint32_t qflags,
                                     const search::engine::PropertiesMap &properties)
 {
-    FNET_Packet::UP ret(new FS4Packet_QUERYX(search::fs4transport::PCODE_QUERYX));
+    FNET_Packet::UP ret(new FS4Packet_QUERYX());
     FS4Packet_QUERYX & qx = static_cast<FS4Packet_QUERYX &>(*ret);
     qx._features      = search::fs4transport::QF_PARSEDQUERY | search::fs4transport::QF_RANKP;
     qx._offset        = _util.GetAlignedSearchOffset();
@@ -1167,7 +1165,6 @@ FastS_FNET_Search::setupQueryPacket(uint32_t hitsPerNode, uint32_t qflags,
 
     qx._numStackItems = _queryArgs->stackItems;
     qx.setStackDump(_queryArgs->getStackRef());
-    qx.UpdateCompatPCODE();
     return ret;
 }
 
@@ -1175,8 +1172,7 @@ FastS_FNET_Search::setupQueryPacket(uint32_t hitsPerNode, uint32_t qflags,
 FastS_ISearch::RetCode
 FastS_FNET_Search::ProcessQueryDone()
 {
-    if (_util.IsQueryFlagSet(search::fs4transport::QFLAG_REPORT_COVERAGE))
-        CheckCoverage();
+    CheckCoverage();
 
     if (_errorCode == search::engine::ECODE_NO_ERROR) {
         MergeHits();

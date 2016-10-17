@@ -11,15 +11,11 @@ import java.nio.ByteBuffer;
  */
 public class PingPacket extends BasicPacket {
 
-    private int flags = 0;
-
-    public int getCode() { return (flags == 0) ? 206 : 220; }
+    public int getCode() { return 220; }
 
     public void encodeBody(ByteBuffer buffer) {
-        if (flags != 0) {
-            buffer.putInt(MQF_QFLAGS);
-            buffer.putInt(flags);
-        }
+        buffer.putInt(MQF_QFLAGS);
+        buffer.putInt(MQFLAG_REPORT_ACTIVEDOCS);
     }
 
     /** feature bits, taken from searchlib/common/transport.h */
@@ -27,10 +23,4 @@ public class PingPacket extends BasicPacket {
 
     /** flag bits, taken from searchlib/common/transport.h */
     static final int MQFLAG_REPORT_ACTIVEDOCS = 0x00000020;
-
-    /** ask the backend to report active (searchable) documents */
-    public void enableActivedocsReporting() {
-        flags |= MQFLAG_REPORT_ACTIVEDOCS;
-    }
-
 }

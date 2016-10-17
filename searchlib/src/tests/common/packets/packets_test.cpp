@@ -136,6 +136,16 @@ TEST("testPacketFactory") {
     for (uint32_t pcode = PCODE_BEGIN; pcode < PCODE_END; ++pcode) {
         if ((pcode != PCODE_MLD_QUERYRESULT2_NOTUSED) &&
             (pcode != PCODE_QUERY_NOTUSED) &&
+            (pcode != PCODE_MONITORQUERY_NOTUSED) &&
+            (pcode != PCODE_GETDOCSUMS_NOTUSED) &&
+            (pcode != PCODE_MLD_GETDOCSUMS_NOTUSED) &&
+            (pcode != PCODE_QUERYRESULT_NOTUSED) &&
+            (pcode != PCODE_MLD_QUERYRESULT_NOTUSED) &&
+            (pcode != PCODE_MONITORRESULT_NOTUSED) &&
+            (pcode != PCODE_MLD_MONITORRESULT_NOTUSED) &&
+            (pcode != PCODE_CLEARCACHES_NOTUSED) &&
+            (pcode != PCODE_PARSEDQUERY2_NOTUSED) &&
+            (pcode != PCODE_QUEUELEN_NOTUSED) &&
             (pcode != PCODE_QUERY2_NOTUSED) &&
             (pcode != PCODE_MLD_GETDOCSUMS2_NOTUSED))
         {
@@ -306,42 +316,6 @@ TEST("testMonitorResultX") {
     }
 }
 
-TEST("testClearCaches") {
-    FS4Packet_CLEARCACHES *src = dynamic_cast<FS4Packet_CLEARCACHES*>(FS4PacketFactory::CreateFS4Packet(PCODE_CLEARCACHES));
-    ASSERT_TRUE(src != NULL);
-
-    std::vector<FNET_Packet*> lst { src, testEncodeDecode(*src) };
-
-    for (FNET_Packet * packet : lst) {
-        FS4Packet_CLEARCACHES *ptr = dynamic_cast<FS4Packet_CLEARCACHES*>(packet);
-        ASSERT_TRUE(ptr != NULL);
-        EXPECT_EQUAL((uint32_t)PCODE_CLEARCACHES, ptr->GetPCODE());
-        EXPECT_EQUAL(0u, ptr->GetLength());
-
-        delete ptr;
-    }
-}
-
-TEST("testQueueLen") {
-    FS4Packet_QUEUELEN *src = dynamic_cast<FS4Packet_QUEUELEN*>(FS4PacketFactory::CreateFS4Packet(PCODE_QUEUELEN));
-    ASSERT_TRUE(src != NULL);
-    src->_queueLen = 1u;
-    src->_dispatchers = 2u;
-
-    std::vector<FNET_Packet*> lst { src, testEncodeDecode(*src) };
-
-    for (FNET_Packet * packet : lst) {
-        FS4Packet_QUEUELEN *ptr = dynamic_cast<FS4Packet_QUEUELEN*>(packet);
-        ASSERT_TRUE(ptr != NULL);
-        EXPECT_EQUAL((uint32_t)PCODE_QUEUELEN, ptr->GetPCODE());
-        EXPECT_EQUAL(8u, ptr->GetLength());
-        EXPECT_EQUAL(1u, ptr->_queueLen);
-        EXPECT_EQUAL(2u, ptr->_dispatchers);
-
-        delete ptr;
-    }
-}
-
 TEST("testQueryResultX") {
     FS4Packet_QUERYRESULTX *src = dynamic_cast<FS4Packet_QUERYRESULTX*>(FS4PacketFactory::CreateFS4Packet(PCODE_QUERYRESULTX));
     ASSERT_TRUE(src != NULL);
@@ -353,7 +327,6 @@ TEST("testQueryResultX") {
     src->_activeDocs = 7u;
     uint32_t sortIndex[3] = { 0u, 1u, 3u /* size of data */}; // numDocs + 1
     src->SetSortDataRef(2, sortIndex, "foo");
-    src->SetAggrDataRef("bar", 3u);
     src->SetGroupDataRef("baz", 3u);
     src->AllocateHits(2);
     src->_hits[0]._gid = gid0;
@@ -396,12 +369,6 @@ TEST("testQueryResultX") {
             EXPECT_EQUAL((void*)NULL, ptr->_sortIndex);
             EXPECT_EQUAL((void*)NULL, ptr->_sortData);
         }
-        if (ptr->_features & QRF_AGGRDATA) {
-            EXPECT_EQUAL("bar", std::string(ptr->_aggrData, ptr->_aggrDataLen));
-        } else {
-            EXPECT_EQUAL(0u, ptr->_aggrDataLen);
-            EXPECT_EQUAL((void*)NULL, ptr->_aggrData);
-        }
         if (ptr->_features & QRF_GROUPDATA) {
             EXPECT_EQUAL("baz", std::string(ptr->_groupData, ptr->_groupDataLen));
         } else {
@@ -440,7 +407,6 @@ createAndFill_QUERYX()
     fillProperties(src->_propsVector[0], "foo", 8);
     fillProperties(src->_propsVector[1], "bar", 16);
     src->setSortSpec("sortspec");
-    src->setAggrSpec("aggrspec");
     src->setGroupSpec("groupspec");
     src->setLocation("location");
     src->setStackDump("stackdump");
@@ -473,11 +439,6 @@ verifyQueryX(FS4Packet_QUERYX & queryX, uint32_t features)
         EXPECT_EQUAL("sortspec", queryX._sortSpec);
     } else {
         EXPECT_EQUAL(0u, queryX._sortSpec.size());
-    }
-    if (queryX._features & QF_AGGRSPEC) {
-        EXPECT_EQUAL("aggrspec", queryX._aggrSpec);
-    } else {
-        EXPECT_EQUAL(0u, queryX._aggrSpec.size());
     }
     if (queryX._features & QF_GROUPSPEC) {
         EXPECT_EQUAL("groupspec", queryX._groupSpec);
@@ -545,13 +506,13 @@ TEST("test pre serializing packets no compression") {
     queryX->_features=FNET_QF_SUPPORTED_MASK;
     FNET_Packet::UP decoded(testEncodeDecode(*src));
     verifyQueryX(*static_cast<FS4Packet_QUERYX *>(decoded.get()), FNET_QF_SUPPORTED_MASK);
-    EXPECT_EQUAL(512u, src->GetLength());
+    EXPECT_EQUAL(500u, src->GetLength());
     EXPECT_EQUAL(src->GetLength(), decoded->GetLength());
     FS4Packet_PreSerialized serialized(*src);
     EXPECT_EQUAL(218u, serialized.GetPCODE());
-    EXPECT_EQUAL(512u, serialized.GetLength());
+    EXPECT_EQUAL(500u, serialized.GetLength());
     FNET_Packet::UP decoded2(testEncodeDecode(serialized));
-    EXPECT_EQUAL(512u, decoded2->GetLength());
+    EXPECT_EQUAL(500u, decoded2->GetLength());
     verifyQueryX(*static_cast<FS4Packet_QUERYX *>(decoded2.get()), FNET_QF_SUPPORTED_MASK);
 }
 
@@ -561,14 +522,14 @@ TEST("test pre serializing packets with compression") {
     queryX->_features=FNET_QF_SUPPORTED_MASK;
     FNET_Packet::UP decoded(testEncodeDecode(*src));
     verifyQueryX(*static_cast<FS4Packet_QUERYX *>(decoded.get()), FNET_QF_SUPPORTED_MASK);
-    EXPECT_EQUAL(512u, src->GetLength());
+    EXPECT_EQUAL(500u, src->GetLength());
     EXPECT_EQUAL(src->GetLength(), decoded->GetLength());
     FS4PersistentPacketStreamer::Instance.SetCompressionLimit(100);
     FS4Packet_PreSerialized serialized(*src);
     EXPECT_EQUAL(218u | (document::CompressionConfig::LZ4 << 24), serialized.GetPCODE());
     EXPECT_GREATER_EQUAL(321u, serialized.GetLength());
     FNET_Packet::UP decoded2(testEncodeDecode(serialized));
-    EXPECT_EQUAL(512u, decoded2->GetLength());
+    EXPECT_EQUAL(500u, decoded2->GetLength());
     verifyQueryX(*static_cast<FS4Packet_QUERYX *>(decoded2.get()), FNET_QF_SUPPORTED_MASK);
 }
     
@@ -645,9 +606,8 @@ TEST("testGetDocsumsX") {
         } else {
             EXPECT_EQUAL(0u, ptr->_flags);
         }
-        EXPECT_EQUAL(2u, ptr->_docidCnt);
-        ASSERT_TRUE(ptr->_docid != NULL);
-        for (uint32_t i = 0; i < ptr->_docidCnt; ++i) {
+        EXPECT_EQUAL(2u, ptr->_docid.size());
+        for (uint32_t i = 0; i < ptr->_docid.size(); ++i) {
             EXPECT_EQUAL(i == 0u ? gid0 : gid1, ptr->_docid[i]._gid);
             EXPECT_EQUAL(ptr->_features & GDF_MLD ? 2u + i : 0u, ptr->_docid[i]._partid);
         }

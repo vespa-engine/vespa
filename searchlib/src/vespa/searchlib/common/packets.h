@@ -21,7 +21,6 @@ using vespalib::string;
 enum fnet_feature_masks {
     FNET_QRF_SUPPORTED_MASK = (QRF_MLD |
                                QRF_SORTDATA |
-                               QRF_AGGRDATA |
                                QRF_COVERAGE |
                                QRF_GROUPDATA |
                                QRF_PROPERTIES),
@@ -29,7 +28,6 @@ enum fnet_feature_masks {
     FNET_QF_SUPPORTED_MASK  = (QF_PARSEDQUERY |
                                QF_RANKP |
                                QF_SORTSPEC |
-                               QF_AGGRSPEC |
                                QF_LOCATION |
                                QF_PROPERTIES |
                                QF_GROUPSPEC |
@@ -321,17 +319,13 @@ class FS4Packet_MONITORQUERYX : public FS4Packet
     FS4Packet_MONITORQUERYX(const FS4Packet_MONITORQUERYX &);
     FS4Packet_MONITORQUERYX& operator=(const FS4Packet_MONITORQUERYX &);
 
-    uint32_t _pcode;
 public:
     uint32_t _features;         // see monitorquery_features
     uint32_t _qflags;           // if MQF_QFLAGS
 
-    FS4Packet_MONITORQUERYX(uint32_t pcode = PCODE_MONITORQUERYX);
+    FS4Packet_MONITORQUERYX();
     ~FS4Packet_MONITORQUERYX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE(void) { _pcode = PCODE_MONITORQUERYX; }
-    uint32_t GetPCODE() override { return _pcode; }
+    uint32_t GetPCODE() override { return PCODE_MONITORQUERYX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;
@@ -346,7 +340,6 @@ private:
     FS4Packet_MONITORRESULTX(const FS4Packet_MONITORRESULTX &);
     FS4Packet_MONITORRESULTX& operator=(const FS4Packet_MONITORRESULTX &);
 
-    uint32_t _pcode;
 public:
     uint32_t _features;         // see monitor
     uint32_t _partid;
@@ -360,43 +353,9 @@ public:
     uint32_t _rflags;           // if MRF_RFLAGS
     uint64_t _activeDocs;       // if MRF_ACTIVEDOCS
 
-    FS4Packet_MONITORRESULTX(uint32_t pcode = PCODE_MONITORRESULTX);
+    FS4Packet_MONITORRESULTX();
     ~FS4Packet_MONITORRESULTX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE(void) { _pcode = PCODE_MONITORRESULTX; }
-    uint32_t GetPCODE()  override { return _pcode; }
-    uint32_t GetLength() override;
-    void Encode(FNET_DataBuffer *dst) override;
-    bool Decode(FNET_DataBuffer *src, uint32_t len) override;
-    vespalib::string toString(uint32_t indent) const override;
-};
-
-//==========================================================================
-
-class FS4Packet_CLEARCACHES : public FS4Packet
-{
-public:
-    FS4Packet_CLEARCACHES();
-    ~FS4Packet_CLEARCACHES();
-    uint32_t GetPCODE() override { return PCODE_CLEARCACHES; }
-    uint32_t GetLength() override;
-    void Encode(FNET_DataBuffer *dst) override;
-    bool Decode(FNET_DataBuffer *src, uint32_t len) override;
-    vespalib::string toString(uint32_t indent) const override;
-};
-
-//==========================================================================
-
-class FS4Packet_QUEUELEN : public FS4Packet
-{
-public:
-    uint32_t _queueLen;
-    uint32_t _dispatchers;
-
-    FS4Packet_QUEUELEN();
-    ~FS4Packet_QUEUELEN();
-    uint32_t GetPCODE() override { return PCODE_QUEUELEN; }
+    uint32_t GetPCODE()  override { return PCODE_MONITORRESULTX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;
@@ -411,7 +370,6 @@ private:
     FS4Packet_QUERYRESULTX(const FS4Packet_QUERYRESULTX &);
     FS4Packet_QUERYRESULTX& operator=(const FS4Packet_QUERYRESULTX &);
 
-    uint32_t _pcode;
     uint32_t _distributionKey;
 
 public:
@@ -422,8 +380,6 @@ public:
     search::HitRank _maxRank;
     uint32_t *_sortIndex;    // if QRF_SORTDATA
     char     *_sortData;     // if QRF_SORTDATA
-    uint32_t _aggrDataLen;   // if QRF_AGGRDATA
-    char    *_aggrData;      // if QRF_AGGRDATA
     uint32_t _groupDataLen;  // if QRF_GROUPDATA
     char    *_groupData;     // if QRF_GROUPDATA
     uint64_t _coverageDocs;  // if QRF_COVERAGE
@@ -451,18 +407,13 @@ public:
     void AllocateSortIndex(uint32_t cnt);
     void AllocateSortData(uint32_t len);
     void SetSortDataRef(uint32_t cnt, uint32_t *sortIndex, const char *sortData);
-    void AllocateAggrData(uint32_t len);
-    void SetAggrDataRef(const char *aggrData, uint32_t len);
     void AllocateGroupData(uint32_t len);
     void SetGroupDataRef(const char *groupData, uint32_t len);
     void AllocateHits(uint32_t cnt);
 
-    FS4Packet_QUERYRESULTX(uint32_t pcode = PCODE_QUERYRESULTX);
+    FS4Packet_QUERYRESULTX();
     ~FS4Packet_QUERYRESULTX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE() { _pcode = PCODE_QUERYRESULTX; }
-    uint32_t GetPCODE() override { return _pcode; }
+    uint32_t GetPCODE() override { return PCODE_QUERYRESULTX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override ;
@@ -479,7 +430,6 @@ private:
     FS4Packet_QUERYX(const FS4Packet_QUERYX &);
     FS4Packet_QUERYX& operator=(const FS4Packet_QUERYX &);
 
-    uint32_t  _pcode;
     uint32_t  _timeout;
 
 public:
@@ -490,7 +440,6 @@ public:
     string    _ranking;       // if QF_RANKP
     PropsVector _propsVector; // if QF_PROPERTIES
     string    _sortSpec;      // if QF_SORTSPEC
-    string    _aggrSpec;      // if QF_AGGRSPEC
     string    _groupSpec;     // if QF_GROUPSPEC
     string    _sessionId;     // if QF_SESSIONID
     string    _location;      // if QF_LOCATION
@@ -500,7 +449,6 @@ public:
 
     void setRanking(const vespalib::stringref &ranking) { _ranking = ranking; }
     void setSortSpec(const vespalib::stringref &spec) { _sortSpec = spec; }
-    void setAggrSpec(const vespalib::stringref &spec) { _aggrSpec = spec; }
     void setGroupSpec(const vespalib::stringref &spec) { _groupSpec = spec; }
     void setSessionId(const vespalib::stringref &sid) { _sessionId = sid; }
     void setLocation(const vespalib::stringref &loc) { _location = loc; }
@@ -508,12 +456,9 @@ public:
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp getTimeout() const;
 
-    explicit FS4Packet_QUERYX(uint32_t pcode = PCODE_QUERYX);
+    explicit FS4Packet_QUERYX();
     ~FS4Packet_QUERYX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE() { _pcode = PCODE_QUERYX; }
-    uint32_t GetPCODE() override { return _pcode; }
+    uint32_t GetPCODE() override { return PCODE_QUERYX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;
@@ -528,7 +473,6 @@ private:
     FS4Packet_GETDOCSUMSX(const FS4Packet_GETDOCSUMSX &);
     FS4Packet_GETDOCSUMSX& operator=(const FS4Packet_GETDOCSUMSX &);
 
-    uint32_t       _pcode;
     uint32_t       _timeout;
 public:
     uint32_t       _features;          // see getdocsums_features
@@ -545,9 +489,8 @@ public:
         FS4_docid() : _gid(), _partid(0) { }
         document::GlobalId _gid;
         uint32_t _partid;           // if GDF_MLD
-    } *_docid;
-
-    uint32_t       _docidCnt;
+    };
+    std::vector<FS4_docid> _docid;
 
     void AllocateDocIDs(uint32_t cnt);
 
@@ -558,12 +501,9 @@ public:
     void setTimeout(const fastos::TimeStamp & timeout);
     fastos::TimeStamp getTimeout() const;
 
-    FS4Packet_GETDOCSUMSX(uint32_t pcode = PCODE_GETDOCSUMSX);
+    FS4Packet_GETDOCSUMSX();
     ~FS4Packet_GETDOCSUMSX();
-    void UpdateCompatPCODE();
-    void UpdateCompatFeatures();
-    void SetRealPCODE() { _pcode = PCODE_GETDOCSUMSX; }
-    uint32_t GetPCODE() override { return _pcode; }
+    uint32_t GetPCODE() override { return PCODE_GETDOCSUMSX; }
     uint32_t GetLength() override;
     void Encode(FNET_DataBuffer *dst) override;
     bool Decode(FNET_DataBuffer *src, uint32_t len) override;

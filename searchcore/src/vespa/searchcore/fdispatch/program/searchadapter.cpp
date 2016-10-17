@@ -38,18 +38,9 @@ SearchAdapter::createReply()
     SearchReply &r = *reply;
     r.useWideHits = true; // mld
     if (_search->GetErrorCode() != search::engine::ECODE_NO_ERROR) {
-        if (allowError()) {
-            r.errorCode = _search->GetErrorCode();
-            r.errorMessage = _search->GetErrorMessage();
-        }
+        r.errorCode = _search->GetErrorCode();
+        r.errorMessage = _search->GetErrorMessage();
         return reply;
-    }
-
-    if ((_request->queryFlags &
-         search::fs4transport::QFLAG_REPORT_QUEUELEN) != 0) {
-        // FIXME
-        r.useQueueLen = true;
-        r.queueLen    = 1;
     }
 
     uint32_t hitcnt = _queryResult->_hitCount;
@@ -68,12 +59,7 @@ SearchAdapter::createReply()
                              _queryResult->_groupResult + _queryResult->_groupResultLen);
     }
 
-    if ((_request->queryFlags &
-         search::fs4transport::QFLAG_REPORT_COVERAGE) != 0)
-    {
-        r.useCoverage = true;
-        r.coverage = SearchReply::Coverage(_searchInfo->_activeDocs, _searchInfo->_coverageDocs);
-    }
+    r.coverage = SearchReply::Coverage(_searchInfo->_activeDocs, _searchInfo->_coverageDocs);
 
     FastS_hitresult *hitbuf = _queryResult->_hitbuf;
     r.hits.resize(hitcnt);

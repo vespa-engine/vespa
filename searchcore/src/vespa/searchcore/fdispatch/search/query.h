@@ -45,11 +45,8 @@ public:
     uint32_t GetQueryFlags(void) const { return _flags; }
     const char *getPrintableQuery();
     bool IsFlagSet(uint32_t flag) const { return (_flags & flag) != 0; }
-    bool Similar(const FastS_query &other) const;
-    bool Equal(const FastS_query &other) const;
 
     unsigned int StackDumpHashKey() const;
-    unsigned int HashKey(void) const;
 
 
 private:

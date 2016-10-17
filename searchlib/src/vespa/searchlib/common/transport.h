@@ -8,21 +8,15 @@
 
 #include <vespa/fastos/fastos.h>
 
-namespace search
-{
+namespace search {
 
-namespace fs4transport
-{
+namespace fs4transport {
 
 /**
  * Instead of using a 32-bit number to send the 'usehardware' flag, we
  * now use this 32-bit number to send 32 flags. The currently defined flags
  * are as follows:
  * <ul>
- *  <li><b>QFLAG_ALLOW_ERRORPACKET</b>: Allow an error packet to be sent as
- *                                response to this query packet.</li>
- *  <li><b>QFLAG_REPORT_QUEUELEN</b>: Send an extra queue length packet before
- *                                query result packets.</li>
  *  <li><b>QFLAG_ESTIMATE</b>: Indicates that the  query is performed to get
  *                             an estimate of the total number of hits</li>
  *  <li><b>QFLAG_DUMP_FEATURES</b>: Dump detailed ranking information. Note that
@@ -35,18 +29,10 @@ namespace fs4transport
  * </ul>
  **/
 enum queryflags {
-    QFLAG_ALLOW_ERRORPACKET    = 0x00000004,
-    QFLAG_REPORT_QUEUELEN      = 0x00000008,
     QFLAG_ESTIMATE             = 0x00000080,
     QFLAG_DROP_SORTDATA        = 0x00004000,
-    QFLAG_REPORT_COVERAGE      = 0x00008000,
     QFLAG_NO_RESULTCACHE       = 0x00010000,
-    QFLAG_DUMP_FEATURES        = 0x00040000,
-
-    QFLAG_CACHE_MASK           = (// which flags affect the cache
-                                  QFLAG_ESTIMATE |
-                                  QFLAG_DROP_SORTDATA |
-                                  QFLAG_REPORT_COVERAGE)
+    QFLAG_DUMP_FEATURES        = 0x00040000
 };
 
 
@@ -55,11 +41,7 @@ enum queryflags {
  * 'featureflags'. Each bit in that field denotes a separate feature
  * that may be present in the query result packet or not. The comment
  * describing the packet format indicates what data fields depend on
- * what features. Note that after removing the query id and the
- * feature flags from a PCODE_QUERYRESULTX packet it is binary
- * compatible with the PCODE_QUERYRESULT, PCODE_MLD_QUERYRESULT and
- * PCODE_MLD_QUERYRESULT2 packets given the correct set of
- * features. The features present in the 'old' query result packets
+ * what features. The features present in the 'old' query result packets
  * are defined in this enum along with the Query Result Features
  * themselves. The value called QRF_SUPPORTED_MASK denotes which
  * features are supported by the current version. If a packet with
@@ -69,13 +51,9 @@ enum queryflags {
 enum queryresult_features {
     QRF_MLD                   = 0x00000001,
     QRF_SORTDATA              = 0x00000010,
-    QRF_AGGRDATA              = 0x00000020,
     QRF_COVERAGE              = 0x00000040,
     QRF_GROUPDATA             = 0x00000200,
-    QRF_PROPERTIES            = 0x00000400,
-
-    QRF_QUERYRESULT_MASK      = 0,
-    QRF_MLD_QUERYRESULT_MASK  = QRF_MLD
+    QRF_PROPERTIES            = 0x00000400
 };
 
 
@@ -84,10 +62,7 @@ enum queryresult_features {
  * 'featureflags'. Each bit in that field denotes a separate feature
  * that may be present in the query packet or not. The comment
  * describing the packet format indicates what data fields depend on
- * what features. Note that after removing the query id and the
- * feature flags from a PCODE_QUERYX packet it is binary compatible
- * with the PCODE_PARSEDQUERY2 packets
- * given the correct set of features. The features present in the
+ * what features. The features present in the
  * 'old' query packets are defined in this enum along with the Query
  * Features themselves. The values called
  * QF_SUPPORTED_[FSEARCH/FDISPATCH]_MASK denotes which features are
@@ -99,14 +74,10 @@ enum query_features {
     QF_PARSEDQUERY            = 0x00000002,
     QF_RANKP                  = 0x00000004,
     QF_SORTSPEC               = 0x00000080,
-    QF_AGGRSPEC               = 0x00000100,
     QF_LOCATION               = 0x00000800,
     QF_PROPERTIES             = 0x00100000,
-    QF_WARMUP		      = 0x00200000, // Deprecated, do not use!
     QF_GROUPSPEC              = 0x00400000,
-    QF_SESSIONID              = 0x00800000,
-
-    QF_PARSEDQUERY2_MASK      = (QF_PARSEDQUERY | QF_RANKP)
+    QF_SESSIONID              = 0x00800000
 };
 
 
@@ -115,11 +86,7 @@ enum query_features {
  * 'featureflags'. Each bit in that field denotes a separate feature
  * that may be present in the getdocsums packet or not. The comment
  * describing the packet format indicates what data fields depend on
- * what features. Note that after removing the query id and the
- * feature flags from a PCODE_GETDOCSUMSX packet it is binary
- * compatible with the PCODE_GETDOCSUMS, PCODE_MLD_GETDOCSUMS and
- * PCODE_MLD_GETDOCSUMS2 packets given the correct set of
- * features. The features present in the 'old' getdocsums packets are
+ * what features. The features present in the 'old' getdocsums packets are
  * defined in this enum along with the GetDocsums Features
  * themselves. The values called
  * GDF_SUPPORTED_[FSEARCH/FDISPATCH]_MASK denotes which features are
@@ -134,15 +101,11 @@ enum getdocsums_features {
     GDF_LOCATION              = 0x00000080,
     GDF_RESCLASSNAME          = 0x00000800,
     GDF_PROPERTIES            = 0x00001000,
-    GDF_FLAGS                 = 0x00002000,
-
-    GDF_GETDOCSUMS_MASK       = 0,
-    GDF_MLD_GETDOCSUMS_MASK   = (GDF_MLD)
+    GDF_FLAGS                 = 0x00002000
 };
 
 
-enum getdocsums_flags
-{
+enum getdocsums_flags {
     GDFLAG_IGNORE_ROW         = 0x00000001,
     GDFLAG_ALLOW_SLIME        = 0x00000002
 };
@@ -150,37 +113,19 @@ enum getdocsums_flags
 // docsum class for slime tunneling
 const uint32_t SLIME_MAGIC_ID = 0x55555555;
 
-enum monitorquery_features
-{
+enum monitorquery_features {
     MQF_QFLAGS		    = 0x00000002,			
-
-    MQF_MONITORQUERY_MASK   = 0
 };
 
-
-enum monitorquery_flags
-{
-    // NOT_USED MQFLAG_REPORT_SOFTOFFLINE = 0x00000010,
+enum monitorquery_flags {
     MQFLAG_REPORT_ACTIVEDOCS  = 0x00000020
 };
 
-
-enum monitorresult_features
-{
+enum monitorresult_features {
     MRF_MLD		    = 0x00000001,
     MRF_RFLAGS		    = 0x00000008,
     MRF_ACTIVEDOCS	    = 0x00000010,
-
-    MRF_MONITORRESULT_MASK  = 0,
-    MRF_MLD_MONITORRESULT_MASK = (MRF_MLD)
 };
-
-
-enum monitorresult_flags
-{
-    // NOT_USED MRFLAG_SOFTOFFLINE       = 0x00000001
-};
-
 
 /**
  * Codes for packets between dispatch nodes and search nodes.
@@ -193,83 +138,30 @@ enum packetcode {
     PCODE_EOL = 200,	/* ..fdispatch <-> ..fsearch.	PacketData:
 			 *0	{uint32_t queryId,}	- only in new format!*/
     PCODE_QUERY_NOTUSED = 201,
-    PCODE_QUERYRESULT = 202,	/* ..fdispatch <-  ..fsearch.	PacketData:
-			 *0	{uint32_t queryId,}	- only in new format!
-			 *1	uint32_t offset,
-			 *2	uint32_t numDocs,
-			 *3	uint32_t totNumDocs,
-			 *4	search::HitRank maxRank,
-			 *5	time_t docstamp,	- sent as Uint32
-			 *6	struct FastS_connhitresult {
-			 *	    uint32_t docid;
-			 *	    search::HitRank metric
-			 *	}[] hits				     */
+    PCODE_QUERYRESULT_NOTUSED = 202,
     PCODE_ERROR = 203,          /* ..fdispatch <-  ..fsearch/..fdispatch
                            *	{uint32_t queryId,}	- only in new format!
                            *      uint32_t  error_code  [see common/errorcodes.h]
                            *      uint32_t  message_len
                            *      char[]    message     (UTF-8)   */
-    PCODE_GETDOCSUMS = 204,	/* ..fdispatch  -> ..fsearch.	PacketData:
-			 *0	{uint32_t queryId,}	- only in new format!
-			 *	time_t docstamp		- header
-			 * 	uint32_t[] docid	- body	  	   */
+    PCODE_GETDOCSUMS_NOTUSED = 204,
     PCODE_DOCSUM = 205,		/* ..fdispatch <-  ..fsearch.
                                  *0	{uint32_t queryId,}	- only in new format!
                                  *1	uint32_t location
                                  *2	char[] <title, incipit, URL, ...>
                                  */
-    PCODE_MONITORQUERY = 206,	/* ..fdispatch  -> ..fsearch.	No packet data.
-			 */
-    PCODE_MONITORRESULT = 207,	/* ..fdispatch <-  ..fsearch.	PacketData:
-                                 *	int partitionId,
-                                 *	time_t timeStamp			     */
-    PCODE_MLD_QUERYRESULT = 208,/* ..fdispatch <-  ..fdispatch.
-                           * header: {queryId,} offset, numdocs, tnumdocs,
-                           *	maxRank, docstamp
-                           * body: (docid, metric, partition, docstamp)*
-                           */
-    PCODE_MLD_GETDOCSUMS = 209,	/* ..fdispatch  -> ..fdispatch.
-                                 * header: {queryId,} docstamp
-                                 * body: (docid, partition, docstamp)*
-                                 */
-    PCODE_MLD_MONITORRESULT = 210 ,/* ..fdispatch <- ..fdispatch	NB: no queryId!
-                             *	lowest partition id,
-                             *	timestamp,
-                             *	total number of nodes,
-                             *	active nodes,
-                             *	total number of partitions,
-                             *	active partitions
-                             */
-    PCODE_CLEARCACHES = 211,	/* ..fdispatch -> ..fdispatch.  No packet data/ NotUsed
-			 */
+    PCODE_MONITORQUERY_NOTUSED = 206,
+    PCODE_MONITORRESULT_NOTUSED = 207,
+    PCODE_MLD_QUERYRESULT_NOTUSED = 208,
+    PCODE_MLD_GETDOCSUMS_NOTUSED = 209,
+    PCODE_MLD_MONITORRESULT_NOTUSED = 210,
+    PCODE_CLEARCACHES_NOTUSED = 211,
     PCODE_QUERY2_NOTUSED = 212,
-    PCODE_PARSEDQUERY2 = 213,	/* ..fdispatch  -> ..fsearch.	PacketData:
-			 *0	{uint32_t queryId,}	- only in new format!
-			 *1	..query::querytypes searchType,	- all/any/exact
-			 *2	uint32_t offset,
-			 *3	uint32_t maxhits,
-			 *4	uint32_t qflags,	(including usehardware)
-			 *5     uint32_t rankprofile,   - enum
-			 *6     uint32_t numStackItems,
-			 *7	multiple encoded stackitems:
-                         - uint32_t OR|AND|NOT|RANK
-                         uint32_t arity
-                         - uint32_t PHRASE
-                         uint32_t arity
-                         uint32_t indexNameLen
-                         char[]   indexName
-                         - uint32_t TERM
-                         uint32_t indexNameLen
-                         char[]   indexName
-                         uint32_t termLen
-                         char[]   term
-                        */
+    PCODE_PARSEDQUERY2_NOTUSED = 213,
     PCODE_MLD_QUERYRESULT2_NOTUSED = 214,
     PCODE_MLD_GETDOCSUMS2_NOTUSED = 215,
+    PCODE_QUEUELEN_NOTUSED = 216,
 
-    PCODE_QUEUELEN = 216,	/* fdispatch <- fsearch.
-			 * header: queueLen, dispatchers
-			 */
     PCODE_QUERYRESULTX = 217,	/*
 			 *      {uint32_t queryId,}    - only if persistent
                          *      uint32_t featureflags, - see 'queryresult_features'
@@ -280,8 +172,6 @@ enum packetcode {
 			 *      uint32_t docstamp,
                          *      uint32_t[numDocs] sortIndex   - if QRF_SORTDATA
                          *      char[sidx[n - 1]] sortData    - if QRF_SORTDATA
-                         *      uint32_t          aggrDataLen - if QRF_AGGRDATA
-                         *      char[aggrDataLen] aggrData    - if QRF_AGGRDATA
                          *      uint32_t           groupDataLen - if QRF_GROUPDATA
                          *      char[groupDataLen] groupData    - if QRF_GROUPDATA
                          *      uint64_t coverageDocs  - if QRF_COVERAGE
@@ -315,8 +205,6 @@ enum packetcode {
                                  *      }
                                  *      uint32_t sortSpecLen         - if QF_SORTSPEC
                                  *      char[sortSpecLen] sortSpec   - if QF_SORTSPEC
-                                 *      uint32_t aggrSpecLen         - if QF_AGGRSPEC
-                                 *      char[aggrSpecLen] aggrSpec   - if QF_AGGRSPEC
                                  *      uint32_t groupSpecLen         - if QF_GROUPSPEC
                                  *      char[groupSpecLen] groupSpec  - if QF_GROUPSPEC
                                  *      uint32_t locationLen         - if QF_LOCATION

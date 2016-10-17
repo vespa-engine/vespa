@@ -223,15 +223,10 @@ FastS_FNET_Engine::Ping()
             return;
         }
         _monitorQuery->markBusy();
-        uint32_t features = 0;
-        uint32_t qflags = 0;
-        qflags |= search::fs4transport::MQFLAG_REPORT_ACTIVEDOCS;
-        if (qflags != 0) {
-            features |= search::fs4transport::MQF_QFLAGS;
-        }
+        uint32_t features = search::fs4transport::MQF_QFLAGS;
+        uint32_t qflags = search::fs4transport::MQFLAG_REPORT_ACTIVEDOCS;
         _monitorQuery->_features |= features;
         _monitorQuery->_qflags = qflags;
-        _monitorQuery->UpdateCompatPCODE();
         _conn->PostPacket(_monitorQuery, FastS_NoID32());
     }
 }

@@ -41,11 +41,6 @@ public:
     SearchAdapter(FastS_AppContext *appCtx,
                   SearchRequest::Source request,
                   SearchClient &client);
-
-    bool allowError() const {
-        return ((_request->queryFlags &
-                 search::fs4transport::QFLAG_ALLOW_ERRORPACKET) != 0);
-    }
 };
 
 } // namespace fdispatch
