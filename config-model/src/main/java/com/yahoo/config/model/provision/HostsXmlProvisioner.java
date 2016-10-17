@@ -47,7 +47,7 @@ public class HostsXmlProvisioner implements HostProvisioner {
 
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity quantity, int groups, ProvisionLogger logger) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Prepare on an XML host provisioner is not supported");
     }
 
     private HostSpec host2HostSpec(Host host) {

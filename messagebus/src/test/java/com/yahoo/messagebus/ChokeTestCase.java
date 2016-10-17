@@ -10,6 +10,7 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.test.Receptor;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
+import com.yahoo.net.HostName;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;

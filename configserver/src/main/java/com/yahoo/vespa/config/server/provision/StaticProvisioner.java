@@ -22,7 +22,7 @@ public class StaticProvisioner implements HostProvisioner {
 
     @Override
     public HostSpec allocateHost(String alias) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Allocating a single host from provisioning info is not supported");
     }
 
     @Override

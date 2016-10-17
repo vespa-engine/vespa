@@ -59,7 +59,7 @@ public class OsgiImpl implements Osgi {
             return (Class<Object>) bundle.loadClass(spec.classId.getName());
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException("Could not load class '" + spec.classId.getName() +
-                    "' from bundle " + bundle, e);
+                                               "' from bundle " + bundle, e);
         }
     }
 
