@@ -11,10 +11,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URL;
 import java.util.HashSet;
@@ -25,7 +22,6 @@ import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -36,7 +32,7 @@ import static org.junit.Assume.assumeTrue;
  *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.0.0.0/8 192.168.99.100
  *   2. Run tests from IDE/mvn.
  *
-
+ *
  * TIPS:
  *   For cleaning up your local docker machine (DON'T DO THIS ON PROD)
  *     docker stop $(docker ps -a -q)
@@ -46,9 +42,6 @@ import static org.junit.Assume.assumeTrue;
  * @author dybdahl
  */
 public class DockerTest {
-    public static final String SUBNET_CONTAINER = "172.18.7.2/24";
-    public static final String IP_ADDRESS_FOR_CONTAINER = "172.18.7.32";
-
     private DockerImpl docker;
     private static final OS operatingSystem = getSystemOS();
     private static final String prefix = "/Users/" + System.getProperty("user.name") + "/.docker/machine/machines/default/";
@@ -73,17 +66,14 @@ public class DockerTest {
     public void testDockerImagePull() throws ExecutionException, InterruptedException {
         assumeTrue(dockerDaemonIsPresent());
 
-        docker.getAllManagedContainers();
         DockerImage dockerImage = new DockerImage("busybox:1.24.0");
 
         // Pull the image and wait for the pull to complete
         docker.pullImageAsync(dockerImage).get();
 
-        // Translate the human readable ID to sha256-hash ID that is returned by getUnusedDockerImages()
-        DockerImage targetImage = new DockerImage(docker.dockerClient.inspectImageCmd(dockerImage.asString()).exec().getId());
         List<DockerImage> unusedDockerImages = docker.getUnusedDockerImages(new HashSet<>());
         if (! unusedDockerImages.contains(dockerImage)) {
-            fail("Did not find image as unused, here are all images; " + unusedDockerImages);
+            fail("Did not find image as unused, here are all the unused images; " + unusedDockerImages);
         }
         // Remove the image
         docker.deleteImage(dockerImage);
@@ -94,70 +84,27 @@ public class DockerTest {
     public void testContainerCycle() throws IOException, InterruptedException, ExecutionException {
         assumeTrue(dockerDaemonIsPresent());
 
-        DockerImage busyBoxImage = new DockerImage("busybox:1.24.0");
-        // Pull the image and wait for the pull to complete
-        System.out.print("Pulling image.");
-        docker.pullImageAsync(busyBoxImage).get();
-        System.out.println("... done");
+        ContainerName containerName = new ContainerName("foo");
+        docker.createContainerCommand(dockerImage, containerName, "hostName1").create();
+        List<Container> managedContainers = docker.getAllManagedContainers();
+        assertThat(managedContainers.size(), is(1));
+        assertThat(managedContainers.get(0).name, is(containerName));
+        assertThat(managedContainers.get(0).isRunning, is(false));
 
-        ContainerName containerName = new ContainerName("DummyWebServer");
-
-        try { // Stop any old container
-            docker.stopContainer(containerName);
-            System.out.println("Stopped an old container with same name");
-        } catch (Exception e) {
-            System.out.println("Did not manage to stop container " + e.getMessage());
-        }
-        try { // Delete any remaining container
-            docker.deleteContainer(containerName);
-            System.out.println("Deleted an old container with same name");
-        } catch (Exception e) {
-            System.out.println("Did not manage to delete container " + e.getMessage());
-        }
-
-        int webPortForContainer = 6342;
-
-        InetAddress inetAddress1 = Inet6Address.getByName(IP_ADDRESS_FOR_CONTAINER);
-        docker.createContainerCommand(busyBoxImage, containerName, "hostName1")
-                .withNetworkMode("vespa-macvlan")
-                .withIpAddress(inetAddress1)
-                .withCmd("sleep").withCmd("55555").create();
-
-        System.out.print("Starting container with sleep running.");
         docker.startContainer(containerName);
-        System.out.println("..done");
+        managedContainers = docker.getAllManagedContainers();
+        assertThat(managedContainers.size(), is(1));
+        assertThat(managedContainers.get(0).name, is(containerName));
+        assertThat(managedContainers.get(0).isRunning, is(true));
 
-
-        // TODO: Get the container to start with httpd instead of hacking it here.
-        new Thread(() -> {
-            try {
-                // This call is blocking
-                docker.executeInContainer(containerName, "/bin/sh", "-c", "/bin/httpd -f -p " + webPortForContainer).getOutput();
-            } catch (RuntimeException e) {
-                // ignore, fails on shut down
-            }
-        }).start();
-
-        boolean success = false;
-        for (int x = 0; x < 600; x++) {
-            try {
-                URL url = new URL("http://" + IP_ADDRESS_FOR_CONTAINER + ":" + webPortForContainer);
-                InputStream is = url.openStream();
-                String containerServer = IOUtils.toString(is);
-                assertThat(containerServer, is("sdf"));
-            } catch (FileNotFoundException e) {
-                System.out.println("Managed to talk to web server in container.");
-                success = true;
-                break;
-            } catch (Throwable t) {
-                System.err.println(t.getMessage());
-                Thread.sleep(100);
-            }
-        }
         docker.stopContainer(containerName);
+        managedContainers = docker.getAllManagedContainers();
+        assertThat(managedContainers.size(), is(1));
+        assertThat(managedContainers.get(0).name, is(containerName));
+        assertThat(managedContainers.get(0).isRunning, is(false));
+
         docker.deleteContainer(containerName);
-        // Do not bother, it takes forever to load it again.. docker.deleteImage(busyBoxImage);
-        assertThat(success, is(true));
+        assertThat(docker.getAllManagedContainers().isEmpty(), is(true));
     }
 
     @Test
