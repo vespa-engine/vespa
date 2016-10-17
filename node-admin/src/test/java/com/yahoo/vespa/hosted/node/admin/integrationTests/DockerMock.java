@@ -185,6 +185,9 @@ public class DockerMock implements Docker {
         }
 
         @Override
+        public CreateContainerCommand withCmd(String name) { return this; }
+
+        @Override
         public void create() {
 
         }
