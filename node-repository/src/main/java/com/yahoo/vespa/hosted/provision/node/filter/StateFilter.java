@@ -29,7 +29,7 @@ public class StateFilter extends NodeFilter {
     private StateFilter(Set<Node.State> states, NodeFilter next) {
         super(next);
         Objects.requireNonNull(states, "state cannot be null, use an empty optional");
-        this.states = states;
+        this.states = ImmutableSet.copyOf(states);
     }
 
     @Override

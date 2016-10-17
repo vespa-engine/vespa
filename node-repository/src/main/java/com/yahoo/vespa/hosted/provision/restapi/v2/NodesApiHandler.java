@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
+import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NodesResponse.ResponseType;
@@ -234,6 +235,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                                                                 request.getProperty("clusterId")));
         filter = ApplicationFilter.from(request.getProperty("application"), filter);
         filter = StateFilter.from(request.getProperty("state"), filter);
+        filter = NodeTypeFilter.from(request.getProperty("type"), filter);
         filter = ParentHostFilter.from(request.getProperty("parentHost"), filter);
         return filter;
     }
@@ -247,7 +249,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
     }
 
     private boolean isPatchOverride(HttpRequest request) {
-        //Since Jersey's HttpUrlConnector does not support PATCH we support this by override this on POST requests.
+        // Since Jersey's HttpUrlConnector does not support PATCH we support this by override this on POST requests.
         String override = request.getHeader("X-HTTP-Method-Override");
         if (override != null) {
             if (override.equals("PATCH")) {
