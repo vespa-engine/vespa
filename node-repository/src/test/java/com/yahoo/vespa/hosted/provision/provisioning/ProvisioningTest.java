@@ -438,7 +438,7 @@ public class ProvisioningTest {
             org.junit.Assert.fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Unknown flavor 'nonexisting' Flavors are [default, docker1, large, old-large1, old-large2, small, v-4-8-100]", e.getMessage());
+            assertEquals("Unknown flavor 'nonexisting'. Flavors are [default, docker1, large, old-large1, old-large2, small, v-4-8-100]", e.getMessage());
         }
     }
 
