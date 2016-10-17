@@ -13,6 +13,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.Container;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
+import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.core.QrTemplatesConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -23,6 +24,7 @@ import com.yahoo.container.protect.FreezeDetector;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.language.Linguistics;
 import com.yahoo.log.LogLevel;
+import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -55,6 +57,8 @@ import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -104,6 +108,11 @@ public class SearchHandler extends LoggingRequestHandler {
     private final Linguistics linguistics;
 
     private final CompiledQueryProfileRegistry queryProfileRegistry;
+    
+    /** If present, responses from this will set the HTTP response header with this key to the host name of this */
+    private final Optional<String> hostResponseHeaderKey;
+    
+    private final String selfHostname = HostName.getLocalhost();
 
     private final class MeanConnections implements Callback {
 
@@ -131,7 +140,8 @@ public class SearchHandler extends LoggingRequestHandler {
             final Executor executor,
             final AccessLog accessLog,
             final QueryProfilesConfig queryProfileConfig,
-            final ComponentRegistry<Searcher> searchers) {
+            final ComponentRegistry<Searcher> searchers,
+            final ContainerHttpConfig containerHttpConfig) {
         super(executor, accessLog, metric, true);
         log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
         searchChainRegistry = new SearchChainRegistry(searchers);
@@ -151,9 +161,33 @@ public class SearchHandler extends LoggingRequestHandler {
                                               .setLogMean(true).setLogMin(true)
                                               .setNameExtension(true)
                                               .setCallback(new MeanConnections()));
+        
+        this.hostResponseHeaderKey = containerHttpConfig.hostResponseHeaderKey().equals("") ?
+                                     Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey());
+    }
+
+    /** @deprecated use the constructor with ContainerHttpConfig */
+    // TODO: Remove on Vespa 7
+    @Deprecated
+    public SearchHandler(
+            final ChainsConfig chainsConfig,
+            final IndexInfoConfig indexInfo,
+            final QrSearchersConfig clusters,
+            final SpecialtokensConfig specialtokens,
+            final Statistics statistics,
+            final Linguistics linguistics,
+            final Metric metric,
+            final ComponentRegistry<Renderer> renderers,
+            final Executor executor,
+            final AccessLog accessLog,
+            final QueryProfilesConfig queryProfileConfig,
+            final ComponentRegistry<Searcher> searchers) {
+        this (chainsConfig, indexInfo, clusters, specialtokens, statistics, linguistics, metric, renderers, executor,
+              accessLog, queryProfileConfig, searchers, new ContainerHttpConfig(new ContainerHttpConfig.Builder()));
     }
 
     /** @deprecated use the constructor without deprecated parameters */
+    // TODO: Remove on Vespa 7
     @Deprecated
     public SearchHandler(
             final ChainsConfig chainsConfig,
@@ -176,7 +210,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private void setupSearchChainRegistry(final ComponentRegistry<Searcher> searchers,
                                           final ChainsConfig chainsConfig) {
-        final ChainsModel chainsModel = ChainsModelBuilder.buildFromConfig(chainsConfig);
+        ChainsModel chainsModel = ChainsModelBuilder.buildFromConfig(chainsConfig);
         ChainsConfigurer.prepareChainRegistry(searchChainRegistry, chainsModel, searchers);
         searchChainRegistry.freeze();
     }
@@ -291,12 +325,14 @@ public class SearchHandler extends LoggingRequestHandler {
         }
 
         // Transform result to response
-        HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
+        HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result), 
                                                              result, query, renderer);
-        if (benchmarkOutput) {
+        if (hostResponseHeaderKey.isPresent())
+            response.headers().add(hostResponseHeaderKey.get(), selfHostname);
+
+        if (benchmarkOutput)
             VespaHeaders.benchmarkOutput(response.headers(), benchmarkCoverage, response.getTiming(),
                                          response.getHitCounts(), getErrors(result), response.getCoverage());
-        }
 
         return response;
     }
@@ -319,11 +355,7 @@ public class SearchHandler extends LoggingRequestHandler {
         }
 
         Chain<Searcher> searchChain = searchChainRegistry.getChain(chainName);
-        if (searchChain == null && explicitChainName == null) { // explicit
-                                                                // search chain
-                                                                // not found
-                                                                // should cause
-                                                                // error
+        if (searchChain == null && explicitChainName == null) { // explicit chain not found should cause error
             chainName = fallbackSearchChain;
             searchChain = searchChainRegistry.getChain(chainName);
         }

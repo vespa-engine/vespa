@@ -34,11 +34,8 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     public static final String DATE = "Date";
     private static final String RENDERING_ERRORS = "rendering_errors";
 
-    /**
-     * Logger for subclasses.
-     */
+    /** Logger for subclasses */
     protected final Logger log;
-
 
     public ThreadedHttpRequestHandler(Executor executor) {
         this(executor, null);

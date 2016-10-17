@@ -19,7 +19,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ProvisionInfo;
-import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.net.HostName;
@@ -28,7 +27,6 @@ import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.ConfigProducer;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.VespaModel;
@@ -203,8 +201,6 @@ public class VespaModelTestCase {
                         "   </documents>" +
                         "</content>" +
                         "</services>");
-        ContainerHttpConfig container = new ContainerHttpConfig((ContainerHttpConfig.Builder) model.getConfig(new ContainerHttpConfig.Builder(), "container/container.0"));
-        assertEquals(container.port().search(), Defaults.getDefaults().vespaWebServicePort());
         MessagebusConfig.Builder mBusB = new MessagebusConfig.Builder();
         model.getConfig(mBusB, "client");
         MessagebusConfig mBus = new MessagebusConfig(mBusB);

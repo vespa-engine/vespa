@@ -23,9 +23,8 @@ public abstract class ExtendedResponse extends AsyncHttpResponse {
     }
 
     @Override
-    public abstract void render(OutputStream output,
-            ContentChannel networkChannel, CompletionHandler handler)
-            throws IOException;
+    public abstract void render(OutputStream output, ContentChannel networkChannel, CompletionHandler handler)
+        throws IOException;
 
     /**
      * @return user name performing the request
