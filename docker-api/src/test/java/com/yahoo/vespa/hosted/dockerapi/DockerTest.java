@@ -52,20 +52,10 @@ public class DockerTest {
             .uri(operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376"));
     private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
 
-    @Test
-    public void testGetAllManagedContainersNoContainersRunning() {
-        assumeTrue(dockerDaemonIsPresent());
-
-        List<Container> containers = docker.getAllManagedContainers();
-        assertThat(containers.isEmpty(), is(true));
-    }
-
     // It is ignored since it is a bit slow and unstable, at least on Mac.
     @Ignore
     @Test
     public void testDockerImagePull() throws ExecutionException, InterruptedException {
-        assumeTrue(dockerDaemonIsPresent());
-
         DockerImage dockerImage = new DockerImage("busybox:1.24.0");
 
         // Pull the image and wait for the pull to complete
@@ -82,8 +72,6 @@ public class DockerTest {
 
     @Test
     public void testContainerCycle() throws IOException, InterruptedException, ExecutionException {
-        assumeTrue(dockerDaemonIsPresent());
-
         ContainerName containerName = new ContainerName("foo");
         docker.createContainerCommand(dockerImage, containerName, "hostName1").create();
         List<Container> managedContainers = docker.getAllManagedContainers();
@@ -109,8 +97,6 @@ public class DockerTest {
 
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
-        assumeTrue(dockerDaemonIsPresent());
-
         String hostName1 = "docker10.test.yahoo.com";
         String hostName2 = "docker11.test.yahoo.com";
         ContainerName containerName1 = new ContainerName("test-container-1");
