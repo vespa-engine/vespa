@@ -2,7 +2,10 @@
 
 #pragma once
 
-#include "dense_tensor_base.h"
+#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/tensor/types.h>
+#include <vespa/vespalib/eval/value_type.h>
+#include "dense_tensor_cells_iterator.h"
 
 namespace vespalib {
 namespace tensor {
@@ -11,10 +14,12 @@ namespace tensor {
  * A dense tensor where all dimensions are indexed.
  * Tensor cells are stored in an underlying array according to the order of the dimensions.
  */
-class DenseTensor : public Tensor, public DenseTensorBase
+class DenseTensor : public Tensor
 {
 public:
     typedef std::unique_ptr<DenseTensor> UP;
+    using Cells = std::vector<double>;
+    using CellsIterator = DenseTensorCellsIterator;
 
 private:
     eval::ValueType _type;

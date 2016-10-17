@@ -5,7 +5,7 @@
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/eval/value_type.h>
-#include "dense_tensor_base.h"
+#include "dense_tensor_cells_iterator.h"
 
 namespace vespalib {
 namespace tensor {
@@ -16,8 +16,13 @@ class DenseTensor;
  * A view to a dense tensor where all dimensions are indexed.
  * Tensor cells are stored in an underlying array according to the order of the dimensions.
  */
-class DenseTensorView : public Tensor, public DenseTensorBase
+class DenseTensorView : public Tensor
 {
+public:
+    using Cells = std::vector<double>;
+    using CellsRef = ConstArrayRef<double>;
+    using CellsIterator = DenseTensorCellsIterator;
+
 private:
     const eval::ValueType &_type;
     CellsRef               _cells;

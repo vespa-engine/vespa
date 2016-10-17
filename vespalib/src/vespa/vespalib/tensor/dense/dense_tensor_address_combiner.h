@@ -2,10 +2,14 @@
 
 #pragma once
 
-#include <vespa/vespalib/tensor/dense/dense_tensor.h>
+#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/tensor/types.h>
+#include <vespa/vespalib/eval/value_type.h>
+#include "dense_tensor_cells_iterator.h"
 
 namespace vespalib {
 namespace tensor {
+
 
 /**
  * Combines two dense tensor addresses to a new tensor address.
@@ -24,7 +28,7 @@ private:
         BOTH
     };
 
-    using CellsIterator = DenseTensor::CellsIterator;
+    using CellsIterator = DenseTensorCellsIterator;
 
     std::vector<AddressOp> _ops;
     Address _combinedAddress;

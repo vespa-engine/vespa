@@ -7,8 +7,8 @@ namespace vespalib {
 namespace tensor {
 namespace dense {
 
-using Cells = DenseTensor::Cells;
-using CellsRef = DenseTensor::CellsRef;
+using Cells = DenseTensorView::Cells;
+using CellsRef = DenseTensorView::CellsRef;
 
 namespace {
 

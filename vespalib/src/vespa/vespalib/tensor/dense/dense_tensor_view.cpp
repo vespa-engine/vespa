@@ -268,7 +268,7 @@ DenseTensorView::clone() const
 namespace {
 
 void
-buildAddress(const DenseTensorView::CellsIterator &itr, TensorSpec::Address &address)
+buildAddress(const DenseTensorCellsIterator &itr, TensorSpec::Address &address)
 {
     auto addressItr = itr.address().begin();
     for (const auto &dim : itr.type().dimensions()) {
