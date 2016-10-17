@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateNetworkCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
@@ -35,7 +36,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,24 +88,30 @@ public class DockerImpl implements Docker {
         this.dockerClient = dockerClient;
     }
 
-    // For testing
-    DockerImpl(final DockerConfig config) {
-        hackAroundPullImageDueToJerseyConflicts = false;
-        // Fail fast
-        initDockerConnection(config, 100 /* connect timeout millis */, false /* fallback to 1.23 on errors */);
-        setMetrics(new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+    public DockerImpl(
+            final DockerConfig config,
+            boolean fallbackTo123OnErrors,
+            boolean trySetupNetowork,
+            Optional<String> subnetwork,
+            boolean hackAroundPullImageDueToJerseyConflicts,
+            int dockerConnectTimeoutMillis,
+            MetricReceiverWrapper metricReceiverWrapper) {
+        this.hackAroundPullImageDueToJerseyConflicts = hackAroundPullImageDueToJerseyConflicts;
+        initDockerConnection(config, dockerConnectTimeoutMillis, fallbackTo123OnErrors);
+        setMetrics(metricReceiverWrapper);
+        if (trySetupNetowork) setupDockerNetworkIfNeeded(subnetwork);
     }
 
     @Inject
     public DockerImpl(final DockerConfig config, MetricReceiverWrapper metricReceiver) {
-        hackAroundPullImageDueToJerseyConflicts = true;
-        initDockerConnection(config, DOCKER_CONNECT_TIMEOUT_MILLIS, true /* fallback to 1.23 on errors */);
-        try {
-            setupDockerNetworkIfNeeded();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not setup docker network", e);
-        }
-        setMetrics(metricReceiver);
+        this(
+                config,
+                true, /* fallback to 1.23 on errors */
+                true, /* try setup netowork */
+                Optional.empty(), /* isLinux */
+                true, /* hackAroundPullImageDueToJerseyConflicts */
+                DOCKER_CONNECT_TIMEOUT_MILLIS /* dockerConnectTimeoutMillis */,
+                metricReceiver);
     }
 
     static DefaultDockerClientConfig.Builder buildDockerClientConfig(DockerConfig config) {
@@ -120,32 +129,57 @@ public class DockerImpl implements Docker {
         return dockerConfigBuilder;
     }
 
-    private void setupDockerNetworkIfNeeded() throws IOException, InterruptedException {
+    private void setupDockerNetworkIfNeeded(Optional<String> subnetwork)  {
         if (! dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
         // Use IPv6 address if there is a mix of IP4 and IPv6 by taking the longest address.
-        List<InetAddress> hostAddresses = Arrays.asList(InetAddress.getAllByName(com.yahoo.net.HostName.getLocalhost()));
+        final List<InetAddress> hostAddresses;
+        try {
+            hostAddresses = Arrays.asList(InetAddress.getAllByName(HostName.getLocalhost()));
+        } catch (UnknownHostException e) {
+            throw new RuntimeException("Could not get hostAddresses", e);
+        }
+
         InetAddress hostAddress = Collections.max(hostAddresses,
                 (o1, o2) -> o1.getAddress().length - o2.getAddress().length);
 
-        NetworkAddressInterface networkAddressInterface = DockerNetworkCreator.getInterfaceForAddress(hostAddress);
+        final NetworkAddressInterface networkAddressInterface;
+        try {
+            networkAddressInterface = DockerNetworkCreator.getInterfaceForAddress(hostAddress);
+        } catch (SocketException|UnknownHostException e) {
+            throw new RuntimeException("Could not get getInterfaceForAddress for " + hostAddress, e);
+        }
         boolean isIPv6 = networkAddressInterface.interfaceAddress.getAddress() instanceof Inet6Address;
+
+        final String defaultGateway;
+        try {
+            defaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(isIPv6).getHostAddress();
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Could not find default gateway, isIpv6 is " + isIPv6, e);
+        }
 
         Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
                 .withSubnet(hostAddress.getHostAddress() + "/" + networkAddressInterface.interfaceAddress.getNetworkPrefixLength())
-                .withGateway(DockerNetworkCreator.getDefaultGateway(isIPv6).getHostAddress()));
+                .withGateway(defaultGateway));
+
+        if (subnetwork.isPresent()) {
+            ipam = new Network.Ipam().withConfig(new Network.Ipam.Config().withSubnet(subnetwork.get()));
+        }
 
         Map<String, String> dockerNetworkOptions = new HashMap<>();
         dockerNetworkOptions.put("parent", networkAddressInterface.networkInterface.getDisplayName());
         dockerNetworkOptions.put("macvlan_mode", "bridge");
 
-        dockerClient.createNetworkCmd()
-                .withName(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
-                .withDriver("macvlan")
-                .withEnableIpv6(isIPv6)
+        CreateNetworkCmd createNetworkCmd = dockerClient.createNetworkCmd()
                 .withIpam(ipam)
-                .withOptions(dockerNetworkOptions)
-                .exec();
+                .withName(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
+        if (! subnetwork.isPresent()) {
+            createNetworkCmd
+                    .withDriver("macvlan")
+                    .withEnableIpv6(isIPv6)
+                    .withOptions(dockerNetworkOptions);
+        }
+        createNetworkCmd.exec();
     }
 
     @Override

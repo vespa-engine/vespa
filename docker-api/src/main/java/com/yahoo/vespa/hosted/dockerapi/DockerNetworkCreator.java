@@ -14,7 +14,7 @@ import java.util.Collections;
  * @author valerijf
  */
 class DockerNetworkCreator {
-    static InetAddress getDefaultGateway(boolean ipv6) throws IOException, InterruptedException {
+    static InetAddress getDefaultGatewayLinux(boolean ipv6) throws IOException, InterruptedException {
         String command = ipv6 ? "route -A inet6 -n | grep 'UG[ \t]' | awk '{print $2}'" :
                 "route -n | grep 'UG[ \t]' | awk '{print $2}'";
 

@@ -25,6 +25,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final Map<String, String> labels = new HashMap<>();
     private final List<String> environmentAssignments = new ArrayList<>();
     private final List<String> volumeBindSpecs = new ArrayList<>();
+    private final List<String> commands = new ArrayList<>();
 
     private Optional<Long> memoryInB = Optional.empty();
     private Optional<String> networkMode = Optional.empty();
@@ -47,6 +48,13 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         labels.put(name, value);
         return this;
     }
+
+    @Override
+    public Docker.CreateContainerCommand withCmd(String name) {
+        commands.add(name);
+        return this;
+    }
+
 
     @Override
     public Docker.CreateContainerCommand withEnvironment(String name, String value) {
@@ -105,6 +113,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds);
 
+        if (! commands.isEmpty()) containerCmd = containerCmd.withCmd(commands);
         if (memoryInB.isPresent()) containerCmd = containerCmd.withMemory(memoryInB.get());
         if (networkMode.isPresent()) containerCmd = containerCmd.withNetworkMode(networkMode.get());
         if (ipv4Address.isPresent()) containerCmd = containerCmd.withIpv4Address(ipv4Address.get());
