@@ -23,7 +23,7 @@ public class PacketCacheTestCase extends junit.framework.TestCase {
 
     static byte[] queryResultPacketData = new byte[] {
         0, 0, 0, 104,
-        0, 0, 0,214 - 256,
+        0, 0, 0,217 - 256,
         0, 0, 0, 1,
         0, 0, 0, 0,
         0, 0, 0, 2,

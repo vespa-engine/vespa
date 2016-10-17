@@ -39,8 +39,7 @@ public class PongPacket extends BasicPacket {
     public int getCode() { return code; }
 
     public void decodeBody(ByteBuffer buffer) {
-        int features = MRF_MLD;
-        features = buffer.getInt();
+        int features = buffer.getInt();
         lowPartitionId = buffer.getInt();
         dispatchTimestamp = buffer.getInt();
         if ((features & MRF_MLD) != 0) {
