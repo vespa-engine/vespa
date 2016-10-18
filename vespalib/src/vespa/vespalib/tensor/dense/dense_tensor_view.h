@@ -10,32 +10,28 @@
 namespace vespalib {
 namespace tensor {
 
+class DenseTensor;
+
 /**
- * A dense tensor where all dimensions are indexed.
+ * A view to a dense tensor where all dimensions are indexed.
  * Tensor cells are stored in an underlying array according to the order of the dimensions.
  */
-class DenseTensor : public Tensor
+class DenseTensorView : public Tensor
 {
 public:
-    typedef std::unique_ptr<DenseTensor> UP;
     using Cells = std::vector<double>;
+    using CellsRef = ConstArrayRef<double>;
     using CellsIterator = DenseTensorCellsIterator;
 
 private:
-    eval::ValueType _type;
-    Cells _cells;
+    const eval::ValueType &_type;
+    CellsRef               _cells;
 
 public:
-    DenseTensor();
-    DenseTensor(const eval::ValueType &type_in,
-                const Cells &cells_in);
-    DenseTensor(const eval::ValueType &type_in,
-                Cells &&cells_in);
-    DenseTensor(eval::ValueType &&type_in,
-                Cells &&cells_in);
+    explicit DenseTensorView(const DenseTensor &rhs);
     const eval::ValueType &type() const { return _type; }
-    const Cells &cells() const { return _cells; }
-    bool operator==(const DenseTensor &rhs) const;
+    const CellsRef &cells() const { return _cells; }
+    bool operator==(const DenseTensorView &rhs) const;
     CellsIterator cellsIterator() const { return CellsIterator(_type, _cells); }
 
     virtual eval::ValueType getType() const override;

@@ -17,7 +17,10 @@ namespace dense {
  */
 template <typename Function>
 std::unique_ptr<Tensor>
-apply(const DenseTensor &lhs, const DenseTensor &rhs, Function &&func);
+apply(const DenseTensorView &lhs, const Tensor &rhs, Function &&func);
+template <typename Function>
+std::unique_ptr<Tensor>
+apply(const DenseTensorView &lhs, const DenseTensorView &rhs, Function &&func);
 
 } // namespace vespalib::tensor::dense
 } // namespace vespalib::tensor

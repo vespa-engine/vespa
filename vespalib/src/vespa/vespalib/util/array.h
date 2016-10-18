@@ -29,6 +29,22 @@ private:
     size_t _sz;
 };
 
+template <typename T>
+class ConstArrayRef {
+public:
+    ConstArrayRef(const T * v, size_t sz) : _v(v), _sz(sz) { }
+    ConstArrayRef(const std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
+    const T & operator [] (size_t i) const { return _v[i]; }
+    size_t size() const { return _sz; }
+    const T *cbegin() const { return _v; }
+    const T *cend() const { return _v + _sz; }
+    const T *begin() const { return _v; }
+    const T *end() const { return _v + _sz; }
+private:
+    const T *_v;
+    size_t   _sz;
+};
+
 /**
 * This is a small and compact implementation of a resizeable array.
 * It has a smaller footprint than std::vector and most important,

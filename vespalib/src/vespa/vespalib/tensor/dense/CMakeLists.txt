@@ -5,5 +5,7 @@ vespa_add_library(vespalib_vespalib_tensor_dense OBJECT
     dense_tensor.cpp
     dense_tensor_address_combiner.cpp
     dense_tensor_builder.cpp
+    dense_tensor_cells_iterator.cpp
+    dense_tensor_view.cpp
     DEPENDS
 )

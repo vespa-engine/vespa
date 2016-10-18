@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "dense_tensor.h"
+#include "dense_tensor_view.h"
 #include "dense_tensor_apply.hpp"
 #include "dense_tensor_reduce.hpp"
 #include <vespa/vespalib/util/stringfmt.h>
@@ -19,23 +20,6 @@ namespace tensor {
 
 namespace {
 
-string
-dimensionsAsString(const eval::ValueType &type)
-{
-    std::ostringstream oss;
-    bool first = true;
-    oss << "[";
-    for (const auto &dim : type.dimensions()) {
-        if (!first) {
-            oss << ",";
-        }
-        first = false;
-        oss << dim.name << ":" << dim.size;
-    }
-    oss << "]";
-    return oss.str();
-}
-
 size_t
 calcCellsSize(const eval::ValueType &type)
 {
@@ -45,7 +29,6 @@ calcCellsSize(const eval::ValueType &type)
     }
     return cellsSize;
 }
-
 
 void
 checkCellsSize(const DenseTensor &arg)
@@ -60,63 +43,6 @@ checkCellsSize(const DenseTensor &arg)
     }
 }
 
-void
-checkDimensions(const DenseTensor &lhs, const DenseTensor &rhs,
-                vespalib::stringref operation)
-{
-    if (lhs.type() != rhs.type()) {
-        throw IllegalStateException(make_string("mismatching dimensions for "
-                                                "dense tensor %s, "
-                                                "lhs dimensions = '%s', "
-                                                "rhs dimensions = '%s'",
-                                                operation.c_str(),
-                                                dimensionsAsString(lhs.type()).c_str(),
-                                                dimensionsAsString(rhs.type()).c_str()));
-    }
-    checkCellsSize(lhs);
-    checkCellsSize(rhs);
-}
-
-
-/*
- * Join the cells of two tensors.
- *
- * The given function is used to calculate the resulting cell value
- * for overlapping cells.
- */
-template <typename Function>
-Tensor::UP
-joinDenseTensors(const DenseTensor &lhs, const DenseTensor &rhs,
-                 Function &&func)
-{
-    DenseTensor::Cells cells;
-    cells.reserve(lhs.cells().size());
-    auto rhsCellItr = rhs.cells().cbegin();
-    for (const auto &lhsCell : lhs.cells()) {
-        cells.push_back(func(lhsCell, *rhsCellItr));
-        ++rhsCellItr;
-    }
-    assert(rhsCellItr == rhs.cells().cend());
-    return std::make_unique<DenseTensor>(lhs.type(),
-                                         std::move(cells));
-}
-
-}
-
-
-void
-DenseTensor::CellsIterator::next()
-{
-    ++_cellIdx;
-    if (valid()) {
-        for (int64_t i = (_address.size() - 1); i >= 0; --i) {
-            _address[i] = (_address[i] + 1) % _type.dimensions()[i].size;
-            if (_address[i] != 0) {
-                // Outer dimension labels can only be increased when this label wraps around.
-                break;
-            }
-        }
-    }
 }
 
 DenseTensor::DenseTensor()
@@ -166,224 +92,104 @@ DenseTensor::getType() const
 double
 DenseTensor::sum() const
 {
-    double result = 0.0;
-    for (const auto &cell : _cells) {
-        result += cell;
-    }
-    return result;
+    return DenseTensorView(*this).sum();
 }
 
 Tensor::UP
 DenseTensor::add(const Tensor &arg) const
 {
-    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return dense::apply(*this, *rhs,
-                        [](double lhsValue, double rhsValue)
-                        { return lhsValue + rhsValue; });
+    return DenseTensorView(*this).add(arg);
 }
 
 Tensor::UP
 DenseTensor::subtract(const Tensor &arg) const
 {
-    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return dense::apply(*this, *rhs,
-                        [](double lhsValue, double rhsValue)
-                        { return lhsValue - rhsValue; });
+    return DenseTensorView(*this).subtract(arg);
 }
 
 Tensor::UP
 DenseTensor::multiply(const Tensor &arg) const
 {
-    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return dense::apply(*this, *rhs, [](double lhsValue, double rhsValue)
-    { return lhsValue * rhsValue; });
+    return DenseTensorView(*this).multiply(arg);
 }
 
 Tensor::UP
 DenseTensor::min(const Tensor &arg) const
 {
-    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return dense::apply(*this, *rhs,
-                        [](double lhsValue, double rhsValue)
-                        { return std::min(lhsValue, rhsValue); });
+    return DenseTensorView(*this).min(arg);
 }
 
 Tensor::UP
 DenseTensor::max(const Tensor &arg) const
 {
-    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return dense::apply(*this, *rhs,
-                        [](double lhsValue, double rhsValue)
-                        { return std::max(lhsValue, rhsValue); });
+    return DenseTensorView(*this).max(arg);
 }
 
 Tensor::UP
 DenseTensor::match(const Tensor &arg) const
 {
-    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    checkDimensions(*this, *rhs, "match");
-    return joinDenseTensors(*this, *rhs,
-                            [](double lhsValue, double rhsValue)
-                            { return (lhsValue * rhsValue); });
+    return DenseTensorView(*this).match(arg);
 }
 
 Tensor::UP
 DenseTensor::apply(const CellFunction &func) const
 {
-    Cells newCells(_cells.size());
-    auto itr = newCells.begin();
-    for (const auto &cell : _cells) {
-        *itr = func.apply(cell);
-        ++itr;
-    }
-    assert(itr == newCells.end());
-    return std::make_unique<DenseTensor>(_type,
-                                         std::move(newCells));
+    return DenseTensorView(*this).apply(func);
 }
 
 Tensor::UP
 DenseTensor::sum(const vespalib::string &dimension) const
 {
-    return dense::reduce(*this, { dimension },
-                          [](double lhsValue, double rhsValue)
-                          { return lhsValue + rhsValue; });
+    return DenseTensorView(*this).sum(dimension);
 }
 
 bool
 DenseTensor::equals(const Tensor &arg) const
 {
-    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
-    if (!rhs) {
-        return false;
-    }
-    return *this == *rhs;
+    return DenseTensorView(*this).equals(arg);
 }
 
 vespalib::string
 DenseTensor::toString() const
 {
-    std::ostringstream stream;
-    stream << *this;
-    return stream.str();
+    return DenseTensorView(*this).toString();
 }
 
 Tensor::UP
 DenseTensor::clone() const
 {
-    return std::make_unique<DenseTensor>(_type, _cells);
-}
-
-namespace {
-
-void
-buildAddress(const DenseTensor::CellsIterator &itr, TensorSpec::Address &address)
-{
-    auto addressItr = itr.address().begin();
-    for (const auto &dim : itr.type().dimensions()) {
-        address.emplace(std::make_pair(dim.name, TensorSpec::Label(*addressItr++)));
-    }
-    assert(addressItr == itr.address().end());
-}
-
+    return DenseTensorView(*this).clone();
 }
 
 TensorSpec
 DenseTensor::toSpec() const
 {
-    TensorSpec result(getType().to_spec());
-    TensorSpec::Address address;
-    for (CellsIterator itr(_type, _cells); itr.valid(); itr.next()) {
-        buildAddress(itr, address);
-        result.add(address, itr.cell());
-        address.clear();
-    }
-    return result;
+    return DenseTensorView(*this).toSpec();
 }
 
 void
 DenseTensor::print(std::ostream &out) const
 {
-    // TODO (geirst): print on common format.
-    out << "[ ";
-    bool first = true;
-    for (const auto &dim : _type.dimensions()) {
-        if (!first) {
-            out << ", ";
-        }
-        out << dim.name << ":" << dim.size;
-        first = false;
-    }
-    out << " ] { ";
-    first = true;
-    for (const auto &cell : cells()) {
-        if (!first) {
-            out << ", ";
-        }
-        out << cell;
-        first = false;
-    }
-    out << " }";
+    return DenseTensorView(*this).print(out);
 }
 
 void
 DenseTensor::accept(TensorVisitor &visitor) const
 {
-    DenseTensor::CellsIterator iterator(_type, _cells);
-    TensorAddressBuilder addressBuilder;
-    TensorAddress address;
-    vespalib::string label;
-    while (iterator.valid()) {
-        addressBuilder.clear();
-        auto rawIndex = iterator.address().begin();
-        for (const auto &dimension : _type.dimensions()) {
-            label = vespalib::make_string("%zu", *rawIndex);
-            addressBuilder.add(dimension.name, label);
-            ++rawIndex;
-        }
-        address = addressBuilder.build();
-        visitor.visit(address, iterator.cell());
-        iterator.next();
-    }
+    return DenseTensorView(*this).accept(visitor);
 }
 
 Tensor::UP
 DenseTensor::apply(const eval::BinaryOperation &op, const Tensor &arg) const
 {
-    const DenseTensor *rhs = dynamic_cast<const DenseTensor *>(&arg);
-    if (!rhs) {
-        return Tensor::UP();
-    }
-    return dense::apply(*this, *rhs,
-                        [&op](double lhsValue, double rhsValue)
-                        { return op.eval(lhsValue, rhsValue); });
+    return DenseTensorView(*this).apply(op, arg);
 }
 
 Tensor::UP
 DenseTensor::reduce(const eval::BinaryOperation &op,
                     const std::vector<vespalib::string> &dimensions) const
 {
-    return dense::reduce(*this,
-                         (dimensions.empty() ? _type.dimension_names() : dimensions),
-                         [&op](double lhsValue, double rhsValue)
-                         { return op.eval(lhsValue, rhsValue); });
+    return DenseTensorView(*this).reduce(op, dimensions);
 }
 
 } // namespace vespalib::tensor
