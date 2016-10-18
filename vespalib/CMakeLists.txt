@@ -88,6 +88,7 @@ vespa_define_module(
     src/tests/testkit-mt
     src/tests/testkit-subset
     src/tests/testkit-testhook
+    src/tests/testkit-time_bomb
     src/tests/text/lowercase
     src/tests/text/stringtokenizer
     src/tests/text/utf8

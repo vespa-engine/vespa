@@ -1,0 +1,41 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/fastos/fastos.h>
+#include "time_bomb.h"
+
+namespace vespalib {
+
+namespace {
+
+void bomb(Gate &gate, size_t seconds) {    
+    if (seconds > 5) {
+        if (gate.await((seconds - 5) * 1000)) {
+            return;
+        }
+    }
+    size_t countdown = std::min(seconds, size_t(5));
+    while (countdown > 0) {
+        fprintf(stderr, "...%zu...\n", countdown--);
+        if (gate.await(1000)) {
+            return;
+        }
+    }
+    fprintf(stderr, "BOOM!\n");
+    abort();
+}
+
+} // namespace vespalib::<unnamed>
+
+TimeBomb::TimeBomb(size_t seconds)
+    : _gate(),
+      _thread(bomb, std::ref(_gate), seconds)
+{
+}
+
+TimeBomb::~TimeBomb()
+{
+    _gate.countDown();
+    _thread.join();
+}
+
+} // namespace vespalib
