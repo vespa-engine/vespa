@@ -16,7 +16,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/common/base.h>
 #include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/tensorattribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include "attrupdate.h"
 
 #include <vespa/searchlib/attribute/attributevector.hpp>

@@ -26,6 +26,7 @@ vespa_add_library(searchlib
     $<TARGET_OBJECTS:searchlib_queryeval_wand>
     $<TARGET_OBJECTS:searchlib_sconfig>
     $<TARGET_OBJECTS:searchlib_searchlib_index>
+    $<TARGET_OBJECTS:searchlib_tensor>
     $<TARGET_OBJECTS:searchlib_transactionlog>
     $<TARGET_OBJECTS:searchlib_util>
 

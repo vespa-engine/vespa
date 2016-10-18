@@ -34,7 +34,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
-#include <vespa/searchlib/attribute/tensorattribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 
 
 namespace vespa { namespace config { namespace search {}}}

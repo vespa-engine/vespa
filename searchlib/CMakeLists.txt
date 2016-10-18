@@ -46,6 +46,7 @@ vespa_define_module(
     src/vespa/searchlib/queryeval
     src/vespa/searchlib/queryeval/test
     src/vespa/searchlib/queryeval/wand
+    src/vespa/searchlib/tensor
     src/vespa/searchlib/test
     src/vespa/searchlib/test/diskindex
     src/vespa/searchlib/test/fakedata

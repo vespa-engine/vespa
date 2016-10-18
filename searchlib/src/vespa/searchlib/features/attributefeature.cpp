@@ -9,7 +9,7 @@ LOG_SETUP(".features.attributefeature");
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchlib/attribute/tensorattribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/features/constant_tensor_executor.h>
 #include <vespa/searchlib/features/tensor_from_tensor_attribute_executor.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
