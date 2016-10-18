@@ -5,7 +5,7 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/tensorattribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/searchsummary/docsummary/attributedfw.h>
 #include <vespa/vespalib/tensor/tensor.h>

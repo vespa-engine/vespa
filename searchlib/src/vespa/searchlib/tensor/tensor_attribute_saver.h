@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "attributesaver.h"
-#include "iattributesavetarget.h"
-#include "tensorattribute.h"
+#include <vespa/searchlib/attribute/attributesaver.h>
+#include <vespa/searchlib/attribute/iattributesavetarget.h>
+#include "tensor_attribute.h"
 
 namespace search {
 

@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "tensor_from_tensor_attribute_executor.h"
-#include <vespa/searchlib/attribute/tensorattribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 
 namespace search {
 namespace features {

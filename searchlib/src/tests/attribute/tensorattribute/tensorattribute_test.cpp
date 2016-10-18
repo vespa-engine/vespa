@@ -3,7 +3,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("tensorattribute_test");
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchlib/attribute/tensorattribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/default_tensor.h>

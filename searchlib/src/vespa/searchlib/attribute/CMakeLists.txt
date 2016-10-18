@@ -81,8 +81,5 @@ vespa_add_library(searchlib_attribute OBJECT
     sourceselector.cpp
     stringattribute.cpp
     stringbase.cpp
-    tensorattribute.cpp
-    tensorattributesaver.cpp
-    tensorstore.cpp
     DEPENDS
 )

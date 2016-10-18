@@ -9,7 +9,7 @@ LOG_SETUP(".proton.attribute.document_field_retriever");
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchlib/attribute/tensorattribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/tensor/tensor.h>
 
 using search::DocumentIdT;

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "not_implemented_attribute.h"
-#include "tensorstore.h"
+#include <vespa/searchlib/attribute/not_implemented_attribute.h>
+#include "tensor_store.h"
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/vespalib/tensor/tensor_mapper.h>
 
