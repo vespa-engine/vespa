@@ -193,7 +193,7 @@ private:
     VESPA_DLL_LOCAL DocidRange finalize(const Guard &guard, size_t thread_id);
 public:
     AdaptiveDocidRangeScheduler(size_t num_threads, uint32_t min_task, uint32_t docid_limit);
-    DocidRange first_range(size_t thread_id) override { return _splitter.get(thread_id); }
+    DocidRange first_range(size_t thread_id) override;
     DocidRange next_range(size_t thread_id) override;
     DocidRange total_span(size_t) const override { return _splitter.full_range(); }
     size_t total_size(size_t thread_id) const override { return _assigned[thread_id]; }

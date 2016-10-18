@@ -7,6 +7,7 @@
 #include <thread>
 
 using namespace proton::matching;
+using vespalib::TimeBomb;
 
 void verify_range(DocidRange a, DocidRange b) {
     EXPECT_EQUAL(a.begin, b.begin);
@@ -174,8 +175,8 @@ TEST("require that the adaptive scheduler reports the full span to all threads")
     TEST_DO(verify_range(scheduler.total_span(2), DocidRange(1,16)));
 }
 
-TEST_MT_F("require that the adaptive scheduler terminates when all workers request more work",
-          4, AdaptiveDocidRangeScheduler(num_threads, 1, 16))
+TEST_MT_FF("require that the adaptive scheduler terminates when all workers request more work",
+           4, AdaptiveDocidRangeScheduler(num_threads, 1, 16), TimeBomb(60))
 {
     (void) f1.first_range(thread_id);
     DocidRange range = f1.next_range(thread_id);
@@ -189,8 +190,8 @@ void wait_idle(const DocidRangeScheduler &scheduler, size_t wanted) {
     }
 }
 
-TEST_MT_F("require that the adaptive scheduler enables threads to share work",
-          3, AdaptiveDocidRangeScheduler(num_threads, 1, 28))
+TEST_MT_FF("require that the adaptive scheduler enables threads to share work",
+           3, AdaptiveDocidRangeScheduler(num_threads, 1, 28), TimeBomb(60))
 {
     DocidRange range = f1.first_range(thread_id);
     if (thread_id == 0) {
@@ -218,17 +219,16 @@ TEST_MT_F("require that the adaptive scheduler enables threads to share work",
     EXPECT_EQUAL(f1.total_size(2), 3u);
 }
 
-TEST("require that the adaptive scheduler protects against documents underflow") {
-    AdaptiveDocidRangeScheduler scheduler(2, 1, 0);
-    TEST_DO(verify_range(scheduler.first_range(0), DocidRange(1,1)));
-    TEST_DO(verify_range(scheduler.first_range(1), DocidRange(1,1)));
-    EXPECT_EQUAL(scheduler.total_size(0), 0u);
-    EXPECT_EQUAL(scheduler.total_size(1), 0u);
-    EXPECT_EQUAL(scheduler.unassigned_size(), 0u);
+TEST_MT_FF("require that the adaptive scheduler protects against documents underflow",
+           2, AdaptiveDocidRangeScheduler(num_threads, 1, 0), TimeBomb(60))
+{
+    TEST_DO(verify_range(f1.first_range(thread_id), DocidRange()));
+    EXPECT_EQUAL(f1.total_size(thread_id), 0u);
+    EXPECT_EQUAL(f1.unassigned_size(), 0u);
 }
 
-TEST_MT_F("require that the adaptive scheduler respects the minimal task size",
-          2, AdaptiveDocidRangeScheduler(num_threads, 3, 21))
+TEST_MT_FF("require that the adaptive scheduler respects the minimal task size",
+           2, AdaptiveDocidRangeScheduler(num_threads, 3, 21), TimeBomb(60))
 {
     EXPECT_EQUAL(f1.first_range(thread_id).size(), 10u);
     if (thread_id == 0) {
@@ -244,8 +244,8 @@ TEST_MT_F("require that the adaptive scheduler respects the minimal task size",
     }
 }
 
-TEST_MT_F("require that the adaptive scheduler will never split a task with size 1",
-          2, AdaptiveDocidRangeScheduler(num_threads, 0, 21))
+TEST_MT_FF("require that the adaptive scheduler will never split a task with size 1",
+           2, AdaptiveDocidRangeScheduler(num_threads, 0, 21), TimeBomb(60))
 {
     EXPECT_EQUAL(f1.first_range(thread_id).size(), 10u);
     if (thread_id == 0) {
@@ -261,8 +261,8 @@ TEST_MT_F("require that the adaptive scheduler will never split a task with size
     }
 }
 
-TEST_MT_F("require that the adaptive scheduler can leave idle workers alone due to minimal task size",
-          3, AdaptiveDocidRangeScheduler(num_threads, 3, 28))
+TEST_MT_FF("require that the adaptive scheduler can leave idle workers alone due to minimal task size",
+           3, AdaptiveDocidRangeScheduler(num_threads, 3, 28), TimeBomb(60))
 {
     EXPECT_EQUAL(f1.first_range(thread_id).size(), 9u);
     if (thread_id == 0) {
@@ -279,6 +279,29 @@ TEST_MT_F("require that the adaptive scheduler can leave idle workers alone due 
     EXPECT_EQUAL(f1.total_size(0), 9u);
     EXPECT_EQUAL(f1.total_size(1), 13u);
     EXPECT_EQUAL(f1.total_size(2), 5u);
+}
+
+TEST_MT_FF("require that the adaptive scheduler handles no documents",
+           4, AdaptiveDocidRangeScheduler(num_threads, 1, 1), TimeBomb(60))
+{
+    for (DocidRange docid_range = f1.first_range(thread_id);
+         !docid_range.empty();
+         docid_range = f1.next_range(thread_id))
+    {
+        TEST_ERROR("no threads should get any work");
+    }
+}
+
+TEST_MT_FF("require that the adaptive scheduler handles fewer documents than threads",
+           4, AdaptiveDocidRangeScheduler(num_threads, 1, 3), TimeBomb(60))
+{
+    for (DocidRange docid_range = f1.first_range(thread_id);
+         !docid_range.empty();
+         docid_range = f1.next_range(thread_id))
+    {
+        EXPECT_TRUE(docid_range.size() == 1);
+        EXPECT_TRUE(thread_id < 2);
+    }
 }
 
 //-----------------------------------------------------------------------------

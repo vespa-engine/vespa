@@ -115,6 +115,17 @@ AdaptiveDocidRangeScheduler::AdaptiveDocidRangeScheduler(size_t num_threads, uin
 }
 
 DocidRange
+AdaptiveDocidRangeScheduler::first_range(size_t thread_id)
+{
+    DocidRange range = _splitter.get(thread_id);
+    if (range.empty()) {
+        // block and be counted as idle
+        return next_range(thread_id);
+    }
+    return range;
+}
+
+DocidRange
 AdaptiveDocidRangeScheduler::next_range(size_t thread_id)
 {
     Guard guard(_lock);
