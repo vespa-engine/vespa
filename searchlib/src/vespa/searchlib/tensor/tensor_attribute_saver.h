@@ -19,7 +19,7 @@ public:
     using RefCopyVector = TensorAttribute::RefCopyVector;
 private:
     RefCopyVector      _refs;
-    const TensorStore &_tensorStore;
+    const GenericTensorStore &_tensorStore;
     using GenerationHandler = vespalib::GenerationHandler;
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
@@ -27,7 +27,7 @@ public:
     TensorAttributeSaver(GenerationHandler::Guard &&guard,
                          const IAttributeSaveTarget::Config &cfg,
                          RefCopyVector &&refs,
-                         const TensorStore &tensorStore);
+                         const GenericTensorStore &tensorStore);
 
     virtual ~TensorAttributeSaver();
 };

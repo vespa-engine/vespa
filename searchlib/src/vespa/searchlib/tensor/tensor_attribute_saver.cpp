@@ -15,7 +15,7 @@ TensorAttributeSaver::
 TensorAttributeSaver(GenerationHandler::Guard &&guard,
                      const IAttributeSaveTarget::Config &cfg,
                      RefCopyVector &&refs,
-                     const TensorStore &tensorStore)
+                     const GenericTensorStore &tensorStore)
     : AttributeSaver(std::move(guard), cfg),
       _refs(std::move(refs)),
       _tensorStore(tensorStore)
