@@ -5,10 +5,12 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.InOrder;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
@@ -21,7 +23,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
-    private final Environment environment = mock(Environment.class);
+    Environment environment = new Environment(Collections.emptySet(),
+                                              Environment.NetworkType.normal,
+                                              "dev",
+                                              "us-east-1",
+                                              new InetAddressResolver());
     private final Docker docker = mock(Docker.class);
     private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment);
 

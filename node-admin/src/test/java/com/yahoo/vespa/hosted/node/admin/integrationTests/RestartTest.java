@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
@@ -42,15 +43,19 @@ public class RestartTest {
         OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
         DockerMock dockerMock = new DockerMock(callOrderVerifier);
 
-        Environment environment = mock(Environment.class);
-        when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
-        when(environment.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
+        InetAddressResolver inetAddressResolver = mock(InetAddressResolver.class);
+        when(inetAddressResolver.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
+        Environment environment = new Environment(Collections.emptySet(),
+                                                  Environment.NetworkType.normal,
+                                                  "dev",
+                                                  "us-east-1",
+                                                  inetAddressResolver);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
                 new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
                                   new DockerOperationsImpl(dockerMock, environment),
-                                  maintenanceSchedulerMock, mr, new Environment(), new Maintainer());
+                                  maintenanceSchedulerMock, mr, environment, new Maintainer());
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
         long wantedRestartGeneration = 1;

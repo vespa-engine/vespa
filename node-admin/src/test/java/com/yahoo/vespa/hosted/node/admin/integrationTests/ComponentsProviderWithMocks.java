@@ -12,8 +12,10 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
+import java.util.Collections;
 import java.util.function.Function;
 
 /**
@@ -28,14 +30,18 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     static final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
     static final Docker dockerMock = new DockerMock(callOrderVerifier);
 
-    private Environment environment = new Environment();
+    private Environment environment = new Environment(Collections.emptySet(),
+                                                      Environment.NetworkType.normal,
+                                                      "dev",
+                                                      "us-east-1",
+                                                      new InetAddressResolver());
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final Function<String, NodeAgent> nodeAgentFactory =
             (hostName) -> new NodeAgentImpl(hostName,
                                             nodeRepositoryMock, orchestratorMock,
                                             new DockerOperationsImpl(dockerMock, environment),
                                             maintenanceSchedulerMock, mr,
-                                            new Environment(), new Maintainer());
+                                            environment, new Maintainer());
     private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
 
