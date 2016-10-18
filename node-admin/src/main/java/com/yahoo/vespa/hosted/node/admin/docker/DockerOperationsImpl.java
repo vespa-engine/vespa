@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -182,14 +181,17 @@ public class DockerOperationsImpl implements DockerOperations {
             InetAddress nodeInetAddress = environment.getInetAddressForHost(nodeSpec.hostname);
             final boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
-            String configServers = environment.getConfigServerHosts().stream().collect(Collectors.joining(","));
+            String configServers = String.join(",", environment.getConfigServerHosts());
             Docker.CreateContainerCommand command = docker.createContainerCommand(
                     nodeSpec.wantedDockerImage.get(),
                     nodeSpec.containerName,
                     nodeSpec.hostname)
                     .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                     .withIpAddress(nodeInetAddress)
-                    .withEnvironment("CONFIG_SERVER_ADDRESS", configServers);
+                    .withEnvironment("CONFIG_SERVER_ADDRESS", configServers)
+                    .withUlimit("nofile", 16384, 16384)
+                    .withUlimit("nproc", 409600, 409600)
+                    .withUlimit("core", -1, -1);
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {

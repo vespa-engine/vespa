@@ -1,16 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
-import com.github.dockerjava.api.model.Network;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
-import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
@@ -43,13 +38,6 @@ import static org.junit.Assume.assumeTrue;
  */
 public class DockerTest {
     private DockerImpl docker;
-    private static final OS operatingSystem = getSystemOS();
-    private static final String prefix = "/Users/" + System.getProperty("user.name") + "/.docker/machine/machines/default/";
-    private static final DockerConfig dockerConfig = new DockerConfig(new DockerConfig.Builder()
-            .caCertPath(operatingSystem == OS.Mac_OS_X ? prefix + "ca.pem" : "")
-            .clientCertPath(operatingSystem == OS.Mac_OS_X ? prefix + "cert.pem" : "")
-            .clientKeyPath(operatingSystem == OS.Mac_OS_X ? prefix + "key.pem" : "")
-            .uri(operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376"));
     private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
 
     // It is ignored since it is a bit slow and unstable, at least on Mac.
@@ -129,7 +117,13 @@ public class DockerTest {
 
     @Before
     public void setup() throws InterruptedException, ExecutionException, IOException {
-        assumeTrue(dockerDaemonIsPresent());
+        if (docker == null) {
+            assumeTrue(DockerTestUtils.dockerDaemonIsPresent());
+
+            docker = DockerTestUtils.getDocker();
+            DockerTestUtils.createDockerTestNetworkIfNeeded(docker);
+            DockerTestUtils.createDockerImage(docker, dockerImage);
+        }
 
         // Clean up any non deleted containers from previous tests
         docker.getAllManagedContainers().forEach(container -> {
@@ -138,69 +132,9 @@ public class DockerTest {
         });
     }
 
-    private boolean dockerDaemonIsPresent() {
-        if (docker != null) return true;
-        if (operatingSystem == OS.Unsupported) {
-            System.out.println("This test does not support " + System.getProperty("os.name") + " yet, ignoring test.");
-            return false;
-        }
-
-        try {
-            setDocker();
-            createDockerTestNetworkIfNeeded();
-            createDockerImage();
-            return true;
-        } catch (Exception e) {
-            System.out.println("Please install Docker Toolbox and start Docker Quick Start Terminal once, ignoring test.");
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private void setDocker() {
-        docker = new DockerImpl(
-                dockerConfig,
-                false, /* fallback to 1.23 on errors */
-                false, /* try setup network */
-                100 /* dockerConnectTimeoutMillis */,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation));
-    }
-
     private void testReachabilityFromHost(String target) throws IOException, InterruptedException {
         URL url = new URL(target);
         String containerServer = IOUtils.toString(url.openStream());
         assertThat(containerServer, is("pong\n"));
-    }
-
-    private void createDockerTestNetworkIfNeeded() {
-        if (! docker.dockerClient.listNetworksCmd().withNameFilter(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
-
-        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config().withSubnet("172.18.0.0/16"));
-        docker.dockerClient.createNetworkCmd()
-                .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
-    }
-
-    private void createDockerImage() throws IOException, ExecutionException, InterruptedException {
-        try {
-            docker.deleteImage(new DockerImage(dockerImage.asString()));
-        } catch (Exception e) {
-            assertThat(e.getMessage(), is("Failed to delete docker image " + dockerImage.asString()));
-        }
-
-        // Build the image locally
-        File dockerFilePath = new File("src/test/resources/simple-ipv6-server");
-        docker.dockerClient
-                .buildImageCmd(dockerFilePath)
-                .withTag(dockerImage.asString()).exec(new BuildImageResultCallback()).awaitCompletion();
-    }
-
-    private enum OS {Linux, Mac_OS_X, Unsupported}
-
-    private static OS getSystemOS() {
-        switch (System.getProperty("os.name").toLowerCase()) {
-            case "linux": return OS.Linux;
-            case "mac os x": return OS.Mac_OS_X;
-            default: return OS.Unsupported;
-        }
     }
 }

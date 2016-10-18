@@ -5,6 +5,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Ulimit;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -25,7 +26,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private final Map<String, String> labels = new HashMap<>();
     private final List<String> environmentAssignments = new ArrayList<>();
     private final List<String> volumeBindSpecs = new ArrayList<>();
-    private final List<String> commands = new ArrayList<>();
+    private final List<Ulimit> ulimits = new ArrayList<>();
 
     private Optional<Long> memoryInB = Optional.empty();
     private Optional<String> networkMode = Optional.empty();
@@ -50,8 +51,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     @Override
-    public Docker.CreateContainerCommand withCmd(String name) {
-        commands.add(name);
+    public Docker.CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit) {
+        ulimits.add(new Ulimit(name, softLimit, hardLimit));
         return this;
     }
 
@@ -111,9 +112,9 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withMacAddress(generateRandomMACAddress())
                 .withLabels(labels)
                 .withEnv(environmentAssignments)
-                .withBinds(volumeBinds);
+                .withBinds(volumeBinds)
+                .withUlimits(ulimits);
 
-        if (! commands.isEmpty()) containerCmd = containerCmd.withCmd(commands);
         if (memoryInB.isPresent()) containerCmd = containerCmd.withMemory(memoryInB.get());
         if (networkMode.isPresent()) containerCmd = containerCmd.withNetworkMode(networkMode.get());
         if (ipv4Address.isPresent()) containerCmd = containerCmd.withIpv4Address(ipv4Address.get());
@@ -138,10 +139,14 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     public String toString() {
         List<String> labelList = labels.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue()).collect(Collectors.toList());
+        List<String> ulimitList = ulimits.stream()
+                .map(ulimit -> ulimit.getName() + "=" + ulimit.getSoft() + ":" + ulimit.getHard())
+                .collect(Collectors.toList());
 
         return "--name " + containerName.asString() + " "
                 + "--hostname " + hostName + " "
                 + toRepeatedOption("--label", labelList)
+                + toRepeatedOption("--ulimit", ulimitList)
                 + toRepeatedOption("--env", environmentAssignments)
                 + toRepeatedOption("--volume", volumeBindSpecs)
                 + toOptionalOption("--memory", memoryInB)
