@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import org.mockito.InOrder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -59,8 +61,13 @@ public class NodeAgentImplTest {
     private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
 
 
+    Environment environment = new Environment(Collections.emptySet(),
+                                              Environment.NetworkType.normal,
+                                              "dev",
+                                              "us-east-1",
+                                              new InetAddressResolver());
     private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-            storageMaintainer, metricReceiver, new MockEnvironment(), maintainer);
+            storageMaintainer, metricReceiver, environment, maintainer);
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -448,15 +455,4 @@ public class NodeAgentImplTest {
         assertEquals(expectedMetrics, actualMetrics);
     }
 
-    private class MockEnvironment extends Environment {
-        @Override
-        public String getEnvironment() {
-            return "dev";
-        }
-
-        @Override
-        public String getRegion() {
-            return "us-east";
-        }
-    }
 }
