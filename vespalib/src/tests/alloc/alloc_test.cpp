@@ -10,28 +10,9 @@ LOG_SETUP("alloc_test");
 using namespace vespalib;
 using namespace vespalib::alloc;
 
-class Test : public TestApp
-{
-public:
-    int Main();
-    void testAlignedAllocation();
-    void testBasic();
-    template <typename T>
-    void testSwap(T & a, T & b);
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("alloc_test");
-    testBasic();
-    testAlignedAllocation();
-    TEST_DONE();
-}
-
 template <typename T>
 void
-Test::testSwap(T & a, T & b)
+testSwap(T & a, T & b)
 {
     void * tmpA(a.get());
     void * tmpB(b.get());
@@ -44,9 +25,7 @@ Test::testSwap(T & a, T & b)
     EXPECT_EQUAL(tmpB, a.get());
 }
 
-void
-Test::testBasic()
-{
+TEST("test basics") {
     {
         Alloc h = Alloc::allocHeap(100);
         EXPECT_EQUAL(100u, h.size());
@@ -88,9 +67,7 @@ Test::testBasic()
     }
 }
 
-void
-Test::testAlignedAllocation()
-{
+TEST("test correct alignment") {
     {
         Alloc buf = Alloc::alloc(10, MemoryAllocator::HUGEPAGE_SIZE, 1024);
         EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 1024 == 0);
@@ -103,4 +80,26 @@ Test::testAlignedAllocation()
     }
 }
 
-TEST_APPHOOK(Test)
+TEST("no rounding of small heap buffer") {
+    Alloc buf = Alloc::alloc(3, MemoryAllocator::HUGEPAGE_SIZE);
+    EXPECT_EQUAL(3ul, buf.size());
+}
+
+TEST("no rounding of large heap buffer") {
+    Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE*11+3, MemoryAllocator::HUGEPAGE_SIZE*16);
+    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*11+3, buf.size());
+}
+
+TEST("rounding of small mmaped buffer") {
+    Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE);
+    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE, buf.size());
+    buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE+1);
+    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*2, buf.size());
+}
+
+TEST("rounding of large mmaped buffer") {
+    Alloc buf = Alloc::alloc(MemoryAllocator::HUGEPAGE_SIZE*11+3);
+    EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*12, buf.size());
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }
