@@ -20,7 +20,7 @@ public interface Docker {
         CreateContainerCommand withMemoryInMb(long megaBytes);
         CreateContainerCommand withNetworkMode(String mode);
         CreateContainerCommand withIpAddress(InetAddress address);
-        CreateContainerCommand withCmd(String name);
+        CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);
 
         void create();
     }
