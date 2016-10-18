@@ -58,7 +58,6 @@ public class DockerTest {
         assertFalse("Failed to delete " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
     }
 
-    @Test
     public void testContainerCycle() throws IOException, InterruptedException, ExecutionException {
         ContainerName containerName = new ContainerName("foo");
         docker.createContainerCommand(dockerImage, containerName, "hostName1").create();
@@ -83,7 +82,6 @@ public class DockerTest {
         assertThat(docker.getAllManagedContainers().isEmpty(), is(true));
     }
 
-    @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
         String hostName1 = "docker10.test.yahoo.com";
         String hostName2 = "docker11.test.yahoo.com";
