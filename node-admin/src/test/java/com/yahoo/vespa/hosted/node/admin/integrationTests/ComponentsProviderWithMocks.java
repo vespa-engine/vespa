@@ -31,7 +31,6 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     static final Docker dockerMock = new DockerMock(callOrderVerifier);
 
     private Environment environment = new Environment(Collections.emptySet(),
-                                                      Environment.NetworkType.normal,
                                                       "dev",
                                                       "us-east-1",
                                                       new InetAddressResolver());

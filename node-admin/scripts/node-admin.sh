@@ -64,7 +64,6 @@ function Start {
            --volume "/home/docker/container-storage/node-admin$VESPA_HOME/var/ycore++:$VESPA_HOME/var/ycore++" \
            --volume "/home/docker/container-storage/node-admin$VESPA_HOME/var/zookeeper:$VESPA_HOME/var/zookeeper" \
            --env "CONFIG_SERVER_ADDRESS=$CONFIG_SERVER_HOSTNAME" \
-           --env "NETWORK_TYPE=$NETWORK_TYPE" \
            --entrypoint=/usr/local/bin/start-node-admin.sh \
            "$DOCKER_IMAGE" >/dev/null
     echo done

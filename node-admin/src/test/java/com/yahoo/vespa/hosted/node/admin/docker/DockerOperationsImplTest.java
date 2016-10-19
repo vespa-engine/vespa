@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
     Environment environment = new Environment(Collections.emptySet(),
-                                              Environment.NetworkType.normal,
                                               "dev",
                                               "us-east-1",
                                               new InetAddressResolver());

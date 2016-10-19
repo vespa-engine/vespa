@@ -1,25 +1,16 @@
 #!/usr/bin/env python
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-# Quick and dirty script to set up routable ip address for docker container
-# Remove when docker releases a plugin api to configure networking.
-# TODO: Refactor for readability
-
+# Quick and dirty script to specify the default gateway on docker interface
 
 from __future__ import print_function
 
 
-import hashlib
-import ipaddress
 import os
 import sys
 
 
-from pyroute2 import IPRoute
 from pyroute2 import NetNS
-from pyroute2.netlink import NetlinkError
-from socket import gethostname
-from socket import AF_INET
 from socket import AF_INET6
 
 def create_directory_ignore_exists(path, permissions):
@@ -44,31 +35,8 @@ def get_attribute(struct_with_attrs, name):
     except Exception as e:
         raise RuntimeError("Couldn't find attribute %s for value: %s" % (name, struct_with_attrs), e)
 
-def network(ip_address):
-    ip = ipaddress.ip_network(unicode(get_attribute(ip_address, 'IFA_ADDRESS')))
-    prefix = int(ip_address['prefixlen'])
-    return ip.supernet(new_prefix = prefix)
-
 def net_namespace_path(pid):
     return "/host/proc/%d/ns/net" % pid
-
-def generate_mac_address(base_host_name, ip_address):
-    hash = hashlib.sha1()
-    hash.update(base_host_name)
-    hash.update(ip_address)
-    digest = hash.digest()
-    # For a mac address, we only need six bytes.
-    six_byte_digest = digest[:6]
-    mac_address_bytes = bytearray(six_byte_digest)
-
-    # Set 'unicast'
-    mac_address_bytes[0] &= 0b11111110
-
-    # Set 'local'
-    mac_address_bytes[0] |= 0b00000010
-
-    mac_address = ':'.join('%02x' % n for n in mac_address_bytes)
-    return mac_address
 
 def get_net_namespace_for_pid(pid):
     net_ns_path = net_namespace_path(pid)
@@ -78,88 +46,6 @@ def get_net_namespace_for_pid(pid):
     create_symlink_ignore_exists(net_ns_path,  "/var/run/netns/%d" % pid)
     return NetNS(str(pid))
 
-# ip address format: {
-#     'index': 3,
-#     'family': 2,
-#     'header': {
-#         'pid': 15,
-#         'length': 88,
-#         'flags': 2,
-#         'error': None,
-#         'type': 20,
-#         'sequence_number': 256
-#     },
-#     'flags': 128,
-#     'attrs': [
-#         ['IFA_ADDRESS', '10.0.2.15'],
-#         ['IFA_LOCAL', '10.0.2.15'],
-#         ['IFA_BROADCAST', '10.0.2.255'],
-#         ['IFA_LABEL', 'eth0'],
-#         ['IFA_FLAGS', 128],
-#         [
-#             'IFA_CACHEINFO',
-#             {
-#                 'ifa_valid': 4294967295,
-#                 'tstamp': 2448,
-#                 'cstamp': 2448,
-#                 'ifa_prefered': 4294967295
-#             }
-#         ]
-#     ],
-#     'prefixlen': 24,
-#     'scope': 0,
-#     'event': 'RTM_NEWADDR'
-# }
-def ip_with_most_specific_network_for_address(address, ips):
-    ips_with_network_matching_address = [ip for ip in ips if address in network(ip)]
-    ip_best_match_for_address = None
-    for ip in ips_with_network_matching_address:
-        if not ip_best_match_for_address:
-            ip_best_match_for_address = ip
-        elif ip['prefixlen'] < ip_best_match_for_address['prefixlen']:
-            ip_best_match_for_address = ip
-    if not ip_best_match_for_address:
-        raise RuntimeError("No matching ip address for %s, candidates are on networks %s" % (address, ', '.join([str(network(ip)) for ip in ips])))
-    return ip_best_match_for_address
-
-ipr = IPRoute()
-
-def delete_interface_by_name(interface_name):
-    for interface_index in ipr.link_lookup(ifname=interface_name):
-        ipr.link('delete', index=interface_index)
-
-def create_interface_in_namespace(network_namespace, ip_address_textual, interface_name, link_device_index):
-    mac_address = generate_mac_address(
-        base_host_name=gethostname(),
-        ip_address=ip_address_textual)
-
-    # For traceability.
-    with open('/tmp/container_mac_address_' + ip_address_textual, 'w') as f:
-        f.write(mac_address)
-
-    # result = [{
-    #     'header': {
-    #         'pid': 240,
-    #         'length': 36,
-    #         'flags': 0,
-    #         'error': None,
-    #         'type': 2,
-    #         'sequence_number': 256
-    #     },
-    #     'event': 'NLMSG_ERROR'
-    # }]
-    result = network_namespace.link_create(
-        ifname=interface_name,
-        kind='macvlan',
-        link=link_device_index,
-        macvlan_mode='bridge',
-        address=mac_address)
-    if result[0]['header']['error']:
-        raise RuntimeError("Failed creating link, result = %s" % result )
-
-    index_of_created_interface = network_namespace.link_lookup(ifname=interface_name)[0]
-    return index_of_created_interface
-
 def index_of_interface_in_namespace(interface_name, namespace):
     interface_index_list = namespace.link_lookup(ifname=interface_name)
     if not interface_index_list:
@@ -167,45 +53,6 @@ def index_of_interface_in_namespace(interface_name, namespace):
     assert len(interface_index_list) == 1
     return interface_index_list[0]
 
-def move_interface(src_interface_index, dest_namespace, dest_namespace_pid, dest_interface_name):
-    ipr.link('set',
-             index=src_interface_index,
-             net_ns_fd=str(dest_namespace_pid),
-             ifname=dest_interface_name)
-
-    new_interface_index = index_of_interface_in_namespace(interface_name=dest_interface_name,
-                                                          namespace=dest_namespace)
-    if not new_interface_index:
-        raise RuntimeError("Concurrent modification to network interfaces")
-    return new_interface_index
-
-def set_ip_address(net_namespace, interface_index, ip_address, network_prefix_length):
-    ip_already_configured = False
-    for existing_ip in net_namespace.get_addr(index=interface_index):
-        existing_ip_address = get_attribute(existing_ip, 'IFA_ADDRESS')
-        existing_ip_prefixlen = existing_ip['prefixlen']
-        is_same_address = ipaddress.ip_address(unicode(existing_ip_address)) == ip_address
-        is_same_netmask = existing_ip_prefixlen == network_prefix_length
-        if is_same_address and is_same_netmask:
-            ip_already_configured = True
-        else:
-            # TODO Should we remove auto assigned ipv6 address (fe80:*) that is constructed from mac address?
-            print("Deleting old ip address. %s/%s" % (existing_ip_address, existing_ip_prefixlen))
-            net_namespace.addr('remove',
-                               index=interface_index,
-                               address=existing_ip_address,
-                               mask=existing_ip_prefixlen)
-
-    if not ip_already_configured:
-        try:
-            net_namespace.addr('add',
-                               index=interface_index,
-                               address=str(ip_address),
-                               # broadcast='192.168.59.255',
-                               mask=network_prefix_length)
-        except NetlinkError as e:
-            if e.code == 17:  # File exists, i.e. address is already added
-                pass
 
 def get_default_route(net_namespace, family):
     # route format: {
@@ -239,100 +86,6 @@ def get_default_route(net_namespace, family):
             return route
     raise RuntimeError("Couldn't find default route: " + str(default_routes))
 
-def setup_container_networking(local_mode, vm_mode):
-    if len(sys.argv) != 3:
-        raise RuntimeError("Usage: %s <container-pid> <ip>" % sys.argv[0])
-
-    container_pid_arg = sys.argv[1]
-    container_ip_arg = sys.argv[2]
-
-    try:
-        container_pid = int(container_pid_arg)
-    except ValueError:
-        raise RuntimeError("Container pid must be an integer, got %s" % container_pid_arg)
-    container_ip = ipaddress.ip_address(unicode(container_ip_arg))
-    family = AF_INET6 if container_ip.version == 6 else AF_INET
-
-    # Done parsing arguments, now let's get to work.
-
-    host_ns = get_net_namespace_for_pid(1)
-    container_ns = get_net_namespace_for_pid(container_pid)
-
-    all_host_ips = host_ns.get_addr()
-    host_ip_best_match_for_container = ip_with_most_specific_network_for_address(address=container_ip,
-                                                                                 ips=all_host_ips)
-    host_device_index_for_container = host_ip_best_match_for_container['index']
-    container_network_prefix_length = host_ip_best_match_for_container['prefixlen']
-
-
-    # Create new interface for the container.
-
-    # The interface to the vespa network are all (in the end) named "vespa". However,
-    # the container interfaces are prepared in the host network namespace, and so they
-    # need temporary names to avoid name-clash.
-    temporary_interface_name_while_in_host_ns = "vespa-tmp-" + container_pid_arg
-    assert len(temporary_interface_name_while_in_host_ns) <= 15 # linux requirement
-
-    container_interface_name = "vespa"
-    assert len(container_interface_name) <= 15 # linux requirement
-
-    # Clean up any leftovers from the past.
-    delete_interface_by_name(temporary_interface_name_while_in_host_ns)
-
-    container_interface_index = index_of_interface_in_namespace(interface_name=container_interface_name,
-                                                                namespace=container_ns)
-    if not container_interface_index:
-        # Must be created in the host_ns to have the same lifetime as the host.
-        # Otherwise, it will be deleted when the node-admin container stops.
-        # (Only temporarily there, moved to the container namespace later.)
-        #
-        # TODO: Here we're linking against the device with the best matching network.
-        # For the sake of argument, as of 2015-12-17, this device is always named
-        # 'vespa'. 'vespa' is itself a macvlan bridge linked to the default route's
-        # interface (typically eth0 or em1). So could we link against eth0 or em1
-        # (or whatever) instead here? What's the difference?
-        temporary_interface_index = create_interface_in_namespace(network_namespace=host_ns,
-                                                                  ip_address_textual=container_ip_arg,
-                                                                  interface_name=temporary_interface_name_while_in_host_ns,
-                                                                  link_device_index=host_device_index_for_container)
-
-        # Move interface from host namespace to container namespace, and change name from temporary name.
-        # Exploit that node_admin docker container shares net namespace with host:
-        container_interface_index = move_interface(src_interface_index=temporary_interface_index,
-                                                   dest_namespace=container_ns,
-                                                   dest_namespace_pid=container_pid,
-                                                   dest_interface_name=container_interface_name)
-
-
-    # Set ip address on interface in container namespace.
-    set_ip_address(net_namespace=container_ns,
-                   interface_index=container_interface_index,
-                   ip_address=container_ip,
-                   network_prefix_length=container_network_prefix_length)
-
-
-    # Activate container interface.
-
-    container_ns.link('set', index=container_interface_index, state='up', name=container_interface_name)
-
-
-    if local_mode:
-        pass
-    elif vm_mode:
-        # Set the default route to the IP of the host vespa interface (e.g. osx)
-        # TODO: What about idempotency? This does not check for existing. Re-does work every time.
-        container_ns.route("add", gateway=get_attribute(host_ip_best_match_for_container, 'IFA_ADDRESS'))
-    else:
-        # Set up default route/gateway in container.
-
-        host_default_route = get_default_route(net_namespace=host_ns, family=family)
-        host_default_route_device_index = get_attribute(host_default_route, 'RTA_OIF')
-        if host_device_index_for_container != host_default_route_device_index:
-            raise RuntimeError("Container's ip address is not on the same network as the host's default route."
-                               " Could not set up default route for the container.")
-        host_default_route_gateway = get_attribute(host_default_route, 'RTA_GATEWAY')
-        container_ns.route(command="replace", gateway=host_default_route_gateway, index=container_interface_index, family=family)
-
 
 # There is a bug in the Docker networking setup which requires us to manually specify the default gateway
 def set_docker_gateway_on_docker_interface():
@@ -352,29 +105,12 @@ def set_docker_gateway_on_docker_interface():
 
 
 # Parse arguments
-flag_local_mode = "--local"
-local_mode = flag_local_mode in sys.argv
-if local_mode:
-    sys.argv.remove(flag_local_mode)
-
-flag_vm_mode = "--vm"
-vm_mode = flag_vm_mode in sys.argv
-if vm_mode:
-    sys.argv.remove(flag_vm_mode)
-
 flag_fix_docker_gateway = "--fix-docker-gateway"
 fix_docker_gateway = flag_fix_docker_gateway in sys.argv
 if fix_docker_gateway:
     sys.argv.remove(flag_fix_docker_gateway)
 
-if fix_docker_gateway and (local_mode or vm_mode):
-    raise RuntimeError("Cannot use %s with %s or %s" % (flag_fix_docker_gateway, flag_local_mode, flag_vm_mode))
-
-if local_mode and vm_mode:
-    raise RuntimeError("Cannot specify both %s and %s" % (flag_local_mode, flag_vm_mode))
-
-
 if fix_docker_gateway:
     set_docker_gateway_on_docker_interface()
 else:
-    setup_container_networking(local_mode, vm_mode)
+    raise RuntimeError("Only valid flag is %s, got %s" % (flag_fix_docker_gateway, sys.argv[1]))

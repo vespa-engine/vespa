@@ -72,6 +72,6 @@ if [ $# -ge 1 ]; then
   fi
 
   # Start the provided script. This works because the $HOME directory is mapped in the same location in the VM. 
-  docker-machine ssh "$DOCKER_VM_NAME" "CONTAINER_CERT_PATH=$DOCKER_CERT_PATH NETWORK_TYPE=vm $ARG_SCRIPT_ABS $*"
+  docker-machine ssh "$DOCKER_VM_NAME" "CONTAINER_CERT_PATH=$DOCKER_CERT_PATH $ARG_SCRIPT_ABS $*"
 fi
 
