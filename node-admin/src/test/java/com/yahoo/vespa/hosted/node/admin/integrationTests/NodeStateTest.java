@@ -57,7 +57,6 @@ public class NodeStateTest {
         InetAddressResolver inetAddressResolver = mock(InetAddressResolver.class);
         when(inetAddressResolver.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
         Environment environment = new Environment(Collections.emptySet(),
-                                                  Environment.NetworkType.normal,
                                                   "dev",
                                                   "us-east-1",
                                                   inetAddressResolver);

@@ -17,33 +17,26 @@ import java.util.stream.Collectors;
  */
 public class Environment {
     private static final String ENV_CONFIGSERVERS = "services__addr_configserver";
-    private static final String ENV_NETWORK_TYPE = "NETWORK_TYPE";
     private static final String ENVIRONMENT = "ENVIRONMENT";
     private static final String REGION = "REGION";
 
-    public enum NetworkType { normal, local, vm }
-
     private final Set<String> configServerHosts;
-    private final NetworkType networkTypeInEnvironment; //TODO: Remove? (is used in scripts, not in Java code)
     private final String environment;
     private final String region;
     private final InetAddressResolver inetAddressResolver;
 
     public Environment() {
         this(getConfigServerHostsFromEnvironment(),
-             networkType(),
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
              new InetAddressResolver());
     }
 
     public Environment(Set<String> configServerHosts,
-                       NetworkType networkTypeInEnvironment,
                        String environment,
                        String region,
                        InetAddressResolver inetAddressResolver) {
         this.configServerHosts = configServerHosts;
-        this.networkTypeInEnvironment = networkTypeInEnvironment;
         this.environment = environment;
         this.region = region;
         this.inetAddressResolver = inetAddressResolver;
@@ -77,14 +70,6 @@ public class Environment {
 
         final List<String> hostNameStrings = Arrays.asList(configServerHosts.split("[,\\s]+"));
         return hostNameStrings.stream().collect(Collectors.toSet());
-    }
-
-    private static NetworkType networkType() throws IllegalArgumentException {
-        String networkTypeInEnvironment = System.getenv(ENV_NETWORK_TYPE);
-        if (networkTypeInEnvironment == null) {
-            return NetworkType.normal;
-        }
-        return NetworkType.valueOf(networkTypeInEnvironment);
     }
 
     public InetAddress getInetAddressForHost(String hostname) throws UnknownHostException {
