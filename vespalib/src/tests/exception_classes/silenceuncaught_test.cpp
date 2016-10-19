@@ -12,7 +12,7 @@ TEST("that uncaught exception causes negative exitcode.") {
 }
 
 TEST("that uncaught silenced exception causes exitcode 66") {
-    SlaveProc proc("ulimit -c 0 && exec ./vespalib_caught_uncaught_app silenced_and_uncaught");
+    SlaveProc proc("exec ./vespalib_caught_uncaught_app silenced_and_uncaught");
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 66);
 }
@@ -24,13 +24,13 @@ TEST("that caught silenced exception followed by an uncaught causes negative exi
 }
 
 TEST("that caught silenced exception causes exitcode 0") {
-    SlaveProc proc("ulimit -c 0 && exec ./vespalib_caught_uncaught_app silenced_and_caught");
+    SlaveProc proc("exec ./vespalib_caught_uncaught_app silenced_and_caught");
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 0);
 }
 
 TEST("that mmap within limits are fine cause exitcode 0") {
-    SlaveProc proc("ulimit -c 0 && exec ./vespalib_mmap_app 100000000 10485760 1");
+    SlaveProc proc("exec ./vespalib_mmap_app 100000000 10485760 1");
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 0);
 }
@@ -42,7 +42,7 @@ TEST("that mmap beyond limits cause negative exitcode.") {
 }
 
 TEST("that mmap beyond limits with set VESPA_SILENCE_CORE_ON_OOM cause exitcode 66.") {
-    SlaveProc proc("ulimit -c 0 && VESPA_SILENCE_CORE_ON_OOM=1 exec ./vespalib_mmap_app 100000000 10485760 10");
+    SlaveProc proc("VESPA_SILENCE_CORE_ON_OOM=1 exec ./vespalib_mmap_app 100000000 10485760 10");
     proc.wait();
     EXPECT_EQUAL(proc.getExitCode(), 66);
 }
