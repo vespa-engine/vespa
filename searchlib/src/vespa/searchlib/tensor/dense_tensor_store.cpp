@@ -37,13 +37,13 @@ calcCellsSize(const vespalib::eval::ValueType &type)
 }
 
 DenseTensorStore::DenseTensorStore(const ValueType &type)
-    : TensorStore(_mystore),
-      _mystore(),
+    : TensorStore(_concreteStore),
+      _concreteStore(),
       _bufferType(RefType::align(1),
                   MIN_BUFFER_CLUSTERS,
                   RefType::offsetSize() / RefType::align(1)),
       _type(type),
-      _size(calcCellsSize(_type))
+      _numCells(calcCellsSize(_type))
 {
     _store.addType(&_bufferType);
     _store.initActiveBuffers();
@@ -67,15 +67,15 @@ DenseTensorStore::getRawBuffer(RefType ref) const
 std::pair<double *, DenseTensorStore::RefType>
 DenseTensorStore::allocRawBuffer()
 {
-    size_t bufSize = RefType::align(_size);
+    size_t bufSize = RefType::align(_numCells);
     _store.ensureBufferCapacity(_typeId, bufSize);
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
     btree::BufferState &state = _store.getBufferState(activeBufferId);
     size_t oldSize = state.size();
     double *bufferEntryWritePtr =
         _store.getBufferEntry<double>(activeBufferId, oldSize);
-    double *padWritePtr = bufferEntryWritePtr + _size;
-    for (size_t i = _size; i < bufSize; ++i) {
+    double *padWritePtr = bufferEntryWritePtr + _numCells;
+    for (size_t i = _numCells; i < bufSize; ++i) {
         *padWritePtr++ = 0.0;
     }
     state.pushed_back(bufSize);
@@ -89,7 +89,7 @@ DenseTensorStore::holdTensor(EntryRef ref)
     if (!ref.valid()) {
         return;
     }
-    _mystore.holdElem(ref, _size);
+    _concreteStore.holdElem(ref, _numCells);
 }
 
 TensorStore::EntryRef
@@ -99,8 +99,8 @@ DenseTensorStore::move(EntryRef ref) {
     }
     auto oldraw = getRawBuffer(ref);
     auto newraw = allocRawBuffer();
-    memcpy(newraw.first, oldraw, _size * sizeof(double));
-    _mystore.holdElem(ref, _size);
+    memcpy(newraw.first, oldraw, _numCells * sizeof(double));
+    _concreteStore.holdElem(ref, _numCells);
     return newraw.second;
 }
 
@@ -111,7 +111,7 @@ DenseTensorStore::getTensor(EntryRef ref) const
     if (raw == nullptr) {
         return std::unique_ptr<Tensor>();
     }
-    return std::make_unique<DenseTensorView>(_type, ConstArrayRef<double>(raw, _size));
+    return std::make_unique<DenseTensorView>(_type, ConstArrayRef<double>(raw, _numCells));
 }
 
 template <class TensorType>
@@ -119,9 +119,9 @@ TensorStore::EntryRef
 DenseTensorStore::setDenseTensor(const TensorType &tensor)
 {
     assert(tensor.type() == _type);
-    assert(tensor.cells().size() == _size);
+    assert(tensor.cells().size() == _numCells);
     auto raw = allocRawBuffer();
-    memcpy(raw.first, &tensor.cells()[0], _size * sizeof(double));
+    memcpy(raw.first, &tensor.cells()[0], _numCells * sizeof(double));
     return raw.second;
 }
 

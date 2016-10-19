@@ -21,8 +21,8 @@ namespace attribute {
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
 
 GenericTensorStore::GenericTensorStore()
-    : TensorStore(_mystore),
-      _mystore(),
+    : TensorStore(_concreteStore),
+      _concreteStore(),
       _bufferType(RefType::align(1),
                   MIN_BUFFER_CLUSTERS,
                   RefType::offsetSize() / RefType::align(1))
@@ -85,7 +85,7 @@ GenericTensorStore::holdTensor(EntryRef ref)
     const char *buf = _store.getBufferEntry<char>(iRef.bufferId(),
                                                   iRef.offset());
     uint32_t len = *reinterpret_cast<const uint32_t *>(buf);
-    _mystore.holdElem(ref, len + sizeof(uint32_t));
+    _concreteStore.holdElem(ref, len + sizeof(uint32_t));
 }
 
 
@@ -97,7 +97,7 @@ GenericTensorStore::move(EntryRef ref) {
     auto oldraw = getRawBuffer(ref);
     auto newraw = allocRawBuffer(oldraw.second);
     memcpy(newraw.first, oldraw.first, oldraw.second);
-    _mystore.holdElem(ref, oldraw.second + sizeof(uint32_t));
+    _concreteStore.holdElem(ref, oldraw.second + sizeof(uint32_t));
     return newraw.second;
 }
 

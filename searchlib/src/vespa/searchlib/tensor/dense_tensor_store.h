@@ -10,11 +10,8 @@ namespace search {
 namespace attribute {
 
 /**
- * Class for storing serialized tensors in memory, used by TensorAttribute.
- *
- * Serialization format is subject to change.  Changes to serialization format
- * might also require corresponding changes to implemented optimized tensor
- * operations that use the serialized tensor as argument.
+ * Class for storing dense tensors with known bounds in memory, used
+ * by DenseTensorAttribute.
  */
 class DenseTensorStore : public TensorStore
 {
@@ -24,10 +21,10 @@ public:
     using DataStoreType = btree::DataStoreT<RefType>;
     using ValueType = vespalib::eval::ValueType;
 private:
-    DataStoreType _mystore;
+    DataStoreType _concreteStore;
     btree::BufferType<double> _bufferType;
     ValueType _type; // type of dense tensor
-    size_t _size; // number of cells in dense tensor
+    size_t _numCells; // number of cells in dense tensor
 
     template <class TensorType>
     TensorStore::EntryRef
@@ -36,7 +33,7 @@ public:
     DenseTensorStore(const ValueType &type);
     virtual ~DenseTensorStore();
 
-    size_t size() const { return _size; }
+    size_t numCells() const { return _numCells; }
     const double *getRawBuffer(RefType ref) const;
     std::pair<double *, RefType> allocRawBuffer();
     virtual void holdTensor(EntryRef ref) override;

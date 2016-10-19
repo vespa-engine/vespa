@@ -21,7 +21,7 @@ public:
     using RefType = btree::AlignedEntryRefT<22, 2>;
     using DataStoreType = btree::DataStoreT<RefType>;
 private:
-    DataStoreType _mystore;
+    DataStoreType _concreteStore;
     btree::BufferType<char> _bufferType;
 public:
     GenericTensorStore();
