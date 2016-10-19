@@ -27,7 +27,7 @@ public:
     typedef vespalib::GenerationHandler::generation_t generation_t;
     using Tensor = vespalib::tensor::Tensor;
 
-private:
+protected:
     DataStoreType _store;
     btree::BufferType<char> _type;
     const uint32_t          _typeId;
@@ -35,7 +35,7 @@ private:
 public:
     TensorStore();
 
-    ~TensorStore();
+    virtual ~TensorStore();
 
     // Inherit doc from DataStoreBase
     void
@@ -64,19 +64,9 @@ public:
     }
 
 
-    std::pair<const void *, uint32_t> getRawBuffer(RefType ref) const;
+    virtual void holdTensor(RefType ref) = 0;
 
-    std::pair<void *, RefType> allocRawBuffer(uint32_t size);
-
-    void hold(RefType ref);
-
-    RefType move(RefType ref);
-
-    std::unique_ptr<Tensor> getTensor(RefType ref) const;
-
-    void holdTensor(RefType ref) { hold(ref); }
-
-    RefType setTensor(const Tensor &tensor);
+    virtual RefType move(RefType ref) = 0;
 
     uint32_t startCompactWorstBuffer() {
         return _store.startCompactWorstBuffer(_typeId);

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
-#include "tensor_store.h"
+#include "generic_tensor_store.h"
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/vespalib/tensor/tensor_mapper.h>
 
@@ -23,7 +23,7 @@ private:
     using RefVector = RcuVectorBase<RefType>;
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
-    TensorStore _tensorStore; // data store for serialized tensors
+    GenericTensorStore _tensorStore; // data store for serialized tensors
     std::unique_ptr<vespalib::tensor::TensorMapper> _tensorMapper; // mapper to our tensor type
     uint64_t    _compactGeneration; // Generation when last compact occurred
 
