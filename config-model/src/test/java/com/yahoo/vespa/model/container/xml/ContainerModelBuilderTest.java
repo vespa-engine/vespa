@@ -12,6 +12,9 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.config.StatisticsRequestHandler;
 import com.yahoo.container.core.ChainsConfig;
@@ -49,11 +52,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author gjoranv
@@ -507,7 +506,28 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         assertEquals(getContainerCluster("default").getContainers().get(0).getServicePropertyString("servicealiases"), "service1,service2");
         assertEquals(getContainerCluster("default").getContainers().get(0).getServicePropertyString("endpointaliases"), "foo1.bar1.com,foo2.bar2.com");
+    }
 
+    @Test
+    public void http_aliases_are_only_honored_in_prod_environment() throws SAXException, IOException {
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc id='default' version='1.0'>",
+                "  <aliases>",
+                "    <service-alias>service1</service-alias>",
+                "    <endpoint-alias>foo1.bar1.com</endpoint-alias>",
+                "  </aliases>",
+                "  <nodes>",
+                "    <node hostalias='host1' />",
+                "  </nodes>",
+                "</jdisc>");
+
+        DeployState deployState = new DeployState.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east-1"))).build();
+        createModel(root, deployState, clusterElem);
+        assertEquals(0, getContainerCluster("default").serviceAliases().size());
+        assertEquals(0, getContainerCluster("default").endpointAliases().size());
+
+        assertNull(getContainerCluster("default").getContainers().get(0).getServicePropertyString("servicealiases"));
+        assertNull(getContainerCluster("default").getContainers().get(0).getServicePropertyString("endpointaliases"));
     }
 
     @Test

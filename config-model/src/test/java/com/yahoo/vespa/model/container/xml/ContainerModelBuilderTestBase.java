@@ -31,13 +31,17 @@ public abstract class ContainerModelBuilderTestBase {
             "  </nodes>";
     protected MockRoot root;
 
-    public static void createModel(MockRoot root, Element... containerElems) throws SAXException, IOException {
+    public static void createModel(MockRoot root, DeployState deployState, Element... containerElems) throws SAXException, IOException {
         for (Element containerElem : containerElems) {
-            ContainerModel model = new ContainerModelBuilder(false, ContainerModelBuilder.Networking.enable).build(DeployState.createTestState(), null, root, containerElem);
+            ContainerModel model = new ContainerModelBuilder(false, ContainerModelBuilder.Networking.enable).build(deployState, null, root, containerElem);
             ContainerCluster cluster = model.getCluster();
             generateDefaultSearchChains(cluster);
         }
         root.freezeModelTopology();
+    }
+
+    public static void createModel(MockRoot root, Element... containerElems) throws SAXException, IOException {
+        createModel(root, DeployState.createTestState(), containerElems);
     }
 
     private static void generateDefaultSearchChains(ContainerCluster cluster) {
