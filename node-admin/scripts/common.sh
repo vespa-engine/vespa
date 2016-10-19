@@ -42,9 +42,6 @@ declare -r APP_HOSTNAME_PREFIX="$APP_CONTAINER_NAME_PREFIX"
 declare -r DEFAULT_NUM_APP_CONTAINERS=20  # Statically allocated number of nodes.
 declare -r TENANT_NAME=localtenant
 
-# May be 'vm' if docker hosts runs within a VM (osx). Default is native/Fedora.
-declare -r NETWORK_TYPE="${NETWORK_TYPE:-local}"
-
 # Allowed program opions
 declare OPTION_NUM_NODES          # Set from --num-nodes or DEFAULT_NUM_APP_CONTAINERS, see Main.
 declare OPTION_WAIT               # Set from --wait or true, see Main.

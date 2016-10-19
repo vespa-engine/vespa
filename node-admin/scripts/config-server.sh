@@ -113,14 +113,6 @@ function Start {
     fi
     echo "done"
 
-    echo -n "Setting up the $CONFIG_SERVER_CONTAINER_NAME container network of type $NETWORK_TYPE... "
-    if ! script_out=$(sudo ./configure-container-networking.py --"$NETWORK_TYPE" "$config_server_container_pid" "$CONFIG_SERVER_IP" 2>&1); then
-        echo "failed"
-        echo "$script_out"
-        exit
-    fi
-    echo "done"
-
     if [ "$wait" == true ]
     then
         # Wait for config server to come up
