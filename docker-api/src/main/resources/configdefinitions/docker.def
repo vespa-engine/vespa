@@ -5,3 +5,9 @@ caCertPath string default = ""
 clientCertPath string default = ""
 clientKeyPath string default = ""
 uri string default = "unix:///host/var/run/docker.sock"
+
+secondsToWaitBeforeKillingContainer int default = 10
+maxPerRouteConnections int default = 10
+maxTotalConnections int default = 100
+connectTimeoutMillis int default = 100000 # 100 sec
+readTimeoutMillis int default = 1800000 # 30 min

@@ -58,6 +58,44 @@ public class DockerTest {
         assertFalse("Failed to delete " + dockerImage.asString() + " image", docker.imageIsDownloaded(dockerImage));
     }
 
+    // Ignored because the test is very slow (several minutes) when swap is enabled, to disable: (Linux)
+    // $ sudo swapoff -a
+    @Ignore
+    @Test
+    public void testOutOfMemoryDoesNotAffectOtherContainers() throws InterruptedException, ExecutionException, IOException {
+        String hostName1 = "docker10.test.yahoo.com";
+        String hostName2 = "docker11.test.yahoo.com";
+        ContainerName containerName1 = new ContainerName("test-container-1");
+        ContainerName containerName2 = new ContainerName("test-container-2");
+        InetAddress inetAddress1 = InetAddress.getByName("172.18.0.10");
+        InetAddress inetAddress2 = InetAddress.getByName("172.18.0.11");
+
+        docker.createContainerCommand(dockerImage, containerName1, hostName1)
+                .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
+                .withIpAddress(inetAddress1)
+                .withMemoryInMb(100).create();
+        docker.startContainer(containerName1);
+
+        docker.createContainerCommand(dockerImage, containerName2, hostName2)
+                .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
+                .withIpAddress(inetAddress2)
+                .withMemoryInMb(100).create();
+        docker.startContainer(containerName2);
+
+        // 137 = 128 + 9 = kill -9 (SIGKILL)
+        assertThat(docker.executeInContainer(containerName2, "python", "/pysrc/fillmem.py", "90").getExitStatus(), is(137));
+
+        // Verify that both HTTP servers are still up
+        testReachabilityFromHost("http://" + inetAddress1.getHostAddress() + "/ping");
+        testReachabilityFromHost("http://" + inetAddress2.getHostAddress() + "/ping");
+
+        docker.stopContainer(containerName1);
+        docker.deleteContainer(containerName1);
+
+        docker.stopContainer(containerName2);
+        docker.deleteContainer(containerName2);
+    }
+
     @Test
     public void testContainerCycle() throws IOException, InterruptedException, ExecutionException {
         ContainerName containerName = new ContainerName("foo");

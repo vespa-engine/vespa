@@ -54,13 +54,8 @@ public class DockerImpl implements Docker {
     private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
 
-    private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
+    private final int SECONDS_TO_WAIT_BEFORE_KILLING;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
-
-    private static final int DOCKER_MAX_PER_ROUTE_CONNECTIONS = 10;
-    private static final int DOCKER_MAX_TOTAL_CONNECTIONS = 100;
-    private static final int DOCKER_CONNECT_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(100);
-    private static final int DOCKER_READ_TIMEOUT_MILLIS = (int) TimeUnit.MINUTES.toMillis(30);
 
     public static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
 
@@ -77,15 +72,17 @@ public class DockerImpl implements Docker {
     // For testing
     DockerImpl(final DockerClient dockerClient) {
         this.dockerClient = dockerClient;
+        this.SECONDS_TO_WAIT_BEFORE_KILLING = 10;
     }
 
     DockerImpl(
             final DockerConfig config,
             boolean fallbackTo123OnErrors,
             boolean trySetupNetwork,
-            int dockerConnectTimeoutMillis,
             MetricReceiverWrapper metricReceiverWrapper) {
-        initDockerConnection(config, dockerConnectTimeoutMillis, fallbackTo123OnErrors);
+        SECONDS_TO_WAIT_BEFORE_KILLING = config.secondsToWaitBeforeKillingContainer();
+
+        initDockerConnection(config, fallbackTo123OnErrors);
         setMetrics(metricReceiverWrapper);
 
         if (trySetupNetwork) {
@@ -103,7 +100,6 @@ public class DockerImpl implements Docker {
                 config,
                 true, /* fallback to 1.23 on errors */
                 true, /* try setup network */
-                DOCKER_CONNECT_TIMEOUT_MILLIS /* dockerConnectTimeoutMillis */,
                 metricReceiver);
     }
 
@@ -501,12 +497,12 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private void initDockerConnection(final DockerConfig config, int connectTimeoutMs, boolean fallbackTo123orErrors) {
+    private void initDockerConnection(final DockerConfig config, boolean fallbackTo123orErrors) {
         JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
-                .withMaxPerRouteConnections(DOCKER_MAX_PER_ROUTE_CONNECTIONS)
-                .withMaxTotalConnections(DOCKER_MAX_TOTAL_CONNECTIONS)
-                .withConnectTimeout(connectTimeoutMs)
-                .withReadTimeout(DOCKER_READ_TIMEOUT_MILLIS);
+                .withMaxPerRouteConnections(config.maxPerRouteConnections())
+                .withMaxTotalConnections(config.maxTotalConnections())
+                .withConnectTimeout(config.connectTimeoutMillis())
+                .withReadTimeout(config.readTimeoutMillis());
         RemoteApiVersion remoteApiVersion;
         try {
             remoteApiVersion = RemoteApiVersion.parseConfig(DockerClientImpl.getInstance(
