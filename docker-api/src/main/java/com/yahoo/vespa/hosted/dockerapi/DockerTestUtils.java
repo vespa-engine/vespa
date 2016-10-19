@@ -16,35 +16,41 @@ import java.util.concurrent.ExecutionException;
 public class DockerTestUtils {
     private static final OS operatingSystem = getSystemOS();
     private static final String prefix = "/Users/" + System.getProperty("user.name") + "/.docker/machine/machines/default/";
-    public static final DockerConfig dockerConfig = new DockerConfig(new DockerConfig.Builder()
+    private static final DockerConfig dockerConfig = new DockerConfig(new DockerConfig.Builder()
             .caCertPath(    operatingSystem == OS.Mac_OS_X ? prefix + "ca.pem" : "")
             .clientCertPath(operatingSystem == OS.Mac_OS_X ? prefix + "cert.pem" : "")
             .clientKeyPath( operatingSystem == OS.Mac_OS_X ? prefix + "key.pem" : "")
             .uri(           operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376"));
-
+    private static DockerImpl docker;
 
     public static boolean dockerDaemonIsPresent() {
+        if (docker != null) return true;
         if (operatingSystem == OS.Unsupported) {
             System.out.println("This test does not support " + System.getProperty("os.name") + " yet, ignoring test.");
             return false;
         }
 
         try {
+            getDocker(); // Will throw an exception if docker is not installed/incorrectly configured
             return true;
         } catch (Exception e) {
-            System.out.println("Please install Docker Toolbox and start Docker Quick Start Terminal once, ignoring test.");
-            e.printStackTrace();
+            System.err.println("Please install Docker Toolbox and start Docker Quick Start Terminal once, ignoring test.");
+            System.err.println(e.getMessage());
             return false;
         }
     }
 
     public static DockerImpl getDocker() {
-        return new DockerImpl(
-                dockerConfig,
-                false, /* fallback to 1.23 on errors */
-                false, /* try setup network */
-                100 /* dockerConnectTimeoutMillis */,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+        if (docker == null) {
+            docker = new DockerImpl(
+                    dockerConfig,
+                    false, /* fallback to 1.23 on errors */
+                    false, /* try setup network */
+                    100 /* dockerConnectTimeoutMillis */,
+                    new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+        }
+
+        return docker;
     }
 
     public static void createDockerTestNetworkIfNeeded(DockerImpl docker) {
