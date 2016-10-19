@@ -153,8 +153,16 @@ fixlimits () {
     elif [ `ulimit -n` -lt 16384 ]; then
         ulimit -n 16384 || exit 1
     fi
-    ulimit -c unlimited # core file size
-    ulimit -u 409600    # number of processes/threads
+
+    # core file size
+    if [ `ulimit -c` != "unlimited" ]; then
+        ulimit -c unlimited
+    fi
+
+    # number of processes/threads
+    if [ `ulimit -u` -lt 409600 ]; then
+        ulimit -u 409600
+    fi
 }
 
 checkjava () {
