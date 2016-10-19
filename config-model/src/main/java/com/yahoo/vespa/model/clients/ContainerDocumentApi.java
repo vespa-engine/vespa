@@ -56,11 +56,11 @@ public class ContainerDocumentApi implements FeederConfig.Producer {
         Set<ComponentSpecification> inherited = new TreeSet<>();
 
         SearchChain vespaGetChain = new SearchChain(new ChainSpecification(new ComponentId("vespaget"),
-                new ChainSpecification.Inheritance(inherited, null), new ArrayList<Phase>(), new TreeSet<ComponentSpecification>()));
+                new ChainSpecification.Inheritance(inherited, null), new ArrayList<>(), new TreeSet<>()));
         vespaGetChain.addInnerComponent(newVespaClientSearcher("com.yahoo.storage.searcher.GetSearcher"));
 
         SearchChain vespaVisitChain = new SearchChain(new ChainSpecification(new ComponentId("vespavisit"),
-                new ChainSpecification.Inheritance(inherited, null), new ArrayList<Phase>(), new TreeSet<ComponentSpecification>()));
+                new ChainSpecification.Inheritance(inherited, null), new ArrayList<>(), new TreeSet<>()));
         vespaVisitChain.addInnerComponent(newVespaClientSearcher("com.yahoo.storage.searcher.VisitSearcher"));
 
         SearchChains chains;
