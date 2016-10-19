@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "tensor_attribute_saver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
+#include "generic_tensor_store.h"
 
 using vespalib::GenerationHandler;
 using search::IAttributeSaveTarget;
