@@ -21,13 +21,20 @@ namespace attribute {
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
 
 GenericTensorStore::GenericTensorStore()
-    : TensorStore()
+    : TensorStore(_concreteStore),
+      _concreteStore(),
+      _bufferType(RefType::align(1),
+                  MIN_BUFFER_CLUSTERS,
+                  RefType::offsetSize() / RefType::align(1))
 {
+    _store.addType(&_bufferType);
+    _store.initActiveBuffers();
 }
 
 
 GenericTensorStore::~GenericTensorStore()
 {
+    _store.dropBuffers();
 }
 
 
@@ -44,7 +51,7 @@ GenericTensorStore::getRawBuffer(RefType ref) const
 }
 
 
-std::pair<void *, TensorStore::RefType>
+std::pair<void *, GenericTensorStore::RefType>
 GenericTensorStore::allocRawBuffer(uint32_t size)
 {
     if (size == 0) {
@@ -69,32 +76,33 @@ GenericTensorStore::allocRawBuffer(uint32_t size)
 }
 
 void
-GenericTensorStore::holdTensor(RefType ref)
+GenericTensorStore::holdTensor(EntryRef ref)
 {
     if (!ref.valid()) {
         return;
     }
-    const char *buf = _store.getBufferEntry<char>(ref.bufferId(),
-                                                  ref.offset());
+    RefType iRef(ref);
+    const char *buf = _store.getBufferEntry<char>(iRef.bufferId(),
+                                                  iRef.offset());
     uint32_t len = *reinterpret_cast<const uint32_t *>(buf);
-    _store.holdElem(ref, len + sizeof(uint32_t));
+    _concreteStore.holdElem(ref, len + sizeof(uint32_t));
 }
 
 
-TensorStore::RefType
-GenericTensorStore::move(RefType ref) {
+TensorStore::EntryRef
+GenericTensorStore::move(EntryRef ref) {
     if (!ref.valid()) {
         return RefType();
     }
     auto oldraw = getRawBuffer(ref);
     auto newraw = allocRawBuffer(oldraw.second);
     memcpy(newraw.first, oldraw.first, oldraw.second);
-    _store.holdElem(ref, oldraw.second + sizeof(uint32_t));
+    _concreteStore.holdElem(ref, oldraw.second + sizeof(uint32_t));
     return newraw.second;
 }
 
 std::unique_ptr<Tensor>
-GenericTensorStore::getTensor(RefType ref) const
+GenericTensorStore::getTensor(EntryRef ref) const
 {
     auto raw = getRawBuffer(ref);
     if (raw.second == 0u) {
@@ -111,7 +119,7 @@ GenericTensorStore::getTensor(RefType ref) const
 }
 
 
-TensorStore::RefType
+TensorStore::EntryRef
 GenericTensorStore::setTensor(const Tensor &tensor)
 {
     vespalib::nbostream stream;

@@ -18,6 +18,12 @@ namespace attribute {
 class GenericTensorStore : public TensorStore
 {
 public:
+    using RefType = btree::AlignedEntryRefT<22, 2>;
+    using DataStoreType = btree::DataStoreT<RefType>;
+private:
+    DataStoreType _concreteStore;
+    btree::BufferType<char> _bufferType;
+public:
     GenericTensorStore();
 
     virtual ~GenericTensorStore();
@@ -26,13 +32,13 @@ public:
 
     std::pair<void *, RefType> allocRawBuffer(uint32_t size);
 
-    virtual void holdTensor(RefType ref) override;
+    virtual void holdTensor(EntryRef ref) override;
 
-    virtual RefType move(RefType ref) override;
+    virtual EntryRef move(EntryRef ref) override;
 
-    std::unique_ptr<Tensor> getTensor(RefType ref) const;
+    std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
 
-    RefType setTensor(const Tensor &tensor);
+    EntryRef setTensor(const Tensor &tensor);
 };
 
 

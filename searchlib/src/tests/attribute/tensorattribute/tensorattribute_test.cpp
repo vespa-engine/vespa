@@ -4,11 +4,13 @@
 LOG_SETUP("tensorattribute_test");
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 
 using search::attribute::TensorAttribute;
+using search::attribute::GenericTensorAttribute;
 using search::AttributeGuard;
 using search::AttributeVector;
 using vespalib::eval::ValueType;
@@ -48,7 +50,7 @@ struct Fixture
           _attr()
     {
         _cfg.setTensorType(ValueType::from_spec(typeSpec));
-        _tensorAttr = std::make_shared<TensorAttribute>(_name, _cfg);
+        _tensorAttr = std::make_shared<GenericTensorAttribute>(_name, _cfg);
         _attr = _tensorAttr;
         _attr->addReservedDoc();
     }
@@ -117,7 +119,7 @@ struct Fixture
     }
 
     void load() {
-        _tensorAttr = std::make_shared<TensorAttribute>(_name, _cfg);
+        _tensorAttr = std::make_shared<GenericTensorAttribute>(_name, _cfg);
         _attr = _tensorAttr;
         bool loadok = _attr->load();
         EXPECT_TRUE(loadok);

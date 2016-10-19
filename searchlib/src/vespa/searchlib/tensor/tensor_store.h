@@ -22,18 +22,16 @@ namespace attribute {
 class TensorStore
 {
 public:
-    using RefType = btree::AlignedEntryRefT<22, 2>;
-    using DataStoreType = btree::DataStoreT<RefType>;
+    using EntryRef = btree::EntryRef;
     typedef vespalib::GenerationHandler::generation_t generation_t;
     using Tensor = vespalib::tensor::Tensor;
 
 protected:
-    DataStoreType _store;
-    btree::BufferType<char> _type;
-    const uint32_t          _typeId;
+    btree::DataStoreBase &_store;
+    const uint32_t        _typeId;
 
 public:
-    TensorStore();
+    TensorStore(btree::DataStoreBase &store);
 
     virtual ~TensorStore();
 
@@ -64,9 +62,9 @@ public:
     }
 
 
-    virtual void holdTensor(RefType ref) = 0;
+    virtual void holdTensor(EntryRef ref) = 0;
 
-    virtual RefType move(RefType ref) = 0;
+    virtual EntryRef move(EntryRef ref) = 0;
 
     uint32_t startCompactWorstBuffer() {
         return _store.startCompactWorstBuffer(_typeId);

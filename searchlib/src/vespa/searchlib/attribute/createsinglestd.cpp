@@ -11,7 +11,7 @@ LOG_SETUP(".createsinglestd");
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/tensor/generic_tensor_attribute.h>
 
 namespace search {
 
@@ -58,7 +58,7 @@ AttributeFactory::createSingleStd(const vespalib::string & baseFileName, const C
         ret.reset(new PredicateAttribute(baseFileName, info));
         break;
     case BasicType::TENSOR:
-        ret.reset(new attribute::TensorAttribute(baseFileName, info));
+        ret.reset(new attribute::GenericTensorAttribute(baseFileName, info));
         break;
     default:
         break;

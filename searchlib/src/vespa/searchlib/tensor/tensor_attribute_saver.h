@@ -10,6 +10,8 @@ namespace search {
 
 namespace attribute {
 
+class GenericTensorStore;
+
 /*
  * Class for saving a tensor attribute.
  */
