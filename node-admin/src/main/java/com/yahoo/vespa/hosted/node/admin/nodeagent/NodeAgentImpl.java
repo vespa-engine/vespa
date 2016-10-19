@@ -74,12 +74,12 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Thread loopThread;
 
-    public enum ContainerState {
+    enum ContainerState {
         ABSENT,
         RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN,
         RUNNING
     }
-    ContainerState containerState = ABSENT;
+    private ContainerState containerState = ABSENT;
 
     // The attributes of the last successful node repo attribute update for this node. Used to avoid redundant calls.
     private NodeAttributes lastAttributesSet = null;
@@ -250,8 +250,10 @@ public class NodeAgentImpl implements NodeAgent {
         Optional<String> restartReason = shouldRestartServices(nodeSpec);
         if (restartReason.isPresent()) {
             Optional<Container> existingContainer = dockerOperations.getContainer(hostname);
-            logger.info("Will restart services for container " + existingContainer.get() + ": " + restartReason.get());
-            restartServices(nodeSpec, existingContainer.get(), orchestrator);
+            if (existingContainer.isPresent()) {
+                logger.info("Will restart services for container " + existingContainer.get() + ": " + restartReason.get());
+                restartServices(nodeSpec, existingContainer.get(), orchestrator);
+            }
         }
     }
 
