@@ -22,6 +22,7 @@ public:
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;
     virtual bool onLoad() override;
     virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    virtual void compactWorst() override;
 };
 
 

@@ -29,6 +29,11 @@ private:
 
 public:
     explicit DenseTensorView(const DenseTensor &rhs);
+    DenseTensorView(const eval::ValueType &type_in, CellsRef cells_in)
+        : _type(type_in),
+          _cells(cells_in)
+    {
+    }
     const eval::ValueType &type() const { return _type; }
     const CellsRef &cells() const { return _cells; }
     bool operator==(const DenseTensorView &rhs) const;

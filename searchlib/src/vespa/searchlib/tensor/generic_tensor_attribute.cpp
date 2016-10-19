@@ -4,6 +4,7 @@
 #include "generic_tensor_attribute.h"
 #include <vespa/vespalib/tensor/tensor.h>
 #include "tensor_attribute_saver.h"
+#include "tensor_attribute.hpp"
 
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
@@ -105,6 +106,13 @@ GenericTensorAttribute::onInitSave()
          getRefCopy(),
          _genericTensorStore);
 }
+
+void
+GenericTensorAttribute::compactWorst()
+{
+    doCompactWorst<GenericTensorStore::RefType>();
+}
+
 
 }  // namespace search::attribute
 

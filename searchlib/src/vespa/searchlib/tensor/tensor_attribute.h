@@ -19,7 +19,7 @@ namespace attribute {
 class TensorAttribute : public NotImplementedAttribute
 {
 protected:
-    using RefType = TensorStore::RefType;
+    using RefType = TensorStore::EntryRef;
     using RefVector = RcuVectorBase<RefType>;
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
@@ -27,7 +27,8 @@ protected:
     std::unique_ptr<vespalib::tensor::TensorMapper> _tensorMapper; // mapper to our tensor type
     uint64_t    _compactGeneration; // Generation when last compact occurred
 
-    void compactWorst();
+    template <typename RefType>
+    void doCompactWorst();
     void setTensorRef(DocId docId, RefType ref);
 public:
     using RefCopyVector = vespalib::Array<RefType>;
@@ -48,6 +49,7 @@ public:
     RefCopyVector getRefCopy() const;
     virtual void setTensor(DocId docId, const Tensor &tensor) = 0;
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const = 0;
+    virtual void compactWorst() = 0;
 };
 
 

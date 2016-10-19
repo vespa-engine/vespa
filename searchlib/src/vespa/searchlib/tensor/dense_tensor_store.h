@@ -3,6 +3,7 @@
 #pragma once
 
 #include "tensor_store.h"
+#include <vespa/vespalib/eval/value_type.h>
 
 namespace search {
 
@@ -15,29 +16,32 @@ namespace attribute {
  * might also require corresponding changes to implemented optimized tensor
  * operations that use the serialized tensor as argument.
  */
-class GenericTensorStore : public TensorStore
+class DenseTensorStore : public TensorStore
 {
 public:
-    using RefType = btree::AlignedEntryRefT<22, 2>;
+    // 2 entry alignment, entry type is double => 16 bytes alignment
+    using RefType = btree::AlignedEntryRefT<22, 1>;
     using DataStoreType = btree::DataStoreT<RefType>;
+    using ValueType = vespalib::eval::ValueType;
 private:
     DataStoreType _mystore;
-    btree::BufferType<char> _bufferType;
+    btree::BufferType<double> _bufferType;
+    ValueType _type; // type of dense tensor
+    size_t _size; // number of cells in dense tensor
+
+    template <class TensorType>
+    TensorStore::EntryRef
+    setDenseTensor(const TensorType &tensor);
 public:
-    GenericTensorStore();
+    DenseTensorStore(const ValueType &type);
+    virtual ~DenseTensorStore();
 
-    virtual ~GenericTensorStore();
-
-    std::pair<const void *, uint32_t> getRawBuffer(RefType ref) const;
-
-    std::pair<void *, RefType> allocRawBuffer(uint32_t size);
-
+    size_t size() const { return _size; }
+    const double *getRawBuffer(RefType ref) const;
+    std::pair<double *, RefType> allocRawBuffer();
     virtual void holdTensor(EntryRef ref) override;
-
     virtual EntryRef move(EntryRef ref) override;
-
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
-
     EntryRef setTensor(const Tensor &tensor);
 };
 
