@@ -4,11 +4,13 @@ package com.yahoo.vespa.hosted.node.admin.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -25,7 +27,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Retries request on config server a few times before giving up.
+ * Retries request on config server a few times before giving up. Assumes that all requests should be sent with
+ * content-type application/json
  *
  * @author dybdahl
  */
@@ -115,6 +118,7 @@ public class ConfigServerHttpRequestExecutor {
     public <T> T put(String path, int port, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut("http://" + configServer + ":" + port + path);
+            setContentTypeToApplicationJson(put);
             if (bodyJsonPojo.isPresent()) {
                 put.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo.get())));
             }
@@ -125,6 +129,7 @@ public class ConfigServerHttpRequestExecutor {
     public <T> T patch(String path, int port, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPatch patch = new HttpPatch("http://" + configServer + ":" + port + path);
+            setContentTypeToApplicationJson(patch);
             patch.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return patch;
         }, wantedReturnType);
@@ -132,13 +137,17 @@ public class ConfigServerHttpRequestExecutor {
 
     public <T> T delete(String path, int port, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            return new HttpDelete("http://" + configServer + ":" + port + path);
+            HttpDelete delete = new HttpDelete("http://" + configServer + ":" + port + path);
+            setContentTypeToApplicationJson(delete);
+            return delete;
         }, wantedReturnType);
     }
 
     public <T> T get(String path, int port, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            return new HttpGet("http://" + configServer + ":" + port + path);
+            HttpGet get = new HttpGet("http://" + configServer + ":" + port + path);
+            setContentTypeToApplicationJson(get);
+            return get;
         }, wantedReturnType);
     }
 
@@ -150,5 +159,9 @@ public class ConfigServerHttpRequestExecutor {
         } catch (IOException e) {
             return "Failed reading stream: " + e.getMessage();
         }
+    }
+
+    private void setContentTypeToApplicationJson(HttpRequestBase request) {
+        request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
     }
 }
