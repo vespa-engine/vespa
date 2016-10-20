@@ -91,6 +91,7 @@ public:
     InterpretedFunction(const TensorEngine &engine, const Function &function, const NodeTypes &types)
         : InterpretedFunction(engine, function.root(), function.num_params(), types) {}
     InterpretedFunction(InterpretedFunction &&rhs) = default;
+    size_t program_size() const { return _program.size(); }
     size_t num_params() const { return _num_params; }
     const Value &eval(Context &ctx) const;
 };
