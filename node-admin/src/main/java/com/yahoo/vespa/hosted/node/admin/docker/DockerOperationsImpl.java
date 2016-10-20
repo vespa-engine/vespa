@@ -71,11 +71,12 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final Environment environment;
-    private final Maintainer maintainer = new Maintainer(); // TODO: Try to get rid of this one
+    private final Maintainer maintainer;
 
-    public DockerOperationsImpl(Docker docker, Environment environment) {
+    public DockerOperationsImpl(Docker docker, Environment environment, Maintainer maintainer) {
         this.docker = docker;
         this.environment = environment;
+        this.maintainer = maintainer;
     }
 
     @Override

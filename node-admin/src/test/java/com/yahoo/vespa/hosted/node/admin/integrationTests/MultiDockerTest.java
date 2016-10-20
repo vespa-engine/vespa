@@ -58,10 +58,12 @@ public class MultiDockerTest {
                                                   inetAddressResolver);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
-                                  new DockerOperationsImpl(dockerMock, environment),
-                                  maintenanceSchedulerMock, mr, environment, new Maintainer());
+        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> {
+            final Maintainer maintainer = new Maintainer();
+            return new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
+                                     new DockerOperationsImpl(dockerMock, environment, maintainer),
+                                     maintenanceSchedulerMock, mr, environment, maintainer);
+        };
         nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }

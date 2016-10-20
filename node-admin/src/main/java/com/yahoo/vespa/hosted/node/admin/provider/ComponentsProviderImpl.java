@@ -53,13 +53,14 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
-        StorageMaintainer storageMaintainer = new StorageMaintainer();
+        final Maintainer maintainer = new Maintainer();
+        StorageMaintainer storageMaintainer = new StorageMaintainer(maintainer);
 
         final Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
-                                                orchestrator, new DockerOperationsImpl(docker, environment),
-                                                storageMaintainer, metricReceiver,
-                                                environment, new Maintainer());
+                                             orchestrator, new DockerOperationsImpl(docker, environment, maintainer),
+                                             storageMaintainer, metricReceiver,
+                                             environment, maintainer);
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(

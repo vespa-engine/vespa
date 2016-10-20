@@ -25,9 +25,14 @@ public class StorageMaintainer {
     private static final long intervalSec = 1000;
 
     private final Object monitor = new Object();
-    private final Maintainer maintainer = new Maintainer();
+    private final Maintainer maintainer;
 
     private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
+
+
+    public StorageMaintainer(Maintainer maintainer) {
+        this.maintainer = maintainer;
+    }
 
     public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
         // Calculating disk usage is IO expensive operation and its value changes relatively slowly, we want to perform
