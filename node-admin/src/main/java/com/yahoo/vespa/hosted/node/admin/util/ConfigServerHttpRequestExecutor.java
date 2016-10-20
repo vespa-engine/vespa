@@ -137,17 +137,13 @@ public class ConfigServerHttpRequestExecutor {
 
     public <T> T delete(String path, int port, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            HttpDelete delete = new HttpDelete("http://" + configServer + ":" + port + path);
-            setContentTypeToApplicationJson(delete);
-            return delete;
+            return new HttpDelete("http://" + configServer + ":" + port + path);
         }, wantedReturnType);
     }
 
     public <T> T get(String path, int port, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            HttpGet get = new HttpGet("http://" + configServer + ":" + port + path);
-            setContentTypeToApplicationJson(get);
-            return get;
+            return new HttpGet("http://" + configServer + ":" + port + path);
         }, wantedReturnType);
     }
 
