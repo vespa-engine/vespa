@@ -24,6 +24,7 @@ import java.util.function.Function;
  * @author dybis
  */
 public class ComponentsProviderWithMocks implements ComponentsProvider {
+    static final Maintainer maintainer = new Maintainer();
     static final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     static final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
     static final StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
@@ -38,9 +39,9 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private final Function<String, NodeAgent> nodeAgentFactory =
             (hostName) -> new NodeAgentImpl(hostName,
                                             nodeRepositoryMock, orchestratorMock,
-                                            new DockerOperationsImpl(dockerMock, environment),
+                                            new DockerOperationsImpl(dockerMock, environment, maintainer),
                                             maintenanceSchedulerMock, mr,
-                                            environment, new Maintainer());
+                                            environment, maintainer);
     private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
 

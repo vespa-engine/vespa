@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrderVerifier;
 
     public StorageMaintainerMock(CallOrderVerifier callOrderVerifier) {
+        super(new Maintainer());
         this.callOrderVerifier = callOrderVerifier;
     }
 

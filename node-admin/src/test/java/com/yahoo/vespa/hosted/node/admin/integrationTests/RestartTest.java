@@ -51,10 +51,12 @@ public class RestartTest {
                                                   inetAddressResolver);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        Function<String, NodeAgent> nodeAgentFactory = (hostName) ->
-                new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
-                                  new DockerOperationsImpl(dockerMock, environment),
-                                  maintenanceSchedulerMock, mr, environment, new Maintainer());
+        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> {
+            final Maintainer maintainer = new Maintainer();
+            return new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
+                                     new DockerOperationsImpl(dockerMock, environment, maintainer),
+                                     maintenanceSchedulerMock, mr, environment, maintainer);
+        };
         NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
         long wantedRestartGeneration = 1;
