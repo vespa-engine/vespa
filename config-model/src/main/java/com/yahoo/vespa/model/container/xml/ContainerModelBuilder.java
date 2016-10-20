@@ -14,6 +14,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -143,7 +144,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addDocumentApi(spec, cluster);  // NOTE: Must be done after addSearch
 
         addAccessLogs(cluster, spec);
-        addRoutingAliases(cluster, spec);
+        addRoutingAliases(cluster, spec, context.getDeployState().zone().environment());
         addNodes(cluster, spec, context);
 
         addClientProviders(spec, cluster);
@@ -159,7 +160,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         //TODO: cache options.
     }
 
-    private void addRoutingAliases(ContainerCluster cluster, Element spec) {
+    private void addRoutingAliases(ContainerCluster cluster, Element spec, Environment environment) {
+        if (environment != Environment.prod) return;
+
         Element aliases = XML.getChild(spec, "aliases");
         for (Element alias : XML.getChildren(aliases, "service-alias")) {
             cluster.serviceAliases().add(XML.getValue(alias));
