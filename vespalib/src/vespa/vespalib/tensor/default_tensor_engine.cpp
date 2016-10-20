@@ -7,6 +7,7 @@
 #include <vespa/vespalib/eval/operation_visitor.h>
 #include "tensor.h"
 #include "dense/dense_tensor_builder.h"
+#include "dense/dense_tensor_function_compiler.h"
 #include "default_tensor.h"
 
 namespace vespalib {
@@ -53,6 +54,12 @@ DefaultTensorEngine::to_spec(const Tensor &tensor) const
     assert(&tensor.engine() == this);
     const tensor::Tensor &my_tensor = static_cast<const tensor::Tensor &>(tensor);
     return my_tensor.toSpec();
+}
+
+eval::TensorFunction::UP
+DefaultTensorEngine::compile(eval::tensor_function::Node_UP expr)
+{
+    return DenseTensorFunctionCompiler::compile(std::move(expr));
 }
 
 struct IsAddOperation : public eval::DefaultOperationVisitor {
