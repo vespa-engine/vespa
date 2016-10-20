@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.net.InetAddress;
@@ -43,13 +44,17 @@ public class DockerTester implements AutoCloseable {
         nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
         dockerMock = new DockerMock(callOrderVerifier);
 
-        Environment environment = mock(Environment.class);
-        when(environment.getConfigServerHosts()).thenReturn(Collections.emptySet());
+        InetAddressResolver inetAddressResolver = mock(InetAddressResolver.class);
         try {
-            when(environment.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
+            when(inetAddressResolver.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
+
+        Environment environment = new Environment(Collections.emptySet(),
+                                                  "dev",
+                                                  "us-east-1",
+                                                  inetAddressResolver);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> {
