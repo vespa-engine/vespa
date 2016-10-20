@@ -12,30 +12,68 @@ namespace attribute {
 /**
  * Class for storing dense tensors with known bounds in memory, used
  * by DenseTensorAttribute.
+ *
+ * Tensor dimension size information for unbound dimensions is at
+ * negative offset to preserve cell array aligment without
+ * introducing excessive padding, e.g. if tensor store is setup for
+ * tensors of type tensor(x[]) then a tensor of type tensor(x[3]) will
+ * use 32 bytes (inclusive 4 bytes padding).
+ *
+ * If both start of tensor dimension size information and start of
+ * tensor cells were to be 32 byte aligned then tensors of type tensor(x[3])
+ * would use 64 bytes.
  */
 class DenseTensorStore : public TensorStore
 {
 public:
-    // 2 entry alignment, entry type is double => 16 bytes alignment
-    using RefType = btree::AlignedEntryRefT<22, 1>;
+    // 32 entry alignment, entry type is char => 32 bytes alignment
+    using RefType = btree::AlignedEntryRefT<22, 5>;
     using DataStoreType = btree::DataStoreT<RefType>;
     using ValueType = vespalib::eval::ValueType;
+
+    class BufferType : public btree::BufferType<char>
+    {
+        uint32_t _dimSizeInfoSize; // size of tensor dimension size information
+    public:
+        BufferType();
+        virtual ~BufferType();
+        virtual void
+        cleanHold(void *buffer, uint64_t offset, uint64_t len) override;
+        uint32_t dimSizeInfoSize() const { return _dimSizeInfoSize; }
+        void setDimSizeInfoSize(uint32_t dimSizeInfoSize_in) {
+            _dimSizeInfoSize = dimSizeInfoSize_in;
+        }
+    };
 private:
     DataStoreType _concreteStore;
-    btree::BufferType<double> _bufferType;
+    BufferType _bufferType;
     ValueType _type; // type of dense tensor
-    size_t _numCells; // number of cells in dense tensor
+    size_t _numBoundCells; // product of bound dimension sizes
+    uint32_t _unboundDims; // number of unbound dimensions
+    uint32_t _cellSize; // size of a cell (e.g. double => 8)
+
+    size_t unboundCells(const void *buffer) const;
+    void checkMatchingType(const ValueType &rhs, size_t numCells);
 
     template <class TensorType>
     TensorStore::EntryRef
     setDenseTensor(const TensorType &tensor);
+    std::pair<void *, RefType> allocRawBuffer(size_t numCells);
+    void setDenseTensorDimSizeInfo(void *buffer, const ValueType &rhs);
+    size_t alignedSize(size_t numCells) const {
+        return RefType::align(numCells * _cellSize + dimSizeInfoSize());
+    }
 public:
+    uint32_t dimSizeInfoSize() const { return _bufferType.dimSizeInfoSize(); }
     DenseTensorStore(const ValueType &type);
     virtual ~DenseTensorStore();
 
-    size_t numCells() const { return _numCells; }
-    const double *getRawBuffer(RefType ref) const;
-    std::pair<double *, RefType> allocRawBuffer();
+    uint32_t unboundDims() const { return _unboundDims; }
+    size_t getNumCells(const void *buffer) const;
+    uint32_t getCellSize() const { return _cellSize; }
+    const void *getRawBuffer(RefType ref) const;
+    std::pair<void *, RefType>
+    allocRawBuffer(size_t numCells, const std::vector<uint32_t> &dimBinding);
     virtual void holdTensor(EntryRef ref) override;
     virtual EntryRef move(EntryRef ref) override;
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
