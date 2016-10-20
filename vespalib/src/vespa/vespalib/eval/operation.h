@@ -24,6 +24,12 @@ struct Operation {
     virtual ~Operation() {}
 };
 
+/**
+ * Simple typecasting utility.
+ */
+template <typename T>
+const T *as(const Operation &op) { return dynamic_cast<const T *>(&op); }
+
 //-----------------------------------------------------------------------------
 
 /**
