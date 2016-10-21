@@ -5,7 +5,7 @@
 
 using namespace search;
 using vespalib::GenericHeader;
-using namespace vesplib
+using namespace vespalib;
 
 void
 FileHeaderTk::addVersionTags(vespalib::GenericHeader &header)
