@@ -174,9 +174,9 @@ DenseTensorStore::move(EntryRef ref) {
 
 namespace {
 
-ValueType makeBoundType(const ValueType &type,
-                        const void *buffer,
-                        uint32_t numUnboundDims)
+ValueType makeConcreteType(const ValueType &type,
+                           const void *buffer,
+                           uint32_t numUnboundDims)
 {
     std::vector<ValueType::Dimension> dimensions(type.dimensions());
     const uint32_t *unboundDimSizeEnd = static_cast<const uint32_t *>(buffer);
@@ -208,7 +208,7 @@ DenseTensorStore::getTensor(EntryRef ref) const
              ConstArrayRef<double>(static_cast<const double *>(raw), numCells));
     }
     return std::make_unique<MutableDenseTensorView>
-        (makeBoundType(_type, raw, _numUnboundDims),
+        (makeConcreteType(_type, raw, _numUnboundDims),
          ConstArrayRef<double>(static_cast<const double *>(raw), numCells));
 }
 
