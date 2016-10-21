@@ -115,7 +115,7 @@ uint32_t mapLabelToNumber(vespalib::stringref label) {
     return result;
 }
 
-class DenseTensorBoundsMapper : public TensorVisitor
+class DenseTensorTypeMapper : public TensorVisitor
 {
     ValueType _type;
     std::vector<ValueType::Dimension> _dimensions;
@@ -125,8 +125,8 @@ class DenseTensorBoundsMapper : public TensorVisitor
 
     virtual void visit(const TensorAddress &address, double value) override;
 
-    DenseTensorBoundsMapper(const ValueType &type);
-    ~DenseTensorBoundsMapper();
+    DenseTensorTypeMapper(const ValueType &type);
+    ~DenseTensorTypeMapper();
 
     ValueType build();
 public:
@@ -134,7 +134,7 @@ public:
 };
 
 bool
-DenseTensorBoundsMapper::addressOK(const TensorAddress &address)
+DenseTensorTypeMapper::addressOK(const TensorAddress &address)
 {
     TensorAddressElementIterator<TensorAddress> addressIterator(address);
     auto dimIterator = _dimensions.begin();
@@ -155,7 +155,7 @@ DenseTensorBoundsMapper::addressOK(const TensorAddress &address)
 
 
 void
-DenseTensorBoundsMapper::expandUnboundDimensions(const TensorAddress &address)
+DenseTensorTypeMapper::expandUnboundDimensions(const TensorAddress &address)
 {
     TensorAddressElementIterator<TensorAddress> addressIterator(address);
     auto dimIterator = _dimensions.begin();
@@ -175,7 +175,7 @@ DenseTensorBoundsMapper::expandUnboundDimensions(const TensorAddress &address)
 }
 
 void
-DenseTensorBoundsMapper::visit(const TensorAddress &address, double value)
+DenseTensorTypeMapper::visit(const TensorAddress &address, double value)
 {
     (void) value;
     if (addressOK(address)) {
@@ -183,7 +183,7 @@ DenseTensorBoundsMapper::visit(const TensorAddress &address, double value)
     }
 }
 
-DenseTensorBoundsMapper::DenseTensorBoundsMapper(const ValueType &type)
+DenseTensorTypeMapper::DenseTensorTypeMapper(const ValueType &type)
     : _type(type),
       _dimensions(type.dimensions())
 {
@@ -193,20 +193,20 @@ DenseTensorBoundsMapper::DenseTensorBoundsMapper(const ValueType &type)
     }
 }
 
-DenseTensorBoundsMapper::~DenseTensorBoundsMapper()
+DenseTensorTypeMapper::~DenseTensorTypeMapper()
 {
 }
 
 ValueType
-DenseTensorBoundsMapper::build()
+DenseTensorTypeMapper::build()
 {
     return ValueType::tensor_type(std::move(_dimensions));
 }
 
 ValueType
-DenseTensorBoundsMapper::map(const Tensor &tensor, const ValueType &type)
+DenseTensorTypeMapper::map(const Tensor &tensor, const ValueType &type)
 {
-    DenseTensorBoundsMapper mapper(type);
+    DenseTensorTypeMapper mapper(type);
     tensor.accept(mapper);
     return mapper.build();
 }
@@ -285,7 +285,7 @@ std::unique_ptr<Tensor>
 DenseTensorMapper::map(const Tensor &tensor, const ValueType &type)
 {
     DenseTensorMapper mapper(type.is_abstract() ?
-                             DenseTensorBoundsMapper::map(tensor, type) :
+                             DenseTensorTypeMapper::map(tensor, type) :
                              type);
     tensor.accept(mapper);
     return mapper.build();
