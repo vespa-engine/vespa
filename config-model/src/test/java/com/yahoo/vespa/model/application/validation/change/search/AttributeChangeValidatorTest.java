@@ -125,8 +125,4 @@ public class AttributeChangeValidatorTest {
                 "field f1 type tensor { indexing: attribute \n attribute: tensor(x[104], y[52]) }")
                 .assertValidation();
     }
-
-
-
-
 }
