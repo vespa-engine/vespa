@@ -85,18 +85,18 @@ class GroupPreparer {
                 nodeList.update(nodeRepository.reserve(accepted));
             }
 
-            if (nodeList.fullfilled()) return nodeList.finalNodes(surplusActiveNodes);
-
-            // Could not be fulfilled
-            if (nodeList.wouldBeFulfilledWithRetiredNodes())
-                throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
-                                                 " because we want to retire existing nodes.");
-            else if (nodeList.wouldBeFulfilledWithClashingParentHost())
-                throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster +
-                                                 " because too many have same parentHost.");
+            if (nodeList.fullfilled()) 
+                return nodeList.finalNodes(surplusActiveNodes);
             else
-                throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster + ".");
+                throw new OutOfCapacityException("Could not satisfy " + requestedNodes + " for " + cluster + 
+                                                 outOfCapacityDetails(nodeList));
         }
+    }
+    
+    private String outOfCapacityDetails(NodeList nodeList) {
+        if (nodeList.wouldBeFulfilledWithClashingParentHost()) 
+            return  ": Not enough nodes available on separate physical hosts.";
+        return ".";
     }
 
     /** 
