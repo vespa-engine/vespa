@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,6 +140,11 @@ public class DockerMock implements Docker {
     }
 
     @Override
+    public void buildImage(File dockerfile, DockerImage dockerImage) {
+
+    }
+
+    @Override
     public void deleteUnusedDockerImages(Set<DockerImage> except) {
 
     }
@@ -186,6 +192,11 @@ public class DockerMock implements Docker {
 
         @Override
         public CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit) {
+            return this;
+        }
+
+        @Override
+        public CreateContainerCommand withEntrypoint(String... entrypoint) {
             return this;
         }
 

@@ -15,6 +15,7 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.RemoteApiVersion;
 import com.github.dockerjava.core.async.ResultCallbackTemplate;
+import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
@@ -28,6 +29,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -254,11 +256,9 @@ public class DockerImpl implements Docker {
 
             return new ContainerStatsImpl(statsCallback.stats.getNetworks(), statsCallback.stats.getCpuStats(),
                     statsCallback.stats.getMemoryStats(), statsCallback.stats.getBlkioStats());
-        } catch (DockerException e) {
+        } catch (DockerException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to get container stats", e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Failed to get container stats in time", e);
         }
     }
 
@@ -379,6 +379,17 @@ public class DockerImpl implements Docker {
         }
     }
 
+    @Override
+    public void buildImage(File dockerfile, DockerImage image) {
+        try {
+            dockerClient.buildImageCmd(dockerfile).withTag(image.asString())
+                    .exec(new BuildImageResultCallback()).awaitCompletion();
+        } catch (DockerException | InterruptedException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to build image " + image.asString(), e);
+        }
+    }
+
     private Map<String, Image> filterOutImagesUsedByContainers(
             Map<String, Image> dockerImagesByImageId, List<com.github.dockerjava.api.model.Container> containerList) {
         Map<String, Image> filteredDockerImagesByImageId = new HashMap<>(dockerImagesByImageId);
@@ -458,7 +469,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public void deleteUnusedDockerImages(Set<DockerImage> except) {
-        getUnusedDockerImages(except).stream().forEach(this::deleteImage);
+        getUnusedDockerImages(except).forEach(this::deleteImage);
     }
 
     private class ImagePullCallback extends PullImageResultCallback {

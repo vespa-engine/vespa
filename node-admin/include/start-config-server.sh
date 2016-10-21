@@ -62,19 +62,6 @@ findroot
 
 export LC_ALL=C
 
-function WaitUntilHostIsReachable {
-    # Address may be IP or hostname.
-    local address="$1"
-
-    echo -n "Will wait until $address is reachable... "
-    while ! ping -q -c 1 -W 3 "$address" &>/dev/null
-    do
-        echo "not done (will retry)"
-        sleep 1
-    done
-    echo "Done"
-}
-
 function VerifyRequiredEnvironmentVariablesAreSet {
     if [ -z "$HOSTED_VESPA_REGION" ]
     then
@@ -83,10 +70,6 @@ function VerifyRequiredEnvironmentVariablesAreSet {
     if [ -z "$CONFIG_SERVER_HOSTNAME" ]
     then
         Fail "Environment variable CONFIG_SERVER_HOSTNAME is not set"
-    fi
-    if [ -z "$HOST_BRIDGE_IP" ]
-    then
-        Fail "Environment variable HOST_BRIDGE_IP is not set"
     fi
 
     case "$HOSTED_VESPA_ENVIRONMENT" in
@@ -115,10 +98,6 @@ function InternalMain {
 
     # Can also set jvmargs if necessary:
     # set cloudconfig_server.jvmargs=-Dvespa.freezedetector.disable=true -XX:NewRatio=1 -verbose:gc -XX:+PrintGCDateStamps -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Xms6g -Xmx6g
-
-    # The network is set up asynchronously and from outside of this
-    # container. Wait until it's done.
-    WaitUntilHostIsReachable "$HOST_BRIDGE_IP"
 
     yinst start cloudconfig_server
 

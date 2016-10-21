@@ -32,6 +32,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private Optional<String> networkMode = Optional.empty();
     private Optional<String> ipv4Address = Optional.empty();
     private Optional<String> ipv6Address = Optional.empty();
+    private Optional<String[]> entrypoint = Optional.empty();
 
     CreateContainerCommandImpl(DockerClient docker,
                                DockerImage dockerImage,
@@ -53,6 +54,12 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     @Override
     public Docker.CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit) {
         ulimits.add(new Ulimit(name, softLimit, hardLimit));
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withEntrypoint(String... entrypoint) {
+        this.entrypoint = Optional.of(entrypoint);
         return this;
     }
 
@@ -119,6 +126,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         if (networkMode.isPresent()) containerCmd = containerCmd.withNetworkMode(networkMode.get());
         if (ipv4Address.isPresent()) containerCmd = containerCmd.withIpv4Address(ipv4Address.get());
         if (ipv6Address.isPresent()) containerCmd = containerCmd.withIpv6Address(ipv6Address.get());
+        if (entrypoint.isPresent()) containerCmd = containerCmd.withEntrypoint(entrypoint.get());
 
         return containerCmd;
     }
@@ -126,7 +134,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     /** Maps ("--env", {"A", "B", "C"}) to "--env A --env B --env C ". */
     private String toRepeatedOption(String option, List<String> optionValues) {
         StringBuilder builder = new StringBuilder();
-        optionValues.stream().forEach(optionValue -> builder.append(option).append(" ").append(optionValue).append(" "));
+        optionValues.forEach(optionValue -> builder.append(option).append(" ").append(optionValue).append(" "));
         return builder.toString();
     }
 
@@ -153,6 +161,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 + toOptionalOption("--net", networkMode)
                 + toOptionalOption("--ip", ipv4Address)
                 + toOptionalOption("--ip6", ipv6Address)
+                + toOptionalOption("--entrypoint", entrypoint)
                 + dockerImage.asString();
     }
 

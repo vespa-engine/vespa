@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.model.Network;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
@@ -62,9 +61,9 @@ public class DockerTestUtils {
                 .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
     }
 
-    public static void createDockerImage(DockerImpl docker, DockerImage dockerImage) throws IOException, ExecutionException, InterruptedException {
+    public static void buildSimpleHttpServerDockerImage(DockerImpl docker, DockerImage dockerImage) throws IOException, ExecutionException, InterruptedException {
         try {
-            docker.deleteImage(new DockerImage(dockerImage.asString()));
+            docker.deleteImage(dockerImage);
         } catch (Exception e) {
             if (! e.getMessage().equals("Failed to delete docker image " + dockerImage.asString())) {
                 throw e;
@@ -72,10 +71,8 @@ public class DockerTestUtils {
         }
 
         // Build the image locally
-        File dockerFilePath = new File("src/test/resources/simple-ipv6-server");
-        docker.dockerClient
-                .buildImageCmd(dockerFilePath)
-                .withTag(dockerImage.asString()).exec(new BuildImageResultCallback()).awaitCompletion();
+        File dockerFileStream = new File("src/test/resources/simple-ipv6-server");
+        docker.buildImage(dockerFileStream, dockerImage);
     }
 
     private enum OS { Linux, Mac_OS_X, Unsupported }

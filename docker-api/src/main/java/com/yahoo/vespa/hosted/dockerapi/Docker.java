@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ public interface Docker {
         CreateContainerCommand withNetworkMode(String mode);
         CreateContainerCommand withIpAddress(InetAddress address);
         CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);
+        CreateContainerCommand withEntrypoint(String... entrypoint);
 
         void create();
     }
@@ -67,6 +69,8 @@ public interface Docker {
     boolean imageIsDownloaded(DockerImage image);
 
     void deleteImage(DockerImage dockerImage);
+
+    void buildImage(File dockerfile, DockerImage dockerImage);
 
     /**
      * Deletes the local images that are currently not in use by any container and not in the except set.
