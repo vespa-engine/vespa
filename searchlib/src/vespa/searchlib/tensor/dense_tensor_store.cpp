@@ -4,6 +4,7 @@
 #include "dense_tensor_store.h"
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor_view.h>
+#include <vespa/vespalib/tensor/dense/mutable_dense_tensor_view.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -15,6 +16,7 @@
 using vespalib::tensor::Tensor;
 using vespalib::tensor::DenseTensor;
 using vespalib::tensor::DenseTensorView;
+using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::ValueType;
 using vespalib::ConstArrayRef;
 
@@ -170,6 +172,28 @@ DenseTensorStore::move(EntryRef ref) {
     return newraw.second;
 }
 
+namespace {
+
+ValueType makeBoundType(const ValueType &type,
+                        const void *buffer,
+                        uint32_t numUnboundDims)
+{
+    std::vector<ValueType::Dimension> dimensions(type.dimensions());
+    const uint32_t *unboundDimSizeEnd = static_cast<const uint32_t *>(buffer);
+    const uint32_t *unboundDimSize = unboundDimSizeEnd - numUnboundDims;
+    for (auto &dim : dimensions) {
+        if (!dim.is_bound()) {
+            assert(unboundDimSize != unboundDimSizeEnd);
+            dim.size = *unboundDimSize;
+            ++unboundDimSize;
+        }
+    }
+    assert(unboundDimSize == unboundDimSizeEnd);
+    return ValueType::tensor_type(std::move(dimensions));
+}
+
+}
+
 std::unique_ptr<Tensor>
 DenseTensorStore::getTensor(EntryRef ref) const
 {
@@ -178,8 +202,13 @@ DenseTensorStore::getTensor(EntryRef ref) const
         return std::unique_ptr<Tensor>();
     }
     size_t numCells = getNumCells(raw);
-    return std::make_unique<DenseTensorView>
-        (_type,
+    if (_numUnboundDims == 0) {
+        return std::make_unique<DenseTensorView>
+            (_type,
+             ConstArrayRef<double>(static_cast<const double *>(raw), numCells));
+    }
+    return std::make_unique<MutableDenseTensorView>
+        (makeBoundType(_type, raw, _numUnboundDims),
          ConstArrayRef<double>(static_cast<const double *>(raw), numCells));
 }
 
@@ -233,7 +262,7 @@ DenseTensorStore::setDenseTensor(const TensorType &tensor)
     size_t numCells = tensor.cells().size();
     checkMatchingType(_type, tensor.type(), numCells);
     auto raw = allocRawBuffer(numCells);
-    setDenseTensorUnboundDimSizes(raw.first, _type, numUnboundDims(), tensor.type());
+    setDenseTensorUnboundDimSizes(raw.first, _type, _numUnboundDims, tensor.type());
     memcpy(raw.first, &tensor.cells()[0], numCells * _cellSize);
     return raw.second;
 }

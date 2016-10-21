@@ -66,7 +66,6 @@ public:
     DenseTensorStore(const ValueType &type);
     virtual ~DenseTensorStore();
 
-    uint32_t numUnboundDims() const { return _numUnboundDims; }
     size_t getNumCells(const void *buffer) const;
     uint32_t getCellSize() const { return _cellSize; }
     const void *getRawBuffer(RefType ref) const;

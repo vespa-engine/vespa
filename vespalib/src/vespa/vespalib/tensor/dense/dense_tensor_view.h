@@ -25,6 +25,7 @@ public:
 
 private:
     const eval::ValueType &_type;
+protected:
     CellsRef               _cells;
 
 public:
