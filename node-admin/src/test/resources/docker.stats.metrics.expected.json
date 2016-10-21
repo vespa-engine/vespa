@@ -3,7 +3,7 @@
     "application":"docker",
     "dimensions":{
       "flavor":"docker",
-      "app":"testapp",
+      "app":"testapp.testinstance",
       "clustertype":"clustType",
       "role":"tenants",
       "tenantName":"tester",
@@ -11,38 +11,52 @@
       "vespaVersion":"1.2.3",
       "state":"active",
       "clusterid":"clustId",
+      "parentHostname":"parent.host.name.yahoo.com",
+      "zone":"dev.us-east-1",
       "interface":"eth1"
     },
     "metrics":{
       "node.network.bytes_sent":5.4246745E7,
       "node.network.bytes_rcvd":3245766.0
+    },
+    "routing":{
+      "yamas":{
+        "namespaces": ["Vespa"]
+      }
     }
   },
   {
     "application":"docker",
     "dimensions":{
       "flavor":"docker",
-      "app":"testapp",
+      "app":"testapp.testinstance",
       "clustertype":"clustType",
       "role":"tenants",
       "tenantName":"tester",
       "host":"hostname",
       "vespaVersion":"1.2.3",
       "state":"active",
-      "clusterid":"clustId"
+      "clusterid":"clustId",
+      "parentHostname":"parent.host.name.yahoo.com",
+      "zone":"dev.us-east-1"
     },
     "metrics":{
       "node.cpu.busy.pct": 45.6789123,
       "node.cpu.throttled_time": 4523.0,
       "node.memory.usage":1.752707072E9,
       "node.memory.limit":4.294967296E9
+    },
+    "routing":{
+      "yamas":{
+        "namespaces": ["Vespa"]
+      }
     }
   },
   {
     "application":"docker",
     "dimensions":{
       "flavor":"docker",
-      "app":"testapp",
+      "app":"testapp.testinstance",
       "clustertype":"clustType",
       "role":"tenants",
       "tenantName":"tester",
@@ -50,11 +64,18 @@
       "vespaVersion":"1.2.3",
       "state":"active",
       "clusterid":"clustId",
+      "parentHostname":"parent.host.name.yahoo.com",
+      "zone":"dev.us-east-1",
       "interface":"eth0"
     },
     "metrics":{
       "node.network.bytes_sent":2.0303455E7,
       "node.network.bytes_rcvd":1.949927E7
+    },
+    "routing":{
+      "yamas":{
+        "namespaces": ["Vespa"]
+      }
     }
   }
 ]

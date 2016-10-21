@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.util;
 
+import com.yahoo.net.HostName;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -23,22 +25,26 @@ public class Environment {
     private final Set<String> configServerHosts;
     private final String environment;
     private final String region;
+    private final String parentHostHostname;
     private final InetAddressResolver inetAddressResolver;
 
     public Environment() {
         this(getConfigServerHostsFromEnvironment(),
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
+             HostName.getLocalhost(),
              new InetAddressResolver());
     }
 
     public Environment(Set<String> configServerHosts,
                        String environment,
                        String region,
+                       String parentHostHostname,
                        InetAddressResolver inetAddressResolver) {
         this.configServerHosts = configServerHosts;
         this.environment = environment;
         this.region = region;
+        this.parentHostHostname = parentHostHostname;
         this.inetAddressResolver = inetAddressResolver;
     }
 
@@ -50,6 +56,10 @@ public class Environment {
 
     public String getRegion() {
         return region;
+    }
+
+    public String getParentHostHostname() {
+        return parentHostHostname;
     }
 
     private static String getEnvironmentVariable(String name) {
