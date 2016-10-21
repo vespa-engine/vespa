@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("routing_test");
-
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/messagebus.h>
@@ -16,8 +13,11 @@ LOG_SETUP("routing_test");
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/vtag.h>
+#include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP("routing_test");
 
 using namespace mbus;
 
@@ -650,7 +650,7 @@ Test::testTrace(TestData &data, const std::vector<string> &expected)
 bool
 Test::testTrace(const std::vector<string> &expected, const Trace &trace)
 {
-    string version = Vtag::currentVersion.toString();
+    string version = vespalib::Vtag::currentVersion.toString();
     string actual = trace.toString();
     size_t pos = 0;
     for (uint32_t i = 0; i < expected.size(); ++i) {

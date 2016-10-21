@@ -7,15 +7,14 @@
 #include <unistd.h>
 #include <time.h>
 #include <assert.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("");
-LOG_RCSID("$Id$");
-
 #include "errhandle.h"
 #include "service.h"
 #include "forward.h"
-#include "vtag.h"
+#include <vespa/vespalib/component/vtag.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP("");
+LOG_RCSID("$Id$");
 
 namespace logdemon {
 
@@ -40,7 +39,7 @@ void
 Forwarder::sendMode()
 {
     char buf[1024];
-    snprintf(buf, 1024, "mode logd %s\n", VersionTag);
+    snprintf(buf, 1024, "mode logd %s\n", vespalib::VersionTag);
     int len = strlen(buf);
     if (len < 100) {
             forwardText(buf, len);

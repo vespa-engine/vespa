@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <logd/config-logd.h>
 #include <vespa/vespalib/util/hashmap.h>
+#include <vespa/log/log.h>
 
 namespace logdemon {
 

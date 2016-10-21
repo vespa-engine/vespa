@@ -31,7 +31,6 @@ vespa_add_library(messagebus
     sourcesessionparams.cpp
     staticthrottlepolicy.cpp
     systemtimer.cpp
-    vtag.cpp
     $<TARGET_OBJECTS:messagebus_routing>
     $<TARGET_OBJECTS:messagebus_network>
     INSTALL lib64

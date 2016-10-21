@@ -22,7 +22,6 @@ vespa_add_library(fnet
     task.cpp
     transport.cpp
     transport_thread.cpp
-    vtag.cpp
     $<TARGET_OBJECTS:fnet_frt>
     INSTALL lib64
     DEPENDS

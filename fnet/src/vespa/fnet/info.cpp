@@ -61,7 +61,7 @@ FNET_Info::FNET_Info()
 const char*
 FNET_Info::GetFNETVersion()
 {
-    return fnet::VersionTag;
+    return vespalib::VersionTag;
 }
 
 

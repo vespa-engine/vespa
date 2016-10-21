@@ -3,14 +3,11 @@
 #pragma once
 
 #include <vespa/fastos/fastos.h>
+#include <vespa/vespalib/component/vtag.h>
 
 // FEATURES
 
 #include "features.h"
-
-// VTAG
-
-#include "vtag.h"
 
 // DEFINES
 

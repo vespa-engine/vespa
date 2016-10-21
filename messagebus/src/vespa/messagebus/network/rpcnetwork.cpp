@@ -1,19 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".rpcnetwork");
-
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/iprotocol.h>
 #include <vespa/messagebus/tracelevel.h>
-#include <vespa/messagebus/vtag.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/util/sync.h>
 #include "inetworkowner.h"
 #include "rpcnetwork.h"
 #include "rpcsendv1.h"
 #include "rpcservice.h"
+#include <vespa/log/log.h>
+
+LOG_SETUP(".rpcnetwork");
+
 
 namespace {
 
@@ -160,7 +160,7 @@ RPCNetwork::flushTargetPool()
 const vespalib::Version &
 RPCNetwork::getVersion() const
 {
-    return Vtag::currentVersion;
+    return vespalib::Vtag::currentVersion;
 }
 
 void

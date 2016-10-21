@@ -1,22 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".testserver");
-
+#include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
-#include <vespa/messagebus/vtag.h>
 #include "oosstate.h"
 #include "simpleprotocol.h"
 #include "slobrok.h"
 #include "slobrokstate.h"
 #include "testserver.h"
+#include <vespa/log/log.h>
+
+LOG_SETUP(".testserver");
 
 namespace mbus {
 
 VersionedRPCNetwork::VersionedRPCNetwork(const RPCNetworkParams &params) :
     RPCNetwork(params),
-    _version(Vtag::currentVersion)
+    _version(vespalib::Vtag::currentVersion)
 {
     // empty
 }

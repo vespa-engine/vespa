@@ -18,17 +18,15 @@ namespace slobrok {
 
 class NamedService
 {
-private:
-    NamedService(const NamedService &);            // Not used
-    NamedService &operator=(const NamedService &); // Not used
-
 protected:
     std::string           _name;
     std::string           _spec;
 
 public:
-    NamedService(const char *name,
-              const char *spec);
+    NamedService(const NamedService &) = delete;
+    NamedService &operator=(const NamedService &) = delete;
+
+    NamedService(const char *name, const char *spec);
     virtual ~NamedService();
 
     const char *getName() const { return _name.c_str(); }

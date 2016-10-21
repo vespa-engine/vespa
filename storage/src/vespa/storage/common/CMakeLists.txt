@@ -4,7 +4,6 @@ vespa_add_library(storage_common OBJECT
     statusmetricconsumer.cpp
     storagelink.cpp
     storagelinkqueued.cpp
-    vtag.cpp
     bucketoperationlogger.cpp
     messagebucketid.cpp
     messagesender.cpp
