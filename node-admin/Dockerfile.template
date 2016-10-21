@@ -17,8 +17,8 @@ RUN yum install -y tcpdump
 ADD include/root-bashrc /root/.bashrc
 
 # Override what's in the base image with local versions:
-ADD target/node-admin-jar-with-dependencies.jar $VESPA_HOME/lib/jars/node-admin-jar-with-dependencies.jar
 ADD src/main/application/services.xml $VESPA_HOME/conf/node-admin-app/services.xml
+ADD target/node-admin-jar-with-dependencies.jar $VESPA_HOME/lib/jars/node-admin-jar-with-dependencies.jar
 ADD scripts/configure-container-networking.py $VESPA_HOME/libexec/vespa/node-admin/configure-container-networking.py
 
 # For deploying sample application.
@@ -34,3 +34,6 @@ ADD include/start-services.sh /usr/local/bin/start-services.sh
 
 # Make config-server aware of node flavor 'docker'.
 ADD include/node-flavors.xml $VESPA_HOME/conf/configserver-app/node-flavors.xml
+
+# Make config-server also listen to 4080
+ADD include/http-server.xml $VESPA_HOME/conf/configserver-app/hosted-vespa/http-server.xml
