@@ -12,6 +12,10 @@ extern char VersionTagDate[];
 extern char VersionTagSystem[];
 extern char VersionTagSystemRev[];
 extern char VersionTagBuilder[];
+extern char VersionTagPkg[];
+extern char VersionTagComponent[];
+extern char VersionTagArch[];
+
 
 class Vtag {
 public:

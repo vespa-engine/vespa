@@ -6,3 +6,4 @@ vespa_add_library(vespalib_vespalib_component OBJECT
     vtag.cpp
     DEPENDS
 )
+set_source_files_properties(avx.cpp PROPERTIES COMPILE_FLAGS "${VTAG_DEFINES}")
