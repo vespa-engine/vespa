@@ -326,7 +326,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void scheduleDownLoadIfNeeded(ContainerNodeSpec nodeSpec) {
         if (dockerOperations.shouldScheduleDownloadOfImage(nodeSpec.wantedDockerImage.get())) {
-            if (imageBeingDownloaded == nodeSpec.wantedDockerImage.get()) {
+            if (nodeSpec.wantedDockerImage.get().equals(imageBeingDownloaded)) {
                 // Downloading already scheduled, but not done.
                 return;
             }
