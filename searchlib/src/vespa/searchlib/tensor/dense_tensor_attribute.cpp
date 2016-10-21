@@ -22,61 +22,52 @@ const vespalib::string tensorTypeTag("tensortype");
 class TensorReader : public AttributeVector::ReaderBase
 {
 private:
-    static constexpr uint8_t notPresent = 0;
-    static constexpr uint8_t present = 1;
+    static constexpr uint8_t tensorIsNotPresent = 0;
+    static constexpr uint8_t tensorIsPresent = 1;
     vespalib::eval::ValueType _tensorType;
-    uint32_t _unboundDims;		// number of unbound dimensions
+    uint32_t _numUnboundDims;
     size_t _numBoundCells;
-    std::vector<uint32_t> _dimSizeInfo;  // sizes of unbound dimensions
+    std::vector<uint32_t> _unboundDimSizes;
 public:
     TensorReader(AttributeVector &attr)
         : AttributeVector::ReaderBase(attr),
           _tensorType(vespalib::eval::ValueType::from_spec(getDatHeader().getTag(tensorTypeTag).asString())),
-          _unboundDims(0),
+          _numUnboundDims(0),
           _numBoundCells(1),
-          _dimSizeInfo()
+          _unboundDimSizes()
     {
         for (const auto & dim : _tensorType.dimensions()) {
             if (dim.is_bound()) {
                 _numBoundCells *= dim.size;
             } else {
-                ++_unboundDims;
+                ++_numUnboundDims;
             }
         }
-        _dimSizeInfo.resize(_unboundDims);
+        _unboundDimSizes.resize(_numUnboundDims);
     }
     size_t getNumCells() {
-        if (_unboundDims == 0) {
-            unsigned char detect;
-            _datFile->ReadBuf(&detect, sizeof(detect));
-            if (detect == present) {
-                return _numBoundCells;
-            }
-            if (detect == notPresent) {
-                return 0u;
-            }
-            abort(); // bad byte value, should be 0 or 1
-        } else {
-            _datFile->ReadBuf(&_dimSizeInfo[0], sizeof(uint32_t));
-            if (_dimSizeInfo[0] == 0) {
-                return 0u;
-            }
-            size_t numCells = _numBoundCells * _dimSizeInfo[0];
-            // TODO: sanity check numCells
-            if (_unboundDims > 1) {
-                _datFile->ReadBuf(&_dimSizeInfo[1],
-                                  (_unboundDims - 1) * sizeof(uint32_t));
-                for (auto i = 1u; i < _unboundDims; ++i) {
-                    assert(_dimSizeInfo[i] != 0u);
-                    numCells *= _dimSizeInfo[i];
-                    // TODO: sanity check numCells
-                }
-            }
-            return numCells;
+        unsigned char detect;
+        _datFile->ReadBuf(&detect, sizeof(detect));
+        if (detect == tensorIsNotPresent) {
+            return 0u;
         }
+        if (detect != tensorIsPresent) {
+            abort();
+        }
+        size_t numCells = _numBoundCells;
+        if (_numUnboundDims != 0) {
+            _datFile->ReadBuf(&_unboundDimSizes[0],
+                              _numUnboundDims * sizeof(uint32_t));
+            for (auto i = 0u; i < _numUnboundDims; ++i) {
+                assert(_unboundDimSizes[i] != 0u);
+                numCells *= _unboundDimSizes[i];
+                // TODO: sanity check numCells
+            }
+        }
+        return numCells;
     }
     const vespalib::eval::ValueType &tensorType() const { return _tensorType; }
-    const std::vector<uint32_t> &getDimSizeInfo() const { return _dimSizeInfo; }
+    const std::vector<uint32_t> &getUnboundDimSizes() const { return _unboundDimSizes; }
     void readTensor(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
 };
 
@@ -136,8 +127,8 @@ DenseTensorAttribute::onLoad()
     for (uint32_t lid = 0; lid < numDocs; ++lid) {
         size_t numCells = tensorReader.getNumCells();
         if (numCells != 0u) {
-            const auto &dimSizeInfo = tensorReader.getDimSizeInfo();
-            auto raw = _denseTensorStore.allocRawBuffer(numCells, dimSizeInfo);
+            const auto &unboundDimSizes = tensorReader.getUnboundDimSizes();
+            auto raw = _denseTensorStore.allocRawBuffer(numCells, unboundDimSizes);
             size_t rawLen = numCells * cellSize;
             tensorReader.readTensor(raw.first, rawLen);
             _refVector.push_back(raw.second);

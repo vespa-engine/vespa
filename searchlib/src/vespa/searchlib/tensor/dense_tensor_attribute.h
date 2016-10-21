@@ -15,7 +15,7 @@ namespace attribute {
  */
 class DenseTensorAttribute : public TensorAttribute
 {
-    DenseTensorStore _denseTensorStore; // data store for dense tensors
+    DenseTensorStore _denseTensorStore;
 public:
     DenseTensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg);
     virtual ~DenseTensorAttribute();

@@ -33,15 +33,15 @@ public:
 
     class BufferType : public btree::BufferType<char>
     {
-        uint32_t _dimSizeInfoSize; // size of tensor dimension size information
+        uint32_t _unboundDimSizesSize;
     public:
         BufferType();
         virtual ~BufferType();
         virtual void
         cleanHold(void *buffer, uint64_t offset, uint64_t len) override;
-        uint32_t dimSizeInfoSize() const { return _dimSizeInfoSize; }
-        void setDimSizeInfoSize(uint32_t dimSizeInfoSize_in) {
-            _dimSizeInfoSize = dimSizeInfoSize_in;
+        uint32_t unboundDimSizesSize() const { return _unboundDimSizesSize; }
+        void setUnboundDimSizesSize(uint32_t unboundDimSizesSize_in) {
+            _unboundDimSizesSize = unboundDimSizesSize_in;
         }
     };
 private:
@@ -49,31 +49,29 @@ private:
     BufferType _bufferType;
     ValueType _type; // type of dense tensor
     size_t _numBoundCells; // product of bound dimension sizes
-    uint32_t _unboundDims; // number of unbound dimensions
+    uint32_t _numUnboundDims;
     uint32_t _cellSize; // size of a cell (e.g. double => 8)
 
     size_t unboundCells(const void *buffer) const;
-    void checkMatchingType(const ValueType &rhs, size_t numCells);
 
     template <class TensorType>
     TensorStore::EntryRef
     setDenseTensor(const TensorType &tensor);
     std::pair<void *, RefType> allocRawBuffer(size_t numCells);
-    void setDenseTensorDimSizeInfo(void *buffer, const ValueType &rhs);
     size_t alignedSize(size_t numCells) const {
-        return RefType::align(numCells * _cellSize + dimSizeInfoSize());
+        return RefType::align(numCells * _cellSize + unboundDimSizesSize());
     }
 public:
-    uint32_t dimSizeInfoSize() const { return _bufferType.dimSizeInfoSize(); }
+    uint32_t unboundDimSizesSize() const { return _bufferType.unboundDimSizesSize(); }
     DenseTensorStore(const ValueType &type);
     virtual ~DenseTensorStore();
 
-    uint32_t unboundDims() const { return _unboundDims; }
+    uint32_t numUnboundDims() const { return _numUnboundDims; }
     size_t getNumCells(const void *buffer) const;
     uint32_t getCellSize() const { return _cellSize; }
     const void *getRawBuffer(RefType ref) const;
     std::pair<void *, RefType>
-    allocRawBuffer(size_t numCells, const std::vector<uint32_t> &dimBinding);
+    allocRawBuffer(size_t numCells, const std::vector<uint32_t> &unboundDimSizes);
     virtual void holdTensor(EntryRef ref) override;
     virtual EntryRef move(EntryRef ref) override;
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
