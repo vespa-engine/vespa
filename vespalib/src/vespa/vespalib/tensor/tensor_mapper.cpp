@@ -98,15 +98,124 @@ SparseTensorMapper<TensorT>::map(const Tensor &tensor,
     return mapper.build();
 }
 
+static constexpr uint32_t BAD_LABEL = std::numeric_limits<uint32_t>::max();
+static constexpr uint32_t BAD_ADDRESS = std::numeric_limits<uint32_t>::max();
+
+uint32_t mapLabelToNumber(vespalib::stringref label) {
+    uint32_t result = 0;
+    for (char c : label) {
+        if (c < '0' || c > '9') {
+            return BAD_LABEL; // bad char
+        }
+        result = result * 10 + (c - '0');
+        if (result > 100000000) {
+            return BAD_LABEL; // overflow
+        }
+    }
+    return result;
+}
+
+class DenseTensorTypeMapper : public TensorVisitor
+{
+    ValueType _type;
+    std::vector<ValueType::Dimension> _dimensions;
+
+    bool addressOK(const TensorAddress &address);
+    void expandUnboundDimensions(const TensorAddress &address);
+
+    virtual void visit(const TensorAddress &address, double value) override;
+
+    DenseTensorTypeMapper(const ValueType &type);
+    ~DenseTensorTypeMapper();
+
+    ValueType build();
+public:
+    static ValueType map(const Tensor &tensor, const ValueType &type);
+};
+
+bool
+DenseTensorTypeMapper::addressOK(const TensorAddress &address)
+{
+    TensorAddressElementIterator<TensorAddress> addressIterator(address);
+    auto dimIterator = _dimensions.begin();
+    for (const auto &dimension : _type.dimensions()) {
+        if (addressIterator.skipToDimension(dimension.name)) {
+            uint32_t label = mapLabelToNumber(addressIterator.label());
+            if (label == BAD_LABEL ||
+                (dimension.is_bound() && label >= dimIterator->size)) {
+                return false;
+            }
+            addressIterator.next();
+        }
+        ++dimIterator;
+    }
+    assert(dimIterator == _dimensions.end());
+    return true;
+}
+
+
+void
+DenseTensorTypeMapper::expandUnboundDimensions(const TensorAddress &address)
+{
+    TensorAddressElementIterator<TensorAddress> addressIterator(address);
+    auto dimIterator = _dimensions.begin();
+    for (const auto &dimension : _type.dimensions()) {
+        if (addressIterator.skipToDimension(dimension.name)) {
+            uint32_t label = mapLabelToNumber(addressIterator.label());
+            if (label != BAD_LABEL &&
+                !dimension.is_bound() &&
+                label >= dimIterator->size) {
+                dimIterator->size = label + 1;
+            }
+            addressIterator.next();
+        }
+        ++dimIterator;
+    }
+    assert(dimIterator == _dimensions.end());
+}
+
+void
+DenseTensorTypeMapper::visit(const TensorAddress &address, double value)
+{
+    (void) value;
+    if (addressOK(address)) {
+        expandUnboundDimensions(address);
+    }
+}
+
+DenseTensorTypeMapper::DenseTensorTypeMapper(const ValueType &type)
+    : _type(type),
+      _dimensions(type.dimensions())
+{
+    for (auto &dimension : _dimensions) {
+        if (!dimension.is_bound())
+            dimension.size = 1;
+    }
+}
+
+DenseTensorTypeMapper::~DenseTensorTypeMapper()
+{
+}
+
+ValueType
+DenseTensorTypeMapper::build()
+{
+    return ValueType::tensor_type(std::move(_dimensions));
+}
+
+ValueType
+DenseTensorTypeMapper::map(const Tensor &tensor, const ValueType &type)
+{
+    DenseTensorTypeMapper mapper(type);
+    tensor.accept(mapper);
+    return mapper.build();
+}
+
 class DenseTensorMapper : public TensorVisitor
 {
     eval::ValueType _type;
     DenseTensor::Cells _cells;
-    static constexpr uint32_t BAD_LABEL = std::numeric_limits<uint32_t>::max();
-    static constexpr uint32_t BAD_ADDRESS =
-        std::numeric_limits<uint32_t>::max();
 
-    static uint32_t mapLabelToNumber(vespalib::stringref label);
     uint32_t mapAddressToIndex(const TensorAddress &address);
     virtual void visit(const TensorAddress &address, double value) override;
 
@@ -139,22 +248,6 @@ DenseTensorMapper::build()
 {
     return std::make_unique<DenseTensor>(std::move(_type),
                                          std::move(_cells));
-}
-
-uint32_t
-DenseTensorMapper::mapLabelToNumber(vespalib::stringref label)
-{
-    uint32_t result = 0;
-    for (char c : label) {
-        if (c < '0' || c > '9') {
-            return BAD_LABEL; // bad char
-        }
-        result = result * 10 + (c - '0');
-        if (result > 100000000) {
-            return BAD_LABEL; // overflow
-        }
-    }
-    return result;
 }
 
 uint32_t
@@ -191,7 +284,9 @@ DenseTensorMapper::visit(const TensorAddress &address, double value)
 std::unique_ptr<Tensor>
 DenseTensorMapper::map(const Tensor &tensor, const ValueType &type)
 {
-    DenseTensorMapper mapper(type);
+    DenseTensorMapper mapper(type.is_abstract() ?
+                             DenseTensorTypeMapper::map(tensor, type) :
+                             type);
     tensor.accept(mapper);
     return mapper.build();
 }
