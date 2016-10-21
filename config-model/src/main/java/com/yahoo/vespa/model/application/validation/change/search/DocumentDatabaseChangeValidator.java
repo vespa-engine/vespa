@@ -32,20 +32,20 @@ public class DocumentDatabaseChangeValidator {
         this.nextDocType = nextDocType;
     }
 
-    public List<VespaConfigChangeAction> validate(ValidationOverrides overrides) {
+    public List<VespaConfigChangeAction> validate(final ValidationOverrides overrides) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
-        result.addAll(validateAttributeChanges());
+        result.addAll(validateAttributeChanges(overrides));
         result.addAll(validateIndexingScriptChanges(overrides));
         result.addAll(validateDocumentTypeChanges(overrides));
         return result;
     }
 
-    private List<VespaConfigChangeAction> validateAttributeChanges() {
+    private List<VespaConfigChangeAction> validateAttributeChanges(final ValidationOverrides overrides) {
         return new AttributeChangeValidator(
                 currentDatabase.getDerivedConfiguration().getAttributeFields(),
                 currentDatabase.getDerivedConfiguration().getIndexSchema(), currentDocType,
                 nextDatabase.getDerivedConfiguration().getAttributeFields(),
-                nextDatabase.getDerivedConfiguration().getIndexSchema(), nextDocType).validate();
+                nextDatabase.getDerivedConfiguration().getIndexSchema(), nextDocType).validate(overrides);
     }
 
     private List<VespaConfigChangeAction> validateIndexingScriptChanges(ValidationOverrides overrides) {
