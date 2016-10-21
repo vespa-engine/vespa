@@ -64,6 +64,7 @@ public class NodeAgentImplTest {
     Environment environment = new Environment(Collections.emptySet(),
                                               "dev",
                                               "us-east-1",
+                                              "parent.host.name.yahoo.com",
                                               new InetAddressResolver());
     private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
             storageMaintainer, metricReceiver, environment, maintainer);

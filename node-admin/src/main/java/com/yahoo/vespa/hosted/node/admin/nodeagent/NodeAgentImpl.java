@@ -471,12 +471,14 @@ public class NodeAgentImpl implements NodeAgent {
                 .add("host", hostname)
                 .add("role", "tenants")
                 .add("flavor", nodeSpec.nodeFlavor)
-                .add("state", nodeSpec.nodeState.toString());
+                .add("state", nodeSpec.nodeState.toString())
+                .add("zone", environment.getZone())
+                .add("parentHostname", environment.getParentHostHostname());
 
         if (nodeSpec.owner.isPresent()) {
             dimensionsBuilder
                     .add("tenantName", nodeSpec.owner.get().tenant)
-                    .add("app", nodeSpec.owner.get().application);
+                    .add("app", nodeSpec.owner.get().application + "." + nodeSpec.owner.get().instance);
         }
         if (nodeSpec.membership.isPresent()) {
             dimensionsBuilder
@@ -542,14 +544,16 @@ public class NodeAgentImpl implements NodeAgent {
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+                .withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
                 .withTag("flavor", nodeSpec.nodeFlavor)
                 .withTag("state", nodeSpec.nodeState.toString())
-                .withTag("zone", environment.getZone());
+                .withTag("zone", environment.getZone())
+                .withTag("parentHostname", environment.getParentHostHostname());
 
         if (nodeSpec.owner.isPresent()) scheduleMaker
                 .withTag("tenantName", nodeSpec.owner.get().tenant)
-                .withTag("app", nodeSpec.owner.get().application);
+                .withTag("app", nodeSpec.owner.get().application + "." + nodeSpec.owner.get().instance);
 
         if (nodeSpec.membership.isPresent()) scheduleMaker
                 .withTag("clustertype", nodeSpec.membership.get().clusterType)
