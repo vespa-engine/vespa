@@ -85,6 +85,12 @@ struct Node : public TensorFunction
 };
 using Node_UP = std::unique_ptr<Node>;
 
+/**
+ * Simple typecasting utility.
+ */
+template <typename T>
+const T *as(const Node &node) { return dynamic_cast<const T *>(&node); }
+
 struct Inject : Node {
     size_t tensor_id;
     Inject(const ValueType &result_type_in,
