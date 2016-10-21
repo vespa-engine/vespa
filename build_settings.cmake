@@ -22,8 +22,6 @@ set(WARN_OPTS "-Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wfo
 # C and C++ compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O3 ${WARN_OPTS} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -DBOOST_DISABLE_ASSERTS -DWITH_SHIPPED_GEOIP -march=westmere -mtune=intel")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${VTAG_DEFINES}")
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} -Wnon-virtual-dtor -fvisibility-inlines-hidden -fdiagnostics-color=auto")
 
 # Linker flags
