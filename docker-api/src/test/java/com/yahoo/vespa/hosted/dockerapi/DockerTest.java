@@ -159,8 +159,7 @@ public class DockerTest {
             assumeTrue(DockerTestUtils.dockerDaemonIsPresent());
 
             docker = DockerTestUtils.getDocker();
-            DockerTestUtils.createDockerTestNetworkIfNeeded(docker);
-            DockerTestUtils.createDockerImage(docker, dockerImage);
+            DockerTestUtils.buildSimpleHttpServerDockerImage(docker, dockerImage);
         }
 
         // Clean up any non deleted containers from previous tests
