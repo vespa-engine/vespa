@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
@@ -86,7 +85,6 @@ public class NodeAgentImpl implements NodeAgent {
     private NodeAttributes lastAttributesSet = null;
     ContainerNodeSpec lastNodeSpec = null;
     CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
-    String parentHostname;
 
     public NodeAgentImpl(
             final String hostName,
@@ -107,7 +105,6 @@ public class NodeAgentImpl implements NodeAgent {
         this.metricReceiver = metricReceiver;
         this.environment = environment;
         this.maintainer = maintainer;
-        this.parentHostname = HostName.getLocalhost();
     }
 
     @Override
@@ -476,7 +473,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .add("flavor", nodeSpec.nodeFlavor)
                 .add("state", nodeSpec.nodeState.toString())
                 .add("zone", environment.getZone())
-                .add("parentHostname", parentHostname);
+                .add("parentHostname", environment.getParentHostHostname());
 
         if (nodeSpec.owner.isPresent()) {
             dimensionsBuilder
@@ -552,7 +549,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .withTag("flavor", nodeSpec.nodeFlavor)
                 .withTag("state", nodeSpec.nodeState.toString())
                 .withTag("zone", environment.getZone())
-                .withTag("parentHostname", parentHostname);
+                .withTag("parentHostname", environment.getParentHostHostname());
 
         if (nodeSpec.owner.isPresent()) scheduleMaker
                 .withTag("tenantName", nodeSpec.owner.get().tenant)

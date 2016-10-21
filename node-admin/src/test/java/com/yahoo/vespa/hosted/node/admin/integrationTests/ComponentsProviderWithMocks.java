@@ -34,6 +34,7 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private Environment environment = new Environment(Collections.emptySet(),
                                                       "dev",
                                                       "us-east-1",
+                                                      "parent.host.name.yahoo.com",
                                                       new InetAddressResolver());
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final Function<String, NodeAgent> nodeAgentFactory =

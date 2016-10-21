@@ -59,6 +59,7 @@ public class NodeStateTest {
         Environment environment = new Environment(Collections.emptySet(),
                                                   "dev",
                                                   "us-east-1",
+                                                  "parent.host.name.yahoo.com",
                                                   inetAddressResolver);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
