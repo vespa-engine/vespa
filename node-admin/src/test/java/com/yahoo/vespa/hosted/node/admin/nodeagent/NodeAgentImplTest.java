@@ -433,6 +433,7 @@ public class NodeAgentImplTest {
         ContainerNodeSpec.Membership membership = new ContainerNodeSpec.Membership("clustType", "clustId", "grp", 3, false);
         nodeAgent.lastNodeSpec = new ContainerNodeSpec(hostName, null, containerName, Node.State.active, "tenants",
                 "docker", version, Optional.of(owner), Optional.of(membership), null, null, null, null, null);
+        nodeAgent.parentHostname = "parent.host.name.yahoo.com";
 
         long totalContainerCpuTime = (long) ((Map) cpu_stats.get("cpu_usage")).get("total_usage");
         long totalSystemCpuTime = (long) cpu_stats.get("system_cpu_usage");

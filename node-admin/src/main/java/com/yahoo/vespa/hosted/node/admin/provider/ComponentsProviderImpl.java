@@ -67,7 +67,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
 
         metricReceiverWrapper = metricReceiver;
-        initializeNodeAgentSecretAgent(docker, environment.getZone());
+        initializeNodeAgentSecretAgent(docker);
     }
 
     @Override
@@ -81,14 +81,14 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     }
 
 
-    private void initializeNodeAgentSecretAgent(Docker docker, String zone) {
+    private void initializeNodeAgentSecretAgent(Docker docker) {
         ContainerName nodeAdminName = new ContainerName("node-admin");
         final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
         docker.executeInContainer(nodeAdminName, "sudo", "chmod", "a+w", yamasAgentFolder.toString());
 
         Path nodeAdminCheckPath = Paths.get("/usr/bin/curl");
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("node-admin", 60, nodeAdminCheckPath,
-                "localhost:4080/rest/metrics").withTag("zone", zone);
+                "localhost:4080/rest/metrics");
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
