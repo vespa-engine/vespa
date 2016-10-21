@@ -8,10 +8,9 @@
 #include <string>
 
 #include "history.h"
+#include "named_service.h"
 
 namespace slobrok {
-
-class NamedService;
 
 /**
  * @class VisibleMap

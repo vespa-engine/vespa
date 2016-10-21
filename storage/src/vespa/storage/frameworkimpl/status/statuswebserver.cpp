@@ -7,7 +7,6 @@
 #include <map>
 #include <sstream>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/common/vtag.h>
 #include <vespa/fastlib/net/url.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -293,7 +292,7 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath,
     } else {
         IndexPageReporter indexRep;
         indexRep << "<p><b>Binary version of Vespa:</b> "
-                 << Vtag::currentVersion.toString()
+                 << vespalib::Vtag::currentVersion.toString()
                  << "</p>\n";
         {
             std::vector<const framework::StatusReporter*> reporters(

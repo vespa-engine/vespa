@@ -1,12 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include "vtag.h"
-
-#include <vespa/log/log.h>
-LOG_SETUP(".rpchooks");
-
+#include <vespa/vespalib/component/vtag.h>
 #include <vespa/fnet/frt/frt.h>
-
 #include "rpchooks.h"
 #include "ok_state.h"
 #include "named_service.h"
@@ -16,6 +11,10 @@ LOG_SETUP(".rpchooks");
 #include "sbenv.h"
 #include "visible_map.h"
 #include "rpcmirror.h"
+
+#include <vespa/log/log.h>
+
+LOG_SETUP(".rpchooks");
 
 namespace slobrok {
 
@@ -558,9 +557,9 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
     _cnts.adminReqs++;
     std::string ver;
 
-    char *s = VersionTag;
+    char *s = vespalib::VersionTag;
     bool needdate = true;
-    if (strncmp(VersionTag, "V_", 2) == 0) {
+    if (strncmp(vespalib::VersionTag, "V_", 2) == 0) {
         s += 2;
         do {
             while (strchr("0123456789", *s) != NULL) {
@@ -596,7 +595,7 @@ RPCHooks::rpc_version(FRT_RPCRequest *req)
     }
     if (needdate) {
         ver.append("-");
-        s = VersionTagDate;
+        s = vespalib::VersionTagDate;
         char *e = strchr(s, '-');
         if (e == NULL) {
             ver.append(s);

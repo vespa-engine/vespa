@@ -9,7 +9,6 @@ vespa_add_library(logd STATIC
     cmdbuf.cpp
     perform.cpp
     sigterm.cpp
-    vtag.cpp
     DEPENDS
 )
 vespa_generate_config(logd ../main/resources/configdefinitions/logd.def)

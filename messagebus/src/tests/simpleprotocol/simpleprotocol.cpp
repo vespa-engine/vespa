@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("simpleprotocol_test");
-
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/component/vtag.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/messagebus/network/identity.h>
@@ -14,7 +12,9 @@ LOG_SETUP("simpleprotocol_test");
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/vtag.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP("simpleprotocol_test");
 
 using namespace mbus;
 
@@ -25,7 +25,7 @@ Test::Main()
 {
     TEST_INIT("simpleprotocol_test");
 
-    vespalib::Version version = Vtag::currentVersion;
+    vespalib::Version version = vespalib::Vtag::currentVersion;
     SimpleProtocol protocol;
     EXPECT_TRUE(protocol.getName() == "Simple");
 

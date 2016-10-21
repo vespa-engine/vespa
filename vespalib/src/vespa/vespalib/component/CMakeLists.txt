@@ -3,5 +3,6 @@ vespa_add_library(vespalib_vespalib_component OBJECT
     SOURCES
     version.cpp
     versionspecification.cpp
+    vtag.cpp
     DEPENDS
 )
