@@ -75,13 +75,9 @@ public class GenerateSourcesMojo extends AbstractMojo {
         if (configGenVersion != null && !configGenVersion.isEmpty()) {
             return configGenVersion;
         }
-        Dependency containerDev = getVespaDependency("container-dev");
-        if (containerDev != null)
-            return containerDev.getVersion();
-
-        Dependency prelude = getVespaDependency("prelude");
-        if (prelude != null)
-            return prelude.getVersion();
+        Dependency containerInternal = getVespaDependency("container-dev");
+        if (containerInternal != null)
+            return containerInternal.getVersion();
 
         Dependency  docproc = getVespaDependency("docproc");
         if (docproc != null)
