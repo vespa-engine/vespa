@@ -36,6 +36,9 @@ static bool operator==(const Tensor &lhs, const Tensor &rhs)
 
 vespalib::string sparseSpec("tensor(x{},y{})");
 vespalib::string denseSpec("tensor(x[2],y[3])");
+vespalib::string denseAbstractSpec_xy("tensor(x[],y[])");
+vespalib::string denseAbstractSpec_x("tensor(x[2],y[])");
+vespalib::string denseAbstractSpec_y("tensor(x[],y[3])");
 
 struct Fixture
 {
@@ -88,7 +91,7 @@ struct Fixture
                             const TensorDimensions &dimensions) {
         return TensorFactory::create(cells, dimensions, _builder);
     }
-    Tensor::UP createDenseTensor(const DenseTensorCells &cells) {
+    Tensor::UP createDenseTensor(const DenseTensorCells &cells) const {
         return TensorFactory::createDense(cells);
     }
 
@@ -162,6 +165,74 @@ struct Fixture
         EXPECT_TRUE(loadok);
     }
 
+    bool isUnbound(const vespalib::string &dimensionName) const
+    {
+        ValueType type = _cfg.tensorType();
+        for (const auto &dim : type.dimensions()) {
+            if (dim.name == dimensionName && !dim.is_bound()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    Tensor::UP expDenseTensor3() const
+    {
+        if (isUnbound("x")) {
+            if (isUnbound("y")) {
+                return createDenseTensor({ {{{"x",0},{"y",1}}, 11} });
+            }
+            return createDenseTensor({    {{{"x",0},{"y",1}}, 11},
+                                          {{{"x",0},{"y",2}}, 0} });
+        } else if (isUnbound("y")) {
+            return createDenseTensor({    {{{"x",0},{"y",1}}, 11},
+                                          {{{"x",1},{"y",0}}, 0} });
+        }
+        return createDenseTensor({    {{{"x",0},{"y",1}}, 11},
+                                      {{{"x",1},{"y",2}}, 0} });
+    }
+
+    Tensor::UP expDenseFillTensor() const
+    {
+        if (isUnbound("x")) {
+            if (isUnbound("y")) {
+                return createDenseTensor({ {{{"x",0},{"y",0}}, 5} });
+            }
+            return createDenseTensor({    {{{"x",0},{"y",0}}, 5},
+                                          {{{"x",0},{"y",2}}, 0} });
+        } else if (isUnbound("y")) {
+            return createDenseTensor({    {{{"x",0},{"y",0}}, 5},
+                                          {{{"x",1},{"y",0}}, 0} });
+        }
+        return createDenseTensor({    {{{"x",0},{"y",0}}, 5},
+                                      {{{"x",1},{"y",2}}, 0} });
+    }
+
+    Tensor::UP expEmptyDenseTensor() const
+    {
+        if (isUnbound("x")) {
+            if (isUnbound("y")) {
+                return createDenseTensor({ {{{"x",0},{"y",0}}, 0} });
+            }
+            return createDenseTensor({ {{{"x",0},{"y",2}}, 0} });
+        } else if (isUnbound("y")) {
+            return createDenseTensor({ {{{"x",1},{"y",0}}, 0} });
+        }
+        return createDenseTensor({ {{{"x",1},{"y",2}}, 0} });
+    }
+
+    vespalib::string expEmptyDenseTensorSpec() const {
+        if (isUnbound("x")) {
+            if (isUnbound("y")) {
+                return "tensor(x[1],y[1])";
+            }
+            return "tensor(x[1],y[3])";
+        } else if (isUnbound("y")) {
+            return "tensor(x[2],y[1])";
+        }
+        return "tensor(x[2],y[3])";
+    }
+
     void testEmptyAttribute();
     void testSetTensorValue();
     void testSaveLoad();
@@ -187,10 +258,9 @@ Fixture::testSetTensorValue()
     TEST_DO(assertGetNoTensor(4));
     setTensor(4, *createTensor({}, {}));
     if (_denseTensors) {
-        TEST_DO(assertGetDenseTensor({{{{"x",1},{"y",2}}, 0} }, 4));
-        setTensor(3, *createTensor({ {{}, 11} }, { "x", "y"}));
-        TEST_DO(assertGetDenseTensor({    {{{"x",0},{"y",0}}, 11},
-                                          {{{"x",1},{"y",2}}, 0} }, 3));
+        TEST_DO(assertGetTensor(*expEmptyDenseTensor(), 4));
+        setTensor(3, *createTensor({ {{{"y","1"}}, 11} }, { "x", "y"}));
+        TEST_DO(assertGetTensor(*expDenseTensor3(), 3));
     } else {
         TEST_DO(assertGetTensor({}, {"x", "y"}, 4));
         setTensor(3, *createTensor({ {{}, 11} }, { "x", "y"}));
@@ -206,17 +276,16 @@ Fixture::testSaveLoad()
 {
     ensureSpace(4);
     setTensor(4, *createTensor({}, {}));
-    setTensor(3, *createTensor({ {{}, 11} }, { "x", "y"}));
+    setTensor(3, *createTensor({ {{{"y","1"}}, 11} }, { "x", "y"}));
     TEST_DO(save());
     TEST_DO(load());
     EXPECT_EQUAL(5u, _attr->getNumDocs());
     EXPECT_EQUAL(5u, _attr->getCommittedDocIdLimit());
     if (_denseTensors) {
-        TEST_DO(assertGetDenseTensor({    {{{"x",0},{"y",0}}, 11},
-                                          {{{"x",1},{"y",2}}, 0} }, 3));
-        TEST_DO(assertGetDenseTensor({{{{"x",1},{"y",2}}, 0} }, 4));
+        TEST_DO(assertGetTensor(*expDenseTensor3(), 3));
+        TEST_DO(assertGetTensor(*expEmptyDenseTensor(), 4));
     } else {
-        TEST_DO(assertGetTensor({ {{}, 11} }, { "x", "y"}, 3));
+        TEST_DO(assertGetTensor({ {{{"y","1"}}, 11} }, { "x", "y"}, 3));
         TEST_DO(assertGetTensor({}, {"x", "y"}, 4));
     }
     TEST_DO(assertGetNoTensor(2));
@@ -229,7 +298,7 @@ Fixture::testCompaction()
     ensureSpace(4);
     Tensor::UP emptytensor = createTensor({}, {});
     Tensor::UP emptyxytensor = createTensor({}, {"x", "y"});
-    Tensor::UP simpletensor = createTensor({ {{}, 11} }, { "x", "y"});
+    Tensor::UP simpletensor = createTensor({ {{{"y","1"}}, 11} }, { "x", "y"});
     Tensor::UP filltensor = createTensor({ {{}, 5} }, { "x", "y"});
     setTensor(4, *emptytensor);
     setTensor(3, *simpletensor);
@@ -255,11 +324,9 @@ Fixture::testCompaction()
         iter, oldStatus.getUsed(), newStatus.getUsed());
     TEST_DO(assertGetNoTensor(1));
     if (_denseTensors) {
-        emptyxytensor = createDenseTensor({{{{"x",1},{"y",2}}, 0} });
-        simpletensor = createDenseTensor({    {{{"x",0},{"y",0}}, 11},
-                                              {{{"x",1},{"y",2}}, 0} });
-        filltensor = createDenseTensor({    {{{"x",0},{"y",0}}, 5},
-                                            {{{"x",1},{"y",2}}, 0} });
+        emptyxytensor = expEmptyDenseTensor();
+        simpletensor = expDenseTensor3();
+        filltensor = expDenseFillTensor();
     }
     TEST_DO(assertGetTensor(*filltensor, 2));
     TEST_DO(assertGetTensor(*simpletensor, 3));
@@ -292,8 +359,13 @@ Fixture::testEmptyTensor()
 {
     const TensorAttribute &tensorAttr = *_tensorAttr;
     Tensor::UP emptyTensor = tensorAttr.getEmptyTensor();
-    EXPECT_EQUAL(emptyTensor->getType(), tensorAttr.getConfig().tensorType());
-    EXPECT_EQUAL(emptyTensor->getType(), ValueType::from_spec(_typeSpec));
+    if (_denseTensors) {
+        vespalib::string expSpec = expEmptyDenseTensorSpec();
+        EXPECT_EQUAL(emptyTensor->getType(), ValueType::from_spec(expSpec));
+    } else {
+        EXPECT_EQUAL(emptyTensor->getType(), tensorAttr.getConfig().tensorType());
+        EXPECT_EQUAL(emptyTensor->getType(), ValueType::from_spec(_typeSpec));
+    }
 }
 
 
@@ -327,6 +399,36 @@ TEST("Test dense tensors with generic tensor attribute")
 TEST("Test dense tensors with dense tensor attribute")
 {
     testAll([]() { return std::make_shared<Fixture>(denseSpec, true); });
+}
+
+TEST("Test dense tensors with generic tensor attribute with unbound x and y dims")
+{
+    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_xy); });
+}
+
+TEST("Test dense tensors with dense tensor attribute with unbound x and y dims")
+{
+    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_xy, true); });
+}
+
+TEST("Test dense tensors with generic tensor attribute with unbound x dim")
+{
+    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_x); });
+}
+
+TEST("Test dense tensors with dense tensor attribute with unbound x dim")
+{
+    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_x, true); });
+}
+
+TEST("Test dense tensors with generic tensor attribute with unbound y dim")
+{
+    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_y); });
+}
+
+TEST("Test dense tensors with dense tensor attribute with unbound y dim")
+{
+    testAll([]() { return std::make_shared<Fixture>(denseAbstractSpec_y, true); });
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); vespalib::unlink("test.dat"); }
