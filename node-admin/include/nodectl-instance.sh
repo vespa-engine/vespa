@@ -6,12 +6,12 @@
 # TODO: Remove the above cookbook file (with the down-side that a new script
 # requires a new vespa release, instead of just a hosted release).
 
-# Usage: nodectl-instance.sh [start|stop]
+# Usage: nodectl-instance.sh [start|stop|suspend]
 #
 # start: Set the node "in service" by e.g. undraining container traffic.
 # start can be assumed to have completed successfully.
 #
-# stop: Stop services on the node
+# stop: Stop services on the node (Note: Only does suspend now, will be changed soon, Oct 24 2016)
 #
 # suspend: Prepare for a short suspension, e.g. there's a pending upgrade. Set the
 # node "out of service" by draining container traffic, and flush index for a
@@ -95,17 +95,17 @@ container_drain() {
     sleep 60
 }
 
-start() {
+Start() {
     # Always start vip for now
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef in
 }
 
-stop() {
+Stop() {
     # TODO: Suspends for now, make it stop services later, when Docker images are updated
-    suspend
+    Suspend
 }
 
-suspend() {
+Suspend() {
     # Always stop vip for now
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef out
 
@@ -120,7 +120,7 @@ suspend() {
 
 main() {
     if [ $# -lt 1 ]; then
-        echo "Usage: $0 [-e] start|stop" >&2
+        echo "Usage: $0 [-e] start|stop|suspend" >&2
         exit 1
     fi
 
@@ -133,11 +133,11 @@ main() {
     action="$1"
 
     if [ "$action" = "start" ]; then
-        start
+        Start
     elif [ "$action" = "stop" ]; then
-        stop
+        Stop
     elif [ "$action" = "suspend" ]; then
-        suspend
+        Suspend
     else
         echo "Unknown action: $action" >&2
         exit 1
