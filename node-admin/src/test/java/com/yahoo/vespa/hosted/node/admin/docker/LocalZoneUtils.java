@@ -90,7 +90,7 @@ public class LocalZoneUtils {
      */
     public static Set<String> provisionNodes(String parentHostname, int numberOfNodes) {
         Set<String> hostnames = new HashSet<>();
-        List<Map> nodesToAdd = new ArrayList<>();
+        List<Map<String,String>> nodesToAdd = new ArrayList<>();
         for (int i = 1; i <= numberOfNodes; i++) {
             final String hostname = APP_HOSTNAME_PREFIX + i;
             Map<String, String> provisionNodeRequest = new HashMap<>();
