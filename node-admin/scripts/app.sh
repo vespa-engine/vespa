@@ -94,8 +94,6 @@ function DeployApp {
 
     local app_dir="$1"
 
-    VerifyApp "$app_dir"
-
     CopyToSharedDir "$app_dir"
 
     # Create tenant
