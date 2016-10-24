@@ -148,10 +148,10 @@ public class ConfigServerHttpRequestExecutor {
 
     public <T> T post(String path, int port, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            HttpPost patch = new HttpPost("http://" + configServer + ":" + port + path);
-            setContentTypeToApplicationJson(patch);
-            patch.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
-            return patch;
+            HttpPost post = new HttpPost("http://" + configServer + ":" + port + path);
+            setContentTypeToApplicationJson(post);
+            post.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
+            return post;
         }, wantedReturnType);
     }
 
