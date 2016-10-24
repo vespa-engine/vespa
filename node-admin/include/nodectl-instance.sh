@@ -101,8 +101,7 @@ Start() {
 }
 
 Stop() {
-    # TODO: Suspends for now, make it stop services later, when Docker images are updated
-    Suspend
+    yinst stop
 }
 
 Suspend() {
