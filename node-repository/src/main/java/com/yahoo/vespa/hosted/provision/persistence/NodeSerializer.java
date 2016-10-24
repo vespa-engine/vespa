@@ -12,7 +12,6 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -45,7 +44,6 @@ public class NodeSerializer {
     private static final String hostnameKey = "hostname";
     private static final String openStackIdKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
-    private static final String configurationKey ="configuration"; // TODO: Remove when 6.31 is deployed everywhere
     private static final String historyKey = "history";
     private static final String instanceKey = "instance"; // legacy name, TODO: change to allocation with backwards compat
     private static final String rebootGenerationKey = "rebootGeneration";
@@ -68,7 +66,7 @@ public class NodeSerializer {
     private static final String restartGenerationKey = "restartGeneration";
     private static final String currentRestartGenerationKey = "currentRestartGeneration";
     private static final String removableKey = "removable";
-    //Saved as part of allocation instead of serviceId, since serviceId serialized form is not easily extendable.
+    // Saved as part of allocation instead of serviceId, since serviceId serialized form is not easily extendable.
     private static final String dockerImageKey = "dockerImage";
 
     // History event fields
@@ -164,7 +162,6 @@ public class NodeSerializer {
     }
 
     private Flavor flavorFromSlime(Inspector object) {
-        if (object.field(configurationKey).valid()) object = object.field(configurationKey); // TODO: Remove this line when 6.31 is deployed everywhere
         return flavors.getFlavorOrThrow(object.field(flavorKey).asString());
     }
 
@@ -223,13 +220,6 @@ public class NodeSerializer {
     
     private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {
         if ( ! object.valid()) return Optional.empty();
-        // TODO: Remove boolean handling when 6.28 is deployed everywhere
-        if (object.type() == Type.BOOL) {
-            if (!object.asBool()) {
-                return Optional.empty();
-            }
-            return Optional.of(Status.HardwareFailureType.unknown);
-        }
         return Optional.of(hardwareFailureFromString(object.asString()));
     }
 
