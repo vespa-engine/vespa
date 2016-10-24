@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class StorageMaintainer {
     private static final PrefixLogger NODE_ADMIN_LOGGER = PrefixLogger.getNodeAdminLogger(StorageMaintainer.class);
@@ -124,6 +124,10 @@ public class StorageMaintainer {
     public void archiveNodeData(ContainerName containerName) throws IOException {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
         Maintainer.archiveAppData(logger, containerName);
+    }
+
+    public Maintainer getMaintainer() {
+        return maintainer;
     }
 
     private static class MetricsCache {
