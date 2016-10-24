@@ -52,9 +52,9 @@ class DocumentQueue {
 
     Document poll(long timeout, TimeUnit unit) throws InterruptedException {
         synchronized (queue) {
-            long startTime = System.currentTimeMillis();
             long remainingToWait = unit.toMillis(timeout);
             while (queue.isEmpty()) {
+                long startTime = System.currentTimeMillis();
                 queue.wait(remainingToWait);
                 remainingToWait -= (System.currentTimeMillis() - startTime);
                 if (remainingToWait <= 0) {
