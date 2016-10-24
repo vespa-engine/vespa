@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/eval/function.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
 #include <vespa/vespalib/eval/interpreted_function.h>
 #include <vespa/vespalib/eval/test/eval_spec.h>
 #include <vespa/vespalib/eval/basic_nodes.h>
@@ -109,6 +110,80 @@ TEST("require that basic addition works") {
     ctx.clear_params();
     ctx.add_param(40);
     EXPECT_EQUAL(interpreted.eval(ctx).as_double(), 50.0);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that dot product like expression is not optimized for unknown types") {
+    const TensorEngine &engine = SimpleTensorEngine::ref();
+    Function function = Function::parse("sum(a*b)");
+    DoubleValue a(2.0);
+    DoubleValue b(3.0);
+    double expect = (2.0 * 3.0);
+    InterpretedFunction interpreted(engine, function, NodeTypes());
+    EXPECT_EQUAL(4u, interpreted.program_size());
+    InterpretedFunction::Context ctx;
+    ctx.add_param(a);
+    ctx.add_param(b);
+    const Value &result = interpreted.eval(ctx);
+    EXPECT_TRUE(result.is_double());
+    EXPECT_EQUAL(expect, result.as_double());
+}
+
+TEST("require that dot product works with tensor function") {
+    const TensorEngine &engine = SimpleTensorEngine::ref();
+    Function function = Function::parse("sum(a*b)");
+    auto a = TensorSpec("tensor(x[3])")
+             .add({{"x", 0}}, 5.0)
+             .add({{"x", 1}}, 3.0)
+             .add({{"x", 2}}, 2.0);
+    auto b = TensorSpec("tensor(x[3])")
+             .add({{"x", 0}}, 7.0)
+             .add({{"x", 1}}, 11.0)
+             .add({{"x", 2}}, 13.0);
+    double expect = ((5.0 * 7.0) + (3.0 * 11.0) + (2.0 * 13.0));
+    NodeTypes types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(a.type())});
+    InterpretedFunction interpreted(engine, function, types);
+    EXPECT_EQUAL(1u, interpreted.program_size());
+    InterpretedFunction::Context ctx;
+    TensorValue va(engine.create(a));
+    TensorValue vb(engine.create(b));
+    ctx.add_param(va);
+    ctx.add_param(vb);
+    const Value &result = interpreted.eval(ctx);
+    EXPECT_TRUE(result.is_double());
+    EXPECT_EQUAL(expect, result.as_double());
+}
+
+TEST("require that matrix multiplication works with tensor function") {
+    const TensorEngine &engine = SimpleTensorEngine::ref();
+    Function function = Function::parse("sum(a*b,y)");
+    auto a = TensorSpec("tensor(x[2],y[2])")
+             .add({{"x", 0},{"y", 0}},  1.0)
+             .add({{"x", 0},{"y", 1}},  2.0)
+             .add({{"x", 1},{"y", 0}},  3.0)
+             .add({{"x", 1},{"y", 1}},  5.0);
+    auto b = TensorSpec("tensor(y[2],z[2])")
+             .add({{"y", 0},{"z", 0}},  7.0)
+             .add({{"y", 0},{"z", 1}}, 11.0)
+             .add({{"y", 1},{"z", 0}}, 13.0)
+             .add({{"y", 1},{"z", 1}}, 17.0);
+    auto expect = TensorSpec("tensor(x[2],z[2])")
+                  .add({{"x", 0},{"z", 0}}, (1.0 *  7.0) + (2.0 * 13.0))
+                  .add({{"x", 0},{"z", 1}}, (1.0 * 11.0) + (2.0 * 17.0))
+                  .add({{"x", 1},{"z", 0}}, (3.0 *  7.0) + (5.0 * 13.0))
+                  .add({{"x", 1},{"z", 1}}, (3.0 * 11.0) + (5.0 * 17.0));
+    NodeTypes types(function, {ValueType::from_spec(a.type()), ValueType::from_spec(a.type())});
+    InterpretedFunction interpreted(engine, function, types);
+    EXPECT_EQUAL(1u, interpreted.program_size());
+    InterpretedFunction::Context ctx;
+    TensorValue va(engine.create(a));
+    TensorValue vb(engine.create(b));
+    ctx.add_param(va);
+    ctx.add_param(vb);
+    const Value &result = interpreted.eval(ctx);
+    ASSERT_TRUE(result.is_tensor());
+    EXPECT_EQUAL(expect, engine.to_spec(*result.as_tensor()));
 }
 
 //-----------------------------------------------------------------------------
