@@ -16,7 +16,11 @@ public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrderVerifier;
 
     public StorageMaintainerMock(CallOrderVerifier callOrderVerifier) {
-        super(new Maintainer());
+        this(new Maintainer(), callOrderVerifier);
+    }
+
+    public StorageMaintainerMock(Maintainer maintainer, CallOrderVerifier callOrderVerifier) {
+        super(maintainer);
         this.callOrderVerifier = callOrderVerifier;
     }
 

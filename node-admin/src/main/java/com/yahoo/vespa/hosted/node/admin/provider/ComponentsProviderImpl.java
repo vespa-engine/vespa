@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.provider;
 
+import com.google.inject.Inject;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -44,29 +45,31 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     // which happens rarely. Changes of apps running etc it detected by the NodeAgent.
     private static final int NODE_ADMIN_STATE_INTERVAL_MILLIS = 5 * 60000;
 
-    public ComponentsProviderImpl(final Docker docker, final MetricReceiverWrapper metricReceiver) {
+    public ComponentsProviderImpl(final Docker docker, final MetricReceiverWrapper metricReceiver,
+                                  final StorageMaintainer storageMaintainer, final Environment environment) {
         String baseHostName = java.util.Optional.ofNullable(System.getenv(ENV_HOSTNAME))
                 .orElseThrow(() -> new IllegalStateException("Environment variable " + ENV_HOSTNAME + " unset"));
 
-        Environment environment = new Environment();
         Set<String> configServerHosts = environment.getConfigServerHosts();
 
         Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
-        final Maintainer maintainer = new Maintainer();
-        StorageMaintainer storageMaintainer = new StorageMaintainer(maintainer);
 
         final Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
-                                             orchestrator, new DockerOperationsImpl(docker, environment, maintainer),
-                                             storageMaintainer, metricReceiver,
-                                             environment, maintainer);
+                        orchestrator, new DockerOperationsImpl(docker, environment, storageMaintainer.getMaintainer()),
+                        storageMaintainer, metricReceiver, environment, storageMaintainer.getMaintainer());
         final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(
                 nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
 
         metricReceiverWrapper = metricReceiver;
+    }
+
+    @Inject
+    public ComponentsProviderImpl(final Docker docker, final MetricReceiverWrapper metricReceiver) {
+        this(docker, metricReceiver, new StorageMaintainer(new Maintainer()), new Environment());
         initializeNodeAgentSecretAgent(docker);
     }
 
