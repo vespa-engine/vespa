@@ -11,7 +11,9 @@
 # start: Set the node "in service" by e.g. undraining container traffic.
 # start can be assumed to have completed successfully.
 #
-# stop: Prepare for a short suspension, e.g. there's a pending upgrade. Set the
+# stop: Stop services on the node
+#
+# suspend: Prepare for a short suspension, e.g. there's a pending upgrade. Set the
 # node "out of service" by draining container traffic, and flush index for a
 # quick start after the suspension. There's no need to stop.
 
@@ -99,6 +101,11 @@ start() {
 }
 
 stop() {
+    # TODO: Suspends for now, make it stop services later, when Docker images are updated
+    suspend
+}
+
+suspend() {
     # Always stop vip for now
     $echo $VESPA_HOME/bin/vespa-routing vip -u chef out
 
@@ -129,6 +136,8 @@ main() {
         start
     elif [ "$action" = "stop" ]; then
         stop
+    elif [ "$action" = "suspend" ]; then
+        suspend
     else
         echo "Unknown action: $action" >&2
         exit 1
