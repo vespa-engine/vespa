@@ -8,7 +8,6 @@ vespa_add_library(staging_vespalib
     $<TARGET_OBJECTS:staging_vespalib_vespalib_stllike>
     $<TARGET_OBJECTS:staging_vespalib_vespalib_net>
     $<TARGET_OBJECTS:staging_vespalib_vespalib_trace>
-    $<TARGET_OBJECTS:staging_vespalib_vespalib_hwaccelrated>
     INSTALL lib64
     DEPENDS
 )

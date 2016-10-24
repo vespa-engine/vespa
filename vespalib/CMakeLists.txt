@@ -22,6 +22,7 @@ vespa_define_module(
     src/tests/component
     src/tests/compress
     src/tests/delegatelist
+    src/tests/dotproduct
     src/tests/dual_merge_director
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
@@ -122,6 +123,7 @@ vespa_define_module(
     src/vespa/vespalib/eval/value_cache
     src/vespa/vespalib/eval/llvm
     src/vespa/vespalib/geo
+    src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/io
     src/vespa/vespalib/net
     src/vespa/vespalib/objects

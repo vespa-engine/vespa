@@ -16,7 +16,6 @@ vespa_define_module(
     src/tests/crc
     src/tests/databuffer
     src/tests/directio
-    src/tests/dotproduct
     src/tests/encoding/base64
     src/tests/fileheader
     src/tests/floatingpointtype
@@ -42,7 +41,6 @@ vespa_define_module(
     src/vespa/vespalib
     src/vespa/vespalib/data
     src/vespa/vespalib/encoding
-    src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/net
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
