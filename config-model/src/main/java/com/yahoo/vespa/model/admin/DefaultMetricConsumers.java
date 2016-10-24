@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin;
 
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,24 +24,165 @@ public class DefaultMetricConsumers {
     public Map<String, MetricsConsumer> getDefaultMetricsConsumers() {
         Map<String, MetricsConsumer> metricsConsumers = new LinkedHashMap<>();
         metricsConsumers.put("yamas", getDefaultYamasConsumer());
-        metricsConsumers.put("ymon", getDefaultYmonConsumer());
         return metricsConsumers;
     }
 
-    private MetricsConsumer getDefaultYmonConsumer(){
-        Map<String, Metric> metricMap = new LinkedHashMap<>();
-        for (Metric metric : commonMetrics()) {
-            metricMap.put(metric.getName(), metric);
-        }
+    private MetricsConsumer getDefaultYamasConsumer(){
+        List<Metric> metrics = new ArrayList<>();
 
-        return new MetricsConsumer("ymon", metricMap);
+        metrics.addAll(addSearchNodeMetrics());
+        metrics.addAll(addStorageMetrics());
+        metrics.addAll(addDocprocMetrics());
+        metrics.addAll(addClusterControllerMetrics());
+        metrics.addAll(addQrserverMetrics());
+        metrics.addAll(addContainerMetrics());
+        metrics.addAll(getConfigServerMetrics());
+
+        return new MetricsConsumer("yamas", toMapByName(metrics));
     }
 
-    private MetricsConsumer getDefaultYamasConsumer(){
-        // include common metrics
-        List<Metric> metrics = commonMetrics();
+    private Map<String, Metric> toMapByName(List<Metric> metrics) {
+        Map<String, Metric> metricMap = new LinkedHashMap<>();
+        for (Metric metric : metrics) {
+            metricMap.put(metric.getName(), metric);
+        }
+        return metricMap;
+    }
 
-        //Search node
+    private Collection<Metric> getConfigServerMetrics() {
+        List<Metric> metrics = new ArrayList<>();
+
+        metrics.add(new Metric("configserver.requests.count", "configserver.requests"));
+        metrics.add(new Metric("configserver.failedRequests.count", "configserver.failedRequests"));
+        metrics.add(new Metric("configserver.latency.average", "configserver.latency"));
+        metrics.add(new Metric("configserver.cacheConfigElems.last", "configserver.cacheConfigElems"));
+        metrics.add(new Metric("configserver.cacheChecksumElems.last", "configserver.cacheChecksumElems"));
+        metrics.add(new Metric("configserver.hosts.last", "configserver.hosts"));
+        metrics.add(new Metric("configserver.delayedResponses.count", "configserver.delayedResponses"));
+        metrics.add(new Metric("configserver.sessionChangeErrors.count", "configserver.sessionChangeErrors"));
+
+        return metrics;
+    }
+
+    private Collection<Metric> addContainerMetrics() {
+        List<Metric> metrics = new ArrayList<>();
+
+        metrics.add(new Metric("serverRejectedRequests.rate"));
+        metrics.add(new Metric("serverRejectedRequests.count"));
+
+        metrics.add(new Metric("serverThreadPoolSize.average"));
+        metrics.add(new Metric("serverThreadPoolSize.min"));
+        metrics.add(new Metric("serverThreadPoolSize.max"));
+        metrics.add(new Metric("serverThreadPoolSize.rate"));
+        metrics.add(new Metric("serverThreadPoolSize.count"));
+        metrics.add(new Metric("serverThreadPoolSize.last"));
+
+        metrics.add(new Metric("serverActiveThreads.average"));
+        metrics.add(new Metric("serverActiveThreads.min"));
+        metrics.add(new Metric("serverActiveThreads.max"));
+        metrics.add(new Metric("serverActiveThreads.rate"));
+        metrics.add(new Metric("serverActiveThreads.count"));
+        metrics.add(new Metric("serverActiveThreads.last"));
+
+        metrics.add(new Metric("httpapi_latency.average"));
+        metrics.add(new Metric("httpapi_pending.average"));
+        metrics.add(new Metric("httpapi_num_operations.rate"));
+        metrics.add(new Metric("httpapi_num_updates.rate"));
+        metrics.add(new Metric("httpapi_num_removes.rate"));
+        metrics.add(new Metric("httpapi_num_puts.rate"));
+        metrics.add(new Metric("httpapi_succeeded.rate"));
+        metrics.add(new Metric("httpapi_failed.rate"));
+
+        metrics.add(new Metric("mem.heap.total.average"));
+        metrics.add(new Metric("mem.heap.free.average"));
+        metrics.add(new Metric("mem.heap.used.average"));
+
+        return metrics;
+    }
+
+    private Collection<Metric> addClusterControllerMetrics() {
+        List<Metric> metrics = new ArrayList<>();
+
+        metrics.add(new Metric("cluster-controller.down.count.last"));
+        metrics.add(new Metric("cluster-controller.initializing.count.last"));
+        metrics.add(new Metric("cluster-controller.maintenance.count.last"));
+        metrics.add(new Metric("cluster-controller.retired.count.last"));
+        metrics.add(new Metric("cluster-controller.stopping.count.last"));
+        metrics.add(new Metric("cluster-controller.up.count.last"));
+        metrics.add(new Metric("cluster-controller.cluster-state-change.count", "content.cluster-controller.cluster-state-change.count"));
+
+        metrics.add(new Metric("cluster-controller.is-master.last"));
+        // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
+        // DO NOT RELY ON THIS METRIC YET.
+        metrics.add(new Metric("cluster-controller.node-event.count"));
+
+        return metrics;
+    }
+
+    private Collection<Metric> addDocprocMetrics() {
+        List<Metric> metrics = new ArrayList<>();
+
+        // per chain
+        metrics.add(new Metric("documents_processed.rate", "documents_processed"));
+
+        return metrics;
+    }
+
+    private Collection<Metric> addQrserverMetrics() {
+        List<Metric> metrics = new ArrayList<>();
+
+        metrics.add(new Metric("peak_qps.average", "peak_qps"));
+        metrics.add(new Metric("search_connections.average", "search_connections"));
+        metrics.add(new Metric("active_queries.average", "active_queries"));
+        metrics.add(new Metric("queries.rate", "queries"));
+        metrics.add(new Metric("query_latency.average", "mean_query_latency"));
+        metrics.add(new Metric("query_latency.max", "max_query_latency"));
+        metrics.add(new Metric("query_latency.95percentile", "95p_query_latency"));
+        metrics.add(new Metric("query_latency.99percentile", "99p_query_latency"));
+        metrics.add(new Metric("failed_queries.rate", "failed_queries"));
+        metrics.add(new Metric("hits_per_query.average", "hits_per_query"));
+        metrics.add(new Metric("empty_results.rate", "empty_results"));
+        metrics.add(new Metric("requestsOverQuota.rate"));
+        metrics.add(new Metric("requestsOverQuota.count"));
+
+        // Errors from qrserver
+        metrics.add(new Metric("error.timeout.rate","error.timeout"));
+        metrics.add(new Metric("error.backends_oos.rate","error.backends_oos"));
+        metrics.add(new Metric("error.plugin_failure.rate","error.plugin_failure"));
+        metrics.add(new Metric("error.backend_communication_error.rate","error.backend_communication_error"));
+        metrics.add(new Metric("error.empty_document_summaries.rate","error.empty_document_summaries"));
+        metrics.add(new Metric("error.invalid_query_parameter.rate","error.invalid_query_parameter"));
+        metrics.add(new Metric("error.internal_server_error.rate", "error.internal_server_error"));
+        metrics.add(new Metric("error.misconfigured_server.rate","error.misconfigured_server"));
+        metrics.add(new Metric("error.invalid_query_transformation.rate","error.invalid_query_transformation"));
+        metrics.add(new Metric("error.result_with_errors.rate","error.result_with_errors"));
+        metrics.add(new Metric("error.unspecified.rate","error.unspecified"));
+        metrics.add(new Metric("error.unhandled_exception.rate","error.unhandled_exception"));
+        metrics.add(new Metric("http.status.1xx.rate"));
+        metrics.add(new Metric("http.status.2xx.rate"));
+        metrics.add(new Metric("http.status.3xx.rate"));
+        metrics.add(new Metric("http.status.4xx.rate"));
+        metrics.add(new Metric("http.status.5xx.rate"));
+
+        return metrics;
+    }
+
+    private Collection<Metric> addSearchNodeMetrics() {
+        List<Metric> metrics = new ArrayList<>();
+
+        metrics.add(new Metric("proton.numstoreddocs.last", "documents_total"));
+        metrics.add(new Metric("proton.numindexeddocs.last", "documents_ready"));
+        metrics.add(new Metric("proton.numactivedocs.last", "documents_active"));
+        metrics.add(new Metric("proton.numremoveddocs.last", "documents_removed"));
+
+        metrics.add(new Metric("proton.docsinmemory.last", "documents_inmemory"));
+        metrics.add(new Metric("proton.diskusage.last", "diskusage"));
+        metrics.add(new Metric("proton.memoryusage.max", "content.proton.memoryusage.max"));
+        metrics.add(new Metric("proton.transport.query.count.rate", "query_requests"));
+        metrics.add(new Metric("proton.transport.docsum.docs.rate", "document_requests"));
+        metrics.add(new Metric("proton.transport.docsum.latency.average", "content.proton.transport.docsum.latency.average"));
+        metrics.add(new Metric("proton.transport.query.latency.average", "query_latency"));
+
         // jobs
         metrics.add(new Metric("content.proton.documentdb.job.total.average"));
         metrics.add(new Metric("content.proton.documentdb.job.attribute_flush.average"));
@@ -83,8 +225,23 @@ public class DefaultMetricConsumers {
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.disk_bloat.average"));
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.max_bucket_spread.average"));
 
+        return metrics;
+    }
 
-        //Storage
+    private Collection<Metric> addStorageMetrics() {
+        List<Metric> metrics = new ArrayList<>();
+
+        metrics.add(new Metric("vds.datastored.alldisks.docs.average","docs"));
+        metrics.add(new Metric("vds.datastored.alldisks.bytes.average","bytes"));
+        metrics.add(new Metric("vds.visitor.allthreads.averagevisitorlifetime.sum.average","visitorlifetime"));
+        metrics.add(new Metric("vds.visitor.allthreads.averagequeuewait.sum.average","visitorqueuewait"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.count.rate","put"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.count.rate","remove"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.get.sum.count.rate","get"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.count.rate","update"));
+        metrics.add(new Metric("vds.filestor.alldisks.queuesize.average","diskqueuesize"));
+        metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average","diskqueuewait"));
+
         metrics.add(new Metric("vds.memfilepersistence.cache.files.average"));
         metrics.add(new Metric("vds.memfilepersistence.cache.body.average"));
         metrics.add(new Metric("vds.memfilepersistence.cache.header.average"));
@@ -116,13 +273,25 @@ public class DefaultMetricConsumers {
         //Distributor
         metrics.add(new Metric("vds.visitor.sum.latency.average"));
         metrics.add(new Metric("vds.visitor.sum.failed.rate"));
+
         metrics.add(new Metric("vds.idealstate.buckets_rechecking.average"));
         metrics.add(new Metric("vds.idealstate.idealstate_diff.average"));
         metrics.add(new Metric("vds.idealstate.buckets_toofewcopies.average"));
         metrics.add(new Metric("vds.idealstate.buckets_toomanycopies.average"));
         metrics.add(new Metric("vds.idealstate.buckets.average"));
         metrics.add(new Metric("vds.idealstate.buckets_notrusted.average"));
-
+        metrics.add(new Metric("vds.idealstate.delete_bucket.done_ok.rate","deleteok"));
+        metrics.add(new Metric("vds.idealstate.delete_bucket.done_failed.rate","deletefailed"));
+        metrics.add(new Metric("vds.idealstate.delete_bucket.pending.average","deletepending"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.done_ok.rate","mergeok"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.done_failed.rate","mergefailed"));
+        metrics.add(new Metric("vds.idealstate.merge_bucket.pending.average","mergepending"));
+        metrics.add(new Metric("vds.idealstate.split_bucket.done_ok.rate","splitok"));
+        metrics.add(new Metric("vds.idealstate.split_bucket.done_failed.rate","splitfailed"));
+        metrics.add(new Metric("vds.idealstate.split_bucket.pending.average","splitpending"));
+        metrics.add(new Metric("vds.idealstate.join_bucket.done_ok.rate","joinok"));
+        metrics.add(new Metric("vds.idealstate.join_bucket.done_failed.rate","joinfailed"));
+        metrics.add(new Metric("vds.idealstate.join_bucket.pending.average","joinpending"));
 
         metrics.add(new Metric("vds.distributor.puts.sum.latency.average"));
         metrics.add(new Metric("vds.distributor.puts.sum.ok.rate"));
@@ -141,156 +310,6 @@ public class DefaultMetricConsumers {
         metrics.add(new Metric("vds.distributor.gets.sum.failures.total.rate"));
         metrics.add(new Metric("vds.distributor.docsstored.average"));
         metrics.add(new Metric("vds.distributor.bytesstored.average"));
-        metrics.add(new Metric("vds.visitor.sum.latency.average"));
-        metrics.add(new Metric("vds.visitor.sum.failed.rate"));
-
-        // Cluster Controller
-        metrics.add(new Metric("cluster-controller.down.count.last"));
-        metrics.add(new Metric("cluster-controller.initializing.count.last"));
-        metrics.add(new Metric("cluster-controller.maintenance.count.last"));
-        metrics.add(new Metric("cluster-controller.retired.count.last"));
-        metrics.add(new Metric("cluster-controller.stopping.count.last"));
-        metrics.add(new Metric("cluster-controller.up.count.last"));
-        metrics.add(new Metric("cluster-controller.cluster-state-change.count", "content.cluster-controller.cluster-state-change.count"));
-
-        metrics.add(new Metric("cluster-controller.is-master.last"));
-        // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
-        // DO NOT RELY ON THIS METRIC YET.
-        metrics.add(new Metric("cluster-controller.node-event.count"));
-
-        // Errors from qrserver
-        metrics.add(new Metric("error.timeout.rate","error.timeout"));
-        metrics.add(new Metric("error.backends_oos.rate","error.backends_oos"));
-        metrics.add(new Metric("error.plugin_failure.rate","error.plugin_failure"));
-        metrics.add(new Metric("error.backend_communication_error.rate","error.backend_communication_error"));
-        metrics.add(new Metric("error.empty_document_summaries.rate","error.empty_document_summaries"));
-        metrics.add(new Metric("error.invalid_query_parameter.rate","error.invalid_query_parameter"));
-        metrics.add(new Metric("error.internal_server_error.rate", "error.internal_server_error"));
-        metrics.add(new Metric("error.misconfigured_server.rate","error.misconfigured_server"));
-        metrics.add(new Metric("error.invalid_query_transformation.rate","error.invalid_query_transformation"));
-        metrics.add(new Metric("error.result_with_errors.rate","error.result_with_errors"));
-        metrics.add(new Metric("error.unspecified.rate","error.unspecified"));
-        metrics.add(new Metric("error.unhandled_exception.rate","error.unhandled_exception"));
-        metrics.add(new Metric("http.status.1xx.rate"));
-        metrics.add(new Metric("http.status.2xx.rate"));
-        metrics.add(new Metric("http.status.3xx.rate"));
-        metrics.add(new Metric("http.status.4xx.rate"));
-        metrics.add(new Metric("http.status.5xx.rate"));
-
-
-        // container
-        metrics.add(new Metric("serverRejectedRequests.rate"));
-        metrics.add(new Metric("serverRejectedRequests.count"));
-
-        metrics.add(new Metric("serverThreadPoolSize.average"));
-        metrics.add(new Metric("serverThreadPoolSize.min"));
-        metrics.add(new Metric("serverThreadPoolSize.max"));
-        metrics.add(new Metric("serverThreadPoolSize.rate"));
-        metrics.add(new Metric("serverThreadPoolSize.count"));
-        metrics.add(new Metric("serverThreadPoolSize.last"));
-
-        metrics.add(new Metric("serverActiveThreads.average"));
-        metrics.add(new Metric("serverActiveThreads.min"));
-        metrics.add(new Metric("serverActiveThreads.max"));
-        metrics.add(new Metric("serverActiveThreads.rate"));
-        metrics.add(new Metric("serverActiveThreads.count"));
-        metrics.add(new Metric("serverActiveThreads.last"));
-
-        metrics.add(new Metric("httpapi_latency.average"));
-        metrics.add(new Metric("httpapi_pending.average"));
-        metrics.add(new Metric("httpapi_num_operations.rate"));
-        metrics.add(new Metric("httpapi_num_updates.rate"));
-        metrics.add(new Metric("httpapi_num_removes.rate"));
-        metrics.add(new Metric("httpapi_num_puts.rate"));
-        metrics.add(new Metric("httpapi_succeeded.rate"));
-        metrics.add(new Metric("httpapi_failed.rate"));
-
-        metrics.add(new Metric("mem.heap.total.average"));
-        metrics.add(new Metric("mem.heap.free.average"));
-        metrics.add(new Metric("mem.heap.used.average"));
-
-
-        // Config server
-        metrics.add(new Metric("configserver.requests.count", "configserver.requests"));
-        metrics.add(new Metric("configserver.failedRequests.count", "configserver.failedRequests"));
-        metrics.add(new Metric("configserver.latency.average", "configserver.latency"));
-        metrics.add(new Metric("configserver.cacheConfigElems.last", "configserver.cacheConfigElems"));
-        metrics.add(new Metric("configserver.cacheChecksumElems.last", "configserver.cacheChecksumElems"));
-        metrics.add(new Metric("configserver.hosts.last", "configserver.hosts"));
-        metrics.add(new Metric("configserver.delayedResponses.count", "configserver.delayedResponses"));
-        metrics.add(new Metric("configserver.sessionChangeErrors.count", "configserver.sessionChangeErrors"));
-
-
-        Map<String, Metric> metricMap = new LinkedHashMap<>();
-        for (Metric metric : metrics) {
-            metricMap.put(metric.getName(), metric);
-        }
-
-        return new MetricsConsumer("yamas", metricMap);
-    }
-
-    // Common metrics for ymon and yamas. For ymon metric names needs to be less then 19 characters long
-    private List<Metric> commonMetrics(){
-        List<Metric> metrics = new ArrayList<>();
-
-        //Searchnode
-        metrics.add(new Metric("proton.numstoreddocs.last", "documents_total"));
-        metrics.add(new Metric("proton.numindexeddocs.last", "documents_ready"));
-        metrics.add(new Metric("proton.numactivedocs.last", "documents_active"));
-        metrics.add(new Metric("proton.numremoveddocs.last", "documents_removed"));
-
-        metrics.add(new Metric("proton.docsinmemory.last", "documents_inmemory"));
-        metrics.add(new Metric("proton.diskusage.last", "diskusage"));
-        metrics.add(new Metric("proton.memoryusage.max", "content.proton.memoryusage.max"));
-        metrics.add(new Metric("proton.transport.query.count.rate", "query_requests"));
-        metrics.add(new Metric("proton.transport.docsum.docs.rate", "document_requests"));
-        metrics.add(new Metric("proton.transport.docsum.latency.average", "content.proton.transport.docsum.latency.average"));
-        metrics.add(new Metric("proton.transport.query.latency.average", "query_latency"));
-
-        //Docproc - per chain
-        metrics.add(new Metric("documents_processed.rate", "documents_processed"));
-
-        //Qrserver
-        metrics.add(new Metric("peak_qps.average", "peak_qps"));
-        metrics.add(new Metric("search_connections.average", "search_connections"));
-        metrics.add(new Metric("active_queries.average", "active_queries"));
-        metrics.add(new Metric("queries.rate", "queries"));
-        metrics.add(new Metric("query_latency.average", "mean_query_latency"));
-        metrics.add(new Metric("query_latency.max", "max_query_latency"));
-        metrics.add(new Metric("query_latency.95percentile", "95p_query_latency"));
-        metrics.add(new Metric("query_latency.99percentile", "99p_query_latency"));
-        metrics.add(new Metric("failed_queries.rate", "failed_queries"));
-        metrics.add(new Metric("hits_per_query.average", "hits_per_query"));
-        metrics.add(new Metric("empty_results.rate", "empty_results"));
-        metrics.add(new Metric("requestsOverQuota.rate"));
-        metrics.add(new Metric("requestsOverQuota.count"));
-
-        //Storage
-        metrics.add(new Metric("vds.datastored.alldisks.docs.average","docs"));
-        metrics.add(new Metric("vds.datastored.alldisks.bytes.average","bytes"));
-        metrics.add(new Metric("vds.visitor.allthreads.averagevisitorlifetime.sum.average","visitorlifetime"));
-        metrics.add(new Metric("vds.visitor.allthreads.averagequeuewait.sum.average","visitorqueuewait"));
-        metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.count.rate","put"));
-        metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.count.rate","remove"));
-        metrics.add(new Metric("vds.filestor.alldisks.allthreads.get.sum.count.rate","get"));
-        metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.count.rate","update"));
-        metrics.add(new Metric("vds.filestor.alldisks.queuesize.average","diskqueuesize"));
-        metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average","diskqueuewait"));
-
-
-        //Distributor
-        metrics.add(new Metric("vds.idealstate.delete_bucket.done_ok.rate","deleteok"));
-        metrics.add(new Metric("vds.idealstate.delete_bucket.done_failed.rate","deletefailed"));
-        metrics.add(new Metric("vds.idealstate.delete_bucket.pending.average","deletepending"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.done_ok.rate","mergeok"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.done_failed.rate","mergefailed"));
-        metrics.add(new Metric("vds.idealstate.merge_bucket.pending.average","mergepending"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.done_ok.rate","splitok"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.done_failed.rate","splitfailed"));
-        metrics.add(new Metric("vds.idealstate.split_bucket.pending.average","splitpending"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.done_ok.rate","joinok"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.done_failed.rate","joinfailed"));
-        metrics.add(new Metric("vds.idealstate.join_bucket.pending.average","joinpending"));
 
         return metrics;
     }
