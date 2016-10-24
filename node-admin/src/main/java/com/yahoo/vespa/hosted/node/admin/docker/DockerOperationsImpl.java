@@ -43,6 +43,7 @@ public class DockerOperationsImpl implements DockerOperations {
     private static final String[] RESUME_NODE_COMMAND = new String[] {NODE_PROGRAM, "resume"};
     private static final String[] SUSPEND_NODE_COMMAND = new String[] {NODE_PROGRAM, "suspend"};
     private static final String[] RESTART_NODE_COMMAND = new String[] {NODE_PROGRAM, "restart"};
+    private static final String[] STOP_NODE_COMMAND = new String[] {NODE_PROGRAM, "stop"};
 
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
@@ -325,6 +326,11 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void restartServicesOnNode(ContainerName containerName) {
         executeCommandInContainer(containerName, RESTART_NODE_COMMAND);
+    }
+
+    @Override
+    public void stopServicesOnNode(ContainerName containerName) {
+        executeCommandInContainer(containerName, STOP_NODE_COMMAND);
     }
 
     @Override
