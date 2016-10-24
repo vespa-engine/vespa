@@ -59,7 +59,7 @@ DefaultTensorEngine::to_spec(const Tensor &tensor) const
 eval::TensorFunction::UP
 DefaultTensorEngine::compile(eval::tensor_function::Node_UP expr)
 {
-    return DenseTensorFunctionCompiler::compile(std::move(expr));
+    return std::move(expr);
 }
 
 struct IsAddOperation : public eval::DefaultOperationVisitor {
