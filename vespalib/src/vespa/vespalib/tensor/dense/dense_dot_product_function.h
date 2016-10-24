@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/eval/tensor_function.h>
+#include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 
 namespace vespalib {
 namespace tensor {
@@ -17,6 +18,7 @@ private:
 
     InjectUP _lhsTensor;
     InjectUP _rhsTensor;
+    hwaccelrated::IAccelrated::UP _hwAccelerator;
 
 public:
     DenseDotProductFunction(InjectUP lhsTensor_, InjectUP rhsTensor_);

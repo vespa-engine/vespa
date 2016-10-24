@@ -74,6 +74,7 @@ vespa_define_module(
     src/tests/stringfmt
     src/tests/sync
     src/tests/tensor/sparse_tensor_builder
+    src/tests/tensor/dense_dot_product_function
     src/tests/tensor/dense_tensor_address_combiner
     src/tests/tensor/dense_tensor_builder
     src/tests/tensor/dense_tensor_function_compiler
