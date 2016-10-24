@@ -77,9 +77,10 @@ public class NodeStateTest {
                                    .get().nodeState, is(Node.State.ready));
 
             dockerTester.getCallOrderVerifier()
-                        .assertInOrderWithAssertMessage("Node set to dirty, but no stop/delete call received",
-                                                        "stopContainer with ContainerName: ContainerName { name=container }",
-                                                        "deleteContainer with ContainerName: ContainerName { name=container }");
+                        .assertInOrder("executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
+                                       "executeInContainer with ContainerName: ContainerName { name=container }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, stop]",
+                                       "stopContainer with ContainerName: ContainerName { name=container }",
+                                       "deleteContainer with ContainerName: ContainerName { name=container }");
         }
     }
 

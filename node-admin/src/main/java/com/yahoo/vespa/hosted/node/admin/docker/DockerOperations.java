@@ -32,6 +32,8 @@ public interface DockerOperations {
 
     void restartServicesOnNode(ContainerName containerName);
 
+    void stopServicesOnNode(ContainerName containerName);
+
     void trySuspendNode(ContainerName containerName);
 
     Docker.ContainerStats getContainerStats(ContainerName containerName);
