@@ -73,8 +73,8 @@ public final class EndPointResultFactory {
                             reply.errorCode.isTransient(),
                             reply.traceMessage,
                             exception));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Bad result line from server: '" + line + "'", e);
+        } catch (Throwable t) {
+            throw new IllegalArgumentException("Bad result line from server: '" + line + "'", t);
         }
     }
 

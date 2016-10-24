@@ -271,7 +271,7 @@ class IOThread implements Runnable, AutoCloseable {
         pendingDocumentStatusCount.set(pendingResultQueueSize);
 
         List<Document> nextDocsForFeeding = (pendingResultQueueSize > maxInFlightRequests)
-              ? new ArrayList<>()       // The queue is full, not more documents.
+              ? new ArrayList<>()       // The queue is full, will not send more documents.
               : getNextDocsForFeeding(maxWaitTimeMilliSecs, TimeUnit.MILLISECONDS);
 
 
@@ -282,11 +282,9 @@ class IOThread implements Runnable, AutoCloseable {
         }
         log.finest("Awaiting " + pendingResultQueueSize + " results.");
         ProcessResponse processResponse = feedDocumentAndProcessResults(nextDocsForFeeding);
-        if (pendingResultQueueSize > maxInFlightRequests &&
-                processResponse.processResultsCount == 0 &&
-                nextDocsForFeeding.size() == 0) {
+        if (pendingResultQueueSize > maxInFlightRequests && processResponse.processResultsCount == 0) {
             try {
-                // Max outstanding documents operation, nothing has been ready on server side, wait a bit
+                // Max outstanding document operations, no more results on server side, wait a bit
                 // before asking again.
                 Thread.sleep(300);
             } catch (InterruptedException e) {
