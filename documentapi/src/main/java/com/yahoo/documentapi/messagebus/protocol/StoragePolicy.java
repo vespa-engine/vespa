@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * slobrokconfigid=[id] (Optional, use given config id for slobrok instead of default)
  * clusterconfigid=[id] (Optional, use given config id for distribution instead of default)
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+ * @author Haakon Humberset
  */
 public class StoragePolicy extends ExternalSlobrokPolicy {
 
@@ -293,7 +293,7 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
                 } catch (Distribution.TooFewBucketBitsInUseException e) {
                     Reply reply = new WrongDistributionReply(cachedClusterState.toString(true));
                     reply.addError(new Error(DocumentProtocol.ERROR_WRONG_DISTRIBUTION,
-                            "Too few distribution bits used for given cluster state"));
+                                             "Too few distribution bits used for given cluster state"));
                     context.setReply(reply);
                     return null;
                 } catch (Distribution.NoDistributorsAvailableException e) {
