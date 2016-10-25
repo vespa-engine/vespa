@@ -56,8 +56,7 @@ struct DotProductFunctionCompiler
                 if (lhsTensor && rhsTensor &&
                     isCompatibleTensorsForDotProduct(lhsTensor->result_type, rhsTensor->result_type))
                 {
-                    return std::make_unique<DenseDotProductFunction>(std::make_unique<Inject>(lhsTensor->result_type, lhsTensor->tensor_id),
-                                                                     std::make_unique<Inject>(rhsTensor->result_type, rhsTensor->tensor_id));
+                    return std::make_unique<DenseDotProductFunction>(lhsTensor->tensor_id, rhsTensor->tensor_id);
                 }
             }
         }

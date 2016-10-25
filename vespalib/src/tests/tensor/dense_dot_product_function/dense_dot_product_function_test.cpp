@@ -22,12 +22,6 @@ makeType(size_t numCells)
     return ValueType::tensor_type({{"x", numCells}});
 }
 
-std::unique_ptr<tensor_function::Inject>
-makeInject(size_t numCells, size_t tensorId)
-{
-    return std::make_unique<tensor_function::Inject>(makeType(numCells), tensorId);
-}
-
 tensor::Tensor::UP
 makeTensor(size_t numCells, double cellBias)
 {
@@ -99,7 +93,7 @@ struct Fixture
     DenseDotProductFunction function;
     FunctionInput input;
     Fixture(size_t lhsNumCells, size_t rhsNumCells)
-        : function(makeInject(lhsNumCells, 0), makeInject(rhsNumCells, 1)),
+        : function(0, 1),
           input(lhsNumCells, rhsNumCells)
     {
     }

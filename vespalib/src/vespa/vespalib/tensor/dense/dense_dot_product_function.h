@@ -16,14 +16,14 @@ class DenseDotProductFunction : public eval::TensorFunction
 private:
     using InjectUP = std::unique_ptr<eval::tensor_function::Inject>;
 
-    InjectUP _lhsTensor;
-    InjectUP _rhsTensor;
+    size_t _lhsTensorId;
+    size_t _rhsTensorId;
     hwaccelrated::IAccelrated::UP _hwAccelerator;
 
 public:
-    DenseDotProductFunction(InjectUP lhsTensor_, InjectUP rhsTensor_);
-    const eval::tensor_function::Inject &lhsTensor() const { return *_lhsTensor; }
-    const eval::tensor_function::Inject &rhsTensor() const { return *_rhsTensor; }
+    DenseDotProductFunction(size_t lhsTensorId_, size_t rhsTensorId_);
+    size_t lhsTensorId() const { return _lhsTensorId; }
+    size_t rhsTensorId() const { return _rhsTensorId; }
     virtual const eval::Value &eval(const Input &input, Stash &stash) const override;
 };
 

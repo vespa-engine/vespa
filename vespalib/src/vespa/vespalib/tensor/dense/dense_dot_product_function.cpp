@@ -12,9 +12,9 @@ namespace tensor {
 
 using CellsRef = DenseTensorView::CellsRef;
 
-DenseDotProductFunction::DenseDotProductFunction(InjectUP lhsTensor_, InjectUP rhsTensor_)
-    : _lhsTensor(std::move(lhsTensor_)),
-      _rhsTensor(std::move(rhsTensor_)),
+DenseDotProductFunction::DenseDotProductFunction(size_t lhsTensorId_, size_t rhsTensorId_)
+    : _lhsTensorId(lhsTensorId_),
+      _rhsTensorId(rhsTensorId_),
       _hwAccelerator(hwaccelrated::IAccelrated::getAccelrator())
 {
 }
@@ -44,8 +44,8 @@ getCellsRef(const eval::Value &value)
 const eval::Value &
 DenseDotProductFunction::eval(const Input &input, Stash &stash) const
 {
-    DenseTensorView::CellsRef lhsCells = getCellsRef(input.get_tensor(_lhsTensor->tensor_id));
-    DenseTensorView::CellsRef rhsCells = getCellsRef(input.get_tensor(_rhsTensor->tensor_id));
+    DenseTensorView::CellsRef lhsCells = getCellsRef(input.get_tensor(_lhsTensorId));
+    DenseTensorView::CellsRef rhsCells = getCellsRef(input.get_tensor(_rhsTensorId));
     size_t numCells = std::min(lhsCells.size(), rhsCells.size());
     double result = _hwAccelerator->dotProduct(lhsCells.cbegin(), rhsCells.cbegin(), numCells);
     return stash.create<eval::DoubleValue>(result);

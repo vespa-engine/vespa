@@ -30,10 +30,8 @@ assertCompiledDotProduct(const vespalib::string &lhsType,
     TensorFunction::UP func = compileDotProduct(lhsType, rhsType);
     const DenseDotProductFunction *dotProduct = as<DenseDotProductFunction>(*func);
     ASSERT_TRUE(dotProduct);
-    EXPECT_EQUAL(ValueType::from_spec(lhsType), dotProduct->lhsTensor().result_type);
-    EXPECT_EQUAL(1u, dotProduct->lhsTensor().tensor_id);
-    EXPECT_EQUAL(ValueType::from_spec(rhsType), dotProduct->rhsTensor().result_type);
-    EXPECT_EQUAL(3u, dotProduct->rhsTensor().tensor_id);
+    EXPECT_EQUAL(1u, dotProduct->lhsTensorId());
+    EXPECT_EQUAL(3u, dotProduct->rhsTensorId());
 }
 
 void
