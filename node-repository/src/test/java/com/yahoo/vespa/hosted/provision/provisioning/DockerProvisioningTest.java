@@ -34,12 +34,27 @@ public class DockerProvisioningTest {
             tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost" + i);
         }
 
-        List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), Optional.empty()), 7, 1, dockerFlavor);
+        Optional<String> wantedDockerImage = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/vespa-base:6.39");
+        final int nodeCount = 7;
+        List<HostSpec> hosts = tester.prepare(application1,
+                                              ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedDockerImage),
+                                              nodeCount, 1, dockerFlavor);
         tester.activate(application1, new HashSet<>(hosts));
 
         final NodeList nodes = tester.getNodes(application1, Node.State.active);
-        assertEquals(7, nodes.size());
+        assertEquals(nodeCount, nodes.size());
         assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
+
+        // Upgrade Vespa version on nodes
+        Optional<String> upgradedWantedDockerImage = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/vespa-base:6.40");
+        List<HostSpec> upgradedHosts = tester.prepare(application1,
+                                                      ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), upgradedWantedDockerImage),
+                                                      nodeCount, 1, dockerFlavor);
+        tester.activate(application1, new HashSet<>(upgradedHosts));
+        final NodeList upgradedNodes = tester.getNodes(application1, Node.State.active);
+        assertEquals(nodeCount, upgradedNodes.size());
+        assertEquals(dockerFlavor, upgradedNodes.asList().get(0).flavor().canonicalName());
+        assertEquals(hosts, upgradedHosts);
     }
 
     // In dev, test and staging you get nodes with default flavor, but we should get specified flavor for docker nodes
