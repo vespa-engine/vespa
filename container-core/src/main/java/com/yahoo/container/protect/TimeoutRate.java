@@ -7,6 +7,7 @@ package com.yahoo.container.protect;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @deprecated this is not in use and will be removed in the next major release
  */
+// TODO: Remove on Vespa 7
 @Deprecated
 public final class TimeoutRate {
 

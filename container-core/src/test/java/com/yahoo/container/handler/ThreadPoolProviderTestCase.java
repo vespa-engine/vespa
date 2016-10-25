@@ -68,7 +68,7 @@ public class ThreadPoolProviderTestCase {
     }
 
     @Test
-    @Ignore
+    @Ignore // Ignored because it depends on the system time and so is unstable on factory
     public void testThreadPoolProviderTerminationOnBreakdown() throws InterruptedException {
         ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(2)
                                                                                      .maxThreadExecutionTimeSeconds(1));

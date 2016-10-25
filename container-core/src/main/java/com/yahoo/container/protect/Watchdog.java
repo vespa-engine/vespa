@@ -18,6 +18,7 @@ import com.yahoo.protect.Process;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @deprecated this is not in use and will be removed in the next major release
  */
+// TODO: Remove on Vespa 7
 @Deprecated
 class Watchdog extends TimerTask {
 
