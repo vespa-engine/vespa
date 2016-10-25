@@ -262,7 +262,6 @@ public class NodeAgentImplTest {
         nodeAgent.tick();
 
         verify(dockerOperations, never()).removeContainer(any(), any(), any());
-        verify(dockerOperations, never()).removeContainer(eq(nodeSpec), any(), any());
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
     }
@@ -294,7 +293,6 @@ public class NodeAgentImplTest {
         nodeAgent.tick();
 
         verify(dockerOperations, never()).removeContainer(any(), any(), any());
-        verify(dockerOperations, never()).removeContainer(eq(nodeSpec), any(), any());
         verify(dockerOperations, never()).startContainerIfNeeded(eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
