@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.vespa.model.application.validation.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
 
 import java.util.List;
 
+import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
 
 public class AttributeChangeValidatorTest {
@@ -25,7 +27,7 @@ public class AttributeChangeValidatorTest {
 
         @Override
         public List<VespaConfigChangeAction> validate() {
-            return validator.validate();
+            return validator.validate(ValidationOverrides.empty());
         }
 
     }
@@ -105,4 +107,22 @@ public class AttributeChangeValidatorTest {
         f.assertValidation();
     }
 
+    @Test
+    public void requireThatChangingTensorTypeOfTensorFieldRequiresRefeed() throws Exception {
+        new Fixture(
+                "field f1 type tensor { indexing: attribute \n attribute: tensor(x[100]) }",
+                "field f1 type tensor { indexing: attribute \n attribute: tensor(y[]) }")
+                .assertValidation(newRefeedAction(
+                        "tensor-type-change",
+                        ValidationOverrides.empty(),
+                        "Field 'f1' changed: tensor type: 'tensor(x[100])' -> 'tensor(y[])'"));
+    }
+
+    @Test
+    public void requireThatNotChangingTensorTypeOfTensorFieldIsOk() throws Exception {
+        new Fixture(
+                "field f1 type tensor { indexing: attribute \n attribute: tensor(x[104], y[52]) }",
+                "field f1 type tensor { indexing: attribute \n attribute: tensor(x[104], y[52]) }")
+                .assertValidation();
+    }
 }

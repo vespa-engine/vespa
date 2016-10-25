@@ -5,7 +5,9 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.IndexSchema;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.vespa.model.application.validation.ValidationOverrides;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
+import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
 import java.util.ArrayList;
@@ -44,11 +46,12 @@ public class AttributeChangeValidator {
         this.nextDocType = nextDocType;
     }
 
-    public List<VespaConfigChangeAction> validate() {
+    public List<VespaConfigChangeAction> validate(final ValidationOverrides overrides) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
         result.addAll(validateAddAttributeAspect());
         result.addAll(validateRemoveAttributeAspect());
         result.addAll(validateAttributeSettings());
+        result.addAll(validateTensorTypes(overrides));
         return result;
     }
 
@@ -89,6 +92,40 @@ public class AttributeChangeValidator {
             }
         }
         return result;
+    }
+
+    private List<VespaConfigChangeAction> validateTensorTypes(final ValidationOverrides overrides) {
+        final List<VespaConfigChangeAction> result = new ArrayList<>();
+
+        for (final Attribute nextAttr : nextFields.attributes()) {
+            final Attribute currentAttr = currentFields.getAttribute(nextAttr.getName());
+
+            if (currentAttr != null && currentAttr.tensorType().isPresent()) {
+                // If the tensor attribute is not present on the new attribute, it means that the data type of the attribute
+                // has been changed. This is already handled by DocumentTypeChangeValidator, so we can ignore it here
+                if (!nextAttr.tensorType().isPresent()) {
+                    continue;
+                }
+
+                // Tensor attribute has changed type
+                if (!nextAttr.tensorType().get().equals(currentAttr.tensorType().get())) {
+                    result.add(createTensorTypeChangedRefeedAction(currentAttr, nextAttr, overrides));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static VespaRefeedAction createTensorTypeChangedRefeedAction(Attribute currentAttr, Attribute nextAttr, ValidationOverrides overrides) {
+        return VespaRefeedAction.of(
+                "tensor-type-change",
+                overrides,
+                new ChangeMessageBuilder(nextAttr.getName())
+                        .addChange(
+                                "tensor type",
+                                currentAttr.tensorType().get().toString(),
+                                nextAttr.tensorType().get().toString()).build());
     }
 
     private static void validateAttributeSetting(Attribute currentAttr, Attribute nextAttr,

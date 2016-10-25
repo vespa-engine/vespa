@@ -40,6 +40,22 @@ public class TensorType {
         @Override
         public abstract String toString();
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Dimension dimension = (Dimension) o;
+
+            if (!name.equals(dimension.name)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
     }
 
     public static class IndexedBoundDimension extends TensorType.Dimension {
@@ -62,6 +78,25 @@ public class TensorType {
         @Override
         public String toString() { return name() + "[" + size.get() + "]"; }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            IndexedBoundDimension that = (IndexedBoundDimension) o;
+
+            if (!size.equals(that.size)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = super.hashCode();
+            result = 31 * result + size.hashCode();
+            return result;
+        }
     }
 
     public static class IndexedUnboundDimension extends TensorType.Dimension {
@@ -78,7 +113,6 @@ public class TensorType {
 
         @Override
         public String toString() { return name() + "[]"; }
-
     }
 
     public static class MappedDimension extends TensorType.Dimension {
