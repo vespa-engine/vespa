@@ -999,7 +999,8 @@ struct TestContext {
 
     void test_dot_product(double expect,
                           const TensorSpec &lhs,
-                          const TensorSpec &rhs) {
+                          const TensorSpec &rhs)
+    {
         Expr_TT eval("sum(a*b)");
         EXPECT_EQUAL(expect, safe(eval).eval(engine, lhs, rhs).number());
     }
