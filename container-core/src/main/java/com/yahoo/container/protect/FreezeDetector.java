@@ -14,22 +14,15 @@ import com.yahoo.container.core.DiagnosticsConfig;
  * @deprecated this is not in use and will be removed in the next major release
  */
 @Deprecated
+// TODO: Remove on Vespa 7
 public class FreezeDetector extends AbstractComponent {
 
     private final Timer timeoutWatchdog;
     private final Watchdog watchdog;
 
     public FreezeDetector(DiagnosticsConfig diagnosticsConfig) {
-        if (diagnosticsConfig.disabled()) {
-            timeoutWatchdog = null;
-            watchdog = null;
-        } else {
-            timeoutWatchdog = new Timer("TimeoutWatchdog", true);
-            watchdog = new Watchdog(diagnosticsConfig.timeoutfraction(),
-                    diagnosticsConfig.minimumqps(),
-                    diagnosticsConfig.shutdown());
-            timeoutWatchdog.schedule(watchdog, 10L * 1000L, 100L);
-        }
+        timeoutWatchdog = null;
+        watchdog = null;
     }
 
     public void register(ThreadLocalDirectory<TimeoutRate, Boolean> timeouts) {
