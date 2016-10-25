@@ -19,7 +19,7 @@ using namespace vespalib::tensor;
 ValueType
 makeType(size_t numCells)
 {
-    return ValueType::from_spec(make_string("tensor(x[%zu]", numCells));
+    return ValueType::tensor_type({{"x", numCells}});
 }
 
 std::unique_ptr<tensor_function::Inject>
