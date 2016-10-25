@@ -262,7 +262,38 @@ public class NodeAgentImplTest {
         nodeAgent.tick();
 
         verify(dockerOperations, never()).removeContainer(any(), any(), any());
-        verify(dockerOperations, never()).removeContainer(eq(nodeSpec), any(), any());
+        verify(orchestrator, never()).resume(any(String.class));
+        verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
+    }
+
+    @Test
+    public void readyNodeLeadsToNoAction() throws Exception {
+        final long restartGeneration = 1;
+        final DockerImage dockerImage = new DockerImage("dockerImage");
+        final ContainerName containerName = new ContainerName("container-name");
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
+                hostName,
+                Optional.empty(),
+                containerName,
+                Node.State.failed,
+                "tenant",
+                "docker",
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(restartGeneration),
+                Optional.of(restartGeneration),
+                MIN_CPU_CORES,
+                MIN_MAIN_MEMORY_AVAILABLE_GB,
+                MIN_DISK_AVAILABLE_GB);
+
+        when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+        when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
+
+        nodeAgent.tick();
+
+        verify(dockerOperations, never()).removeContainer(any(), any(), any());
+        verify(dockerOperations, never()).startContainerIfNeeded(eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
     }

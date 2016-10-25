@@ -292,7 +292,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (nodeState == Node.State.dirty || nodeState == Node.State.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
-        if (!nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
+        if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
                                        + existingContainer.get() + " -> " + nodeSpec.wantedDockerImage.get());
         }
