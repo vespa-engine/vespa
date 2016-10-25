@@ -68,6 +68,7 @@ public class ThreadPoolProviderTestCase {
     }
 
     @Test
+    @Ignore
     public void testThreadPoolProviderTerminationOnBreakdown() throws InterruptedException {
         ThreadpoolConfig config = new ThreadpoolConfig(new ThreadpoolConfig.Builder().maxthreads(2)
                                                                                      .maxThreadExecutionTimeSeconds(1));
