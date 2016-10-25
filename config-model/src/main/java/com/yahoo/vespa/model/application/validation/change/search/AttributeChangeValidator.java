@@ -101,7 +101,8 @@ public class AttributeChangeValidator {
             final Attribute currentAttr = currentFields.getAttribute(nextAttr.getName());
 
             if (currentAttr != null && currentAttr.tensorType().isPresent()) {
-                // Tensor attribute has been removed. Ignore
+                // If the tensor attribute is not present on the new attribute, it means that the data type of the attribute
+                // has been changed. This is already handled by DocumentTypeChangeValidator, so we can ignore it here
                 if (!nextAttr.tensorType().isPresent()) {
                     continue;
                 }
