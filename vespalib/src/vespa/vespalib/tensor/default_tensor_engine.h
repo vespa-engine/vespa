@@ -24,7 +24,7 @@ public:
     vespalib::string to_string(const Tensor &tensor) const override;
     TensorSpec to_spec(const Tensor &tensor) const override;
 
-    virtual eval::TensorFunction::UP compile(eval::tensor_function::Node_UP expr);
+    virtual eval::TensorFunction::UP compile(eval::tensor_function::Node_UP expr) const override;
 
     std::unique_ptr<Tensor> create(const TensorSpec &spec) const override;
     const Value &reduce(const Tensor &tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions, Stash &stash) const override;

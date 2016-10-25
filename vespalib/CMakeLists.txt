@@ -22,6 +22,7 @@ vespa_define_module(
     src/tests/component
     src/tests/compress
     src/tests/delegatelist
+    src/tests/dotproduct
     src/tests/dual_merge_director
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
@@ -73,6 +74,7 @@ vespa_define_module(
     src/tests/stringfmt
     src/tests/sync
     src/tests/tensor/sparse_tensor_builder
+    src/tests/tensor/dense_dot_product_function
     src/tests/tensor/dense_tensor_address_combiner
     src/tests/tensor/dense_tensor_builder
     src/tests/tensor/dense_tensor_function_compiler
@@ -122,6 +124,7 @@ vespa_define_module(
     src/vespa/vespalib/eval/value_cache
     src/vespa/vespalib/eval/llvm
     src/vespa/vespalib/geo
+    src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/io
     src/vespa/vespalib/net
     src/vespa/vespalib/objects
