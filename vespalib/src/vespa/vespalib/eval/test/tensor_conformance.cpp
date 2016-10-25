@@ -354,7 +354,7 @@ struct Expr_T : Eval {
 
 // expression(tensor,tensor)
 struct Expr_TT : Eval {
-    const vespalib::string &expr;
+    vespalib::string expr;
     Expr_TT(const vespalib::string &expr_in) : expr(expr_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
         Function fun = Function::parse(expr);
@@ -997,6 +997,27 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_dot_product(double expect,
+                          const TensorSpec &lhs,
+                          const TensorSpec &rhs) {
+        Expr_TT eval("sum(a*b)");
+        EXPECT_EQUAL(expect, safe(eval).eval(engine, lhs, rhs).number());
+    }
+
+    void test_dot_product() {
+        TEST_DO(test_dot_product(((2 * 7) + (3 * 11) + (5 * 13)),
+                                 spec(x(3), Seq({ 2, 3, 5 })),
+                                 spec(x(3), Seq({ 7, 11, 13 }))));
+        TEST_DO(test_dot_product(((2 * 7) + (3 * 11)),
+                                 spec(x(2), Seq({ 2, 3 })),
+                                 spec(x(3), Seq({ 7, 11, 13 }))));
+        TEST_DO(test_dot_product(((2 * 7) + (3 * 11)),
+                                 spec(x(3), Seq({ 2, 3, 5 })),
+                                 spec(x(2), Seq({ 7, 11 }))));
+    }
+
+    //-------------------------------------------------------------------------
+
     void run_tests() {
         TEST_DO(test_tensor_create_type());
         TEST_DO(test_tensor_equality());
@@ -1005,6 +1026,7 @@ struct TestContext {
         TEST_DO(test_tensor_reduce());
         TEST_DO(test_tensor_map());
         TEST_DO(test_tensor_apply());
+        TEST_DO(test_dot_product());
     }
 };
 
