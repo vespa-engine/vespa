@@ -30,12 +30,12 @@ public class DefaultMetricConsumers {
     private MetricsConsumer getDefaultYamasConsumer(){
         List<Metric> metrics = new ArrayList<>();
 
-        metrics.addAll(addSearchNodeMetrics());
-        metrics.addAll(addStorageMetrics());
-        metrics.addAll(addDocprocMetrics());
-        metrics.addAll(addClusterControllerMetrics());
-        metrics.addAll(addQrserverMetrics());
-        metrics.addAll(addContainerMetrics());
+        metrics.addAll(getSearchNodeMetrics());
+        metrics.addAll(getStorageMetrics());
+        metrics.addAll(getDocprocMetrics());
+        metrics.addAll(getClusterControllerMetrics());
+        metrics.addAll(getQrserverMetrics());
+        metrics.addAll(getContainerMetrics());
         metrics.addAll(getConfigServerMetrics());
 
         return new MetricsConsumer("yamas", toMapByName(metrics));
@@ -64,7 +64,7 @@ public class DefaultMetricConsumers {
         return metrics;
     }
 
-    private Collection<Metric> addContainerMetrics() {
+    private Collection<Metric> getContainerMetrics() {
         List<Metric> metrics = new ArrayList<>();
 
         metrics.add(new Metric("serverRejectedRequests.rate"));
@@ -100,7 +100,7 @@ public class DefaultMetricConsumers {
         return metrics;
     }
 
-    private Collection<Metric> addClusterControllerMetrics() {
+    private Collection<Metric> getClusterControllerMetrics() {
         List<Metric> metrics = new ArrayList<>();
 
         metrics.add(new Metric("cluster-controller.down.count.last"));
@@ -119,7 +119,7 @@ public class DefaultMetricConsumers {
         return metrics;
     }
 
-    private Collection<Metric> addDocprocMetrics() {
+    private Collection<Metric> getDocprocMetrics() {
         List<Metric> metrics = new ArrayList<>();
 
         // per chain
@@ -128,7 +128,7 @@ public class DefaultMetricConsumers {
         return metrics;
     }
 
-    private Collection<Metric> addQrserverMetrics() {
+    private Collection<Metric> getQrserverMetrics() {
         List<Metric> metrics = new ArrayList<>();
 
         metrics.add(new Metric("peak_qps.average", "peak_qps"));
@@ -167,7 +167,7 @@ public class DefaultMetricConsumers {
         return metrics;
     }
 
-    private Collection<Metric> addSearchNodeMetrics() {
+    private Collection<Metric> getSearchNodeMetrics() {
         List<Metric> metrics = new ArrayList<>();
 
         metrics.add(new Metric("proton.numstoreddocs.last", "documents_total"));
@@ -228,7 +228,7 @@ public class DefaultMetricConsumers {
         return metrics;
     }
 
-    private Collection<Metric> addStorageMetrics() {
+    private Collection<Metric> getStorageMetrics() {
         List<Metric> metrics = new ArrayList<>();
 
         metrics.add(new Metric("vds.datastored.alldisks.docs.average","docs"));
