@@ -341,10 +341,10 @@ public class ClusterSearcher extends Searcher {
 
         if (invalidInDocTypes != null && !invalidInDocTypes.isEmpty()) {
             String plural = invalidInDocTypes.size() > 1 ? "s" : "";
-            return new Result(query, ErrorMessage.createInvalidQueryParameter(
-                "Requested rank profile '" + rankProfile +
-                "' is undefined for document type" + plural + " '" +
-                StringUtils.join(invalidInDocTypes.iterator(), ", ") + "'"));
+            return new Result(query, 
+                              ErrorMessage.createInvalidQueryParameter("Requested rank profile '" + rankProfile +
+                                                                       "' is undefined for document type" + plural + " '" +
+                                                                       StringUtils.join(invalidInDocTypes.iterator(), ", ") + "'"));
         }
 
         return null;
@@ -373,9 +373,7 @@ public class ClusterSearcher extends Searcher {
                 }
             }
             // no error: good result, let's return
-            if (result.hits().getError() == null) {
-                return;
-            }
+            if (result.hits().getError() == null) return;
 
         } while (tries < hasher.getNodeCount() && failoverToRemote);
     }
@@ -387,11 +385,8 @@ public class ClusterSearcher extends Searcher {
 
     private void updateCacheHitRatio(Result result, Query query) {
         // result.isCached() looks at the contained hits, so if there are no
-        // hits, the result will be treated as cached, even though the backend
-        // was queried.
-        if (result.hits().getError() == null
-                && result.hits().getConcreteSize() > 0) {
-
+        // hits, the result will be treated as cached, even though the backend was queried.
+        if (result.hits().getError() == null && result.hits().getConcreteSize() > 0) {
             if (result.isCached()) {
                 cacheHit();
             } else if (!query.getNoCache()) {
@@ -401,7 +396,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     @Override
-    public Result search(com.yahoo.search.Query query, Execution execution) {
+    public Result search(Query query, Execution execution) {
         Result result;
         int tries = 0;
 
@@ -436,19 +431,23 @@ public class ClusterSearcher extends Searcher {
     }
 
     private void validateQueryTimeout(Query query) {
-        if (query.getTimeout() > maxQueryTimeout) {
-            log.warning("Query timeout (" + query.getTimeout() + " ms) > max query timeout (" + maxQueryTimeout + " ms) for '" +
-                    query.toString() + "'. Setting timeout to " + maxQueryTimeout + " ms.");
-            query.setTimeout(maxQueryTimeout);
+        if (query.getTimeout() <= maxQueryTimeout) return;
+
+        if (query.isTraceable(2)) {
+            query.trace("Query timeout (" + query.getTimeout() + " ms) > max query timeout (" + 
+                        maxQueryTimeout + " ms). Setting timeout to " + maxQueryTimeout + " ms.", 2);
         }
+        query.setTimeout(maxQueryTimeout);
     }
 
     private void validateQueryCache(Query query) {
-        if (query.getRanking().getQueryCache() && query.getTimeout() > maxQueryCacheTimeout) {
-            log.warning("Query timeout (" + query.getTimeout() + " ms) > max query cache timeout (" + maxQueryCacheTimeout + " ms) for '" +
-                    query.toString() + "'. Disabling query cache.");
-            query.getRanking().setQueryCache(false);
+        if (query.getRanking().getQueryCache() && query.getTimeout() <= maxQueryCacheTimeout) return;
+
+        if (query.isTraceable(2)) {
+            query.trace("Query timeout (" + query.getTimeout() + " ms) > max query cache timeout (" +
+                        maxQueryCacheTimeout + " ms). Disabling query cache.", 2);
         }
+        query.getRanking().setQueryCache(false);
     }
 
     private Result doSearch(Searcher searcher, Query query, Execution execution) {

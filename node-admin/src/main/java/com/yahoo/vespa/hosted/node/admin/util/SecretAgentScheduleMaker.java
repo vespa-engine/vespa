@@ -57,7 +57,7 @@ public class SecretAgentScheduleMaker {
             }
         }
 
-        stringBuilder.append("  tags:\n").append("    namespace: Vespa\n");
+        if (!tags.isEmpty()) stringBuilder.append("  tags:\n");
         tags.forEach((key, value) -> stringBuilder.append("    ").append(key).append(": ").append(value).append("\n"));
 
         return stringBuilder.toString();

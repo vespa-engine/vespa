@@ -100,11 +100,17 @@ public class MetricReceiverWrapper implements Iterable<MetricReceiverWrapper.Dim
         }
 
         public String toSecretAgentReport() throws JsonProcessingException {
+            final Map<String, Object> routing = new HashMap<>();
+            final Map<String, Object> routingYamas = new HashMap<>();
+            routing.put("yamas", routingYamas);
+            routingYamas.put("namespaces", new String[]{"Vespa"});
+
             Map<String, Object> report = new LinkedHashMap<>();
             report.put("application", "docker");
             report.put("timestamp", System.currentTimeMillis() / 1000);
             report.put("dimensions", dimensions.dimensionsMap);
             report.put("metrics", metrics);
+            report.put("routing", routing);
 
             return objectMapper.writeValueAsString(report);
         }

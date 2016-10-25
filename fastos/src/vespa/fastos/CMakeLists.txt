@@ -21,7 +21,6 @@ vespa_add_library(fastos
     unix_socket.cpp
     unix_thread.cpp
     unix_time.cpp
-    vtag.cpp
     INSTALL lib64
     DEPENDS
     ${CMAKE_DL_LIBS}

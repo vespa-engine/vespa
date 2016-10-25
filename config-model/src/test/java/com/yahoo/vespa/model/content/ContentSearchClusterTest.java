@@ -39,6 +39,12 @@ public class ContentSearchClusterTest {
         return new ProtonConfig(protonCfgBuilder);
     }
 
+    private static void assertProtonResourceLimits(double expDiskLimit, double expMemoryLimits, String clusterXml) throws Exception {
+        ProtonConfig cfg = getProtonConfig(createCluster(clusterXml));
+        assertEquals(expDiskLimit, cfg.writefilter().disklimit(), EPSILON);
+        assertEquals(expMemoryLimits, cfg.writefilter().memorylimit(), EPSILON);
+    }
+
     @Test
     public void requireThatProtonInitializeThreadsIsSet() throws Exception {
         assertEquals(2, getProtonConfig(createClusterWithOneDocumentType()).initialize().threads());
@@ -47,9 +53,20 @@ public class ContentSearchClusterTest {
 
     @Test
     public void requireThatProtonResourceLimitsCanBeSet() throws Exception {
-        String clusterXml = new ContentClusterBuilder().protonDiskLimit(0.88).protonMemoryLimit(0.77).getXml();
-        ProtonConfig cfg = getProtonConfig(createCluster(clusterXml));
-        assertEquals(0.88, cfg.writefilter().disklimit(), EPSILON);
-        assertEquals(0.77, cfg.writefilter().memorylimit(), EPSILON);
+        assertProtonResourceLimits(0.88, 0.77,
+                new ContentClusterBuilder().protonDiskLimit(0.88).protonMemoryLimit(0.77).getXml());
     }
+
+    @Test
+    public void requireThatOnlyDiskLimitCanBeSet() throws Exception {
+        assertProtonResourceLimits(0.88, 0.9,
+                new ContentClusterBuilder().protonDiskLimit(0.88).getXml());
+    }
+
+    @Test
+    public void requireThatOnlyMemoryLimitCanBeSet() throws Exception {
+        assertProtonResourceLimits(0.9, 0.77,
+                new ContentClusterBuilder().protonMemoryLimit(0.77).getXml());
+    }
+
 }

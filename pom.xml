@@ -1119,6 +1119,7 @@
         <module>config-proxy</module>
         <module>configserver</module>
         <module>config_test</module>
+        <module>container</module>
         <module>container-core</module>
         <module>container-accesslogging</module>
         <module>container-dev</module>

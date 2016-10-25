@@ -17,8 +17,12 @@ public class DomResourceLimitsBuilder {
         if (resourceLimits == null) {
             return builder.build();
         }
-        builder.setDiskLimit(resourceLimits.childAsDouble("disk"));
-        builder.setMemoryLimit(resourceLimits.childAsDouble("memory"));
+        if (resourceLimits.getChild("disk") != null) {
+            builder.setDiskLimit(resourceLimits.childAsDouble("disk"));
+        }
+        if (resourceLimits.getChild("memory") != null) {
+            builder.setMemoryLimit(resourceLimits.childAsDouble("memory"));
+        }
         return builder.build();
     }
 }

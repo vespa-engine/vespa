@@ -273,7 +273,6 @@ public class NodeAgentImpl implements NodeAgent {
             throws Exception {
         if (existingContainer.isRunning) {
             ContainerName containerName = existingContainer.name;
-            //PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
             if (nodeSpec.nodeState == Node.State.active) {
                 logger.info("Restarting services for " + containerName);
                 // Since we are restarting the services we need to suspend the node.
@@ -283,9 +282,15 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
+    private void stopServices(ContainerName containerName) throws Exception {
+            logger.info("Stopping services for " + containerName);
+            dockerOperations.stopServicesOnNode(containerName);
+    }
+
     private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
-        if (nodeSpec.nodeState != Node.State.active) {
-            return Optional.of("Node no longer active");
+        final Node.State nodeState = nodeSpec.nodeState;
+        if (nodeState == Node.State.dirty || nodeState == Node.State.provisioned) {
+            return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
         if (!nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
@@ -310,12 +315,10 @@ public class NodeAgentImpl implements NodeAgent {
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
 
             if (existingContainer.get().isRunning) {
-                // If we're stopping the node only to upgrade we need to suspend the services.
-                if (nodeSpec.nodeState == Node.State.active) {
-                    final ContainerName containerName = existingContainer.get().name;
-                    orchestratorSuspendNode(orchestrator, nodeSpec, logger);
-                    dockerOperations.trySuspendNode(containerName);
-                }
+                final ContainerName containerName = existingContainer.get().name;
+                orchestratorSuspendNode(orchestrator, nodeSpec, logger);
+                dockerOperations.trySuspendNode(containerName);
+                stopServices(containerName);
             }
             dockerOperations.removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             return true;
@@ -471,12 +474,14 @@ public class NodeAgentImpl implements NodeAgent {
                 .add("host", hostname)
                 .add("role", "tenants")
                 .add("flavor", nodeSpec.nodeFlavor)
-                .add("state", nodeSpec.nodeState.toString());
+                .add("state", nodeSpec.nodeState.toString())
+                .add("zone", environment.getZone())
+                .add("parentHostname", environment.getParentHostHostname());
 
         if (nodeSpec.owner.isPresent()) {
             dimensionsBuilder
                     .add("tenantName", nodeSpec.owner.get().tenant)
-                    .add("app", nodeSpec.owner.get().application);
+                    .add("app", nodeSpec.owner.get().application + "." + nodeSpec.owner.get().instance);
         }
         if (nodeSpec.membership.isPresent()) {
             dimensionsBuilder
@@ -542,14 +547,16 @@ public class NodeAgentImpl implements NodeAgent {
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
+                .withTag("namespace", "Vespa")
                 .withTag("role", "tenants")
                 .withTag("flavor", nodeSpec.nodeFlavor)
                 .withTag("state", nodeSpec.nodeState.toString())
-                .withTag("zone", environment.getZone());
+                .withTag("zone", environment.getZone())
+                .withTag("parentHostname", environment.getParentHostHostname());
 
         if (nodeSpec.owner.isPresent()) scheduleMaker
                 .withTag("tenantName", nodeSpec.owner.get().tenant)
-                .withTag("app", nodeSpec.owner.get().application);
+                .withTag("app", nodeSpec.owner.get().application + "." + nodeSpec.owner.get().instance);
 
         if (nodeSpec.membership.isPresent()) scheduleMaker
                 .withTag("clustertype", nodeSpec.membership.get().clusterType)

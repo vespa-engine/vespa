@@ -9,6 +9,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -136,14 +137,21 @@ public class ConfigServerHttpRequestExecutor {
     }
 
     public <T> T delete(String path, int port, Class<T> wantedReturnType) {
-        return tryAllConfigServers(configServer -> {
-            return new HttpDelete("http://" + configServer + ":" + port + path);
-        }, wantedReturnType);
+        return tryAllConfigServers(configServer ->
+                new HttpDelete("http://" + configServer + ":" + port + path), wantedReturnType);
     }
 
     public <T> T get(String path, int port, Class<T> wantedReturnType) {
+        return tryAllConfigServers(configServer ->
+                new HttpGet("http://" + configServer + ":" + port + path), wantedReturnType);
+    }
+
+    public <T> T post(String path, int port, Object bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
-            return new HttpGet("http://" + configServer + ":" + port + path);
+            HttpPost post = new HttpPost("http://" + configServer + ":" + port + path);
+            setContentTypeToApplicationJson(post);
+            post.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
+            return post;
         }, wantedReturnType);
     }
 

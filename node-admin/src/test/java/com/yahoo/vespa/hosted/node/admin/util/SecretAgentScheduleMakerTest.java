@@ -35,7 +35,6 @@ public class SecretAgentScheduleMakerTest {
                 "    - arg1\n" +
                 "    - arg2 with space\n" +
                 "  tags:\n" +
-                "    namespace: Vespa\n" +
                 "    tenantName: vespa\n" +
                 "    app: canary-docker.default\n" +
                 "    clustertype: container\n" +
@@ -56,9 +55,7 @@ public class SecretAgentScheduleMakerTest {
                 "- id: system-checks\n" +
                 "  interval: 60\n" +
                 "  user: nobody\n" +
-                "  check: /some/test\n" +
-                "  tags:\n" +
-                "    namespace: Vespa\n", scheduleMaker.toString());
+                "  check: /some/test\n", scheduleMaker.toString());
     }
 
     @Test
@@ -70,8 +67,6 @@ public class SecretAgentScheduleMakerTest {
                 "- id: system-checks\n" +
                 "  interval: 60\n" +
                 "  user: yahoo\n" +
-                "  check: /some/test\n" +
-                "  tags:\n" +
-                "    namespace: Vespa\n", scheduleMaker.toString());
+                "  check: /some/test\n", scheduleMaker.toString());
     }
 }

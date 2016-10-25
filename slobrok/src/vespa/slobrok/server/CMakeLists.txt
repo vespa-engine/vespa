@@ -15,11 +15,11 @@ vespa_add_library(slobrok_slobrokserver
     rpc_server_manager.cpp
     rpc_server_map.cpp
     rpchooks.cpp
+    rpcmirror.cpp
     sbenv.cpp
     selfcheck.cpp
     slobrokserver.cpp
     visible_map.cpp
-    vtag.cpp
     metrics_producer.cpp
     INSTALL lib64
     DEPENDS

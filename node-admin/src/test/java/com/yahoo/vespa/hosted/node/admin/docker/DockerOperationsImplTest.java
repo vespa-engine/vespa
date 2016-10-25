@@ -24,9 +24,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
-    Environment environment = new Environment(Collections.emptySet(),
+    private final Environment environment = new Environment(Collections.emptySet(),
                                               "dev",
                                               "us-east-1",
+                                              "parent.host.name.yahoo.com",
                                               new InetAddressResolver());
     private final Docker docker = mock(Docker.class);
     private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment, new Maintainer());

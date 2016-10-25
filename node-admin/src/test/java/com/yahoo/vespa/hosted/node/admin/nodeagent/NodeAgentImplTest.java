@@ -64,6 +64,7 @@ public class NodeAgentImplTest {
     Environment environment = new Environment(Collections.emptySet(),
                                               "dev",
                                               "us-east-1",
+                                              "parent.host.name.yahoo.com",
                                               new InetAddressResolver());
     private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
             storageMaintainer, metricReceiver, environment, maintainer);
@@ -235,7 +236,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void failedNodeRunningContainerIsTakenDown() throws Exception {
+    public void failedNodeRunningContainerShouldStillBeRunning() throws Exception {
         final long restartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
@@ -260,14 +261,14 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        verify(dockerOperations, times(1)).removeContainer(any(), any(), any());
-        verify(dockerOperations, times(1)).removeContainer(eq(nodeSpec), any(), any());
+        verify(dockerOperations, never()).removeContainer(any(), any(), any());
+        verify(dockerOperations, never()).removeContainer(eq(nodeSpec), any(), any());
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
     }
 
     @Test
-    public void inactiveNodeRunningContainerIsTakenDown() throws Exception {
+    public void inactiveNodeRunningContainerShouldStillBeRunning() throws Exception {
         final long restartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
@@ -294,7 +295,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations);
         inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
-        inOrder.verify(dockerOperations, times(1)).removeContainer(eq(nodeSpec), any(), any());
+        inOrder.verify(dockerOperations, never()).removeContainer(eq(nodeSpec), any(), any());
 
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
@@ -322,7 +323,10 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(
-                Optional.of(new Container(hostName, dockerImage, containerName, nodeState != Node.State.dirty)));
+                Optional.of(new Container(hostName,
+                                          dockerImage,
+                                          containerName,
+                                          nodeState != Node.State.dirty && nodeState != Node.State.provisioned)));
 
         nodeAgent.tick();
 
