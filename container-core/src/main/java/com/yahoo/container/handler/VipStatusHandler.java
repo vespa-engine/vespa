@@ -158,27 +158,29 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
         }
     }
 
+    /**
+     * Create this with a dedicated thread pool to avoid returning an error to VIPs when the regular thread pool is 
+     * out of capacity. This is the default behavior.
+     */
+    @Inject
+    public VipStatusHandler(VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
+        // One thread should be enough for status handling - otherwise something else is completely wrong,
+        // in which case this will eventually start returning a 503 (due to work rejection) as the bounded
+        // queue will fill up
+        this(new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(100)),
+             vipConfig, metric, vipStatus);
+    }
+
     public VipStatusHandler(Executor executor, VipStatusConfig vipConfig, Metric metric) {
         this(executor, vipConfig, metric, null);
     }
 
-    @Inject
     public VipStatusHandler(Executor executor, VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
-        super(createDedicatedThreadExecutor(), metric);
+        super(executor, metric);
         this.accessDisk = vipConfig.accessdisk();
         this.statusFile = new File(Defaults.getDefaults().underVespaHome(vipConfig.statusfile()));
         this.noSearchBackendsImpliesOutOfService = vipConfig.noSearchBackendsImpliesOutOfService();
         this.vipStatus = vipStatus;
-    }
-
-    /**
-     * Use a dedicated thread pool to avoid returning an error to VIPs when the regular thread pool is out of capacity.
-     * One thread should be enough for status handling - otherwise something else is completely wrong, 
-     * in which case this will eventually start returning a 503 (due to work rejection) as the bounded 
-     * queue will fill up
-     */
-    private static Executor createDedicatedThreadExecutor() {
-        return new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(100));
     }
 
     @Override
