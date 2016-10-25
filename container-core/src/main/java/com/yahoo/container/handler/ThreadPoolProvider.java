@@ -22,7 +22,7 @@ import com.yahoo.jdisc.Metric;
  * A configurable thread pool provider. This provides the worker threads used for normal request processing.
  * Request an Executor injected in your component constructor if you want to use it.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author baldersheim
  * @author bratseth
  */

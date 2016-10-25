@@ -179,9 +179,8 @@ public class StatisticsSearcher extends Searcher {
         if (latency >= 0) {
             addLatency(latency, metricContext);
         } else {
-            getLogger().log(
-                    LogLevel.WARNING,
-                    "Apparently negative latency measure, start: " + start
+            getLogger().log(LogLevel.WARNING,
+                            "Apparently negative latency measure, start: " + start
                             + ", end: " + end + ", for query: " + query.toString());
         }
         if (result.hits().getError() != null) {
@@ -238,7 +237,7 @@ public class StatisticsSearcher extends Searcher {
         if (result.hits().getErrorHit().hasOnlyErrorCode(Error.NULL_QUERY.code)) {
             nullQueries.increment();
             return;
-        } else if (result.hits().getErrorHit().hasOnlyErrorCode(3)) {
+        } else if (result.hits().getErrorHit().hasOnlyErrorCode(Error.ILLEGAL_QUERY.code)) {
             illegalQueries.increment();
             return;
         }

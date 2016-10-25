@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import com.google.inject.Inject;
@@ -23,7 +26,8 @@ import com.yahoo.vespa.defaults.Defaults;
  * Transmit status to VIP from file or memory. Bind this to
  * "http://{@literal *}/status.html" to serve VIP status requests.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
+ * @author bratseth
  */
 public final class VipStatusHandler extends ThreadedHttpRequestHandler {
 
@@ -154,11 +158,23 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
         }
     }
 
+    /**
+     * Create this with a dedicated thread pool to avoid returning an error to VIPs when the regular thread pool is 
+     * out of capacity. This is the default behavior.
+     */
+    @Inject
+    public VipStatusHandler(VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
+        // One thread should be enough for status handling - otherwise something else is completely wrong,
+        // in which case this will eventually start returning a 503 (due to work rejection) as the bounded
+        // queue will fill up
+        this(new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(100)),
+             vipConfig, metric, vipStatus);
+    }
+
     public VipStatusHandler(Executor executor, VipStatusConfig vipConfig, Metric metric) {
         this(executor, vipConfig, metric, null);
     }
 
-    @Inject
     public VipStatusHandler(Executor executor, VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
         super(executor, metric);
         this.accessDisk = vipConfig.accessdisk();

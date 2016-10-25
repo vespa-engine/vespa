@@ -24,14 +24,14 @@ import java.util.logging.Logger;
  * {@link HttpResponse#render(java.io.OutputStream)} method.
  *
  * @author hmusum
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author bratseth
  * @since 5.1
  */
 public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler {
 
     public static final String CONTENT_TYPE = "Content-Type";
-    public static final String DATE = "Date";
+    public static final String DATE = "Date"; // TODO: Remove on Vespa 7
     private static final String RENDERING_ERRORS = "rendering_errors";
 
     /** Logger for subclasses */
