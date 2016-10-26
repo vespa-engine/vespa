@@ -225,25 +225,15 @@ public class StatisticsSearcher extends Searcher {
     }
 
     private void incrErrorCount(Result result, Metric.Context metricContext) {
-        //If result is null an exception was thrown further down
-        if (result == null) {
-            //myStats.incrErrorCount();
-            failedQueries.increment();
-            metric.add(FAILED_QUERIES_METRIC, 1, metricContext);
-            metric.add("error.unhandled_exception", 1, metricContext);
-            return;
-        }
-
-        if (result.hits().getErrorHit().hasOnlyErrorCode(Error.NULL_QUERY.code)) {
-            nullQueries.increment();
-            return;
-        } else if (result.hits().getErrorHit().hasOnlyErrorCode(Error.ILLEGAL_QUERY.code)) {
-            illegalQueries.increment();
-            return;
-        }
-        //myStats.incrErrorCount();
         failedQueries.increment();
         metric.add(FAILED_QUERIES_METRIC, 1, metricContext);
+
+        if (result == null) // the chain threw an exception
+            metric.add("error.unhandled_exception", 1, metricContext);
+        else if (result.hits().getErrorHit().hasOnlyErrorCode(Error.NULL_QUERY.code))
+            nullQueries.increment();
+        else if (result.hits().getErrorHit().hasOnlyErrorCode(Error.ILLEGAL_QUERY.code))
+            illegalQueries.increment();
     }
 
     /**
