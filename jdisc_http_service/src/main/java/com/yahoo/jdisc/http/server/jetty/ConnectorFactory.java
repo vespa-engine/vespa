@@ -11,7 +11,10 @@ import com.yahoo.jdisc.http.SecretStore;
 import com.yahoo.jdisc.http.ssl.ReaderForPath;
 import com.yahoo.jdisc.http.ssl.SslKeyStore;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreFactory;
+import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
+import com.yahoo.yolean.concurrent.ResourceFactory;
 import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.io.ByteBufferPool;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.ConnectorStatistics;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -28,6 +31,7 @@ import java.io.Reader;
 import java.lang.reflect.Field;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
@@ -250,6 +254,107 @@ public class ConnectorFactory {
     }
 
     public static class JDiscServerConnector extends ServerConnector {
+        public static class BufferPool implements ByteBufferPool {
+            abstract class Pool {
+                ByteBuffer aquire(int size, boolean direct) {
+                    return aquireImpl(size, direct);
+                }
+                void release(ByteBuffer buf) { releaseImpl(buf); }
+                protected abstract ByteBuffer aquireImpl(int size, boolean direct);
+                protected abstract void releaseImpl(ByteBuffer buf);
+            };
+            class NoPool extends Pool {
+                @Override
+                protected ByteBuffer aquireImpl(int size, boolean direct) {
+                    return newByteBuffer(size, direct);
+                }
+                @Override
+                protected void releaseImpl(ByteBuffer buf) {
+                    buf = null;
+                }
+            }
+            class ConcurrentPool extends Pool {
+                class ByteBufferFactory extends ResourceFactory<ByteBuffer> {
+                    final int size;
+                    final boolean direct;
+                    ByteBufferFactory(int size, boolean direct) {
+                        this.size = size;
+                        this.direct = direct;
+                    }
+
+                    @Override
+                    public ByteBuffer create() {
+                        return newByteBuffer(size, direct);
+                    }
+                }
+
+                final ConcurrentResourcePool<ByteBuffer> pool;
+
+                ConcurrentPool(int size, boolean direct) {
+                    pool = new ConcurrentResourcePool<>(new ByteBufferFactory(size, direct));
+                }
+                @Override
+                protected ByteBuffer aquireImpl(int size, boolean direct) {
+                    return pool.alloc();
+                }
+
+                @Override
+                protected void releaseImpl(ByteBuffer buf) {
+                    pool.free(buf);
+                }
+            }
+            final int minSize2Pool;
+            final int maxSize2Pool;
+            final int numPools;
+            final NoPool noPooling = new NoPool();
+            Pool [] directPools;
+            Pool [] heapPools;
+            BufferPool() {
+                // No pooling.
+                this(Integer.MAX_VALUE, 0, 0);
+            }
+            BufferPool(int minSize2Pool, int maxSize2Pool, int numPools) {
+                this.minSize2Pool = minSize2Pool;
+                this.maxSize2Pool = maxSize2Pool;
+                this.numPools = numPools;
+                if ((numPools > 0) && (maxSize2Pool > minSize2Pool)) {
+                    directPools = new Pool[numPools];
+                    heapPools = new Pool[numPools];
+                    int size = (maxSize2Pool - minSize2Pool) / numPools;
+                    for (int i = 0; i < numPools; i++) {
+                        int maxSize = minSize2Pool + size*(i+1);
+                        directPools[i] = new ConcurrentPool(maxSize, true);
+                        heapPools[i] = new ConcurrentPool(maxSize, false);
+                    }
+                } else {
+                    directPools = null;
+                    heapPools = null;
+                }
+            }
+
+            @Override
+            public ByteBuffer acquire(int size, boolean direct) {
+                return selectPool(size, direct).aquire(size, direct);
+            }
+
+            @Override
+            public void release(ByteBuffer buffer) {
+                selectPool(buffer.capacity(), buffer.isDirect()).release(buffer);
+
+            }
+            private Pool selectPool(int size, boolean direct) {
+                if (poolable(size)) {
+                    int offsetSize = size - minSize2Pool;
+                    int index = offsetSize * numPools / (maxSize2Pool - minSize2Pool);
+                    return direct ? directPools[index] : heapPools[index];
+                } else {
+                    return noPooling;
+                }
+            }
+            private boolean poolable(int size) {
+                return (size > minSize2Pool) && (size <= maxSize2Pool);
+            }
+        }
         public static final String REQUEST_ATTRIBUTE = JDiscServerConnector.class.getName();
         private final static Logger log = Logger.getLogger(JDiscServerConnector.class.getName());
         private final Metric.Context metricCtx;
@@ -264,7 +369,7 @@ public class ConnectorFactory {
                 final Server server,
                 final ServerSocketChannel channelOpenedByActivator,
                 final ConnectionFactory... factories) {
-            super(server, factories);
+            super(server, null, null, new BufferPool(), -1, -1, factories);
             this.channelOpenedByActivator = channelOpenedByActivator;
             this.tcpKeepAlive = config.tcpKeepAliveEnabled();
             this.tcpNoDelay = config.tcpNoDelay();
