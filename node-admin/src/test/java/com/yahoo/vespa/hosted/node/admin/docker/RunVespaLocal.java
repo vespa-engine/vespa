@@ -36,9 +36,10 @@ import static org.mockito.Mockito.when;
  * To get started:
  *  1. Add config-server and container nodes hostnames to /etc/hosts:
  *      $ sudo ./vespa/node-admin/scripts/etc-hosts.sh
- *  2. Set environmental variables:
+ *  2. Set environmental variables in shell or e.g. ~/.bashrc:
  *      VESPA_HOME="/home/y"
  *      VESPA_WEB_SERVICE_PORT="4080"
+ *      VESPA_BASE_IMAGE="<vespa image>"
  *  3. Create /home/docker/container-storage with read/write permissions
  *  4. Update {@link RunVespaLocal#appPath} to point to the application you want deployed
  *  5. Specify base image (see below) and download it with "docker pull <image>"
@@ -50,8 +51,7 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class RunVespaLocal {
-    private static final DockerImage vespaBaseImage =
-            new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.40.185");
+    private static final DockerImage vespaBaseImage = new DockerImage(System.getenv("VESPA_BASE_IMAGE"));
     private static final Environment environment = new Environment(
             Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
             HostName.getLocalhost(), new InetAddressResolver());
