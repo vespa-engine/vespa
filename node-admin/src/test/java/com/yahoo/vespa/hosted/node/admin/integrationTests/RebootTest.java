@@ -47,11 +47,11 @@ public class RebootTest {
             assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
                        is(Optional.of("Not all node agents are frozen.")));
 
-            NodeAdmin nodeAdmin = dockerTester.getNodeAdmin();
-            assertEquals(Optional.empty(), updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED));
+            updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
 
+            NodeAdmin nodeAdmin = dockerTester.getNodeAdmin();
             // Wait for node admin to be frozen
-            while ( ! dockerTester.getNodeAdmin().isFrozen()) {
+            while ( ! nodeAdmin.isFrozen()) {
                 System.out.println("Node admin not frozen yet");
                 Thread.sleep(10);
             }
