@@ -176,9 +176,6 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     virtual void visit(const Error &node) {
         bind_type(ValueType::error_type(), node);
     }
-    virtual void visit(const Tensor &node) {
-        bind_type(ValueType::tensor_type({}), node);
-    }
     virtual void visit(const TensorSum &node) {
         const ValueType &child = state.peek(0);
         if (node.dimension().empty()) {
@@ -189,21 +186,6 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
             }
         } else {
             bind_type(child.remove_dimensions({node.dimension()}), node);
-        }
-    }
-    virtual void visit(const TensorMatch &node) {
-        if (state.peek(1).is_any() || state.peek(0).is_any()) {
-            bind_type(ValueType::any_type(), node);
-        } else if ((state.peek(1) == state.peek(0)) &&
-                   (!state.peek(1).unknown_dimensions() && !state.peek(0).unknown_dimensions()))
-        {
-            bind_type(state.peek(0), node);
-        } else if ((state.peek(1).is_tensor() && state.peek(0).is_tensor()) &&
-                   (state.peek(1).unknown_dimensions() || state.peek(0).unknown_dimensions()))
-        {
-            bind_type(ValueType::any_type(), node);
-        } else {
-            bind_type(ValueType::error_type(), node);
         }
     }
     virtual void visit(const Add &node) { resolve_op2_union(node); }
