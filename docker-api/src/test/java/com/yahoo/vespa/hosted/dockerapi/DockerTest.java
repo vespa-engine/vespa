@@ -41,6 +41,7 @@ public class DockerTest {
     private static final String CONTAINER_NAME_DOCKER_TEST_PREFIX = "docker-test-";
 
     // It is ignored since it is a bit slow and unstable, at least on Mac.
+    @Ignore
     @Test
     public void testDockerImagePullDelete() throws ExecutionException, InterruptedException {
         DockerImage dockerImage = new DockerImage("busybox:1.24.0");
@@ -56,7 +57,7 @@ public class DockerTest {
 
     // Ignored because the test is very slow (several minutes) when swap is enabled, to disable: (Linux)
     // $ sudo swapoff -a
-
+    @Ignore
     @Test
     public void testOutOfMemoryDoesNotAffectOtherContainers() throws InterruptedException, ExecutionException, IOException {
         String hostName1 = "docker10.test.yahoo.com";
