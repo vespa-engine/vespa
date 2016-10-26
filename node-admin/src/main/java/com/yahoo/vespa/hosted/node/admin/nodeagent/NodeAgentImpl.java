@@ -282,7 +282,8 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void stopServices(ContainerName containerName) throws Exception {
+    @Override
+    public void stopServices(ContainerName containerName) throws Exception {
             logger.info("Stopping services for " + containerName);
             dockerOperations.stopServicesOnNode(containerName);
     }

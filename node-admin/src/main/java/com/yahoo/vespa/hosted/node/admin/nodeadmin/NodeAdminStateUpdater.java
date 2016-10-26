@@ -90,7 +90,9 @@ public class NodeAdminStateUpdater extends AbstractComponent {
                 }
                 // Avoids media type issues (HTTP ERROR: 415 Unsupported Media Type), probably related to having empty node list.
                 if (nodesInActiveState.size() == 0) return Optional.empty();
-                return orchestrator.suspend(dockerHostHostName, nodesInActiveState);
+                Optional<String> orchestratorResponse = orchestrator.suspend(dockerHostHostName, nodesInActiveState);
+                if (orchestratorResponse.isPresent()) return orchestratorResponse;
+                return nodeAdmin.stopServices(nodesInActiveState);
             } else {
                 nodeAdmin.unfreezeNodeAgents();
                 // we let the NodeAgent do the resume against the orchestrator.

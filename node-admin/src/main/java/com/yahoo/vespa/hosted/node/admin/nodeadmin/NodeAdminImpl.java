@@ -146,6 +146,21 @@ public class NodeAdminImpl implements NodeAdmin {
         this.frozen.set(frozen);
     }
 
+    @Override
+    public Optional<String> stopServices(List<String> nodes) {
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            try {
+                final Optional<ContainerNodeSpec> containerNodeSpec = nodeAgent.getContainerNodeSpec();
+                if (containerNodeSpec.isPresent() && nodes.contains(containerNodeSpec.get().hostname)) {
+                    nodeAgent.stopServices(containerNodeSpec.get().containerName);
+                }
+            } catch (Exception e) {
+                return Optional.of(e.getMessage());
+            }
+        }
+        return Optional.empty();
+    }
+
     public Set<String> getListOfHosts() {
         return nodeAgents.keySet();
     }
