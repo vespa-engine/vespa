@@ -2200,18 +2200,21 @@ AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool co
     constexpr uint32_t numDocs = 200;
     AttributeGuard guard;
     if (!compact) {
+        // Hold read guard while populating attribute to keep data on hold list
         guard = AttributeGuard(attr);
     }
     addDocs(attr, numDocs);
     populate(v, numDocs);
     if (compact) {
-        for (uint32_t i = 4; i < numDocs; ++i)
+        for (uint32_t i = 4; i < numDocs; ++i) {
             attr->clearDoc(i);
+        }
         attr->commit();
         attr->incGeneration();
         attr->compactLidSpace(4);
         attr->commit();
         attr->incGeneration();
+        // Hold read guard when shrinking lid space to keep data on hold list
         guard = AttributeGuard(attr);
         attr->shrinkLidSpace();
     }
