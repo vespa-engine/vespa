@@ -43,10 +43,14 @@ import static org.mockito.Mockito.when;
  *  3. Create /home/docker/container-storage with read/write permissions
  *  4. Update {@link RunVespaLocal#appPath} to point to the application you want deployed
  *  5. Specify base image (see below) and download it with "docker pull <image>"
+ *  6. Build node-admin with "mvn package"
+ *  7. See com.yahoo.vespa.hosted.dockerapi.DockerTest in docker-api for how to make containers visible from Mac
  *
  *  Issues:
  *
  *  1. If you cannot make Docker Toolbox start, try starting Virtualbox and turn off the "default" machine
+ *  2. If the above is not enough try "sudo ifconfig vboxnet0 down && sudo ifconfig vboxnet0 up" (see https://github.com/docker/kitematic/issues/1193)
+ *  3. If you get an error with image vespa:local:latest, try building the image in node-admin folder manually: "docker build --tag vespa:local ."
  *
  * @author freva
  */

@@ -129,14 +129,14 @@ public class LocalZoneUtils {
         ProcessResult copyProcess = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, deployPath, "-e",
                 TENANT_NAME, "prepare", pathToAppOnConfigServer.resolve(pathToApp.getFileName()).toString());
         if (! copyProcess.isSuccess()) {
-            throw new RuntimeException("Could not copy " + pathToApp + " to " + CONFIG_SERVER_CONTAINER_NAME.asString() +
-                    "\n" + copyProcess.getErrors());
+            throw new RuntimeException("Could not prepare " + pathToApp + " on " + CONFIG_SERVER_CONTAINER_NAME.asString() +
+                    "\n" + copyProcess.getOutput() + "\n" + copyProcess.getErrors());
         }
 
         ProcessResult execProcess = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, deployPath, "-e",
                 TENANT_NAME, "activate");
         if (! execProcess.isSuccess()) {
-            throw new RuntimeException("Could not activate application\n" + execProcess.getErrors());
+            throw new RuntimeException("Could not activate application\n" + copyProcess.getOutput() + "\n" + copyProcess.getErrors());
         }
     }
 }
