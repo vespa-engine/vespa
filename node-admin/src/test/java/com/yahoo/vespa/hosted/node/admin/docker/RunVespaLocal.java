@@ -41,12 +41,17 @@ import static org.mockito.Mockito.when;
  *      VESPA_WEB_SERVICE_PORT="4080"
  *  3. Create /home/docker/container-storage with read/write permissions
  *  4. Update {@link RunVespaLocal#appPath} to point to the application you want deployed
+ *  5. Specify base image (see below) and download it with "docker pull <image>"
+ *
+ *  Issues:
+ *
+ *  1. If you cannot make Docker Toolbox start, try starting Virtualbox and turn off the "default" machine
  *
  * @author freva
  */
 public class RunVespaLocal {
     private static final DockerImage vespaBaseImage =
-            new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/vespa-base:6.38.151");
+            new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.40.185");
     private static final Environment environment = new Environment(
             Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
             HostName.getLocalhost(), new InetAddressResolver());
@@ -60,7 +65,12 @@ public class RunVespaLocal {
         System.out.println(Defaults.getDefaults().vespaHome());
         assumeTrue(DockerTestUtils.dockerDaemonIsPresent());
 
-        when(maintainer.pathInHostFromPathInNode(any(), any())).thenCallRealMethod();
+        DockerTestUtils.OS operatingSystem = DockerTestUtils.getSystemOS();
+        if (operatingSystem == DockerTestUtils.OS.Mac_OS_X) {
+            when(maintainer.pathInHostFromPathInNode(any(), any())).thenReturn(Paths.get("/tmp/"));
+        } else {
+            when(maintainer.pathInHostFromPathInNode(any(), any())).thenCallRealMethod();
+        }
         when(maintainer.pathInNodeAdminToNodeCleanup(any())).thenReturn(Paths.get("/tmp"));
         when(maintainer.pathInNodeAdminFromPathInNode(any(), any())).thenAnswer(invocation -> {
             Object[] args = invocation.getArguments();

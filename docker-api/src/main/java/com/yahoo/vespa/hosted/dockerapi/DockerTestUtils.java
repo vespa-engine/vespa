@@ -75,9 +75,9 @@ public class DockerTestUtils {
         docker.buildImage(dockerFileStream, dockerImage);
     }
 
-    private enum OS { Linux, Mac_OS_X, Unsupported }
+    public enum OS { Linux, Mac_OS_X, Unsupported }
 
-    private static OS getSystemOS() {
+    public static OS getSystemOS() {
         switch (System.getProperty("os.name").toLowerCase()) {
             case "linux": return OS.Linux;
             case "mac os x": return OS.Mac_OS_X;
