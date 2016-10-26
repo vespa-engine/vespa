@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
@@ -144,6 +145,28 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public void setFrozen(boolean frozen) {
         this.frozen.set(frozen);
+    }
+
+    @Override
+    public Optional<String> stopServices(List<String> nodes) {
+        if ( ! isFrozen()) {
+            return Optional.of("Node admin is not frozen");
+        }
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            try {
+                final Optional<ContainerNodeSpec> containerNodeSpec = nodeAgent.getContainerNodeSpec();
+                if (containerNodeSpec.isPresent() && nodes.contains(containerNodeSpec.get().hostname)) {
+                    final ContainerName containerName = containerNodeSpec.get().containerName;
+
+                    if ( ! isFrozen()) return Optional.of("Node agent for " + containerName + " is not frozen");
+
+                    nodeAgent.stopServices(containerName);
+                }
+            } catch (Exception e) {
+                return Optional.of(e.getMessage());
+            }
+        }
+        return Optional.empty();
     }
 
     public Set<String> getListOfHosts() {

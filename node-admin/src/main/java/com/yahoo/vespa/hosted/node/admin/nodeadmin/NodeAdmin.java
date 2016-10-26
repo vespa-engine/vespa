@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -29,6 +30,12 @@ public interface NodeAdmin {
      * Causes the NodeAgent to unfreeze and start picking up changes from NodeRepository.
      */
     void unfreezeNodeAgents();
+
+    /**
+     * Stop services on these nodes
+     * @return empty if successful, otherwise an error
+     */
+    Optional<String> stopServices(List<String> nodes);
 
     /**
      * Returns whether the NodeAdmin itself is currently frozen, meaning it will not pick up any changes
