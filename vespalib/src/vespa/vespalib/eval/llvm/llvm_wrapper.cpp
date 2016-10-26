@@ -339,22 +339,8 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     // tensor nodes
 
-    virtual void visit(const nodes::Tensor &item) {
-        // verbatim_tensor -> sum(verbatim_tensor)
-        double value = 0.0;
-        for (const auto &cell: item.cells()) {
-            value += cell.second;
-        }
-        push_double(value);
-    }
     virtual void visit(const TensorSum &) {
         // sum(x) -> x
-    }
-    virtual void visit(const TensorMatch &) {
-        // match(a,b) -> a * b
-        llvm::Value *b = pop_double();
-        llvm::Value *a = pop_double();
-        push(builder.CreateFMul(a, b, "match_res"));
     }
 
     // operator nodes
