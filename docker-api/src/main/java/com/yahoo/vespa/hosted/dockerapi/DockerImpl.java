@@ -6,8 +6,10 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
+import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -71,6 +73,8 @@ public class DockerImpl implements Docker {
     private GaugeWrapper numberOfRunningContainersGauge;
     private CounterWrapper numberOfDockerDaemonFails;
 
+    private Optional<DockerImageGarbageCollector> dockerImageGC = Optional.empty();
+
     // For testing
     DockerImpl(final DockerClient dockerClient) {
         this.dockerClient = dockerClient;
@@ -82,6 +86,11 @@ public class DockerImpl implements Docker {
             boolean fallbackTo123OnErrors,
             boolean trySetupNetwork,
             MetricReceiverWrapper metricReceiverWrapper) {
+        if (config.imageGCEnabled()) {
+            Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
+            dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
+        }
+
         SECONDS_TO_WAIT_BEFORE_KILLING = config.secondsToWaitBeforeKillingContainer();
 
         initDockerConnection(config, fallbackTo123OnErrors);
@@ -154,7 +163,6 @@ public class DockerImpl implements Docker {
                 .withHostResource(sourcePath).withRemotePath(destinationPath).exec();
     }
 
-
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(final DockerImage image) {
         final CompletableFuture<DockerImage> completionListener;
@@ -181,11 +189,14 @@ public class DockerImpl implements Docker {
      */
     @Override
     public boolean imageIsDownloaded(final DockerImage dockerImage) {
+        return inspectImage(dockerImage).isPresent();
+    }
+
+    private Optional<InspectImageResponse> inspectImage(DockerImage dockerImage) {
         try {
-            List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
-            return images.stream().
-                    flatMap(image -> Arrays.stream(image.getRepoTags())).
-                    anyMatch(tag -> tag.equals(dockerImage.asString()));
+            return Optional.of(dockerClient.inspectImageCmd(dockerImage.asString()).exec());
+        } catch (NotFoundException e) {
+            return Optional.empty();
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to list image name: '" + dockerImage + "'", e);
@@ -293,6 +304,8 @@ public class DockerImpl implements Docker {
     public void deleteContainer(ContainerName containerName) {
         Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
         if (dockerContainer.isPresent()) {
+            dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(dockerContainer.get().getImageId()));
+
             try {
                 dockerClient.removeContainerCmd(dockerContainer.get().getId()).exec();
                 numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
@@ -390,86 +403,14 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private Map<String, Image> filterOutImagesUsedByContainers(
-            Map<String, Image> dockerImagesByImageId, List<com.github.dockerjava.api.model.Container> containerList) {
-        Map<String, Image> filteredDockerImagesByImageId = new HashMap<>(dockerImagesByImageId);
-
-        for (com.github.dockerjava.api.model.Container container : containerList) {
-            String imageToSpare = container.getImageId();
-            do {
-                // May be null if two images have have the same parent, the first image will remove the parent, the
-                // second will get null.
-                Image sparedImage = filteredDockerImagesByImageId.remove(imageToSpare);
-                imageToSpare = sparedImage == null ? "" : sparedImage.getParentId();
-            } while (!imageToSpare.isEmpty());
-        }
-
-        return filteredDockerImagesByImageId;
-    }
-
-    private Map<String, Image> filterOutExceptImages(Map<String, Image> dockerImagesByImageId, Set<DockerImage> except) {
-        Map<String, Image> dockerImageByImageTags = new HashMap<>();
-        // Transform map of image ID:image to map of image tag:image (for each tag the image has)
-        for (Map.Entry<String, Image> entry : dockerImagesByImageId.entrySet()) {
-            String[] repoTags = entry.getValue().getRepoTags();
-            // If no tags present, fall back to image ID
-            if (repoTags == null) {
-                dockerImageByImageTags.put(entry.getKey(), entry.getValue());
-            } else {
-                for (String tag : repoTags) {
-                    dockerImageByImageTags.put(tag, entry.getValue());
-                }
-            }
-        }
-
-        // Remove images we want to keep from the map of unused images, also recursively keep the parents of images we want to keep
-        except.forEach(image -> {
-            String imageToSpare = image.asString();
-            do {
-                Image sparedImage = dockerImageByImageTags.remove(imageToSpare);
-                imageToSpare = sparedImage == null ? "" : sparedImage.getParentId();
-            } while (!imageToSpare.isEmpty());
-        });
-        return dockerImageByImageTags;
-    }
-
-    /**
-     * Generates lists of images that are safe to delete, in the order that is safe to delete them (children before
-     * parents). The function starts with a map of all images and the filters out images that are used now or will be
-     * used in near future (through the use of except set).
-     *
-     * @param except set of image tags to keep, regardless whether they are being used right now or not.
-     * @return List of image tags of unused images, if unused image has no tag, will return image ID instead.
-     */
-    List<DockerImage> getUnusedDockerImages(Set<DockerImage> except) {
-        List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
-        Map<String, Image> dockerImageByImageId = images.stream().collect(Collectors.toMap(Image::getId, img -> img));
-
-        List<com.github.dockerjava.api.model.Container> containers = dockerClient.listContainersCmd().withShowAll(true).exec();
-        Map<String, Image> unusedImagesByContainers = filterOutImagesUsedByContainers(dockerImageByImageId, containers);
-        Map<String, Image> unusedImagesByExcept = filterOutExceptImages(unusedImagesByContainers, except);
-
-        List<String> unusedImages = unusedImagesByExcept.keySet().stream().collect(Collectors.toList());
-        // unusedImages now contains all the unused images, all we need to do now is to order them in a way that is
-        // safe to delete with. The order is:
-        Collections.sort(unusedImages, (o1, o2) -> {
-            Image image1 = unusedImagesByExcept.get(o1);
-            Image image2 = unusedImagesByExcept.get(o2);
-
-            // If image2 is parent of image1, image1 comes before image2
-            if (Objects.equals(image1.getParentId(), image2.getId())) return -1;
-            // If image1 is parent of image2, image2 comes before image1
-            else if (Objects.equals(image2.getParentId(), image1.getId())) return 1;
-            // Otherwise, sort lexicographically by image name (For testing)
-            else return o1.compareTo(o2);
-        });
-
-        return unusedImages.stream().map(DockerImage::new).collect(Collectors.toList());
-    }
-
     @Override
-    public void deleteUnusedDockerImages(Set<DockerImage> except) {
-        getUnusedDockerImages(except).forEach(this::deleteImage);
+    public void deleteUnusedDockerImages() {
+        if (! dockerImageGC.isPresent()) return;
+
+        List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
+        List<com.github.dockerjava.api.model.Container> containers = dockerClient.listContainersCmd().withShowAll(true).exec();
+
+        dockerImageGC.get().getUnusedDockerImages(images, containers).forEach(this::deleteImage);
     }
 
     private class ImagePullCallback extends PullImageResultCallback {
@@ -487,7 +428,9 @@ public class DockerImpl implements Docker {
 
         @Override
         public void onComplete() {
-            if (imageIsDownloaded(dockerImage)) {
+            Optional<InspectImageResponse> inspectImage = inspectImage(dockerImage);
+            if (inspectImage.isPresent()) { // Download successful, update image GC with the newly downloaded image
+                dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(inspectImage.get().getId()));
                 removeScheduledPoll(dockerImage).complete(dockerImage);
             } else {
                 removeScheduledPoll(dockerImage).completeExceptionally(

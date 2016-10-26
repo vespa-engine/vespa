@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -73,9 +72,9 @@ public interface Docker {
     void buildImage(File dockerfile, DockerImage dockerImage);
 
     /**
-     * Deletes the local images that are currently not in use by any container and not in the except set.
+     * Deletes the local images that are currently not in use by any container and not recently used.
      */
-    void deleteUnusedDockerImages(Set<DockerImage> except);
+    void deleteUnusedDockerImages();
 
     /**
      * TODO: Make this function interruptible, see https://github.com/spotify/docker-client/issues/421
