@@ -36,17 +36,22 @@ import static org.mockito.Mockito.when;
  * To get started:
  *  1. Add config-server and container nodes hostnames to /etc/hosts:
  *      $ sudo ./vespa/node-admin/scripts/etc-hosts.sh
- *  2. Set environmental variables:
+ *  2. Set environmental variables in shell or e.g. ~/.bashrc:
  *      VESPA_HOME="/home/y"
  *      VESPA_WEB_SERVICE_PORT="4080"
+ *      VESPA_BASE_IMAGE="<vespa image>"
  *  3. Create /home/docker/container-storage with read/write permissions
  *  4. Update {@link RunVespaLocal#appPath} to point to the application you want deployed
+ *  5. Specify base image (see below) and download it with "docker pull <image>"
+ *
+ *  Issues:
+ *
+ *  1. If you cannot make Docker Toolbox start, try starting Virtualbox and turn off the "default" machine
  *
  * @author freva
  */
 public class RunVespaLocal {
-    private static final DockerImage vespaBaseImage =
-            new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/vespa-base:6.38.151");
+    private static final DockerImage vespaBaseImage = new DockerImage(System.getenv("VESPA_BASE_IMAGE"));
     private static final Environment environment = new Environment(
             Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
             HostName.getLocalhost(), new InetAddressResolver());
@@ -60,7 +65,12 @@ public class RunVespaLocal {
         System.out.println(Defaults.getDefaults().vespaHome());
         assumeTrue(DockerTestUtils.dockerDaemonIsPresent());
 
-        when(maintainer.pathInHostFromPathInNode(any(), any())).thenCallRealMethod();
+        DockerTestUtils.OS operatingSystem = DockerTestUtils.getSystemOS();
+        if (operatingSystem == DockerTestUtils.OS.Mac_OS_X) {
+            when(maintainer.pathInHostFromPathInNode(any(), any())).thenReturn(Paths.get("/tmp/"));
+        } else {
+            when(maintainer.pathInHostFromPathInNode(any(), any())).thenCallRealMethod();
+        }
         when(maintainer.pathInNodeAdminToNodeCleanup(any())).thenReturn(Paths.get("/tmp"));
         when(maintainer.pathInNodeAdminFromPathInNode(any(), any())).thenAnswer(invocation -> {
             Object[] args = invocation.getArguments();
