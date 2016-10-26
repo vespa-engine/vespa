@@ -24,7 +24,7 @@ import static org.junit.Assume.assumeTrue;
  *
  * MAC:
  *   1. Install Docker Toolbox, and start it (Docker Quickstart Terminal) (you can close terminal window afterwards)
- *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.0.0.0/8 192.168.99.100
+ *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.18.0.0/16 192.168.99.100
  *   2. Run tests from IDE/mvn.
  *
  *
