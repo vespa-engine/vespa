@@ -240,33 +240,6 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
     virtual void visit(const Error &) {
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));
     }
-    virtual void visit(const nodes::Tensor &node) {
-        std::set<vespalib::string> dimension_names;
-        for (const auto &cell: node.cells()) {
-            const auto &address = cell.first;
-            for (const auto &binding: address) {
-                dimension_names.insert(binding.first);
-            }
-        }
-        std::vector<ValueType::Dimension> dimensions;
-        for (const auto &name: dimension_names) {
-            dimensions.emplace_back(name);
-        }
-        TensorSpec spec(dimensions.empty()
-                        ? ValueType::double_type().to_spec()
-                        : ValueType::tensor_type(dimensions).to_spec());
-        for (const auto &cell: node.cells()) {
-            const auto &address = cell.first;
-            TensorSpec::Address spec_address;
-            for (const auto &binding: address) {
-                spec_address.emplace(binding.first, TensorSpec::Label(binding.second));
-            }
-            spec.add(spec_address, cell.second);
-        }
-        std::unique_ptr<eval::Tensor> tensor = tensor_engine.create(spec);
-        program.emplace_back(op_load_const,
-                             wrap_param<Value>(stash.create<TensorValue>(std::move(tensor))));
-    }
     virtual void visit(const TensorSum &node) {
         if (is_typed(node) && is_typed_tensor_product_of_params(node.get_child(0))) {
             assert(program.size() >= 3); // load,load,mul
@@ -291,9 +264,6 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
             program.emplace_back(op_tensor_sum_dimension,
                                  wrap_param<vespalib::string>(stash.create<vespalib::string>(node.dimension())));
         }
-    }
-    virtual void visit(const TensorMatch &) {
-        program.emplace_back(op_binary<operation::Mul>);
     }
     virtual void visit(const Add &) {
         program.emplace_back(op_binary<operation::Add>);

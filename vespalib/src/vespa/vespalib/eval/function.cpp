@@ -427,65 +427,6 @@ void parse_call(ParseContext &ctx, Call_UP call) {
     ctx.push_expression(std::move(call));
 }
 
-std::map<vespalib::string, vespalib::string> get_tensor_address(ParseContext &ctx) {
-    std::map<vespalib::string, vespalib::string> address;
-    ctx.eat('{');
-    ctx.skip_spaces();
-    while (!ctx.eos() && ctx.get() != '}') {
-        if (!address.empty()) {
-            ctx.eat(',');
-        }
-        vespalib::string dimension = get_ident(ctx);
-        ctx.skip_spaces();
-        ctx.eat(':');
-        vespalib::string label = get_ident(ctx);
-        ctx.skip_spaces();
-        address[dimension] = label;
-        ctx.skip_spaces();
-    }
-    ctx.eat('}');
-    return address;
-}
-
-double get_number_value(ParseContext &ctx) {
-    bool negative = false;
-    if (ctx.get() == '-') {
-        negative = true;
-        ctx.next();
-    }
-    parse_number(ctx);
-    Node_UP node = ctx.pop_expression();
-    auto number = nodes::as<nodes::Number>(*node);
-    if (!number) {
-        return error_value;
-    }
-    return (negative) ? -number->value() : number->value();
-}
-
-// NOTE: verbatim tensors are parsed as leafs; no nesting
-// format: {{dimension:label, ...}:2.5, ...}
-void parse_tensor(ParseContext &ctx) {
-    std::unique_ptr<nodes::Tensor> tensor(new nodes::Tensor());
-    ctx.eat('{');
-    ctx.skip_spaces();
-    size_t tensor_size = 0;
-    while (!ctx.eos() && ctx.get() != '}') {
-        if (++tensor_size > 1) {
-            ctx.eat(',');
-            ctx.skip_spaces();
-        }
-        auto address = get_tensor_address(ctx);
-        ctx.skip_spaces();
-        ctx.eat(':');
-        ctx.skip_spaces();
-        double value = get_number_value(ctx);
-        tensor->add(address, value);
-        ctx.skip_spaces();
-    }
-    ctx.eat('}');
-    ctx.push_expression(std::move(tensor));
-}
-
 void parse_tensor_sum(ParseContext &ctx) {
     parse_expression(ctx);
     Node_UP child = ctx.pop_expression();
@@ -497,15 +438,6 @@ void parse_tensor_sum(ParseContext &ctx) {
     } else {
         ctx.push_expression(Node_UP(new nodes::TensorSum(std::move(child))));
     }
-}
-
-void parse_tensor_match(ParseContext &ctx) {
-    parse_expression(ctx);
-    Node_UP lhs = ctx.pop_expression();
-    ctx.eat(',');
-    parse_expression(ctx);
-    Node_UP rhs = ctx.pop_expression();
-    ctx.push_expression(Node_UP(new nodes::TensorMatch(std::move(lhs), std::move(rhs))));
 }
 
 bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
@@ -522,8 +454,6 @@ bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_call(ctx, std::move(call));
             } else if (name == "sum") {
                 parse_tensor_sum(ctx);
-            } else if (name == "match") {
-                parse_tensor_match(ctx);
             } else {
                 ctx.fail(make_string("unknown function: '%s'", name.c_str()));
                 return false;
@@ -591,8 +521,6 @@ void parse_value(ParseContext &ctx) {
         ctx.eat(')');
     } else if (ctx.get() == '[') {
         parse_array(ctx);
-    } else if (ctx.get() == '{') {
-        parse_tensor(ctx);
     } else if (ctx.get() == '"') {
         parse_string(ctx);
     } else if (isdigit(ctx.get())) {
