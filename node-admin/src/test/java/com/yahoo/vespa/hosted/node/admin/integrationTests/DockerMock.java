@@ -145,7 +145,7 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void deleteUnusedDockerImages(Set<DockerImage> except) {
+    public void deleteUnusedDockerImages() {
 
     }
 

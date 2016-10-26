@@ -11,15 +11,12 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -46,16 +43,12 @@ public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
     private final ScheduledExecutorService metricsFetcherScheduler = Executors.newScheduledThreadPool(1);
 
-    private static final long MIN_AGE_IMAGE_GC_MILLIS = Duration.ofMinutes(15).toMillis();
-
     private final Docker docker;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final StorageMaintainer storageMaintainer;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
     private final Map<String, NodeAgent> nodeAgents = new HashMap<>();
-
-    private Map<DockerImage, Long> firstTimeEligibleForGC = Collections.emptyMap();
 
     private final int nodeAgentScanIntervalMillis;
 
@@ -97,7 +90,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
         storageMaintainer.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
-        garbageCollectDockerImages(containersToRun);
+        docker.deleteUnusedDockerImages();
 
         updateNodeAgentMetrics();
     }
@@ -198,23 +191,6 @@ public class NodeAdminImpl implements NodeAdmin {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             nodeAgent.stop();
         }
-    }
-
-    private void garbageCollectDockerImages(final List<ContainerNodeSpec> containersToRun) {
-        final long currentTime = System.currentTimeMillis();
-        Set<DockerImage> imagesToSpare = containersToRun.stream()
-                .flatMap(nodeSpec -> streamOf(nodeSpec.wantedDockerImage))
-                .filter(image -> currentTime - firstTimeEligibleForGC.getOrDefault(image, currentTime) > MIN_AGE_IMAGE_GC_MILLIS)
-                .collect(Collectors.toSet());
-
-        docker.deleteUnusedDockerImages(imagesToSpare);
-    }
-
-    // Turns an Optional<T> into a Stream<T> of length zero or one depending upon whether a value is present.
-    // This is a workaround for Java 8 not having Stream.flatMap(Optional).
-    private static <T> Stream<T> streamOf(Optional<T> opt) {
-        return opt.map(Stream::of)
-                .orElseGet(Stream::empty);
     }
 
     // Set-difference. Returns minuend minus subtrahend.
