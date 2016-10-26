@@ -13,10 +13,6 @@ import static org.junit.Assert.assertEquals;
 
 public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase {
 
-    // Weakness: assumes a user has a macro with a certain arity.
-    // New built-in comes along with different arity.
-    // Then macro no longer works as it will have a parse error.
-
     @Test
     public void testBasicMacroShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
