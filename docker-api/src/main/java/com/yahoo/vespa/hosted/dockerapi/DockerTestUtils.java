@@ -21,7 +21,8 @@ public class DockerTestUtils {
             .clientKeyPath( operatingSystem == OS.Mac_OS_X ? prefix + "key.pem" : "")
             .uri(           operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376")
             .connectTimeoutMillis(100)
-            .secondsToWaitBeforeKillingContainer(0));
+            .secondsToWaitBeforeKillingContainer(0)
+            .imageGCEnabled(false));
     private static DockerImpl docker;
 
     public static boolean dockerDaemonIsPresent() {
