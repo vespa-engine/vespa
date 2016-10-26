@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.provision.Node;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.UnknownHostException;
@@ -26,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 public class RebootTest {
 
     @Test
+    @Ignore
     public void test() throws InterruptedException, UnknownHostException {
         try (DockerTester dockerTester = new DockerTester()) {
 
