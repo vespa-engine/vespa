@@ -188,6 +188,7 @@ public class DockerOperationsImpl implements DockerOperations {
                     nodeSpec.wantedDockerImage.get(),
                     nodeSpec.containerName,
                     nodeSpec.hostname)
+                    .withLabel(DockerImpl.LABEL_NAME_MANAGEDBY, DockerImpl.LABEL_VALUE_MANAGEDBY)
                     .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                     .withIpAddress(nodeInetAddress)
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers)

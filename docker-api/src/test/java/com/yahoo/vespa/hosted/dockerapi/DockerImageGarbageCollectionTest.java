@@ -45,15 +45,6 @@ public class DockerImageGarbageCollectionTest {
     }
 
     @Test
-    public void onlyLeafImageIsUnused() throws Exception {
-        new ImageGcTester(0)
-                .withExistingImages(
-                        ImageBuilder.forId("parent-image"),
-                        ImageBuilder.forId("leaf-image").withParentId("parent-image"))
-                .expectUnusedImages("leaf-image", "parent-image");
-    }
-
-    @Test
     public void multipleUnusedImagesAreIdentified() throws Exception {
         new ImageGcTester(0)
                 .withExistingImages(
