@@ -1,19 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/eval/function.h>
 
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/fef/test/as_tensor.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/vespalib/eval/function.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/vespalib/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 
@@ -28,6 +28,8 @@ using search::AttributeVector;
 using vespalib::eval::Function;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
+using vespalib::eval::TensorSpec;
+using vespalib::tensor::DefaultTensorEngine;
 using vespalib::tensor::DenseTensorCells;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
@@ -47,6 +49,15 @@ Tensor::UP createTensor(const TensorCells &cells,
                         const TensorDimensions &dimensions) {
     vespalib::tensor::DefaultTensor::builder builder;
     return TensorFactory::create(cells, dimensions, builder);
+}
+
+Tensor::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = DefaultTensorEngine::ref().create(spec);
+    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
+}
+
+Tensor::UP make_empty(const vespalib::string &type) {
+    return make_tensor(TensorSpec(type));
 }
 
 }
@@ -157,60 +168,49 @@ struct ExecFixture
 TEST_F("require that tensor attribute can be extracted as tensor in attribute feature",
        ExecFixture("attribute(tensorattr)"))
 {
-    EXPECT_EQUAL(AsTensor("{ {x:b}:5, {x:c}:7, {x:a}:3 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(x{})")
+                              .add({{"x", "b"}}, 5)
+                              .add({{"x", "c"}}, 7)
+                              .add({{"x", "a"}}, 3)), f.execute());
 }
 
 TEST_F("require that tensor from query can be extracted as tensor in query feature",
        ExecFixture("query(tensorquery)"))
 {
-    EXPECT_EQUAL(AsTensor("{ {q:f}:17, {q:d}:11, {q:e}:13 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(q{})")
+                              .add({{"q", "f"}}, 17)
+                              .add({{"q", "d"}}, 11)
+                              .add({{"q", "e"}}, 13)), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute does not exists",
        ExecFixture("attribute(null)"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(x{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute());
 }
 
 TEST_F("require that empty tensor is created if tensor type is wrong",
        ExecFixture("attribute(wrongtype)"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(x{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute());
 }
 
 TEST_F("require that empty tensor is created if query parameter is not found",
        ExecFixture("query(null)"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(q{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(q{})"), f.execute());
 }
 
 TEST_F("require that empty tensor with correct type is created if document has no tensor",
        ExecFixture("attribute(tensorattr)")) {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(x{})"), f.execute(2));
-}
-
-struct AsDenseTensor {
-    Tensor::UP tensor;
-    explicit AsDenseTensor(const DenseTensorCells &cells)
-        : tensor(TensorFactory::createDense(cells))
-    {
-        ASSERT_TRUE(!!tensor);
-    }
-    bool operator==(const Tensor &rhs) const { return tensor->equals(rhs); }
-};
-
-
-std::ostream &operator<<(std::ostream &os, const AsDenseTensor &my_tensor) {
-    os << *my_tensor.tensor;
-    return os;
+    EXPECT_EQUAL(*make_empty("tensor(x{})"), f.execute(2));
 }
 
 TEST_F("require that tensor from query is mapped",
        ExecFixture("query(mappedtensorquery)")) {
-    EXPECT_EQUAL(AsDenseTensor({    {{{"x", 0}}, 24},
-                                    {{{"x", 1}}, 17} }),
-                 f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(x[2])")
+                              .add({{"x", 0}}, 24)
+                              .add({{"x", 1}}, 17)), f.execute());
 }
-
 
 TEST_MAIN() { TEST_RUN_ALL(); }
