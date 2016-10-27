@@ -21,6 +21,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Duration;
@@ -112,9 +113,14 @@ class ClientFeederV3 {
         threadsAvailableForFeeding.decrementAndGet();
         ongoingRequests.incrementAndGet();
         try {
+            FeederSettings feederSettings = new FeederSettings(request);
+            // We are blocking up too many threads, we can not parse the request and should rather exit early.
+            if (feederSettings.denyIfBusy && threadsAvailableForFeeding.get() < -10) {
+                return new ErrorHttpResponse(429, "Gateway overloaded");
+            }
+
             InputStream inputStream = StreamReaderV3.unzipStreamIfNeeded(request);
             final BlockingQueue<OperationStatus> replies = new LinkedBlockingQueue<>();
-            FeederSettings feederSettings = new FeederSettings(request);
             try {
                 feed(feederSettings, inputStream, replies, threadsAvailableForFeeding);
                 synchronized (monitor) {
