@@ -1,14 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/eval/function.h>
 
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
-#include <vespa/searchlib/fef/test/as_tensor.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/vespalib/eval/function.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
+#include <vespa/vespalib/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
 
 using search::feature_t;
@@ -20,7 +20,9 @@ using vespalib::eval::Function;
 using vespalib::eval::Value;
 using vespalib::eval::DoubleValue;
 using vespalib::eval::TensorValue;
+using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
+using vespalib::tensor::DefaultTensorEngine;
 using vespalib::tensor::DenseTensorCells;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorCells;
@@ -34,6 +36,11 @@ Tensor::UP createTensor(const TensorCells &cells,
                         const TensorDimensions &dimensions) {
     vespalib::tensor::DefaultTensor::builder builder;
     return TensorFactory::create(cells, dimensions, builder);
+}
+
+Tensor::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = DefaultTensorEngine::ref().create(spec);
+    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
 }
 
 }
@@ -103,7 +110,11 @@ TEST_F("require that existing tensor constant is detected",
                     {{{"x", "c"}}, 7} },
                 { "x" });
     EXPECT_TRUE(f.setup());
-    EXPECT_EQUAL(AsTensor("{ {x:b}:5, {x:c}:7, {x:a}:3 }"), f.executeTensor());
+    auto expect = make_tensor(TensorSpec("tensor(x{})")
+                              .add({{"x","b"}}, 5)
+                              .add({{"x","c"}}, 7)
+                              .add({{"x","a"}}, 3));
+    EXPECT_EQUAL(*expect, f.executeTensor());
 }
 
 

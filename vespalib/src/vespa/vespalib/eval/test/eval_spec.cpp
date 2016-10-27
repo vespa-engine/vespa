@@ -119,7 +119,6 @@ EvalSpec::add_function_call_cases() {
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "fmod(a,b)", [](double a, double b){ return std::fmod(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "min(a,b)", [](double a, double b){ return std::min(a, b); });
     add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "max(a,b)", [](double a, double b){ return std::max(a, b); });
-    add_rule({"a", -1.0, 1.0}, {"b", -1.0, 1.0}, "match(a,b)", [](double a, double b){ return (a * b); });
 }
 
 void

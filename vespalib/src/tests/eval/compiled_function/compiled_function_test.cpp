@@ -162,15 +162,9 @@ TEST_MT("require that multithreaded compilation works", 64) {
 }
 
 TEST("require that tensor operations have sane numeric fallbacks") {
-    CompiledFunction cf1(Function::parse({"a", "b"}, "{{}:42}"), PassParams::SEPARATE);
-    CompiledFunction cf2(Function::parse({"a", "b"}, "sum(a+b)"), PassParams::SEPARATE);
-    CompiledFunction cf3(Function::parse({"a", "b"}, "match(a,b)"), PassParams::SEPARATE);
-    auto fun1 = cf1.get_function<2>();
-    auto fun2 = cf2.get_function<2>();
-    auto fun3 = cf3.get_function<2>();
-    EXPECT_EQUAL(42.0, fun1(5.0, 7.0));
-    EXPECT_EQUAL(12.0, fun2(5.0, 7.0));
-    EXPECT_EQUAL(35.0, fun3(5.0, 7.0));
+    CompiledFunction cf(Function::parse({"a", "b"}, "sum(a+b)"), PassParams::SEPARATE);
+    auto fun = cf.get_function<2>();
+    EXPECT_EQUAL(12.0, fun(5.0, 7.0));
 }
 
 //-----------------------------------------------------------------------------
