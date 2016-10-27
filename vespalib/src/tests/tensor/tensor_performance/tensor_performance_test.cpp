@@ -3,6 +3,7 @@
 #include <vespa/vespalib/eval/function.h>
 #include <vespa/vespalib/eval/interpreted_function.h>
 #include <vespa/vespalib/eval/tensor_nodes.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
 #include <vespa/vespalib/tensor/sparse/sparse_tensor.h>
 #include <vespa/vespalib/tensor/sparse/sparse_tensor_builder.h>
 #include <vespa/vespalib/tensor/dense/dense_tensor_builder.h>
@@ -17,9 +18,9 @@ using namespace vespalib::tensor;
 
 //-----------------------------------------------------------------------------
 
-const vespalib::string dot_product_match_expr    = "sum(match(query,document))";
+const vespalib::string dot_product_match_expr    = "sum(query*document)";
 const vespalib::string dot_product_multiply_expr = "sum(query*document)";
-const vespalib::string model_match_expr          = "sum(match(query*document,model))";
+const vespalib::string model_match_expr          = "sum((query*document)*model)";
 const vespalib::string matrix_product_expr       = "sum(sum((query+document)*model,x))";
 
 //-----------------------------------------------------------------------------
@@ -91,45 +92,56 @@ double benchmark_expression_us(const vespalib::string &expression, const Params 
 
 //-----------------------------------------------------------------------------
 
-tensor::Tensor::UP parse_tensor(const vespalib::string &tensor_str) {
-    Function function = Function::parse(tensor_str);
-    auto tensor = nodes::as<nodes::Tensor>(function.root());
-    ASSERT_TRUE(tensor);
-    SparseTensorBuilder builder;
-    for (const auto &cell: tensor->cells()) {
-        for (const auto &dimension: cell.first) {
-            builder.add_label(builder.define_dimension(dimension.first), dimension.second);
-        }
-        builder.add_cell(cell.second);
-    }
-    return builder.build();
+tensor::Tensor::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = DefaultTensorEngine::ref().create(spec);
+    return tensor::Tensor::UP(dynamic_cast<tensor::Tensor*>(tensor.release()));
 }
 
 //-----------------------------------------------------------------------------
 
 TEST("SMOKETEST - require that dot product benchmark expressions produce expected results") {
     Params params;
-    params.add("query",    parse_tensor("{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}"));
-    params.add("document", parse_tensor("{{x:0}:2.0,{x:1}:2.0,{x:2}:2.0}"));
+    params.add("query",    make_tensor(TensorSpec("tensor(x{})")
+                                       .add({{"x","0"}}, 1.0)
+                                       .add({{"x","1"}}, 2.0)
+                                       .add({{"x","2"}}, 3.0)));
+    params.add("document", make_tensor(TensorSpec("tensor(x{})")
+                                       .add({{"x","0"}}, 2.0)
+                                       .add({{"x","1"}}, 2.0)
+                                       .add({{"x","2"}}, 2.0)));
     EXPECT_EQUAL(calculate_expression(dot_product_match_expr, params), 12.0);
     EXPECT_EQUAL(calculate_expression(dot_product_multiply_expr, params), 12.0);
 }
 
 TEST("SMOKETEST - require that model match benchmark expression produces expected result") {
     Params params;
-    params.add("query",    parse_tensor("{{x:0}:1.0,{x:1}:2.0}"));
-    params.add("document", parse_tensor("{{y:0}:3.0,{y:1}:4.0}"));
-    params.add("model",    parse_tensor("{{x:0,y:0}:2.0,{x:0,y:1}:2.0,"
-                                        " {x:1,y:0}:2.0,{x:1,y:1}:2.0}"));
+    params.add("query",    make_tensor(TensorSpec("tensor(x{})")
+                                       .add({{"x","0"}}, 1.0)
+                                       .add({{"x","1"}}, 2.0)));
+    params.add("document", make_tensor(TensorSpec("tensor(y{})")
+                                       .add({{"y","0"}}, 3.0)
+                                       .add({{"y","1"}}, 4.0)));
+    params.add("model",    make_tensor(TensorSpec("tensor(x{},y{})")
+                                       .add({{"x","0"},{"y","0"}}, 2.0)
+                                       .add({{"x","0"},{"y","1"}}, 2.0)
+                                       .add({{"x","1"},{"y","0"}}, 2.0)
+                                       .add({{"x","1"},{"y","1"}}, 2.0)));
     EXPECT_EQUAL(calculate_expression(model_match_expr, params), 42.0);
 }
 
 TEST("SMOKETEST - require that matrix product benchmark expression produces expected result") {
     Params params;
-    params.add("query",    parse_tensor("{{x:0}:1.0,{x:1}:0.0}"));
-    params.add("document", parse_tensor("{{x:0}:0.0,{x:1}:2.0}"));
-    params.add("model",    parse_tensor("{{x:0,y:0}:1.0,{x:0,y:1}:2.0,"
-                                        " {x:1,y:0}:3.0,{x:1,y:1}:4.0}"));
+    params.add("query",    make_tensor(TensorSpec("tensor(x{})")
+                                       .add({{"x","0"}}, 1.0)
+                                       .add({{"x","1"}}, 0.0)));
+    params.add("document", make_tensor(TensorSpec("tensor(x{})")
+                                       .add({{"x","0"}}, 0.0)
+                                       .add({{"x","1"}}, 2.0)));
+    params.add("model",    make_tensor(TensorSpec("tensor(x{},y{})")
+                                       .add({{"x","0"},{"y","0"}}, 1.0)
+                                       .add({{"x","0"},{"y","1"}}, 2.0)
+                                       .add({{"x","1"},{"y","0"}}, 3.0)
+                                       .add({{"x","1"},{"y","1"}}, 4.0)));
     EXPECT_EQUAL(calculate_expression(matrix_product_expr, params), 17.0);
 }
 
