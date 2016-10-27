@@ -1,5 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.collections;
+package com.yahoo.yolean.concurrent;
+
+import com.yahoo.yolean.concurrent.ResourceFactory;
 
 import java.util.Iterator;
 import java.util.Queue;
@@ -7,10 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author baldersheim
- * TODO: remove on vespa 7 or before
- * Use com.yahoo.yolean.concurrent.ConcurrentResourcePool instead.
  */
-@Deprecated
 public class ConcurrentResourcePool<T> implements Iterable<T> {
 
     private final Queue<T> pool = new ConcurrentLinkedQueue<>();
