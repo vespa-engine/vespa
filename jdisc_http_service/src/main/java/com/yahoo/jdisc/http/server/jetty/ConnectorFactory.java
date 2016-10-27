@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.BufferUtil;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.servlet.ServletRequest;
@@ -255,7 +256,10 @@ public class ConnectorFactory {
 
     public static class JDiscServerConnector extends ServerConnector {
         public static class BufferPool implements ByteBufferPool {
-            abstract class Pool {
+            private static ByteBuffer allocate(int capacity, boolean direct) {
+                return direct ? BufferUtil.allocateDirect(capacity) : BufferUtil.allocate(capacity);
+            }
+            private static abstract class Pool {
                 ByteBuffer aquire(int size, boolean direct) {
                     return aquireImpl(size, direct);
                 }
@@ -263,17 +267,17 @@ public class ConnectorFactory {
                 protected abstract ByteBuffer aquireImpl(int size, boolean direct);
                 protected abstract void releaseImpl(ByteBuffer buf);
             };
-            class NoPool extends Pool {
+            private static class NoPool extends Pool {
                 @Override
                 protected ByteBuffer aquireImpl(int size, boolean direct) {
-                    return newByteBuffer(size, direct);
+                    return BufferPool.allocate(size, direct);
                 }
                 @Override
                 protected void releaseImpl(ByteBuffer buf) {
                     buf = null;
                 }
             }
-            class ConcurrentPool extends Pool {
+            private static class ConcurrentPool extends Pool {
                 class ByteBufferFactory extends ResourceFactory<ByteBuffer> {
                     final int size;
                     final boolean direct;
@@ -284,7 +288,7 @@ public class ConnectorFactory {
 
                     @Override
                     public ByteBuffer create() {
-                        return newByteBuffer(size, direct);
+                        return BufferPool.allocate(size, direct);
                     }
                 }
 
@@ -303,6 +307,7 @@ public class ConnectorFactory {
                     pool.free(buf);
                 }
             }
+
             final int minSize2Pool;
             final int maxSize2Pool;
             final int numPools;
