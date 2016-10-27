@@ -9,7 +9,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
-import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -19,18 +19,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 /**
- * Class for testing full integration with docker daemon, requires running daemon. To run these tests:
- *
- * MAC:
- *   1. Install Docker Toolbox, and start it (Docker Quickstart Terminal) (you can close terminal window afterwards)
- *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.18.0.0/16 192.168.99.100
- *   2. Run tests from IDE/mvn.
- *
- *
- * TIPS:
- *   For cleaning up your local docker machine (DON'T DO THIS ON PROD)
- *     docker stop $(docker ps -a -q)
- *     docker rm $(docker ps -a -q)
+ * Requires docker daemon, see {@link com.yahoo.vespa.hosted.dockerapi.DockerTestUtils} for more details.
  *
  * @author freva
  * @author dybdahl
@@ -95,24 +84,23 @@ public class DockerTest {
 
     @Test
     public void testContainerCycle() throws IOException, InterruptedException, ExecutionException {
-        ContainerName containerName = new ContainerName(CONTAINER_NAME_DOCKER_TEST_PREFIX + "foo");
-        docker.createContainerCommand(dockerImage, containerName, "hostName1").create();
-        List<Container> managedContainers = docker.getAllManagedContainers();
-        assertThat(managedContainers.size(), is(1));
-        assertThat(managedContainers.get(0).name, is(containerName));
-        assertThat(managedContainers.get(0).isRunning, is(false));
+        final ContainerName containerName = new ContainerName(CONTAINER_NAME_DOCKER_TEST_PREFIX + "foo");
+        final String containerHostname = "hostName1";
+
+        docker.createContainerCommand(dockerImage, containerName, containerHostname).create();
+        Optional<Container> container = docker.getContainer(containerHostname);
+        assertTrue(container.isPresent());
+        assertFalse(container.get().isRunning);
 
         docker.startContainer(containerName);
-        managedContainers = docker.getAllManagedContainers();
-        assertThat(managedContainers.size(), is(1));
-        assertThat(managedContainers.get(0).name, is(containerName));
-        assertThat(managedContainers.get(0).isRunning, is(true));
+        container = docker.getContainer(containerHostname);
+        assertTrue(container.isPresent());
+        assertTrue(container.get().isRunning);
 
         docker.stopContainer(containerName);
-        managedContainers = docker.getAllManagedContainers();
-        assertThat(managedContainers.size(), is(1));
-        assertThat(managedContainers.get(0).name, is(containerName));
-        assertThat(managedContainers.get(0).isRunning, is(false));
+        container = docker.getContainer(containerHostname);
+        assertTrue(container.isPresent());
+        assertFalse(container.get().isRunning);
 
         docker.deleteContainer(containerName);
         assertThat(docker.getAllManagedContainers().isEmpty(), is(true));
@@ -160,7 +148,7 @@ public class DockerTest {
         }
 
         // Clean up any non deleted containers from previous tests
-        docker.getAllManagedContainers().forEach(container -> {
+        docker.getAllContainers(false).forEach(container -> {
             if (container.name.asString().startsWith(CONTAINER_NAME_DOCKER_TEST_PREFIX)) {
                 if (container.isRunning) docker.stopContainer(container.name);
                 docker.deleteContainer(container.name);

@@ -2,7 +2,12 @@
 package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.hosted.dockerapi.*;
+import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -14,6 +19,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,15 +80,28 @@ public class LocalZoneUtils {
 
     public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
         Path dockerfileTemplatePath = Paths.get("Dockerfile.template");
-        Path dockerfilePath = Paths.get("Dockerfile");
 
         String dockerfileTemplate = new String(Files.readAllBytes(dockerfileTemplatePath))
                 .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
                 .replaceAll("\\$VESPA_HOME", Defaults.getDefaults().vespaHome());
 
-        Files.write(dockerfilePath, dockerfileTemplate.getBytes());
+        /**
+         * Because the daemon could be running on a remote machine, docker build command will upload the entire
+         * build path to daemon and then execute the Dockerfile. This means that:
+         * 1. We cant use relative paths in Dockerfile
+         * 2. We should avoid using a large directory as build root
+         *
+         * Therefore, copy docker-api jar to node-admin/target and used node-admin as build root instead of vespa/
+          */
+        Path projectRoot = Paths.get("").toAbsolutePath().getParent();
+        Files.copy(projectRoot.resolve("docker-api/target/docker-api-jar-with-dependencies.jar"),
+                projectRoot.resolve("node-admin/target/docker-api-jar-with-dependencies.jar"),
+                StandardCopyOption.REPLACE_EXISTING);
 
-        docker.buildImage(dockerfilePath.toAbsolutePath().getParent().toFile(), VESPA_LOCAL_IMAGE);
+        Path dockerfilePath = Paths.get("Dockerfile").toAbsolutePath();
+
+        Files.write(dockerfilePath, dockerfileTemplate.getBytes());
+        docker.buildImage(dockerfilePath.getParent().toFile(), VESPA_LOCAL_IMAGE);
     }
 
     /**
@@ -90,7 +109,7 @@ public class LocalZoneUtils {
      */
     public static Set<String> provisionNodes(String parentHostname, int numberOfNodes) {
         Set<String> hostnames = new HashSet<>();
-        List<Map<String,String>> nodesToAdd = new ArrayList<>();
+        List<Map<String, String>> nodesToAdd = new ArrayList<>();
         for (int i = 1; i <= numberOfNodes; i++) {
             final String hostname = APP_HOSTNAME_PREFIX + i;
             Map<String, String> provisionNodeRequest = new HashMap<>();
@@ -112,7 +131,7 @@ public class LocalZoneUtils {
                 CONFIG_SERVER_WEB_SERVICE_PORT, Optional.empty(), Map.class);
     }
 
-    public static void prepareAppForDeployment(Docker docker, Path pathToApp) {
+    public static void deployApp(Docker docker, Path pathToApp) {
         Path pathToAppOnConfigServer = Paths.get("/tmp");
         docker.copyArchiveToContainer(pathToApp.toAbsolutePath().toString(),
                 CONFIG_SERVER_CONTAINER_NAME, pathToAppOnConfigServer.toString());
@@ -138,6 +157,13 @@ public class LocalZoneUtils {
         if (! execProcess.isSuccess()) {
             throw new RuntimeException("Could not activate application\n" + copyProcess.getOutput() + "\n" + copyProcess.getErrors());
         }
+    }
+
+    public static void undeployApp() {
+        final String appName = "default";
+
+        requestExecutor.delete("/application/v2/tenant/" + TENANT_NAME + "/application/" + appName,
+                CONFIG_SERVER_WEB_SERVICE_PORT, Map.class);
     }
 }
 

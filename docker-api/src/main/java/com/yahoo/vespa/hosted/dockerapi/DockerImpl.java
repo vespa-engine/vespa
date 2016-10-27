@@ -6,10 +6,8 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
-import com.github.dockerjava.api.command.InspectImageResponse;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
-import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
@@ -48,15 +46,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import static com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator.NetworkAddressInterface;
 
 
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
-    private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
-    private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
+    public static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
+    public static final String LABEL_VALUE_MANAGEDBY = "node-admin";
 
     private final int SECONDS_TO_WAIT_BEFORE_KILLING;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
@@ -192,11 +189,10 @@ public class DockerImpl implements Docker {
         return inspectImage(dockerImage).isPresent();
     }
 
-    private Optional<InspectImageResponse> inspectImage(DockerImage dockerImage) {
+    private Optional<Image> inspectImage(DockerImage dockerImage) {
         try {
-            return Optional.of(dockerClient.inspectImageCmd(dockerImage.asString()).exec());
-        } catch (NotFoundException e) {
-            return Optional.empty();
+            return dockerClient.listImagesCmd().withShowAll(true)
+                    .withImageNameFilter(dockerImage.asString()).exec().stream().findFirst();
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to list image name: '" + dockerImage + "'", e);
@@ -205,8 +201,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName name, String hostName) {
-        return new CreateContainerCommandImpl(dockerClient, image, name, hostName)
-                .withLabel(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
+        return new CreateContainerCommandImpl(dockerClient, image, name, hostName);
     }
 
     @Override
@@ -275,7 +270,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public void startContainer(ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
+        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName);
         if (dockerContainer.isPresent()) {
             try {
                 dockerClient.startContainerCmd(dockerContainer.get().getId()).exec();
@@ -289,7 +284,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public void stopContainer(final ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
+        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName);
         if (dockerContainer.isPresent()) {
             try {
                 dockerClient.stopContainerCmd(dockerContainer.get().getId()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
@@ -302,7 +297,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public void deleteContainer(ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
+        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName);
         if (dockerContainer.isPresent()) {
             dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(dockerContainer.get().getImageId()));
 
@@ -316,35 +311,38 @@ public class DockerImpl implements Docker {
         }
     }
 
-    @Override
-    public List<Container> getAllManagedContainers() {
+    List<Container> getAllContainers(boolean managedOnly) {
         try {
             return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
-                    .filter(this::isManaged)
-                    .flatMap(this::asContainer)
+                    .filter(container -> !managedOnly || isManaged(container))
+                    .map(this::asContainer)
                     .collect(Collectors.toList());
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Could not retrieve all container", e);
+            throw new RuntimeException("Could not retrieve all containers", e);
         }
     }
 
     @Override
+    public List<Container> getAllManagedContainers() {
+        return getAllContainers(true);
+    }
+
+    @Override
     public Optional<Container> getContainer(String hostname) {
-        // TODO Don't rely on getAllManagedContainers
-        return getAllManagedContainers().stream()
+        return getAllContainers(false).stream()
                 .filter(c -> Objects.equals(hostname, c.hostname))
                 .findFirst();
     }
 
-    private Stream<Container> asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
+    private Container asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
         try {
             final InspectContainerResponse response = dockerClient.inspectContainerCmd(dockerClientContainer.getId()).exec();
-            return Stream.of(new Container(
+            return new Container(
                     response.getConfig().getHostName(),
                     new DockerImage(dockerClientContainer.getImage()),
                     new ContainerName(decode(response.getName())),
-                    response.getState().getRunning()));
+                    response.getState().getRunning());
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             //TODO: do proper exception handling
@@ -353,11 +351,9 @@ public class DockerImpl implements Docker {
     }
 
 
-    private Optional<com.github.dockerjava.api.model.Container> getContainerFromName(
-            final ContainerName containerName, final boolean alsoGetStoppedContainers) {
+    private Optional<com.github.dockerjava.api.model.Container> getContainerFromName(final ContainerName containerName) {
         try {
-            return dockerClient.listContainersCmd().withShowAll(alsoGetStoppedContainers).exec().stream()
-                    .filter(this::isManaged)
+            return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
                     .filter(container -> matchName(container, containerName.asString()))
                     .findFirst();
         } catch (DockerException e) {
@@ -396,8 +392,8 @@ public class DockerImpl implements Docker {
     public void buildImage(File dockerfile, DockerImage image) {
         try {
             dockerClient.buildImageCmd(dockerfile).withTag(image.asString())
-                    .exec(new BuildImageResultCallback()).awaitCompletion();
-        } catch (DockerException | InterruptedException e) {
+                    .exec(new BuildImageResultCallback()).awaitImageId();
+        } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to build image " + image.asString(), e);
         }
@@ -428,9 +424,9 @@ public class DockerImpl implements Docker {
 
         @Override
         public void onComplete() {
-            Optional<InspectImageResponse> inspectImage = inspectImage(dockerImage);
-            if (inspectImage.isPresent()) { // Download successful, update image GC with the newly downloaded image
-                dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(inspectImage.get().getId()));
+            Optional<Image> image = inspectImage(dockerImage);
+            if (image.isPresent()) { // Download successful, update image GC with the newly downloaded image
+                dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(image.get().getId()));
                 removeScheduledPoll(dockerImage).complete(dockerImage);
             } else {
                 removeScheduledPoll(dockerImage).completeExceptionally(
