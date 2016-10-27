@@ -8,7 +8,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleFunction;
+import java.util.function.DoubleUnaryOperator;
 import java.util.function.UnaryOperator;
 
 /**
@@ -44,7 +48,23 @@ public interface Tensor {
 
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
+    
+    // ----------------- Level 0 functions
+    
+    default Tensor map(Tensor tensor, DoubleUnaryOperator mapper) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 
+    default Tensor reduce(Tensor tensor, String dimension, 
+                          DoubleBinaryOperator reductor, Optional<DoubleBinaryOperator> postTransformation) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    default Tensor join(Tensor tensorA, Tensor tensorB, DoubleBinaryOperator combinator) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    // ----------------- Old stuff
     /**
      * Returns the <i>sparse tensor product</i> of this tensor and the argument tensor.
      * This is the all-to-all combinations of cells in the argument tenors, except the combinations
