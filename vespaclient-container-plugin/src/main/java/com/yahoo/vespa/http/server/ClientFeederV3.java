@@ -114,7 +114,24 @@ class ClientFeederV3 {
         ongoingRequests.incrementAndGet();
         try {
             FeederSettings feederSettings = new FeederSettings(request);
-            // We are blocking up too many threads, we can not parse the request and should rather exit early.
+            /**
+             * The gateway handle overload from clients in different ways.
+             *
+             * If the backend is overloaded, but not the gateway, it will fill the backend, messagebus throttler
+             * will start to block new documents and finally all threadsAvailableForFeeding will be blocking.
+             * However, as more threads are added, the gateway will not block on messagebus but return
+             * transitive errors on the documents that can not be processed. These errors will cause the client(s) to
+             * back off a bit.
+             *
+             * However, we can also have the case that the gateway becomes the bottleneck (e.g. CPU). In this case
+             * we need to stop processing of new messages as early as possible and reject the request. This
+             * will cause the client(s) to back off for a while. We want some slack before we enter this mode.
+             * If we can simply transitively fail each document, it is nicer. Therefor we allow some threads to be
+             * busy processing requests with transitive errors before entering this mode. Since we already
+             * have flooded the backend, have several threads hanging and waiting for capacity, the number should
+             * not be very large. Too much slack can lead to too many threads handling feed and impacting query traffic.
+             * We try 10 for now. This should only kick in with very massive feeding to few gateway nodes.
+             */
             if (feederSettings.denyIfBusy && threadsAvailableForFeeding.get() < -10) {
                 return new ErrorHttpResponse(429, "Gateway overloaded");
             }
