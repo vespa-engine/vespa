@@ -1,21 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/tensor/tensor.h>
 
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/fef/test/as_tensor.h>
+#include <vespa/searchlib/features/tensor_from_weighted_set_feature.h>
+#include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
-#include <vespa/searchlib/features/tensor_from_weighted_set_feature.h>
-#include <vespa/searchlib/fef/fef.h>
+#include <vespa/vespalib/eval/function.h>
+#include <vespa/vespalib/eval/tensor_spec.h>
+#include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <vespa/vespalib/tensor/tensor.h>
 
 using search::feature_t;
 using namespace search::fef;
@@ -26,13 +26,24 @@ using search::IntegerAttribute;
 using search::StringAttribute;
 using vespalib::eval::Value;
 using vespalib::eval::Function;
+using vespalib::eval::TensorSpec;
 using vespalib::tensor::Tensor;
+using vespalib::tensor::DefaultTensorEngine;
 
 typedef search::attribute::Config AVC;
 typedef search::attribute::BasicType AVBT;
 typedef search::attribute::CollectionType AVCT;
 typedef search::AttributeVector::SP AttributePtr;
 typedef FtTestApp FTA;
+
+Tensor::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = DefaultTensorEngine::ref().create(spec);
+    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
+}
+
+Tensor::UP make_empty(const vespalib::string &type) {
+    return make_tensor(TensorSpec(type));
+}
 
 struct SetupFixture
 {
@@ -124,55 +135,73 @@ struct ExecFixture
 TEST_F("require that weighted set string attribute can be converted to tensor (default dimension)",
         ExecFixture("tensorFromWeightedSet(attribute(wsstr))"))
 {
-    EXPECT_EQUAL(AsTensor("{ {wsstr:b}:5, {wsstr:c}:7, {wsstr:a}:3 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(wsstr{})")
+                              .add({{"wsstr","b"}}, 5)
+                              .add({{"wsstr","c"}}, 7)
+                              .add({{"wsstr","a"}}, 3)), f.execute());
 }
 
 TEST_F("require that weighted set string attribute can be converted to tensor (explicit dimension)",
         ExecFixture("tensorFromWeightedSet(attribute(wsstr),dim)"))
 {
-    EXPECT_EQUAL(AsTensor("{ {dim:a}:3, {dim:b}:5, {dim:c}:7 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(dim{})")
+                              .add({{"dim","a"}}, 3)
+                              .add({{"dim","b"}}, 5)
+                              .add({{"dim","c"}}, 7)), f.execute());
 }
 
 TEST_F("require that weighted set integer attribute can be converted to tensor (default dimension)",
         ExecFixture("tensorFromWeightedSet(attribute(wsint))"))
 {
-    EXPECT_EQUAL(AsTensor("{ {wsint:13}:5, {wsint:17}:7, {wsint:11}:3 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(wsint{})")
+                              .add({{"wsint","13"}}, 5)
+                              .add({{"wsint","17"}}, 7)
+                              .add({{"wsint","11"}}, 3)), f.execute());
 }
 
 TEST_F("require that weighted set integer attribute can be converted to tensor (explicit dimension)",
         ExecFixture("tensorFromWeightedSet(attribute(wsint),dim)"))
 {
-    EXPECT_EQUAL(AsTensor("{ {dim:17}:7, {dim:11}:3, {dim:13}:5 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(dim{})")
+                              .add({{"dim","17"}}, 7)
+                              .add({{"dim","11"}}, 3)
+                              .add({{"dim","13"}}, 5)), f.execute());
 }
 
 TEST_F("require that weighted set from query can be converted to tensor (default dimension)",
         ExecFixture("tensorFromWeightedSet(query(wsquery))"))
 {
-    EXPECT_EQUAL(AsTensor("{ {wsquery:f}:17, {wsquery:d}:11, {wsquery:e}:13 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(wsquery{})")
+                              .add({{"wsquery","f"}}, 17)
+                              .add({{"wsquery","d"}}, 11)
+                              .add({{"wsquery","e"}}, 13)), f.execute());
 }
 
 TEST_F("require that weighted set from query can be converted to tensor (explicit dimension)",
         ExecFixture("tensorFromWeightedSet(query(wsquery),dim)"))
 {
-    EXPECT_EQUAL(AsTensor("{ {dim:d}:11, {dim:e}:13, {dim:f}:17 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(dim{})")
+                              .add({{"dim","d"}}, 11)
+                              .add({{"dim","e"}}, 13)
+                              .add({{"dim","f"}}, 17)), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute does not exists",
         ExecFixture("tensorFromWeightedSet(attribute(null))"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(null{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(null{})"), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute type is not supported",
         ExecFixture("tensorFromWeightedSet(attribute(astr))"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(astr{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(astr{})"), f.execute());
 }
 
 TEST_F("require that empty tensor is created if query parameter is not found",
         ExecFixture("tensorFromWeightedSet(query(null))"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(null{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(null{})"), f.execute());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
