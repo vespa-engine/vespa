@@ -46,7 +46,6 @@ TEST("require that error nodes have error type") {
 TEST("require that leaf constants have appropriate type") {
     TEST_DO(verify("123", "double"));
     TEST_DO(verify("\"string values are hashed\"", "double"));
-    TEST_DO(verify("{{x:1,y:2}:3}", "tensor"));
 }
 
 TEST("require that input parameters preserve their type") {
@@ -120,26 +119,6 @@ TEST("require that dimension sum resolves correct type") {
     TEST_DO(verify("sum(tensor(x{},y{},z{}),y)", "tensor(x{},z{})"));
     TEST_DO(verify("sum(tensor(x{},y{},z{}),w)", "error"));
     TEST_DO(verify("sum(tensor(x{}),x)", "double"));
-}
-
-TEST("require that tensor match resolves correct type") {
-    TEST_DO(verify("match(error,tensor)", "error"));
-    TEST_DO(verify("match(tensor,error)", "error"));
-    TEST_DO(verify("match(any,any)", "any"));
-    TEST_DO(verify("match(any,tensor)", "any"));
-    TEST_DO(verify("match(tensor,any)", "any"));
-    TEST_DO(verify("match(tensor,tensor)", "any"));
-    TEST_DO(verify("match(double,double)", "double"));
-    TEST_DO(verify("match(tensor,double)", "error"));
-    TEST_DO(verify("match(double,tensor)", "error"));
-    TEST_DO(verify("match(double,any)", "any"));
-    TEST_DO(verify("match(any,double)", "any"));
-    TEST_DO(verify("match(tensor(x{},y{}),tensor(x{},y{}))", "tensor(x{},y{})"));
-    TEST_DO(verify("match(tensor(x{},y{}),tensor(x{},y[]))", "error"));
-    TEST_DO(verify("match(tensor(x{},y{}),tensor(x{}))", "error"));
-    TEST_DO(verify("match(tensor(x{}),tensor(y{}))", "error"));
-    TEST_DO(verify("match(tensor,tensor(x{},y{}))", "any"));
-    TEST_DO(verify("match(tensor(x{},y{}),tensor)", "any"));
 }
 
 vespalib::string strfmt(const char *pattern, const char *a) {
@@ -242,9 +221,9 @@ TEST("require that various operations resolve appropriate type") {
 
 TEST("require that double only expressions can be detected") {
     Function plain_fun = Function::parse("1+2");
-    Function complex_fun = Function::parse("sum({{x:1,y:2}:3})");
+    Function complex_fun = Function::parse("sum(a)");
     NodeTypes plain_types(plain_fun, {});
-    NodeTypes complex_types(complex_fun, {});
+    NodeTypes complex_types(complex_fun, {ValueType::tensor_type({})});
     EXPECT_TRUE(plain_types.get_type(plain_fun.root()).is_double());
     EXPECT_TRUE(complex_types.get_type(complex_fun.root()).is_double());
     EXPECT_TRUE(plain_types.all_types_are_double());
