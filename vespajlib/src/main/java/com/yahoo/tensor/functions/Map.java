@@ -26,4 +26,9 @@ public class Map extends PrimitiveTensorFunction {
         return new Map(argument.toPrimitive(), mapper);
     }
 
+    @Override
+    public String toString() {
+        return "map(" + argument.toString() + ", lambda(a) (...))";
+    }
+
 }

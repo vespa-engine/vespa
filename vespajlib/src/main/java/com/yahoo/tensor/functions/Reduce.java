@@ -30,4 +30,9 @@ public class Reduce extends PrimitiveTensorFunction {
         return new Reduce(argument.toPrimitive(), dimension, reductor, postTransformation);
     }
 
+    @Override
+    public String toString() {
+        return "reduce(" + argument.toString() + ", " + dimension + ", lambda(a, b) (...), lambda(a, b) (...))";
+    }
+
 }

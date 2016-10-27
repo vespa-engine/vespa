@@ -1,7 +1,7 @@
 package com.yahoo.tensor.functions;
 
 /**
- * An inspectable representation of a tensor function which is able to be translated to a set of primitive
+ * A representation of a tensor function which is able to be translated to a set of primitive
  * tensor functions if necessary.
  * All tensor functions are immutable.
  * 
