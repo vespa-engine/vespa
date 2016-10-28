@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
@@ -37,13 +38,13 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
                                                       "parent.host.name.yahoo.com",
                                                       new InetAddressResolver());
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+    private final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, maintainer, mr);
     private final Function<String, NodeAgent> nodeAgentFactory =
             (hostName) -> new NodeAgentImpl(hostName,
-                                            nodeRepositoryMock, orchestratorMock,
-                                            new DockerOperationsImpl(dockerMock, environment, maintainer),
+                                            nodeRepositoryMock, orchestratorMock, dockerOperations,
                                             maintenanceSchedulerMock, mr,
                                             environment, maintainer);
-    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
+    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
 
 
     @Override

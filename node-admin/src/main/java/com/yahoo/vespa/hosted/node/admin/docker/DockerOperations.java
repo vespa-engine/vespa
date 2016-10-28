@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface DockerOperations {
@@ -36,5 +37,12 @@ public interface DockerOperations {
 
     void trySuspendNode(ContainerName containerName);
 
-    Docker.ContainerStats getContainerStats(ContainerName containerName);
+    Optional<Docker.ContainerStats> getContainerStats(ContainerName containerName);
+
+    /**
+     * Returns the list of containers managed by node-admin
+     */
+    List<Container> getAllManagedContainers();
+
+    void deleteUnusedDockerImages();
 }

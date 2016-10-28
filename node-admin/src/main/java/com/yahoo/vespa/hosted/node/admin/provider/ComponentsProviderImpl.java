@@ -6,6 +6,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
@@ -53,14 +54,15 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
 
+        final DockerOperations dockerOperations = new DockerOperationsImpl(
+                docker, environment, storageMaintainer.getMaintainer(), metricReceiver);
         final Function<String, NodeAgent> nodeAgentFactory =
-                (hostName) -> new NodeAgentImpl(hostName, nodeRepository,
-                        orchestrator, new DockerOperationsImpl(docker, environment, storageMaintainer.getMaintainer()),
+                (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
                         storageMaintainer, metricReceiver, environment, storageMaintainer.getMaintainer());
-        final NodeAdmin nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, storageMaintainer,
+        final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver);
-        nodeAdminStateUpdater = new NodeAdminStateUpdater(
-                nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS, NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS,
+                NODE_ADMIN_STATE_INTERVAL_MILLIS, orchestrator, baseHostName);
 
         metricReceiverWrapper = metricReceiver;
     }

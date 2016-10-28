@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.CharStreams;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -10,6 +11,9 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
+import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
@@ -47,6 +51,8 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final Pattern VESPA_VERSION_PATTERN = Pattern.compile("^(\\S*)$", Pattern.MULTILINE);
 
+    private static final String MANAGER_NAME = "node-admin";
+
     // Map of directories to mount and whether they should be writeable by everyone
     private static final Map<String, Boolean> DIRECTORIES_TO_MOUNT = new HashMap<>();
     static {
@@ -73,11 +79,13 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final Environment environment;
     private final Maintainer maintainer;
+    private GaugeWrapper numberOfRunningContainersGauge;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, Maintainer maintainer) {
+    public DockerOperationsImpl(Docker docker, Environment environment, Maintainer maintainer, MetricReceiverWrapper metricReceiver) {
         this.docker = docker;
         this.environment = environment;
         this.maintainer = maintainer;
+        setMetrics(metricReceiver);
     }
 
     @Override
@@ -114,6 +122,7 @@ public class DockerOperationsImpl implements DockerOperations {
         if (docker.getContainer(nodeSpec.hostname).isPresent()) return false;
 
         startContainer(nodeSpec);
+        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
         return true;
     }
 
@@ -188,7 +197,7 @@ public class DockerOperationsImpl implements DockerOperations {
                     nodeSpec.wantedDockerImage.get(),
                     nodeSpec.containerName,
                     nodeSpec.hostname)
-                    .withLabel(DockerImpl.LABEL_NAME_MANAGEDBY, DockerImpl.LABEL_VALUE_MANAGEDBY)
+                    .withManagedBy(MANAGER_NAME)
                     .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                     .withIpAddress(nodeInetAddress)
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers)
@@ -221,7 +230,7 @@ public class DockerOperationsImpl implements DockerOperations {
             if (isIPv6) {
                 docker.connectContainerToNetwork(nodeSpec.containerName, "bridge");
                 docker.startContainer(nodeSpec.containerName);
-                setupContainerNetworkingWithScript(nodeSpec.containerName, nodeSpec.hostname);
+                setupContainerNetworkingWithScript(nodeSpec.containerName);
             } else {
                 docker.startContainer(nodeSpec.containerName);
             }
@@ -233,14 +242,16 @@ public class DockerOperationsImpl implements DockerOperations {
         }
     }
 
-    private void setupContainerNetworkingWithScript(ContainerName containerName, String hostName) {
+    private void setupContainerNetworkingWithScript(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
-        Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName);
-        Optional<Integer> containerPid = containerInfo.getPid();
+        Optional<Docker.ContainerInfo> containerInfo = docker.inspectContainer(containerName);
+        if (!containerInfo.isPresent()) {
+            throw new RuntimeException("Container " + containerName + " does not exist");
+        }
+        Optional<Integer> containerPid = containerInfo.get().getPid();
         if (!containerPid.isPresent()) {
-            throw new RuntimeException("Container " + containerName + " for host "
-                    + hostName + " isn't running (pid not found)");
+            throw new RuntimeException("Container " + containerName + " isn't running (pid not found)");
         }
 
         final List<String> command = new LinkedList<>();
@@ -307,6 +318,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Deleting container " + containerName);
         docker.deleteContainer(containerName);
+        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 
     @Override
@@ -335,7 +347,28 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public Docker.ContainerStats getContainerStats(ContainerName containerName) {
+    public Optional<Docker.ContainerStats> getContainerStats(ContainerName containerName) {
         return docker.getContainerStats(containerName);
+    }
+
+    @Override
+    public List<Container> getAllManagedContainers() {
+        return docker.getAllContainersManagedBy(MANAGER_NAME);
+    }
+
+    @Override
+    public void deleteUnusedDockerImages() {
+        docker.deleteUnusedDockerImages();
+    }
+
+    private void setMetrics(MetricReceiverWrapper metricReceiver) {
+        Dimensions dimensions = new Dimensions.Builder()
+                .add("host", HostName.getLocalhost())
+                .add("role", "docker").build();
+
+        numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");
+
+        // Some containers could already be running, count them and initialize to that value
+        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 }

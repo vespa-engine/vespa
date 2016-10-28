@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * Mock with some simple logic
  *
- * @author valerijf
+ * @author freva
  */
 public class DockerMock implements Docker {
     private List<Container> containers = new ArrayList<>();
@@ -57,12 +57,19 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public ContainerInfo inspectContainer(ContainerName containerName) {
-        return () -> Optional.of(2);
+    public List<Container> getAllContainersManagedBy(String manager) {
+        synchronized (monitor) {
+            return new ArrayList<>(containers);
+        }
     }
 
     @Override
-    public ContainerStats getContainerStats(ContainerName containerName) {
+    public Optional<ContainerInfo> inspectContainer(ContainerName containerName) {
+        return Optional.of(() -> Optional.of(2));
+    }
+
+    @Override
+    public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
         return null;
     }
 
@@ -91,13 +98,6 @@ public class DockerMock implements Docker {
             containers = containers.stream()
                     .filter(container -> !container.name.equals(containerName))
                     .collect(Collectors.toList());
-        }
-    }
-
-    @Override
-    public List<Container> getAllManagedContainers() {
-        synchronized (monitor) {
-            return new ArrayList<>(containers);
         }
     }
 
@@ -196,6 +196,11 @@ public class DockerMock implements Docker {
 
         @Override
         public CreateContainerCommand withEntrypoint(String... entrypoint) {
+            return this;
+        }
+
+        @Override
+        public CreateContainerCommand withManagedBy(String manager) {
             return this;
         }
 

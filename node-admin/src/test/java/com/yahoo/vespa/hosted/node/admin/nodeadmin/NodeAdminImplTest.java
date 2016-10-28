@@ -7,8 +7,8 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
@@ -48,11 +48,11 @@ public class NodeAdminImplTest {
 
     @Test
     public void nodeAgentsAreProperlyLifeCycleManaged() throws Exception {
-        final Docker docker = mock(Docker.class);
+        final DockerOperations dockerOperations = mock(DockerOperations.class);
         final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
         final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
 
-        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(docker, nodeAgentFactory, storageMaintainer, 100,
+        final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, 100,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation));
 
         final NodeAgent nodeAgent1 = mock(NodeAgentImpl.class);

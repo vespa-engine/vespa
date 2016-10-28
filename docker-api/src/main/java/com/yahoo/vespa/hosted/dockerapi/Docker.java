@@ -22,6 +22,7 @@ public interface Docker {
         CreateContainerCommand withIpAddress(InetAddress address);
         CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);
         CreateContainerCommand withEntrypoint(String... entrypoint);
+        CreateContainerCommand withManagedBy(String manager);
 
         void create();
     }
@@ -37,7 +38,7 @@ public interface Docker {
         Optional<Integer> getPid();
     }
 
-    ContainerInfo inspectContainer(ContainerName containerName);
+    Optional<ContainerInfo> inspectContainer(ContainerName containerName);
 
 
     interface ContainerStats {
@@ -47,7 +48,7 @@ public interface Docker {
         Map<String, Object> getBlkioStats();
     }
 
-    ContainerStats getContainerStats(ContainerName containerName);
+    Optional<ContainerStats> getContainerStats(ContainerName containerName);
     
     void startContainer(ContainerName containerName);
 
@@ -59,7 +60,7 @@ public interface Docker {
 
     void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath);
 
-    List<Container> getAllManagedContainers();
+    List<Container> getAllContainersManagedBy(String manager);
 
     Optional<Container> getContainer(String hostname);
 

@@ -8,6 +8,8 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
@@ -24,7 +26,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -46,14 +47,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import static com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator.NetworkAddressInterface;
 
 
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
-    public static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
-    public static final String LABEL_VALUE_MANAGEDBY = "node-admin";
+    static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
 
     private final int SECONDS_TO_WAIT_BEFORE_KILLING;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
@@ -67,7 +69,6 @@ public class DockerImpl implements Docker {
     // Exposed for testing.
     DockerClient dockerClient;
 
-    private GaugeWrapper numberOfRunningContainersGauge;
     private CounterWrapper numberOfDockerDaemonFails;
 
     private Optional<DockerImageGarbageCollector> dockerImageGC = Optional.empty();
@@ -244,24 +245,34 @@ public class DockerImpl implements Docker {
         }
     }
 
-    @Override
-    public ContainerInfo inspectContainer(ContainerName containerName) {
+    private Optional<InspectContainerResponse> inspectContainerCmd(String container) {
         try {
-            InspectContainerResponse containerInfo = dockerClient.inspectContainerCmd(containerName.asString()).exec();
-            return new ContainerInfoImpl(containerName, containerInfo);
+            return Optional.of(dockerClient.inspectContainerCmd(container).exec());
+        } catch (NotFoundException ignored) {
+            return Optional.empty();
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to get container info", e);
         }
     }
 
-    public ContainerStats getContainerStats(ContainerName containerName) {
-        try {
-             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
-             statsCallback.awaitCompletion(10, TimeUnit.SECONDS);
+    @Override
+    public Optional<ContainerInfo> inspectContainer(ContainerName containerName) {
+        Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(containerName.asString());
+        if (! inspectResponse.isPresent()) return Optional.empty();
+        else return Optional.of(new ContainerInfoImpl(containerName, inspectResponse.get()));
+    }
 
-            return new ContainerStatsImpl(statsCallback.stats.getNetworks(), statsCallback.stats.getCpuStats(),
-                    statsCallback.stats.getMemoryStats(), statsCallback.stats.getBlkioStats());
+    @Override
+    public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
+        try {
+            DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
+            statsCallback.awaitCompletion(10, TimeUnit.SECONDS);
+
+            return Optional.of(new ContainerStatsImpl(statsCallback.stats.getNetworks(), statsCallback.stats.getCpuStats(),
+                    statsCallback.stats.getMemoryStats(), statsCallback.stats.getBlkioStats()));
+        } catch (NotFoundException ignored) {
+            return Optional.empty();
         } catch (DockerException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to get container stats", e);
@@ -270,52 +281,51 @@ public class DockerImpl implements Docker {
 
     @Override
     public void startContainer(ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName);
-        if (dockerContainer.isPresent()) {
-            try {
-                dockerClient.startContainerCmd(dockerContainer.get().getId()).exec();
-                numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
-            } catch (DockerException e) {
-                numberOfDockerDaemonFails.add();
-                throw new RuntimeException("Failed to start container", e);
-            }
+        try {
+            dockerClient.startContainerCmd(containerName.asString()).exec();
+        } catch(NotFoundException | NotModifiedException ignored) {
+            // If container doesn't exist or is already started, ignore
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to start container", e);
         }
     }
 
     @Override
     public void stopContainer(final ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName);
-        if (dockerContainer.isPresent()) {
-            try {
-                dockerClient.stopContainerCmd(dockerContainer.get().getId()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
-            } catch (DockerException e) {
-                numberOfDockerDaemonFails.add();
-                throw new RuntimeException("Failed to stop container", e);
-            }
+        try {
+            dockerClient.stopContainerCmd(containerName.asString()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
+        } catch(NotFoundException | NotModifiedException ignored) {
+            // If container doesn't exist or is already stopped, ignore
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to stop container", e);
         }
     }
 
     @Override
     public void deleteContainer(ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName);
-        if (dockerContainer.isPresent()) {
-            dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(dockerContainer.get().getImageId()));
+        try {
+            dockerImageGC.ifPresent(imageGC -> {
+                Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(containerName.asString());
+                if (inspectResponse.isPresent()) imageGC.updateLastUsedTimeFor(inspectResponse.get().getImageId());
+            });
 
-            try {
-                dockerClient.removeContainerCmd(dockerContainer.get().getId()).exec();
-                numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
-            } catch (DockerException e) {
-                numberOfDockerDaemonFails.add();
-                throw new RuntimeException("Failed to delete container", e);
-            }
+            dockerClient.removeContainerCmd(containerName.asString()).exec();
+        } catch(NotFoundException ignored) {
+            // If container doesn't exist ignore
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to delete container", e);
         }
     }
 
-    List<Container> getAllContainers(boolean managedOnly) {
+    @Override
+    public List<Container> getAllContainersManagedBy(String manager) {
         try {
             return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
-                    .filter(container -> !managedOnly || isManaged(container))
-                    .map(this::asContainer)
+                    .filter(container -> isManagedBy(container, manager))
+                    .flatMap(this::asContainer)
                     .collect(Collectors.toList());
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
@@ -324,54 +334,32 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public List<Container> getAllManagedContainers() {
-        return getAllContainers(true);
-    }
-
-    @Override
     public Optional<Container> getContainer(String hostname) {
-        return getAllContainers(false).stream()
-                .filter(c -> Objects.equals(hostname, c.hostname))
-                .findFirst();
-    }
-
-    private Container asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
-        try {
-            final InspectContainerResponse response = dockerClient.inspectContainerCmd(dockerClientContainer.getId()).exec();
-            return new Container(
-                    response.getConfig().getHostName(),
-                    new DockerImage(dockerClientContainer.getImage()),
-                    new ContainerName(decode(response.getName())),
-                    response.getState().getRunning());
-        } catch (DockerException e) {
-            numberOfDockerDaemonFails.add();
-            //TODO: do proper exception handling
-            throw new RuntimeException("Failed talking to docker daemon", e);
-        }
-    }
-
-
-    private Optional<com.github.dockerjava.api.model.Container> getContainerFromName(final ContainerName containerName) {
         try {
             return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
-                    .filter(container -> matchName(container, containerName.asString()))
+                    .flatMap(this::asContainer)
+                    .filter(c -> Objects.equals(hostname, c.hostname))
                     .findFirst();
         } catch (DockerException e) {
-            throw new RuntimeException("Failed to get container from name", e);
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Could not retrieve all containers", e);
         }
     }
 
-    private boolean isManaged(final com.github.dockerjava.api.model.Container container) {
+    private Stream<Container> asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
+        Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(dockerClientContainer.getId());
+        if (! inspectResponse.isPresent()) return Stream.empty();
+        return Stream.of(new Container(
+                inspectResponse.get().getConfig().getHostName(),
+                new DockerImage(inspectResponse.get().getConfig().getImage()),
+                new ContainerName(decode(inspectResponse.get().getName())),
+                inspectResponse.get().getState().getRunning()));
+    }
+
+    private boolean isManagedBy(final com.github.dockerjava.api.model.Container container, String manager) {
         final Map<String, String> labels = container.getLabels();
-        if (labels == null) {
-            return false;
-        }
+        return labels != null && manager.equals(labels.get(LABEL_NAME_MANAGEDBY));
 
-        return LABEL_VALUE_MANAGEDBY.equals(labels.get(LABEL_NAME_MANAGEDBY));
-    }
-
-    private boolean matchName(com.github.dockerjava.api.model.Container container, String targetName) {
-        return Arrays.stream(container.getNames()).anyMatch(encodedName -> decode(encodedName).equals(targetName));
     }
 
     private String decode(String encodedContainerName) {
@@ -382,6 +370,8 @@ public class DockerImpl implements Docker {
     public void deleteImage(final DockerImage dockerImage) {
         try {
             dockerClient.removeImageCmd(dockerImage.asString()).exec();
+        } catch (NotFoundException ignored) {
+            // Image was already deleted, ignore
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to delete docker image " + dockerImage.asString(), e);
@@ -484,10 +474,6 @@ public class DockerImpl implements Docker {
                 .add("host", HostName.getLocalhost())
                 .add("role", "docker").build();
 
-        numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");
         numberOfDockerDaemonFails = metricReceiver.declareCounter(dimensions, "daemon.api_fails");
-
-        // Some containers could already be running, count them and initialize to that value
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 }
