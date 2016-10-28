@@ -264,7 +264,7 @@ public class ConnectorFactory {
                 final Server server,
                 final ServerSocketChannel channelOpenedByActivator,
                 final ConnectionFactory... factories) {
-            super(server, null, null, new BufferPool(), -1, -1, factories);
+            super(server, factories);
             this.channelOpenedByActivator = channelOpenedByActivator;
             this.tcpKeepAlive = config.tcpKeepAliveEnabled();
             this.tcpNoDelay = config.tcpNoDelay();
