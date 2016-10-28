@@ -60,8 +60,7 @@ public class NodeAgentImplTest {
     private final Maintainer maintainer = mock(Maintainer.class);
     private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
 
-
-    Environment environment = new Environment(Collections.emptySet(),
+    private final Environment environment = new Environment(Collections.emptySet(),
                                               "dev",
                                               "us-east-1",
                                               "parent.host.name.yahoo.com",
@@ -92,7 +91,7 @@ public class NodeAgentImplTest {
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
-        when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
+        when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(false);
         when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
@@ -140,7 +139,7 @@ public class NodeAgentImplTest {
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.empty());
-        when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
+        when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(true);
         when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
@@ -412,7 +411,7 @@ public class NodeAgentImplTest {
                 MIN_DISK_AVAILABLE_GB);
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
-        when(dockerOperations.getContainerStats(any())).thenReturn(containerStats);
+        when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, wantedDockerImage, containerName, true)));
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(wantedDockerImage))).thenReturn(false);
@@ -458,7 +457,7 @@ public class NodeAgentImplTest {
         Docker.ContainerStats stats = new ContainerStatsImpl(networks, cpu_stats, memory_stats, blkio_stats);
 
         final ContainerName containerName = new ContainerName("cont-name");
-        when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(stats);
+        when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(Optional.of(stats));
 
         when(dockerOperations.getContainer(eq(hostName)))
                 .thenReturn(Optional.of(new Container(hostName, new DockerImage("wantedDockerImage"), containerName, true)));

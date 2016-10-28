@@ -27,7 +27,7 @@ import static org.junit.Assume.assumeTrue;
 public class DockerTest {
     private DockerImpl docker;
     private static final DockerImage dockerImage = new DockerImage("simple-ipv6-server:Dockerfile");
-    private static final String CONTAINER_NAME_DOCKER_TEST_PREFIX = "docker-test-";
+    private static final String MANAGER_NAME = "docker-test";
 
     // It is ignored since it is a bit slow and unstable, at least on Mac.
     @Ignore
@@ -51,18 +51,20 @@ public class DockerTest {
     public void testOutOfMemoryDoesNotAffectOtherContainers() throws InterruptedException, ExecutionException, IOException {
         String hostName1 = "docker10.test.yahoo.com";
         String hostName2 = "docker11.test.yahoo.com";
-        ContainerName containerName1 = new ContainerName(CONTAINER_NAME_DOCKER_TEST_PREFIX + 1);
-        ContainerName containerName2 = new ContainerName(CONTAINER_NAME_DOCKER_TEST_PREFIX + 2);
-        InetAddress inetAddress1 = InetAddress.getByName("172.18.0.10");
-        InetAddress inetAddress2 = InetAddress.getByName("172.18.0.11");
+        ContainerName containerName1 = new ContainerName("docker-test-1");
+        ContainerName containerName2 = new ContainerName("docker-test-2");
+        InetAddress inetAddress1 = InetAddress.getByName("172.18.10.10");
+        InetAddress inetAddress2 = InetAddress.getByName("172.18.10.11");
 
         docker.createContainerCommand(dockerImage, containerName1, hostName1)
+                .withManagedBy(MANAGER_NAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withIpAddress(inetAddress1)
                 .withMemoryInMb(100).create();
         docker.startContainer(containerName1);
 
         docker.createContainerCommand(dockerImage, containerName2, hostName2)
+                .withManagedBy(MANAGER_NAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withIpAddress(inetAddress2)
                 .withMemoryInMb(100).create();
@@ -84,10 +86,10 @@ public class DockerTest {
 
     @Test
     public void testContainerCycle() throws IOException, InterruptedException, ExecutionException {
-        final ContainerName containerName = new ContainerName(CONTAINER_NAME_DOCKER_TEST_PREFIX + "foo");
+        final ContainerName containerName = new ContainerName("docker-test-foo");
         final String containerHostname = "hostName1";
 
-        docker.createContainerCommand(dockerImage, containerName, containerHostname).create();
+        docker.createContainerCommand(dockerImage, containerName, containerHostname).withManagedBy(MANAGER_NAME).create();
         Optional<Container> container = docker.getContainer(containerHostname);
         assertTrue(container.isPresent());
         assertFalse(container.get().isRunning);
@@ -103,23 +105,23 @@ public class DockerTest {
         assertFalse(container.get().isRunning);
 
         docker.deleteContainer(containerName);
-        assertThat(docker.getAllManagedContainers().isEmpty(), is(true));
+        assertThat(docker.getAllContainersManagedBy(MANAGER_NAME).isEmpty(), is(true));
     }
 
     @Test
     public void testDockerNetworking() throws InterruptedException, ExecutionException, IOException {
         String hostName1 = "docker10.test.yahoo.com";
         String hostName2 = "docker11.test.yahoo.com";
-        ContainerName containerName1 = new ContainerName(CONTAINER_NAME_DOCKER_TEST_PREFIX + 1);
-        ContainerName containerName2 = new ContainerName(CONTAINER_NAME_DOCKER_TEST_PREFIX + 2);
-        InetAddress inetAddress1 = InetAddress.getByName("172.18.0.10");
-        InetAddress inetAddress2 = InetAddress.getByName("172.18.0.11");
+        ContainerName containerName1 = new ContainerName("docker-test-1");
+        ContainerName containerName2 = new ContainerName("docker-test-2");
+        InetAddress inetAddress1 = InetAddress.getByName("172.18.10.10");
+        InetAddress inetAddress2 = InetAddress.getByName("172.18.10.11");
 
-        docker.createContainerCommand(dockerImage, containerName1, hostName1)
+        docker.createContainerCommand(dockerImage, containerName1, hostName1).withManagedBy(MANAGER_NAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress1).create();
         docker.startContainer(containerName1);
 
-        docker.createContainerCommand(dockerImage, containerName2, hostName2)
+        docker.createContainerCommand(dockerImage, containerName2, hostName2).withManagedBy(MANAGER_NAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withIpAddress(inetAddress2).create();
         docker.startContainer(containerName2);
 
@@ -148,11 +150,9 @@ public class DockerTest {
         }
 
         // Clean up any non deleted containers from previous tests
-        docker.getAllContainers(false).forEach(container -> {
-            if (container.name.asString().startsWith(CONTAINER_NAME_DOCKER_TEST_PREFIX)) {
-                if (container.isRunning) docker.stopContainer(container.name);
-                docker.deleteContainer(container.name);
-            }
+        docker.getAllContainersManagedBy(MANAGER_NAME).forEach(container -> {
+            if (container.isRunning) docker.stopContainer(container.name);
+            docker.deleteContainer(container.name);
         });
     }
 

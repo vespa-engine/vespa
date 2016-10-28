@@ -85,7 +85,7 @@ public class LocalZoneUtils {
                 .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
                 .replaceAll("\\$VESPA_HOME", Defaults.getDefaults().vespaHome());
 
-        /**
+        /*
          * Because the daemon could be running on a remote machine, docker build command will upload the entire
          * build path to daemon and then execute the Dockerfile. This means that:
          * 1. We cant use relative paths in Dockerfile

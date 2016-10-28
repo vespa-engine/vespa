@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
@@ -43,7 +44,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
     private final ScheduledExecutorService metricsFetcherScheduler = Executors.newScheduledThreadPool(1);
 
-    private final Docker docker;
+    private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final StorageMaintainer storageMaintainer;
     private AtomicBoolean frozen = new AtomicBoolean(false);
@@ -56,14 +57,10 @@ public class NodeAdminImpl implements NodeAdmin {
     private GaugeWrapper numberOfContainersInLoadImageState;
     private CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
-    /**
-     * @param docker interface to docker daemon and docker-related tasks
-     * @param nodeAgentFactory factory for {@link NodeAgent} objects
-     */
-    public NodeAdminImpl(final Docker docker, final Function<String, NodeAgent> nodeAgentFactory,
+    public NodeAdminImpl(final DockerOperations dockerOperations, final Function<String, NodeAgent> nodeAgentFactory,
                          final StorageMaintainer storageMaintainer, int nodeAgentScanIntervalMillis,
                          final MetricReceiverWrapper metricReceiver) {
-        this.docker = docker;
+        this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
@@ -86,11 +83,11 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
-        final List<Container> existingContainers = docker.getAllManagedContainers();
+        final List<Container> existingContainers = dockerOperations.getAllManagedContainers();
 
         storageMaintainer.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
-        docker.deleteUnusedDockerImages();
+        dockerOperations.deleteUnusedDockerImages();
 
         updateNodeAgentMetrics();
     }

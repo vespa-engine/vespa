@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
@@ -63,13 +64,11 @@ public class DockerTester implements AutoCloseable {
                                                   inetAddressResolver);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> {
-            final Maintainer maintainer = new Maintainer();
-            return new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
-                                     new DockerOperationsImpl(dockerMock, environment, maintainer),
-                                     maintenanceSchedulerMock, mr, environment, maintainer);
-        };
-        nodeAdmin = new NodeAdminImpl(dockerMock, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
+        final Maintainer maintainer = new Maintainer();
+        final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, maintainer, mr);
+        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
+                orchestratorMock, dockerOperations, maintenanceSchedulerMock, mr, environment, maintainer);
+        nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }
 

@@ -60,6 +60,7 @@ public class DockerTestUtils {
                     false, /* fallback to 1.23 on errors */
                     false, /* try setup network */
                     new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+            createDockerTestNetworkIfNeeded(docker);
         }
 
         return docker;
