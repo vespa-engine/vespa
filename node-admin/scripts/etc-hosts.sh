@@ -3,26 +3,16 @@
 
 set -e
 
-source "${0%/*}/common.sh"
+declare -r NETWORK_PREFIX=172.18
+declare -r CONFIG_SERVER_HOSTNAME=config-server
+declare -r CONFIG_SERVER_IP="$NETWORK_PREFIX.1.1"
 
+declare -r APP_HOSTNAME_PREFIX=cnode-
+declare -r APP_NETWORK_PREFIX="$NETWORK_PREFIX.2"
+
+declare -r NUM_APP_CONTAINERS=20  # Statically allocated number of nodes.
 declare -r HOSTS_FILE=/etc/hosts
 declare -r HOSTS_LINE_SUFFIX=" # Managed by etc-hosts.sh"
-
-function Usage {
-    UsageHelper "$@" <<EOF
-Usage: $SCRIPT_NAME <command> [--num-nodes <num-nodes>]
-Manage Docker container DNS<->IP resolution ($HOSTS_FILE).
-
-Commands:
-  start     Add Docker containers to $HOSTS_FILE
-  stop      Remove Docker containers from $HOSTS_FILE (not implemented)
-  restart   Stop, then start
-
-Options:
-  --num-nodes <num-nodes>
-            Add <num-nodes> hosts instead of the default $DEFAULT_NUM_APP_CONTAINERS.
-EOF
-}
 
 function IsInHostsAlready {
     local ip="$1"
@@ -58,7 +48,8 @@ function IsInHostsAlready {
     then
         return 1
     else
-        Fail "$file contains a conflicting host specification for $hostname/$ip"
+        printf "$file contains a conflicting host specification for $hostname/$ip"
+        exit 1
     fi
 }
 
@@ -83,11 +74,6 @@ function Stop {
 }
 
 function StartAsRoot {
-    if (($# != 0))
-    then
-        Usage
-    fi
-
     # May need sudo
     if [ ! -w "$HOSTS_FILE" ]
     then
@@ -105,13 +91,4 @@ function StartAsRoot {
     done
 }
 
-function Start {
-    if [ "$(id -u)" != 0 ]
-    then
-        sudo "$0" "$@"
-    else
-        StartAsRoot "$@"
-    fi
-}
-
-Main "$@"
+StartAsRoot "$@"
