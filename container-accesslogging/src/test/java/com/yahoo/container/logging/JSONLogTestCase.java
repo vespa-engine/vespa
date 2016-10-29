@@ -40,11 +40,11 @@ public class JSONLogTestCase extends junit.framework.TestCase {
          String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":\"920880005.123\"," +
-            "\"duration\":\"122\"," +
-            "\"size\":\"9875\"," +
-            "\"code\":\"200\"," +
-            "\"totalhits\":\"1234\"," +
-            "\"hits\":\"0\"," +
+            "\"duration\":122," +
+            "\"size\":9875," +
+            "\"code\":200," +
+            "\"totalhits\":1234," +
+            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
@@ -64,11 +64,11 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":\"920880005.123\"," +
-            "\"duration\":\"122\"," +
-            "\"size\":\"9875\"," +
-            "\"code\":\"200\"," +
-            "\"totalhits\":\"1234\"," +
-            "\"hits\":\"0\"," +
+            "\"duration\":122," +
+            "\"size\":9875," +
+            "\"code\":200," +
+            "\"totalhits\":1234," +
+            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
@@ -92,11 +92,11 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":\"920880005.123\"," +
-            "\"duration\":\"122\"," +
-            "\"size\":\"9875\"," +
-            "\"code\":\"200\"," +
-            "\"totalhits\":\"1234\"," +
-            "\"hits\":\"0\"," +
+            "\"duration\":122," +
+            "\"size\":9875," +
+            "\"code\":200," +
+            "\"totalhits\":1234," +
+            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
@@ -113,18 +113,18 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":\"920880005.123\"," +
-            "\"duration\":\"122\"," +
-            "\"size\":\"9875\"," +
-            "\"code\":\"200\"," +
-            "\"totalhits\":\"1234\"," +
-            "\"hits\":\"0\"," +
+            "\"duration\":122," +
+            "\"size\":9875," +
+            "\"code\":200," +
+            "\"totalhits\":1234," +
+            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
             "\"host\":\"localhost\"," +
             "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
-            "\"remoteport\":\"1234\"" +
+            "\"remoteport\":1234" +
             "}";
 
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
@@ -155,11 +155,11 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
             "\"time\":\"920880005.123\"," +
-            "\"duration\":\"122\"," +
-            "\"size\":\"9875\"," +
-            "\"code\":\"200\"," +
-            "\"totalhits\":\"1234\"," +
-            "\"hits\":\"0\"," +
+            "\"duration\":122," +
+            "\"size\":9875," +
+            "\"code\":200," +
+            "\"totalhits\":1234," +
+            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +

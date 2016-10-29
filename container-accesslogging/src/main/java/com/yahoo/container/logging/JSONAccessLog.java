@@ -20,7 +20,7 @@ public final class JSONAccessLog implements  AccessLogInterface {
     }
 
     @Override
-    public void log(final AccessLogEntry logEntry) {
+    public void log(AccessLogEntry logEntry) {
         logHandler.access.log(Level.INFO, new JSONFormatter(logEntry).format() + '\n');
     }
 

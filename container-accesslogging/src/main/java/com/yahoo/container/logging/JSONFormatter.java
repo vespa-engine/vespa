@@ -25,28 +25,7 @@ public class JSONFormatter {
     private AccessLogEntry accessLogEntry;
     private final JsonFactory generatorFactory;
 
-    // Access log fields set from access log entry
-    private String ipV4AddressInDotDecimalNotation;
-    private String timestampWithMillis;
-    private String durationBetweenRequestResponseInMillis;
-    private String numBytesReturned;
-    private String statusCode;
-    private String uri;
-    private String httpVersion;
-    private String userAgent;
-    private String totalHits;
-    private String retrievedHits;
-    private String httpMethod;
-    private String hostString;
-    private String remoteAddress;
-    private String remotePort;
-    private String peerAddress;
-    private String peerPort;
-
-    private Map<String,List<String>> keyValues;
-
     private static Logger logger = Logger.getLogger(JSONFormatter.class.getName());
-
 
     public JSONFormatter(final AccessLogEntry entry) {
         accessLogEntry = entry;
@@ -60,143 +39,94 @@ public class JSONFormatter {
      * @return The Vespa JSON access log string without trailing newline
      */
     public String format() {
-        String logString;
-
-        setIpV4Address(accessLogEntry.getIpV4Address());
-        setTimeStampMillis(accessLogEntry.getTimeStampMillis());
-        setDurationBetweenRequestResponseMillis(accessLogEntry.getDurationBetweenRequestResponseMillis());
-        setReturnedContentSize(accessLogEntry.getReturnedContentSize());
-        setStatusCode(accessLogEntry.getStatusCode());
-        setHitCounts(accessLogEntry.getHitCounts());
-
-        setRemoteAddress(accessLogEntry.getRemoteAddress());
-        setRemotePort(accessLogEntry.getRemotePort());
-
-        setHttpMethod(accessLogEntry.getHttpMethod());
-        setURI(accessLogEntry.getURI());
-        setHttpVersion(accessLogEntry.getHttpVersion());
-
-        setUserAgent(accessLogEntry.getUserAgent());
-
-        setHostString(accessLogEntry.getHostString());
-        setPeerAddress(accessLogEntry.getPeerAddress());
-        setPeerPort(accessLogEntry.getPeerPort());
-
-        keyValues = accessLogEntry.getKeyValues();
-
-        try {
-            logString = toJSONAccessEntry();
-        } catch (IOException e) {
-            logString = "";
-        }
-
-        return logString;
-    }
-
-    private String toJSONAccessEntry() throws IOException {
         ByteArrayOutputStream logLine = new ByteArrayOutputStream();
-        JsonGenerator generator = generatorFactory.createGenerator(logLine, JsonEncoding.UTF8);
-        generator.writeStartObject();
-        generator.writeStringField("ip", ipV4AddressInDotDecimalNotation);
-        generator.writeStringField("time", timestampWithMillis);
-        generator.writeStringField("duration", durationBetweenRequestResponseInMillis);
-        generator.writeStringField("size", numBytesReturned);
-        generator.writeStringField("code", statusCode);
-        generator.writeStringField("totalhits", totalHits);
-        generator.writeStringField("hits", retrievedHits);
-        generator.writeStringField("method", httpMethod);
-        generator.writeStringField("uri", uri);
-        generator.writeStringField("version", httpVersion);
-        generator.writeStringField("agent", userAgent);
-        generator.writeStringField("host", hostString);
+        try {
+            JsonGenerator generator = generatorFactory.createGenerator(logLine, JsonEncoding.UTF8);
+            generator.writeStartObject();
+            generator.writeStringField("ip", accessLogEntry.getIpV4Address());
+            generator.writeStringField("time", toTimestampWithFraction(accessLogEntry.getTimeStampMillis()));
+            generator.writeNumberField("duration",
+                                       capDuration(accessLogEntry.getDurationBetweenRequestResponseMillis()));
+            generator.writeNumberField("size", accessLogEntry.getReturnedContentSize());
+            generator.writeNumberField("code", accessLogEntry.getStatusCode());
+            generator.writeNumberField("totalhits", getTotalHitCount(accessLogEntry.getHitCounts()));
+            generator.writeNumberField("hits", getRetrievedHitCount(accessLogEntry.getHitCounts()));
+            generator.writeStringField("method", accessLogEntry.getHttpMethod());
+            generator.writeStringField("uri", getNormalizedURI(accessLogEntry.getURI()));
+            generator.writeStringField("version", accessLogEntry.getHttpVersion());
+            generator.writeStringField("agent", accessLogEntry.getUserAgent());
+            generator.writeStringField("host", accessLogEntry.getHostString());
 
-        // Only add remote address/port fields if relevant
-        if (remoteAddressDiffers(ipV4AddressInDotDecimalNotation, remoteAddress)) {
-            generator.writeStringField("remoteaddr", remoteAddress);
-            if (remotePort != null) {
-                generator.writeStringField("remoteport", remotePort);
-            }
-        }
-
-        // Only add peer address/port fields if relevant
-        if (peerAddress != null) {
-            generator.writeStringField("peeraddr", peerAddress);
-            if (peerPort != null && !peerPort.equals(remotePort)) {
-                generator.writeStringField("peerport", peerPort);
-            }
-        }
-
-        // Add key/value access log entries. Keys with single values are written as single
-        // string value fields while keys with multiple values are written as string arrays
-        if (keyValues != null && !keyValues.isEmpty()) {
-            generator.writeObjectFieldStart("attributes");
-            for (Map.Entry<String,List<String>> entry : keyValues.entrySet()) {
-                if (entry.getValue().size() == 1) {
-                    generator.writeStringField(entry.getKey(), entry.getValue().get(0));
-                } else {
-                    generator.writeFieldName(entry.getKey());
-                    generator.writeStartArray();
-                    for (String s : entry.getValue()) {
-                        generator.writeString(s);
-                    }
-                    generator.writeEndArray();
+            // Only add remote address/port fields if relevant
+            if (remoteAddressDiffers(accessLogEntry.getIpV4Address(), accessLogEntry.getRemoteAddress())) {
+                generator.writeStringField("remoteaddr", accessLogEntry.getRemoteAddress());
+                if (accessLogEntry.getRemotePort() > 0) {
+                    generator.writeNumberField("remoteport", accessLogEntry.getRemotePort());
                 }
             }
-            generator.writeEndObject();
-        }
 
-        generator.writeEndObject();
-        generator.close();
+            // Only add peer address/port fields if relevant
+            if (accessLogEntry.getPeerAddress() != null) {
+                generator.writeStringField("peeraddr", accessLogEntry.getPeerAddress());
+
+                int peerPort = accessLogEntry.getPeerPort();
+                if (peerPort > 0 && peerPort != accessLogEntry.getRemotePort()) {
+                    generator.writeNumberField("peerport", peerPort);
+                }
+            }
+
+            // Add key/value access log entries. Keys with single values are written as single
+            // string value fields while keys with multiple values are written as string arrays
+            Map<String,List<String>> keyValues = accessLogEntry.getKeyValues();
+            if (keyValues != null && !keyValues.isEmpty()) {
+                generator.writeObjectFieldStart("attributes");
+                for (Map.Entry<String,List<String>> entry : keyValues.entrySet()) {
+                    if (entry.getValue().size() == 1) {
+                        generator.writeStringField(entry.getKey(), entry.getValue().get(0));
+                    } else {
+                        generator.writeFieldName(entry.getKey());
+                        generator.writeStartArray();
+                        for (String s : entry.getValue()) {
+                            generator.writeString(s);
+                        }
+                        generator.writeEndArray();
+                    }
+                }
+                generator.writeEndObject();
+            }
+
+            generator.writeEndObject();
+            generator.close();
+
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to generate JSON access log entry: " + e.getMessage());
+        }
 
         return logLine.toString();
     }
+
 
     private boolean remoteAddressDiffers(String ipV4Address, String remoteAddress) {
         return remoteAddress != null && !Objects.equals(ipV4Address, remoteAddress);
     }
 
-    private void setUserAgent(String userAgent) { this.userAgent = userAgent; }
-
-    private void setHttpMethod(String method) { this.httpMethod = method; }
-
-    private void setHttpVersion(String httpVersion) { this.httpVersion = httpVersion; }
-
-    private void setHostString(String hostString) { this.hostString = hostString; }
-
-    private void setRemoteAddress(String remoteAddress) { this.remoteAddress = remoteAddress; }
-
-    private void setPeerAddress(final String peerAddress) { this.peerAddress = peerAddress; }
-
-    private void setRemotePort(int remotePort) {
-        if (remotePort == 0) {
-            this.remotePort = null;
-        } else {
-            this.remotePort = String.valueOf(remotePort);
-        }
-    }
-
-    private void setPeerPort(int peerPort) {
-        if (peerPort == 0) {
-            this.peerPort = null;
-        } else {
-            this.peerPort = String.valueOf(peerPort);
-        }
-    }
-
-    private void setHitCounts(HitCounts counts) {
+    private long getTotalHitCount(HitCounts counts) {
         if (counts == null) {
-            return;
+            return 0;
         }
 
-        this.totalHits = String.valueOf(counts.getTotalHitCount());
-        this.retrievedHits = String.valueOf(counts.getRetrievedHitCount());
+        return counts.getTotalHitCount();
     }
 
-    private void setIpV4Address(String ipV4AddressInDotDecimalNotation) {
-        this.ipV4AddressInDotDecimalNotation = ipV4AddressInDotDecimalNotation;
+    private int getRetrievedHitCount(HitCounts counts) {
+        if (counts == null) {
+            return 0;
+        }
+
+        return counts.getRetrievedHitCount();
     }
 
-    private void setTimeStampMillis(long numMillisSince1Jan1970AtMidnightUTC) {
+    private String toTimestampWithFraction(long numMillisSince1Jan1970AtMidnightUTC) {
         int unixTime = (int)(numMillisSince1Jan1970AtMidnightUTC/1000);
         int milliSeconds = (int)(numMillisSince1Jan1970AtMidnightUTC % 1000);
 
@@ -207,10 +137,10 @@ public class JSONFormatter {
             unixTime = (int)(numMillisSince1Jan1970AtMidnightUTC/1000 % 0x7fffffff);
         }
 
-        timestampWithMillis = unixTime + "." + milliSeconds;
+        return unixTime + "." + milliSeconds;
     }
 
-    private void setDurationBetweenRequestResponseMillis(long timeInMillis) {
+    private int capDuration(long timeInMillis) {
         int duration = (int)timeInMillis;
 
         if (timeInMillis > 0xffffffffL) {
@@ -218,32 +148,17 @@ public class JSONFormatter {
             duration = 0xffffffff;
         }
 
-        durationBetweenRequestResponseInMillis = String.valueOf(duration);
+        return duration;
     }
 
-    private void setReturnedContentSize(long byteCount) {
-        numBytesReturned = String.valueOf(byteCount);
-    }
-
-    private void setURI(final URI uri) {
-        setNormalizedURI(uri.normalize());
-    }
-
-    private void setNormalizedURI(final URI normalizedUri) {
-        String uriString = normalizedUri.getPath();
-        if (normalizedUri.getRawQuery() != null) {
-            uriString = uriString + "?" + normalizedUri.getRawQuery();
+    private String getNormalizedURI(URI uri) {
+        URI normalizedURI = uri.normalize();
+        String uriString = normalizedURI.getPath();
+        if (normalizedURI.getRawQuery() != null) {
+            uriString = uriString + "?" + normalizedURI.getRawQuery();
         }
 
-        this.uri = uriString;
-    }
-
-    private void setStatusCode(int statusCode) {
-        if (statusCode == 0) {
-            return;
-        }
-
-        this.statusCode = String.valueOf(statusCode);
+        return uriString;
     }
 
 }
