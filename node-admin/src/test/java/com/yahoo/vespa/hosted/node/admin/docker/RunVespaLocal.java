@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -17,14 +16,15 @@ import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
@@ -33,38 +33,40 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
+ * Requires docker daemon, see {@link com.yahoo.vespa.hosted.dockerapi.DockerTestUtils} for more details.
+ *
  * To get started:
  *  1. Add config-server and container nodes hostnames to /etc/hosts:
  *      $ sudo ./vespa/node-admin/scripts/etc-hosts.sh
  *  2. Set environmental variables in shell or e.g. ~/.bashrc:
  *      VESPA_HOME="/home/y"
  *      VESPA_WEB_SERVICE_PORT="4080"
- *      VESPA_BASE_IMAGE="<vespa image>"
- *  3. Create /home/docker/container-storage with read/write permissions
- *  4. Update {@link RunVespaLocal#appPath} to point to the application you want deployed
- *  5. Specify base image (see below) and download it with "docker pull <image>"
+ *      VESPA_DOCKER_REGISTRY="<registry hostname>:<port>"
+ *      VESPA_PATH_TO_APP="<path to vespa app to deploy>.zip"
  *
- *  Issues:
+ * Linux only:
+ *  1. Create /home/docker/container-storage with read/write permissions
  *
+ *
+ * Issues:
  *  1. If you cannot make Docker Toolbox start, try starting Virtualbox and turn off the "default" machine
+ *  2. If the above is not enough try "sudo ifconfig vboxnet0 down && sudo ifconfig vboxnet0 up" (see https://github.com/docker/kitematic/issues/1193)
  *
  * @author freva
  */
 public class RunVespaLocal {
-    private static final DockerImage vespaBaseImage = new DockerImage(System.getenv("VESPA_BASE_IMAGE"));
+    private static final DockerImage VESPA_BASE_IMAGE = new DockerImage(
+            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/vespa-base:6.38.151");
     private static final Environment environment = new Environment(
             Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
             HostName.getLocalhost(), new InetAddressResolver());
     private static final Maintainer maintainer = mock(Maintainer.class);
-    private static Path appPath = Paths.get(System.getProperty("user.home") + "/dev/basic-search/target/application.zip");
+    private static final String PATH_TO_APP_TO_DEPLOY = System.getenv("VESPA_PATH_TO_APP");
+    private final Logger logger = Logger.getLogger("RunVespaLocal");
 
 
     @Test
-    @Ignore
     public void runVespaLocalTest() throws IOException, InterruptedException {
-        System.out.println(Defaults.getDefaults().vespaHome());
-        assumeTrue(DockerTestUtils.dockerDaemonIsPresent());
-
         DockerTestUtils.OS operatingSystem = DockerTestUtils.getSystemOS();
         if (operatingSystem == DockerTestUtils.OS.Mac_OS_X) {
             when(maintainer.pathInHostFromPathInNode(any(), any())).thenReturn(Paths.get("/tmp/"));
@@ -78,34 +80,52 @@ public class RunVespaLocal {
         });
 
         Docker docker = DockerTestUtils.getDocker();
-        LocalZoneUtils.buildVespaLocalDockerImage(docker, vespaBaseImage);
+        logger.info("Building " + LocalZoneUtils.VESPA_LOCAL_IMAGE.asString());
+        LocalZoneUtils.buildVespaLocalDockerImage(docker, VESPA_BASE_IMAGE);
+
+        logger.info("Starting config-server");
         assertTrue("Could not start config server", LocalZoneUtils.startConfigServerIfNeeded(docker, environment));
 
-        NodeAdminStateUpdater nodeAdminStateUpdater = new ComponentsProviderImpl(docker,
-                new MetricReceiverWrapper(MetricReceiver.nullImplementation),
-                new StorageMaintainerMock(maintainer, new CallOrderVerifier()),
-                environment).getNodeAdminStateUpdater();
-
-
+        logger.info("Provisioning nodes");
         try {
             Set<String> hostnames = LocalZoneUtils.provisionNodes(HostName.getLocalhost(), 5);
             for (String hostname : hostnames) {
                 try {
                     LocalZoneUtils.setState(Node.State.ready, hostname);
                 } catch (RuntimeException e) {
-                    System.err.println(e.getMessage());
+                    logger.warning(e.getMessage());
                 }
             }
         } catch (RuntimeException e) {
-            System.err.println(e.getMessage());
+            logger.warning(e.getMessage());
         }
 
-        LocalZoneUtils.prepareAppForDeployment(docker, appPath);
+        logger.info("Deploying application");
+        LocalZoneUtils.deployApp(docker, Paths.get(PATH_TO_APP_TO_DEPLOY));
 
+        logger.info("Starting node-admin");
+        NodeAdminStateUpdater nodeAdminStateUpdater = new ComponentsProviderImpl(docker,
+                new MetricReceiverWrapper(MetricReceiver.nullImplementation),
+                new StorageMaintainerMock(maintainer, new CallOrderVerifier()),
+                environment).getNodeAdminStateUpdater();
+
+        logger.info("Ready");
         while (true) {
             Thread.sleep(1000);
         }
 
+//        LocalZoneUtils.undeployApp();
 //        nodeAdminStateUpdater.deconstruct();
+    }
+
+    @Before
+    public void before() throws ExecutionException, InterruptedException {
+        assumeTrue(DockerTestUtils.dockerDaemonIsPresent());
+        Docker docker = DockerTestUtils.getDocker();
+
+        if (!docker.imageIsDownloaded(VESPA_BASE_IMAGE)) {
+            logger.info("Pulling base image (This may take a while)");
+            docker.pullImageAsync(VESPA_BASE_IMAGE).get();
+        }
     }
 }

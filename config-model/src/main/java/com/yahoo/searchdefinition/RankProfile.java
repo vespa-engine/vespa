@@ -690,6 +690,7 @@ public class RankProfile implements Serializable, Cloneable {
         expression = new ConstantDereferencer(constants).transform(expression);
         expression = new ConstantTensorTransformer(constants, rankPropertiesOutput).transform(expression);
         expression = new MacroInliner(inlineMacros).transform(expression);
+        expression = new MacroShadower(getMacros()).transform(expression);
         expression = new Simplifier().transform(expression);
         for (Map.Entry<String, String> rankProperty : rankPropertiesOutput.entrySet()) {
             addRankProperty(rankProperty.getKey(), rankProperty.getValue());

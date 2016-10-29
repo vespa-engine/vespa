@@ -1,5 +1,0 @@
-36,39d35
-< case $hname in
-<     *.*.*) ;;
-<     *) echo "The hostname must be a FQDN, was: $hname" ; exit 1 ;;
-< esac

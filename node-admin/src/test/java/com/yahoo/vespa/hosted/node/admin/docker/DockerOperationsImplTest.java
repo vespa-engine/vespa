@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
+import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
@@ -30,7 +32,8 @@ public class DockerOperationsImplTest {
                                               "parent.host.name.yahoo.com",
                                               new InetAddressResolver());
     private final Docker docker = mock(Docker.class);
-    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment, new Maintainer());
+    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment,
+            new Maintainer(), new MetricReceiverWrapper(MetricReceiver.nullImplementation));
 
     @Test
     public void absenceOfNodeProgramIsSuccess() throws Exception {

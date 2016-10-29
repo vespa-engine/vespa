@@ -358,7 +358,12 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
                                  " retrieved cluster state version " + newState.getVersion() +
                                  " which was the state we used to calculate distributor as target last time.";
                     reply.getTrace().trace(1, msg);
-                    log.log(LogLevel.WARNING, msg);
+                    // Client load can be rejected towards distributors even with a matching cluster state version.
+                    // This usually happens during a node fail-over transition, where the target distributor will
+                    // reject an operation bound to a particular bucket if it does not own the bucket in _both_
+                    // the current and the next (transition target) state. Since it can happen during normal operation
+                    // and will happen per client operation, we keep this as debug level to prevent spamming the logs.
+                    log.log(LogLevel.DEBUG, msg);
                 } else if (newState.getVersion() > context.usedState.getVersion()) {
                     if (reply.getTrace().shouldTrace(1)) {
                         reply.getTrace().trace(1, "Message sent to distributor " + context.calculatedDistributor +

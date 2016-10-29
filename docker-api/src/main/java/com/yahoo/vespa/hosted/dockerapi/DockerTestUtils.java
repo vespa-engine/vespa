@@ -10,6 +10,17 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 /**
+ * Helper class for testing full integration with docker daemon, requires running daemon. To run these tests:
+ *
+ * MAC:
+ *   1. Install Docker Toolbox, and start it (Docker Quickstart Terminal) (you can close terminal window afterwards)
+ *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.18.0.0/16 192.168.99.100
+ *
+ * GENERAL TIPS:
+ *   For cleaning up your local docker machine (DON'T DO THIS ON PROD)
+ *     docker stop $(docker ps -a -q)
+ *     docker rm $(docker ps -a -q)
+ *
  * @author freva
  */
 public class DockerTestUtils {
@@ -21,13 +32,14 @@ public class DockerTestUtils {
             .clientKeyPath( operatingSystem == OS.Mac_OS_X ? prefix + "key.pem" : "")
             .uri(           operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376")
             .connectTimeoutMillis(100)
-            .secondsToWaitBeforeKillingContainer(0));
+            .secondsToWaitBeforeKillingContainer(0)
+            .imageGCEnabled(false));
     private static DockerImpl docker;
 
     public static boolean dockerDaemonIsPresent() {
         if (docker != null) return true;
         if (operatingSystem == OS.Unsupported) {
-            System.out.println("This test does not support " + System.getProperty("os.name") + " yet, ignoring test.");
+            System.err.println("This test does not support " + System.getProperty("os.name") + " yet, ignoring test.");
             return false;
         }
 
@@ -48,6 +60,7 @@ public class DockerTestUtils {
                     false, /* fallback to 1.23 on errors */
                     false, /* try setup network */
                     new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+            createDockerTestNetworkIfNeeded(docker);
         }
 
         return docker;

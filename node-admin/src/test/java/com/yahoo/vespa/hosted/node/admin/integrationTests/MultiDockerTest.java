@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -45,19 +46,19 @@ public class MultiDockerTest {
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrder(
                     "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host1, ContainerName: ContainerName { name=container1 }",
-                    "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                    "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]",
+                    "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                    "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
                     "createContainerCommand with DockerImage: DockerImage { imageId=image2 }, HostName: host2, ContainerName: ContainerName { name=container2 }",
-                    "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                    "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]",
+                    "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                    "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
                     "stopContainer with ContainerName: ContainerName { name=container2 }",
                     "deleteContainer with ContainerName: ContainerName { name=container2 }",
 
                     "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host3, ContainerName: ContainerName { name=container3 }",
-                    "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                    "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
+                    "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                    "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
             callOrderVerifier.assertInOrderWithAssertMessage("Maintainer did not receive call to delete application storage",
                                                              "deleteContainer with ContainerName: ContainerName { name=container2 }",
@@ -96,8 +97,8 @@ public class MultiDockerTest {
 
         tester.getCallOrderVerifier().assertInOrder(
                 "createContainerCommand with DockerImage: " + dockerImage.get() + ", HostName: " + hostName + ", ContainerName: " + containerName,
-                "executeInContainer with ContainerName: " + containerName + ", args: [/usr/bin/env, test, -x, /opt/yahoo/vespa/bin/vespa-nodectl]",
-                "executeInContainer with ContainerName: " + containerName + ", args: [/opt/yahoo/vespa/bin/vespa-nodectl, resume]");
+                "executeInContainer with ContainerName: " + containerName + ", args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                "executeInContainer with ContainerName: " + containerName + ", args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
         return containerNodeSpec;
     }

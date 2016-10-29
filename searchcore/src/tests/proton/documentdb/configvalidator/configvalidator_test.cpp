@@ -23,6 +23,7 @@ const ConfigValidator::ResultType AAA = ConfigValidator::ATTRIBUTE_ASPECT_ADDED;
 const ConfigValidator::ResultType AAR = ConfigValidator::ATTRIBUTE_ASPECT_REMOVED;
 const ConfigValidator::ResultType AFAA = ConfigValidator::ATTRIBUTE_FAST_ACCESS_ADDED;
 const ConfigValidator::ResultType AFAR = ConfigValidator::ATTRIBUTE_FAST_ACCESS_REMOVED;
+const ConfigValidator::ResultType ATTC = ConfigValidator::ATTRIBUTE_TENSOR_TYPE_CHANGED;
 
 enum FType {
     INDEX,
@@ -325,24 +326,39 @@ createAttribute(const vespalib::string &name, bool fastAccess)
     return attr;
 }
 
+AttributesConfigBuilder
+createAttributesConfig(const AttributesConfigBuilder::Attribute &attribute)
+{
+    AttributesConfigBuilder result;
+    result.attribute.push_back(attribute);
+    return result;
+}
+
 TEST("require that adding attribute fast-access is discovered")
 {
-    AttributesConfigBuilder oldCfg;
-    oldCfg.attribute.push_back(createAttribute("a1", false));
-    AttributesConfigBuilder newCfg;
-    newCfg.attribute.push_back(createAttribute("a1", true));
-
-    EXPECT_EQUAL(AFAA, checkAttribute(newCfg, oldCfg));
+    EXPECT_EQUAL(AFAA, checkAttribute(createAttributesConfig(createAttribute("a1", true)),
+                                      createAttributesConfig(createAttribute("a1", false))));
 }
 
 TEST("require that removing attribute fast-access is discovered")
 {
-    AttributesConfigBuilder oldCfg;
-    oldCfg.attribute.push_back(createAttribute("a1", true));
-    AttributesConfigBuilder newCfg;
-    newCfg.attribute.push_back(createAttribute("a1", false));
+    EXPECT_EQUAL(AFAR, checkAttribute(createAttributesConfig(createAttribute("a1", false)),
+                                      createAttributesConfig(createAttribute("a1", true))));
+}
 
-    EXPECT_EQUAL(AFAR, checkAttribute(newCfg, oldCfg));
+AttributesConfigBuilder::Attribute
+createTensorAttribute(const vespalib::string &name, const vespalib::string &tensorType)
+{
+    AttributesConfigBuilder::Attribute attr;
+    attr.name = name;
+    attr.tensortype = tensorType;
+    return attr;
+}
+
+TEST("require that changing attribute tensor type is discovered")
+{
+    EXPECT_EQUAL(ATTC, checkAttribute(createAttributesConfig(createTensorAttribute("a1", "tensor(x[10])")),
+                                      createAttributesConfig(createTensorAttribute("a1", "tensor(x[11])"))));
 }
 
 TEST_MAIN()

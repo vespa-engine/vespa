@@ -21,6 +21,7 @@ SingleValueEnumAttribute(const vespalib::string &baseFileName,
 template <typename B>
 SingleValueEnumAttribute<B>::~SingleValueEnumAttribute()
 {
+    getGenerationHolder().clearHoldLists();
 }
 
 template <typename B>

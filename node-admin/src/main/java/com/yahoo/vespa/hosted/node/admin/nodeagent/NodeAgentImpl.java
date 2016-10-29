@@ -282,7 +282,8 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void stopServices(ContainerName containerName) throws Exception {
+    @Override
+    public void stopServices(ContainerName containerName) throws Exception {
             logger.info("Stopping services for " + containerName);
             dockerOperations.stopServicesOnNode(containerName);
     }
@@ -466,10 +467,10 @@ public class NodeAgentImpl implements NodeAgent {
         }
 
         if (nodeSpec == null || nodeSpec.nodeState != Node.State.active) return;
-        final Optional<Container> container = dockerOperations.getContainer(nodeSpec.hostname);
-        if ( ! container.isPresent() || ! container.get().isRunning ) return;
+        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(nodeSpec.containerName);
+        if ( ! containerStats.isPresent()) return;
 
-        Docker.ContainerStats stats = dockerOperations.getContainerStats(nodeSpec.containerName);
+        Docker.ContainerStats stats = containerStats.get();
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", hostname)
                 .add("role", "tenants")

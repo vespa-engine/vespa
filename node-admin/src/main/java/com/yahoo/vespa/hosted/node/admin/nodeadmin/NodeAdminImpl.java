@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
@@ -10,15 +11,13 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -45,16 +44,12 @@ public class NodeAdminImpl implements NodeAdmin {
     private static final PrefixLogger logger = PrefixLogger.getNodeAdminLogger(NodeAdmin.class);
     private final ScheduledExecutorService metricsFetcherScheduler = Executors.newScheduledThreadPool(1);
 
-    private static final long MIN_AGE_IMAGE_GC_MILLIS = Duration.ofMinutes(15).toMillis();
-
-    private final Docker docker;
+    private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final StorageMaintainer storageMaintainer;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
     private final Map<String, NodeAgent> nodeAgents = new HashMap<>();
-
-    private Map<DockerImage, Long> firstTimeEligibleForGC = Collections.emptyMap();
 
     private final int nodeAgentScanIntervalMillis;
 
@@ -62,14 +57,10 @@ public class NodeAdminImpl implements NodeAdmin {
     private GaugeWrapper numberOfContainersInLoadImageState;
     private CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
-    /**
-     * @param docker interface to docker daemon and docker-related tasks
-     * @param nodeAgentFactory factory for {@link NodeAgent} objects
-     */
-    public NodeAdminImpl(final Docker docker, final Function<String, NodeAgent> nodeAgentFactory,
+    public NodeAdminImpl(final DockerOperations dockerOperations, final Function<String, NodeAgent> nodeAgentFactory,
                          final StorageMaintainer storageMaintainer, int nodeAgentScanIntervalMillis,
                          final MetricReceiverWrapper metricReceiver) {
-        this.docker = docker;
+        this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
         this.nodeAgentScanIntervalMillis = nodeAgentScanIntervalMillis;
@@ -92,11 +83,11 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
-        final List<Container> existingContainers = docker.getAllManagedContainers();
+        final List<Container> existingContainers = dockerOperations.getAllManagedContainers();
 
         storageMaintainer.cleanNodeAdmin();
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
-        garbageCollectDockerImages(containersToRun);
+        dockerOperations.deleteUnusedDockerImages();
 
         updateNodeAgentMetrics();
     }
@@ -146,6 +137,28 @@ public class NodeAdminImpl implements NodeAdmin {
         this.frozen.set(frozen);
     }
 
+    @Override
+    public Optional<String> stopServices(List<String> nodes) {
+        if ( ! isFrozen()) {
+            return Optional.of("Node admin is not frozen");
+        }
+        for (NodeAgent nodeAgent : nodeAgents.values()) {
+            try {
+                final Optional<ContainerNodeSpec> containerNodeSpec = nodeAgent.getContainerNodeSpec();
+                if (containerNodeSpec.isPresent() && nodes.contains(containerNodeSpec.get().hostname)) {
+                    final ContainerName containerName = containerNodeSpec.get().containerName;
+
+                    if ( ! isFrozen()) return Optional.of("Node agent for " + containerName + " is not frozen");
+
+                    nodeAgent.stopServices(containerName);
+                }
+            } catch (Exception e) {
+                return Optional.of(e.getMessage());
+            }
+        }
+        return Optional.empty();
+    }
+
     public Set<String> getListOfHosts() {
         return nodeAgents.keySet();
     }
@@ -175,23 +188,6 @@ public class NodeAdminImpl implements NodeAdmin {
         for (NodeAgent nodeAgent : nodeAgents.values()) {
             nodeAgent.stop();
         }
-    }
-
-    private void garbageCollectDockerImages(final List<ContainerNodeSpec> containersToRun) {
-        final long currentTime = System.currentTimeMillis();
-        Set<DockerImage> imagesToSpare = containersToRun.stream()
-                .flatMap(nodeSpec -> streamOf(nodeSpec.wantedDockerImage))
-                .filter(image -> currentTime - firstTimeEligibleForGC.getOrDefault(image, currentTime) > MIN_AGE_IMAGE_GC_MILLIS)
-                .collect(Collectors.toSet());
-
-        docker.deleteUnusedDockerImages(imagesToSpare);
-    }
-
-    // Turns an Optional<T> into a Stream<T> of length zero or one depending upon whether a value is present.
-    // This is a workaround for Java 8 not having Stream.flatMap(Optional).
-    private static <T> Stream<T> streamOf(Optional<T> opt) {
-        return opt.map(Stream::of)
-                .orElseGet(Stream::empty);
     }
 
     // Set-difference. Returns minuend minus subtrahend.

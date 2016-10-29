@@ -4,10 +4,12 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.attribute_config_validator");
 #include "attribute_config_validator.h"
+#include <vespa/vespalib/eval/value_type.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespa::config::search::AttributesConfig;
 using vespalib::make_string;
+using vespalib::eval::ValueType;
 
 namespace proton {
 
@@ -49,6 +51,24 @@ checkFastAccessRemoved(const AttributesConfig &newCfg,
     return checkFastAccess(oldCfg, newCfg, CV::ATTRIBUTE_FAST_ACCESS_REMOVED, "remove");
 }
 
+CV::Result
+checkTensorTypeChanged(const AttributesConfig &newCfg,
+                       const AttributesConfig &oldCfg)
+{
+    for (const auto &newAttr : newCfg.attribute) {
+        for (const auto &oldAttr : oldCfg.attribute) {
+            if ((newAttr.name == oldAttr.name) &&
+                (ValueType::from_spec(newAttr.tensortype) != ValueType::from_spec(oldAttr.tensortype)))
+            {
+                return CV::Result(CV::ATTRIBUTE_TENSOR_TYPE_CHANGED,
+                                  make_string("Tensor type has changed from '%s' -> '%s' for attribute '%s'",
+                                              oldAttr.tensortype.c_str(), newAttr.tensortype.c_str(), newAttr.name.c_str()));
+            }
+        }
+    }
+    return CV::Result();
+}
+
 }
 
 CV::Result
@@ -58,6 +78,7 @@ AttributeConfigValidator::validate(const AttributesConfig &newCfg,
     CV::Result res;
     if (!(res = checkFastAccessAdded(newCfg, oldCfg)).ok()) return res;
     if (!(res = checkFastAccessRemoved(newCfg, oldCfg)).ok()) return res;
+    if (!(res = checkTensorTypeChanged(newCfg, oldCfg)).ok()) return res;
     return CV::Result();
 }
 

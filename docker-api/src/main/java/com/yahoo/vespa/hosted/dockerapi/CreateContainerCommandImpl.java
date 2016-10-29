@@ -51,6 +51,11 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         return this;
     }
 
+    public Docker.CreateContainerCommand withManagedBy(String manager) {
+        labels.put(DockerImpl.LABEL_NAME_MANAGEDBY, manager);
+        return this;
+    }
+
     @Override
     public Docker.CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit) {
         ulimits.add(new Ulimit(name, softLimit, hardLimit));

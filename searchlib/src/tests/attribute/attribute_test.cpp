@@ -233,6 +233,12 @@ private:
     void requireThatAddressSpaceUsageIsReported(const Config &config);
     void requireThatAddressSpaceUsageIsReported();
 
+    template <typename VectorType, typename BufferType>
+    void testReaderDuringLastUpdate(const Config &config, bool fastSearch, bool compact);
+    template <typename VectorType, typename BufferType>
+    void testReaderDuringLastUpdate(const Config &config);
+    void testReaderDuringLastUpdate();
+
 public:
     AttributeTest() { }
     int Main();
@@ -2173,6 +2179,72 @@ AttributeTest::requireThatAddressSpaceUsageIsReported()
     TEST_DO(requireThatAddressSpaceUsageIsReported<StringAttribute>(Config(BasicType::STRING, CollectionType::ARRAY)));
 }
 
+
+template <typename AttributeType, typename BufferType>
+void
+AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool compact)
+{
+    vespalib::asciistream ss;
+    ss << "fill-" << config.basicType().asString() << "-" <<
+        config.collectionType().asString() <<
+        (fs ? "-fs" : "") <<
+        (compact ? "-compact" : "");
+    vespalib::string name(ss.str());
+    Config cfg = config;
+    cfg.setFastSearch(fs);
+    cfg.setGrowStrategy(GrowStrategy(100, 50, 0));
+
+    LOG(info, "testReaderDuringLastUpdate(%s)", name.c_str());
+    AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
+    AttributeType &v = static_cast<AttributeType &>(*attr.get());
+    constexpr uint32_t numDocs = 200;
+    AttributeGuard guard;
+    if (!compact) {
+        // Hold read guard while populating attribute to keep data on hold list
+        guard = AttributeGuard(attr);
+    }
+    addDocs(attr, numDocs);
+    populate(v, numDocs);
+    if (compact) {
+        for (uint32_t i = 4; i < numDocs; ++i) {
+            attr->clearDoc(i);
+        }
+        attr->commit();
+        attr->incGeneration();
+        attr->compactLidSpace(4);
+        attr->commit();
+        attr->incGeneration();
+        // Hold read guard when shrinking lid space to keep data on hold list
+        guard = AttributeGuard(attr);
+        attr->shrinkLidSpace();
+    }
+}
+
+
+template <typename AttributeType, typename BufferType>
+void
+AttributeTest::testReaderDuringLastUpdate(const Config &config)
+{
+    testReaderDuringLastUpdate<AttributeType, BufferType>(config, false, false);
+    testReaderDuringLastUpdate<AttributeType, BufferType>(config, true, false);
+    testReaderDuringLastUpdate<AttributeType, BufferType>(config, false, true);
+    testReaderDuringLastUpdate<AttributeType, BufferType>(config, true, true);
+}
+
+void
+AttributeTest::testReaderDuringLastUpdate()
+{
+    TEST_DO((testReaderDuringLastUpdate<IntegerAttribute,AttributeVector::largeint_t>(Config(BasicType::INT32, CollectionType::SINGLE))));
+    TEST_DO((testReaderDuringLastUpdate<IntegerAttribute,AttributeVector::largeint_t>(Config(BasicType::INT32, CollectionType::ARRAY))));
+    TEST_DO((testReaderDuringLastUpdate<IntegerAttribute,AttributeVector::WeightedInt>(Config(BasicType::INT32, CollectionType::WSET))));
+    TEST_DO((testReaderDuringLastUpdate<FloatingPointAttribute,double>(Config(BasicType::FLOAT, CollectionType::SINGLE))));
+    TEST_DO((testReaderDuringLastUpdate<FloatingPointAttribute,double>(Config(BasicType::FLOAT, CollectionType::ARRAY))));
+    TEST_DO((testReaderDuringLastUpdate<FloatingPointAttribute,FloatingPointAttribute::WeightedFloat>(Config(BasicType::FLOAT, CollectionType::WSET))));
+    TEST_DO((testReaderDuringLastUpdate<StringAttribute,vespalib::string>(Config(BasicType::STRING, CollectionType::SINGLE))));
+    TEST_DO((testReaderDuringLastUpdate<StringAttribute,vespalib::string>(Config(BasicType::STRING, CollectionType::ARRAY))));
+    TEST_DO((testReaderDuringLastUpdate<StringAttribute,StringAttribute::WeightedString>(Config(BasicType::STRING, CollectionType::WSET))));
+}
+
 void
 deleteDataDirs()
 {
@@ -2216,6 +2288,7 @@ int AttributeTest::Main()
     testCreateSerialNum();
     TEST_DO(testCompactLidSpace());
     TEST_DO(requireThatAddressSpaceUsageIsReported());
+    testReaderDuringLastUpdate();
 
     deleteDataDirs();
     TEST_DONE();

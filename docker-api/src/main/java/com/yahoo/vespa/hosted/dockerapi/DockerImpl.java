@@ -8,6 +8,8 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
@@ -24,7 +26,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,20 +43,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import static com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator.NetworkAddressInterface;
 
 
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
-    private static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
-    private static final String LABEL_VALUE_MANAGEDBY = "node-admin";
+    static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
 
     private final int SECONDS_TO_WAIT_BEFORE_KILLING;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
@@ -68,8 +69,9 @@ public class DockerImpl implements Docker {
     // Exposed for testing.
     DockerClient dockerClient;
 
-    private GaugeWrapper numberOfRunningContainersGauge;
     private CounterWrapper numberOfDockerDaemonFails;
+
+    private Optional<DockerImageGarbageCollector> dockerImageGC = Optional.empty();
 
     // For testing
     DockerImpl(final DockerClient dockerClient) {
@@ -82,6 +84,11 @@ public class DockerImpl implements Docker {
             boolean fallbackTo123OnErrors,
             boolean trySetupNetwork,
             MetricReceiverWrapper metricReceiverWrapper) {
+        if (config.imageGCEnabled()) {
+            Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
+            dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
+        }
+
         SECONDS_TO_WAIT_BEFORE_KILLING = config.secondsToWaitBeforeKillingContainer();
 
         initDockerConnection(config, fallbackTo123OnErrors);
@@ -154,7 +161,6 @@ public class DockerImpl implements Docker {
                 .withHostResource(sourcePath).withRemotePath(destinationPath).exec();
     }
 
-
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(final DockerImage image) {
         final CompletableFuture<DockerImage> completionListener;
@@ -181,11 +187,13 @@ public class DockerImpl implements Docker {
      */
     @Override
     public boolean imageIsDownloaded(final DockerImage dockerImage) {
+        return inspectImage(dockerImage).isPresent();
+    }
+
+    private Optional<Image> inspectImage(DockerImage dockerImage) {
         try {
-            List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
-            return images.stream().
-                    flatMap(image -> Arrays.stream(image.getRepoTags())).
-                    anyMatch(tag -> tag.equals(dockerImage.asString()));
+            return dockerClient.listImagesCmd().withShowAll(true)
+                    .withImageNameFilter(dockerImage.asString()).exec().stream().findFirst();
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to list image name: '" + dockerImage + "'", e);
@@ -194,8 +202,7 @@ public class DockerImpl implements Docker {
 
     @Override
     public CreateContainerCommand createContainerCommand(DockerImage image, ContainerName name, String hostName) {
-        return new CreateContainerCommandImpl(dockerClient, image, name, hostName)
-                .withLabel(LABEL_NAME_MANAGEDBY, LABEL_VALUE_MANAGEDBY);
+        return new CreateContainerCommandImpl(dockerClient, image, name, hostName);
     }
 
     @Override
@@ -238,24 +245,34 @@ public class DockerImpl implements Docker {
         }
     }
 
-    @Override
-    public ContainerInfo inspectContainer(ContainerName containerName) {
+    private Optional<InspectContainerResponse> inspectContainerCmd(String container) {
         try {
-            InspectContainerResponse containerInfo = dockerClient.inspectContainerCmd(containerName.asString()).exec();
-            return new ContainerInfoImpl(containerName, containerInfo);
+            return Optional.of(dockerClient.inspectContainerCmd(container).exec());
+        } catch (NotFoundException ignored) {
+            return Optional.empty();
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to get container info", e);
         }
     }
 
-    public ContainerStats getContainerStats(ContainerName containerName) {
-        try {
-             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
-             statsCallback.awaitCompletion(10, TimeUnit.SECONDS);
+    @Override
+    public Optional<ContainerInfo> inspectContainer(ContainerName containerName) {
+        Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(containerName.asString());
+        if (! inspectResponse.isPresent()) return Optional.empty();
+        else return Optional.of(new ContainerInfoImpl(containerName, inspectResponse.get()));
+    }
 
-            return new ContainerStatsImpl(statsCallback.stats.getNetworks(), statsCallback.stats.getCpuStats(),
-                    statsCallback.stats.getMemoryStats(), statsCallback.stats.getBlkioStats());
+    @Override
+    public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
+        try {
+            DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
+            statsCallback.awaitCompletion(10, TimeUnit.SECONDS);
+
+            return Optional.of(new ContainerStatsImpl(statsCallback.stats.getNetworks(), statsCallback.stats.getCpuStats(),
+                    statsCallback.stats.getMemoryStats(), statsCallback.stats.getBlkioStats()));
+        } catch (NotFoundException ignored) {
+            return Optional.empty();
         } catch (DockerException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to get container stats", e);
@@ -264,105 +281,85 @@ public class DockerImpl implements Docker {
 
     @Override
     public void startContainer(ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
-        if (dockerContainer.isPresent()) {
-            try {
-                dockerClient.startContainerCmd(dockerContainer.get().getId()).exec();
-                numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
-            } catch (DockerException e) {
-                numberOfDockerDaemonFails.add();
-                throw new RuntimeException("Failed to start container", e);
-            }
+        try {
+            dockerClient.startContainerCmd(containerName.asString()).exec();
+        } catch(NotFoundException | NotModifiedException ignored) {
+            // If container doesn't exist or is already started, ignore
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to start container", e);
         }
     }
 
     @Override
     public void stopContainer(final ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
-        if (dockerContainer.isPresent()) {
-            try {
-                dockerClient.stopContainerCmd(dockerContainer.get().getId()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
-            } catch (DockerException e) {
-                numberOfDockerDaemonFails.add();
-                throw new RuntimeException("Failed to stop container", e);
-            }
+        try {
+            dockerClient.stopContainerCmd(containerName.asString()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
+        } catch(NotFoundException | NotModifiedException ignored) {
+            // If container doesn't exist or is already stopped, ignore
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to stop container", e);
         }
     }
 
     @Override
     public void deleteContainer(ContainerName containerName) {
-        Optional<com.github.dockerjava.api.model.Container> dockerContainer = getContainerFromName(containerName, true);
-        if (dockerContainer.isPresent()) {
-            try {
-                dockerClient.removeContainerCmd(dockerContainer.get().getId()).exec();
-                numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
-            } catch (DockerException e) {
-                numberOfDockerDaemonFails.add();
-                throw new RuntimeException("Failed to delete container", e);
-            }
+        try {
+            dockerImageGC.ifPresent(imageGC -> {
+                Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(containerName.asString());
+                if (inspectResponse.isPresent()) imageGC.updateLastUsedTimeFor(inspectResponse.get().getImageId());
+            });
+
+            dockerClient.removeContainerCmd(containerName.asString()).exec();
+        } catch(NotFoundException ignored) {
+            // If container doesn't exist ignore
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to delete container", e);
         }
     }
 
     @Override
-    public List<Container> getAllManagedContainers() {
+    public List<Container> getAllContainersManagedBy(String manager) {
         try {
             return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
-                    .filter(this::isManaged)
+                    .filter(container -> isManagedBy(container, manager))
                     .flatMap(this::asContainer)
                     .collect(Collectors.toList());
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Could not retrieve all container", e);
+            throw new RuntimeException("Could not retrieve all containers", e);
         }
     }
 
     @Override
     public Optional<Container> getContainer(String hostname) {
-        // TODO Don't rely on getAllManagedContainers
-        return getAllManagedContainers().stream()
-                .filter(c -> Objects.equals(hostname, c.hostname))
-                .findFirst();
+        try {
+            return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
+                    .flatMap(this::asContainer)
+                    .filter(c -> Objects.equals(hostname, c.hostname))
+                    .findFirst();
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Could not retrieve all containers", e);
+        }
     }
 
     private Stream<Container> asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
-        try {
-            final InspectContainerResponse response = dockerClient.inspectContainerCmd(dockerClientContainer.getId()).exec();
-            return Stream.of(new Container(
-                    response.getConfig().getHostName(),
-                    new DockerImage(dockerClientContainer.getImage()),
-                    new ContainerName(decode(response.getName())),
-                    response.getState().getRunning()));
-        } catch (DockerException e) {
-            numberOfDockerDaemonFails.add();
-            //TODO: do proper exception handling
-            throw new RuntimeException("Failed talking to docker daemon", e);
-        }
+        Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(dockerClientContainer.getId());
+        if (! inspectResponse.isPresent()) return Stream.empty();
+        return Stream.of(new Container(
+                inspectResponse.get().getConfig().getHostName(),
+                new DockerImage(inspectResponse.get().getConfig().getImage()),
+                new ContainerName(decode(inspectResponse.get().getName())),
+                inspectResponse.get().getState().getRunning()));
     }
 
-
-    private Optional<com.github.dockerjava.api.model.Container> getContainerFromName(
-            final ContainerName containerName, final boolean alsoGetStoppedContainers) {
-        try {
-            return dockerClient.listContainersCmd().withShowAll(alsoGetStoppedContainers).exec().stream()
-                    .filter(this::isManaged)
-                    .filter(container -> matchName(container, containerName.asString()))
-                    .findFirst();
-        } catch (DockerException e) {
-            throw new RuntimeException("Failed to get container from name", e);
-        }
-    }
-
-    private boolean isManaged(final com.github.dockerjava.api.model.Container container) {
+    private boolean isManagedBy(final com.github.dockerjava.api.model.Container container, String manager) {
         final Map<String, String> labels = container.getLabels();
-        if (labels == null) {
-            return false;
-        }
+        return labels != null && manager.equals(labels.get(LABEL_NAME_MANAGEDBY));
 
-        return LABEL_VALUE_MANAGEDBY.equals(labels.get(LABEL_NAME_MANAGEDBY));
-    }
-
-    private boolean matchName(com.github.dockerjava.api.model.Container container, String targetName) {
-        return Arrays.stream(container.getNames()).anyMatch(encodedName -> decode(encodedName).equals(targetName));
     }
 
     private String decode(String encodedContainerName) {
@@ -373,6 +370,8 @@ public class DockerImpl implements Docker {
     public void deleteImage(final DockerImage dockerImage) {
         try {
             dockerClient.removeImageCmd(dockerImage.asString()).exec();
+        } catch (NotFoundException ignored) {
+            // Image was already deleted, ignore
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to delete docker image " + dockerImage.asString(), e);
@@ -383,93 +382,21 @@ public class DockerImpl implements Docker {
     public void buildImage(File dockerfile, DockerImage image) {
         try {
             dockerClient.buildImageCmd(dockerfile).withTag(image.asString())
-                    .exec(new BuildImageResultCallback()).awaitCompletion();
-        } catch (DockerException | InterruptedException e) {
+                    .exec(new BuildImageResultCallback()).awaitImageId();
+        } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
             throw new RuntimeException("Failed to build image " + image.asString(), e);
         }
     }
 
-    private Map<String, Image> filterOutImagesUsedByContainers(
-            Map<String, Image> dockerImagesByImageId, List<com.github.dockerjava.api.model.Container> containerList) {
-        Map<String, Image> filteredDockerImagesByImageId = new HashMap<>(dockerImagesByImageId);
-
-        for (com.github.dockerjava.api.model.Container container : containerList) {
-            String imageToSpare = container.getImageId();
-            do {
-                // May be null if two images have have the same parent, the first image will remove the parent, the
-                // second will get null.
-                Image sparedImage = filteredDockerImagesByImageId.remove(imageToSpare);
-                imageToSpare = sparedImage == null ? "" : sparedImage.getParentId();
-            } while (!imageToSpare.isEmpty());
-        }
-
-        return filteredDockerImagesByImageId;
-    }
-
-    private Map<String, Image> filterOutExceptImages(Map<String, Image> dockerImagesByImageId, Set<DockerImage> except) {
-        Map<String, Image> dockerImageByImageTags = new HashMap<>();
-        // Transform map of image ID:image to map of image tag:image (for each tag the image has)
-        for (Map.Entry<String, Image> entry : dockerImagesByImageId.entrySet()) {
-            String[] repoTags = entry.getValue().getRepoTags();
-            // If no tags present, fall back to image ID
-            if (repoTags == null) {
-                dockerImageByImageTags.put(entry.getKey(), entry.getValue());
-            } else {
-                for (String tag : repoTags) {
-                    dockerImageByImageTags.put(tag, entry.getValue());
-                }
-            }
-        }
-
-        // Remove images we want to keep from the map of unused images, also recursively keep the parents of images we want to keep
-        except.forEach(image -> {
-            String imageToSpare = image.asString();
-            do {
-                Image sparedImage = dockerImageByImageTags.remove(imageToSpare);
-                imageToSpare = sparedImage == null ? "" : sparedImage.getParentId();
-            } while (!imageToSpare.isEmpty());
-        });
-        return dockerImageByImageTags;
-    }
-
-    /**
-     * Generates lists of images that are safe to delete, in the order that is safe to delete them (children before
-     * parents). The function starts with a map of all images and the filters out images that are used now or will be
-     * used in near future (through the use of except set).
-     *
-     * @param except set of image tags to keep, regardless whether they are being used right now or not.
-     * @return List of image tags of unused images, if unused image has no tag, will return image ID instead.
-     */
-    List<DockerImage> getUnusedDockerImages(Set<DockerImage> except) {
-        List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
-        Map<String, Image> dockerImageByImageId = images.stream().collect(Collectors.toMap(Image::getId, img -> img));
-
-        List<com.github.dockerjava.api.model.Container> containers = dockerClient.listContainersCmd().withShowAll(true).exec();
-        Map<String, Image> unusedImagesByContainers = filterOutImagesUsedByContainers(dockerImageByImageId, containers);
-        Map<String, Image> unusedImagesByExcept = filterOutExceptImages(unusedImagesByContainers, except);
-
-        List<String> unusedImages = unusedImagesByExcept.keySet().stream().collect(Collectors.toList());
-        // unusedImages now contains all the unused images, all we need to do now is to order them in a way that is
-        // safe to delete with. The order is:
-        Collections.sort(unusedImages, (o1, o2) -> {
-            Image image1 = unusedImagesByExcept.get(o1);
-            Image image2 = unusedImagesByExcept.get(o2);
-
-            // If image2 is parent of image1, image1 comes before image2
-            if (Objects.equals(image1.getParentId(), image2.getId())) return -1;
-            // If image1 is parent of image2, image2 comes before image1
-            else if (Objects.equals(image2.getParentId(), image1.getId())) return 1;
-            // Otherwise, sort lexicographically by image name (For testing)
-            else return o1.compareTo(o2);
-        });
-
-        return unusedImages.stream().map(DockerImage::new).collect(Collectors.toList());
-    }
-
     @Override
-    public void deleteUnusedDockerImages(Set<DockerImage> except) {
-        getUnusedDockerImages(except).forEach(this::deleteImage);
+    public void deleteUnusedDockerImages() {
+        if (! dockerImageGC.isPresent()) return;
+
+        List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
+        List<com.github.dockerjava.api.model.Container> containers = dockerClient.listContainersCmd().withShowAll(true).exec();
+
+        dockerImageGC.get().getUnusedDockerImages(images, containers).forEach(this::deleteImage);
     }
 
     private class ImagePullCallback extends PullImageResultCallback {
@@ -487,7 +414,9 @@ public class DockerImpl implements Docker {
 
         @Override
         public void onComplete() {
-            if (imageIsDownloaded(dockerImage)) {
+            Optional<Image> image = inspectImage(dockerImage);
+            if (image.isPresent()) { // Download successful, update image GC with the newly downloaded image
+                dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(image.get().getId()));
                 removeScheduledPoll(dockerImage).complete(dockerImage);
             } else {
                 removeScheduledPoll(dockerImage).completeExceptionally(
@@ -545,10 +474,6 @@ public class DockerImpl implements Docker {
                 .add("host", HostName.getLocalhost())
                 .add("role", "docker").build();
 
-        numberOfRunningContainersGauge = metricReceiver.declareGauge(dimensions, "containers.running");
         numberOfDockerDaemonFails = metricReceiver.declareCounter(dimensions, "daemon.api_fails");
-
-        // Some containers could already be running, count them and initialize to that value
-        numberOfRunningContainersGauge.sample(getAllManagedContainers().size());
     }
 }

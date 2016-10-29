@@ -103,6 +103,8 @@ TOKEN :
     <IN: "in"> |
     <SUM: "sum"> |
     <MATCH: "match"> |
+    <RELU: "relu"> |
+    <SIGMOID: "sigmoid"> |
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
 }
 
@@ -352,7 +354,9 @@ Function unaryFunctionName() : { }
     <CEIL>    { return Function.ceil;    } |
     <FABS>    { return Function.fabs;    } |
     <FLOOR>   { return Function.floor;   } |
-    <ISNAN>   { return Function.isNan;   }
+    <ISNAN>   { return Function.isNan;   } |
+    <RELU>    { return Function.relu;    } |
+    <SIGMOID> { return Function.sigmoid; }
 }
 
 Function binaryFunctionName() : { }

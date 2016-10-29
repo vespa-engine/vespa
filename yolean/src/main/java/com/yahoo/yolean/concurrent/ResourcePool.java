@@ -1,5 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.collections;
+package com.yahoo.yolean.concurrent;
+
+import com.yahoo.yolean.concurrent.ResourceFactory;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -10,10 +12,8 @@ import java.util.Iterator;
  * factory.</p>
  *
  * @author baldersheim
- * TODO: remove on vespa 7 or before
- * Use com.yahoo.yolean.concurrent.ResourceFactory instead.
+ * @since 5.2
  */
-@Deprecated
 public final class ResourcePool<T> implements Iterable<T> {
 
     private final Deque<T> pool = new ArrayDeque<>();
