@@ -27,6 +27,7 @@ public class AccessLogBuilder {
     private enum AccessLogTypeLiteral {
         VESPA("vespa"),
         YAPACHE("yapache"),
+        JSON("json"),
         DISABLED("disabled");
 
         final String attributeValue;
@@ -89,6 +90,8 @@ public class AccessLogBuilder {
                 return Optional.of(new DomBuilder(AccessLogType.queryAccessLog).build(cluster, accessLogSpec));
             case YAPACHE:
                 return Optional.of(new DomBuilder(AccessLogType.yApacheAccessLog).build(cluster, accessLogSpec));
+            case JSON:
+                return Optional.of(new DomBuilder(AccessLogType.jsonAccessLog).build(cluster, accessLogSpec));
             default:
                 throw new InconsistentSchemaAndCodeError();
         }

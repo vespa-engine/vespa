@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.component;
 import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.container.logging.VespaAccessLog;
 import com.yahoo.container.logging.YApacheAccessLog;
+import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
@@ -17,7 +18,7 @@ import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme;
 public final class AccessLogComponent extends SimpleComponent implements AccessLogConfig.Producer {
 
 
-    public enum AccessLogType { queryAccessLog, yApacheAccessLog }
+    public enum AccessLogType { queryAccessLog, yApacheAccessLog, jsonAccessLog }
 
     private final String fileNamePattern;
     private final String rotationInterval;
@@ -55,6 +56,8 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                 return YApacheAccessLog.class.getName();
             case queryAccessLog:
                 return VespaAccessLog.class.getName();
+            case jsonAccessLog:
+                return JSONAccessLog.class.getName();
             default:
                 throw new AssertionError();
         }
