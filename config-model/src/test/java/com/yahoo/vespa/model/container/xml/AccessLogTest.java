@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.container.core.AccessLogConfig;
+import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
 import com.yahoo.container.logging.YApacheAccessLog;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -12,10 +13,9 @@ import org.junit.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.text.StringUtilities.quote;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -70,20 +70,37 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
                 "  <accesslog type='yapache' ",
                 "             fileNamePattern='pattern' rotationInterval='interval'",
                 "             rotationScheme='date' />",
+                "  <accesslog type='json' ",
+                "             fileNamePattern='pattern' rotationInterval='interval'",
+                "             rotationScheme='date' />",
                 nodesXml,
                 "</jdisc>" );
 
         createModel(root, clusterElem);
 
-        Component<?, ?> accessLogComponent = getContainerComponent("default", YApacheAccessLog.class.getName());
-        assertNotNull(accessLogComponent);
-        assertThat(accessLogComponent.getClassId().getName(), is(YApacheAccessLog.class.getName()));
+        { // yapache
+            Component<?, ?> accessLogComponent = getContainerComponent("default", YApacheAccessLog.class.getName());
+            assertNotNull(accessLogComponent);
+            assertEquals(YApacheAccessLog.class.getName(), accessLogComponent.getClassId().getName(), YApacheAccessLog.class.getName());
+            AccessLogConfig config = root.getConfig(AccessLogConfig.class, "default/component/com.yahoo.container.logging.YApacheAccessLog");
+            AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
+            assertEquals("pattern", fileHandlerConfig.pattern());
+            assertEquals("interval", fileHandlerConfig.rotation());
+            assertEquals(AccessLogConfig.FileHandler.RotateScheme.DATE, fileHandlerConfig.rotateScheme());
+        }
 
-        AccessLogConfig config = root.getConfig(AccessLogConfig.class, "default/component/com.yahoo.container.logging.YApacheAccessLog");
-        AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
-        assertThat(fileHandlerConfig.pattern(), is("pattern"));
-        assertThat(fileHandlerConfig.rotation(), is("interval"));
-        assertThat(fileHandlerConfig.rotateScheme(), is(AccessLogConfig.FileHandler.RotateScheme.DATE));
+        { // json
+            Component<?, ?> accessLogComponent = getContainerComponent("default", JSONAccessLog.class.getName());
+            assertNotNull(accessLogComponent);
+            assertEquals(JSONAccessLog.class.getName(), accessLogComponent.getClassId().getName(), JSONAccessLog.class.getName());
+            AccessLogConfig config = root.getConfig(AccessLogConfig.class, "default/component/com.yahoo.container.logging.JSONAccessLog");
+            AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
+            assertEquals("pattern", fileHandlerConfig.pattern());
+            assertEquals("interval", fileHandlerConfig.rotation());
+            assertEquals(AccessLogConfig.FileHandler.RotateScheme.DATE, fileHandlerConfig.rotateScheme());
+        }
+
+
 
     }
 
