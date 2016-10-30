@@ -129,7 +129,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         long sessionId = session.getSessionId();
         validateSessionStatus(session);
         try {
+            log.log(LogLevel.INFO, "Trying to acquire lock: " + activateLock);
             activateLock.acquire(timeoutBudget, ignoreLockFailure);
+            log.log(LogLevel.INFO, "Lock acquired: " + activateLock);
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(localSessionRepo.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
@@ -146,7 +148,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         } catch (Exception e) {
             throw new InternalServerException("Error activating application", e);
         } finally {
+            log.log(LogLevel.INFO, "Trying to release lock: " + activateLock);
             activateLock.release();
+            log.log(LogLevel.INFO, "Lock released: " + activateLock);
         }
         log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
                                " activated successfully using " +

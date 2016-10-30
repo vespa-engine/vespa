@@ -39,4 +39,9 @@ public class ActivateLock {
         }
     }
 
+    @Override
+    public String toString() {
+        return "ActivateLock (" + curatorLock + "), has lock: " + curatorLock.hasLock();
+    }
+
 }
