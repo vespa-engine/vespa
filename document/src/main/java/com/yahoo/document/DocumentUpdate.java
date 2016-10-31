@@ -42,7 +42,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     private List<FieldUpdate> fieldUpdates;
     private List<FieldPathUpdate> fieldPathUpdates;
     private DocumentType documentType;
-    private Optional<Boolean> createIfNonExistent;
+    private Optional<Boolean> createIfNonExistent = Optional.empty();
 
     /**
      * Creates a DocumentUpdate.
