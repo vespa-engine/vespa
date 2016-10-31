@@ -112,11 +112,8 @@ SearchView::getDocsums(const DocsumRequest & req)
             req.resultClassName.c_str(), req.hits.size());
         return createEmptyReply(req);
     }
-    { // convert from gids to lids
-        IDocumentMetaStoreContext::IReadGuard::UP readGuard =
-            _matchView->getDocumentMetaStore()->getReadGuard();
-        convertGidsToLids(req, readGuard->get(), _matchView->getDocIdLimit().get());
-    }
+    IDocumentMetaStoreContext::IReadGuard::UP readGuard = _matchView->getDocumentMetaStore()->getReadGuard();
+    convertGidsToLids(req, readGuard->get(), _matchView->getDocIdLimit().get());
     IDocsumStore::UP store(_summarySetup->createDocsumStore(req.resultClassName));
     Matcher::SP matcher = _matchView->getMatcher(req.ranking);
     MatchContext::UP mctx = _matchView->createContext();
