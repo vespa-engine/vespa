@@ -290,7 +290,12 @@ ZKFacade::invokeWatcher(void* watcherContext) {
         return;
 
     if (watcher) {
-        (*watcher->_nodeChangedWatcher)();
+        try {
+            (*watcher->_nodeChangedWatcher)();
+        } catch (const ZKConnectionLossException & e) {
+            LOGFWD(error, "Got connection loss exception while invoking watcher : %s", e.what());
+            std::quick_exit(12);
+        }
     } else {
         LOGFWD(error, "Invoke called on expired watcher.");
     }
