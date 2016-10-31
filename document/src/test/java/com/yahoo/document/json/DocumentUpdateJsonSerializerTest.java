@@ -340,4 +340,34 @@ public class DocumentUpdateJsonSerializerTest {
                 "}"
         ));
     }
+
+    @Test
+    public void testCreateIfNotExistTrue() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'create': true,",
+                "    'fields': {",
+                "        'int_field': {",
+                "            'assign': 42",
+                "        }",
+                "    }",
+                "}"
+        ));
+    }
+
+    @Test
+    public void testCreateIfNotExistFalse() {
+        deSerializeAndSerializeJsonAndMatch(inputJson(
+                "{",
+                "    'update': 'DOCUMENT_ID',",
+                "    'create': false,",
+                "    'fields': {",
+                "        'int_field': {",
+                "            'assign': 42",
+                "        }",
+                "    }",
+                "}"
+        ));
+    }
 }

@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Optional;
 
 import static com.yahoo.document.json.JsonSerializationHelper.*;
 
@@ -86,6 +87,11 @@ public class DocumentUpdateJsonSerializer
 
                 if (update.getCondition().isPresent()) {
                     generator.writeStringField("condition", update.getCondition().getSelection());
+                }
+
+                Optional<Boolean> createIfNotExistent = update.getOptionalCreateIfNonExistent();
+                if (createIfNotExistent.isPresent()) {
+                    generator.writeBooleanField("create", createIfNotExistent.get());
                 }
 
                 generator.writeObjectFieldStart("fields");

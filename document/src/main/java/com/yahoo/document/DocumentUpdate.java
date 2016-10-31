@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * <p>Specifies one or more field updates to a document.</p> <p>A document update contains a list of {@link
@@ -41,7 +42,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     private List<FieldUpdate> fieldUpdates;
     private List<FieldPathUpdate> fieldPathUpdates;
     private DocumentType documentType;
-    private boolean createIfNonExistent;
+    private Optional<Boolean> createIfNonExistent = Optional.empty();
 
     /**
      * Creates a DocumentUpdate.
@@ -334,7 +335,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         if (fieldPathUpdates != null ? !fieldPathUpdates.equals(that.fieldPathUpdates) : that.fieldPathUpdates != null)
             return false;
         if (fieldUpdates != null ? !fieldUpdates.equals(that.fieldUpdates) : that.fieldUpdates != null) return false;
-        if (createIfNonExistent != that.createIfNonExistent) return false;
+        if (this.getCreateIfNonExistent() != ((DocumentUpdate) o).getCreateIfNonExistent()) return false;
 
         return true;
     }
@@ -355,7 +356,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         string.append(docId);
         string.append("': ");
         string.append("create-if-non-existent=");
-        string.append(createIfNonExistent ? "true" : "false");
+        string.append(createIfNonExistent.orElse(false));
         string.append(": ");
         string.append("[");
 
@@ -400,7 +401,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @param value Whether the document it updates should be created.
      */
     public void setCreateIfNonExistent(boolean value) {
-        createIfNonExistent = value;
+        createIfNonExistent = Optional.of(value);
     }
 
     /**
@@ -410,6 +411,10 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @return Whether the document it updates should be created.
      */
     public boolean getCreateIfNonExistent() {
+        return createIfNonExistent.orElse(false);
+    }
+
+    public Optional<Boolean> getOptionalCreateIfNonExistent() {
         return createIfNonExistent;
     }
 }
