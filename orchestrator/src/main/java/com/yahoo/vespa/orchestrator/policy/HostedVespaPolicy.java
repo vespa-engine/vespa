@@ -217,7 +217,7 @@ public class HostedVespaPolicy implements Policy {
                     hostName,
                     CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT,
                     VespaModelUtil.CLUSTER_CONTROLLER_SERVICE_TYPE,
-                    "Failed to communicate with cluster controllers " + clusterControllers,
+                    "Failed to communicate with cluster controllers " + clusterControllers + ": " + e,
                     e);
         }
 

@@ -3,19 +3,15 @@ package com.yahoo.vespa.orchestrator.resources;
 
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
+import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
-import com.yahoo.vespa.applicationmodel.HostName;
-import org.apache.commons.lang.exception.ExceptionUtils;
-
-import java.util.logging.Logger;
 
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
@@ -23,6 +19,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.logging.Logger;
 
 /**
  * @author oyving
@@ -45,6 +42,7 @@ public class HostResource implements HostApi {
             HostStatus status = orchestrator.getNodeStatus(hostName);
             return new GetHostResponse(hostName.s(), status.name());
         } catch (HostNameNotFoundException e) {
+            log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
         }
     }
@@ -55,9 +53,10 @@ public class HostResource implements HostApi {
         try {
             orchestrator.suspend(hostName);
         } catch (HostNameNotFoundException e) {
+            log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
         } catch (HostStateChangeDeniedException e) {
-            log.log(LogLevel.DEBUG, "Suspend for " + hostName + " failed.", e);
+            log.log(LogLevel.INFO, "Failed to suspend " + hostName + ": " + e.getMessage());
             throw webExceptionWithDenialReason(hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
@@ -69,9 +68,10 @@ public class HostResource implements HostApi {
         try {
             orchestrator.resume(hostName);
         } catch (HostNameNotFoundException e) {
+            log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
         } catch (HostStateChangeDeniedException e) {
-            log.log(LogLevel.DEBUG, "Resume for " + hostName + " failed.", e);
+            log.log(LogLevel.INFO, "Failed to resume " + hostName + ": " + e.getMessage());
             throw webExceptionWithDenialReason(hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
