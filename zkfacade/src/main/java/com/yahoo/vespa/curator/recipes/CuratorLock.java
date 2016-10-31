@@ -72,4 +72,9 @@ public class CuratorLock implements Lock {
         throw new UnsupportedOperationException();
     }
 
+
+    @Override
+    public String toString() {
+        return mutex.toString();
+    }
 }
