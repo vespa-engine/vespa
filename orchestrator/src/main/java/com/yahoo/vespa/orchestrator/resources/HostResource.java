@@ -56,7 +56,7 @@ public class HostResource implements HostApi {
             log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
         } catch (HostStateChangeDeniedException e) {
-            log.log(LogLevel.INFO, "Failed to suspend " + hostName + ": " + e.getMessage(), e);
+            log.log(LogLevel.INFO, "Failed to suspend " + hostName + ": " + e.getMessage());
             throw webExceptionWithDenialReason(hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
@@ -71,7 +71,7 @@ public class HostResource implements HostApi {
             log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
         } catch (HostStateChangeDeniedException e) {
-            log.log(LogLevel.INFO, "Failed to resume " + hostName + ": " + e.getMessage(), e);
+            log.log(LogLevel.INFO, "Failed to resume " + hostName + ": " + e.getMessage());
             throw webExceptionWithDenialReason(hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
