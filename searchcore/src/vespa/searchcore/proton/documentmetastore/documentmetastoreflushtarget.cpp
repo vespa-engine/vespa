@@ -64,6 +64,19 @@ DocumentMetaStoreFlushTarget::Flusher::saveSnapInfo()
 }
 
 bool
+DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
+{
+    vespalib::mkdir(_flushDir, false);
+    SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext,
+                                                 _syncToken);
+    search::AttributeFileSaveTarget saveTarget(_dmsft._tuneFileAttributes,
+                                               fileHeaderContext);
+    bool saveSuccess = _saver->save(saveTarget);
+    _saver.reset();
+    return saveSuccess;
+}
+
+bool
 DocumentMetaStoreFlushTarget::Flusher::flush()
 {
     IndexMetaInfo::Snapshot newSnap(false, _syncToken,
@@ -75,20 +88,11 @@ DocumentMetaStoreFlushTarget::Flusher::flush()
     if (!saveSnapInfo()) {
         return false;
     }
-    vespalib::mkdir(_flushDir, false);
-    vespalib::string flushFile(_flushDir + "/" + _dmsft._dms->getName());
-
-    SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext,
-                                                 _syncToken);
-    search::AttributeFileSaveTarget saveTarget(_dmsft._tuneFileAttributes,
-                             fileHeaderContext);
-    if (!_saver->save(saveTarget)) {
+    if (!saveDocumentMetaStore()) {
         LOG(warning, "Could not write document meta store '%s' to disk",
             _dmsft._dms->getBaseFileName().c_str());
-        _saver.reset();
         return false;
     }
-    _saver.reset();
     /*
      * Sync transaction log again.  This is needed when background
      * flush is activated to ensure that same future will occur that has
