@@ -354,7 +354,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci,
         // re-pack docsum blob
         GeneralResult gres(rci.inputClass, 0, docid, 0);
         if (! gres.inplaceUnpack(value)) {
-            LOG(error, "Unpack failed: illegal docsum entry for document %d", docid);
+            LOG(debug, "Unpack failed: illegal docsum entry for document %d. This is expected during lidspace compaction.", docid);
             topInserter.insertNix();
             return;
         }
