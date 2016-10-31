@@ -43,6 +43,8 @@ private:
         std::unique_ptr<search::AttributeSaver> _saver;
         uint64_t                          _syncToken;
         vespalib::string                  _flushDir;
+
+        bool saveDocumentMetaStore(); // not updating snap info.
     public:
         Flusher(DocumentMetaStoreFlushTarget &dmsft, uint64_t syncToken);
         ~Flusher();
