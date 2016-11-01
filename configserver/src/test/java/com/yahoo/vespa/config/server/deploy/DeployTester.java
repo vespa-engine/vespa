@@ -21,7 +21,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Version;
-import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -61,7 +60,6 @@ public class DeployTester {
 
     private final Curator curator;
     private final Tenants tenants;
-    private final Path tenantPath = Path.createRoot().append("testapp");
     private final File testApp;
 
     private ApplicationId id;
@@ -94,11 +92,15 @@ public class DeployTester {
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
     public ApplicationId deployApp(String appName) throws InterruptedException, IOException {
-        LocalSession session = tenant().getSessionFactory().createSession(testApp, "default", new SilentDeployLogger(), new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
-        ApplicationId id = ApplicationId.from(tenant().getName(), ApplicationName.from(appName), InstanceName.defaultName());
-        session.prepare(new SilentDeployLogger(), new PrepareParams(new ConfigserverConfig(new ConfigserverConfig.Builder())).applicationId(id), Optional.empty(), tenantPath);
+        final Tenant tenant = tenant();
+        LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new SilentDeployLogger(), new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
+        ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
+        session.prepare(new SilentDeployLogger(),
+                        new PrepareParams(new ConfigserverConfig(new ConfigserverConfig.Builder())).applicationId(id),
+                        Optional.empty(),
+                        tenant.getPath());
         session.createActivateTransaction().commit();
-        tenant().getLocalSessionRepo().addSession(session);
+        tenant.getLocalSessionRepo().addSession(session);
         this.id = id;
         return id;
     }
