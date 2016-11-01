@@ -140,10 +140,10 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             transaction.add(deactivateCurrentActivateNew(localSessionRepo.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
             // TODO: (October 2016) Remove the second part of this if statement as soon as all zone applications stop using hosts.xml for routing nodes
+            log.log(LogLevel.INFO, "Activating " + session.getProvisionInfo().getHosts() + ". isHostedRoutingApplicationUsingRoutingNodesInNodeRepo:" + isHostedRoutingApplicationUsingRoutingNodesInNodeRepo(session));
             if (hostProvisioner.isPresent() &&
                     (isNotHostedRoutingApplication(session.getApplicationId()) || isHostedRoutingApplicationUsingRoutingNodesInNodeRepo(session))) {
-                ProvisionInfo info = session.getProvisionInfo();
-                hostProvisioner.get().activate(transaction, session.getApplicationId(), info.getHosts());
+                hostProvisioner.get().activate(transaction, session.getApplicationId(), session.getProvisionInfo().getHosts());
             }
             transaction.commit();
             session.waitUntilActivated(timeoutBudget);
@@ -234,7 +234,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     // Precondition: session is for a hosted routing application
     boolean isHostedRoutingApplicationUsingRoutingNodesInNodeRepo(LocalSession session) {
-        final Path servicesPath = Path.fromString(ApplicationPackage.SERVICES);
+        Path servicesPath = Path.fromString(ApplicationPackage.SERVICES);
         ApplicationFile services = session.getApplicationFile(servicesPath, LocalSession.Mode.READ);
         try {
             return usesRoutingNodesInNodeRepo(services.createReader());
@@ -243,7 +243,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         }
     }
 
-    // TODO: Copied verbatim from VespaModelFactory, since we need it know and it is not available for all model versions yet.
+    // TODO: Copied verbatim from VespaModelFactory, since we need it now and it is not available for all model versions yet.
     //       Remove or use the one from VespaModelFactory as soon as possible
     private boolean usesRoutingNodesInNodeRepo(Reader servicesReader) {
         Document services = XmlHelper.getDocument(servicesReader);
