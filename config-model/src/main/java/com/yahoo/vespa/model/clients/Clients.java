@@ -8,11 +8,8 @@ import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import com.yahoo.vespa.model.container.search.ContainerHttpGateway;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -20,14 +17,14 @@ import java.util.List;
  * This is the clients plugin for the Vespa model. It is responsible for creating
  * all clients services.
  *
- * @author <a href="mailto:gunnarga@yahoo-inc.com">Gunnar Gauslaa Bergem</a>
+ * @author Gunnar Gauslaa Bergem
  */
 public class Clients extends ConfigModel {
 
     private static final long serialVersionUID = 1L;
-    private ContainerCluster containerHttpGateways = null;
     private List<VespaSpoolerService> vespaSpoolers = new LinkedList<>();
     private LoadTypeSet loadTypes = new LoadTypeSet();
+    
     private final AbstractConfigProducer parent;
 
     public Clients(ConfigModelContext modelContext) {
@@ -39,17 +36,7 @@ public class Clients extends ConfigModel {
         return parent;
     }
 
-    @Override
-    public void prepare(ConfigModelRepo configModelRepo) {
-        if (containerHttpGateways != null) {
-            containerHttpGateways.prepare();
-        }
-    }
-
-    public void setContainerHttpGateways(ContainerCluster containerHttpGateways) {
-        this.containerHttpGateways = containerHttpGateways;
-    }
-
+    /** Returns the mutable list of spoolers which is then used to add spoolers */
     public List<VespaSpoolerService> getVespaSpoolers() {
         return vespaSpoolers;
     }

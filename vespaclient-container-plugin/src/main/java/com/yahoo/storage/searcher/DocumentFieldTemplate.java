@@ -26,13 +26,8 @@ public class DocumentFieldTemplate extends UserTemplate<Writer> {
     String encoding;
     boolean wrapXml;
 
-    public DocumentFieldTemplate(Field field, String contentType,
-                                 String encoding, boolean wrapXml) {
-        // Defaults here are chosen as to give the same expected results as
-        // HTTPGateway's GetRequest
-        super("documentfield", contentType,
-                encoding);
-
+    public DocumentFieldTemplate(Field field, String contentType, String encoding, boolean wrapXml) {
+        super("documentfield", contentType, encoding);
         this.field = field;
         this.contentType = contentType;
         this.encoding = encoding;
