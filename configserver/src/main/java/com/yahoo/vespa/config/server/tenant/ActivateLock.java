@@ -23,13 +23,14 @@ public class ActivateLock {
         this.curatorLock = new CuratorLock(curator, rootPath.append(ACTIVATE_LOCK_NAME).getAbsolute());
     }
 
-    public synchronized void acquire(TimeoutBudget timeoutBudget, boolean ignoreLockError) {
+    public synchronized boolean acquire(TimeoutBudget timeoutBudget, boolean ignoreLockError) {
         try {
-            curatorLock.tryLock(timeoutBudget.timeLeft().toMillis(), TimeUnit.MILLISECONDS);
+            return curatorLock.tryLock(timeoutBudget.timeLeft().toMillis(), TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             if (!ignoreLockError) {
                 throw new RuntimeException(e);
             }
+            return false;
         }
     }
 
