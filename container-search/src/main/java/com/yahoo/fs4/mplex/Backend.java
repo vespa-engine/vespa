@@ -45,7 +45,7 @@ public class Backend implements ConnectionFactory {
 
     private static final Logger log = Logger.getLogger(Backend.class.getName());
 
-    private ListenerPool listeners;
+    private final ListenerPool listeners;
     private final InetSocketAddress address;
     private final String host;
     private final int port;
@@ -59,20 +59,21 @@ public class Backend implements ConnectionFactory {
     private final LinkedList<FS4Channel> pingChannels = new LinkedList<>();
     private final PacketListener packetListener;
     private final ConnectionPool connectionPool;
-    final PacketDumper packetDumper;
-    private AtomicInteger connectionCount = new AtomicInteger(0);
+    private final PacketDumper packetDumper;
+    private final AtomicInteger connectionCount = new AtomicInteger(0);
 
 
     /**
      * For unit testing.  do not use
      */
     protected Backend() {
-        this.host = null;
-        this.port = 0;
-        this.packetListener = null;
-        this.packetDumper = null;
-        this.address = null;
-        this.connectionPool = new ConnectionPool();
+        listeners = null;
+        host = null;
+        port = 0;
+        packetListener = null;
+        packetDumper = null;
+        address = null;
+        connectionPool = new ConnectionPool();
     }
 
     public Backend(String host, int port, String serverDiscriminator, ListenerPool listenerPool, ConnectionPool connectionPool) {
@@ -130,8 +131,9 @@ public class Backend implements ConnectionFactory {
             connectSocket(socket);
         } catch (Exception e) {
             // was warning, see VESPA-1922
-            if ( ! areInSocketNotConnectableState)
+            if ( ! areInSocketNotConnectableState) {
                 logInfo("connecting to", e);
+            }
             areInSocketNotConnectableState = true;
             socket.close();
             return null;
@@ -171,9 +173,10 @@ public class Backend implements ConnectionFactory {
         }
 
         // did we get a connection?
-        if ( !connected)
+        if ( !connected) {
             throw new IllegalArgumentException("Could not create connection to dispatcher on "
-                                               + address.getHostName() + ":" + address.getPort());
+                    + address.getHostName() + ":" + address.getPort());
+        }
         socket.socket().
         setTcpNoDelay(true);
     }
@@ -243,9 +246,7 @@ public class Backend implements ConnectionFactory {
      */
     public FS4Channel getPingChannel () {
         synchronized (pingChannels) {
-            if (pingChannels.isEmpty())
-                return null;
-            return pingChannels.getFirst();
+            return (pingChannels.isEmpty()) ? null : pingChannels.getFirst();
         }
     }
 
@@ -300,7 +301,7 @@ public class Backend implements ConnectionFactory {
 
     protected boolean sendPacket(BasicPacket packet, Integer channelId) throws IOException {
         if (shutdownInitiated) {
-            log.warning("Tried to send packet after shutdown initiated.  Ignored.");
+            log.fine("Tried to send packet after shutdown initiated.  Ignored.");
             return false;
         }
 
@@ -356,9 +357,10 @@ public class Backend implements ConnectionFactory {
      * This method should be used to ensure graceful shutdown of the backend.
      */
     public void shutdown() {
-        log.info("shutting down");
-        if (shutdownInitiated)
+        log.fine("shutting down");
+        if (shutdownInitiated) {
             throw new IllegalStateException("Shutdown already in progress");
+        }
         shutdownInitiated = true;
     }
 
