@@ -244,7 +244,7 @@
       <plugin> <!-- For the YQL query language -->
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
-        <version>4.3</version>
+        <version>4.5</version>
         <executions>
           <execution>
             <configuration>
