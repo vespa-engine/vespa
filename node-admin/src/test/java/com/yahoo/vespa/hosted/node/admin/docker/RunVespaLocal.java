@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
  */
 public class RunVespaLocal {
     private static final DockerImage VESPA_BASE_IMAGE = new DockerImage(
-            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/vespa-base:6.38.151");
+            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/ci:6.38.151");
     private static final Environment environment = new Environment(
             Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
             HostName.getLocalhost(), new InetAddressResolver());

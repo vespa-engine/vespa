@@ -34,7 +34,7 @@ public class DockerProvisioningTest {
             tester.makeReadyDockerNodes(1, dockerFlavor, "dockerHost" + i);
         }
 
-        Optional<String> wantedDockerImage = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/vespa-base:6.39");
+        Optional<String> wantedDockerImage = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/ci:6.39");
         final int nodeCount = 7;
         List<HostSpec> hosts = tester.prepare(application1,
                                               ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), wantedDockerImage),
@@ -46,7 +46,7 @@ public class DockerProvisioningTest {
         assertEquals(dockerFlavor, nodes.asList().get(0).flavor().canonicalName());
 
         // Upgrade Vespa version on nodes
-        Optional<String> upgradedWantedDockerImage = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/vespa-base:6.40");
+        Optional<String> upgradedWantedDockerImage = Optional.of("docker-registry.ops.yahoo.com:4443/vespa/ci:6.40");
         List<HostSpec> upgradedHosts = tester.prepare(application1,
                                                       ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"), upgradedWantedDockerImage),
                                                       nodeCount, 1, dockerFlavor);
