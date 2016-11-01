@@ -56,10 +56,10 @@ class Activator {
             allActive.addAll(reservedToActivate);
             if ( ! containsAll(hostnames, allActive))
                 throw new IllegalArgumentException("Activation of " + application + " failed. " +
-                        "Could not find all requested hosts." +
-                        "\nRequested: " + hosts +
-                        "\nReserved: " + toHostNames(reserved) +
-                        "\nActive: " + toHostNames(active));
+                                                   "Could not find all requested hosts." +
+                                                   "\nRequested: " + hosts +
+                                                   "\nReserved: " + toHostNames(reserved) +
+                                                   "\nActive: " + toHostNames(active));
 
             List<Node> activeToRemove = removeHostsFromList(hostnames, active);
             activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired
