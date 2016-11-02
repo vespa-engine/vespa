@@ -271,8 +271,7 @@ public class Feeder implements Runnable {
                 ++numPending;
                 updateMetrics(msg.second);
                 updateOpsPerSec();
-                log(LogLevel.DEBUG, "Sent message successfully, document id: ",
-                        msg.first);
+                log(LogLevel.DEBUG, "Sent message successfully, document id: ", msg.first);
             } else if (!result.getError().isFatal()) {
                 enqueue(msg.first, result.getError().getMessage(), ErrorCode.TRANSIENT_ERROR, msg.second);
                 break;
