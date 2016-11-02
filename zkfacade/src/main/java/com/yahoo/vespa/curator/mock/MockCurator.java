@@ -73,6 +73,7 @@ public class MockCurator extends Curator {
     private boolean shouldTimeoutOnEnter = false;
     private int monotonicallyIncreasingNumber = 0;
     private final boolean stableOrdering;
+    private String connectionSpec = "";
 
     /** The file system used by this mock to store zookeeper files and directories */
     private final MemoryFileSystem fileSystem = new MemoryFileSystem();
@@ -115,6 +116,14 @@ public class MockCurator extends Curator {
     public Optional<DistributedAtomicLong> counter(String path) {
         return Optional.ofNullable(atomicCounters.get(path));
     }
+
+    /**
+     * Assigns the connection string, which must be on the form host1:port,host2:port ...
+     */
+    public void setConnectionSpec(String connectionSpec) { this.connectionSpec = connectionSpec; }
+
+    @Override
+    public String connectionSpec() { return connectionSpec; }
 
     // ----- Start of adaptor methods from Curator to the mock file system -----
 
