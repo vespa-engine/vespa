@@ -41,6 +41,7 @@ public class NodeRepositoryImplTest {
 
     private int findRandomOpenPort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
+            socket.setReuseAddress(true);
             return socket.getLocalPort();
         }
     }
