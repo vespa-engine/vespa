@@ -2,11 +2,13 @@
 
 #include <vespa/fastos/fastos.h>
 #include "dense_tensor_attribute.h"
-#include <vespa/vespalib/tensor/tensor.h>
 #include "dense_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
+#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/tensor/dense/mutable_dense_tensor_view.h>
 
 using vespalib::eval::ValueType;
+using vespalib::tensor::MutableDenseTensorView;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorMapper;
 
@@ -107,6 +109,16 @@ DenseTensorAttribute::getTensor(DocId docId) const
         return std::unique_ptr<Tensor>();
     }
     return _denseTensorStore.getTensor(ref);
+}
+
+void
+DenseTensorAttribute::getTensor(DocId docId, MutableDenseTensorView &tensor) const
+{
+    RefType ref;
+    if (docId < getCommittedDocIdLimit()) {
+        ref = _refVector[docId];
+    }
+    _denseTensorStore.getTensor(ref, tensor);
 }
 
 bool

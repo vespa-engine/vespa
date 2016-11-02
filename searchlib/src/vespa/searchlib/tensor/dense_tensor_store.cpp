@@ -18,7 +18,6 @@ using vespalib::tensor::DenseTensor;
 using vespalib::tensor::DenseTensorView;
 using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::ValueType;
-using vespalib::ConstArrayRef;
 
 namespace search {
 namespace attribute {
@@ -53,7 +52,8 @@ DenseTensorStore::DenseTensorStore(const ValueType &type)
       _type(type),
       _numBoundCells(1u),
       _numUnboundDims(0u),
-      _cellSize(sizeof(double))
+      _cellSize(sizeof(double)),
+      _emptyCells()
 {
     for (const auto & dim : _type.dimensions()) {
         if (dim.is_bound()) {
@@ -62,6 +62,7 @@ DenseTensorStore::DenseTensorStore(const ValueType &type)
             ++_numUnboundDims;
         }
     }
+    _emptyCells.resize(_numBoundCells, 0.0);
     _bufferType.setUnboundDimSizesSize(_numUnboundDims * sizeof(uint32_t));
     _store.addType(&_bufferType);
     _store.initActiveBuffers();
@@ -75,9 +76,6 @@ DenseTensorStore::~DenseTensorStore()
 const void *
 DenseTensorStore::getRawBuffer(RefType ref) const
 {
-    if (!ref.valid()) {
-        return nullptr;
-    }
     return _store.getBufferEntry<char>(ref.bufferId(),
                                          ref.offset());
 }
@@ -158,7 +156,8 @@ DenseTensorStore::holdTensor(EntryRef ref)
 }
 
 TensorStore::EntryRef
-DenseTensorStore::move(EntryRef ref) {
+DenseTensorStore::move(EntryRef ref)
+{
     if (!ref.valid()) {
         return RefType();
     }
@@ -174,22 +173,13 @@ DenseTensorStore::move(EntryRef ref) {
 
 namespace {
 
-ValueType makeConcreteType(const ValueType &type,
-                           const void *buffer,
-                           uint32_t numUnboundDims)
+void makeConcreteType(MutableDenseTensorView &tensor,
+                      const void *buffer,
+                      uint32_t numUnboundDims)
 {
-    std::vector<ValueType::Dimension> dimensions(type.dimensions());
     const uint32_t *unboundDimSizeEnd = static_cast<const uint32_t *>(buffer);
-    const uint32_t *unboundDimSize = unboundDimSizeEnd - numUnboundDims;
-    for (auto &dim : dimensions) {
-        if (!dim.is_bound()) {
-            assert(unboundDimSize != unboundDimSizeEnd);
-            dim.size = *unboundDimSize;
-            ++unboundDimSize;
-        }
-    }
-    assert(unboundDimSize == unboundDimSizeEnd);
-    return ValueType::tensor_type(std::move(dimensions));
+    const uint32_t *unboundDimSizeBegin = unboundDimSizeEnd - numUnboundDims;
+    tensor.setUnboundDimensions(unboundDimSizeBegin, unboundDimSizeEnd);
 }
 
 }
@@ -197,19 +187,41 @@ ValueType makeConcreteType(const ValueType &type,
 std::unique_ptr<Tensor>
 DenseTensorStore::getTensor(EntryRef ref) const
 {
-    auto raw = getRawBuffer(ref);
-    if (raw == nullptr) {
+    if (!ref.valid()) {
         return std::unique_ptr<Tensor>();
     }
+    auto raw = getRawBuffer(ref);
     size_t numCells = getNumCells(raw);
     if (_numUnboundDims == 0) {
         return std::make_unique<DenseTensorView>
-            (_type,
-             ConstArrayRef<double>(static_cast<const double *>(raw), numCells));
+                (_type,
+                 DenseTensorView::CellsRef(static_cast<const double *>(raw), numCells));
+    } else {
+        std::unique_ptr <MutableDenseTensorView> result =
+                std::make_unique<MutableDenseTensorView>(_type,
+                                                         DenseTensorView::CellsRef(static_cast<const double *>(raw),
+                                                                               numCells));
+        makeConcreteType(*result, raw, _numUnboundDims);
+        return result;
     }
-    return std::make_unique<MutableDenseTensorView>
-        (makeConcreteType(_type, raw, _numUnboundDims),
-         ConstArrayRef<double>(static_cast<const double *>(raw), numCells));
+}
+
+void
+DenseTensorStore::getTensor(EntryRef ref, MutableDenseTensorView &tensor) const
+{
+    if (!ref.valid()) {
+        tensor.setCells(DenseTensorView::CellsRef(&_emptyCells[0], _emptyCells.size()));
+        if (_numUnboundDims > 0) {
+            tensor.setUnboundDimensionsForEmptyTensor();
+        }
+    } else {
+        auto raw = getRawBuffer(ref);
+        size_t numCells = getNumCells(raw);
+        tensor.setCells(DenseTensorView::CellsRef(static_cast<const double *>(raw), numCells));
+        if (_numUnboundDims > 0) {
+            makeConcreteType(tensor, raw, _numUnboundDims);
+        }
+    }
 }
 
 namespace
