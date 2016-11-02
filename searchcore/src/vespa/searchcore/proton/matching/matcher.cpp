@@ -45,6 +45,7 @@ struct StupidMetaStore : IDocumentMetaStore {
     DocId getCommittedDocIdLimit() const override { return 1; }
     DocId getNumUsedLids() const override { return 0; }
     DocId getNumActiveLids() const override { return 0; }
+    uint64_t getCurrentGeneration() const override { return 0; }
     LidUsageStats getLidUsageStats() const override { return LidUsageStats(); }
     Blueprint::UP createBlackListBlueprint() const override {
         return Blueprint::UP();

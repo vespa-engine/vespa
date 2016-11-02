@@ -49,6 +49,17 @@ convertGidsToLids(const DocsumRequest & request,
     }
 }
 
+bool
+requestHasLidAbove(const DocsumRequest & request, uint32_t docIdLimit)
+{
+    for (const DocsumRequest::Hit & h : request.hits) {
+        if (h.docid >= docIdLimit) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /**
  * Maps the lids in the reply to gids using the original request.
  **/
@@ -80,15 +91,12 @@ createEmptyReply(const DocsumRequest & request)
 
 }
 
-
 SearchView::SearchView(const ISummaryManager::ISummarySetup::SP & summarySetup,
                        const MatchView::SP & matchView)
     : ISearchHandler(),
       _summarySetup(summarySetup),
       _matchView(matchView)
-{
-}
-
+{ }
 
 DocsumReply::UP
 SearchView::getDocsums(const DocsumRequest & req)
@@ -99,21 +107,24 @@ SearchView::getDocsums(const DocsumRequest & req)
                      req.resultClassName.c_str(), req.hits.size());
         return createEmptyReply(req);
     }
-    IDocumentMetaStoreContext::IReadGuard::UP readGuard = _matchView->getDocumentMetaStore()->getReadGuard();
-    DocsumReply::UP reply = getDocsumsInternal(req, readGuard->get());
-    if (false) {
-        LOG(info, "Must refetch docsums since the lids have moved.");
-        reply = getDocsumsInternal(req, readGuard->get());
+    SearchView::InternalDocsumReply reply = getDocsumsInternal(req);
+    while ( ! reply.second ) {
+        reply = getDocsumsInternal(req);
     }
     if ( ! req.useRootSlime()) {
-        convertLidsToGids(*reply, req);
+        LOG(info, "Must refetch docsums since the lids have moved.");
+        convertLidsToGids(*reply.first, req);
     }
-    return reply;
+    return std::move(reply.first);
 }
 
-DocsumReply::UP
-SearchView::getDocsumsInternal(const DocsumRequest & req, const search::IDocumentMetaStore & metaStore)
+SearchView::InternalDocsumReply
+SearchView::getDocsumsInternal(const DocsumRequest & req)
 {
+    IDocumentMetaStoreContext::IReadGuard::UP readGuard = _matchView->getDocumentMetaStore()->getReadGuard();
+    const search::IDocumentMetaStore & metaStore = readGuard->get();
+    uint64_t startGeneration = readGuard->get().getCurrentGeneration();
+
     convertGidsToLids(req, metaStore, _matchView->getDocIdLimit().get());
     IDocsumStore::UP store(_summarySetup->createDocsumStore(req.resultClassName));
     Matcher::SP matcher = _matchView->getMatcher(req.ranking);
@@ -121,7 +132,14 @@ SearchView::getDocsumsInternal(const DocsumRequest & req, const search::IDocumen
     DocsumContext::UP ctx(new DocsumContext(req, _summarySetup->getDocsumWriter(), *store, matcher,
                                             mctx->getSearchContext(), mctx->getAttributeContext(),
                                             *_summarySetup->getAttributeManager(), *getSessionManager()));
-    return ctx->getDocsums();
+    SearchView::InternalDocsumReply reply(ctx->getDocsums(), true);
+    uint64_t endGeneration = readGuard->get().getCurrentGeneration();
+    if (startGeneration != endGeneration) {
+        if (requestHasLidAbove(req, metaStore.getNumUsedLids())) {
+            reply.second = false;
+        }
+    }
+    return reply;
 }
 
 SearchReply::UP

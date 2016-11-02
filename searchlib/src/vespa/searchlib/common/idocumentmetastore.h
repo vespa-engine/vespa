@@ -145,6 +145,11 @@ struct IDocumentMetaStore {
      * that gives hits for all documents that should not be visible.
      **/
     virtual std::unique_ptr<queryeval::Blueprint> createBlackListBlueprint() const = 0;
+
+    /**
+     * Give read access to the current generation of the metastore.
+     **/
+    virtual uint64_t getCurrentGeneration() const = 0;
 };
 
 

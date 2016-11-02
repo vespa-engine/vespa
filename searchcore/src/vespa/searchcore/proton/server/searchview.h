@@ -10,13 +10,9 @@ namespace proton {
 
 class SearchView : public ISearchHandler
 {
-private:
-    ISummaryManager::ISummarySetup::SP _summarySetup;
-    MatchView::SP                      _matchView;
-
-    DocsumReply::UP getDocsumsInternal(const DocsumRequest & req, const search::IDocumentMetaStore & metaStore);
-    using IndexSearchable = searchcorespi::IndexSearchable;
 public:
+    using IndexSearchable = searchcorespi::IndexSearchable;
+    using InternalDocsumReply = std::pair<DocsumReply::UP, bool>;
     typedef std::shared_ptr<SearchView> SP;
 
     SearchView(const ISummaryManager::ISummarySetup::SP &summarySetup, const MatchView::SP &matchView);
@@ -29,17 +25,14 @@ public:
     const matching::SessionManager::SP  & getSessionManager()    const { return _matchView->getSessionManager(); }
     const IDocumentMetaStoreContext::SP & getDocumentMetaStore() const { return _matchView->getDocumentMetaStore(); }
     DocIdLimit &getDocIdLimit() const { return _matchView->getDocIdLimit(); }
-
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const { return _matchView->getMatcherStats(rankProfile); }
 
-    /**
-     * Implements ISearchHandler
-     */
     DocsumReply::UP getDocsums(const DocsumRequest & req) override;
-
-    SearchReply::UP match(const ISearchHandler::SP &self,
-                          const SearchRequest &req,
-                          vespalib::ThreadBundle &threadBundle) const override;
+    SearchReply::UP match(const ISearchHandler::SP &self, const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;
+private:
+    InternalDocsumReply getDocsumsInternal(const DocsumRequest & req);
+    ISummaryManager::ISummarySetup::SP _summarySetup;
+    MatchView::SP                      _matchView;
 };
 
 } // namespace proton
