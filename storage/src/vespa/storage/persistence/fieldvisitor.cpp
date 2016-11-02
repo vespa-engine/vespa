@@ -5,7 +5,7 @@
 namespace storage {
 
 void FieldVisitor::visitFieldValueNode(const document::select::FieldValueNode & node) {
-    _fields.insert(_docType.getField(node.getFieldName()));
+    _fields.insert(_docType.getField(node.getRealFieldName()));
 }
 
 void FieldVisitor::visitComparison(const document::select::Compare & node) {
