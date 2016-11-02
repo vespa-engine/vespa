@@ -34,6 +34,7 @@ class DocumentSelectParserTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testOperators);
     CPPUNIT_TEST(testVisitor);
     CPPUNIT_TEST(testUtf8);
+    CPPUNIT_TEST(testGetRealFieldName);
     CPPUNIT_TEST(testBodyFieldDetection);
     CPPUNIT_TEST(testDocumentUpdates);
     CPPUNIT_TEST_SUITE_END();
@@ -79,6 +80,7 @@ public:
     void testOperators9();
     void testVisitor();
     void testUtf8();
+    void testGetRealFieldName();
     void testBodyFieldDetection();
     void testDocumentUpdates();
     void testDocumentUpdates0();
@@ -1273,6 +1275,29 @@ void DocumentSelectParserTest::testUtf8()
         "testdoctype1", "doc:myspace:utf8doc", 24, 2.0, utf8name, "bar"));
 //    PARSE("testdoctype1.hstringval = \"H?kon\"", *_doc[_doc.size()-1], True);
 //    PARSE("testdoctype1.hstringval =~ \"H.kon\"", *_doc[_doc.size()-1], True);
+}
+
+static const select::FieldValueNode & leftFieldValueNodeFromCompNode(std::unique_ptr<select::Node> node) {
+    return dynamic_cast<const select::FieldValueNode &>(
+        dynamic_cast<const select::Compare &>(*node).getLeft());
+}
+
+void DocumentSelectParserTest::testGetRealFieldName() {
+    CPPUNIT_ASSERT_EQUAL(
+        vespalib::string("headerval"),
+        leftFieldValueNodeFromCompNode(_parser->parse("testdoctype1.headerval == 42")).getRealFieldName());
+
+    CPPUNIT_ASSERT_EQUAL(
+        vespalib::string("headerval"),
+        leftFieldValueNodeFromCompNode(_parser->parse("testdoctype1.headerval{test} == 42")).getRealFieldName());
+
+    CPPUNIT_ASSERT_EQUAL(
+        vespalib::string("headerval"),
+        leftFieldValueNodeFromCompNode(_parser->parse("testdoctype1.headerval[42] == 42")).getRealFieldName());
+
+    CPPUNIT_ASSERT_EQUAL(
+        vespalib::string("headerval"),
+        leftFieldValueNodeFromCompNode(_parser->parse("testdoctype1.headerval.meow.meow{test} == 42")).getRealFieldName());
 }
 
 } // document
