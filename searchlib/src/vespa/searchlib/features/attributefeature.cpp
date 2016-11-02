@@ -11,7 +11,7 @@ LOG_SETUP(".features.attributefeature");
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/features/constant_tensor_executor.h>
-#include <vespa/searchlib/features/tensor_from_tensor_attribute_executor.h>
+#include <vespa/searchlib/features/tensor_attribute_executor.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
@@ -412,7 +412,7 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType);
     }
-    return FeatureExecutor::LP(new TensorFromTensorAttributeExecutor(tensorAttribute));
+    return FeatureExecutor::LP(new TensorAttributeExecutor(tensorAttribute));
 }
 
 }

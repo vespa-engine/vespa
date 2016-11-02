@@ -1,24 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include "tensor_from_tensor_attribute_executor.h"
+#include "tensor_attribute_executor.h"
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 
 namespace search {
 namespace features {
 
-TensorFromTensorAttributeExecutor::
-TensorFromTensorAttributeExecutor(const search::attribute::TensorAttribute *
-                                  attribute)
+TensorAttributeExecutor::
+TensorAttributeExecutor(const search::attribute::TensorAttribute *attribute)
     : _attribute(attribute),
       _tensor(),
       _emptyTensor(std::make_unique<vespalib::eval::TensorValue>(attribute->getEmptyTensor()))
 {
 }
 
-
 void
-TensorFromTensorAttributeExecutor::execute(fef::MatchData &data)
+TensorAttributeExecutor::execute(fef::MatchData &data)
 {
     auto tensor = _attribute->getTensor(data.getDocId());
     if (!tensor) {
