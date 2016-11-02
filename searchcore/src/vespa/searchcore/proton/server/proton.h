@@ -32,6 +32,8 @@
 #include <vespa/vespalib/util/rwlock.h>
 #include <vespa/vespalib/util/varholder.h>
 
+namespace vespalib { class IHwInfo; }
+
 namespace proton
 {
 
@@ -140,6 +142,7 @@ private:
     bool                            _initStarted;
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
 
     bool performDataDirectoryUpgrade(const vespalib::string &baseDir);
     void loadLibrary(const vespalib::string &libName);

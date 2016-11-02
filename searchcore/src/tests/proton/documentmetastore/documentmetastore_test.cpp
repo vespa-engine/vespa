@@ -17,6 +17,7 @@ LOG_SETUP("documentmetastore_test");
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
+#include <vespa/vespalib/util/mock_hw_info.h>
 
 using namespace document;
 using search::AttributeVector;
@@ -1832,13 +1833,16 @@ TEST("requireThatShrinkViaFlushTargetWorks")
     TuneFileAttributes tuneFileAttributes;
     DummyFileHeaderContext fileHeaderContext;
     DummyTlsSyncer dummyTlsSyncer;
+    std::shared_ptr<vespalib::IHwInfo> hwInfo =
+        std::make_shared<vespalib::MockHwInfo>();
     vespalib::rmdir("dmsflush", true);
     vespalib::mkdir("dmsflush");
     IFlushTarget::SP ft(new DocumentMetaStoreFlushTarget(dms,
                                                          dummyTlsSyncer,
                                                          "dmsflush",
                                                          tuneFileAttributes,
-                                                         fileHeaderContext));
+                                                         fileHeaderContext,
+                                                         hwInfo));
     
     populate(10, *dms);
 

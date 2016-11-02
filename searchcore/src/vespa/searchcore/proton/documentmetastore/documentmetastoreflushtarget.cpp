@@ -6,12 +6,14 @@ LOG_SETUP(".proton.documentmetastore.documentmetastoreflushtarget");
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include "documentmetastoreflushtarget.h"
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
+#include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/i_hw_info.h>
 #include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
@@ -69,10 +71,21 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
     vespalib::mkdir(_flushDir, false);
     SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext,
                                                  _syncToken);
-    search::AttributeFileSaveTarget saveTarget(_dmsft._tuneFileAttributes,
-                                               fileHeaderContext);
-    bool saveSuccess = _saver->save(saveTarget);
-    _saver.reset();
+    bool saveSuccess = false;
+    if (_dmsft._hwInfo->spinningDisk()) {
+        search::AttributeMemorySaveTarget memorySaveTarget;
+        saveSuccess = _saver->save(memorySaveTarget);
+        _saver.reset();
+        if (saveSuccess) {
+            saveSuccess = memorySaveTarget.writeToFile(_dmsft._tuneFileAttributes,
+                                                       fileHeaderContext);
+        }
+    } else {
+        search::AttributeFileSaveTarget saveTarget(_dmsft._tuneFileAttributes,
+                                                   fileHeaderContext);
+        saveSuccess = _saver->save(saveTarget);
+        _saver.reset();
+    }
     return saveSuccess;
 }
 
@@ -156,7 +169,8 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms,
                              ITlsSyncer &tlsSyncer,
                              const vespalib::string & baseDir,
                              const TuneFileAttributes &tuneFileAttributes,
-                             const FileHeaderContext &fileHeaderContext)
+                             const FileHeaderContext &fileHeaderContext,
+                             const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
     : IFlushTarget("documentmetastore", Type::SYNC, Component::ATTRIBUTE),
       _dms(dms),
       _tlsSyncer(tlsSyncer),
@@ -168,7 +182,8 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms,
       _lastStats(),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
-      _lastFlushTime()
+      _lastFlushTime(),
+      _hwInfo(hwInfo)
 
 {
     if (!_snapInfo.load()) {

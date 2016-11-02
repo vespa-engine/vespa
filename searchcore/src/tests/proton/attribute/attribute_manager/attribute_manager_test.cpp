@@ -30,6 +30,7 @@ LOG_SETUP("attribute_manager_test");
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/mock_hw_info.h>
 #include <vespa/config-attributes.h>
 
 namespace vespa { namespace config { namespace search {}}}
@@ -106,10 +107,12 @@ struct BaseFixture
     test::DirectoryHandler _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
     ForegroundTaskExecutor   _attributeFieldWriter;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
     BaseFixture()
         : _dirHandler(test_dir),
           _fileHeaderContext(),
-          _attributeFieldWriter()
+          _attributeFieldWriter(),
+          _hwInfo(std::make_shared<vespalib::MockHwInfo>())
     {
     }
 };
@@ -123,7 +126,7 @@ struct AttributeManagerFixture
     AttributeManagerFixture(BaseFixture &bf)
         : _msp(std::make_shared<proton::AttributeManager>
                (test_dir, "test.subdb", TuneFileAttributes(), bf._fileHeaderContext,
-                bf._attributeFieldWriter)),
+                bf._attributeFieldWriter, bf._hwInfo)),
           _m(*_msp),
           _aw(_msp)
     {
@@ -435,7 +438,7 @@ TEST_F("require that removed attributes can resurrect", BaseFixture)
             new proton::AttributeManager(test_dir, "test.subdb",
                                          TuneFileAttributes(),
                                          f._fileHeaderContext,
-                                         f._attributeFieldWriter));
+                                         f._attributeFieldWriter, f._hwInfo));
     {
         AttributeVector::SP a1 =
             am1->addAttribute("a1", INT32_SINGLE,

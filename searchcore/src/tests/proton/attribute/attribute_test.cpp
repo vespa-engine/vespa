@@ -19,6 +19,7 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/util/filekit.h>
+#include <vespa/vespalib/util/mock_hw_info.h>
 #include <vespa/vespalib/io/fileutil.h>
 
 #include <vespa/document/predicate/predicate_slime_builder.h>
@@ -102,6 +103,7 @@ struct Fixture
     test::DirectoryHandler _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
     ForegroundTaskExecutor   _attributeFieldWriter;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
     proton::AttributeManager::SP _m;
     AttributeWriter aw;
 
@@ -109,9 +111,10 @@ struct Fixture
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
           _m(std::make_shared<proton::AttributeManager>
              (test_dir, "test.subdb", TuneFileAttributes(),
-              _fileHeaderContext, _attributeFieldWriter)),
+              _fileHeaderContext, _attributeFieldWriter, _hwInfo)),
           aw(_m)
     {
     }
@@ -527,16 +530,20 @@ struct FilterFixture
     test::DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+
     proton::AttributeManager::SP _baseMgr;
     FilterAttributeManager _filterMgr;
     FilterFixture()
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
           _baseMgr(new proton::AttributeManager(test_dir, "test.subdb",
                                                 TuneFileAttributes(),
                                                 _fileHeaderContext,
-                                                _attributeFieldWriter)),
+                                                _attributeFieldWriter,
+                                                _hwInfo)),
           _filterMgr(ACCEPTED_ATTRIBUTES, _baseMgr)
     {
         _baseMgr->addAttribute("a1", INT32_SINGLE, createSerialNum);

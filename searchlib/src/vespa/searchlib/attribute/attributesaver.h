@@ -30,6 +30,8 @@ public:
     virtual ~AttributeSaver();
 
     bool save(IAttributeSaveTarget &saveTarget);
+
+    bool hasGenerationGuard() const;
 };
 
 } // namespace search
