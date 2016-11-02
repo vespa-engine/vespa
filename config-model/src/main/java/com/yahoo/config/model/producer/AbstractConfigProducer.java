@@ -11,7 +11,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.admin.MonitoringSystem;
+import com.yahoo.vespa.model.admin.monitoring.MonitoringSystem;
 import com.yahoo.vespa.model.utils.FreezableMap;
 
 import java.io.*;

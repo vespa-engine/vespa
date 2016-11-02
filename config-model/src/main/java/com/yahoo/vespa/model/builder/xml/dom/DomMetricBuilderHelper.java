@@ -2,8 +2,8 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.admin.Metric;
-import com.yahoo.vespa.model.admin.MetricsConsumer;
+import com.yahoo.vespa.model.admin.monitoring.Metric;
+import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import org.w3c.dom.Element;
 
 import java.util.LinkedHashMap;
