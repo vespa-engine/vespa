@@ -4,6 +4,7 @@ vespa_add_executable(fbench_httpclient_splitstring_app TEST
     httpclient_splitstring.cpp
     DEPENDS
     fbench_util
+    fbench_httpclient
 )
 vespa_add_test(NAME fbench_httpclient_splitstring_app COMMAND fbench_httpclient_splitstring_app)
 vespa_add_executable(fbench_httpclient_app
@@ -25,5 +26,6 @@ vespa_add_executable(fbench_clientstatus_app TEST
     clientstatus.cpp
     DEPENDS
     fbench_util
+    fastos_static
 )
 vespa_add_test(NAME fbench_clientstatus_app COMMAND fbench_clientstatus_app)
