@@ -46,6 +46,9 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     virtual search::queryeval::Blueprint::UP createBlackListBlueprint() const override {
         return _store.createBlackListBlueprint();
     }
+    uint64_t getCurrentGeneration() const override {
+        return _store.getCurrentGeneration();
+    }
 
 
     /**
