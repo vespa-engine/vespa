@@ -73,6 +73,7 @@ public class Feeder implements Runnable {
     private final CountDownLatch requestReceived = new CountDownLatch(1);
     private final FeedReaderFactory feedReaderFactory;
 
+    // TODO refactor this perverse pile of constructor arguments
     public Feeder(InputStream requestInputStream,
                   FeedReaderFactory feedReaderFactory,
                   DocumentTypeManager docTypeManager,
@@ -120,10 +121,7 @@ public class Feeder implements Runnable {
         if (!clientId.contains("#")) {
             throw new UnknownClientException("Got request from client with id '" + clientId +
                                              "', but found no session for this client. " +
-                                             "Most probably this server is in VIP rotation, " +
-                                             "and a client session was rotated from one server to another. " +
-                                             "This must not happen. Configure VIP with persistence=enabled, " +
-                                             "or (preferably) do not use a VIP at all.");
+                                             "This is expected during upgrades of gateways and infrastructure nodes.");
         }
         int hashPos = clientId.indexOf("#");
         String supposedHostname = clientId.substring(hashPos + 1, clientId.length());
@@ -131,7 +129,8 @@ public class Feeder implements Runnable {
             throw new UnknownClientException("Got request from client with id '" + clientId +
                                              "', but found no session for this client. Possible session " +
                                              "timeout due to inactivity, server restart or reconfig, " +
-                                             "or bad VIP usage.");
+                                             "or bad VIP usage. " +
+                                             "This is expected during upgrades of gateways and infrastructure nodes.");
         }
 
         if (!supposedHostname.equals(localHostname)) {
@@ -140,10 +139,9 @@ public class Feeder implements Runnable {
                                              "Session was originally established towards host " +
                                              supposedHostname + ", but our hostname is " +
                                              localHostname + ". " +
-                                             "Most probably this server is in VIP rotation, " +
-                                             "and a session was rotated from one server to another. " +
-                                             "This should not happen. Configure VIP with persistence=enabled, " +
-                                             "or (preferably) do not use a VIP at all.");
+                                             "If using VIP rotation, this could be due to a session was rotated from one server to another. " +
+                                             "Configure VIP with persistence=enabled. " +
+                                             "This is expected during upgrades of gateways and infrastructure nodes.");
         }
         log.log(LogLevel.DEBUG, "Client '" + clientId + "' reconnected after session inactivity, or server restart " +
                                "or reconfig. Re-establishing session.");
@@ -273,14 +271,17 @@ public class Feeder implements Runnable {
                 ++numPending;
                 updateMetrics(msg.second);
                 updateOpsPerSec();
-                log(LogLevel.DEBUG, "Sent message successfully, document id: ", msg.first);
+                log(LogLevel.DEBUG, "Sent message successfully, document id: ",
+                        msg.first);
             } else if (!result.getError().isFatal()) {
-                enqueue(msg.first, result.getError().getMessage(), ErrorCode.TRANSIENT_ERROR, msg.second);
+                enqueue(msg.first, result.getError().getMessage(),
+                        ErrorCode.TRANSIENT_ERROR, msg.second);
                 break;
             } else {
                 // should probably not happen, but everybody knows stuff that
                 // shouldn't happen, happens all the time
-                enqueue(msg.first, result.getError().getMessage(), ErrorCode.ERROR, msg.second);
+                enqueue(msg.first, result.getError().getMessage(),
+                        ErrorCode.ERROR, msg.second);
                 break;
             }
         }
