@@ -8,8 +8,10 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.admin.monitoring.Metric;
+import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
+import com.yahoo.vespa.model.admin.monitoring.Yamas;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 

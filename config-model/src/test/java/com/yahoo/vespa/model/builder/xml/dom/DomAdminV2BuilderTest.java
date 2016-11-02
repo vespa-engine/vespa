@@ -8,6 +8,7 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.*;
+import com.yahoo.vespa.model.admin.monitoring.Yamas;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Element;

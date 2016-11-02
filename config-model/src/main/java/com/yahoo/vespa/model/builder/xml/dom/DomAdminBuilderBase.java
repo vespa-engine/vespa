@@ -3,12 +3,13 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.*;
+import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
+import com.yahoo.vespa.model.admin.monitoring.Yamas;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.config.application.api.FileRegistry;
 import org.w3c.dom.Element;

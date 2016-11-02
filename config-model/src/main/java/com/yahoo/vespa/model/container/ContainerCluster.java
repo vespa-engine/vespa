@@ -54,7 +54,7 @@ import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
-import com.yahoo.vespa.model.admin.MonitoringSystem;
+import com.yahoo.vespa.model.admin.monitoring.MonitoringSystem;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;

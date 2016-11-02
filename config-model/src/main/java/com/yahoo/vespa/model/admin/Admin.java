@@ -10,6 +10,8 @@ import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.*;
+import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
+import com.yahoo.vespa.model.admin.monitoring.Yamas;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;
