@@ -6,5 +6,5 @@ vespa_add_executable(fbench_geturl_app
     INSTALL bin
     DEPENDS
     fbench_util
-    fastos
+    fbench_httpclient
 )
