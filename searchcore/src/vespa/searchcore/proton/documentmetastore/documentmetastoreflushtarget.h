@@ -8,6 +8,8 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include "documentmetastore.h"
 
+namespace vespalib { class IHwInfo; }
+
 namespace search
 {
 
@@ -74,6 +76,7 @@ private:
     const search::TuneFileAttributes _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
     fastos::TimeStamp           _lastFlushTime;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
     
     static vespalib::string
     getSnapshotName(uint64_t syncToken);
@@ -94,7 +97,8 @@ public:
                                  const search::TuneFileAttributes &
                                  tuneFileAttributes,
                                  const search::common::FileHeaderContext &
-                                 fileHeaderContext);
+                                 fileHeaderContext,
+                                 const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
 
     virtual
     ~DocumentMetaStoreFlushTarget();

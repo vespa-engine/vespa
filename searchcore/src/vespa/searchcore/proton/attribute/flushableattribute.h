@@ -8,6 +8,8 @@
 #include <vespa/searchlib/common/indexmetainfo.h>
 
 
+namespace vespalib { class IHwInfo; }
+
 namespace search
 {
 
@@ -75,6 +77,7 @@ private:
     const search::common::FileHeaderContext &_fileHeaderContext;
     fastos::TimeStamp           _lastFlushTime;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
 
     Task::UP internalInitFlush(SerialNum currentSerial);
 
@@ -92,7 +95,8 @@ public:
                        const search::TuneFileAttributes &tuneFileAttributes,
                        const search::common::FileHeaderContext &
                        fileHeaderContext,
-                       search::ISequencedTaskExecutor &attributeFieldWriter);
+                       search::ISequencedTaskExecutor &attributeFieldWriter,
+                       const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
 
     virtual
     ~FlushableAttribute();

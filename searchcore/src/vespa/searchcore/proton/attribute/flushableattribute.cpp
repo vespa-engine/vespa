@@ -12,6 +12,7 @@ LOG_SETUP(".proton.attribute.flushableattribute");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/util/i_hw_info.h>
 #include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
@@ -73,16 +74,24 @@ FlushableAttribute::Flusher::saveAttribute()
     vespalib::mkdir(_flushFile.getDirName(), false);
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext,
                                                  _syncToken);
-    if (_saver) {
-        search::AttributeFileSaveTarget saveTarget(_fattr._tuneFileAttributes,
-                                                   fileHeaderContext);
-        bool saveSuccess = _saver->save(saveTarget);
+    bool saveSuccess = true;
+    if (_saver && _saver->hasGenerationGuard() &&
+        _fattr._hwInfo->spinningDisk()) {
+        saveSuccess = _saver->save(_saveTarget);
         _saver.reset();
-        return saveSuccess;
-    } else {
-        return _saveTarget.writeToFile(_fattr._tuneFileAttributes,
-                                       fileHeaderContext);
     }
+    if (saveSuccess) {
+        if (_saver) {
+            search::AttributeFileSaveTarget saveTarget(_fattr._tuneFileAttributes,
+                                                       fileHeaderContext);
+            saveSuccess = _saver->save(saveTarget);
+            _saver.reset();
+        } else {
+            saveSuccess = _saveTarget.writeToFile(_fattr._tuneFileAttributes,
+                                                  fileHeaderContext);
+        }
+    }
+    return saveSuccess;
 }
 
 bool
@@ -161,7 +170,8 @@ FlushableAttribute::FlushableAttribute(const AttributeVector::SP attr,
                                        const FileHeaderContext &
                                        fileHeaderContext,
                                        search::ISequencedTaskExecutor &
-                                       attributeFieldWriter)
+                                       attributeFieldWriter,
+                                       const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
     : IFlushTarget(vespalib::make_string(
                            "attribute.%s",
                            attr->getName().c_str()),
@@ -177,7 +187,8 @@ FlushableAttribute::FlushableAttribute(const AttributeVector::SP attr,
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
       _lastFlushTime(),
-      _attributeFieldWriter(attributeFieldWriter)
+      _attributeFieldWriter(attributeFieldWriter),
+      _hwInfo(hwInfo)
 {
     if (!_snapInfo.load()) {
         _snapInfo.save();
