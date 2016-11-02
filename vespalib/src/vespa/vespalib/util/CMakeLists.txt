@@ -22,8 +22,10 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     generationholder.cpp
     hashmap.cpp
     host_name.cpp
+    hw_info.cpp
     joinable.cpp
     left_right_heap.cpp
+    mock_hw_info.cpp
     printable.cpp
     priority_queue.cpp
     random.cpp
