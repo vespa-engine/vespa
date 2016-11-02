@@ -274,14 +274,12 @@ public class Feeder implements Runnable {
                 log(LogLevel.DEBUG, "Sent message successfully, document id: ",
                         msg.first);
             } else if (!result.getError().isFatal()) {
-                enqueue(msg.first, result.getError().getMessage(),
-                        ErrorCode.TRANSIENT_ERROR, msg.second);
+                enqueue(msg.first, result.getError().getMessage(), ErrorCode.TRANSIENT_ERROR, msg.second);
                 break;
             } else {
                 // should probably not happen, but everybody knows stuff that
                 // shouldn't happen, happens all the time
-                enqueue(msg.first, result.getError().getMessage(),
-                        ErrorCode.ERROR, msg.second);
+                enqueue(msg.first, result.getError().getMessage(), ErrorCode.ERROR, msg.second);
                 break;
             }
         }
