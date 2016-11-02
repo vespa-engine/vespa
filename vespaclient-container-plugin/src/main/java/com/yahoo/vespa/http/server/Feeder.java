@@ -73,7 +73,6 @@ public class Feeder implements Runnable {
     private final CountDownLatch requestReceived = new CountDownLatch(1);
     private final FeedReaderFactory feedReaderFactory;
 
-    // TODO refactor this perverse pile of constructor arguments
     public Feeder(InputStream requestInputStream,
                   FeedReaderFactory feedReaderFactory,
                   DocumentTypeManager docTypeManager,
