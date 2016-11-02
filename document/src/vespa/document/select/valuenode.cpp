@@ -20,6 +20,10 @@ namespace document {
 namespace select {
 
 namespace {
+    static const std::regex FIELD_NAME_REGEX("^([_A-Za-z][_A-Za-z0-9]*).*");
+}
+
+namespace {
     bool documentTypeEqualsName(const DocumentType& type,
                                 const vespalib::stringref& name)
     {
@@ -201,10 +205,9 @@ FieldValueNode::FieldValueNode(const vespalib::string& doctype,
 }
 
 const vespalib::string FieldValueNode::extractFieldName(const std::string & fieldExpression) {
-    static const std::regex fieldNameRegex("^([_A-Za-z][_A-Za-z0-9]+).*");
     std::smatch match;
 
-    if (std::regex_match(fieldExpression, match, fieldNameRegex) && match[1].matched) {
+    if (std::regex_match(fieldExpression, match, FIELD_NAME_REGEX) && match[1].matched) {
         return vespalib::string(match[1].first, match[1].second);
     }
 
