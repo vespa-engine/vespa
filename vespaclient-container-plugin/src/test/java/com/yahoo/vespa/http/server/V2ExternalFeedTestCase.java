@@ -44,7 +44,9 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -250,12 +252,8 @@ public class V2ExternalFeedTestCase {
 
             HttpResponse r = handler.handle(nalle);
             r.render(out);
-            String expectedErrorMsg = "Got request from client with id 'something', but found no session for this client. " +
-                                      "Most probably this server is in VIP rotation, and a client session was rotated from one " +
-                                      "server to another. This must not happen. Configure VIP with persistence=enabled, or " +
-                                      "(preferably) do not use a VIP at all.";
-            assertEquals(expectedErrorMsg,
-                         Utf8.toString(out.toByteArray()));
+            String expectedErrorMsg = "Got request from client with id 'something', but found no session for this client.";
+	    assertThat(Utf8.toString(out.toByteArray()), containsString(expectedErrorMsg));
             assertEquals("text/plain", r.getContentType());
             assertEquals(StandardCharsets.UTF_8.name(), r.getCharacterEncoding());
         }
@@ -277,11 +275,8 @@ public class V2ExternalFeedTestCase {
             nalle.getJDiscRequest().headers().add(Headers.TRACE_LEVEL, "4");
             HttpResponse r = handler.handle(nalle);
             r.render(out);
-            String expectedErrorMsg = "Got request from client with id 'something#', but found no session for this " +
-                                      "client. Possible session timeout due to inactivity, server restart or " +
-                                      "reconfig, or bad VIP usage.";
-            assertEquals(expectedErrorMsg,
-                         Utf8.toString(out.toByteArray()));
+            String expectedErrorMsg = "Got request from client with id 'something#', but found no session for this client.";
+            assertThat(Utf8.toString(out.toByteArray()), containsString(expectedErrorMsg));
             assertEquals("text/plain", r.getContentType());
             assertEquals(StandardCharsets.UTF_8.name(), r.getCharacterEncoding());
         }
@@ -306,11 +301,8 @@ public class V2ExternalFeedTestCase {
             String expectedErrorMsg = "Got request from client with id 'something#thisHostnameDoesNotExistAnywhere', " +
                                       "but found no session for this client. Session was originally established " +
                                       "towards host thisHostnameDoesNotExistAnywhere, but our hostname is " +
-                                      "ourHostname. Most probably this server is in VIP rotation, and a session " +
-                                      "was rotated from one server to another. This should not happen. Configure VIP " +
-                                      "with persistence=enabled, or (preferably) do not use a VIP at all.";
-            assertEquals(expectedErrorMsg,
-                         Utf8.toString(out.toByteArray()));
+                                      "ourHostname.";
+            assertThat(Utf8.toString(out.toByteArray()), containsString(expectedErrorMsg));
             assertEquals("text/plain", r.getContentType());
             assertEquals(StandardCharsets.UTF_8.name(), r.getCharacterEncoding());
         }
