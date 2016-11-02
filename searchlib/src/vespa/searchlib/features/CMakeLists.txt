@@ -11,6 +11,7 @@ vespa_add_library(searchlib_features OBJECT
     debug_wait.cpp
     distancefeature.cpp
     distancetopathfeature.cpp
+    dense_tensor_attribute_executor.cpp
     dotproductfeature.cpp
     element_completeness_feature.cpp
     element_similarity_feature.cpp
