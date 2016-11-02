@@ -67,8 +67,4 @@ public:
     int Main(int argc, char *argv[]);
 };
 
-/**
- * Run fbench as a FastOS application.
- **/
 int main(int argc, char** argv);
-
