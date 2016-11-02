@@ -593,7 +593,7 @@ void
 Test::testLayout()
 {
     FastOS_File file;
-    const std::string fileName = vespalib::TestApp::GetSourceDirectory() + "fileheader.dat";
+    const std::string fileName = TEST_PATH("fileheader.dat");
     ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
 
     FileHeader header;

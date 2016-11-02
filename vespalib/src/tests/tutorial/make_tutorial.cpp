@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/slaveproc.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sys/mman.h>
@@ -57,7 +56,7 @@ TEST_MAIN_WITH_PROCESS_PROXY() {
     size_t pos = 0;
     size_t end = 0;
     size_t cursor = 0;
-    std::string input = readFile(vespalib::TestApp::GetSourceDirectory() + "tutorial_source.html");
+    std::string input = readFile(TEST_PATH("tutorial_source.html"));
     while ((pos = input.find(pre, cursor)) < input.size() &&
            (end = input.find(post, pos)) < input.size())
     {
@@ -65,16 +64,13 @@ TEST_MAIN_WITH_PROCESS_PROXY() {
         pos += pre.size();
         if (input.find(example, pos) == pos) {
             pos += example.size();
-            insertExample(std::string((input.data() + pos), (end - pos)),
-                          vespalib::TestApp::GetSourceDirectory());
+            insertExample(std::string((input.data() + pos), (end - pos)), TEST_PATH(""));
         } else if (input.find(source, pos) == pos) {
             pos += source.size();
-            insertSource(std::string((input.data() + pos), (end - pos)),
-                         vespalib::TestApp::GetSourceDirectory());
+            insertSource(std::string((input.data() + pos), (end - pos)), TEST_PATH(""));
         } else if (input.find(file, pos) == pos) {
             pos += file.size();
-            insertFile(std::string((input.data() + pos), (end - pos)),
-                       vespalib::TestApp::GetSourceDirectory());
+            insertFile(std::string((input.data() + pos), (end - pos)), TEST_PATH(""));
         } else {
             std::string str((input.data() + pos), (end - pos));
             TEST_FATAL(make_string("invalid directive >%s<", str.c_str()).c_str());

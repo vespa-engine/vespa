@@ -3,6 +3,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("guard_test");
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/guard.h>
 
 using namespace vespalib;
@@ -132,7 +133,7 @@ Test::testDirPointer()
         EXPECT_TRUE(!dir.valid());
     }
     {
-        DirPointer dir(opendir(vespalib::TestApp::GetSourceDirectory().c_str()));
+        DirPointer dir(opendir(TEST_PATH("").c_str()));
         EXPECT_TRUE(dir.valid());
 
         dirent *de;

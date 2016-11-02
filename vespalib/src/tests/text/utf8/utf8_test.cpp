@@ -2,8 +2,10 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("utf8_test");
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/text/utf8.h>
+
 #if 0
 #include <vespa/fastlib/text/unicodeutil.h>
 #endif
@@ -54,7 +56,7 @@ Test::Main()
 
     {
         // read data produced from Java program
-        int fd = ::open((vespalib::TestApp::GetSourceDirectory() + "regular-utf8.dat").c_str(), O_RDONLY);
+        int fd = ::open(TEST_PATH("regular-utf8.dat").c_str(), O_RDONLY);
         ASSERT_TRUE(fd > 0);
         vespalib::string data;
         data.clear();

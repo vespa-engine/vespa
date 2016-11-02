@@ -99,7 +99,7 @@ std::string to_sorted_key_value_string(const NamedErrorCodes& codes) {
 
 std::string
 ErrorCodesTest::path_prefixed(const std::string& file_name) const {
-    return GetSourceDirectory() + "../../../test/crosslanguagefiles/" + file_name;
+    return TEST_PATH("../../../test/crosslanguagefiles/" + file_name);
 }
 
 void

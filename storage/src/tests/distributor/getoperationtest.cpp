@@ -56,7 +56,7 @@ public:
         _repo.reset(
                 new document::DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
                         getConfig("config-doctypes",
-                                  FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
+                                  FileSpec(TEST_PATH("config-doctypes.cfg")))));
         createLinks();
 
         docId = document::DocumentId(document::DocIdString("test", "uri"));

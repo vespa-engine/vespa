@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
@@ -116,18 +116,15 @@ DistributionTest::testVerifyJavaDistributions()
         std::string test = tests[i];
         ClusterState state;
         {
-            std::ifstream in(
-                    (vespalib::TestApp::GetSourceDirectory() +
-                            "distribution/testdata/java_" + test + ".state").c_str());
+            std::ifstream in(TEST_PATH("distribution/testdata/java_" + test + ".state").c_str());
             std::string mystate;
             in >> mystate;
             in.close();
             state = ClusterState(mystate);
         }
         Distribution distr(readConfig<vespa::config::content::StorDistributionConfig>(
-                "file:" + vespalib::TestApp::GetSourceDirectory() + "distribution/testdata/java_" + test + ".cfg"));
-        std::ofstream of((vespalib::TestApp::GetSourceDirectory() +
-                          "distribution/testdata/cpp_" + test + ".distribution").c_str());
+                "file:" + TEST_PATH("distribution/testdata/java_") + test + ".cfg"));
+        std::ofstream of((TEST_PATH("distribution/testdata/cpp_") + test + ".distribution").c_str());
 
         long maxBucket = 1;
         long mask = 0;
@@ -158,8 +155,8 @@ DistributionTest::testVerifyJavaDistributions()
         }
         of.close();
         std::ostringstream cmd;
-        cmd << "diff -u " << vespalib::TestApp::GetSourceDirectory() << "distribution/testdata/cpp_" << test << ".distribution "
-            << vespalib::TestApp::GetSourceDirectory() << "distribution/testdata/java_" << test << ".distribution";
+        cmd << "diff -u " << TEST_PATH("distribution/testdata/cpp_") << test << ".distribution "
+            << TEST_PATH("distribution/testdata/java_") << test << ".distribution";
         int result = system(cmd.str().c_str());
         CPPUNIT_ASSERT_EQUAL_MSG("Failed distribution sync test: " + test,
                                  0, result);
@@ -234,7 +231,7 @@ void
 DistributionTest::testVerifyJavaDistributions2()
 {
     vespalib::DirectoryList files(
-            vespalib::listDirectory(vespalib::TestApp::GetSourceDirectory() + "distribution/testdata"));
+            vespalib::listDirectory(TEST_PATH("distribution/testdata")));
     for (uint32_t i=0, n=files.size(); i<n; ++i) {
         size_t pos = files[i].find(".java.results");
         if (pos == vespalib::string::npos || pos + 13 != files[i].size()) {
@@ -246,14 +243,14 @@ DistributionTest::testVerifyJavaDistributions2()
         using namespace vespalib::slime;
         vespalib::Slime slime;
 
-        auto buf = readFile(vespalib::TestApp::GetSourceDirectory() + "distribution/testdata/" + files[i]);
+        auto buf = readFile(TEST_PATH("distribution/testdata/") + files[i]);
         auto size = JsonFormat::decode({&buf[0], buf.size()}, slime);
 
         if (size == 0) {
             std::cerr << "\n\nSize of " << files[i] << " is 0. Maybe is not generated yet? Taking a 5 second nap!";
             std::this_thread::sleep_for(std::chrono::seconds(5));
 
-            buf = readFile(vespalib::TestApp::GetSourceDirectory() + "distribution/testdata/" + files[i]);
+            buf = readFile(TEST_PATH("distribution/testdata/") + files[i]);
             size = JsonFormat::decode({&buf[0], buf.size()}, slime);
 
             if (size == 0) {
@@ -299,7 +296,7 @@ DistributionTest::testUnchangedDistribution()
     ClusterState state("distributor:10 storage:10");
 
     Distribution distr(Distribution::getDefaultDistributionConfig(3, 10));
-    std::ifstream in(vespalib::TestApp::GetSourceDirectory() + "distribution/testdata/41-distributordistribution");
+    std::ifstream in(TEST_PATH("distribution/testdata/41-distributordistribution"));
 
     for (unsigned i = 0; i < 65536; i++) {
         uint16_t node = distr.getIdealDistributorNode(

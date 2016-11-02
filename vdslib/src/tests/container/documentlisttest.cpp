@@ -307,11 +307,10 @@ void WritableDocumentListTest::testSizeOf()
 
 void WritableDocumentListTest::testReadJavaFile()
 {
-    DocumentTypeRepo::SP repo(new DocumentTypeRepo(readDocumenttypesConfig(
-            vespalib::TestApp::GetSourceDirectory() + "../test/files/documenttypes.cfg")));
+    DocumentTypeRepo::SP repo(new DocumentTypeRepo(readDocumenttypesConfig(TEST_PATH("../test/files/documenttypes.cfg"))));
 
     //read file
-    int file = open((vespalib::TestApp::GetSourceDirectory() + "../test/files/documentlist-java.dat").c_str(), O_RDONLY);
+    int file = open(TEST_PATH("../test/files/documentlist-java.dat").c_str(), O_RDONLY);
     if (file == -1) {
         CPPUNIT_ASSERT(0);
     }
@@ -408,10 +407,10 @@ void WritableDocumentListTest::testGetSerializedSize() {
 
 void WritableDocumentListTest::testCopyEntry() {
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(readDocumenttypesConfig(
-            vespalib::TestApp::GetSourceDirectory() + "../test/files/documenttypes.cfg")));
+            TEST_PATH("../test/files/documenttypes.cfg"))));
 
     //read file
-    int file = open((vespalib::TestApp::GetSourceDirectory() + "../test/files/documentlist-java.dat").c_str(), O_RDONLY);
+    int file = open(TEST_PATH("../test/files/documentlist-java.dat").c_str(), O_RDONLY);
     if (file == -1) {
         CPPUNIT_ASSERT(0);
     }

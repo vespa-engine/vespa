@@ -63,7 +63,7 @@ struct FakeStatter : public PartitionMonitor::Statter {
 
 void PartitionMonitorTest::testNormalUsage()
 {
-    const std::string file_name = vespalib::TestApp::GetSourceDirectory() + "testrunner.cpp";
+    const std::string file_name = TEST_PATH("testrunner.cpp");
     PartitionMonitor monitor(file_name);
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
@@ -90,7 +90,7 @@ void PartitionMonitorTest::testNormalUsage()
 
 void PartitionMonitorTest::testHighInodeFillrate()
 {
-    const std::string file_name = vespalib::TestApp::GetSourceDirectory() + "testrunner.cpp";
+    const std::string file_name = TEST_PATH("testrunner.cpp");
     PartitionMonitor monitor(file_name);
     FakeStatter* statter = new FakeStatter();
     statter->_info.f_favail = 2;
@@ -118,7 +118,7 @@ void PartitionMonitorTest::testHighInodeFillrate()
 
 void PartitionMonitorTest::testAlwaysStatPolicy()
 {
-    PartitionMonitor monitor(vespalib::TestApp::GetSourceDirectory() + "testrunner.cpp");
+    PartitionMonitor monitor(TEST_PATH("testrunner.cpp"));
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     monitor.setAlwaysStatPolicy();
@@ -130,7 +130,7 @@ void PartitionMonitorTest::testAlwaysStatPolicy()
 
 void PartitionMonitorTest::testPeriodPolicy()
 {
-    PartitionMonitor monitor(vespalib::TestApp::GetSourceDirectory() + "testrunner.cpp");
+    PartitionMonitor monitor(TEST_PATH("testrunner.cpp"));
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     monitor.setStatPeriodPolicy(4);
@@ -142,7 +142,7 @@ void PartitionMonitorTest::testPeriodPolicy()
 
 void PartitionMonitorTest::testStatOncePolicy()
 {
-    PartitionMonitor monitor(vespalib::TestApp::GetSourceDirectory() + "testrunner.cpp");
+    PartitionMonitor monitor(TEST_PATH("testrunner.cpp"));
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     monitor.setStatOncePolicy();
@@ -154,7 +154,7 @@ void PartitionMonitorTest::testStatOncePolicy()
 
 void PartitionMonitorTest::testDynamicPolicy()
 {
-    PartitionMonitor monitor(vespalib::TestApp::GetSourceDirectory() + "testrunner.cpp");
+    PartitionMonitor monitor(TEST_PATH("testrunner.cpp"));
     FakeStatter* statter = new FakeStatter();
     monitor.setStatter(std::unique_ptr<PartitionMonitor::Statter>(statter));
     monitor.setStatDynamicPolicy(2);
@@ -180,7 +180,7 @@ void PartitionMonitorTest::testDynamicPolicy()
 
 void PartitionMonitorTest::testIsFull()
 {
-    PartitionMonitor monitor(vespalib::TestApp::GetSourceDirectory() + "testrunner.cpp");
+    PartitionMonitor monitor(TEST_PATH("testrunner.cpp"));
     monitor.setMaxFillness(0.85);
     FakeStatter* statter = new FakeStatter();
     monitor.setStatOncePolicy();

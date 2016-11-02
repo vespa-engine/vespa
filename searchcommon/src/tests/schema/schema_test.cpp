@@ -3,7 +3,7 @@
 #include <vespa/log/log.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <fstream>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/configparser.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 LOG_SETUP("schema_test");
@@ -161,7 +161,7 @@ TEST("testLoadAndSave") {
 
     { // load from config -> save to file -> load from file
         Schema s;
-        SchemaConfigurer configurer(s, "dir:" + vespalib::TestApp::GetSourceDirectory());
+        SchemaConfigurer configurer(s, "dir:" + TEST_PATH(""));
         EXPECT_EQUAL(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
         assertIndexField(SIF("b", SDT::INT64), s.getIndexField(1));

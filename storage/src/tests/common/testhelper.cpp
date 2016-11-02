@@ -4,7 +4,7 @@
 
 #include <vespa/log/log.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 LOG_SETUP(".testhelper");
 
@@ -160,7 +160,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config->set("maxconcurrentvisitors_fixed", "4");
     config->set("maxconcurrentvisitors_variable", "0");
     config = &dc.addConfig("stor-visitordispatcher");
-    addFileConfig(dc, "documenttypes", vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg");
+    addFileConfig(dc, "documenttypes", TEST_PATH("config-doctypes.cfg"));
     addStorageDistributionConfig(dc);
     return dc;
 }

@@ -17,23 +17,6 @@ TestApp::~TestApp()
 {
 }
 
-const std::string&
-TestApp::GetSourceDirectory()
-{
-    static const std::string srcDir = [] () {
-        std::string dir(".");
-        const char* env = getenv("SOURCE_DIRECTORY");
-        if (env) {
-            dir = env;
-        }
-        if (*dir.rbegin() != '/') {
-            dir += "/";
-        }
-        return dir;
-    } ();
-    return srcDir;
-}
-
 void
 TestApp::ReportInit(const char *name)
 {

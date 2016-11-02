@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <lib/modelinspect.h>
 #include <iostream>
 
@@ -33,8 +33,7 @@ public:
 
     static config::ConfigUri configUri(const std::string &type, const std::string &name)
     {
-        return config::ConfigUri(type + ":" +
-                                 vespalib::TestApp::GetSourceDirectory() + "/" + name);
+        return config::ConfigUri(type + ":" + TEST_PATH(name));
     }
 };
 

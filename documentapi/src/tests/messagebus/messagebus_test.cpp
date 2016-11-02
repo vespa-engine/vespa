@@ -37,7 +37,7 @@ Test::Main()
 {
     TEST_INIT(_argv[0]);
     _repo.reset(new DocumentTypeRepo(readDocumenttypesConfig(
-            GetSourceDirectory() + "../../../test/cfg/testdoctypes.cfg")));
+            TEST_PATH("../../../test/cfg/testdoctypes.cfg"))));
 
     testMessage();  TEST_FLUSH();
     testProtocol(); TEST_FLUSH();

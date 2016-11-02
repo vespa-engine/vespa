@@ -19,7 +19,7 @@
 #include <vespa/searchlib/expression/integerbucketresultnode.h>
 #include <vespa/vespalib/objects/nboserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <fstream>
 #include <vespa/log/log.h>
@@ -43,7 +43,7 @@ document::GlobalId getGlobalId(uint32_t docId) {
 struct Fixture {
     // Set WRITE_FILES to true to generate new expected serialization files.
     const bool WRITE_FILES = false;
-    const std::string file_path = vespalib::TestApp::GetSourceDirectory() + "../../test/files/";
+    const std::string file_path = TEST_PATH("../../test/files/");
     std::string file_name;
     std::ifstream file_stream;
 

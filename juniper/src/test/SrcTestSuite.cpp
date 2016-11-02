@@ -59,7 +59,7 @@ public:
 };
 
 int SrcTestSuiteApp::Main() {
-    juniper::TestEnv te(this, (GetSourceDirectory() + "../rpclient/testclient.rc").c_str());
+    juniper::TestEnv te(this, TEST_PATH("../rpclient/testclient.rc").c_str());
     SrcTestSuite suite;
     suite.Run();
     long failures = suite.Report();

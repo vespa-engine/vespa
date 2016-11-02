@@ -441,7 +441,7 @@ TEST("requireThatDocumentLookupChecksName") {
 }
 
 TEST("requireThatBuildFromConfigWorks") {
-    DocumentTypeRepo repo(readDocumenttypesConfig(vespalib::TestApp::GetSourceDirectory() + "documenttypes.cfg"));
+    DocumentTypeRepo repo(readDocumenttypesConfig(TEST_PATH("documenttypes.cfg")));
     ASSERT_TRUE(repo.getDocumentType("document"));
     ASSERT_TRUE(repo.getDocumentType("types"));
     ASSERT_TRUE(repo.getDocumentType("types_search"));

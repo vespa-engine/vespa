@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     if (argc > 1) {
         numRep = strtoul(argv[1], 0, 0);
     }
-    std::ifstream file((vespalib::TestApp::GetSourceDirectory() + "large_json.txt").c_str());
+    std::ifstream file(TEST_PATH("large_json.txt").c_str());
     assert(file.is_open());
     std::stringstream buf;
     buf << file.rdbuf();

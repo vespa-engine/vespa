@@ -2,6 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("lowercase_test");
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <iostream>
@@ -20,7 +21,7 @@ Test::Main()
     EXPECT_EQUAL((int8_t)'a', LowerCase::convert((int8_t)'A'));
     EXPECT_EQUAL((uint8_t)'a', LowerCase::convert((uint8_t)'A'));
 
-    std::ifstream yellData(vespalib::TestApp::GetSourceDirectory() + "yell-want.dat");
+    std::ifstream yellData(TEST_PATH("yell-want.dat"));
 
     EXPECT_TRUE(yellData.good());
 

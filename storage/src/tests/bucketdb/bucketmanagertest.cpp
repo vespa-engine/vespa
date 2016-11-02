@@ -195,7 +195,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
 
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(
                 *ConfigGetter<DocumenttypesConfig>::getConfig(
-                    "config-doctypes", FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
+                    "config-doctypes", FileSpec(TEST_PATH("config-doctypes.cfg")))));
     _top.reset(new DummyStorageLink);
     _node.reset(new TestServiceLayerApp(
                 DiskCount(2), NodeIndex(0), config.getConfigId()));
