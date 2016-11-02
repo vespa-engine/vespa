@@ -283,8 +283,8 @@ class ApacheGatewayConnection implements GatewayConnection {
             return;
         } else {
             if (!sessionId.equals(serverHeaderVal)) {
-                log.severe("Request has been routed to a server which does not recognize the client session."
-                        + " Most likely causes are server restart or incompatible use of a VIP.");
+                log.info("Request has been routed to a server which does not recognize the client session."
+                        + " Most likely cause is upgrading of cluster, transitive error.");
                 throw new ServerResponseException(
                         "Session ID received from server ('" + serverHeaderVal
                         + "') does not match cached session ID ('" + sessionId + "')");
