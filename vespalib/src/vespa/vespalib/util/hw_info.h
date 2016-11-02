@@ -7,7 +7,7 @@
 namespace vespalib {
 
 /*
- * class describing some hardware on the machine.
+ * Class describing some hardware on the machine.
  */
 class HwInfo : public IHwInfo
 {
