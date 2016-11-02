@@ -84,6 +84,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg,
       _iSearchView(),
       _iFeedView(),
       _configLock(ctx._configLock),
+      _hwInfo(ctx._hwInfo),
       _getSerialNum(ctx._getSerialNum),
       _tlsSyncer(ctx._writeService.master(), ctx._getSerialNum, ctx._tlSyncer),
       _dmsFlushTarget(),
@@ -242,7 +243,7 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
                                                            _tlsSyncer,
                                   baseDir,
                                   dmsResult->tuneFile(),
-                                  _fileHeaderContext));
+                                  _fileHeaderContext, _hwInfo));
 }
 
 DocumentSubDbInitializer::UP

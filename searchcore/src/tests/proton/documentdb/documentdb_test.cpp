@@ -21,6 +21,7 @@ LOG_SETUP("documentdb_test");
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/mock_hw_info.h>
 
 using document::DocumentType;
 using document::DocumentTypeRepo;
@@ -56,6 +57,7 @@ struct Fixture {
     DummyWireService _dummy;
     DummyDBOwner _dummyDBOwner;
     vespalib::ThreadStackExecutor _summaryExecutor;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
     DocumentDB::SP _db;
     DummyFileHeaderContext _fileHeaderContext;
     TransLogServer _tls;
@@ -66,9 +68,16 @@ struct Fixture {
 };
 
 Fixture::Fixture()
-    : _summaryExecutor(8, 128*1024),
-      _tls("tmp", 9014, ".", _fileHeaderContext) {
-
+    : _dummy(),
+      _dummyDBOwner(),
+      _summaryExecutor(8, 128*1024),
+      _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
+      _db(),
+      _fileHeaderContext(),
+      _tls("tmp", 9014, ".", _fileHeaderContext),
+      _queryLimiter(),
+      _clock()
+{
     DocumentDBConfig::DocumenttypesConfigSP documenttypesConfig(new DocumenttypesConfig());
     DocumentType docType("typea", 0);
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(docType));
@@ -90,7 +99,8 @@ Fixture::Fixture()
                              _dummyDBOwner, _summaryExecutor, _summaryExecutor, NULL, _dummy, _fileHeaderContext,
                              ConfigStore::UP(new MemoryConfigStore),
                              std::make_shared<vespalib::ThreadStackExecutor>
-                             (16, 128 * 1024)));
+                             (16, 128 * 1024),
+                             _hwInfo));
     _db->start();
     _db->waitForOnlineState();
 }

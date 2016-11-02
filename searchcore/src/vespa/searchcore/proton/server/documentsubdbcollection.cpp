@@ -38,7 +38,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const vespalib::Clock &clock,
         vespalib::Lock &configLock,
         const vespalib::string &baseDir,
-        const ProtonConfig &protonCfg)
+        const ProtonConfig &protonCfg,
+        const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
     : _subDBs(),
       _calc(),
       _readySubDbId(0),
@@ -68,7 +69,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                                        _bucketDB,
                                        *_bucketDBHandler,
                                        metrics,
-                                       configLock);
+                                       configLock,
+                                       hwInfo);
     _subDBs.push_back
         (new SearchableDocSubDB
             (SearchableDocSubDB::Config(FastAccessDocSubDB::Config

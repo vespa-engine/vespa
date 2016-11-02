@@ -24,6 +24,7 @@ LOG_SETUP("configurer_test");
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/mock_hw_info.h>
 
 using namespace config;
 using namespace document;
@@ -93,6 +94,7 @@ struct ViewSet
     CommitTimeTracker _commitTimeTracker;
     VarHolder<SearchView::SP> searchView;
     VarHolder<SearchableFeedView::SP> feedView;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
     ViewSet()
         : _reconfigurer(),
           _fileHeaderContext(),
@@ -107,7 +109,8 @@ struct ViewSet
           _lidReuseDelayer(),
           _commitTimeTracker(TimeStamp()),
           searchView(),
-          feedView()
+          feedView(),
+          _hwInfo(std::make_shared<vespalib::MockHwInfo>())
     {
     }
 
@@ -173,7 +176,8 @@ Fixture::initViewSet(ViewSet &views)
                                                       TuneFileAttributes(),
                                                       views._fileHeaderContext,
                                                       views._writeService.
-                                                      attributeFieldWriter()));
+                                                      attributeFieldWriter(),
+                                                      views._hwInfo));
     ProtonConfig protonCfg;
     SummaryManager::SP summaryMgr(
             new SummaryManager(_summaryExecutor, ProtonConfig::Summary(),
@@ -248,6 +252,8 @@ struct MyFastAccessFeedView
     DummyFileHeaderContext _fileHeaderContext;
     DocIdLimit _docIdLimit;
     IThreadingService &_writeService;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+
     IDocumentMetaStoreContext::SP _dmsc;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     CommitTimeTracker                 _commitTimeTracker;
@@ -258,6 +264,7 @@ struct MyFastAccessFeedView
           _fileHeaderContext(),
           _docIdLimit(0),
           _writeService(writeService),
+          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
           _dmsc(),
           _lidReuseDelayer(),
           _commitTimeTracker(TimeStamp()),
@@ -281,7 +288,8 @@ struct MyFastAccessFeedView
                                                       TuneFileAttributes(),
                                                       _fileHeaderContext,
                                                       _writeService.
-                                                      attributeFieldWriter()));
+                                                      attributeFieldWriter(),
+                                                      _hwInfo));
         IAttributeWriter::SP writer(new AttributeWriter(mgr));
         FastAccessFeedView::Context fastUpdateCtx(writer, _docIdLimit);
         _feedView.set(FastAccessFeedView::SP(new FastAccessFeedView(storeOnlyCtx,
