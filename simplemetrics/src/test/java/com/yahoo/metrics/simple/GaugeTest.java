@@ -21,16 +21,18 @@ import com.yahoo.metrics.ManagerConfig;
  *
  * @author steinar
  */
-public class GaugeTest extends UnitTestSetup {
+public class GaugeTest {
+
+    MetricReceiver receiver;
 
     @Before
     public void setUp() throws Exception {
-        super.init();
+        receiver = new MetricReceiver.MockReceiver();
     }
 
     @After
     public void tearDown() throws Exception {
-        super.fini();
+        receiver = null;
     }
 
     @Test
@@ -38,7 +40,7 @@ public class GaugeTest extends UnitTestSetup {
         final String metricName = "unitTestGauge";
         Gauge g = receiver.declareGauge(metricName);
         g.sample(1.0d);
-        Bucket b = getUpdatedSnapshot();
+        Bucket b = receiver.getSnapshot();
         final Map<String, List<Entry<Point, UntypedMetric>>> valuesByMetricName = b.getValuesByMetricName();
         assertEquals(1, valuesByMetricName.size());
         List<Entry<Point, UntypedMetric>> x = valuesByMetricName.get(metricName);
@@ -54,7 +56,7 @@ public class GaugeTest extends UnitTestSetup {
         Point p = receiver.pointBuilder().set("x", 2L).set("y", 3.0d).set("z", "5").build();
         Gauge g = receiver.declareGauge(metricName, p);
         g.sample(Math.E, g.builder().set("x", 7).set("_y", 11.0d).set("Z", "13").build());
-        Bucket b = getUpdatedSnapshot();
+        Bucket b = receiver.getSnapshot();
         final Map<String, List<Entry<Point, UntypedMetric>>> valuesByMetricName = b.getValuesByMetricName();
         assertEquals(1, valuesByMetricName.size());
         List<Entry<Point, UntypedMetric>> x = valuesByMetricName.get(metricName);

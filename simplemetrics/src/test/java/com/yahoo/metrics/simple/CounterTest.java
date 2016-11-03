@@ -14,23 +14,23 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.yahoo.metrics.ManagerConfig;
-
 /**
  * Functional tests for counters.
  *
  * @author steinar
  */
-public class CounterTest extends UnitTestSetup {
+public class CounterTest {
+
+    MetricReceiver receiver;
 
     @Before
     public void setUp() throws Exception {
-        super.init();
+        receiver = new MetricReceiver.MockReceiver();
     }
 
     @After
     public void tearDown() throws Exception {
-        super.fini();
+        receiver = null;
     }
 
     @Test
@@ -38,7 +38,7 @@ public class CounterTest extends UnitTestSetup {
         final String metricName = "unitTestCounter";
         Counter c = receiver.declareCounter(metricName);
         c.add();
-        Bucket b = getUpdatedSnapshot();
+        Bucket b = receiver.getSnapshot();
         final Map<String, List<Entry<Point, UntypedMetric>>> valuesByMetricName = b.getValuesByMetricName();
         assertEquals(1, valuesByMetricName.size());
         List<Entry<Point, UntypedMetric>> x = valuesByMetricName.get(metricName);
@@ -53,7 +53,7 @@ public class CounterTest extends UnitTestSetup {
         Counter c = receiver.declareCounter(metricName);
         final long twoToThePowerOfFourtyeight = 65536L * 65536L * 65536L;
         c.add(twoToThePowerOfFourtyeight);
-        Bucket b = getUpdatedSnapshot();
+        Bucket b = receiver.getSnapshot();
         final Map<String, List<Entry<Point, UntypedMetric>>> valuesByMetricName = b.getValuesByMetricName();
         assertEquals(1, valuesByMetricName.size());
         List<Entry<Point, UntypedMetric>> x = valuesByMetricName.get(metricName);
@@ -68,7 +68,7 @@ public class CounterTest extends UnitTestSetup {
         Point p = receiver.pointBuilder().set("x", 2L).set("y", 3.0d).set("z", "5").build();
         Counter c = receiver.declareCounter(metricName, p);
         c.add();
-        Bucket b = getUpdatedSnapshot();
+        Bucket b = receiver.getSnapshot();
         final Map<String, List<Entry<Point, UntypedMetric>>> valuesByMetricName = b.getValuesByMetricName();
         assertEquals(1, valuesByMetricName.size());
         List<Entry<Point, UntypedMetric>> x = valuesByMetricName.get(metricName);
@@ -84,7 +84,7 @@ public class CounterTest extends UnitTestSetup {
         Counter c = receiver.declareCounter(metricName, p);
         final long twoToThePowerOfFourtyeight = 65536L * 65536L * 65536L;
         c.add(twoToThePowerOfFourtyeight, c.builder().set("x", 7).set("_y", 11.0d).set("Z", "13").build());
-        Bucket b = getUpdatedSnapshot();
+        Bucket b = receiver.getSnapshot();
         final Map<String, List<Entry<Point, UntypedMetric>>> valuesByMetricName = b.getValuesByMetricName();
         assertEquals(1, valuesByMetricName.size());
         List<Entry<Point, UntypedMetric>> x = valuesByMetricName.get(metricName);
