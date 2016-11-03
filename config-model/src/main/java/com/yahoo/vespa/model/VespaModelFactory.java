@@ -160,7 +160,7 @@ public class VespaModelFactory implements ModelFactory {
     }
 
     // Returns true if nodes element has an attribute 'type', false otherwise
-    private static boolean useRoutingNodesInNodeRepo(Reader servicesReader) {
+    public static boolean useRoutingNodesInNodeRepo(Reader servicesReader) {
         Document services = XmlHelper.getDocument(servicesReader);
 
         Element jdisc = XML.getChild(services.getDocumentElement(), "jdisc");

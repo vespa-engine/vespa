@@ -234,8 +234,11 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     // Precondition: session is for a hosted routing application
     boolean isHostedRoutingApplicationUsingRoutingNodesInNodeRepo(LocalSession session) {
-        Path servicesPath = Path.fromString(ApplicationPackage.SERVICES);
+        Path servicesPath = Path.fromString(".preprocessed/" + ApplicationPackage.SERVICES);
         ApplicationFile services = session.getApplicationFile(servicesPath, LocalSession.Mode.READ);
+
+        if ( ! services.exists()) return false;
+
         try {
             return usesRoutingNodesInNodeRepo(services.createReader());
         } catch (FileNotFoundException e) {
