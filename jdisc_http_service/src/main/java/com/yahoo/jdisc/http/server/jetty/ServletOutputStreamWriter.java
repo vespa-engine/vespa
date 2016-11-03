@@ -205,7 +205,6 @@ public class ServletOutputStreamWriter {
 
     private void closeOutputStream(CompletionHandler handler) throws Exception {
         callCompletionHandlerWhenDone(handler, () -> {
-            outputStream.close();
             return null;
         });
     }
