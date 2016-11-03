@@ -38,7 +38,7 @@ public class JdiscMetricsFactory implements MetricConsumerFactory, SnapshotProvi
     public MetricSnapshot latestSnapshot() {
         Bucket curr = metricReceiver.getSnapshot();
         if (curr == null) {
-            log.warning("no snapshot from instance of " + metricInstance.getClass());
+            log.warning("no snapshot from instance of " + metricReceiver.getClass());
             return null;
         } else {
             SnapshotConverter converter = new SnapshotConverter(curr);
@@ -50,7 +50,7 @@ public class JdiscMetricsFactory implements MetricConsumerFactory, SnapshotProvi
     public void histogram(PrintStream output) {
         Bucket curr = metricReceiver.getSnapshot();
         if (curr == null) {
-            log.warning("no snapshot from instance of " + metricInstance.getClass());
+            log.warning("no snapshot from instance of " + metricReceiver.getClass());
         } else {
             SnapshotConverter converter = new SnapshotConverter(curr);
             converter.outputHistograms(output);
