@@ -34,6 +34,7 @@ LOG_SETUP(".proton.server.proton");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/vespalib/util/hw_info.h>
 
 using document::DocumentTypeRepo;
 using vespalib::FileHeader;
@@ -208,7 +209,8 @@ Proton::Proton(const config::ConfigUri & configUri,
       _abortInit(false),
       _initStarted(false),
       _initComplete(false),
-      _initDocumentDbsInSequence(false)
+      _initDocumentDbsInSequence(false),
+      _hwInfo(std::make_shared<vespalib::HwInfo>())
 {
 }
 
@@ -733,7 +735,8 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                       *_metricsEngine,
                                       _fileHeaderContext,
                                       std::move(config_store),
-                                      initializeThreads));
+                                      initializeThreads,
+                                      _hwInfo));
     _protonConfigurer.registerDocumentDB(docTypeName, ret.get());
     try {
         ret->start();

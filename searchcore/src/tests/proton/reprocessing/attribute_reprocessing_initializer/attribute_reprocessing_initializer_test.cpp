@@ -13,6 +13,7 @@ LOG_SETUP("attribute_reprocessing_initializer_test");
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/mock_hw_info.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 
 using namespace proton;
@@ -52,15 +53,17 @@ struct MyConfig
 {
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
     AttributeManager::SP _mgr;
     search::index::Schema _schema;
     MyDocTypeInspector::SP _inspector;
     MyConfig()
         : _fileHeaderContext(),
           _attributeFieldWriter(),
+          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                     _fileHeaderContext,
-                                    _attributeFieldWriter)),
+                                    _attributeFieldWriter, _hwInfo)),
           _schema(),
           _inspector(new MyDocTypeInspector())
     {
@@ -94,6 +97,7 @@ struct Fixture
     test::DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
     AttributeManager::SP _mgr;
     MyConfig _oldCfg;
     MyConfig _newCfg;
@@ -103,9 +107,10 @@ struct Fixture
         : _dirHandler(TEST_DIR),
           _fileHeaderContext(),
           _attributeFieldWriter(),
+          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                     _fileHeaderContext,
-                                    _attributeFieldWriter)),
+                                    _attributeFieldWriter, _hwInfo)),
           _initializer(),
           _handler()
     {

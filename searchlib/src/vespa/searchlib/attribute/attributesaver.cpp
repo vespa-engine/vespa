@@ -36,5 +36,10 @@ AttributeSaver::save(IAttributeSaveTarget &saveTarget)
     return true;
 }
 
+bool
+AttributeSaver::hasGenerationGuard() const
+{
+    return _guard.valid();
+}
 
 } // namespace search

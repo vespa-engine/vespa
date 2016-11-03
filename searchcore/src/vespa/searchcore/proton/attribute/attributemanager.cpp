@@ -12,6 +12,7 @@ LOG_SETUP(".proton.attribute.attributemanager");
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/util/i_hw_info.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <memory>
@@ -58,7 +59,8 @@ AttributeManager::addAttribute(const AttributeWrap &attribute)
                 (new FlushableAttribute(attribute, _baseDir,
                                         _tuneFileAttributes,
                                         _fileHeaderContext,
-                                        _attributeFieldWriter));
+                                        _attributeFieldWriter,
+                                        _hwInfo));
         _writableAttributes.push_back(attribute.get());
     }
 }
@@ -177,7 +179,8 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const TuneFileAttributes &tuneFileAttributes,
                                    const FileHeaderContext &fileHeaderContext,
                                    search::ISequencedTaskExecutor &
-                                   attributeFieldWriter)
+                                   attributeFieldWriter,
+                                   const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
       _flushables(),
@@ -188,7 +191,8 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _fileHeaderContext(fileHeaderContext),
       _factory(new AttributeFactory()),
       _interlock(std::make_shared<search::attribute::Interlock>()),
-      _attributeFieldWriter(attributeFieldWriter)
+      _attributeFieldWriter(attributeFieldWriter),
+      _hwInfo(hwInfo)
 {
     createBaseDir();
 }
@@ -200,7 +204,8 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const search::common::FileHeaderContext &fileHeaderContext,
                                    search::ISequencedTaskExecutor &
                                    attributeFieldWriter,
-                                   const IAttributeFactory::SP &factory)
+                                   const IAttributeFactory::SP &factory,
+                                   const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
       _flushables(),
@@ -211,7 +216,8 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
       _fileHeaderContext(fileHeaderContext),
       _factory(factory),
       _interlock(std::make_shared<search::attribute::Interlock>()),
-      _attributeFieldWriter(attributeFieldWriter)
+      _attributeFieldWriter(attributeFieldWriter),
+      _hwInfo(hwInfo)
 {
     createBaseDir();
 }

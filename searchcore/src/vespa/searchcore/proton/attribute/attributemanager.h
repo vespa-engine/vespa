@@ -12,6 +12,8 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchcommon/common/schema.h>
 
+namespace vespalib { class IHwInfo; }
+
 namespace search
 {
 
@@ -64,6 +66,7 @@ private:
     IAttributeFactory::SP _factory;
     std::shared_ptr<search::attribute::Interlock> _interlock;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
+    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
 
     search::AttributeVector::SP internalAddAttribute(const vespalib::string &name,
                                                      const Config &cfg,
@@ -100,7 +103,8 @@ public:
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext &
                      fileHeaderContext,
-                     search::ISequencedTaskExecutor &attributeFieldWriter);
+                     search::ISequencedTaskExecutor &attributeFieldWriter,
+                     const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
 
     AttributeManager(const vespalib::string &baseDir,
                      const vespalib::string &documentSubDbName,
@@ -108,7 +112,8 @@ public:
                      const search::common::FileHeaderContext &
                      fileHeaderContext,
                      search::ISequencedTaskExecutor &attributeFieldWriter,
-                     const IAttributeFactory::SP &factory);
+                     const IAttributeFactory::SP &factory,
+                     const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
 
     AttributeManager(const AttributeManager &currMgr,
                      const Spec &newSpec,
