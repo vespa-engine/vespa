@@ -74,6 +74,29 @@ public class MetricReceiver {
         }
     }
 
+    public static final class MockReceiver extends MetricReceiver {
+        private final ThreadLocalDirectory<Bucket, Sample> collection;
+        private MockReceiver(ThreadLocalDirectory<Bucket, Sample> collection) {
+            super(collection, null);
+            this.collection = collection;
+        }
+        public MockReceiver() {
+            this(new ThreadLocalDirectory<>(new MetricUpdater()));
+        }
+        /** gathers all data since last snapshot */
+        public Bucket getSnapshot() {
+            final Bucket merged = new Bucket();
+            for (Bucket b : collection.fetch()) {
+                merged.merge(b, true);
+            }
+            return merged;
+        }
+        /** utility method for testing */
+        public Point point(String dim, String val) {
+            return pointBuilder().set(dim, val).build();
+        }
+    }
+
     private static final class NullReceiver extends MetricReceiver {
         NullReceiver() {
             super(null, null);

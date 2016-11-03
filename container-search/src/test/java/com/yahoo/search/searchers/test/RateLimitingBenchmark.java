@@ -3,7 +3,10 @@ package com.yahoo.search.searchers.test;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.jdisc.Metric;
+import com.yahoo.metrics.simple.Bucket;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.Point;
+import com.yahoo.metrics.simple.UntypedMetric;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -41,7 +44,8 @@ public class RateLimitingBenchmark {
     private final int timeBetweenPeaksMs = 2000;
 
     private final Chain<Searcher> chain;
-    private final MockMetric metric;
+    private final MetricReceiver metric;
+    private Bucket metricSnapshot;
 
     private final Map<String, RequestCounts> requestCounters = new HashMap<>();
 
@@ -61,7 +65,7 @@ public class RateLimitingBenchmark {
         clusterInfoConfig.clusterId("testCluster");
         clusterInfoConfig.nodeCount(1);
 
-        this.metric = new MockMetric();
+        this.metric = new MetricReceiver.MockReceiver();
 
         chain = new Chain<>("test", new RateLimitingSearcher(new RateLimitingConfig(rateLimitingConfig),
                                     new ClusterInfoConfig(clusterInfoConfig), metric));
@@ -75,6 +79,7 @@ public class RateLimitingBenchmark {
         runWorkers();
         long totalTime = Math.max(1, System.currentTimeMillis() - startTime);
 
+        metricSnapshot = metric.getSnapshot();
         double totalAttemptedRate = 0;
         for (int i=0; i < clientCount; i++) {
             double attemptedRate = requestCounters.get(toClientId(i)).attempted.get() * 1000d / totalTime;
@@ -108,10 +113,10 @@ public class RateLimitingBenchmark {
     }
 
     private int rejectedRequests(int id) {
-        Metric.Context context = metric.createContext("id", toClientId(id));
-        Number rejectedRequestsMetric = metric.values(context).get("requestsOverQuota");
+        Point context = metric.pointBuilder().set("id", toClientId(id)).build();
+        UntypedMetric rejectedRequestsMetric = metricSnapshot.getMapForMetric("requestsOverQuota").get(context);
         if (rejectedRequestsMetric == null) return 0;
-        return rejectedRequestsMetric.intValue();
+        return (int)rejectedRequestsMetric.getCount();
     }
 
     private class Worker implements Runnable {

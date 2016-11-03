@@ -3,7 +3,11 @@ package com.yahoo.search.searchers;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterInfoConfig;
-import com.yahoo.jdisc.Metric;
+
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.Counter;
+import com.yahoo.metrics.simple.Point;
+
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -69,7 +73,7 @@ public class RateLimitingSearcher extends Searcher {
     private final ThreadLocal<Map<String, Double>> allocatedCapacity = new ThreadLocal<>();
 
     /** For emitting metrics */
-    private final Metric metric;
+    private final Counter overQuotaCounter;
 
     /**
      * How much capacity to allocate to a thread each time it runs out.
@@ -81,19 +85,19 @@ public class RateLimitingSearcher extends Searcher {
     private final double recheckForCapacityProbability;
 
     @Inject
-    public RateLimitingSearcher(RateLimitingConfig rateLimitingConfig, ClusterInfoConfig clusterInfoConfig, Metric metric) {
+    public RateLimitingSearcher(RateLimitingConfig rateLimitingConfig, ClusterInfoConfig clusterInfoConfig, MetricReceiver metric) {
         this(rateLimitingConfig, clusterInfoConfig, metric, Clock.systemUTC());
     }
 
     /** For testing - allows injection of a timer to avoid depending on the system clock */
-    public RateLimitingSearcher(RateLimitingConfig rateLimitingConfig, ClusterInfoConfig clusterInfoConfig, Metric metric, Clock clock) {
+    public RateLimitingSearcher(RateLimitingConfig rateLimitingConfig, ClusterInfoConfig clusterInfoConfig, MetricReceiver metric, Clock clock) {
         this.capacityIncrement = rateLimitingConfig.capacityIncrement();
         this.recheckForCapacityProbability = rateLimitingConfig.recheckForCapacityProbability();
         this.availableCapacity = new AvailableCapacity(rateLimitingConfig.maxAvailableCapacity(), clock);
 
         this.nodeCount = clusterInfoConfig.nodeCount();
 
-        this.metric = metric;
+        this.overQuotaCounter = metric.declareCounter(requestsOverQuotaMetricName);
     }
 
     @Override
@@ -119,7 +123,12 @@ public class RateLimitingSearcher extends Searcher {
         }
 
         if (rate==0 || getAllocatedCapacity(id) <= 0) { // we are still over rate: reject
-            metric.add(requestsOverQuotaMetricName, 1, createContext(query.properties().getString(idDimensionKey, ""), id));
+            String idDim = query.properties().getString(idDimensionKey, null);
+            if (idDim == null) {
+                overQuotaCounter.add(1);
+            } else {
+                overQuotaCounter.add(1, createContext(idDim, id));
+            }
             if ( ! query.properties().getBoolean(dryRunKey, false))
                 return new Result(query, new ErrorMessage(429, "Too many requests", "Allowed rate: " + rate + "/s"));
         }
@@ -133,10 +142,8 @@ public class RateLimitingSearcher extends Searcher {
         return result;
     }
 
-    private Metric.Context createContext(String dimensionName, String dimensionValue) {
-        if (dimensionName.isEmpty())
-            return metric.createContext(Collections.emptyMap());
-        return metric.createContext(Collections.singletonMap(dimensionName, dimensionValue));
+    private Point createContext(String dimensionName, String dimensionValue) {
+        return overQuotaCounter.builder().set(dimensionName, dimensionValue).build();
     }
 
     private double getAllocatedCapacity(String id) {

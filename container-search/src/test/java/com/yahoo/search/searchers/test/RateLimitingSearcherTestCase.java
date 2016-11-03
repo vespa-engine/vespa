@@ -3,6 +3,10 @@ package com.yahoo.search.searchers.test;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.metrics.simple.Bucket;
+import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.Point;
+import com.yahoo.metrics.simple.UntypedMetric;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -14,6 +18,7 @@ import org.junit.Test;
 import com.yahoo.test.ManualClock;
 
 import java.time.Duration;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -38,7 +43,7 @@ public class RateLimitingSearcherTestCase {
         clusterInfoConfig.nodeCount(4);
 
         ManualClock clock = new ManualClock();
-        MockMetric metric = new MockMetric();
+        MetricReceiver.MockReceiver metric = new MetricReceiver.MockReceiver();
 
         Chain<Searcher> chain = new Chain<Searcher>("test", new RateLimitingSearcher(new RateLimitingConfig(rateLimitingConfig),
                                                                               new ClusterInfoConfig(clusterInfoConfig),
@@ -68,8 +73,9 @@ public class RateLimitingSearcherTestCase {
         assertTrue(executeWasAllowed(chain, "id1"));
 
         // check metrics
-        assertEquals((double)requestsToTry-2 + 1 + requestsToTry-2 + 3, metric.values(metric.createContext("id", "id1")).get("requestsOverQuota"));
-        assertEquals((double)requestsToTry-2 + requestsToTry-4, metric.values(metric.createContext("id", "id2")).get("requestsOverQuota"));
+        Map<Point,UntypedMetric> map = metric.getSnapshot().getMapForMetric("requestsOverQuota");
+        assertEquals(requestsToTry-2 + 1 + requestsToTry-2 + 3, map.get(metric.point("id", "id1")).getCount());
+        assertEquals(requestsToTry-2 + requestsToTry-4,         map.get(metric.point("id", "id2")).getCount());
     }
 
     private int requestsToTry = 50;
