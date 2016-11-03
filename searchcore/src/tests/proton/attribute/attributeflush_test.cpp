@@ -197,7 +197,7 @@ private:
     requireThatFlushableAttributeReportsMemoryUsage(void);
 
     void
-    requireThatFlushableAttributeManagesSyncTokenInfo(std::shared_ptr<vespalib::IHwInfo> hwInfo);
+    requireThatFlushableAttributeManagesSyncTokenInfo();
 
     void
     requireThatFlushTargetsCanBeRetrieved(void);
@@ -216,6 +216,9 @@ private:
 
     void
     requireThatShrinkWorks();
+
+    void requireThatFlushedAttributeCanBeLoaded(std::shared_ptr<vespalib::IHwInfo> hwInfo);
+    void requireThatFlushedAttributeCanBeLoaded();
 public:
     int
     Main(void);
@@ -262,6 +265,11 @@ struct AttributeManagerFixture
     }
     AttributeVector::SP addAttribute(const vespalib::string &name) {
         return _m.addAttribute(name, getInt32Config(), createSerialNum);
+    }
+    AttributeVector::SP addPostingAttribute(const vespalib::string &name) {
+        AVConfig cfg(getInt32Config());
+        cfg.setFastSearch(true);
+        return _m.addAttribute(name, cfg, createSerialNum);
     }
 };
 
@@ -332,9 +340,9 @@ Test::requireThatFlushableAttributeReportsMemoryUsage(void)
 
 
 void
-Test::requireThatFlushableAttributeManagesSyncTokenInfo(std::shared_ptr<vespalib::IHwInfo> hwInfo)
+Test::requireThatFlushableAttributeManagesSyncTokenInfo()
 {
-    Fixture f(hwInfo);
+    Fixture f;
     AttributeManager &am = f._m;
     AttributeVector::SP av = f.addAttribute("a3");
     av->addDocs(1);
@@ -551,6 +559,43 @@ Test::requireThatShrinkWorks()
     EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
 }
 
+void
+Test::requireThatFlushedAttributeCanBeLoaded(std::shared_ptr<vespalib::IHwInfo> hwInfo)
+{
+    constexpr uint32_t numDocs = 100;
+    BaseFixture f(hwInfo);
+    vespalib::string attrName(hwInfo->spinningDisk() ? "a11spin" : "a11ssd");
+    {
+        AttributeManagerFixture amf(f);
+        AttributeManager &am = amf._m;
+        AttributeVector::SP av = amf.addPostingAttribute(attrName);
+        IntegerAttribute & ia = static_cast<IntegerAttribute &>(*av);
+        EXPECT_EQUAL(1, av->getNumDocs());
+        av->addDocs(numDocs);
+        EXPECT_EQUAL(numDocs + 1, av->getNumDocs());
+        for (uint32_t i = 0; i < numDocs; ++i) {
+            ia.update(i + 1, i + 43);
+        }
+        av->commit();
+        IFlushTarget::SP ft = am.getFlushable(attrName);
+        ft->initFlush(5)->run();
+    }
+    {
+        AttributeManagerFixture amf(f);
+        AttributeVector::SP av = amf.addPostingAttribute(attrName);
+        EXPECT_EQUAL(numDocs + 1, av->getNumDocs());
+        for (uint32_t i = 0; i < numDocs; ++i) {
+            EXPECT_EQUAL(i + 43, av->getInt(i + 1));
+        }
+    }
+}
+
+void
+Test::requireThatFlushedAttributeCanBeLoaded()
+{
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded(std::make_shared<vespalib::MockHwInfo>(false)));
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded(std::make_shared<vespalib::MockHwInfo>(true)));
+}
 
 int
 Test::Main(void)
@@ -563,16 +608,14 @@ Test::Main(void)
     vespalib::rmdir(test_dir, true);
     TEST_DO(requireThatUpdaterAndFlusherCanRunConcurrently());
     TEST_DO(requireThatFlushableAttributeReportsMemoryUsage());
-    TEST_DO(requireThatFlushableAttributeManagesSyncTokenInfo(std::make_shared<vespalib::MockHwInfo>()));
+    TEST_DO(requireThatFlushableAttributeManagesSyncTokenInfo());
     TEST_DO(requireThatFlushTargetsCanBeRetrieved());
     TEST_DO(requireThatCleanUpIsPerformedAfterFlush());
     TEST_DO(requireThatFlushStatsAreUpdated());
     TEST_DO(requireThatOnlyOneFlusherCanRunAtTheSameTime());
     TEST_DO(requireThatLastFlushTimeIsReported());
     TEST_DO(requireThatShrinkWorks());
-    vespalib::rmdir(test_dir, true);
-    TEST_DO(requireThatFlushableAttributeManagesSyncTokenInfo(std::make_shared<vespalib::MockHwInfo>(true)));
-    vespalib::rmdir(test_dir, true);
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded());
 
     TEST_DONE();
 }
