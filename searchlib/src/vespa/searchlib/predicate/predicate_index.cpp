@@ -5,7 +5,7 @@
 #include "predicate_index.h"
 
 #include "predicate_tree_annotator.h"
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include "predicate_hash.h"
 #include <algorithm>
 #include <vespa/log/log.h>

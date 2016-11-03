@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/btree/btreestore.h>
 #include "dociditerator.h"
 #include "postinglistsearchcontext.h"

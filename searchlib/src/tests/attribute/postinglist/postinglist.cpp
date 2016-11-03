@@ -10,7 +10,7 @@ LOG_SETUP("postinglist_test");
 #include <map>
 #include <set>
 
-#include <vespa/searchlib/btree/datastore.h>
+#include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>

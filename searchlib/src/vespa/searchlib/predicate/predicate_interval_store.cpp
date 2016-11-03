@@ -5,9 +5,9 @@
 #include "predicate_interval_store.h"
 
 #include "predicate_index.h"
-#include <vespa/searchlib/btree/bufferstate.h>
-#include <vespa/searchlib/btree/datastore.hpp>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/bufferstate.h>
+#include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_interval_store");
 

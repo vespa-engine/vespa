@@ -3,7 +3,7 @@
 #pragma once
 
 #include "btreenodestore.h"
-#include "datastore.hpp"
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search
 {

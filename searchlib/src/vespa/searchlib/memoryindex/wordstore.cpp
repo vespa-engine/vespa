@@ -4,7 +4,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.wordstore");
 #include "wordstore.h"
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search {
 namespace memoryindex {

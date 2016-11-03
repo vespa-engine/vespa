@@ -6,6 +6,7 @@ vespa_add_library(searchlib
     $<TARGET_OBJECTS:searchlib_bitcompression>
     $<TARGET_OBJECTS:searchlib_btree>
     $<TARGET_OBJECTS:searchlib_common>
+    $<TARGET_OBJECTS:searchlib_datastore>
     $<TARGET_OBJECTS:searchlib_diskindex>
     $<TARGET_OBJECTS:searchlib_docstore>
     $<TARGET_OBJECTS:searchlib_engine>

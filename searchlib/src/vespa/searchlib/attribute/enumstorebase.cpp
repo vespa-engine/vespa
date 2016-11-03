@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "enumstorebase.h"
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdexcept>

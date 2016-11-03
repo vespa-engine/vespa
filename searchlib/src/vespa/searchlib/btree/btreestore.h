@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "datastore.h"
 #include "btreenode.h"
 #include "btreebuilder.h"
 #include "btreeroot.h"
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
+#include <vespa/searchlib/datastore/datastore.h>
 
 namespace search
 {

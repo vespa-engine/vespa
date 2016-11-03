@@ -3,8 +3,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/btree/datastore.h>
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search {
 namespace btree {

@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "datastore.h"
+#include "btreenode.h"
 #include "btreetraits.h"
+#include <vespa/searchlib/datastore/datastore.h>
 
 namespace search
 {

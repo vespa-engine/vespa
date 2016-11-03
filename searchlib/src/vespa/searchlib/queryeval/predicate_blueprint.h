@@ -6,7 +6,7 @@
 #include "predicate_search.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vector>
 #include <memory>
 

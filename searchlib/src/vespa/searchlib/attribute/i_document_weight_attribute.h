@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/btree/btreeiterator.h>
 
 namespace search {

@@ -3,9 +3,9 @@
 #pragma once
 
 #include "predicate_ref_cache.h"
-#include <vespa/searchlib/btree/bufferstate.h>
-#include <vespa/searchlib/btree/datastore.h>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/bufferstate.h>
+#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vector>
 
 namespace search {

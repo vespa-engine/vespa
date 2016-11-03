@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/entryref.h>
-#include <vespa/searchlib/btree/datastore.h>
+#include <vespa/searchlib/datastore/entryref.h>
+#include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
 namespace vespalib { namespace tensor { class Tensor; } }

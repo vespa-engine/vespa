@@ -5,7 +5,7 @@
 LOG_SETUP(".memoryindex.featurestore");
 #include "featurestore.h"
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search
 {

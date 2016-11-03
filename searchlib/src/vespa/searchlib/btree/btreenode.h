@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include "entryref.h"
-#include <sys/types.h>
-#include <assert.h>
-#include <utility>
 #include "noaggregated.h"
 #include "minmaxaggregated.h"
+#include <assert.h>
+#include <sys/types.h>
+#include <utility>
+#include <vespa/searchlib/datastore/entryref.h>
 
 namespace search {
 namespace btree {

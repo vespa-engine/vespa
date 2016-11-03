@@ -12,8 +12,5 @@ vespa_add_library(searchlib_btree OBJECT
     btreeroot.cpp
     btreerootbase.cpp
     btreestore.cpp
-    bufferstate.cpp
-    datastore.cpp
-    datastorebase.cpp
     DEPENDS
 )

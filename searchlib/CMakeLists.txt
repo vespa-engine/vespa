@@ -26,6 +26,7 @@ vespa_define_module(
     src/vespa/searchlib/btree
     src/vespa/searchlib/common
     src/vespa/searchlib/config
+    src/vespa/searchlib/datastore
     src/vespa/searchlib/diskindex
     src/vespa/searchlib/docstore
     src/vespa/searchlib/engine

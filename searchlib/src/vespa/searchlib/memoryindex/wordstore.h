@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/datastore.h>
+#include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search {

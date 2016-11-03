@@ -3,7 +3,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.compact_document_words_store_test");
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/memoryindex/compact_document_words_store.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <iostream>

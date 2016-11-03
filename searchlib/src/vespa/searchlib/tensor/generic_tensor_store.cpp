@@ -8,7 +8,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/macro.h>
 #include <vespa/document/util/serializable.h>
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TypedBinaryFormat;

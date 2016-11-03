@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "tensor_store.h"
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search {
 
