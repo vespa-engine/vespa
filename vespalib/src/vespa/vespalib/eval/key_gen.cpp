@@ -34,9 +34,7 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     virtual void visit(const If       &node) { add_byte( 7); add_double(node.p_true()); }
     virtual void visit(const Let          &) { add_byte( 8); }
     virtual void visit(const Error        &) { add_byte( 9); }
-    virtual void visit(const nodes::Tensor&) { add_byte( 0); }
     virtual void visit(const TensorSum    &) { add_byte( 0); }
-    virtual void visit(const TensorMatch  &) { add_byte( 0); }
     virtual void visit(const Add          &) { add_byte(10); }
     virtual void visit(const Sub          &) { add_byte(11); }
     virtual void visit(const Mul          &) { add_byte(12); }

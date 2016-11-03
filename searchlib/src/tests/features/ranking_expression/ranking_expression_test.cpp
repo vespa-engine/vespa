@@ -65,10 +65,6 @@ TEST("require that expression with object input produces object output (interpre
     TEST_DO(verify_output_type({{"b", "double"}}, "a*b", FeatureType::object(ValueType::double_type())));
 }
 
-TEST("require that expression with internal tensor operations produce object output (interpreted)") {
-    TEST_DO(verify_output_type({}, "a*b*sum({{x:1}:5,{x:2}:7})", FeatureType::object(ValueType::double_type())));
-}
-
 TEST("require that ranking expression can resolve to concrete complex type") {
     TEST_DO(verify_output_type({{"a", "tensor(x{},y{})"}, {"b", "tensor(y{},z{})"}}, "a*b",
                                FeatureType::object(ValueType::from_spec("tensor(x{},y{},z{})"))));

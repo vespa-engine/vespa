@@ -1,21 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/eval/function.h>
-#include <vespa/vespalib/tensor/tensor.h>
 
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/fef/test/as_tensor.h>
+#include <vespa/searchlib/features/tensor_from_labels_feature.h>
+#include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/searchlib/fef/test/ftlib.h>
-#include <vespa/searchlib/features/tensor_from_labels_feature.h>
-#include <vespa/searchlib/fef/fef.h>
+#include <vespa/vespalib/eval/function.h>
+#include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/tensor/default_tensor_engine.h>
 
 using search::feature_t;
 using namespace search::fef;
@@ -26,6 +25,8 @@ using search::IntegerAttribute;
 using search::StringAttribute;
 using vespalib::eval::Value;
 using vespalib::eval::Function;
+using vespalib::eval::TensorSpec;
+using vespalib::tensor::DefaultTensorEngine;
 using vespalib::tensor::Tensor;
 
 typedef search::attribute::Config AVC;
@@ -33,6 +34,15 @@ typedef search::attribute::BasicType AVBT;
 typedef search::attribute::CollectionType AVCT;
 typedef search::AttributeVector::SP AttributePtr;
 typedef FtTestApp FTA;
+
+Tensor::UP make_tensor(const TensorSpec &spec) {
+    auto tensor = DefaultTensorEngine::ref().create(spec);
+    return Tensor::UP(dynamic_cast<Tensor*>(tensor.release()));
+}
+
+Tensor::UP make_empty(const vespalib::string &type) {
+    return make_tensor(TensorSpec(type));
+}
 
 struct SetupFixture
 {
@@ -128,37 +138,49 @@ struct ExecFixture
 TEST_F("require that array string attribute can be converted to tensor (default dimension)",
         ExecFixture("tensorFromLabels(attribute(astr))"))
 {
-    EXPECT_EQUAL(AsTensor("{ {astr:a}:1, {astr:b}:1, {astr:c}:1 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(astr{})")
+                              .add({{"astr", "a"}}, 1)
+                              .add({{"astr", "b"}}, 1)
+                              .add({{"astr", "c"}}, 1)), f.execute());
 }
 
 TEST_F("require that array string attribute can be converted to tensor (explicit dimension)",
         ExecFixture("tensorFromLabels(attribute(astr),dim)"))
 {
-    EXPECT_EQUAL(AsTensor("{ {dim:a}:1, {dim:b}:1, {dim:c}:1 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(dim{})")
+                              .add({{"dim", "a"}}, 1)
+                              .add({{"dim", "b"}}, 1)
+                              .add({{"dim", "c"}}, 1)), f.execute());
 }
 
 TEST_F("require that array integer attribute can be converted to tensor (default dimension)",
         ExecFixture("tensorFromLabels(attribute(aint))"))
 {
-    EXPECT_EQUAL(AsTensor("{ {aint:7}:1, {aint:3}:1, {aint:5}:1 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(aint{})")
+                              .add({{"aint", "7"}}, 1)
+                              .add({{"aint", "3"}}, 1)
+                              .add({{"aint", "5"}}, 1)), f.execute());
 }
 
 TEST_F("require that array attribute can be converted to tensor (explicit dimension)",
         ExecFixture("tensorFromLabels(attribute(aint),dim)"))
 {
-    EXPECT_EQUAL(AsTensor("{ {dim:7}:1, {dim:3}:1, {dim:5}:1 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(dim{})")
+                              .add({{"dim", "7"}}, 1)
+                              .add({{"dim", "3"}}, 1)
+                              .add({{"dim", "5"}}, 1)), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute does not exists",
         ExecFixture("tensorFromLabels(attribute(null))"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(null{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(null{})"), f.execute());
 }
 
 TEST_F("require that empty tensor is created if attribute type is not supported",
         ExecFixture("tensorFromLabels(attribute(wsstr))"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(wsstr{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(wsstr{})"), f.execute());
 }
 
 
@@ -167,25 +189,34 @@ TEST_F("require that empty tensor is created if attribute type is not supported"
 TEST_F("require that string array from query can be converted to tensor (default dimension)",
         ExecFixture("tensorFromLabels(query(astr_query))"))
 {
-    EXPECT_EQUAL(AsTensor("{ {astr_query:d}:1, {astr_query:e}:1, {astr_query:f}:1 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(astr_query{})")
+                              .add({{"astr_query", "d"}}, 1)
+                              .add({{"astr_query", "e"}}, 1)
+                              .add({{"astr_query", "f"}}, 1)), f.execute());
 }
 
 TEST_F("require that integer array from query can be converted to tensor (default dimension)",
         ExecFixture("tensorFromLabels(query(aint_query))"))
 {
-    EXPECT_EQUAL(AsTensor("{ {aint_query:13}:1, {aint_query:17}:1, {aint_query:11}:1 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(aint_query{})")
+                              .add({{"aint_query", "13"}}, 1)
+                              .add({{"aint_query", "17"}}, 1)
+                              .add({{"aint_query", "11"}}, 1)), f.execute());
 }
 
 TEST_F("require that string array from query can be converted to tensor (explicit dimension)",
         ExecFixture("tensorFromLabels(query(astr_query),dim)"))
 {
-    EXPECT_EQUAL(AsTensor("{ {dim:d}:1, {dim:e}:1, {dim:f}:1 }"), f.execute());
+    EXPECT_EQUAL(*make_tensor(TensorSpec("tensor(dim{})")
+                              .add({{"dim", "d"}}, 1)
+                              .add({{"dim", "e"}}, 1)
+                              .add({{"dim", "f"}}, 1)), f.execute());
 }
 
 TEST_F("require that empty tensor is created if query parameter is not found",
         ExecFixture("tensorFromLabels(query(null))"))
 {
-    EXPECT_EQUAL(AsEmptyTensor("tensor(null{})"), f.execute());
+    EXPECT_EQUAL(*make_empty("tensor(null{})"), f.execute());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -596,20 +596,6 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
-    void verify_verbatim_tensor(const vespalib::string &tensor_expr, const TensorSpec &expect) {
-        EXPECT_EQUAL(Expr_V(tensor_expr).eval(engine).tensor(), expect);
-    }
-
-    void test_verbatim_tensors() {
-        TEST_DO(verify_verbatim_tensor("{}", spec(0.0)));
-        TEST_DO(verify_verbatim_tensor("{{}:5}", spec(5.0)));
-        TEST_DO(verify_verbatim_tensor("{{x:foo}:1,{x:bar}:2,{x:baz}:3}", spec(x({"foo","bar","baz"}), Seq({1,2,3}))));
-        TEST_DO(verify_verbatim_tensor("{{x:foo,y:a}:1,{y:b,x:bar}:2}",
-                                       spec({x({"foo","bar"}),y({"a","b"})}, Seq({1,X,X,2}), Bits({1,0,0,1}))));
-    }
-
-    //-------------------------------------------------------------------------
-
     void verify_reduce_result(const Eval &eval, const TensorSpec &a, const Eval::Result &expect) {
         if (expect.is_tensor()) {
             EXPECT_EQUAL(eval.eval(engine, a).tensor(), expect.tensor());
@@ -1023,7 +1009,6 @@ struct TestContext {
         TEST_DO(test_tensor_create_type());
         TEST_DO(test_tensor_equality());
         TEST_DO(test_tensor_inequality());
-        TEST_DO(test_verbatim_tensors());
         TEST_DO(test_tensor_reduce());
         TEST_DO(test_tensor_map());
         TEST_DO(test_tensor_apply());

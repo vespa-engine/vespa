@@ -745,32 +745,13 @@ TEST("require that missing value gives parse error") {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that tensors can be parsed") {
-    EXPECT_EQUAL("{}", Function::parse("{}").dump());
-    EXPECT_EQUAL("{{}:1}", Function::parse("{{}:1}").dump());
-    EXPECT_EQUAL("{{a:1}:1}", Function::parse("{{a:1}:1}").dump());
-    EXPECT_EQUAL("{{a:1}:1,{a:2}:2}", Function::parse("{{a:1}:1,{a:2}:2}").dump());
-    EXPECT_EQUAL("{{a:1,b:1}:1,{a:2}:2}", Function::parse("{{a:1,b:1}:1,{a:2}:2}").dump());
-    EXPECT_EQUAL("{{a:1,b:1}:-1.5,{a:2}:-2.5}", Function::parse("{{a:1,b:1}:-1.5,{a:2}:-2.5}").dump());
-    EXPECT_EQUAL("{{a:1,b:1}:1,{a:2}:2}", Function::parse(" { { a : 1 , b : 1 } : 1 , { a : 2 } : 2 } ").dump());
-}
-
 TEST("require that tensor sum can be parsed") {
-    EXPECT_EQUAL("sum({{a:1}:1})", Function::parse("sum({{a:1}:1})").dump());
-    EXPECT_EQUAL("sum({{a:1}:1},dim)", Function::parse("sum({{a:1}:1},dim)").dump());
-    EXPECT_EQUAL("sum({{a:1}:1},dim)", Function::parse(params, "sum({{a:1}:1},dim)").dump());
-    EXPECT_EQUAL("sum({{a:1}:1})", Function::parse(" sum ( {{a:1}:1} ) ").dump());
-    EXPECT_EQUAL("sum({{a:1}:1},dim)", Function::parse(" sum ( {{a:1}:1} , dim ) ").dump());
-}
-
-TEST("require that tensor match can be parsed") {
-    EXPECT_EQUAL("match({{a:1}:1},{{a:1}:2})", Function::parse("match({{a:1}:1},{{a:1}:2})").dump());
-    EXPECT_EQUAL("match({{a:1}:1},{{a:1}:2})", Function::parse(" match ( {{a:1}:1} , {{a:1}:2} ) ").dump());
+    EXPECT_EQUAL("sum(a)", Function::parse("sum(a)").dump());
+    EXPECT_EQUAL("sum(a,dim)", Function::parse("sum(a,dim)").dump());
 }
 
 TEST("require that tensor operations can be nested") {
-    EXPECT_EQUAL("sum(sum(match({{a:1}:1},{{a:1}:2}),a))",
-                 Function::parse("sum(sum(match({{a:1}:1},{{a:1}:2}),a))").dump());
+    EXPECT_EQUAL("sum(sum(sum(a)),dim)", Function::parse("sum(sum(sum(a)),dim)").dump());
 }
 
 //-----------------------------------------------------------------------------
