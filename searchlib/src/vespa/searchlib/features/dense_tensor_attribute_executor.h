@@ -19,7 +19,7 @@ class DenseTensorAttributeExecutor : public fef::FeatureExecutor
 private:
     const search::attribute::DenseTensorAttribute *_attribute;
     vespalib::tensor::MutableDenseTensorView *_tensorView;
-    vespalib::eval::TensorValue::UP _tensor;
+    vespalib::eval::TensorValue _tensor;
 
 public:
     DenseTensorAttributeExecutor(const search::attribute::DenseTensorAttribute *attribute);
