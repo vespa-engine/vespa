@@ -11,6 +11,7 @@ vespa_add_library(searchlib_features OBJECT
     debug_wait.cpp
     distancefeature.cpp
     distancetopathfeature.cpp
+    dense_tensor_attribute_executor.cpp
     dotproductfeature.cpp
     element_completeness_feature.cpp
     element_similarity_feature.cpp
@@ -45,9 +46,9 @@ vespa_add_library(searchlib_features OBJECT
     reverseproximityfeature.cpp
     setup.cpp
     subqueries_feature.cpp
+    tensor_attribute_executor.cpp
     tensor_factory_blueprint.cpp
     tensor_from_labels_feature.cpp
-    tensor_from_tensor_attribute_executor.cpp
     tensor_from_weighted_set_feature.cpp
     term_field_md_feature.cpp
     termdistancecalculator.cpp

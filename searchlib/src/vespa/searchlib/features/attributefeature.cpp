@@ -9,9 +9,11 @@ LOG_SETUP(".features.attributefeature");
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/features/constant_tensor_executor.h>
-#include <vespa/searchlib/features/tensor_from_tensor_attribute_executor.h>
+#include <vespa/searchlib/features/dense_tensor_attribute_executor.h>
+#include <vespa/searchlib/features/tensor_attribute_executor.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
@@ -19,9 +21,10 @@ LOG_SETUP(".features.attributefeature");
 #include <vespa/searchlib/fef/feature_type.h>
 
 using search::attribute::IAttributeVector;
-using search::attribute::CollectionType;
 using search::attribute::BasicType;
+using search::attribute::CollectionType;
 using search::attribute::ConstCharContent;
+using search::attribute::DenseTensorAttribute;
 using search::attribute::IntegerContent;
 using search::attribute::FloatContent;
 using search::attribute::TensorAttribute;
@@ -412,7 +415,12 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 tensorType.to_spec().c_str());
         return ConstantTensorExecutor::createEmpty(tensorType);
     }
-    return FeatureExecutor::LP(new TensorFromTensorAttributeExecutor(tensorAttribute));
+    if (tensorType.is_dense()) {
+        const DenseTensorAttribute *denseTensorAttribute = dynamic_cast<const DenseTensorAttribute *>(tensorAttribute);
+        assert(denseTensorAttribute != nullptr);
+        return FeatureExecutor::LP(new DenseTensorAttributeExecutor(denseTensorAttribute));
+    }
+    return FeatureExecutor::LP(new TensorAttributeExecutor(tensorAttribute));
 }
 
 }

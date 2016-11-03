@@ -12,17 +12,44 @@ namespace tensor {
  */
 class MutableDenseTensorView : public DenseTensorView
 {
-    eval::ValueType  _concreteType;
+private:
+    struct MutableValueType
+    {
+    private:
+        eval::ValueType _type;
+        std::vector<size_t *> _unboundDimSizes;
+
+    public:
+        MutableValueType(eval::ValueType type_in);
+        const eval::ValueType &type() const { return _type; }
+        void setUnboundDimensions(const uint32_t *unboundDimSizeBegin, const uint32_t *unboundDimSizeEnd) {
+            const uint32_t *unboundDimSizePtr = unboundDimSizeBegin;
+            for (auto unboundDimSize : _unboundDimSizes) {
+                *unboundDimSize = *unboundDimSizePtr++;
+            }
+            assert(unboundDimSizePtr == unboundDimSizeEnd);
+        }
+        void setUnboundDimensionsForEmptyTensor() {
+            for (auto unboundDimSize : _unboundDimSizes) {
+                *unboundDimSize = 1;
+            }
+        }
+    };
+
+    MutableValueType _concreteType;
 
 public:
-    MutableDenseTensorView(eval::ValueType type_in, CellsRef cells_in)
-        : DenseTensorView(_concreteType, cells_in),
-          _concreteType(type_in)
-    {
+    MutableDenseTensorView(eval::ValueType type_in);
+    MutableDenseTensorView(eval::ValueType type_in, CellsRef cells_in);
+    void setCells(CellsRef cells_in) {
+        _cells = cells_in;
     }
-
-    CellsRef &cells() { return _cells; }
-    eval::ValueType &type() { return _concreteType; }
+    void setUnboundDimensions(const uint32_t *unboundDimSizeBegin, const uint32_t *unboundDimSizeEnd) {
+        _concreteType.setUnboundDimensions(unboundDimSizeBegin, unboundDimSizeEnd);
+    }
+    void setUnboundDimensionsForEmptyTensor() {
+        _concreteType.setUnboundDimensionsForEmptyTensor();
+    }
 };
 
 } // namespace vespalib::tensor

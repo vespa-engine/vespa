@@ -12,7 +12,7 @@ namespace search {
 namespace attribute { class TensorAttribute; }
 namespace features {
 
-class TensorFromTensorAttributeExecutor : public fef::FeatureExecutor
+class TensorAttributeExecutor : public fef::FeatureExecutor
 {
 private:
     const search::attribute::TensorAttribute *_attribute;
@@ -20,8 +20,7 @@ private:
     vespalib::eval::TensorValue::UP _emptyTensor;
 
 public:
-    TensorFromTensorAttributeExecutor(const search::attribute::TensorAttribute *
-                                      attribute);
+    TensorAttributeExecutor(const search::attribute::TensorAttribute *attribute);
     virtual void execute(fef::MatchData &data);
 };
 

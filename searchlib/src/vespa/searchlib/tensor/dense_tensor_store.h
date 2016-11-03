@@ -5,6 +5,8 @@
 #include "tensor_store.h"
 #include <vespa/vespalib/eval/value_type.h>
 
+namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
+
 namespace search {
 
 namespace attribute {
@@ -51,6 +53,7 @@ private:
     size_t _numBoundCells; // product of bound dimension sizes
     uint32_t _numUnboundDims;
     uint32_t _cellSize; // size of a cell (e.g. double => 8)
+    std::vector<double> _emptyCells;
 
     size_t unboundCells(const void *buffer) const;
 
@@ -61,11 +64,13 @@ private:
     size_t alignedSize(size_t numCells) const {
         return RefType::align(numCells * _cellSize + unboundDimSizesSize());
     }
+
 public:
-    uint32_t unboundDimSizesSize() const { return _bufferType.unboundDimSizesSize(); }
     DenseTensorStore(const ValueType &type);
     virtual ~DenseTensorStore();
 
+    const ValueType &type() const { return _type; }
+    uint32_t unboundDimSizesSize() const { return _bufferType.unboundDimSizesSize(); }
     size_t getNumCells(const void *buffer) const;
     uint32_t getCellSize() const { return _cellSize; }
     const void *getRawBuffer(RefType ref) const;
@@ -74,6 +79,7 @@ public:
     virtual void holdTensor(EntryRef ref) override;
     virtual EntryRef move(EntryRef ref) override;
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
+    void getTensor(EntryRef ref, vespalib::tensor::MutableDenseTensorView &tensor) const;
     EntryRef setTensor(const Tensor &tensor);
 };
 

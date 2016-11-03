@@ -45,8 +45,8 @@ DenseTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
     const uint32_t docIdLimit(_refs.size());
     const uint32_t cellSize = _tensorStore.getCellSize();
     for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
-        auto raw = _tensorStore.getRawBuffer(_refs[lid]);
-        if (raw) {
+        if (_refs[lid].valid()) {
+            auto raw = _tensorStore.getRawBuffer(_refs[lid]);
             datWriter->write(&tensorIsPresent, sizeof(tensorIsPresent));
             size_t numCells = _tensorStore.getNumCells(raw);
             size_t rawLen = numCells * cellSize + unboundDimSizesSize;

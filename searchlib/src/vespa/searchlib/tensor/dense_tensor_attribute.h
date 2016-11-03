@@ -5,6 +5,8 @@
 #include "tensor_attribute.h"
 #include "dense_tensor_store.h"
 
+namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
+
 namespace search {
 
 namespace attribute {
@@ -25,6 +27,7 @@ public:
     virtual std::unique_ptr<AttributeSaver> onInitSave() override;
     virtual void compactWorst() override;
     virtual uint32_t getVersion() const override;
+    void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const;
 };
 
 
