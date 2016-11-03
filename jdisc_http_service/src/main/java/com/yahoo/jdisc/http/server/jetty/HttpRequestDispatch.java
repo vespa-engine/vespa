@@ -89,7 +89,7 @@ class HttpRequestDispatch {
             onError(servletResponseController.finishedFuture(),
                     servletRequestReader::onError);
 
-            CompletableFuture.allOf(servletRequestReader.finishedFuture, servletResponseController.finishedFuture())
+            servletResponseController.finishedFuture()
                     .whenComplete(completeRequestCallback);
         } catch (Throwable throwable) {
             log.log(Level.WARNING, "Failed registering finished listeners.", throwable);
