@@ -146,6 +146,16 @@ public class Bucket {
         return singleMetric;
     }
 
+    public Map<Point, UntypedMetric> getMapForMetric(@NonNull String metricName) {
+        Map<Point, UntypedMetric> result = new HashMap<>();
+        for (Map.Entry<Identifier, UntypedMetric> entry : values.entrySet()) {
+            if (metricName.equals(entry.getKey().getName())) {
+                result.put(entry.getKey().getLocation(), entry.getValue());
+            }
+        }
+        return result;
+    }
+
     public Map<String, List<Map.Entry<Point, UntypedMetric>>> getValuesByMetricName() {
         Map<String, List<Map.Entry<Point, UntypedMetric>>> result = new HashMap<>();
         for (Map.Entry<Identifier, UntypedMetric> entry : values.entrySet()) {
