@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -44,13 +46,11 @@ public class JSONFormatter {
             JsonGenerator generator = generatorFactory.createGenerator(logLine, JsonEncoding.UTF8);
             generator.writeStartObject();
             generator.writeStringField("ip", accessLogEntry.getIpV4Address());
-            generator.writeStringField("time", toTimestampWithFraction(accessLogEntry.getTimeStampMillis()));
+            generator.writeNumberField("time", toTimestampInSeconds(accessLogEntry.getTimeStampMillis()));
             generator.writeNumberField("duration",
-                                       capDuration(accessLogEntry.getDurationBetweenRequestResponseMillis()));
-            generator.writeNumberField("size", accessLogEntry.getReturnedContentSize());
+                                       durationAsSeconds(accessLogEntry.getDurationBetweenRequestResponseMillis()));
+            generator.writeNumberField("responsesize", accessLogEntry.getReturnedContentSize());
             generator.writeNumberField("code", accessLogEntry.getStatusCode());
-            generator.writeNumberField("totalhits", getTotalHitCount(accessLogEntry.getHitCounts()));
-            generator.writeNumberField("hits", getRetrievedHitCount(accessLogEntry.getHitCounts()));
             generator.writeStringField("method", accessLogEntry.getHttpMethod());
             generator.writeStringField("uri", getNormalizedURI(accessLogEntry.getURI()));
             generator.writeStringField("version", accessLogEntry.getHttpVersion());
@@ -73,6 +73,14 @@ public class JSONFormatter {
                 if (peerPort > 0 && peerPort != accessLogEntry.getRemotePort()) {
                     generator.writeNumberField("peerport", peerPort);
                 }
+            }
+
+            // Only add search sub block of this is a search request
+            if (isSearchRequest(accessLogEntry)) {
+                generator.writeObjectFieldStart("search");
+                generator.writeNumberField("totalhits", getTotalHitCount(accessLogEntry.getHitCounts()));
+                generator.writeNumberField("hits", getRetrievedHitCount(accessLogEntry.getHitCounts()));
+                generator.writeEndObject();
             }
 
             // Add key/value access log entries. Keys with single values are written as single
@@ -110,6 +118,10 @@ public class JSONFormatter {
         return remoteAddress != null && !Objects.equals(ipV4Address, remoteAddress);
     }
 
+    private boolean isSearchRequest(AccessLogEntry logEntry) {
+        return logEntry != null && (logEntry.getHitCounts() != null);
+    }
+
     private long getTotalHitCount(HitCounts counts) {
         if (counts == null) {
             return 0;
@@ -126,29 +138,32 @@ public class JSONFormatter {
         return counts.getRetrievedHitCount();
     }
 
-    private String toTimestampWithFraction(long numMillisSince1Jan1970AtMidnightUTC) {
-        int unixTime = (int)(numMillisSince1Jan1970AtMidnightUTC/1000);
-        int milliSeconds = (int)(numMillisSince1Jan1970AtMidnightUTC % 1000);
+    private BigDecimal toTimestampInSeconds(long numMillisSince1Jan1970AtMidnightUTC) {
+        BigDecimal timestampInSeconds =
+            new BigDecimal(numMillisSince1Jan1970AtMidnightUTC).divide(BigDecimal.valueOf(1000));
 
         if (numMillisSince1Jan1970AtMidnightUTC/1000 > 0x7fffffff) {
             logger.log(Level.WARNING, "A year 2038 problem occurred.");
             logger.log(Level.INFO, "numMillisSince1Jan1970AtMidnightUTC: "
                        + numMillisSince1Jan1970AtMidnightUTC);
-            unixTime = (int)(numMillisSince1Jan1970AtMidnightUTC/1000 % 0x7fffffff);
+            timestampInSeconds =
+                new BigDecimal(numMillisSince1Jan1970AtMidnightUTC)
+                    .divide(BigDecimal.valueOf(1000))
+                    .remainder(BigDecimal.valueOf(0x7fffffff));
         }
-
-        return unixTime + "." + milliSeconds;
+        return timestampInSeconds.setScale(3, RoundingMode.HALF_UP);
     }
 
-    private int capDuration(long timeInMillis) {
-        int duration = (int)timeInMillis;
+    private BigDecimal durationAsSeconds(long timeInMillis) {
+        BigDecimal duration =
+            new BigDecimal(timeInMillis).divide(BigDecimal.valueOf(1000));
 
         if (timeInMillis > 0xffffffffL) {
             logger.log(Level.WARNING, "Duration too long: " + timeInMillis);
-            duration = 0xffffffff;
+            duration = new BigDecimal(0xffffffff);
         }
 
-        return duration;
+        return duration.setScale(3, BigDecimal.ROUND_HALF_UP);
     }
 
     private String getNormalizedURI(URI uri) {

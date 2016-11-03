@@ -23,7 +23,7 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         entry.setHitCounts(new HitCounts(0, 10, 1234, 0, 10));
         entry.setHostString("localhost");
         entry.setStatusCode(200);
-        entry.setTimeStamp(920880005123L);
+        entry.setTimeStamp(920880005023L);
         entry.setDurationBetweenRequestResponse(122);
         entry.setReturnedContentSize(9875);
 
@@ -39,18 +39,20 @@ public class JSONLogTestCase extends junit.framework.TestCase {
 
          String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"time\":\"920880005.123\"," +
-            "\"duration\":122," +
-            "\"size\":9875," +
+            "\"time\":920880005.023," +
+            "\"duration\":0.122," +
+            "\"responsesize\":9875," +
             "\"code\":200," +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
-            "\"host\":\"localhost\"" +
-             "}";
+            "\"host\":\"localhost\"," +
+            "\"search\":{" +
+            "\"totalhits\":1234," +
+            "\"hits\":0" +
+            "}" +
+            "}";
 
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
     }
@@ -63,17 +65,19 @@ public class JSONLogTestCase extends junit.framework.TestCase {
 
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"time\":\"920880005.123\"," +
-            "\"duration\":122," +
-            "\"size\":9875," +
+            "\"time\":920880005.023," +
+            "\"duration\":0.122," +
+            "\"responsesize\":9875," +
             "\"code\":200," +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
             "\"host\":\"localhost\"," +
+            "\"search\":{" +
+            "\"totalhits\":1234," +
+            "\"hits\":0" +
+            "}," +
             "\"attributes\":{" +
             "\"singlevalue\":\"value1\"," +
             "\"multivalue\":[\"value2\",\"value3\"]}" +
@@ -91,18 +95,20 @@ public class JSONLogTestCase extends junit.framework.TestCase {
 
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"time\":\"920880005.123\"," +
-            "\"duration\":122," +
-            "\"size\":9875," +
+            "\"time\":920880005.023," +
+            "\"duration\":0.122," +
+            "\"responsesize\":9875," +
             "\"code\":200," +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
             "\"host\":\"localhost\"," +
-            "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"" +
+            "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
+            "\"search\":{" +
+            "\"totalhits\":1234," +
+            "\"hits\":0" +
+            "}" +
             "}";
 
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
@@ -112,19 +118,21 @@ public class JSONLogTestCase extends junit.framework.TestCase {
 
         expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"time\":\"920880005.123\"," +
-            "\"duration\":122," +
-            "\"size\":9875," +
+            "\"time\":920880005.023," +
+            "\"duration\":0.122," +
+            "\"responsesize\":9875," +
             "\"code\":200," +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I)\"," +
             "\"host\":\"localhost\"," +
             "\"remoteaddr\":\"FE80:0000:0000:0000:0202:B3FF:FE1E:8329\"," +
-            "\"remoteport\":1234" +
+            "\"remoteport\":1234," +
+            "\"search\":{" +
+            "\"totalhits\":1234," +
+            "\"hits\":0" +
+            "}" +
             "}";
 
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
@@ -148,23 +156,25 @@ public class JSONLogTestCase extends junit.framework.TestCase {
         entry.setHitCounts(new HitCounts(0, 10, 1234, 0, 10));
         entry.setHostString("localhost");
         entry.setStatusCode(200);
-        entry.setTimeStamp(920880005123L);
+        entry.setTimeStamp(920880005023L);
         entry.setDurationBetweenRequestResponse(122);
         entry.setReturnedContentSize(9875);
 
         String expectedOutput =
             "{\"ip\":\"152.200.54.243\"," +
-            "\"time\":\"920880005.123\"," +
-            "\"duration\":122," +
-            "\"size\":9875," +
+            "\"time\":920880005.023," +
+            "\"duration\":0.122," +
+            "\"responsesize\":9875," +
             "\"code\":200," +
-            "\"totalhits\":1234," +
-            "\"hits\":0," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
             "\"version\":\"HTTP/1.1\"," +
             "\"agent\":\"Mozilla/4.05 [en] (Win95; I; \\\"Best Browser Ever\\\")\"," +
-            "\"host\":\"localhost\"" +
+            "\"host\":\"localhost\"," +
+            "\"search\":{" +
+            "\"totalhits\":1234," +
+            "\"hits\":0" +
+            "}" +
             "}";
 
         assertEquals(expectedOutput, new JSONFormatter(entry).format());
