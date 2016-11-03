@@ -32,7 +32,7 @@ LOG_SETUP("matchobjectTest");
 class MatchObjectTestApp : public vespalib::TestApp {
 public:
     virtual int Main() {
-        juniper::TestEnv te(this, (GetSourceDirectory() + "../rpclient/testclient.rc").c_str());
+        juniper::TestEnv te(this, TEST_PATH("../rpclient/testclient.rc").c_str());
         MatchObjectTest test;
         test.SetStream(&std::cout);
         test.Run(_argc, _argv);

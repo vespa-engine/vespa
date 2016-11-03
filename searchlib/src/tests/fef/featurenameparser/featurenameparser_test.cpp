@@ -2,6 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP("featurenameparser_test");
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/fef/featurenameparser.h>
 #include <vector>
@@ -144,7 +145,7 @@ Test::Main()
     EXPECT_TRUE(testParse("foo(  ,  ,  )", true, "foo", ParamList().add("").add("").add(""), ""));
     EXPECT_TRUE(testParse("foo( \t , \n , \r , \f )", true, "foo", ParamList().add("").add("").add("").add(""), ""));
 
-    testFile(vespalib::TestApp::GetSourceDirectory() + "parsetest.txt");
+    testFile(TEST_PATH("parsetest.txt"));
     TEST_DONE();
 }
 

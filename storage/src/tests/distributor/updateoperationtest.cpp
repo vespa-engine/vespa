@@ -13,7 +13,7 @@
 #include <vespa/document/config/config-documenttypes.h>
 #include <tests/distributor/messagesenderstub.h>
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using std::shared_ptr;
 using namespace document;
@@ -50,7 +50,7 @@ public:
         _repo.reset(
                 new DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
                                      getConfig("config-doctypes",
-                                               FileSpec(vespalib::TestApp::GetSourceDirectory() + "config-doctypes.cfg"))));
+                                               FileSpec(TEST_PATH("config-doctypes.cfg")))));
         _html_type = _repo->getDocumentType("text/html");
         createLinks();
     }

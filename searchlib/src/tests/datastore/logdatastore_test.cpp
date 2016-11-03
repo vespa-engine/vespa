@@ -3,7 +3,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
 #include <vespa/searchlib/docstore/storebybucket.h>
@@ -303,7 +303,7 @@ TEST("testTruncatedIdxFile"){
     {
         // Files comes from the 'growing test'.
         LogDataStore datastore(executor,
-                               vespalib::TestApp::GetSourceDirectory() + "bug-7257706", config,
+                               TEST_PATH("bug-7257706"), config,
                                GrowStrategy(), TuneFileSummary(),
                                fileHeaderContext, tlSyncer, NULL);
         EXPECT_EQUAL(354ul, datastore.lastSyncToken());

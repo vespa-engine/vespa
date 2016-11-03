@@ -21,7 +21,7 @@ void Usage(char* s)
 
 int AuxTestApp::Main()
 {
-    juniper::TestEnv te(this, (GetSourceDirectory() + "../rpclient/testclient.rc").c_str());
+    juniper::TestEnv te(this, TEST_PATH("../rpclient/testclient.rc").c_str());
     AuxTest pta;
     pta.SetStream(&std::cout);
     pta.Run(_argc, _argv);

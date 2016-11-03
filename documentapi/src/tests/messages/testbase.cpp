@@ -12,8 +12,8 @@ using document::readDocumenttypesConfig;
 
 TestBase::TestBase() :
     _repo(new DocumentTypeRepo(readDocumenttypesConfig(
-            GetSourceDirectory() + "../../../test/cfg/testdoctypes.cfg"))),
-    _dataPath(GetSourceDirectory() + "../../../test/crosslanguagefiles"),
+            TEST_PATH("../../../test/cfg/testdoctypes.cfg")))),
+    _dataPath(TEST_PATH("../../../test/crosslanguagefiles")),
     _loadTypes(),
     _protocol(_loadTypes, _repo),
     _tests()

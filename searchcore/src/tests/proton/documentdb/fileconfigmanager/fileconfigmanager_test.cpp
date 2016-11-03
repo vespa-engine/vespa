@@ -7,7 +7,7 @@ LOG_SETUP("fileconfigmanager_test");
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
 
 using namespace config;
@@ -53,7 +53,7 @@ getSchema(int step)
 DocumentDBConfig::SP
 makeBaseConfigSnapshot()
 {
-    config::DirSpec spec(vespalib::TestApp::GetSourceDirectory() + "cfg");
+    config::DirSpec spec(TEST_PATH("cfg"));
     ConfigKeySet extraKeySet;
     extraKeySet.add<MycfgConfig>("");
     DBCM dbcm(spec, "test", extraKeySet);

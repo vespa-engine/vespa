@@ -156,7 +156,7 @@ public:
           _queryLimiter(),
           _clock(),
           _dummy(),
-          _spec(vespalib::TestApp::GetSourceDirectory()),
+          _spec(TEST_PATH("")),
           _configMgr(_spec, getDocTypeName()),
           _documenttypesConfig(new DocumenttypesConfig()),
           _repo(repo),
@@ -1250,11 +1250,11 @@ Test::Test()
 {
     std::string cfgId("summary");
     _summaryCfg = config::ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
-        cfgId, config::FileSpec(vespalib::TestApp::GetSourceDirectory() + "summary.cfg"));
+        cfgId, config::FileSpec(TEST_PATH("summary.cfg")));
     _resultCfg.ReadConfig(*_summaryCfg, cfgId.c_str());
     std::string mapCfgId("summarymap");
     std::unique_ptr<vespa::config::search::SummarymapConfig> mapCfg = config::ConfigGetter<vespa::config::search::SummarymapConfig>::getConfig(
-            mapCfgId, config::FileSpec(vespalib::TestApp::GetSourceDirectory() + "summarymap.cfg"));
+            mapCfgId, config::FileSpec(TEST_PATH("summarymap.cfg")));
     for (size_t i = 0; i < mapCfg->override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = mapCfg->override[i];
         if (o.command == "dynamicteaser") {
@@ -1269,6 +1269,7 @@ Test::Test()
         }
     }
 }
+
 
 
 int

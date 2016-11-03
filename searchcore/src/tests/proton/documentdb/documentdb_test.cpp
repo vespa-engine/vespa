@@ -20,7 +20,7 @@ LOG_SETUP("documentdb_test");
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <tests/proton/common/dummydbowner.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using document::DocumentType;
 using document::DocumentTypeRepo;
@@ -73,7 +73,7 @@ Fixture::Fixture()
     DocumentType docType("typea", 0);
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(docType));
     TuneFileDocumentDB::SP tuneFileDocumentDB(new TuneFileDocumentDB);
-    config::DirSpec spec(vespalib::TestApp::GetSourceDirectory() + "cfg");
+    config::DirSpec spec(TEST_PATH("cfg"));
     DocumentDBConfigHelper mgr(spec, "typea");
     BootstrapConfig::SP
         b(new BootstrapConfig(1,

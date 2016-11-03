@@ -3,6 +3,7 @@
 #include <limits>
 #include <vespa/log/log.h>
 LOG_SETUP("identifiable_test");
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -342,7 +343,7 @@ AsciistreamTest::testCreateFromFile()
     asciistream is(asciistream::createFromFile("non-existing.txt"));
     EXPECT_TRUE(is.eof());
 
-    is = asciistream::createFromFile(vespalib::TestApp::GetSourceDirectory() + "test.txt");
+    is = asciistream::createFromFile(TEST_PATH("test.txt"));
     EXPECT_FALSE(is.eof());
     EXPECT_EQUAL(12u, is.size());
     string s;

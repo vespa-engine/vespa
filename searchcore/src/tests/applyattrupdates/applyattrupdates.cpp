@@ -317,7 +317,7 @@ Test::requireThatWeightedSetAttributesAreUpdated()
 }
 
 Test::Test()
-    : _repo(readDocumenttypesConfig(vespalib::TestApp::GetSourceDirectory() + "doctypes.cfg")),
+    : _repo(readDocumenttypesConfig(TEST_PATH("doctypes.cfg"))),
       _docType(_repo.getDocumentType("testdoc"))
 {
 }

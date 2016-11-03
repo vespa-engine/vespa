@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vbench/test/all.h>
 
 using namespace vbench;
@@ -10,7 +10,7 @@ TEST("input file reader") {
         EXPECT_TRUE(reader.tainted());
     }
     {
-        InputFileReader reader(vespalib::TestApp::GetSourceDirectory() + "simple_test_input.txt");
+        InputFileReader reader(TEST_PATH("simple_test_input.txt"));
         EXPECT_TRUE(!reader.tainted());
         string line;
         EXPECT_TRUE(reader.readLine(line));
@@ -23,7 +23,7 @@ TEST("input file reader") {
         TEST_FLUSH();
     }
     {
-        InputFileReader reader(vespalib::TestApp::GetSourceDirectory() + "hard_test_input.txt");
+        InputFileReader reader(TEST_PATH("hard_test_input.txt"));
         EXPECT_TRUE(!reader.tainted());
         string line;
         EXPECT_TRUE(reader.readLine(line));

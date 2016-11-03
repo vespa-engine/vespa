@@ -682,7 +682,7 @@ void deserializeAndCheck(const string &file_name, PredicateFieldValue &value) {
 }
 
 void checkDeserialization(const string &name, std::unique_ptr<Slime> slime) {
-    const string data_dir = vespalib::TestApp::GetSourceDirectory() + "../../test/resources/predicates/";
+    const string data_dir = TEST_PATH("../../test/resources/predicates/");
 
     PredicateFieldValue value(std::move(slime));
     serializeToFile(value, data_dir + name + "__cpp");
@@ -801,7 +801,7 @@ void deserializeAndCheck(const string &file_name, TensorFieldValue &value) {
 }
 
 void checkDeserialization(const string &name, std::unique_ptr<Tensor> tensor) {
-    const string data_dir = vespalib::TestApp::GetSourceDirectory() + "../../test/resources/tensor/";
+    const string data_dir = TEST_PATH("../../test/resources/tensor/");
 
     TensorFieldValue value;
     if (tensor) {

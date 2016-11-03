@@ -6,8 +6,8 @@
 
 #include <fstream>
 #include <vespa/log/log.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 LOG_SETUP("functiontest_test");
 
@@ -95,7 +95,7 @@ struct LazyTestFixture
     std::unique_ptr<FunctionTestConfig> _config;
 
     LazyTestFixture(const std::string & dirName)
-        : _spec(vespalib::TestApp::GetSourceDirectory() + dirName),
+        : _spec(TEST_PATH(dirName)),
           _subscriber(_spec),
           _handle(_subscriber.subscribe<FunctionTestConfig>(""))
     {
@@ -130,7 +130,7 @@ struct ErrorFixture
 };
 
 void attemptLacking(const std::string& param, bool isArray) {
-    std::ifstream in(vespalib::TestApp::GetSourceDirectory() + "defaultvalues/function-test.cfg", std::ios_base::in);
+    std::ifstream in(TEST_PATH("defaultvalues/function-test.cfg"), std::ios_base::in);
     std::ostringstream config;
     std::string s;
     while (std::getline(in, s)) {
@@ -172,7 +172,7 @@ TEST_F("testVariableAccess", TestFixture("variableaccess")) {
 
 TEST("test variable access from slime") {
     vespalib::Slime slime;
-    std::string json(readFile(vespalib::TestApp::GetSourceDirectory() + "slime-payload.json"));
+    std::string json(readFile(TEST_PATH("slime-payload.json")));
     vespalib::slime::JsonFormat::decode(json, slime);
     FunctionTestConfig config(config::ConfigPayload(slime.get()));
     checkVariableAccess(config);

@@ -34,8 +34,8 @@ public:
 
 TableTest::TableTest() :
     vespalib::TestApp(),
-    _tables1Dir(vespalib::TestApp::GetSourceDirectory() + "tables1"),
-    _tables2Dir(vespalib::TestApp::GetSourceDirectory() + "tables2")
+    _tables1Dir(TEST_PATH("tables1")),
+    _tables2Dir(TEST_PATH("tables2"))
 {
 }
 

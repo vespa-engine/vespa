@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/slaveproc.h>
 
 using namespace vespalib;
@@ -18,8 +17,7 @@ TEST("make fixture macros") {
     EXPECT_TRUE(runPrint("../../apps/make_fixture_macros/vespalib_make_fixture_macros_app 9 > macros.tmp"));
 
     std::string diffCmd("diff -u ");
-    diffCmd += vespalib::TestApp::GetSourceDirectory();
-    diffCmd += "../../vespa/vespalib/testkit/generated_fixture_macros.h macros.tmp";
+    diffCmd += TEST_PATH("../../vespa/vespalib/testkit/generated_fixture_macros.h macros.tmp");
     EXPECT_TRUE(runPrint(diffCmd.c_str()));
 }
 

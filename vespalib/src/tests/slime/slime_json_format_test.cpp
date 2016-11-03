@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <iostream>
 #include <fstream>
@@ -352,7 +351,7 @@ TEST("decode simplified form") {
 }
 
 TEST_F("decode bytes not null-terminated", Slime) {
-    std::ifstream file(vespalib::TestApp::GetSourceDirectory() + "large_json.txt");
+    std::ifstream file(TEST_PATH("large_json.txt"));
     ASSERT_TRUE(file.is_open());
     std::stringstream buf;
     buf << file.rdbuf();

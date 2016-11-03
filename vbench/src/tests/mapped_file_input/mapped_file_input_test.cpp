@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vbench/test/all.h>
 
 using namespace vbench;
@@ -10,7 +10,7 @@ TEST("mapped file input") {
         EXPECT_TRUE(file.tainted());
     }
     {
-        MappedFileInput file(vespalib::TestApp::GetSourceDirectory() + "file.txt");
+        MappedFileInput file(TEST_PATH("file.txt"));
         EXPECT_TRUE(!file.tainted());
         LineReader reader(file, 3);
         string line;

@@ -20,7 +20,7 @@ LOG_SETUP("document_subdbs_test");
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <iostream>
 
@@ -57,10 +57,11 @@ const std::string SUB_NAME = "subdb";
 const std::string BASE_DIR = "basedir";
 const SerialNum CFG_SERIAL = 5;
 
-struct ConfigDir1 { static vespalib::string dir() { return vespalib::TestApp::GetSourceDirectory() + "cfg1"; } };
-struct ConfigDir2 { static vespalib::string dir() { return vespalib::TestApp::GetSourceDirectory() + "cfg2"; } };
-struct ConfigDir3 { static vespalib::string dir() { return vespalib::TestApp::GetSourceDirectory() + "cfg3"; } };
-struct ConfigDir4 { static vespalib::string dir() { return vespalib::TestApp::GetSourceDirectory() + "cfg4"; } };
+struct ConfigDir1 { static vespalib::string dir() { return TEST_PATH("cfg1"); } };
+struct ConfigDir2 { static vespalib::string dir() { return TEST_PATH("cfg2"); } };
+struct ConfigDir3 { static vespalib::string dir() { return TEST_PATH("cfg3"); } };
+struct ConfigDir4 { static vespalib::string dir() { return TEST_PATH("cfg4")
+                ; } };
 
 struct MySubDBOwner : public IDocumentSubDB::IOwner
 {
