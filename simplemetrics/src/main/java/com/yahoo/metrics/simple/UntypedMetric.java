@@ -27,6 +27,26 @@ public class UntypedMetric {
 
     public enum AssumedType { NONE, GAUGE, COUNTER };
 
+    public String toString() {
+        StringBuilder buf = new StringBuilder();
+        buf.append(this.getClass().getName()).append(": ");
+        buf.append("outputFormat=").append(outputFormat).append(", ");
+        if (count > 0 && outputFormat == AssumedType.GAUGE) {
+            buf.append("max=").append(max).append(", ");
+            buf.append("min=").append(min).append(", ");
+            buf.append("sum=").append(sum).append(", ");
+        }
+        if (histogram != null) {
+            buf.append("histogram=").append(histogram).append(", ");
+        }
+        if (metricSettings != null) {
+            buf.append("metricSettings=").append(metricSettings).append(", ");
+        }
+        buf.append("current=").append(current).append(", ");
+        buf.append("count=").append(count);
+        return buf.toString();
+    }
+
     UntypedMetric(MetricSettings metricSettings) {
         this.metricSettings = metricSettings;
         if (metricSettings == null || !metricSettings.isHistogram()) {
