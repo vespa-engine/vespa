@@ -6,38 +6,27 @@
 
 using search::attribute::DenseTensorAttribute;
 using vespalib::eval::TensorValue;
-using vespalib::eval::Tensor;
 using vespalib::tensor::MutableDenseTensorView;
 
 namespace search {
 namespace features {
 
-namespace {
-
-MutableDenseTensorView *
-extractConcreteTensor(TensorValue &tensorValue)
-{
-    Tensor *tensor = const_cast<Tensor *>(tensorValue.as_tensor());
-    MutableDenseTensorView *tensorView = dynamic_cast<MutableDenseTensorView *>(tensor);
-    assert(tensorView != nullptr);
-    return tensorView;
-}
-
-}
-
 DenseTensorAttributeExecutor::
 DenseTensorAttributeExecutor(const DenseTensorAttribute *attribute)
     : _attribute(attribute),
-      _tensor(std::make_unique<MutableDenseTensorView>(_attribute->getConfig().tensorType())),
-      _tensorView(extractConcreteTensor(_tensor))
+      _tensorView(),
+      _tensor()
 {
+    std::unique_ptr<MutableDenseTensorView> tensorView = std::make_unique<MutableDenseTensorView>(_attribute->getConfig().tensorType());
+    _tensorView = tensorView.get();
+    _tensor = std::make_unique<TensorValue>(std::move(tensorView));
 }
 
 void
 DenseTensorAttributeExecutor::execute(fef::MatchData &data)
 {
     _attribute->getTensor(data.getDocId(), *_tensorView);
-    *data.resolve_object_feature(outputs()[0]) = _tensor;
+    *data.resolve_object_feature(outputs()[0]) = *_tensor;
 }
 
 } // namespace features
