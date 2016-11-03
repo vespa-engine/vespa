@@ -34,6 +34,8 @@ class DocumentSelectParserTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testOperators);
     CPPUNIT_TEST(testVisitor);
     CPPUNIT_TEST(testUtf8);
+    CPPUNIT_TEST(testThatSimpleFieldValuesHaveCorrectFieldName);
+    CPPUNIT_TEST(testThatComplexFieldValuesHaveCorrectFieldNames);
     CPPUNIT_TEST(testBodyFieldDetection);
     CPPUNIT_TEST(testDocumentUpdates);
     CPPUNIT_TEST_SUITE_END();
@@ -51,6 +53,9 @@ class DocumentSelectParserTest : public CppUnit::TestFixture {
     DocumentUpdate::SP createUpdate(
             const std::string& doctype, const std::string& id, uint32_t hint,
             const std::string& hstr);
+
+    const select::FieldValueNode &
+    parseFieldValue(const std::string expression);
 
     template <typename ContainsType>
     select::ResultList doParse(const vespalib::stringref& expr,
@@ -79,6 +84,8 @@ public:
     void testOperators9();
     void testVisitor();
     void testUtf8();
+    void testThatSimpleFieldValuesHaveCorrectFieldName();
+    void testThatComplexFieldValuesHaveCorrectFieldNames();
     void testBodyFieldDetection();
     void testDocumentUpdates();
     void testDocumentUpdates0();
@@ -1273,6 +1280,32 @@ void DocumentSelectParserTest::testUtf8()
         "testdoctype1", "doc:myspace:utf8doc", 24, 2.0, utf8name, "bar"));
 //    PARSE("testdoctype1.hstringval = \"H?kon\"", *_doc[_doc.size()-1], True);
 //    PARSE("testdoctype1.hstringval =~ \"H.kon\"", *_doc[_doc.size()-1], True);
+}
+
+const select::FieldValueNode &
+DocumentSelectParserTest::parseFieldValue(const std::string expression) {
+    return dynamic_cast<const select::FieldValueNode &>(
+        dynamic_cast<const select::Compare &>(*_parser->parse(expression)).getLeft());
+}
+
+void DocumentSelectParserTest::testThatSimpleFieldValuesHaveCorrectFieldName() {
+    CPPUNIT_ASSERT_EQUAL(
+        vespalib::string("headerval"),
+        parseFieldValue("testdoctype1.headerval").getRealFieldName());
+}
+
+void DocumentSelectParserTest::testThatComplexFieldValuesHaveCorrectFieldNames() {
+    CPPUNIT_ASSERT_EQUAL(
+        vespalib::string("headerval"),
+        parseFieldValue("testdoctype1.headerval{test}").getRealFieldName());
+
+    CPPUNIT_ASSERT_EQUAL(
+        vespalib::string("headerval"),
+        parseFieldValue("testdoctype1.headerval[42]").getRealFieldName());
+
+    CPPUNIT_ASSERT_EQUAL(
+        vespalib::string("headerval"),
+        parseFieldValue("testdoctype1.headerval.meow.meow{test}").getRealFieldName());
 }
 
 } // document
