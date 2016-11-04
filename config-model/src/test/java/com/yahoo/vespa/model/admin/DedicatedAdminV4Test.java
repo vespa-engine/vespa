@@ -89,7 +89,7 @@ public class DedicatedAdminV4Test {
         assertEquals(3, consumer.getMetrics().size());
         Metric metric = consumer.getMetrics().get("nginx.upstreams.down.last");
         assertNotNull(metric);
-        assertEquals("nginx.upstreams.down", metric.getOutputName());
+        assertEquals("nginx.upstreams.down", metric.outputName);
     }
 
     private Set<String> serviceNames(SentinelConfig config) {

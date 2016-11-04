@@ -1,71 +1,70 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Helper class to model a metric.
  *
  * @author trygve
+ * @author gjoranv
  */
 public class Metric {
 
-    private final String name;
-    private String outputName;
-    private final Map<String, String> dimensions = new HashMap<>();
-    private final String description;
+    public final String name;
+    public final String outputName;
+    public final String description;
+    public final Map<String, String> dimensions;
 
-    /**
-     * @param name        The metric name
-     * @param outputName  The name of the metric in yamas
-     * @param description The description of this metric
-     */
-    public Metric(String name, String outputName, String description) {
+
+    public Metric(String name, String outputName, String description, Map<String, String> dimensions) {
         this.name = name;
         this.outputName = outputName;
         this.description = description;
+        this.dimensions = Collections.unmodifiableMap(dimensions);
+    }
+
+    public Metric(String name, String outputName, String description) {
+        this(name, outputName, description, new HashMap<>());
     }
 
     /**
-     * Creates a metric with empty dimensions and consumers containing the default consumer
-     *
-     * @param name       the metric name
-     * @param outputName name tp be used in yamas
+     * Creates a metric with empty description
      */
     public Metric(String name, String outputName) {
         this(name, outputName, "");
     }
 
     /**
-     * Creates a metric with same outputname as metricname and  empty dimensions and consumers containing the default consumer and
+     * Creates a metric with same outputname as metricname
      *
-     * @param name The name of the metric, same name used for outputname
+     * @param name The name of the metric, same name used for output name
      */
     public Metric(String name) {
         this(name, name);
     }
 
-    public String getDescription() {
-        return this.description;
+    /**
+     * Returns a new Metric that is a combination of this and the given metric.
+     * New dimensions from the given metric are added, but already existing
+     * dimensions will be kept unchanged.
+     *
+     * @param other The metric to add dimensions from.
+     * @return A new metric with dimensions from this and the other.
+     */
+    public Metric addDimensionsFrom(Metric other) {
+        Map<String, String> combined = new LinkedHashMap<>(dimensions);
+        other.dimensions.forEach(
+                (k, v) -> {
+                    if (!combined.containsKey(k)) combined.put(k, v);
+                });
+
+        return new Metric(name, outputName, description, combined);
     }
 
-
-    public String getOutputName() {
-        return outputName;
-    }
-
-    public void setOutputName(String outputName) {
-        this.outputName = outputName;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Map<String, String> getDimensions() {
-        return dimensions;
-    }
 
     @Override
     public String toString() {

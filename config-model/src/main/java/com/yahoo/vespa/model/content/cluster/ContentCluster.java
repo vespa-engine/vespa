@@ -663,7 +663,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
            for (Map.Entry<String, MetricsConsumer> e : consumers.entrySet()) {
                 MetricsmanagerConfig.Consumer.Builder b = getMetricBuilder(e.getKey(), builder);
                 for (Metric m : e.getValue().getMetrics().values()) {
-                    b.addedmetrics(m.getName());
+                    b.addedmetrics(m.name);
                 }
             }
         }
