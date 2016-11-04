@@ -12,16 +12,11 @@
 #include <vespa/document/util/stringutil.h>
 #include <sys/time.h>
 #include <vespa/vespalib/text/lowercase.h>
-#include <regex>
 
 LOG_SETUP(".document.select.valuenode");
 
 namespace document {
 namespace select {
-
-namespace {
-    static const std::regex FIELD_NAME_REGEX("^([_A-Za-z][_A-Za-z0-9]*).*");
-}
 
 namespace {
     bool documentTypeEqualsName(const DocumentType& type,
@@ -197,33 +192,22 @@ FloatValueNode::print(std::ostream& out, bool verbose,
 }
 
 FieldValueNode::FieldValueNode(const vespalib::string& doctype,
-                               const vespalib::string& fieldExpression)
+                               const vespalib::string& field)
     : _doctype(doctype),
-      _fieldExpression(fieldExpression),
-      _fieldName(extractFieldName(fieldExpression))
+      _field(field)
 {
-}
-
-const vespalib::string FieldValueNode::extractFieldName(const std::string & fieldExpression) {
-    std::smatch match;
-
-    if (std::regex_match(fieldExpression, match, FIELD_NAME_REGEX) && match[1].matched) {
-        return vespalib::string(match[1].first, match[1].second);
-    }
-
-    throw ParsingFailedException("Fatal: could not extract field name from field expression '" + fieldExpression + "'");
 }
 
 void
 FieldValueNode::initFieldPath(const DocumentType& type) const {
     if (_fieldPath.size() == 0) {
-        FieldPath::UP path(type.buildFieldPath(_fieldExpression));
+        FieldPath::UP path(type.buildFieldPath(_field));
         if (!path.get()) {
             throw FieldNotFoundException(
                     vespalib::make_string("Could not create field path for doc "
                                           "type: '%s' field: '%s'",
                                           type.toString().c_str(),
-                                          _fieldExpression.c_str()),
+                                          _field.c_str()),
                     VESPA_STRLOC);
         }
         _fieldPath = *path;
@@ -264,7 +248,7 @@ FieldValueNode::getValue(const Context& context) const
         return std::unique_ptr<Value>(new InvalidValue());
     } catch (FieldNotFoundException& e) {
         LOG(warning, "Tried to compare to field %s, not found in document type",
-                     _fieldExpression.c_str());
+                     _field.c_str());
         return std::unique_ptr<Value>(new InvalidValue());
     }
 }
@@ -402,7 +386,7 @@ FieldValueNode::print(std::ostream& out, bool verbose,
 {
     (void) verbose; (void) indent;
     if (hadParentheses()) out << '(';
-    out << _doctype << "." << _fieldExpression;
+    out << _doctype << "." << _field;
     if (hadParentheses()) out << ')';
 }
 
@@ -438,7 +422,7 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
         }
     } catch (FieldNotFoundException& e) {
         LOG(warning, "Tried to compare to field %s, not found in document type",
-                     _fieldExpression.c_str());
+                     _field.c_str());
         out << "Field not found in document type " << doc.getType()
             << ". Returning invalid.\n";
         return std::unique_ptr<Value>(new InvalidValue());
