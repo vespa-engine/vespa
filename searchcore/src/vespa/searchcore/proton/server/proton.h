@@ -36,6 +36,7 @@ namespace proton
 {
 
 class DiskMemUsageSampler;
+class HwInfoSampler;
 
 class Proton : public IBootstrapOwner,
                public search::engine::MonitorServer,
@@ -141,6 +142,7 @@ private:
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
     HwInfo                          _hwInfo;
+    std::unique_ptr<HwInfoSampler>  _hwInfoSampler;
 
     bool performDataDirectoryUpgrade(const vespalib::string &baseDir);
     void loadLibrary(const vespalib::string &libName);
