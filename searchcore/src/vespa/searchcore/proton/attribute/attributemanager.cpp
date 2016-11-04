@@ -235,7 +235,8 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
       _fileHeaderContext(currMgr._fileHeaderContext),
       _factory(currMgr._factory),
       _interlock(currMgr._interlock),
-      _attributeFieldWriter(currMgr._attributeFieldWriter)
+      _attributeFieldWriter(currMgr._attributeFieldWriter),
+      _hwInfo(currMgr._hwInfo)
 {
     Spec::AttributeList toBeAdded;
     transferExistingAttributes(currMgr, newSpec, toBeAdded);
