@@ -72,7 +72,7 @@ public:
     virtual void rewind() override;
 
     // Used by unit test
-    btree::EntryRef getWordRef() const;
+    datastore::EntryRef getWordRef() const;
 };
 
 }

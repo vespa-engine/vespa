@@ -7,7 +7,7 @@ LOG_SETUP("datastore_test");
 #include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search {
-namespace btree {
+namespace datastore {
 
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
@@ -428,5 +428,5 @@ Test::Main()
 }
 }
 
-TEST_APPHOOK(search::btree::Test);
+TEST_APPHOOK(search::datastore::Test);
 

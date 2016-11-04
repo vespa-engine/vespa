@@ -33,9 +33,9 @@ public:
 
 
     struct WordKey {
-        btree::EntryRef _wordRef;
+        datastore::EntryRef _wordRef;
 
-        explicit WordKey(btree::EntryRef wordRef)
+        explicit WordKey(datastore::EntryRef wordRef)
             : _wordRef(wordRef)
         {
         }
@@ -59,7 +59,7 @@ public:
         const vespalib::stringref  _word;
 
         const char *
-        getWord(btree::EntryRef wordRef) const
+        getWord(datastore::EntryRef wordRef) const
         {
             if (wordRef.valid()) {
                 return _wordStore.getWord(wordRef);
@@ -100,12 +100,12 @@ private:
     std::unique_ptr<OrderedDocumentInserter> _inserter;
 
 public:
-    btree::EntryRef addWord(const vespalib::stringref word) {
+    datastore::EntryRef addWord(const vespalib::stringref word) {
         _numUniqueWords++;
         return _wordStore.addWord(word);
     }
 
-    btree::EntryRef
+    datastore::EntryRef
     addFeatures(const index::DocIdAndFeatures &features)
     {
         return _featureStore.addFeatures(_fieldId, features).first;
@@ -215,7 +215,7 @@ class BTreeNodeT<memoryindex::MemoryFieldIndex::WordKey,
 
 extern template
 class BTreeNodeTT<memoryindex::MemoryFieldIndex::WordKey,
-                  EntryRef,
+                  datastore::EntryRef,
                   search::btree::NoAggregated,
                   BTreeDefaultTraits::INTERNAL_SLOTS>;
 

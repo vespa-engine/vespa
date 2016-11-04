@@ -11,20 +11,20 @@ namespace memoryindex {
 class WordStore
 {
 public:
-    typedef btree::DataStoreT<btree::AlignedEntryRefT<22, 2> > DataStoreType;
+    typedef datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2> > DataStoreType;
     typedef DataStoreType::RefType RefType;
 
 private:
     DataStoreType           _store;
     uint32_t                _numWords;
-    btree::BufferType<char> _type;
+    datastore::BufferType<char> _type;
     const uint32_t          _typeId;
 
 public:
     WordStore();
     ~WordStore();
-    btree::EntryRef addWord(const vespalib::stringref word);
-    const char * getWord(btree::EntryRef ref) const
+    datastore::EntryRef addWord(const vespalib::stringref word);
+    const char * getWord(datastore::EntryRef ref) const
     {
         RefType internalRef(ref);
         return _store.getBufferEntry<char>(internalRef.bufferId(),

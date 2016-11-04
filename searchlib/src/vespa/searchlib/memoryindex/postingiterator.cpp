@@ -62,7 +62,7 @@ PostingIterator::doUnpack(uint32_t docId)
     assert(docId == getDocId());
     assert(_itr.valid());
     assert(docId == _itr.getKey());
-    btree::EntryRef featureRef(_itr.getData());
+    datastore::EntryRef featureRef(_itr.getData());
     _featureStore.setupForUnpackFeatures(featureRef, _featureDecoder);
     _featureDecoder.unpackFeatures(_matchData, docId);
     setUnpacked();

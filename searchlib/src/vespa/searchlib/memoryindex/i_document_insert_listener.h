@@ -13,7 +13,7 @@ class IDocumentInsertListener
 {
 public:
     virtual ~IDocumentInsertListener() {}
-    virtual void insert(btree::EntryRef wordRef, uint32_t docId) = 0;
+    virtual void insert(datastore::EntryRef wordRef, uint32_t docId) = 0;
     virtual void flush() = 0;
 };
 

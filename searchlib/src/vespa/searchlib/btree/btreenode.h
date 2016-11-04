@@ -10,13 +10,17 @@
 #include <vespa/searchlib/datastore/entryref.h>
 
 namespace search {
-namespace btree {
+namespace datastore {
 
-template <typename, typename, typename, size_t, size_t>
-class BTreeNodeAllocator;
-template <typename, typename, typename, size_t, size_t> class BTreeNodeStore;
 template <typename> class BufferType;
 template <typename> class DataStoreT;
+
+}
+
+namespace btree {
+
+template <typename, typename, typename, size_t, size_t> class BTreeNodeAllocator;
+template <typename, typename, typename, size_t, size_t> class BTreeNodeStore;
 
 class NoAggregated;
 
@@ -59,7 +63,7 @@ protected:
     }
 
 public:
-    typedef EntryRef Ref;
+    typedef datastore::EntryRef Ref;
 
     bool isLeaf() const { return _level == 0u; }
 
@@ -485,9 +489,9 @@ public:
     template <typename, uint32_t>
     friend class BTreeNodeDataWrap;
     template <typename>
-    friend class BufferType;
+    friend class datastore::BufferType;
     template <typename>
-    friend class DataStoreT;
+    friend class datastore::DataStoreT;
     typedef BTreeNode::Ref Ref;
     typedef std::pair<Ref, InternalNodeType *> RefPair;
     using ParentType::_keys;
@@ -641,9 +645,9 @@ public:
     template <typename, typename, typename, size_t, size_t>
     friend class BTreeNodeStore;
     template <typename>
-    friend class BufferType;
+    friend class datastore::BufferType;
     template <typename>
-    friend class DataStoreT;
+    friend class datastore::DataStoreT;
     typedef BTreeNode::Ref Ref;
     typedef std::pair<Ref, LeafNodeType *> RefPair;
     using ParentType::validSlots;
@@ -765,7 +769,7 @@ extern template class BTreeKeyData<uint32_t, int32_t>;
 extern template class BTreeNodeT<uint32_t, 16>;
 extern template class BTreeNodeTT<uint32_t, uint32_t, NoAggregated, 16>;
 extern template class BTreeNodeTT<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
-extern template class BTreeNodeTT<uint32_t, EntryRef, NoAggregated, 16>;
+extern template class BTreeNodeTT<uint32_t, datastore::EntryRef, NoAggregated, 16>;
 extern template class BTreeNodeTT<uint32_t, int32_t, MinMaxAggregated, 16>;
 extern template class BTreeInternalNode<uint32_t, NoAggregated, 16>;
 extern template class BTreeInternalNode<uint32_t, MinMaxAggregated, 16>;

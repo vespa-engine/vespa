@@ -29,11 +29,11 @@ class DenseTensorStore : public TensorStore
 {
 public:
     // 32 entry alignment, entry type is char => 32 bytes alignment
-    using RefType = btree::AlignedEntryRefT<22, 5>;
-    using DataStoreType = btree::DataStoreT<RefType>;
+    using RefType = datastore::AlignedEntryRefT<22, 5>;
+    using DataStoreType = datastore::DataStoreT<RefType>;
     using ValueType = vespalib::eval::ValueType;
 
-    class BufferType : public btree::BufferType<char>
+    class BufferType : public datastore::BufferType<char>
     {
         uint32_t _unboundDimSizesSize;
     public:

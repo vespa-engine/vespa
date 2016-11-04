@@ -315,7 +315,7 @@ EnumStoreTest::testAddEnum(bool hasPostings)
         uint32_t e = ses.getEnum(indices[i]);
         EXPECT_EQUAL(i, e);
         EXPECT_TRUE(ses.findEnum(unique[i].c_str(), e));
-        EXPECT_TRUE(ses.getEnum(btree::EntryRef(e)) == i);
+        EXPECT_TRUE(ses.getEnum(datastore::EntryRef(e)) == i);
         EXPECT_TRUE(ses.findIndex(unique[i].c_str(), idx));
         EXPECT_TRUE(idx == indices[i]);
         EXPECT_EQUAL(1u, ses.getRefCount(indices[i]));

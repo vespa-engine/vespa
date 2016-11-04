@@ -36,7 +36,7 @@ DocumentRemover::remove(uint32_t docId, IDocumentRemoveListener &listener)
 }
 
 void
-DocumentRemover::insert(btree::EntryRef wordRef, uint32_t docId)
+DocumentRemover::insert(datastore::EntryRef wordRef, uint32_t docId)
 {
     _wordFieldDocTuples.emplace_back(wordRef, docId);
 }

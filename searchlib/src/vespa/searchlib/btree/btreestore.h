@@ -27,7 +27,7 @@ public:
     typedef KeyT KeyType;
     typedef DataT DataType;
     typedef AggrT AggregatedType;
-    typedef DataStoreT<EntryRefT<22> > DataStoreType;
+    typedef datastore::DataStoreT<datastore::EntryRefT<22> > DataStoreType;
     typedef DataStoreType::RefType RefType;
     typedef BTreeKeyData<KeyT, DataT> KeyDataType;
 
@@ -37,8 +37,8 @@ public:
                               TraitsT::INTERNAL_SLOTS> InternalNodeType;
     typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>
     LeafNodeType;
-    typedef std::pair<EntryRef, BTreeType *> BTreeTypeRefPair;
-    typedef std::pair<EntryRef, KeyDataType *> KeyDataTypeRefPair;
+    typedef std::pair<datastore::EntryRef, BTreeType *> BTreeTypeRefPair;
+    typedef std::pair<datastore::EntryRef, KeyDataType *> KeyDataTypeRefPair;
     typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
     typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
     typedef vespalib::GenerationHandler::generation_t generation_t;
@@ -53,6 +53,10 @@ public:
                          TraitsT::INTERNAL_SLOTS,
                          TraitsT::LEAF_SLOTS,
                          AggrCalcT> Builder;
+    using EntryRef = datastore::EntryRef;
+    template <typename EntryType>
+    using BufferType = datastore::BufferType<EntryType>;
+    using BufferState = datastore::BufferState;
 
     static constexpr uint32_t clusterLimit = 8;
     

@@ -127,7 +127,7 @@ EnumStoreT<StringEntryType>::deserialize(const void *src,
     if (available < sz)
         return -1;
     uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);
-    btree::BufferState & buffer = _store.getBufferState(activeBufferId);
+    datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
     uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
     if (buffer.remaining() < entrySize) {
         fprintf(stderr, "Out of enumstore bufferspace\n");
@@ -158,7 +158,7 @@ class btree::BTreeNodeDataWrap<btree::BTreeNoLeafData,
                                EnumTreeTraits::LEAF_SLOTS>;
 
 template
-class btree::BTreeNodeDataWrap<btree::EntryRef,
+class btree::BTreeNodeDataWrap<datastore::EntryRef,
                                EnumTreeTraits::LEAF_SLOTS>;
 
 #if 0
@@ -168,7 +168,7 @@ class btree::BTreeKeyData<EnumStoreBase::Index,
 
 template
 class btree::BTreeKeyData<EnumStoreBase::Index,
-                          btree::EntryRef>;
+                          datastore::EntryRef>;
 #endif
 
 template
@@ -183,7 +183,7 @@ class btree::BTreeNodeT<EnumStoreBase::Index,
 
 template
 class btree::BTreeNodeTT<EnumStoreBase::Index,
-                         btree::EntryRef,
+                         datastore::EntryRef,
                          btree::NoAggregated,
                          EnumTreeTraits::INTERNAL_SLOTS>;
 
@@ -196,7 +196,7 @@ class btree::BTreeNodeTT<EnumStoreBase::Index,
 #if 0
 template
 class btree::BTreeNodeTT<EnumStoreBase::Index,
-                         btree::EntryRef,
+                         datastore::EntryRef,
                          btree::NoAggregated,
                          EnumTreeTraits::LEAF_SLOTS>;
 #endif
@@ -214,7 +214,7 @@ class btree::BTreeLeafNode<EnumStoreBase::Index,
 
 template
 class btree::BTreeLeafNode<EnumStoreBase::Index,
-                           btree::EntryRef,
+                           datastore::EntryRef,
                            btree::NoAggregated,
                            EnumTreeTraits::LEAF_SLOTS>;
 
@@ -226,7 +226,7 @@ class btree::BTreeLeafNodeTemp<EnumStoreBase::Index,
 
 template
 class btree::BTreeLeafNodeTemp<EnumStoreBase::Index,
-                               btree::EntryRef,
+                               datastore::EntryRef,
                                btree::NoAggregated,
                                EnumTreeTraits::LEAF_SLOTS>;
 
@@ -239,7 +239,7 @@ class btree::BTreeNodeStore<EnumStoreBase::Index,
 
 template
 class btree::BTreeNodeStore<EnumStoreBase::Index,
-                            btree::EntryRef,
+                            datastore::EntryRef,
                             btree::NoAggregated,
                             EnumTreeTraits::INTERNAL_SLOTS,
                             EnumTreeTraits::LEAF_SLOTS>;
@@ -253,7 +253,7 @@ class btree::BTreeIteratorBase<EnumStoreBase::Index,
                                EnumTreeTraits::PATH_SIZE>;
 template
 class btree::BTreeIteratorBase<EnumStoreBase::Index,
-                               btree::EntryRef,
+                               datastore::EntryRef,
                                btree::NoAggregated,
                                EnumTreeTraits::INTERNAL_SLOTS,
                                EnumTreeTraits::LEAF_SLOTS,
@@ -266,7 +266,7 @@ class btree::BTreeIterator<EnumStoreBase::Index,
                            EnumTreeTraits>;
 template
 class btree::BTreeIterator<EnumStoreBase::Index,
-                           btree::EntryRef,
+                           datastore::EntryRef,
                            btree::NoAggregated,
                            const EnumStoreComparatorWrapper,
                            EnumTreeTraits>;
@@ -278,7 +278,7 @@ class btree::BTree<EnumStoreBase::Index,
                    EnumTreeTraits>;
 template
 class btree::BTree<EnumStoreBase::Index,
-                   btree::EntryRef,
+                   datastore::EntryRef,
                    btree::NoAggregated,
                    const EnumStoreComparatorWrapper,
                    EnumTreeTraits>;
@@ -291,7 +291,7 @@ class btree::BTreeRoot<EnumStoreBase::Index,
 
 template
 class btree::BTreeRoot<EnumStoreBase::Index,
-                       btree::EntryRef,
+                       datastore::EntryRef,
                        btree::NoAggregated,
                        const EnumStoreComparatorWrapper,
                        EnumTreeTraits>;
@@ -304,7 +304,7 @@ class btree::BTreeRootT<EnumStoreBase::Index,
 
 template
 class btree::BTreeRootT<EnumStoreBase::Index,
-                        btree::EntryRef,
+                        datastore::EntryRef,
                         btree::NoAggregated,
                         const EnumStoreComparatorWrapper,
                         EnumTreeTraits>;
@@ -317,7 +317,7 @@ class btree::BTreeRootBase<EnumStoreBase::Index,
 
 template
 class btree::BTreeRootBase<EnumStoreBase::Index,
-                           btree::EntryRef,
+                           datastore::EntryRef,
                            btree::NoAggregated,
                            EnumTreeTraits::INTERNAL_SLOTS,
                            EnumTreeTraits::LEAF_SLOTS>;
@@ -331,7 +331,7 @@ class btree::BTreeNodeAllocator<EnumStoreBase::Index,
 
 template
 class btree::BTreeNodeAllocator<EnumStoreBase::Index,
-                                btree::EntryRef,
+                                datastore::EntryRef,
                                 btree::NoAggregated,
                                 EnumTreeTraits::INTERNAL_SLOTS,
                                 EnumTreeTraits::LEAF_SLOTS>;
@@ -345,7 +345,7 @@ class btree::BTreeBuilder<EnumStoreBase::Index,
 
 template
 class btree::BTreeBuilder<EnumStoreBase::Index,
-                          btree::EntryRef,
+                          datastore::EntryRef,
                           btree::NoAggregated,
                           EnumTreeTraits::INTERNAL_SLOTS,
                           EnumTreeTraits::LEAF_SLOTS>;

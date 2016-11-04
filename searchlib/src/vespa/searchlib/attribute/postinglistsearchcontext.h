@@ -40,8 +40,8 @@ protected:
     uint64_t                _numValues; // attr.getStatus().getNumValues();
     bool                    _hasWeight;
     bool                    _useBitVector;
-    search::btree::EntryRef _pidx;
-    search::btree::EntryRef _frozenRoot; // Posting list in tree form
+    search::datastore::EntryRef _pidx;
+    search::datastore::EntryRef _frozenRoot; // Posting list in tree form
     float _FSTC;  // Filtering Search Time Constant
     float _PLSTC; // Posting List Search Time Constant
     const EnumStoreBase    &_esb;
@@ -105,7 +105,7 @@ protected:
     typedef typename Traits::PostingList PostingList;
     typedef typename Traits::Posting Posting;
     typedef std::vector<Posting> PostingVector;
-    typedef btree::EntryRef EntryRef;
+    typedef datastore::EntryRef EntryRef;
     typedef typename PostingList::ConstIterator PostingConstIterator;
 
     const PostingList    &_postingList;

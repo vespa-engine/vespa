@@ -21,7 +21,7 @@ public:
     typedef memoryindex::Dictionary::PostingList Tree;
     typedef Tree::NodeAllocatorType NodeAllocator;
     typedef memoryindex::FeatureStore FeatureStore;
-    typedef btree::EntryRef EntryRef;
+    typedef datastore::EntryRef EntryRef;
     typedef index::Schema Schema;
     typedef bitcompression::PosOccFieldsParams PosOccFieldsParams;
 

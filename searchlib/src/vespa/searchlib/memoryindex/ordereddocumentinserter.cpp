@@ -59,7 +59,7 @@ OrderedDocumentInserter::flushWord()
     }
     //XXX: Feature store leak, removed features not marked dead
     PostingListStore &postingListStore(_fieldIndex.getPostingListStore());
-    btree::EntryRef pidx(_dItr.getData());
+    datastore::EntryRef pidx(_dItr.getData());
     postingListStore.apply(pidx,
                            &_adds[0],
                            &_adds[0] + _adds.size(),
@@ -99,10 +99,10 @@ OrderedDocumentInserter::setNextWord(const vespalib::stringref word)
         _dItr.binarySeek(key, cmp);
     }
     if (!_dItr.valid() || cmp(key, _dItr.getKey())) {
-        btree::EntryRef wordRef = _fieldIndex.addWord(_word);
+        datastore::EntryRef wordRef = _fieldIndex.addWord(_word);
         WordKey insertKey(wordRef);
         DictionaryTree &dTree(_fieldIndex.getDictionaryTree());
-        dTree.insert(_dItr, insertKey, btree::EntryRef().ref());
+        dTree.insert(_dItr, insertKey, datastore::EntryRef().ref());
     }
     assert(_dItr.valid());
     assert(_word == wordStore.getWord(_dItr.getKey()._wordRef));
@@ -116,7 +116,7 @@ OrderedDocumentInserter::add(uint32_t docId,
     assert(docId != noDocId);
     assert(_prevDocId == noDocId || _prevDocId < docId ||
            (_prevDocId == docId && !_prevAdd));
-    btree::EntryRef featureRef = _fieldIndex.addFeatures(features);
+    datastore::EntryRef featureRef = _fieldIndex.addFeatures(features);
     _adds.push_back(PostingListKeyDataType(docId, featureRef.ref()));
     _listener.insert(_dItr.getKey()._wordRef, docId);
     _prevDocId = docId;
@@ -146,7 +146,7 @@ OrderedDocumentInserter::rewind()
 }
 
 
-btree::EntryRef
+datastore::EntryRef
 OrderedDocumentInserter::getWordRef() const
 {
     return _dItr.getKey()._wordRef;

@@ -10,7 +10,7 @@ namespace attribute {
 
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
 
-TensorStore::TensorStore(btree::DataStoreBase &store)
+TensorStore::TensorStore(datastore::DataStoreBase &store)
     : _store(store),
       _typeId(0)
 {

@@ -49,12 +49,12 @@ MemoryFieldIndex::~MemoryFieldIndex(void)
     // XXX: Kludge
     for (DictionaryTree::Iterator it = _dict.begin();
          it.valid(); ++it) {
-        btree::EntryRef pidx(it.getData());
+        datastore::EntryRef pidx(it.getData());
         if (pidx.valid()) {
             _postingListStore.clear(pidx);
             // Before updating ref
             std::atomic_thread_fence(std::memory_order_release);
-            it.writeData(btree::EntryRef().ref());
+            it.writeData(datastore::EntryRef().ref());
         }
     }
     _postingListStore.clearBuilder();
@@ -71,7 +71,7 @@ MemoryFieldIndex::PostingList::Iterator
 MemoryFieldIndex::find(const vespalib::stringref word) const
 {
     DictionaryTree::Iterator itr =
-        _dict.find(WordKey(btree::EntryRef()),
+        _dict.find(WordKey(datastore::EntryRef()),
                   KeyComp(_wordStore, word));
     if (itr.valid()) {
         return _postingListStore.begin(itr.getData());
@@ -83,7 +83,7 @@ MemoryFieldIndex::PostingList::ConstIterator
 MemoryFieldIndex::findFrozen(const vespalib::stringref word) const
 {
     DictionaryTree::ConstIterator itr =
-        _dict.getFrozenView().find(WordKey(btree::EntryRef()),
+        _dict.getFrozenView().find(WordKey(datastore::EntryRef()),
                                    KeyComp(_wordStore, word));
     if (itr.valid()) {
         return _postingListStore.beginFrozen(itr.getData());
@@ -111,12 +111,12 @@ MemoryFieldIndex::compactFeatures(void)
             PostingList::Iterator
                 it(tree->begin(_postingListStore.getAllocator()));
             for (; it.valid(); ++it) {
-                btree::EntryRef oldFeatures = it.getData();
+                datastore::EntryRef oldFeatures = it.getData();
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                btree::EntryRef newFeatures =
+                datastore::EntryRef newFeatures =
                     _featureStore.moveFeatures(packedIndex, oldFeatures);
 
 #if 0
@@ -137,12 +137,12 @@ MemoryFieldIndex::compactFeatures(void)
             const PostingListKeyDataType *ite = shortArray + clusterSize;
             for (const PostingListKeyDataType *it = shortArray; it < ite;
                  ++it) {
-                btree::EntryRef oldFeatures = it->getData();
+                datastore::EntryRef oldFeatures = it->getData();
 
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                btree::EntryRef newFeatures =
+                datastore::EntryRef newFeatures =
                     _featureStore.moveFeatures(packedIndex, oldFeatures);
 
 #if 0
@@ -190,7 +190,7 @@ MemoryFieldIndex::dump(search::index::IndexBuilder & indexBuilder)
             assert(pitr.valid());
             for (; pitr.valid(); ++pitr) {
                 uint32_t docId = pitr.getKey();
-                btree::EntryRef featureRef = pitr.getData();
+                datastore::EntryRef featureRef = pitr.getData();
                 indexBuilder.startDocument(docId);
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
@@ -215,7 +215,7 @@ MemoryFieldIndex::dump(search::index::IndexBuilder & indexBuilder)
             const PostingListKeyDataType *kde = kd + clusterSize;
             for (; kd != kde; ++kd) {
                 uint32_t docId = kd->_key;
-                btree::EntryRef featureRef = kd->getData();
+                datastore::EntryRef featureRef = kd->getData();
                 indexBuilder.startDocument(docId);
                 _featureStore.setupForReadFeatures(featureRef, decoder);
                 decoder.readFeatures(features);
@@ -274,7 +274,7 @@ class BTreeNodeT<memoryindex::MemoryFieldIndex::WordKey,
 
 template
 class BTreeNodeTT<memoryindex::MemoryFieldIndex::WordKey,
-                  EntryRef,
+                  datastore::EntryRef,
                   search::btree::NoAggregated,
                   BTreeDefaultTraits::INTERNAL_SLOTS>;
 

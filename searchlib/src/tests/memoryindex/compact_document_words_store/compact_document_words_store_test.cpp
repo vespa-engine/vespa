@@ -10,7 +10,7 @@ LOG_SETUP(".memoryindex.compact_document_words_store_test");
 #include <map>
 
 using namespace search;
-using namespace search::btree;
+using namespace search::datastore;
 using namespace search::memoryindex;
 
 typedef CompactDocumentWordsStore::Builder Builder;

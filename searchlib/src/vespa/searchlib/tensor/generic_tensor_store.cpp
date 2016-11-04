@@ -61,7 +61,7 @@ GenericTensorStore::allocRawBuffer(uint32_t size)
     size_t bufSize = RefType::align(extSize);
     _store.ensureBufferCapacity(_typeId, bufSize);
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    btree::BufferState &state = _store.getBufferState(activeBufferId);
+    datastore::BufferState &state = _store.getBufferState(activeBufferId);
     size_t oldSize = state.size();
     char *bufferEntryWritePtr =
         _store.getBufferEntry<char>(activeBufferId, oldSize);

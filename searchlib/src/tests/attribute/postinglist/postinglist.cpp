@@ -99,7 +99,7 @@ private:
     std::vector<RandomValue> _randomValues;
 
 public:
-    typedef btree::DataStore<int> IntKeyStore;
+    typedef datastore::DataStore<int> IntKeyStore;
     typedef btree::BTreeKeyData<uint32_t, btree::BTreeNoLeafData>
     AttributePosting;
     typedef btree::BTreeStore<uint32_t,
@@ -109,8 +109,8 @@ public:
                               btree::BTreeDefaultTraits>
     PostingList;
     typedef PostingList::NodeAllocatorType PostingListNodeAllocator;
-    typedef btree::EntryRef PostingIdx;
-    typedef btree::EntryRef StoreIndex;
+    typedef datastore::EntryRef PostingIdx;
+    typedef datastore::EntryRef StoreIndex;
 
     class IntComp {
     private:
@@ -593,8 +593,8 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
     std::vector<uint32_t> toHold;
 
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
-        btree::BufferState &state = valueHandle.getBufferState(bufferId);
-        if (state._state == btree::BufferState::ACTIVE) {
+        datastore::BufferState &state = valueHandle.getBufferState(bufferId);
+        if (state._state == datastore::BufferState::ACTIVE) {
             toHold.push_back(bufferId);
             // Freelists already disabled due to variable sized data
         }

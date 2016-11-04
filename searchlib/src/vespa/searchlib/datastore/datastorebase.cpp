@@ -4,14 +4,10 @@
 
 using vespalib::GenerationHeldBase;
 
-namespace search
-{
+namespace search {
+namespace datastore {
 
-namespace btree
-{
-
-namespace
-{
+namespace {
 
 /*
  * Minimum dead bytes in active write buffer before switching to new
@@ -421,6 +417,5 @@ DataStoreBase::startCompactWorstBuffer(uint32_t typeId)
 }
 
 
-} // namespace btree
-
+} // namespace datastore
 } // namespace search

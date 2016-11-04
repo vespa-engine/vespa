@@ -35,7 +35,7 @@ serialize(const Builder &builder, uint32_t *begin)
 }
 
 CompactDocumentWordsStore::Builder &
-CompactDocumentWordsStore::Builder::insert(btree::EntryRef wordRef)
+CompactDocumentWordsStore::Builder::insert(datastore::EntryRef wordRef)
 {
     _words.push_back(wordRef);
     return *this;
@@ -97,14 +97,14 @@ CompactDocumentWordsStore::Store::~Store()
     _store.dropBuffers();
 }
 
-btree::EntryRef
+datastore::EntryRef
 CompactDocumentWordsStore::Store::insert(const Builder &builder)
 {
     size_t serializedSize = getSerializedSize(builder);
     _store.ensureBufferCapacity(_typeId, serializedSize);
 
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    btree::BufferState &state = _store.getBufferState(activeBufferId);
+    datastore::BufferState &state = _store.getBufferState(activeBufferId);
     size_t oldSize = state.size();
     RefType ref(oldSize, activeBufferId);
     assert(oldSize == ref.offset());
@@ -118,7 +118,7 @@ CompactDocumentWordsStore::Store::insert(const Builder &builder)
 }
 
 CompactDocumentWordsStore::Iterator
-CompactDocumentWordsStore::Store::get(btree::EntryRef ref) const
+CompactDocumentWordsStore::Store::get(datastore::EntryRef ref) const
 {
     RefType internalRef(ref);
     const uint32_t *buf = _store.getBufferEntry<uint32_t>(internalRef.bufferId(),
@@ -135,7 +135,7 @@ CompactDocumentWordsStore::CompactDocumentWordsStore()
 void
 CompactDocumentWordsStore::insert(const Builder &builder)
 {
-    btree::EntryRef ref = _wordsStore.insert(builder);
+    datastore::EntryRef ref = _wordsStore.insert(builder);
     auto insres = _docs.insert(std::make_pair(builder.docId(), ref));
     if (!insres.second) {
         LOG(error, "Failed inserting remove info for docid %u",

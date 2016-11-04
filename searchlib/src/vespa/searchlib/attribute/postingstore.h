@@ -20,7 +20,7 @@ class Config;
 class BitVectorEntry
 {
 public:
-    btree::EntryRef _tree; // Daisy chained reference to tree based posting list
+    datastore::EntryRef _tree; // Daisy chained reference to tree based posting list
     std::shared_ptr<GrowableBitVector> _bv; // bitvector
 
 public:
@@ -70,7 +70,7 @@ template <typename DataT>
 class PostingStore : public PostingListTraits<DataT>::PostingStoreBase,
     public PostingStoreBase2
 {
-    btree::BufferType<BitVectorEntry> _bvType;
+    datastore::BufferType<BitVectorEntry> _bvType;
 public:
     typedef DataT DataType;
     typedef typename PostingListTraits<DataT>::PostingStoreBase Parent;
@@ -84,7 +84,7 @@ public:
     typedef typename Parent::AggregatedType AggregatedType;
     typedef typename Parent::BTreeTypeRefPair BTreeTypeRefPair;
     typedef typename Parent::Builder Builder;
-    typedef btree::EntryRef EntryRef;
+    typedef datastore::EntryRef EntryRef;
     typedef std::less<uint32_t> CompareT;
     using Parent::applyNewArray;
     using Parent::applyNewTree;

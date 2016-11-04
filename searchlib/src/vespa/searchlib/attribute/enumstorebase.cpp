@@ -65,7 +65,7 @@ EnumStoreBase::reset(uint64_t initBufferSize)
 }
 
 uint32_t
-EnumStoreBase::getBufferIndex(btree::BufferState::State status)
+EnumStoreBase::getBufferIndex(datastore::BufferState::State status)
 {
     for (uint32_t i = 0; i < _store.getNumBuffers(); ++i) {
         if (_store.getBufferState(i)._state == status) {
@@ -95,7 +95,7 @@ EnumStoreBase::getMemoryUsage() const
 AddressSpace
 EnumStoreBase::getAddressSpaceUsage() const
 {
-    const btree::BufferState &activeState =
+    const datastore::BufferState &activeState =
             _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
     return AddressSpace(activeState.size() - activeState.getDeadElems(),
                         DataStoreType::RefType::offsetSize());
@@ -127,10 +127,10 @@ EnumStoreBase::trimHoldLists(generation_t firstUsed)
 bool
 EnumStoreBase::preCompact(uint64_t bytesNeeded)
 {
-    if (getBufferIndex(btree::BufferState::FREE) == Index::numBuffers()) {
+    if (getBufferIndex(datastore::BufferState::FREE) == Index::numBuffers()) {
         return false;
     }
-    btree::BufferState & activeBuf = _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
+    datastore::BufferState & activeBuf = _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
 
     // allocate enough space in free buffer
     uint64_t newSize = computeNewSize(activeBuf.size(), activeBuf._deadElems, bytesNeeded);
@@ -146,7 +146,7 @@ void
 EnumStoreBase::fallbackResize(uint64_t bytesNeeded)
 {
     uint32_t activeBufId = _store.getActiveBufferId(TYPE_ID);
-    btree::BufferState &activeBuf = _store.getBufferState(activeBufId);
+    datastore::BufferState &activeBuf = _store.getBufferState(activeBufId);
 
     // allocate enough space in free buffer
     uint64_t newSize = computeNewSize(activeBuf.size(),
@@ -615,7 +615,7 @@ EnumStoreDict<Dictionary>::hasData(void) const
 }
 
 
-template class btree::DataStoreT<btree::AlignedEntryRefT<31, 4> >;
+template class datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >;
 
 template
 void

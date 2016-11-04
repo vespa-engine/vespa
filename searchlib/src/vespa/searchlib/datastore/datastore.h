@@ -4,18 +4,19 @@
 
 #include "datastorebase.h"
 
-namespace search
-{
+namespace search {
+namespace btree {
 
-namespace btree
-{
-
-template <typename EntryType>
+template<typename EntryType>
 struct DefaultReclaimer {
-    static void reclaim(EntryType * entry) {
+    static void reclaim(EntryType *entry) {
         (void) entry;
     }
 };
+
+} // namespace btree
+
+namespace datastore {
 
 template <typename RefT = EntryRefT<22> >
 class DataStoreT : public DataStoreBase
@@ -133,6 +134,6 @@ public:
 
 extern template class DataStoreT<EntryRefT<22> >;
 
-} // namespace search::btree
+} // namespace search::datastore
 } // namespace search
 

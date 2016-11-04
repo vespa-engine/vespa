@@ -32,8 +32,8 @@ private:
         const MultiValueNumericPostingAttribute &self;
         DocumentWeightAttributeAdapter(const MultiValueNumericPostingAttribute &self_in) : self(self_in) {}
         virtual LookupResult lookup(const vespalib::string &term) const override final;
-        virtual void create(btree::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override final;
-        virtual DocumentWeightIterator create(btree::EntryRef idx) const override final;
+        virtual void create(datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override final;
+        virtual DocumentWeightIterator create(datastore::EntryRef idx) const override final;
     };
     DocumentWeightAttributeAdapter _document_weight_attribute_adapter;
 

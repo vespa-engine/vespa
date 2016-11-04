@@ -3,14 +3,10 @@
 #include "datastore.h"
 #include "datastore.hpp"
 
-namespace search
-{
-
-namespace btree
-{
+namespace search {
+namespace datastore {
 
 template class DataStoreT<EntryRefT<22> >;
 
-} // namespace btree
-
+} // namespace datastore
 } // namespace search

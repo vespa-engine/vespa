@@ -22,8 +22,8 @@ class PredicateTreeAnnotations;
  * posting lists for matching.
  */
 class PredicateIndex : public PopulateInterface {
-    typedef SimpleIndex<btree::EntryRef> IntervalIndex;
-    typedef SimpleIndex<btree::EntryRef> BoundsIndex;
+    typedef SimpleIndex<datastore::EntryRef> IntervalIndex;
+    typedef SimpleIndex<datastore::EntryRef> BoundsIndex;
     typedef btree::BTree<uint32_t, btree::BTreeNoLeafData> BTreeSet;
     template <typename IntervalT>
     using FeatureMap = std::unordered_map<uint64_t, std::vector<IntervalT>>;
@@ -36,8 +36,8 @@ public:
     typedef std::unique_ptr<PredicateIndex> UP;
     typedef vespalib::GenerationHandler GenerationHandler;
     typedef vespalib::GenerationHolder GenerationHolder;
-    using BTreeIterator = SimpleIndex<btree::EntryRef>::BTreeIterator;
-    using VectorIterator = SimpleIndex<btree::EntryRef>::VectorIterator;
+    using BTreeIterator = SimpleIndex<datastore::EntryRef>::BTreeIterator;
+    using VectorIterator = SimpleIndex<datastore::EntryRef>::VectorIterator;
     static const vespalib::string z_star_attribute_name;
     static const uint64_t z_star_hash;
     static const vespalib::string z_star_compressed_attribute_name;
@@ -57,7 +57,7 @@ private:
 
     template <typename IntervalT>
     void addPosting(uint64_t feature, uint32_t doc_id,
-                    btree::EntryRef ref);
+                    datastore::EntryRef ref);
 
     template <typename IntervalT>
     void indexDocumentFeatures(uint32_t doc_id, const FeatureMap<IntervalT> &interval_map);
@@ -124,7 +124,7 @@ public:
     void adjustDocIdLimit(uint32_t docId);
 };
 
-extern template class SimpleIndex<btree::EntryRef>;
+extern template class SimpleIndex<datastore::EntryRef>;
 
 }  // namespace predicate
 }  // namespace search

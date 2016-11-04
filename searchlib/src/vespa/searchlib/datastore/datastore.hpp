@@ -4,12 +4,8 @@
 
 #include "datastore.h"
 
-namespace search
-{
-
-namespace btree
-{
-
+namespace search {
+namespace datastore {
 
 template <typename RefT>
 DataStoreT<RefT>::DataStoreT(void)
@@ -243,6 +239,6 @@ DataStore<EntryType, RefT>::getEntry(EntryRef ref) const
 
 extern template class DataStoreT<EntryRefT<22> >;
 
-} // namespace search::btree
+} // namespace search::datastore
 } // namespace search
 
