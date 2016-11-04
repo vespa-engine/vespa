@@ -47,7 +47,7 @@ public class DefaultMetricConsumers {
     private Map<String, Metric> toMapByName(List<Metric> metrics) {
         Map<String, Metric> metricMap = new LinkedHashMap<>();
         for (Metric metric : metrics) {
-            metricMap.put(metric.getName(), metric);
+            metricMap.put(metric.name, metric);
         }
         return metricMap;
     }
