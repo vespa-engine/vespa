@@ -54,7 +54,7 @@ class DocumentSelectParserTest : public CppUnit::TestFixture {
             const std::string& doctype, const std::string& id, uint32_t hint,
             const std::string& hstr);
 
-    const select::FieldValueNode &
+    const select::FieldValueNode
     parseFieldValue(const std::string expression);
 
     template <typename ContainsType>
@@ -1282,7 +1282,7 @@ void DocumentSelectParserTest::testUtf8()
 //    PARSE("testdoctype1.hstringval =~ \"H.kon\"", *_doc[_doc.size()-1], True);
 }
 
-const select::FieldValueNode &
+const select::FieldValueNode
 DocumentSelectParserTest::parseFieldValue(const std::string expression) {
     return dynamic_cast<const select::FieldValueNode &>(
         dynamic_cast<const select::Compare &>(*_parser->parse(expression)).getLeft());
