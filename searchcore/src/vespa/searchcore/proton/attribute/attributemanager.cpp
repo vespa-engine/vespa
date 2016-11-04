@@ -12,7 +12,7 @@ LOG_SETUP(".proton.attribute.attributemanager");
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/util/i_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <memory>
@@ -180,7 +180,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    const FileHeaderContext &fileHeaderContext,
                                    search::ISequencedTaskExecutor &
                                    attributeFieldWriter,
-                                   const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
+                                   const HwInfo &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
       _flushables(),
@@ -205,7 +205,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
                                    search::ISequencedTaskExecutor &
                                    attributeFieldWriter,
                                    const IAttributeFactory::SP &factory,
-                                   const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
+                                   const HwInfo &hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
       _flushables(),

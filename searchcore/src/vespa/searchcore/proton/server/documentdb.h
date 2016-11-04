@@ -41,8 +41,6 @@
 
 using vespa::config::search::core::ProtonConfig;
 
-namespace vespalib { class IHwInfo; }
-
 namespace search
 {
 
@@ -273,7 +271,7 @@ public:
                const search::common::FileHeaderContext &fileHeaderContext,
                ConfigStore::UP config_store,
                InitializeThreads initializeThreads,
-               const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
+               const HwInfo &hwInfo);
 
     /**
      * Expose a cost view of the session manager. This is used by the

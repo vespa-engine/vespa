@@ -16,7 +16,7 @@ LOG_SETUP("attributeflush_test");
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/searchcore/proton/test/directory_handler.h>
-#include <vespa/vespalib/util/mock_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 
 using namespace document;
@@ -217,7 +217,7 @@ private:
     void
     requireThatShrinkWorks();
 
-    void requireThatFlushedAttributeCanBeLoaded(std::shared_ptr<vespalib::IHwInfo> hwInfo);
+    void requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo);
     void requireThatFlushedAttributeCanBeLoaded();
 public:
     int
@@ -232,15 +232,15 @@ struct BaseFixture
     test::DirectoryHandler _dirHandler;
     DummyFileHeaderContext   _fileHeaderContext;
     ForegroundTaskExecutor   _attributeFieldWriter;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo                   _hwInfo;
     BaseFixture()
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
-          _hwInfo(std::make_shared<vespalib::MockHwInfo>())
+          _hwInfo()
     {
     }
-    BaseFixture(const std::shared_ptr<IHwInfo> &hwInfo)
+    BaseFixture(const HwInfo &hwInfo)
         : _dirHandler(test_dir),
           _fileHeaderContext(),
           _attributeFieldWriter(),
@@ -280,7 +280,7 @@ struct Fixture : public BaseFixture, public AttributeManagerFixture
           AttributeManagerFixture(*static_cast<BaseFixture *>(this))
     {
     }
-    Fixture(const std::shared_ptr<IHwInfo> &hwInfo)
+    Fixture(const HwInfo &hwInfo)
         : BaseFixture(hwInfo),
           AttributeManagerFixture(*static_cast<BaseFixture *>(this))
     {
@@ -560,11 +560,11 @@ Test::requireThatShrinkWorks()
 }
 
 void
-Test::requireThatFlushedAttributeCanBeLoaded(std::shared_ptr<vespalib::IHwInfo> hwInfo)
+Test::requireThatFlushedAttributeCanBeLoaded(const HwInfo &hwInfo)
 {
     constexpr uint32_t numDocs = 100;
     BaseFixture f(hwInfo);
-    vespalib::string attrName(hwInfo->spinningDisk() ? "a11spin" : "a11ssd");
+    vespalib::string attrName(hwInfo.slowDisk() ? "a11slow" : "a11fast");
     {
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
@@ -593,8 +593,8 @@ Test::requireThatFlushedAttributeCanBeLoaded(std::shared_ptr<vespalib::IHwInfo> 
 void
 Test::requireThatFlushedAttributeCanBeLoaded()
 {
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded(std::make_shared<vespalib::MockHwInfo>(false)));
-    TEST_DO(requireThatFlushedAttributeCanBeLoaded(std::make_shared<vespalib::MockHwInfo>(true)));
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(false)));
+    TEST_DO(requireThatFlushedAttributeCanBeLoaded(HwInfo(true)));
 }
 
 int

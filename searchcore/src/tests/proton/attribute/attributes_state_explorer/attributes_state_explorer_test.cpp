@@ -11,7 +11,7 @@ LOG_SETUP("attributes_state_explorer_test");
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/util/mock_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 using namespace proton;
 using namespace proton::test;
@@ -27,14 +27,14 @@ struct Fixture
     DirectoryHandler _dirHandler;
     DummyFileHeaderContext _fileHeaderContext;
     ForegroundTaskExecutor _attributeFieldWriter;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo                 _hwInfo;
     AttributeManager::SP _mgr;
     AttributeManagerExplorer _explorer;
     Fixture()
         : _dirHandler(TEST_DIR),
           _fileHeaderContext(),
           _attributeFieldWriter(),
-          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
+          _hwInfo(),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb", TuneFileAttributes(),
                                     _fileHeaderContext,
                                     _attributeFieldWriter,

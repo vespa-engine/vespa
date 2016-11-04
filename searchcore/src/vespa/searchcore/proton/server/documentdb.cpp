@@ -88,7 +88,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        const FileHeaderContext &fileHeaderContext,
                        ConfigStore::UP config_store,
                        InitializeThreads initializeThreads,
-                       const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
+                       const HwInfo &hwInfo)
     : IDocumentDBConfigOwner(),
       IReplayConfig(),
       FeedHandler::IOwner(),

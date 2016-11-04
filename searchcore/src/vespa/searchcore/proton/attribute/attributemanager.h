@@ -11,8 +11,7 @@
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchcommon/common/schema.h>
-
-namespace vespalib { class IHwInfo; }
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 namespace search
 {
@@ -28,7 +27,6 @@ class FileHeaderContext;
 
 namespace proton
 {
-
 
 /**
  * Specialized attribute manager for proton.
@@ -66,7 +64,7 @@ private:
     IAttributeFactory::SP _factory;
     std::shared_ptr<search::attribute::Interlock> _interlock;
     search::ISequencedTaskExecutor &_attributeFieldWriter;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo                          _hwInfo;
 
     search::AttributeVector::SP internalAddAttribute(const vespalib::string &name,
                                                      const Config &cfg,
@@ -104,7 +102,7 @@ public:
                      const search::common::FileHeaderContext &
                      fileHeaderContext,
                      search::ISequencedTaskExecutor &attributeFieldWriter,
-                     const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
+                     const HwInfo &hwInfo);
 
     AttributeManager(const vespalib::string &baseDir,
                      const vespalib::string &documentSubDbName,
@@ -113,7 +111,7 @@ public:
                      fileHeaderContext,
                      search::ISequencedTaskExecutor &attributeFieldWriter,
                      const IAttributeFactory::SP &factory,
-                     const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
+                     const HwInfo &hwInfo);
 
     AttributeManager(const AttributeManager &currMgr,
                      const Spec &newSpec,

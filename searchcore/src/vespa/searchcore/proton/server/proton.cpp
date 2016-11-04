@@ -34,7 +34,7 @@ LOG_SETUP(".proton.server.proton");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/random.h>
-#include <vespa/vespalib/util/hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 using document::DocumentTypeRepo;
 using vespalib::FileHeader;
@@ -210,7 +210,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _initStarted(false),
       _initComplete(false),
       _initDocumentDbsInSequence(false),
-      _hwInfo(std::make_shared<vespalib::HwInfo>())
+      _hwInfo()
 {
 }
 

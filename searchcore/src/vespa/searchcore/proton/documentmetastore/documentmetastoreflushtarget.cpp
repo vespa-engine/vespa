@@ -13,7 +13,7 @@ LOG_SETUP(".proton.documentmetastore.documentmetastoreflushtarget");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/i_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
@@ -72,7 +72,7 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
     SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext,
                                                  _syncToken);
     bool saveSuccess = false;
-    if (_dmsft._hwInfo->spinningDisk()) {
+    if (_dmsft._hwInfo.slowDisk()) {
         search::AttributeMemorySaveTarget memorySaveTarget;
         saveSuccess = _saver->save(memorySaveTarget);
         _saver.reset();
@@ -170,7 +170,7 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms,
                              const vespalib::string & baseDir,
                              const TuneFileAttributes &tuneFileAttributes,
                              const FileHeaderContext &fileHeaderContext,
-                             const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
+                             const HwInfo &hwInfo)
     : IFlushTarget("documentmetastore", Type::SYNC, Component::ATTRIBUTE),
       _dms(dms),
       _tlsSyncer(tlsSyncer),

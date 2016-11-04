@@ -12,7 +12,7 @@ LOG_SETUP(".proton.attribute.flushableattribute");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/i_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
@@ -76,7 +76,7 @@ FlushableAttribute::Flusher::saveAttribute()
                                                  _syncToken);
     bool saveSuccess = true;
     if (_saver && _saver->hasGenerationGuard() &&
-        _fattr._hwInfo->spinningDisk()) {
+        _fattr._hwInfo.slowDisk()) {
         saveSuccess = _saver->save(_saveTarget);
         _saver.reset();
     }
@@ -171,7 +171,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVector::SP attr,
                                        fileHeaderContext,
                                        search::ISequencedTaskExecutor &
                                        attributeFieldWriter,
-                                       const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
+                                       const HwInfo &hwInfo)
     : IFlushTarget(vespalib::make_string(
                            "attribute.%s",
                            attr->getName().c_str()),

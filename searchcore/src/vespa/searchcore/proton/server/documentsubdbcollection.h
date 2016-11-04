@@ -16,8 +16,6 @@
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 
-namespace vespalib { class IHwInfo; }
-
 namespace proton {
 class DocumentDBConfig;
 class LegacyDocumentDBMetrics;
@@ -62,7 +60,7 @@ public:
             vespalib::Lock &configLock,
             const vespalib::string &baseDir,
             const vespa::config::search::core::ProtonConfig &protonCfg,
-            const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
+            const HwInfo &hwInfo);
     ~DocumentSubDBCollection();
 
     void setBucketStateCalculator(const IBucketStateCalculator::SP &calc) {
