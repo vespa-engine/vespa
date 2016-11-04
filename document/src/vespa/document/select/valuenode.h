@@ -235,16 +235,19 @@ public:
 class FieldValueNode : public ValueNode
 {
     vespalib::string _doctype;
-    vespalib::string _field;
+    vespalib::string _fieldExpression;
+    vespalib::string _fieldName;
     mutable FieldPath _fieldPath;
 
 public:
     FieldValueNode(const vespalib::string& doctype,
-                   const vespalib::string& field);
+                   const vespalib::string& fieldExpression);
 
     const vespalib::string& getDocType() const { return _doctype; }
 
-    const vespalib::string& getFieldName() const { return _field; }
+    const vespalib::string& getRealFieldName() const { return _fieldName; }
+
+    const vespalib::string& getFieldName() const { return _fieldExpression; }
 
     virtual std::unique_ptr<Value> getValue(const Context& context) const;
 
@@ -257,8 +260,10 @@ public:
     virtual void visit(Visitor& visitor) const;
 
     ValueNode::UP clone() const {
-        return wrapParens(new FieldValueNode(_doctype, _field));
+        return wrapParens(new FieldValueNode(_doctype, _fieldExpression));
     }
+
+    static const vespalib::string extractFieldName(const std::string & fieldExpression);
 
 private:
     class IteratorHandler : public FieldValue::IteratorHandler

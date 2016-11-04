@@ -21,7 +21,6 @@ vespa_add_library(document_select OBJECT
     cloningvisitor.cpp
     context.cpp
     gid_filter.cpp
-    DEPENDS
     AFTER
     document_documentconfig
 )
