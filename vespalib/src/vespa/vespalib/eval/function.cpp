@@ -74,21 +74,58 @@ struct ImplicitParams : Params {
 
 //-----------------------------------------------------------------------------
 
+class ResolveContext
+{
+private:
+    const Params                  &_params;
+    const SymbolExtractor         *_symbol_extractor;
+    std::vector<vespalib::string>  _let_names;
+public:
+    ResolveContext(const Params &params, const SymbolExtractor *symbol_extractor)
+        : _params(params), _symbol_extractor(symbol_extractor), _let_names() {}
+
+    void push_let_name(const vespalib::string &name) {
+        _let_names.push_back(name);
+    }
+
+    void pop_let_name() {
+        assert(!_let_names.empty());
+        _let_names.pop_back();
+    }
+
+    int resolve_let_name(const vespalib::string &name) const {
+        for (int i = (int(_let_names.size()) - 1); i >= 0; --i) {
+            if (name == _let_names[i]) {
+                return -(i + 1);
+            }
+        }
+        return nodes::Symbol::UNDEF;
+    }
+
+    int resolve_param(const vespalib::string &name) const {
+        size_t param_id = _params.resolve(name);
+        if (param_id == Params::UNDEF) {
+            return nodes::Symbol::UNDEF;
+        }
+        return param_id;
+    }
+
+    const SymbolExtractor *symbol_extractor() const { return _symbol_extractor; }
+};
+
 class ParseContext
 {
 private:
-    const char                   *_begin;
-    const char                   *_pos;
-    const char                   *_end;
-    char                          _curr;
-    vespalib::string              _scratch;
-    vespalib::string              _failure;
-    std::vector<Node_UP>          _expression_stack;
-    std::vector<Operator_UP>      _operator_stack;
-    std::vector<vespalib::string> _let_names;
-    size_t                        _operator_mark;
-    const Params                 &_params;
-    const SymbolExtractor        *_symbol_extractor;
+    const char                  *_begin;
+    const char                  *_pos;
+    const char                  *_end;
+    char                         _curr;
+    vespalib::string             _scratch;
+    vespalib::string             _failure;
+    std::vector<Node_UP>         _expression_stack;
+    std::vector<Operator_UP>     _operator_stack;
+    size_t                       _operator_mark;
+    std::vector<ResolveContext>  _resolve_stack;
 
 public:
     ParseContext(const Params &params, const char *str, size_t len,
@@ -96,10 +133,8 @@ public:
         : _begin(str), _pos(str), _end(str + len), _curr(0),
           _scratch(), _failure(),
           _expression_stack(), _operator_stack(),
-          _let_names(),
           _operator_mark(0),
-          _params(params),
-          _symbol_extractor(symbol_extractor)
+          _resolve_stack({ResolveContext(params, symbol_extractor)})
     {
         if (_pos < _end) {
             _curr = *_pos;
@@ -110,6 +145,16 @@ public:
             delete_node(std::move(_expression_stack[i]));
         }
         _expression_stack.clear();
+    }
+
+    ResolveContext &resolver() {
+        assert(!_resolve_stack.empty());
+        return _resolve_stack.back();
+    }
+
+    const ResolveContext &resolver() const {
+        assert(!_resolve_stack.empty());
+        return _resolve_stack.back();
     }
 
     void fail(const vespalib::string &msg) {
@@ -171,40 +216,31 @@ public:
     }
 
     void push_let_binding(const vespalib::string &name) {
-        _let_names.push_back(name);
+        resolver().push_let_name(name);
     }
 
     void pop_let_binding() {
-        assert(!_let_names.empty());
-        _let_names.pop_back();
+        resolver().pop_let_name();
     }
 
     int resolve_let_ref(const vespalib::string &name) const {
-        for (int i = (int(_let_names.size()) - 1); i >= 0; --i) {
-            if (name == _let_names[i]) {
-                return -(i + 1);
-            }
-        }
-        return nodes::Symbol::UNDEF;
+        return resolver().resolve_let_name(name);
     }
 
     int resolve_parameter(const vespalib::string &name) const {
-        size_t param_id = _params.resolve(name);
-        if (param_id == Params::UNDEF) {
-            return nodes::Symbol::UNDEF;
-        }
-        return param_id;
+        return resolver().resolve_param(name);
     }
 
     void extract_symbol(vespalib::string &symbol_out, InputMark before_symbol) {
-        if (_symbol_extractor == nullptr) {
+        const SymbolExtractor *symbol_extractor = resolver().symbol_extractor();
+        if (symbol_extractor == nullptr) {
             return;
         }
         symbol_out.clear();
         restore_input_mark(before_symbol);
         if (!eos()) {
             const char *new_pos = nullptr;
-            _symbol_extractor->extract_symbol(_pos, _end, new_pos, symbol_out);
+            symbol_extractor->extract_symbol(_pos, _end, new_pos, symbol_out);
             if ((new_pos != nullptr) && (new_pos > _pos) && (new_pos <= _end)) {
                 _pos = new_pos;
                 _curr = (_pos < _end) ? *_pos : 0;
