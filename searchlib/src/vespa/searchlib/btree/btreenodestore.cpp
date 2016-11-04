@@ -51,68 +51,68 @@ typedef btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated>           My
 
 template
 std::pair<MyRef, MyEntry1 *>
-datastore::DataStoreT<MyRef>::allocNewEntryCopy<MyEntry1>(uint32_t, const MyEntry1 &);
+DataStoreT<MyRef>::allocNewEntryCopy<MyEntry1>(uint32_t, const MyEntry1 &);
 
 template
 std::pair<MyRef, MyEntry2 *>
-datastore::DataStoreT<MyRef>::allocNewEntryCopy<MyEntry2>(uint32_t, const MyEntry2 &);
+DataStoreT<MyRef>::allocNewEntryCopy<MyEntry2>(uint32_t, const MyEntry2 &);
 
 template
 std::pair<MyRef, MyEntry4 *>
-datastore::DataStoreT<MyRef>::allocNewEntryCopy<MyEntry4>(uint32_t, const MyEntry4 &);
+DataStoreT<MyRef>::allocNewEntryCopy<MyEntry4>(uint32_t, const MyEntry4 &);
 
 template
 std::pair<MyRef, MyEntry5 *>
-datastore::DataStoreT<MyRef>::allocNewEntryCopy<MyEntry5>(uint32_t, const MyEntry5 &);
+DataStoreT<MyRef>::allocNewEntryCopy<MyEntry5>(uint32_t, const MyEntry5 &);
 
 template
 std::pair<MyRef, MyEntry6 *>
-datastore::DataStoreT<MyRef>::allocNewEntryCopy<MyEntry6>(uint32_t, const MyEntry6 &);
+DataStoreT<MyRef>::allocNewEntryCopy<MyEntry6>(uint32_t, const MyEntry6 &);
 
 template
 std::pair<MyRef, MyEntry1 *>
-datastore::DataStoreT<MyRef>::allocEntry<MyEntry1, btree::BTreeNodeReclaimer>(uint32_t);
+DataStoreT<MyRef>::allocEntry<MyEntry1, btree::BTreeNodeReclaimer>(uint32_t);
 
 template
 std::pair<MyRef, MyEntry2 *>
-datastore::DataStoreT<MyRef>::allocEntry<MyEntry2, btree::BTreeNodeReclaimer>(uint32_t);
+DataStoreT<MyRef>::allocEntry<MyEntry2, btree::BTreeNodeReclaimer>(uint32_t);
 
 template
 std::pair<MyRef, MyEntry4 *>
-datastore::DataStoreT<MyRef>::allocEntry<MyEntry4, btree::BTreeNodeReclaimer>(uint32_t);
+DataStoreT<MyRef>::allocEntry<MyEntry4, btree::BTreeNodeReclaimer>(uint32_t);
 
 template
 std::pair<MyRef, MyEntry5 *>
-datastore::DataStoreT<MyRef>::allocEntry<MyEntry5, btree::BTreeNodeReclaimer>(uint32_t);
+DataStoreT<MyRef>::allocEntry<MyEntry5, btree::BTreeNodeReclaimer>(uint32_t);
 
 template
 std::pair<MyRef, MyEntry6 *>
-datastore::DataStoreT<MyRef>::allocEntry<MyEntry6, btree::BTreeNodeReclaimer>(uint32_t);
+DataStoreT<MyRef>::allocEntry<MyEntry6, btree::BTreeNodeReclaimer>(uint32_t);
 
 template
 std::pair<MyRef, MyEntry1 *>
-datastore::DataStoreT<MyRef>::allocEntryCopy<MyEntry1, btree::BTreeNodeReclaimer>(
+DataStoreT<MyRef>::allocEntryCopy<MyEntry1, btree::BTreeNodeReclaimer>(
         uint32_t, const MyEntry1 &);
 
 template
 std::pair<MyRef, MyEntry2 *>
-datastore::DataStoreT<MyRef>::allocEntryCopy<MyEntry2, btree::BTreeNodeReclaimer>(
+DataStoreT<MyRef>::allocEntryCopy<MyEntry2, btree::BTreeNodeReclaimer>(
         uint32_t, const MyEntry2 &);
 
 template
 std::pair<MyRef, MyEntry4 *>
-datastore::DataStoreT<MyRef>::allocEntryCopy<MyEntry4, btree::BTreeNodeReclaimer>(
+DataStoreT<MyRef>::allocEntryCopy<MyEntry4, btree::BTreeNodeReclaimer>(
         uint32_t, const MyEntry4 &);
 
 template
 std::pair<MyRef, MyEntry5 *>
-datastore::DataStoreT<MyRef>::allocEntryCopy<MyEntry5, btree::BTreeNodeReclaimer>(
+DataStoreT<MyRef>::allocEntryCopy<MyEntry5, btree::BTreeNodeReclaimer>(
         uint32_t, const MyEntry5 &);
 
 
 template
 std::pair<MyRef, MyEntry6 *>
-datastore::DataStoreT<MyRef>::allocEntryCopy<MyEntry6, btree::BTreeNodeReclaimer>(
+DataStoreT<MyRef>::allocEntryCopy<MyEntry6, btree::BTreeNodeReclaimer>(
         uint32_t, const MyEntry6 &);
 
 
