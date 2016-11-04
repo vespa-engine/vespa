@@ -23,8 +23,6 @@
 #include <vespa/vespalib/util/varholder.h>
 
 
-namespace vespalib { class IHwInfo; }
-
 namespace proton
 {
 
@@ -149,7 +147,7 @@ public:
         bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
         LegacyDocumentDBMetrics &_metrics;
         vespalib::Lock &_configLock;
-        const std::shared_ptr<vespalib::IHwInfo> &_hwInfo;
+        const HwInfo &_hwInfo;
 
         Context(IDocumentSubDB::IOwner &owner,
                 search::transactionlog::SyncProxy &tlSyncer,
@@ -162,7 +160,7 @@ public:
                 bucketDBHandlerInitializer,
                 LegacyDocumentDBMetrics &metrics,
                 vespalib::Lock &configLock,
-                const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
+                const HwInfo &hwInfo)
             : _owner(owner),
               _tlSyncer(tlSyncer),
               _getSerialNum(getSerialNum),
@@ -204,7 +202,7 @@ protected:
     vespalib::VarHolder<ISearchHandler::SP> _iSearchView;
     vespalib::VarHolder<IFeedView::SP>      _iFeedView;
     vespalib::Lock                         &_configLock;
-    std::shared_ptr<vespalib::IHwInfo>      _hwInfo;
+    HwInfo                                  _hwInfo;
 private:
     const IGetSerialNum             &_getSerialNum;
     TlsSyncer                        _tlsSyncer;

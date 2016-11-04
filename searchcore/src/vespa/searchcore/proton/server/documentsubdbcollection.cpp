@@ -39,7 +39,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         vespalib::Lock &configLock,
         const vespalib::string &baseDir,
         const ProtonConfig &protonCfg,
-        const std::shared_ptr<vespalib::IHwInfo> &hwInfo)
+        const HwInfo &hwInfo)
     : _subDBs(),
       _calc(),
       _readySubDbId(0),

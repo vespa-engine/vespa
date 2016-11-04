@@ -34,7 +34,8 @@ LOG_SETUP(".proton.server.proton");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/random.h>
-#include <vespa/vespalib/util/hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info_sampler.h>
 
 using document::DocumentTypeRepo;
 using vespalib::FileHeader;
@@ -210,7 +211,8 @@ Proton::Proton(const config::ConfigUri & configUri,
       _initStarted(false),
       _initComplete(false),
       _initDocumentDbsInSequence(false),
-      _hwInfo(std::make_shared<vespalib::HwInfo>())
+      _hwInfo(),
+      _hwInfoSampler()
 {
 }
 
@@ -239,6 +241,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 {
     assert( _initStarted && ! _initComplete );
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
+    _hwInfoSampler = std::make_unique<HwInfoSampler>(protonConfig.basedir);
+    _hwInfo = _hwInfoSampler->hwInfo();
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>
                            (protonConfig.basedir,

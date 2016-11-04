@@ -19,7 +19,7 @@ LOG_SETUP("persistenceconformance_test");
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/mock_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 using namespace config;
 using namespace proton;
@@ -190,7 +190,7 @@ public:
                                        docType.toString()),
                                std::make_shared<vespalib::ThreadStackExecutor>
                                (16, 128 * 1024),
-                               std::make_shared<vespalib::MockHwInfo>()));
+                               HwInfo()));
     }
 };
 

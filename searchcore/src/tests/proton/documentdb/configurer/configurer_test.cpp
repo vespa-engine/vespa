@@ -24,7 +24,7 @@ LOG_SETUP("configurer_test");
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/mock_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 using namespace config;
 using namespace document;
@@ -94,7 +94,7 @@ struct ViewSet
     CommitTimeTracker _commitTimeTracker;
     VarHolder<SearchView::SP> searchView;
     VarHolder<SearchableFeedView::SP> feedView;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo _hwInfo;
     ViewSet()
         : _reconfigurer(),
           _fileHeaderContext(),
@@ -110,7 +110,7 @@ struct ViewSet
           _commitTimeTracker(TimeStamp()),
           searchView(),
           feedView(),
-          _hwInfo(std::make_shared<vespalib::MockHwInfo>())
+          _hwInfo()
     {
     }
 
@@ -252,7 +252,7 @@ struct MyFastAccessFeedView
     DummyFileHeaderContext _fileHeaderContext;
     DocIdLimit _docIdLimit;
     IThreadingService &_writeService;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo _hwInfo;
 
     IDocumentMetaStoreContext::SP _dmsc;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
@@ -264,7 +264,7 @@ struct MyFastAccessFeedView
           _fileHeaderContext(),
           _docIdLimit(0),
           _writeService(writeService),
-          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
+          _hwInfo(),
           _dmsc(),
           _lidReuseDelayer(),
           _commitTimeTracker(TimeStamp()),

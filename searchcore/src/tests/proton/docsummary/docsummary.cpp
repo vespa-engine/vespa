@@ -24,7 +24,7 @@ LOG_SETUP("docsummary_test");
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/vespalib/util/mock_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 using namespace document;
 using namespace search;
@@ -144,7 +144,7 @@ public:
     DocumentDBConfig::DocumenttypesConfigSP _documenttypesConfig;
     const DocumentTypeRepo::SP _repo;
     TuneFileDocumentDB::SP _tuneFileDocumentDB;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo _hwInfo;
     std::unique_ptr<DocumentDB> _ddb;
     AttributeWriter::UP _aw;
     ISummaryAdapter::SP _sa;
@@ -163,7 +163,7 @@ public:
           _documenttypesConfig(new DocumenttypesConfig()),
           _repo(repo),
           _tuneFileDocumentDB(new TuneFileDocumentDB()),
-          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
+          _hwInfo(),
           _ddb(),
           _aw(),
           _sa()

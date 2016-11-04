@@ -11,7 +11,7 @@ LOG_SETUP("attribute_populator_test");
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/mock_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchlib/common/foregroundtaskexecutor.h>
 
 using namespace document;
@@ -56,7 +56,7 @@ struct Fixture
     test::DirectoryHandler _testDir;
     DummyFileHeaderContext _fileHeader;
     ForegroundTaskExecutor _attributeFieldWriter;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo                 _hwInfo;
     AttributeManager::SP _mgr;
     AttributePopulator _pop;
     DocContext _ctx;
@@ -64,7 +64,7 @@ struct Fixture
         : _testDir(TEST_DIR),
           _fileHeader(),
           _attributeFieldWriter(),
-          _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
+          _hwInfo(),
           _mgr(new AttributeManager(TEST_DIR, "test.subdb",
                   TuneFileAttributes(),
                                     _fileHeader, _attributeFieldWriter, _hwInfo)),

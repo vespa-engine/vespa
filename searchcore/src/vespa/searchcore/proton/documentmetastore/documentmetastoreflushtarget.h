@@ -7,8 +7,7 @@
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include "documentmetastore.h"
-
-namespace vespalib { class IHwInfo; }
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 namespace search
 {
@@ -76,7 +75,7 @@ private:
     const search::TuneFileAttributes _tuneFileAttributes;
     const search::common::FileHeaderContext &_fileHeaderContext;
     fastos::TimeStamp           _lastFlushTime;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo                      _hwInfo;
     
     static vespalib::string
     getSnapshotName(uint64_t syncToken);
@@ -98,7 +97,7 @@ public:
                                  tuneFileAttributes,
                                  const search::common::FileHeaderContext &
                                  fileHeaderContext,
-                                 const std::shared_ptr<vespalib::IHwInfo> &hwInfo);
+                                 const HwInfo &hwInfo);
 
     virtual
     ~DocumentMetaStoreFlushTarget();

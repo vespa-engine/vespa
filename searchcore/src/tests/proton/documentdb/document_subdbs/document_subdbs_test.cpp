@@ -21,7 +21,7 @@ LOG_SETUP("document_subdbs_test");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/mock_hw_info.h>
+#include <vespa/searchcore/proton/common/hw_info.h>
 
 #include <iostream>
 
@@ -128,7 +128,7 @@ struct MyStoreOnlyContext
 	MyFileHeaderContext _fileHeader;
 	LegacyDocumentDBMetrics _metrics;
 	vespalib::Lock _configLock;
-        std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+        HwInfo           _hwInfo;
 	StoreOnlyContext _ctx;
 	MyStoreOnlyContext(IThreadingService &writeService,
 	                   ThreadStackExecutorBase &summaryExecutor,
@@ -141,7 +141,7 @@ struct MyStoreOnlyContext
 	      _fileHeader(),
 	      _metrics(DOCTYPE_NAME, 1),
 	      _configLock(),
-              _hwInfo(std::make_shared<vespalib::MockHwInfo>()),
+              _hwInfo(),
 	      _ctx(_owner,
                _syncProxy,
                _getSerialNum,

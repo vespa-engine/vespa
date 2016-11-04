@@ -32,12 +32,11 @@
 #include <vespa/vespalib/util/rwlock.h>
 #include <vespa/vespalib/util/varholder.h>
 
-namespace vespalib { class IHwInfo; }
-
 namespace proton
 {
 
 class DiskMemUsageSampler;
+class HwInfoSampler;
 
 class Proton : public IBootstrapOwner,
                public search::engine::MonitorServer,
@@ -142,7 +141,8 @@ private:
     bool                            _initStarted;
     bool                            _initComplete;
     bool                            _initDocumentDbsInSequence;
-    std::shared_ptr<vespalib::IHwInfo> _hwInfo;
+    HwInfo                          _hwInfo;
+    std::unique_ptr<HwInfoSampler>  _hwInfoSampler;
 
     bool performDataDirectoryUpgrade(const vespalib::string &baseDir);
     void loadLibrary(const vespalib::string &libName);
