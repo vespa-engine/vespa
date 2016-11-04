@@ -8,12 +8,8 @@
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/searchlib/util/memoryusage.h>
 
-
-namespace search
-{
-
-namespace btree
-{
+namespace search {
+namespace datastore {
 
 class DataStoreBase
 {
@@ -398,7 +394,6 @@ public:
 };
 
 
-} // namespace btree
-
+} // namespace datastore
 } // namespace search
 

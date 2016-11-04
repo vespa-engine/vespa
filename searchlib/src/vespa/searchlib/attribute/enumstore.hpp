@@ -138,7 +138,7 @@ EnumStoreT<EntryType>::deserialize(const void *src,
     if (available < sz)
         return -1;
     uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);
-    btree::BufferState & buffer = _store.getBufferState(activeBufferId);
+    datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
     uint32_t entrySize(alignEntrySize(EntryBase::size() + sz));
     if (buffer.remaining() < entrySize) {
         abort(); // not enough space
@@ -235,7 +235,7 @@ EnumStoreT<EntryType>::addEnum(Type value,
     typedef typename Dictionary::Iterator DictionaryIterator;
     uint32_t entrySize = this->getEntrySize(value);
     uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);
-    btree::BufferState & buffer = _store.getBufferState(activeBufferId);
+    datastore::BufferState & buffer = _store.getBufferState(activeBufferId);
 #ifdef LOG_ENUM_STORE
     LOG(info,
         "addEnum(): buffer[%u]: capacity = %" PRIu64
@@ -316,7 +316,7 @@ template <typename DictionaryType>
 struct TreeBuilderInserter {
     static void insert(typename DictionaryType::Builder & builder,
                        EnumStoreBase::Index enumIdx,
-                       btree::EntryRef postingIdx)
+                       datastore::EntryRef postingIdx)
     {
         (void) postingIdx;
         builder.insert(enumIdx, typename DictionaryType::DataType());
@@ -327,7 +327,7 @@ template <>
 struct TreeBuilderInserter<EnumPostingTree> {
     static void insert(EnumPostingTree::Builder & builder,
                        EnumStoreBase::Index enumIdx,
-                       btree::EntryRef postingIdx)
+                       datastore::EntryRef postingIdx)
     {
         builder.insert(enumIdx, postingIdx);
     }
@@ -344,7 +344,7 @@ EnumStoreT<EntryType>::reset(Builder &builder, Dictionary &dict)
 
     DictionaryBuilder treeBuilder(dict.getAllocator());
     uint32_t activeBufferId = _store.getActiveBufferId(TYPE_ID);
-    btree::BufferState & state = _store.getBufferState(activeBufferId);
+    datastore::BufferState & state = _store.getBufferState(activeBufferId);
 
     // insert entries and update DictionaryBuilder
     const typename Builder::Uniques & uniques = builder.getUniques();
@@ -358,7 +358,7 @@ EnumStoreT<EntryType>::reset(Builder &builder, Dictionary &dict)
         state.pushed_back(iter->_sz);
 
         // update DictionaryBuilder with enum index and posting index
-        TreeBuilderInserter<Dictionary>::insert(treeBuilder, idx, btree::EntryRef(iter->_pidx));
+        TreeBuilderInserter<Dictionary>::insert(treeBuilder, idx, datastore::EntryRef(iter->_pidx));
     }
 
     // reset Dictionary
@@ -388,7 +388,7 @@ EnumStoreT<EntryType>::performCompaction(Dictionary &dict)
 {
     typedef typename Dictionary::Iterator DictionaryIterator;
     uint32_t freeBufferIdx = _store.getActiveBufferId(TYPE_ID);
-    btree::BufferState & freeBuf = _store.getBufferState(freeBufferIdx);
+    datastore::BufferState & freeBuf = _store.getBufferState(freeBufferIdx);
     bool disabledReEnumerate = _disabledReEnumerate;
 
     uint32_t newEnum = 0;

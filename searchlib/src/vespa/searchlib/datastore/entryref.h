@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 namespace search {
-namespace btree {
+namespace datastore {
 
 class EntryRef {
 protected:
@@ -59,6 +59,6 @@ public:
     static uint64_t pad(uint64_t val) { return (-val & PadConstant); }
 };
 
-} // namespace search::btree
+} // namespace search::datastore
 } // namespace search
 

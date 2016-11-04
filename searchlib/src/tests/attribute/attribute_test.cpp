@@ -1706,7 +1706,7 @@ AttributeTest::testStatus()
         4 + sizeof(EnumStoreBase::Index) * EnumTreeTraits::LEAF_SLOTS;
     static constexpr size_t InternalNodeSize =
         8 + (sizeof(EnumStoreBase::Index) +
-             sizeof(btree::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
+             sizeof(datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
     static constexpr size_t NestedVectorSize = 24; // sizeof(vespalib::Array)
 
     {

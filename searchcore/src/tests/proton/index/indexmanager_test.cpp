@@ -33,7 +33,7 @@ LOG_SETUP("indexmanager_test");
 
 using document::Document;
 using document::FieldValue;
-using search::btree::EntryRef;
+using search::datastore::EntryRef;
 using search::index::DocBuilder;
 using search::index::Schema;
 using search::index::DummyFileHeaderContext;

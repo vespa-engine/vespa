@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/entryref.h>
-#include <vespa/searchlib/btree/datastore.h>
+#include <vespa/searchlib/datastore/entryref.h>
+#include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
 namespace vespalib { namespace tensor { class Tensor; } }
@@ -22,16 +22,16 @@ namespace attribute {
 class TensorStore
 {
 public:
-    using EntryRef = btree::EntryRef;
+    using EntryRef = datastore::EntryRef;
     typedef vespalib::GenerationHandler::generation_t generation_t;
     using Tensor = vespalib::tensor::Tensor;
 
 protected:
-    btree::DataStoreBase &_store;
+    datastore::DataStoreBase &_store;
     const uint32_t        _typeId;
 
 public:
-    TensorStore(btree::DataStoreBase &store);
+    TensorStore(datastore::DataStoreBase &store);
 
     virtual ~TensorStore();
 

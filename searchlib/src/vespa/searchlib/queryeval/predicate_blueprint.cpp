@@ -33,7 +33,7 @@ typedef PredicateBlueprint::BoundsEntry BoundsEntry;
 
 template <typename Entry>
 void pushValueDictionaryEntry(const Entry &entry,
-                              const SimpleIndex<btree::EntryRef> &interval_index,
+                              const SimpleIndex<datastore::EntryRef> &interval_index,
                               vector<IntervalEntry> &interval_entries) {
     const std::string &hash_str = entry.getKey() + "=" + entry.getValue();
     uint64_t feature = PredicateHash::hash64(hash_str);
@@ -46,8 +46,8 @@ void pushValueDictionaryEntry(const Entry &entry,
 }
 
 struct MyRangeHandler {
-    const SimpleIndex<btree::EntryRef> &interval_index;
-    const SimpleIndex<btree::EntryRef> &bounds_index;
+    const SimpleIndex<datastore::EntryRef> &interval_index;
+    const SimpleIndex<datastore::EntryRef> &bounds_index;
     vector<IntervalEntry> &interval_entries;
     vector<BoundsEntry> &bounds_entries;
     uint64_t subquery_bitmap;
@@ -82,7 +82,7 @@ void pushRangeDictionaryEntries(
     expander.expand(entry.getKey(), entry.getValue(), handler);
 }
 
-void pushZStarPostingList(const SimpleIndex<btree::EntryRef> &interval_index,
+void pushZStarPostingList(const SimpleIndex<datastore::EntryRef> &interval_index,
                           vector<IntervalEntry> &interval_entries) {
     uint64_t feature = PredicateIndex::z_star_hash;
     auto iterator = interval_index.lookup(feature);
@@ -214,7 +214,7 @@ namespace {
     void lookupPostingLists(const std::vector<DictEntry> &dict_entries,
                             std::vector<VectorIteratorEntry> &vector_iterators,
                             std::vector<BTreeIteratorEntry> &btree_iterators,
-                            const SimpleIndex<btree::EntryRef> &index)
+                            const SimpleIndex<datastore::EntryRef> &index)
     {
         for (const auto &entry : dict_entries) {
             auto vector_iterator = index.getVectorPostingList(entry.feature);

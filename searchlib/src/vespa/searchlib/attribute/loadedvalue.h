@@ -4,7 +4,7 @@
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/enumstorebase.h>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/entryref.h>
 
 namespace search
 {
@@ -60,7 +60,7 @@ public:
     EnumStoreBase::Index
     getEidx() const
     {
-        return EnumStoreBase::Index(btree::EntryRef(_value._eidx));
+        return EnumStoreBase::Index(datastore::EntryRef(_value._eidx));
     }
 
     void
@@ -105,7 +105,7 @@ public:
     };
     uint32_t                         _docId;
     uint32_t                         _idx;
-    btree::EntryRef                  _pidx;
+    datastore::EntryRef                  _pidx;
 private:
     int32_t                          _weight;
     Value                            _value;

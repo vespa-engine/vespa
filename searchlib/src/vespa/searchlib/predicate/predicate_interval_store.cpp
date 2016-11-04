@@ -5,14 +5,14 @@
 #include "predicate_interval_store.h"
 
 #include "predicate_index.h"
-#include <vespa/searchlib/btree/bufferstate.h>
-#include <vespa/searchlib/btree/datastore.hpp>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/bufferstate.h>
+#include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_interval_store");
 
-using search::btree::BufferState;
-using search::btree::EntryRef;
+using search::datastore::BufferState;
+using search::datastore::EntryRef;
 using std::vector;
 
 namespace search {
@@ -23,8 +23,8 @@ PredicateIntervalStore::Entry<T> PredicateIntervalStore::allocNewEntry(
         uint32_t type_id, uint32_t size) {
     _store.ensureBufferCapacity(type_id, size);
     uint32_t active_buffer_id = _store.getActiveBufferId(type_id);
-    btree::BufferState &state = _store.getBufferState(active_buffer_id);
-    assert(state._state == btree::BufferState::ACTIVE);
+    datastore::BufferState &state = _store.getBufferState(active_buffer_id);
+    assert(state._state == datastore::BufferState::ACTIVE);
     size_t old_size = state.size();
     T *buf = _store.getBufferEntry<T>(active_buffer_id, old_size);
     state.pushed_back(size);
@@ -60,16 +60,16 @@ PredicateIntervalStore::~PredicateIntervalStore() {
 // anyway.
 //
 template <typename IntervalT>
-btree::EntryRef PredicateIntervalStore::insert(
+datastore::EntryRef PredicateIntervalStore::insert(
         const vector<IntervalT> &intervals) {
     const uint32_t size = entrySize<IntervalT>() * intervals.size();
     if (size == 0) {
-        return btree::EntryRef();
+        return datastore::EntryRef();
     }
     uint32_t *buffer;
-    btree::EntryRef ref;
+    datastore::EntryRef ref;
     if (size == 1 && intervals[0].interval <= RefCacheType::DATA_REF_MASK) {
-        return btree::EntryRef(intervals[0].interval);
+        return datastore::EntryRef(intervals[0].interval);
     }
     uint32_t cached_ref = _ref_cache.find(
             reinterpret_cast<const uint32_t *>(&intervals[0]), size);

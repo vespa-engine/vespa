@@ -15,7 +15,7 @@
 LOG_SETUP(".document_features_store");
 
 using search::btree::BTreeNoLeafData;
-using search::btree::EntryRef;
+using search::datastore::EntryRef;
 using vespalib::DataBuffer;
 using vespalib::stringref;
 using std::unordered_map;
@@ -153,8 +153,8 @@ void DocumentFeaturesStore::insert(const PredicateTreeAnnotations &annotations,
         for (const auto &range : annotations.range_features) {
             stringref word(range.label.data, range.label.size);
             KeyComp cmp(_word_store, word);
-            auto word_it = _word_index.find(btree::EntryRef(), cmp);
-            btree::EntryRef ref;
+            auto word_it = _word_index.find(datastore::EntryRef(), cmp);
+            datastore::EntryRef ref;
             if (word_it.valid()) {
                 ref = word_it.getKey();
             } else {

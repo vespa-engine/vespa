@@ -37,6 +37,8 @@ public:
     typedef vespalib::GenerationHandler::generation_t generation_t;
     typedef BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>
     NodeStore;
+    using EntryRef = datastore::EntryRef;
+    using DataStoreBase = datastore::DataStoreBase;
 
 private:
     BTreeNodeAllocator(const BTreeNodeAllocator &rhs);

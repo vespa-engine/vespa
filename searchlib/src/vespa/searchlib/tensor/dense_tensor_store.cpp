@@ -11,7 +11,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/macro.h>
 #include <vespa/document/util/serializable.h>
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 using vespalib::tensor::Tensor;
 using vespalib::tensor::DenseTensor;
@@ -25,7 +25,7 @@ namespace attribute {
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
 
 DenseTensorStore::BufferType::BufferType()
-    : btree::BufferType<char>(RefType::align(1),
+    : datastore::BufferType<char>(RefType::align(1),
                               MIN_BUFFER_CLUSTERS,
                               RefType::offsetSize() / RefType::align(1)),
       _unboundDimSizesSize(0u)
@@ -95,7 +95,7 @@ DenseTensorStore::getNumCells(const void *buffer) const
 
 namespace {
 
-void allocateSpaceForFirstUnboundDimSizesInBuffer(char *&buffer, size_t &oldSize, btree::BufferState &state, size_t alignedUnboundDimSizesSize) {
+void allocateSpaceForFirstUnboundDimSizesInBuffer(char *&buffer, size_t &oldSize, datastore::BufferState &state, size_t alignedUnboundDimSizesSize) {
     memset(buffer, 0, alignedUnboundDimSizesSize);
     state.pushed_back(alignedUnboundDimSizesSize);
     state._deadElems += alignedUnboundDimSizesSize;
@@ -119,7 +119,7 @@ DenseTensorStore::allocRawBuffer(size_t numCells)
     size_t ensureSize = alignedBufSize + alignedUnboundDimSizesSize;
     _store.ensureBufferCapacity(_typeId, ensureSize);
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    btree::BufferState &state = _store.getBufferState(activeBufferId);
+    datastore::BufferState &state = _store.getBufferState(activeBufferId);
     size_t oldSize = state.size();
     char *buffer = _store.getBufferEntry<char>(activeBufferId, oldSize);
     if (oldSize <= alignedUnboundDimSizesSize) {

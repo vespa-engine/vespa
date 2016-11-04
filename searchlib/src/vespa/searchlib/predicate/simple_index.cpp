@@ -19,7 +19,7 @@ void log_debug(vespalib::string &str) {
 
 } // namespace simpleindex
 
-template class SimpleIndex<btree::EntryRef>;
+template class SimpleIndex<datastore::EntryRef>;
 
 }  // namespace predicate
 } // namespace search

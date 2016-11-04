@@ -4,7 +4,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.wordstore");
 #include "wordstore.h"
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search {
 namespace memoryindex {
@@ -29,12 +29,12 @@ WordStore::~WordStore(void)
     _store.dropBuffers();
 }
 
-btree::EntryRef
+datastore::EntryRef
 WordStore::addWord(const vespalib::stringref word)
 {
     _store.ensureBufferCapacity(_typeId, RefType::align(word.size() + 1));
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    btree::BufferState &state = _store.getBufferState(activeBufferId);
+    datastore::BufferState &state = _store.getBufferState(activeBufferId);
     size_t oldSize = state.size();
     RefType ref(oldSize, activeBufferId);
     assert(oldSize == ref.offset());

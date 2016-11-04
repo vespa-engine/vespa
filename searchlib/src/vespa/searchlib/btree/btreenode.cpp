@@ -1,5 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/fastos.h>
 #include "btreenode.h"
 #include "btreenode.hpp"
 
@@ -20,7 +21,7 @@ template class BTreeKeyData<uint32_t, int32_t>;
 template class BTreeNodeT<uint32_t, 16>;
 template class BTreeNodeTT<uint32_t, uint32_t, NoAggregated, 16>;
 template class BTreeNodeTT<uint32_t, BTreeNoLeafData, NoAggregated, 16>;
-template class BTreeNodeTT<uint32_t, EntryRef, NoAggregated, 16>;
+template class BTreeNodeTT<uint32_t, datastore::EntryRef, NoAggregated, 16>;
 template class BTreeNodeTT<uint32_t, int32_t, MinMaxAggregated, 16>;
 template class BTreeInternalNode<uint32_t, NoAggregated, 16>;
 template class BTreeInternalNode<uint32_t, MinMaxAggregated, 16>;

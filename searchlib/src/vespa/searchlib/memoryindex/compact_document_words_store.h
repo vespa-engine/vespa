@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/btree/datastore.h>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -26,7 +26,7 @@ public:
     {
     public:
         typedef std::unique_ptr<Builder> UP;
-        typedef vespalib::Array<btree::EntryRef> WordRefVector;
+        typedef vespalib::Array<datastore::EntryRef> WordRefVector;
 
     private:
         uint32_t   _docId;
@@ -34,7 +34,7 @@ public:
 
     public:
         Builder(uint32_t docId_) : _docId(docId_), _words() {}
-        Builder &insert(btree::EntryRef wordRef);
+        Builder &insert(datastore::EntryRef wordRef);
         uint32_t docId() const { return _docId; }
         const WordRefVector &words() const { return _words; }
     };
@@ -57,7 +57,7 @@ public:
         Iterator(const uint32_t *buf);
         bool valid() const { return _valid; }
         Iterator &operator++();
-        btree::EntryRef wordRef() const { return _wordRef; }
+        datastore::EntryRef wordRef() const { return _wordRef; }
         bool hasBackingBuf() const { return _buf != nullptr; }
     };
 
@@ -67,23 +67,23 @@ public:
     class Store
     {
     public:
-        typedef btree::DataStoreT<btree::EntryRefT<22> > DataStoreType;
+        typedef datastore::DataStoreT<datastore::EntryRefT<22> > DataStoreType;
         typedef DataStoreType::RefType RefType;
 
     private:
         DataStoreType               _store;
-        btree::BufferType<uint32_t> _type;
+        datastore::BufferType<uint32_t> _type;
         const uint32_t              _typeId;
 
     public:
         Store();
         ~Store();
-        btree::EntryRef insert(const Builder &builder);
-        Iterator get(btree::EntryRef ref) const;
+        datastore::EntryRef insert(const Builder &builder);
+        Iterator get(datastore::EntryRef ref) const;
         MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
     };
 
-    typedef vespalib::hash_map<uint32_t, btree::EntryRef> DocumentWordsMap;
+    typedef vespalib::hash_map<uint32_t, datastore::EntryRef> DocumentWordsMap;
 
 private:
     DocumentWordsMap _docs;

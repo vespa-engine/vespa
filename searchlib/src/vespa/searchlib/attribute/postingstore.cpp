@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "postingstore.h"
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>

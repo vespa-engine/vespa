@@ -3,9 +3,9 @@
 #pragma once
 
 #include "predicate_ref_cache.h"
-#include <vespa/searchlib/btree/bufferstate.h>
-#include <vespa/searchlib/btree/datastore.h>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/bufferstate.h>
+#include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vector>
 
 namespace search {
@@ -19,12 +19,12 @@ class Interval;
 class PredicateIntervalStore {
     class DataStoreAdapter;
     typedef PredicateRefCache<DataStoreAdapter, 8> RefCacheType;
-    typedef btree::DataStoreT<btree::EntryRefT<18, 6>> DataStoreType;
+    typedef datastore::DataStoreT<datastore::EntryRefT<18, 6>> DataStoreType;
     typedef DataStoreType::RefType RefType;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
     DataStoreType _store;
-    btree::BufferType<uint32_t> _size1Type;
+    datastore::BufferType<uint32_t> _size1Type;
 
     class DataStoreAdapter {
         const DataStoreType &_store;
@@ -62,7 +62,7 @@ public:
      * IntervalT is either Interval or IntervalWithBounds.
      */
     template <typename IntervalT>
-    btree::EntryRef insert(const std::vector<IntervalT> &intervals);
+    datastore::EntryRef insert(const std::vector<IntervalT> &intervals);
 
     /**
      * Removes an entry. The entry remains accessible until commit
@@ -72,7 +72,7 @@ public:
      * Remove is currently disabled, as the ref cache is assumed to
      * keep the total number of different entries low.
      */
-    void remove(btree::EntryRef ref);
+    void remove(datastore::EntryRef ref);
 
     void trimHoldLists(generation_t used_generation);
 
@@ -92,7 +92,7 @@ public:
      * single interval optimization.
      */
     template <typename IntervalT>
-    const IntervalT *get(btree::EntryRef btree_ref,
+    const IntervalT *get(datastore::EntryRef btree_ref,
                          uint32_t &size_out,
                          IntervalT *single_buf) const
     {

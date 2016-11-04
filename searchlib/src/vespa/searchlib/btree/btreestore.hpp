@@ -6,7 +6,7 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include "btreebuilder.h"
 #include "btreebuilder.hpp"
-#include "datastore.hpp"
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search
 {

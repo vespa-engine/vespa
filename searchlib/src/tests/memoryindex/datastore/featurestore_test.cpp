@@ -6,6 +6,7 @@ LOG_SETUP("featurestore_test");
 #include <vespa/searchlib/memoryindex/featurestore.h>
 
 using namespace search::btree;
+using namespace search::datastore;
 using namespace search::index;
 
 namespace search

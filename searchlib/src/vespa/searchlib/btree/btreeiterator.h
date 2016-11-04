@@ -719,6 +719,7 @@ public:
     using ParentType::_leafRoot;
     using ParentType::_compatLeafNode;
     using ParentType::end;
+    using EntryRef = datastore::EntryRef;
 
     BTreeIterator(BTreeNode::Ref root, const NodeAllocatorType &allocator)
         : ParentType(root, allocator)

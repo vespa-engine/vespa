@@ -237,7 +237,7 @@ void checkAllIntervals(Iterator posting_it, IntervalT expected_interval,
     for (uint32_t id = 1; id < 100u; ++id) {
         ASSERT_TRUE(posting_it.valid());
         EXPECT_EQUAL(id, posting_it.getKey());
-        btree::EntryRef ref = posting_it.getData();
+        datastore::EntryRef ref = posting_it.getData();
         ASSERT_TRUE(ref.valid());
         uint32_t size;
         IntervalT single;

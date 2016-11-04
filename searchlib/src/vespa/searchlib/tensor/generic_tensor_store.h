@@ -18,11 +18,11 @@ namespace attribute {
 class GenericTensorStore : public TensorStore
 {
 public:
-    using RefType = btree::AlignedEntryRefT<22, 2>;
-    using DataStoreType = btree::DataStoreT<RefType>;
+    using RefType = datastore::AlignedEntryRefT<22, 2>;
+    using DataStoreType = datastore::DataStoreT<RefType>;
 private:
     DataStoreType _concreteStore;
-    btree::BufferType<char> _bufferType;
+    datastore::BufferType<char> _bufferType;
 public:
     GenericTensorStore();
 

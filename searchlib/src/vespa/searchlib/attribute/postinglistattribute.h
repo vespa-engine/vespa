@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/btree/btreestore.h>
 #include "dociditerator.h"
 #include "postinglistsearchcontext.h"
@@ -53,7 +53,7 @@ protected:
     typedef typename AggregationTraits::PostingList PostingList;
     typedef AttributeVector::DocId DocId;
     typedef std::map<EnumPostingPair, PostingChange<P> > PostingMap;
-    typedef btree::EntryRef EntryRef;
+    typedef datastore::EntryRef EntryRef;
     typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;
     typedef EnumStoreBase::Index EnumIndex;
     PostingList _postingList;
@@ -117,7 +117,7 @@ public:
     typedef typename Dictionary::Iterator DictionaryIterator;
     typedef EnumStoreBase::Index EnumIndex;
     typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
-    typedef btree::EntryRef EntryRef;
+    typedef datastore::EntryRef EntryRef;
     typedef typename Parent::PostingMap PostingMap;
     typedef typename Parent::PostingList PostingList;
     typedef typename PostingList::Iterator PostingIterator;

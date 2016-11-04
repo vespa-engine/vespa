@@ -5,13 +5,13 @@
 #include "predicate_index.h"
 
 #include "predicate_tree_annotator.h"
-#include <vespa/searchlib/btree/entryref.h>
+#include <vespa/searchlib/datastore/entryref.h>
 #include "predicate_hash.h"
 #include <algorithm>
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_index");
 
-using search::btree::EntryRef;
+using search::datastore::EntryRef;
 using vespalib::DataBuffer;
 using std::vector;
 
@@ -45,7 +45,7 @@ void PredicateIndex::indexDocumentFeatures(
     for (const auto &map_entry : interval_map) {
         uint64_t feature = map_entry.first;
         const auto &interval_list = map_entry.second;
-        btree::EntryRef ref = _interval_store.insert(interval_list);
+        datastore::EntryRef ref = _interval_store.insert(interval_list);
         assert(ref.valid());
         addPosting<IntervalT>(feature, doc_id, ref);
         _cache.set(feature, doc_id, true);
@@ -156,7 +156,7 @@ void PredicateIndex::indexEmptyDocument(uint32_t doc_id)
 
 namespace {
 void removeFromIndex(
-        uint64_t feature, uint32_t doc_id, SimpleIndex<btree::EntryRef> &index, PredicateIntervalStore &interval_store)
+        uint64_t feature, uint32_t doc_id, SimpleIndex<datastore::EntryRef> &index, PredicateIntervalStore &interval_store)
 {
     auto result = index.removeFromPostingList(feature, doc_id);
     if (result.second) { // Posting was removed
@@ -168,7 +168,7 @@ void removeFromIndex(
 
 class DocIdIterator : public PopulateInterface::Iterator {
 public:
-    using BTreeIterator = SimpleIndex<btree::EntryRef>::BTreeIterator;
+    using BTreeIterator = SimpleIndex<datastore::EntryRef>::BTreeIterator;
 
     DocIdIterator(BTreeIterator it) : _it(it) { }
     int32_t getNext() override {

@@ -5,7 +5,7 @@ LOG_SETUP("wordstore_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/memoryindex/wordstore.h>
 
-using namespace search::btree;
+using namespace search::datastore;
 
 namespace search {
 namespace memoryindex {

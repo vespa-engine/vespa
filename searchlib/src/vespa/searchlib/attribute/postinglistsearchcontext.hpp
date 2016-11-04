@@ -60,7 +60,7 @@ PostingListSearchContextT<DataT>::lookupSingle(void)
                                    getFrozenView(_postingList.getAllocator()));
                     _frozenRoot = frozenView.getRoot();
                     if (!_frozenRoot.valid()) {
-                        _pidx = btree::EntryRef();
+                        _pidx = datastore::EntryRef();
                     }
                 } else {
                     _gbv = bv; 
@@ -72,7 +72,7 @@ PostingListSearchContextT<DataT>::lookupSingle(void)
                            getFrozenView(_postingList.getAllocator()));
             _frozenRoot = frozenView.getRoot();
             if (!_frozenRoot.valid()) {
-                _pidx = btree::EntryRef();
+                _pidx = datastore::EntryRef();
             }
         }
     }

@@ -1,2 +1,2 @@
-datastore_test.cpp
+featurestore_test.cpp
 wordstore_test.cpp

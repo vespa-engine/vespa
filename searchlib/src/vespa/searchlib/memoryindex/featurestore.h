@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/btree/datastore.h>
+#include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
@@ -14,7 +14,7 @@ namespace memoryindex {
 class FeatureStore
 {
 public:
-    typedef btree::DataStoreT<btree::AlignedEntryRefT<22, 2> > DataStoreType;
+    typedef datastore::DataStoreT<datastore::AlignedEntryRefT<22, 2> > DataStoreType;
     typedef DataStoreType::RefType RefType;
     typedef bitcompression::EG2PosOccEncodeContext<true> EncodeContext;
     typedef bitcompression::EG2PosOccDecodeContextCooked<true>
@@ -44,7 +44,7 @@ private:
 
     const Schema &_schema;
 
-    btree::BufferType<uint8_t> _type;
+    datastore::BufferType<uint8_t> _type;
     const uint32_t      _typeId;
 
     /**
@@ -64,7 +64,7 @@ private:
      * @param byteLen the byte length of the buffer
      * @return the entry ref for the added features
      */
-    btree::EntryRef
+    datastore::EntryRef
     addFeatures(const uint8_t * src, uint64_t byteLen);
 
     /**
@@ -74,7 +74,7 @@ private:
      * @param endOffset the end offset into the encode context
      * @return the entry ref and bit length of the features
      */
-    std::pair<btree::EntryRef, uint64_t>
+    std::pair<datastore::EntryRef, uint64_t>
     addFeatures(uint64_t beginOffset, uint64_t endOffset);
 
     /**
@@ -84,7 +84,7 @@ private:
      * @param bitLen bit length of features to move
      * @return new reference to stored features
      */
-    btree::EntryRef moveFeatures(btree::EntryRef ref, uint64_t bitLen);
+    datastore::EntryRef moveFeatures(datastore::EntryRef ref, uint64_t bitLen);
 
 public:
 
@@ -107,7 +107,7 @@ public:
      * @return			pair with reference to stored features and
      *				size of encoded features in bits
      */
-    std::pair<btree::EntryRef, uint64_t>
+    std::pair<datastore::EntryRef, uint64_t>
     addFeatures(uint32_t packedIndex,
                 const DocIdAndFeatures &features);
 
@@ -122,7 +122,7 @@ public:
      */
     void
     getFeatures(uint32_t packedIndex,
-                btree::EntryRef ref,
+                datastore::EntryRef ref,
                 DocIdAndFeatures &features);
 
 
@@ -147,12 +147,12 @@ public:
      * @param decoder  The feature decoder
      */
     void
-    setupForReadFeatures(btree::EntryRef ref, DecodeContextCooked &decoder) const
+    setupForReadFeatures(datastore::EntryRef ref, DecodeContextCooked &decoder) const
     {
         const uint8_t * bits = getBits(ref);
         decoder.setByteCompr(bits);
         uint32_t bufferId = RefType(ref).bufferId();
-        const btree::BufferState &state = _store.getBufferState(bufferId);
+        const datastore::BufferState &state = _store.getBufferState(bufferId);
         decoder.setEnd(
                 ((_store.getBufferEntry<uint8_t>(bufferId, state.size()) -
                   bits) + 7) / 8,
@@ -167,7 +167,7 @@ public:
      * @param decoder  The feature decoder
      */
     void
-    setupForUnpackFeatures(btree::EntryRef ref, DecodeContextCooked &decoder) const
+    setupForUnpackFeatures(datastore::EntryRef ref, DecodeContextCooked &decoder) const
     {
         decoder.setByteCompr(getBits(ref));
     }
@@ -181,7 +181,7 @@ public:
      * @return			size of features in bits
      */
     size_t
-    bitSize(uint32_t packedIndex, btree::EntryRef ref);
+    bitSize(uint32_t packedIndex, datastore::EntryRef ref);
 
     /**
      * Get byte address of stored features
@@ -190,7 +190,7 @@ public:
      * @return			byte address of stored features
      */
     const uint8_t *
-    getBits(btree::EntryRef ref) const
+    getBits(datastore::EntryRef ref) const
     {
         RefType iRef(ref);
         return _store.getBufferEntry<uint8_t>(iRef.bufferId(), iRef.offset());
@@ -203,9 +203,9 @@ public:
      * @param ref		Old reference to stored features
      * @return			New reference to stored features
      */
-    btree::EntryRef
+    datastore::EntryRef
     moveFeatures(uint32_t packedIndex,
-                 btree::EntryRef ref);
+                 datastore::EntryRef ref);
 
     /**
      * Return a const view of the fields params used by this feature store.
@@ -260,7 +260,7 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    btree::DataStoreBase::MemStats
+    datastore::DataStoreBase::MemStats
     getMemStats() const
     {
         return _store.getMemStats();

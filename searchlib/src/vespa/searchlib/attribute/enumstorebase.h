@@ -4,7 +4,7 @@
 
 #include "address_space.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchlib/btree/datastore.h>
+#include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.h>
@@ -31,7 +31,7 @@ class EnumStoreBase;
 class EnumStoreComparator;
 class EnumStoreComparatorWrapper;
 
-typedef btree::DataStoreT<btree::AlignedEntryRefT<31, 4> >
+typedef datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >
 EnumStoreDataStoreType;
 typedef EnumStoreDataStoreType::RefType EnumStoreIndex;
 typedef vespalib::Array<EnumStoreIndex> EnumStoreIndexVector;
@@ -43,7 +43,7 @@ typedef btree::BTree<EnumStoreIndex, btree::BTreeNoLeafData,
                      btree::NoAggregated,
                      const EnumStoreComparatorWrapper,
                      EnumTreeTraits> EnumTree;
-typedef btree::BTree<EnumStoreIndex, btree::EntryRef,
+typedef btree::BTree<EnumStoreIndex, datastore::EntryRef,
                      btree::NoAggregated,
                      const EnumStoreComparatorWrapper,
                      EnumTreeTraits> EnumPostingTree;
@@ -318,14 +318,14 @@ private:
 
 protected:
 
-    class EnumBufferType : public btree::BufferType<char> {
+    class EnumBufferType : public datastore::BufferType<char> {
     private:
         uint64_t _initBufferSize; // in bytes
         bool _pendingCompact;
         bool _wantCompact;
     public:
         EnumBufferType(uint64_t initBufferSize)
-            : btree::BufferType<char>(Index::align(1),
+            : datastore::BufferType<char>(Index::align(1),
                     Index::offsetSize() / Index::align(1),
                     Index::offsetSize() / Index::align(1)),
               _initBufferSize(initBufferSize),
@@ -347,7 +347,7 @@ protected:
         virtual void
         onFree(size_t usedElems)
         {
-            btree::BufferType<char>::onFree(usedElems);
+            datastore::BufferType<char>::onFree(usedElems);
             _pendingCompact = _wantCompact;
             _wantCompact = false;
         }
@@ -390,17 +390,17 @@ protected:
     EntryBase getEntryBase(Index idx) const {
         return EntryBase(const_cast<DataStoreType &>(_store).getBufferEntry<char>(idx.bufferId(), idx.offset()));
     }
-    btree::BufferState & getBuffer(uint32_t bufferIdx) {
+    datastore::BufferState & getBuffer(uint32_t bufferIdx) {
         return _store.getBufferState(bufferIdx);
     }
-    const btree::BufferState & getBuffer(uint32_t bufferIdx) const {
+    const datastore::BufferState & getBuffer(uint32_t bufferIdx) const {
         return _store.getBufferState(bufferIdx);
     }
     bool validIndex(Index idx) const {
         return (idx.valid() && idx.offset() < _store.getBufferState(idx.bufferId()).size());
     }
 
-    uint32_t getBufferIndex(btree::BufferState::State status);
+    uint32_t getBufferIndex(datastore::BufferState::State status);
     void postCompact(uint32_t newEnum);
     bool preCompact(uint64_t bytesNeeded);
 
@@ -616,7 +616,7 @@ public:
 };
 
 extern template class
-btree::DataStoreT<btree::AlignedEntryRefT<31, 4> >;
+datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >;
 
 }
 

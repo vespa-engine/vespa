@@ -26,6 +26,7 @@ vespa_define_module(
     src/vespa/searchlib/btree
     src/vespa/searchlib/common
     src/vespa/searchlib/config
+    src/vespa/searchlib/datastore
     src/vespa/searchlib/diskindex
     src/vespa/searchlib/docstore
     src/vespa/searchlib/engine
@@ -100,14 +101,15 @@ vespa_define_module(
     src/tests/common/resultset
     src/tests/common/sequencedtaskexecutor
     src/tests/common/summaryfeatures
-    src/tests/datastore
+    src/tests/datastore/datastore
     src/tests/diskindex/bitvector
     src/tests/diskindex/diskindex
     src/tests/diskindex/fieldwriter
     src/tests/diskindex/fusion
     src/tests/diskindex/pagedict4
-    src/tests/document_store
-    src/tests/document_store/visitor
+    src/tests/docstore/document_store
+    src/tests/docstore/document_store_visitor
+    src/tests/docstore/logdatastore
     src/tests/engine/docsumapi
     src/tests/engine/monitorapi
     src/tests/engine/searchapi

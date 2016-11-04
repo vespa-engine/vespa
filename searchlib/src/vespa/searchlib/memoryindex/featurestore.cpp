@@ -5,7 +5,7 @@
 LOG_SETUP(".memoryindex.featurestore");
 #include "featurestore.h"
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search
 {
@@ -35,13 +35,13 @@ FeatureStore::writeFeatures(uint32_t packedIndex,
 }
 
 
-btree::EntryRef
+datastore::EntryRef
 FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
 {
     uint32_t pad = RefType::pad(byteLen);
     _store.ensureBufferCapacity(_typeId, byteLen + pad + DECODE_SAFETY);
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    btree::BufferState &state = _store.getBufferState(activeBufferId);
+    datastore::BufferState &state = _store.getBufferState(activeBufferId);
     size_t oldSize = state.size();
     RefType ref(oldSize, activeBufferId);
     uint8_t * dst = _store.getBufferEntry<uint8_t>(activeBufferId, oldSize);
@@ -57,7 +57,7 @@ FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
 }
 
 
-std::pair<btree::EntryRef, uint64_t>
+std::pair<datastore::EntryRef, uint64_t>
 FeatureStore::addFeatures(uint64_t beginOffset, uint64_t endOffset)
 {
     uint64_t bitLen = (endOffset - beginOffset);
@@ -72,8 +72,8 @@ FeatureStore::addFeatures(uint64_t beginOffset, uint64_t endOffset)
 }
 
 
-btree::EntryRef
-FeatureStore::moveFeatures(btree::EntryRef ref, uint64_t bitLen)
+datastore::EntryRef
+FeatureStore::moveFeatures(datastore::EntryRef ref, uint64_t bitLen)
 {
     const uint8_t *src = getBits(ref);
     uint64_t byteLen = (bitLen + 7) / 8;
@@ -116,7 +116,7 @@ FeatureStore::~FeatureStore(void)
 }
 
 
-std::pair<btree::EntryRef, uint64_t>
+std::pair<datastore::EntryRef, uint64_t>
 FeatureStore::addFeatures(uint32_t packedIndex,
                           const DocIdAndFeatures &features)
 {
@@ -129,7 +129,7 @@ FeatureStore::addFeatures(uint32_t packedIndex,
 
 
 void
-FeatureStore::getFeatures(uint32_t packedIndex, btree::EntryRef ref,
+FeatureStore::getFeatures(uint32_t packedIndex, datastore::EntryRef ref,
                           DocIdAndFeatures &features)
 {
     setupForField(packedIndex, _d);
@@ -139,7 +139,7 @@ FeatureStore::getFeatures(uint32_t packedIndex, btree::EntryRef ref,
 
 
 size_t
-FeatureStore::bitSize(uint32_t packedIndex, btree::EntryRef ref)
+FeatureStore::bitSize(uint32_t packedIndex, datastore::EntryRef ref)
 {
     setupForField(packedIndex, _d);
     setupForUnpackFeatures(ref, _d);
@@ -152,9 +152,9 @@ FeatureStore::bitSize(uint32_t packedIndex, btree::EntryRef ref)
 }
 
 
-btree::EntryRef
+datastore::EntryRef
 FeatureStore::moveFeatures(uint32_t packedIndex,
-                           btree::EntryRef ref)
+                           datastore::EntryRef ref)
 {
     uint64_t bitLen = bitSize(packedIndex, ref);
     return moveFeatures(ref, bitLen);

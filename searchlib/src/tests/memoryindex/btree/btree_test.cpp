@@ -21,6 +21,7 @@ LOG_SETUP("btree_test");
 #include <vespa/searchlib/btree/btreestore.hpp>
 
 using vespalib::GenerationHandler;
+using search::datastore::EntryRef;
 
 namespace search {
 namespace btree {

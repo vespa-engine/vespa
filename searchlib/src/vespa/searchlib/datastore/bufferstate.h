@@ -11,7 +11,7 @@
 #include <vespa/vespalib/util/generationhandler.h>
 
 namespace search {
-namespace btree {
+namespace datastore {
 
 class BufferTypeBase
 {
@@ -262,6 +262,6 @@ private:
 };
 
 
-} // namespace search::btree
+} // namespace search::datastore
 } // namespace search
 

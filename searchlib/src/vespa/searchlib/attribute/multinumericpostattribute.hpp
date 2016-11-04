@@ -100,7 +100,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
 
         dictItr.lower_bound(frozenDictionary.getRoot(), EnumIndex(), comp);
         if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {
-            btree::EntryRef pidx = dictItr.getData();
+            datastore::EntryRef pidx = dictItr.getData();
             if (pidx.valid()) {
                 const PostingList &plist = self.getPostingList();
                 auto minmax = plist.getAggregated(pidx);
@@ -113,7 +113,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(btree::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const
 {
     assert(idx.valid());
     self.getPostingList().beginFrozen(idx, dst);
@@ -121,7 +121,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(
 
 template <typename B, typename M>
 DocumentWeightIterator
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(btree::EntryRef idx) const
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(datastore::EntryRef idx) const
 {
     assert(idx.valid());
     return self.getPostingList().beginFrozen(idx);

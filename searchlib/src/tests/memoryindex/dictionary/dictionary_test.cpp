@@ -45,6 +45,7 @@ namespace search
 {
 
 using namespace btree;
+using namespace datastore;
 using namespace fef;
 using namespace index;
 using queryeval::SearchIterator;
@@ -510,7 +511,7 @@ public:
         return *this;
     }
 
-    btree::EntryRef
+    datastore::EntryRef
     getWordRef()
     {
         return _inserter.getWordRef();

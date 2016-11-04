@@ -18,13 +18,13 @@ class DocumentRemover : public IDocumentInsertListener
 private:
     struct WordFieldDocTuple
     {
-        btree::EntryRef _wordRef;
+        datastore::EntryRef _wordRef;
         uint32_t _docId;
         WordFieldDocTuple() :
             _wordRef(0),
             _docId(0)
         { }
-        WordFieldDocTuple(btree::EntryRef wordRef, uint32_t docId) :
+        WordFieldDocTuple(datastore::EntryRef wordRef, uint32_t docId) :
             _wordRef(wordRef),
             _docId(docId)
         { }
@@ -54,7 +54,7 @@ public:
     const CompactDocumentWordsStore &getStore() const { return _store; }
 
     // Implements IDocumentInsertListener
-    void insert(btree::EntryRef wordRef, uint32_t docId) override;
+    void insert(datastore::EntryRef wordRef, uint32_t docId) override;
     void flush() override;
 };
 

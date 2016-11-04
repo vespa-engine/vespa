@@ -6,8 +6,7 @@
 using vespalib::alloc::Alloc;
 
 namespace search {
-
-namespace btree {
+namespace datastore {
 
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
@@ -341,7 +340,6 @@ BufferState::fallbackResize(uint64_t newSize,
     std::atomic_thread_fence(std::memory_order_release);
 }
 
-} // namespace btree
-
+} // namespace datastore
 } // namespace search
 

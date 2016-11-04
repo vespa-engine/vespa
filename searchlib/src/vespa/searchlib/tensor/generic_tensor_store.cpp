@@ -8,7 +8,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/macro.h>
 #include <vespa/document/util/serializable.h>
-#include <vespa/searchlib/btree/datastore.hpp>
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TypedBinaryFormat;
@@ -61,7 +61,7 @@ GenericTensorStore::allocRawBuffer(uint32_t size)
     size_t bufSize = RefType::align(extSize);
     _store.ensureBufferCapacity(_typeId, bufSize);
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    btree::BufferState &state = _store.getBufferState(activeBufferId);
+    datastore::BufferState &state = _store.getBufferState(activeBufferId);
     size_t oldSize = state.size();
     char *bufferEntryWritePtr =
         _store.getBufferEntry<char>(activeBufferId, oldSize);
