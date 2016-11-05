@@ -179,11 +179,6 @@ public class ServletOutputStreamWriter {
         }
 
         assert !Thread.holdsLock(monitor);
-        if (!outputStream.isReady()) {
-            String msg = "ServletInputStream not ready!";
-            log.severe(msg);
-            throw new IllegalStateException(msg);
-        }
         if (e.isPresent()) {
             finishedFuture.completeExceptionally(e.get());
         } else {
