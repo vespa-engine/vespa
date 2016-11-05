@@ -19,7 +19,6 @@ public class Metric {
     public final String description;
     public final Map<String, String> dimensions;
 
-
     public Metric(String name, String outputName, String description, Map<String, String> dimensions) {
         this.name = name;
         this.outputName = outputName;

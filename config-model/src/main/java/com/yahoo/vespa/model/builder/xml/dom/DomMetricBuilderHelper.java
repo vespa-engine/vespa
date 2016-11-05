@@ -3,12 +3,15 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
+import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import org.w3c.dom.Element;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Helper class for parsing yamasmetric config.
@@ -30,18 +33,23 @@ public class DomMetricBuilderHelper {
         List<Element> consumersElem = XML.getChildren(spec, "consumer");
         for (Element consumer : consumersElem) {
             String consumerName = consumer.getAttribute("name");
-            Map<String, Metric> metrics = new LinkedHashMap<>();
+            Set<Metric> metrics = new LinkedHashSet<>();
             List<Element> metricsEl = XML.getChildren(consumer, "metric");
             if (metricsEl != null) {
                 for (Element metric : metricsEl) {
                     String metricName = metric.getAttribute("name");
                     String outputName = metric.getAttribute("output-name");
-                    metrics.put(metricName, new Metric(metricName, outputName));
+                    metrics.add(new Metric(metricName, outputName));
                 }
             }
-            MetricsConsumer metricsConsumer = new MetricsConsumer(consumerName, metrics);
+            MetricsConsumer metricsConsumer = new MetricsConsumer(consumerName,
+                                                                  new MetricSet(metricSetId(consumerName), metrics));
             metricsConsumers.put(consumerName, metricsConsumer);
         }
         return metricsConsumers;
+    }
+
+    private static String metricSetId(String consumerName) {
+        return "legacy-user-metrics-" + consumerName;
     }
 }

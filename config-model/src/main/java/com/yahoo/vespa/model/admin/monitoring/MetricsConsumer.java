@@ -9,27 +9,29 @@ import java.util.Map;
  * @author trygve
  */
 public class MetricsConsumer {
-    private final String consumer;
-    private final Map<String, Metric> metrics;
+    private final String id;
+    private final MetricSet metricSet;
 
     /**
-     * @param consumer The consumer
-     * @param metrics  The metrics for the the consumer
+     * @param id The consumer
+     * @param metricSet  The metrics for this consumer
      */
-    public MetricsConsumer(String consumer, Map<String, Metric> metrics) {
-        this.consumer = consumer;
-        this.metrics = metrics;
+    public MetricsConsumer(String id, MetricSet metricSet) {
+        this.id = id;
+        this.metricSet = metricSet;
     }
 
-    public String getConsumer() {
-        return consumer;
+    public String getId() {
+        return id;
     }
+
+    public MetricSet getMetricSet() { return metricSet; }
 
     /**
      * @return Map of metric with metric name as key
      */
     public Map<String, Metric> getMetrics() {
-        return metrics;
+        return metricSet.getMetrics();
     }
 
 }
