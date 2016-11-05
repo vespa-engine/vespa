@@ -135,7 +135,7 @@ class ServletRequestReader implements ReadListener {
             requestContentChannel.write(buf, writeCompletionHandler);
             metricReporter.successfulRead(bytesReceived);
         } catch (final Throwable t) {
-            completeWithFailure(t);
+            finishedFuture.completeExceptionally(t);
         } finally {
             //decrease due to this method completing.
             decreaseOutstandingUserCallsAndCloseRequestContentChannelConditionally();
@@ -220,7 +220,7 @@ class ServletRequestReader implements ReadListener {
 
             @Override
             public void failed(final Throwable t) {
-                completeWithFailure(t);
+                finishedFuture.completeExceptionally(t);
             }
         };
 
@@ -228,33 +228,23 @@ class ServletRequestReader implements ReadListener {
             requestContentChannel.close(closeCompletionHandler);
             //if close did not cause an exception,
             // is it safe to pipe the result of the completionHandlerInvokedFuture into finishedFuture
-            completedCalledFuture.whenComplete((ignoredResult, ignoredThrowable) -> completeWithSuccess());
+            completedCalledFuture.whenComplete(this::setFinishedFuture);
         } catch (final Throwable t) {
-            completeWithFailure(t);
+            finishedFuture.completeExceptionally(t);
         }
     }
 
-    private void completeWithSuccess() {
-        verifyInputStreamState();
-        finishedFuture.complete(null);
-    }
-
-    private void completeWithFailure(Throwable throwable) {
-        verifyInputStreamState();
-        finishedFuture.completeExceptionally(throwable);
-    }
-
-    private void verifyInputStreamState() {
-        if (!servletInputStream.isReady()) {
-            String msg = "ServletInputStream not ready!";
-            log.severe(msg);
-            throw new IllegalStateException(msg);
+    private void setFinishedFuture(Void result, Throwable throwable) {
+        if (throwable != null) {
+            finishedFuture.completeExceptionally(throwable);
+        } else {
+            finishedFuture.complete(null);
         }
     }
 
     @Override
     public void onError(final Throwable t) {
-        completeWithFailure(t);
+        finishedFuture.completeExceptionally(t);
         doneReading();
     }
 
@@ -266,7 +256,7 @@ class ServletRequestReader implements ReadListener {
 
         @Override
         public void failed(final Throwable t) {
-            completeWithFailure(t);
+            finishedFuture.completeExceptionally(t);
             decreaseOutstandingUserCallsAndCloseRequestContentChannelConditionally();
         }
     };
