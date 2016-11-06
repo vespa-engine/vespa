@@ -658,7 +658,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
                         removedtags("thread").
                         tags("disk"));
 
-        Map<String, MetricsConsumer> consumers = getRoot().getAdmin().getUserMetricsConsumers();
+        Map<String, MetricsConsumer> consumers = getRoot().getAdmin().getLegacyUserMetricsConsumers();
         if (consumers != null) {
            for (Map.Entry<String, MetricsConsumer> e : consumers.entrySet()) {
                 MetricsmanagerConfig.Consumer.Builder b = getMetricBuilder(e.getKey(), builder);

@@ -12,6 +12,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Yamas;
+import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;
@@ -36,7 +37,8 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final Yamas yamas;
-    private final Map<String, MetricsConsumer> metricsConsumers;
+    private final Metrics metrics;
+    private final Map<String, MetricsConsumer> legacyMetricsConsumers;
     private final List<Configserver> configservers = new ArrayList<>();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
@@ -53,10 +55,15 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(AbstractConfigProducer parent, Yamas yamas, Map<String, MetricsConsumer> metricsConsumers, boolean multitenant) {
+    public Admin(AbstractConfigProducer parent,
+                 Yamas yamas,
+                 Metrics metrics,
+                 Map<String, MetricsConsumer> legacyMetricsConsumers,
+                 boolean multitenant) {
         super(parent, "admin");
         this.yamas = yamas;
-        this.metricsConsumers = metricsConsumers;
+        this.metrics = metrics;
+        this.legacyMetricsConsumers = legacyMetricsConsumers;
         this.multitenant = multitenant;
     }
 
@@ -69,9 +76,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         return yamas;
     }
 
+    public Metrics getUserMetrics() { return metrics; }
+
     /** Returns the configured userMetricConsumers. Null if not configured */
-    public Map<String, MetricsConsumer> getUserMetricsConsumers(){
-        return metricsConsumers;
+    public Map<String, MetricsConsumer> getLegacyUserMetricsConsumers(){
+        return legacyMetricsConsumers;
     }
 
     /** Returns a list of all config servers */
