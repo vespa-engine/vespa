@@ -98,6 +98,10 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
             this.metric = metric;
             this.processTerminator = processTerminator;
             this.maxThreadExecutionTimeMillis = maxThreadExecutionTimeMillis;
+
+            metric.set(MetricNames.THREAD_POOL_SIZE, wrapped.getPoolSize(), null);
+            metric.set(MetricNames.ACTIVE_THREADS, wrapped.getActiveCount(), null);
+            metric.add(MetricNames.REJECTED_REQUEST, 0, null);
         }
 
         /**
