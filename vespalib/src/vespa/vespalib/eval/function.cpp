@@ -157,6 +157,15 @@ public:
         return _resolve_stack.back();
     }
 
+    void push_resolve_context(const Params &params, const SymbolExtractor *symbol_extractor) {
+        _resolve_stack.emplace_back(params, symbol_extractor);
+    }
+
+    void pop_resolve_context() {
+        assert(!_resolve_stack.empty());
+        _resolve_stack.pop_back();
+    }
+
     void fail(const vespalib::string &msg) {
         if (_failure.empty()) {
             _failure = msg;
@@ -463,6 +472,62 @@ void parse_call(ParseContext &ctx, Call_UP call) {
     ctx.push_expression(std::move(call));
 }
 
+// (a,b,c)
+std::vector<vespalib::string> get_ident_list(ParseContext &ctx) {
+    std::vector<vespalib::string> list;
+    ctx.skip_spaces();
+    ctx.eat('(');
+    for (ctx.skip_spaces(); !ctx.eos() && (ctx.get() != ')'); ctx.skip_spaces()) {
+        if (!list.empty()) {
+            ctx.eat(',');
+        }
+        list.push_back(get_ident(ctx));
+    }
+    ctx.eat(')');
+    return list;
+}
+
+Function parse_lambda(ParseContext &ctx) {
+    ctx.skip_spaces();
+    ctx.eat('f');
+    auto param_names = get_ident_list(ctx);
+    ExplicitParams params(param_names);
+    ctx.push_resolve_context(params, nullptr);
+    ctx.skip_spaces();
+    ctx.eat('(');
+    parse_expression(ctx);
+    ctx.eat(')');
+    ctx.pop_resolve_context();
+    Node_UP lambda_root = ctx.pop_expression();
+    return Function(std::move(lambda_root), std::move(param_names));
+}
+
+void parse_tensor_map(ParseContext &ctx) {
+    parse_expression(ctx);
+    Node_UP child = ctx.pop_expression();
+    ctx.eat(',');
+    Function lambda = parse_lambda(ctx);
+    if (lambda.num_params() != 1) {
+        ctx.fail(make_string("map requires a lambda with 1 parameter, was %zu",
+                             lambda.num_params()));
+    }
+}
+
+void parse_tensor_join(ParseContext &ctx) {
+    parse_expression(ctx);
+    Node_UP lhs = ctx.pop_expression();
+    ctx.eat(',');
+    parse_expression(ctx);
+    Node_UP rhs = ctx.pop_expression();
+    ctx.eat(',');
+    Function lambda = parse_lambda(ctx);
+    if (lambda.num_params() != 2) {
+        ctx.fail(make_string("join requires a lambda with 2 parameter, was %zu",
+                             lambda.num_params()));
+    }
+}
+
+// to be replaced with more generic 'reduce'
 void parse_tensor_sum(ParseContext &ctx) {
     parse_expression(ctx);
     Node_UP child = ctx.pop_expression();
@@ -488,6 +553,10 @@ bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
             Call_UP call = nodes::CallRepo::instance().create(name);
             if (call.get() != nullptr) {
                 parse_call(ctx, std::move(call));
+            } else if (name == "map") {
+                parse_tensor_map(ctx);
+            } else if (name == "join") {
+                parse_tensor_join(ctx);
             } else if (name == "sum") {
                 parse_tensor_sum(ctx);
             } else {
