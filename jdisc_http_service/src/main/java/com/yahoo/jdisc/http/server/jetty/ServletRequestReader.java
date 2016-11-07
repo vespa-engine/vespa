@@ -35,7 +35,7 @@ class ServletRequestReader implements ReadListener {
 
     private static final Logger log = Logger.getLogger(ServletRequestReader.class.getName());
 
-    private static final int MIN_BUFFER_SIZE_BYTES = 1024;
+    private static final int BUFFER_SIZE_BYTES = 8 * 1024;
 
     private final Object monitor = new Object();
 
@@ -111,9 +111,7 @@ class ServletRequestReader implements ReadListener {
     @Override
     public void onDataAvailable() throws IOException {
         while (servletInputStream.isReady()) {
-            final int estimatedNumBytesAvailable = servletInputStream.available();
-            final int bufferSizeBytes = Math.max(estimatedNumBytesAvailable, MIN_BUFFER_SIZE_BYTES);
-            final byte[] buffer = new byte[bufferSizeBytes];
+            final byte[] buffer = new byte[BUFFER_SIZE_BYTES];
             final int numBytesRead = servletInputStream.read(buffer);
             if (numBytesRead < 0) {
                 // End of stream; there should be no more data available, ever.
