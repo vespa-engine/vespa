@@ -441,7 +441,8 @@ public class ClusterSearcher extends Searcher {
     }
 
     private void validateQueryCache(Query query) {
-        if (query.getRanking().getQueryCache() && query.getTimeout() <= maxQueryCacheTimeout) return;
+        if ( ! query.getRanking().getQueryCache() ) return;
+        if (query.getTimeout() <= maxQueryCacheTimeout) return;
 
         if (query.isTraceable(2)) {
             query.trace("Query timeout (" + query.getTimeout() + " ms) > max query cache timeout (" +
