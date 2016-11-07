@@ -108,7 +108,9 @@ class ServletRequestReader implements ReadListener {
     @Override
     public void onDataAvailable() throws IOException {
         while (servletInputStream.isReady()) {
-            final byte[] buffer = new byte[MIN_BUFFER_SIZE_BYTES];
+            final int estimatedNumBytesAvailable = servletInputStream.available();
+            final int bufferSizeBytes = Math.max(estimatedNumBytesAvailable, MIN_BUFFER_SIZE_BYTES);
+            final byte[] buffer = new byte[bufferSizeBytes];
             final int numBytesRead = servletInputStream.read(buffer);
             if (numBytesRead < 0) {
                 // End of stream; there should be no more data available, ever.
