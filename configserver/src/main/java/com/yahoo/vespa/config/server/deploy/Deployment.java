@@ -129,13 +129,13 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         long sessionId = session.getSessionId();
         validateSessionStatus(session);
         try {
-            log.log(LogLevel.INFO, "Trying to acquire lock " + activateLock + " for session " + sessionId);
+            log.log(LogLevel.DEBUG, "Trying to acquire lock " + activateLock + " for session " + sessionId);
             boolean acquired = activateLock.acquire(timeoutBudget, ignoreLockFailure);
             if ( ! acquired) {
-                log.log(LogLevel.INFO, "Acquiring " + activateLock + " for session " + sessionId + " returned false");
+                log.log(LogLevel.DEBUG, "Acquiring " + activateLock + " for session " + sessionId + " returned false");
             }
 
-            log.log(LogLevel.INFO, "Lock acquired " + activateLock + " for session " + sessionId);
+            log.log(LogLevel.DEBUG, "Lock acquired " + activateLock + " for session " + sessionId);
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(localSessionRepo.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
@@ -152,9 +152,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         } catch (Exception e) {
             throw new InternalServerException("Error activating application", e);
         } finally {
-            log.log(LogLevel.INFO, "Trying to release lock " + activateLock + " for session " + sessionId);
+            log.log(LogLevel.DEBUG, "Trying to release lock " + activateLock + " for session " + sessionId);
             activateLock.release();
-            log.log(LogLevel.INFO, "Lock released " + activateLock + " for session " + sessionId);
+            log.log(LogLevel.DEBUG, "Lock released " + activateLock + " for session " + sessionId);
         }
         log.log(LogLevel.INFO, session.logPre() + "Session " + sessionId + 
                                " activated successfully using " +
