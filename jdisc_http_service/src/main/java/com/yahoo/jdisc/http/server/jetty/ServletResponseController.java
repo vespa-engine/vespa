@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,12 +39,14 @@ public class ServletResponseController {
     //servletResponse must not be modified after the response has been committed.
     private final HttpServletResponse servletResponse;
     private final boolean developerMode;
+    private final Executor executor;
 
     //all calls to the servletOutputStreamWriter must hold the monitor first to ensure visibility of servletResponse changes.
     private final ServletOutputStreamWriter servletOutputStreamWriter;
 
     @GuardedBy("monitor")
     private boolean responseCommitted = false;
+
 
 
     public ServletResponseController(
@@ -56,6 +57,7 @@ public class ServletResponseController {
 
         this.servletResponse = servletResponse;
         this.developerMode = developerMode;
+        this.executor = executor;
         this.servletOutputStreamWriter =
                 new ServletOutputStreamWriter(servletResponse.getOutputStream(), executor, metricReporter);
     }
@@ -117,7 +119,7 @@ public class ServletResponseController {
         try {
 
             // HttpServletResponse.sendError() is blocking and must not be executed in Jetty/RequestHandler thread.
-            Executors.newSingleThreadExecutor().execute(() -> {
+            executor.execute(() -> {
                 try {
                     // TODO We should control the response content this method generates
                     // a response body based on Jetty's own response templates ("Powered by Jetty").
