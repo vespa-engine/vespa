@@ -156,7 +156,8 @@ class HttpRequestDispatch {
                         servletInputStream,
                         requestContentChannel,
                         jDiscContext.janitor,
-                        metricReporter);
+                        metricReporter,
+                        servletResponseController);
 
         servletInputStream.setReadListener(servletRequestReader);
         return servletRequestReader;
