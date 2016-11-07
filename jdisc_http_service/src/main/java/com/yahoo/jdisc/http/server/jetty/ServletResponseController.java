@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -114,12 +115,20 @@ public class ServletResponseController {
         }
 
         try {
-            // TODO: sendError() is a synchronous call. Refactor. (Also, we should control the response content -
-            // this method generates a response body based on Jetty's own response templates ("Powered by Jetty").
-            servletResponse.sendError(
-                    statusCode,
-                    reasonPhrase);
-            finishedFuture().complete(null);
+
+            // HttpServletResponse.sendError() is blocking and must not be executed in Jetty/RequestHandler thread.
+            Executors.newSingleThreadExecutor().execute(() -> {
+                try {
+                    // TODO We should control the response content this method generates
+                    // a response body based on Jetty's own response templates ("Powered by Jetty").
+                    servletResponse.sendError(statusCode, reasonPhrase);
+                    finishedFuture().complete(null);
+                } catch (IOException e) {
+                    log.severe("Failed to send error response: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            });
+
         } catch (Throwable e) {
             servletOutputStreamWriter.fail(t);
         }
