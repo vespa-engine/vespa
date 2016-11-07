@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -192,6 +191,12 @@ public class ServletResponseController {
     private void commitResponse() {
         synchronized (monitor) {
             responseCommitted = true;
+        }
+    }
+
+    public boolean isResponseCommitted() {
+        synchronized (monitor) {
+            return responseCommitted;
         }
     }
 
