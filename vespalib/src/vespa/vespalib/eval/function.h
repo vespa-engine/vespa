@@ -60,6 +60,7 @@ public:
         nodes::DumpContext dump_context(_params);
         return _root->dump(dump_context);
     }
+    vespalib::string dump_as_lambda() const;
     // Utility function used to unwrap an expression contained inside
     // a named wrapper. For example 'max(x+y)' -> 'max', 'x+y'
     static bool unwrap(vespalib::stringref input,

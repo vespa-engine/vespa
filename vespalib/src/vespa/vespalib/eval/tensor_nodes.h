@@ -55,7 +55,7 @@ public:
         str += "map(";
         str += _child->dump(ctx);
         str += ",";
-        str += _lambda.dump();
+        str += _lambda.dump_as_lambda();
         str += ")";
         return str;
     }
@@ -86,7 +86,7 @@ public:
         str += ",";
         str += _rhs->dump(ctx);
         str += ",";
-        str += _lambda.dump();
+        str += _lambda.dump_as_lambda();
         str += ")";
         return str;
     }

@@ -497,6 +497,7 @@ Function parse_lambda(ParseContext &ctx) {
     ctx.eat('(');
     parse_expression(ctx);
     ctx.eat(')');
+    ctx.skip_spaces();
     ctx.pop_resolve_context();
     Node_UP lambda_root = ctx.pop_expression();
     return Function(std::move(lambda_root), std::move(param_names));
@@ -723,6 +724,28 @@ Function::parse(const std::vector<vespalib::string> &params, vespalib::stringref
 }
 
 //-----------------------------------------------------------------------------
+
+vespalib::string
+Function::dump_as_lambda() const
+{
+    vespalib::string lambda = "f(";
+    for (size_t i = 0; i < _params.size(); ++i) {
+        if (i > 0) {
+            lambda += ",";
+        }
+        lambda += _params[i];
+    }
+    lambda += ")";
+    vespalib::string expr = dump();
+    if (starts_with(expr, "(")) {
+        lambda += expr;
+    } else {
+        lambda += "(";
+        lambda += expr;
+        lambda += ")";
+    }
+    return lambda;
+}
 
 bool
 Function::unwrap(vespalib::stringref input,

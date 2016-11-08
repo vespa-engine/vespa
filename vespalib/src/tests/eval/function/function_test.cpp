@@ -747,11 +747,39 @@ TEST("require that missing value gives parse error") {
 
 TEST("require that tensor sum can be parsed") {
     EXPECT_EQUAL("sum(a)", Function::parse("sum(a)").dump());
+    EXPECT_EQUAL("sum(a)", Function::parse(" sum ( a ) ").dump());
     EXPECT_EQUAL("sum(a,dim)", Function::parse("sum(a,dim)").dump());
+    EXPECT_EQUAL("sum(a,dim)", Function::parse(" sum ( a , dim ) ").dump());
 }
 
 TEST("require that tensor operations can be nested") {
     EXPECT_EQUAL("sum(sum(sum(a)),dim)", Function::parse("sum(sum(sum(a)),dim)").dump());
+}
+
+TEST("require that tensor map can be parsed") {
+    EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse("map(a,f(x)(x+1))").dump());
+    EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse(" map ( a , f ( x ) ( x + 1 ) ) ").dump());
+}
+
+TEST("require that tensor join can be parsed") {
+    EXPECT_EQUAL("join(a,b,f(x,y)(x+y))", Function::parse("join(a,b,f(x,y)(x+y))").dump());
+    EXPECT_EQUAL("join(a,b,f(x,y)(x+y))", Function::parse(" join ( a , b , f ( x , y ) ( x + y ) ) ").dump());
+}
+
+TEST("require that parenthesis are added around lambda expression when needed") {
+    EXPECT_EQUAL("f(x)(sin(x))", Function::parse("sin(x)").dump_as_lambda());
+}
+
+TEST("require that parse error inside a lambda fails the enclosing expression") {
+    verify_error("map(x,f(a)(b))", "[map(x,f(a)(b]...[unknown symbol: 'b']...[))]");
+}
+
+TEST("require that outer parameters are hidden within a lambda") {
+    verify_error("map(x,f(a)(y))", "[map(x,f(a)(y]...[unknown symbol: 'y']...[))]");
+}
+
+TEST("require that outer let bindings are hidden within a lambda") {
+    verify_error("let(b,x,map(b,f(a)(b)))", "[let(b,x,map(b,f(a)(b]...[unknown symbol: 'b']...[)))]");
 }
 
 //-----------------------------------------------------------------------------
