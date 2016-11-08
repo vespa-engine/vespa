@@ -33,8 +33,8 @@ public final class PointBuilder {
         location = new ArrayList<>();
         if (p != null) {
             int size = p.dimensionality();
-            dimensions = new ArrayList<>(size);
-            location = new ArrayList<>(size);
+            dimensions = new ArrayList<>(size+2);
+            location = new ArrayList<>(size+2);
             for (String dimensionName : p.getDimensions()) {
                 dimensions.add(dimensionName);
             }
@@ -103,7 +103,7 @@ public final class PointBuilder {
     public Point build() {
         Point p;
         if (dimensions.size() == 0) {
-            p = null;
+            p = Point.emptyPoint();
         } else {
             p = new Point(dimensions.toArray(dimensionsTypeArgument), location.toArray(locationTypeArgument));
         }
