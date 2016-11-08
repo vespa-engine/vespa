@@ -205,6 +205,12 @@ public class DockerMock implements Docker {
         }
 
         @Override
+        public CreateContainerCommand withAddCapability(String capabilityName) {return this; }
+
+        @Override
+        public CreateContainerCommand withDropCapability(String capabilityName) {return this; }
+
+        @Override
         public void create() {
 
         }
