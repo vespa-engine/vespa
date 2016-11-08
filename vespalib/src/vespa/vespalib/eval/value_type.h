@@ -79,6 +79,7 @@ public:
     static ValueType tensor_type(std::vector<Dimension> dimensions_in);
     static ValueType from_spec(const vespalib::string &spec);
     vespalib::string to_spec() const;
+    static ValueType join(const ValueType &lhs, const ValueType &rhs);
 };
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);

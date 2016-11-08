@@ -323,6 +323,11 @@ struct SafeEval : Eval {
 };
 SafeEval safe(const Eval &eval) { return SafeEval(eval); }
 
+const Value &check_type(const Value &value, const ValueType &expect_type) {
+    EXPECT_EQUAL(value.type(), expect_type);
+    return value;
+}
+
 // expression(void)
 struct Expr_V : Eval {
     const vespalib::string &expr;
@@ -332,7 +337,7 @@ struct Expr_V : Eval {
         NodeTypes types(fun, {});
         InterpretedFunction ifun(engine, fun, types);
         InterpretedFunction::Context ctx;
-        return Result(ifun.eval(ctx));
+        return Result(check_type(ifun.eval(ctx), types.get_type(fun.root())));
     }
 };
 
@@ -348,7 +353,7 @@ struct Expr_T : Eval {
         InterpretedFunction::Context ctx;
         TensorValue va(engine.create(a));
         ctx.add_param(va);
-        return Result(ifun.eval(ctx));
+        return Result(check_type(ifun.eval(ctx), types.get_type(fun.root())));
     }
 };
 
@@ -367,7 +372,7 @@ struct Expr_TT : Eval {
         TensorValue vb(engine.create(b));
         ctx.add_param(va);
         ctx.add_param(vb);
-        return Result(ifun.eval(ctx));
+        return Result(check_type(ifun.eval(ctx), types.get_type(fun.root())));
     }
 };
 
@@ -444,10 +449,11 @@ struct RetainedReduce : Eval {
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         auto a_type = ValueType::from_spec(a.type());
         auto ir = tensor_function::reduce(tensor_function::inject(a_type, tensor_id_a), op, dimensions);
+        ValueType expect_type = ir->result_type;
         auto fun = engine.compile(std::move(ir));
         Input input(engine.create(a));
         Stash stash;
-        return Result(fun->eval(input, stash));
+        return Result(check_type(fun->eval(input, stash), expect_type));
     }
 };
 
@@ -458,10 +464,11 @@ struct RetainedMap : Eval {
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
         auto a_type = ValueType::from_spec(a.type());
         auto ir = tensor_function::map(map_operation_id, tensor_function::inject(a_type, tensor_id_a));
+        ValueType expect_type = ir->result_type;
         auto fun = engine.compile(std::move(ir));
         Input input(engine.create(a), op);
         Stash stash;
-        return Result(fun->eval(input, stash));
+        return Result(check_type(fun->eval(input, stash), expect_type));
     }
 };
 
@@ -473,11 +480,12 @@ struct RetainedApply : Eval {
         auto a_type = ValueType::from_spec(a.type());
         auto b_type = ValueType::from_spec(b.type());
         auto ir = tensor_function::apply(op, tensor_function::inject(a_type, tensor_id_a),
-                                         tensor_function::inject(a_type, tensor_id_b));
+                                         tensor_function::inject(b_type, tensor_id_b));
+        ValueType expect_type = ir->result_type;
         auto fun = engine.compile(std::move(ir));
         Input input(engine.create(a), engine.create(b));
         Stash stash;
-        return Result(fun->eval(input, stash));
+        return Result(check_type(fun->eval(input, stash), expect_type));
     }
 };
 

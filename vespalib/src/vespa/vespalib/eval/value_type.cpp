@@ -42,7 +42,7 @@ struct DimensionResult {
     }
 };
 
-DimensionResult join(const DimensionList &lhs, const DimensionList &rhs) {
+DimensionResult my_join(const DimensionList &lhs, const DimensionList &rhs) {
     DimensionResult result;
     auto pos = rhs.begin();
     auto end = rhs.end();
@@ -62,7 +62,7 @@ DimensionResult join(const DimensionList &lhs, const DimensionList &rhs) {
     return result;
 }
 
-DimensionResult intersect(const DimensionList &lhs, const DimensionList &rhs) {
+DimensionResult my_intersect(const DimensionList &lhs, const DimensionList &rhs) {
     DimensionResult result;
     auto pos = rhs.begin();
     auto end = rhs.end();
@@ -155,7 +155,7 @@ ValueType::add_dimensions_from(const ValueType &rhs) const
     if (unknown_dimensions() || rhs.unknown_dimensions()) {
         return any_type();
     }
-    DimensionResult result = join(_dimensions, rhs._dimensions);
+    DimensionResult result = my_join(_dimensions, rhs._dimensions);
     if (result.mismatch) {
         return error_type();
     }
@@ -171,7 +171,7 @@ ValueType::keep_dimensions_in(const ValueType &rhs) const
     if (unknown_dimensions() || rhs.unknown_dimensions()) {
         return any_type();
     }
-    DimensionResult result = intersect(_dimensions, rhs._dimensions);
+    DimensionResult result = my_intersect(_dimensions, rhs._dimensions);
     if (result.mismatch) {
         return error_type();
     }
@@ -198,6 +198,21 @@ vespalib::string
 ValueType::to_spec() const
 {
     return value_type::to_spec(*this);
+}
+
+ValueType
+ValueType::join(const ValueType &lhs, const ValueType &rhs)
+{
+    if (lhs.is_error() || rhs.is_error()) {
+        return error_type();
+    } else if (lhs.is_any() || rhs.is_any()) {
+        return any_type();
+    } else if (lhs.is_double()) {
+        return rhs;
+    } else if (rhs.is_double()) {
+        return lhs;
+    }
+    return lhs.add_dimensions_from(rhs);
 }
 
 std::ostream &

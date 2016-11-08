@@ -113,17 +113,8 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         bind_type(state.peek(0), node);
     }
 
-    bool resolve_op2(const Node &node) {
-        if (state.peek(1).is_any() || state.peek(0).is_any()) {
-            bind_type(ValueType::any_type(), node);
-        } else if (state.peek(1).is_double()) {
-            bind_type(state.peek(0), node);
-        } else if (state.peek(0).is_double()) {
-            bind_type(state.peek(1), node);
-        } else {
-            bind_type(state.peek(1).add_dimensions_from(state.peek(0)), node);
-        }
-        return true;
+    void resolve_op2(const Node &node) {
+        bind_type(ValueType::join(state.peek(1), state.peek(0)), node);
     }
 
     //-------------------------------------------------------------------------
