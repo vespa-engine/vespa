@@ -9,6 +9,7 @@ import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.admin.monitoring.DefaultMetricConsumers;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Yamas;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricConsumers.VESPA_CONSUMER_ID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
@@ -84,7 +86,7 @@ public class DedicatedAdminV4Test {
         assertEquals("vespa.routing", yamas.getClustername());
         assertEquals(60L, (long)yamas.getIntervalSeconds());
         
-        MetricsConsumer consumer = model.getAdmin().getLegacyUserMetricsConsumers().get("yamas");
+        MetricsConsumer consumer = model.getAdmin().getLegacyUserMetricsConsumers().get(VESPA_CONSUMER_ID);
         assertNotNull(consumer);
         assertEquals(3, consumer.getMetrics().size());
         Metric metric = consumer.getMetrics().get("nginx.upstreams.down.last");

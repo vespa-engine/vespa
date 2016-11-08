@@ -5,15 +5,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * This class sets up the default metrics and the default 'vespa' metrics consumer.
- *
- * TODO: remove for Vespa 7 or when the 'metric-consumers' element in 'admin' has been removed.
+ * This class sets up the default 'vespa' metrics consumer.
  *
  * @author <a href="mailto:trygve@yahoo-inc.com">Trygve Bolsø Berdal</a>
  * @author gjoranv
  */
-@SuppressWarnings("UnusedDeclaration") // All public apis are used by model amenders
 public class DefaultMetricConsumers {
+
+    public static final String VESPA_CONSUMER_ID = "vespa";
 
     private static final MetricSet vespaMetricSet = new VespaMetricSet();
 
@@ -26,12 +25,8 @@ public class DefaultMetricConsumers {
     @SuppressWarnings("UnusedDeclaration")
     public static Map<String, MetricsConsumer> getDefaultMetricsConsumers() {
         Map<String, MetricsConsumer> metricsConsumers = new LinkedHashMap<>();
-        metricsConsumers.put("yamas", getYamasConsumer());
+        metricsConsumers.put(VESPA_CONSUMER_ID, new MetricsConsumer(VESPA_CONSUMER_ID, vespaMetricSet));
         return metricsConsumers;
-    }
-
-    private static MetricsConsumer getYamasConsumer(){
-        return new MetricsConsumer("yamas", vespaMetricSet);
     }
 
 }
