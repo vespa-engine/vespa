@@ -60,6 +60,21 @@ requestHasLidAbove(const DocsumRequest & request, uint32_t docIdLimit)
     return false;
 }
 
+bool
+hasAnyLidsMoved(const DocsumRequest & request,
+                const search::IDocumentMetaStore &metaStore)
+{
+    for (const DocsumRequest::Hit & h : request.hits) {
+        uint32_t lid = 0;
+        if (h.docid != search::endDocId) {
+            if (!metaStore.getLid(h.gid, lid) || (lid != h.docid)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 /**
  * Maps the lids in the reply to gids using the original request.
  **/
@@ -136,7 +151,9 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
     uint64_t endGeneration = readGuard->get().getCurrentGeneration();
     if (startGeneration != endGeneration) {
         if (requestHasLidAbove(req, metaStore.getNumUsedLids())) {
-            reply.second = false;
+            if (hasAnyLidsMoved(req, metaStore)) {
+                reply.second = false;
+            }
         }
     }
     return reply;
