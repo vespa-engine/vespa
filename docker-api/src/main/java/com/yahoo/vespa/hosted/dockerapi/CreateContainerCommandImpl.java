@@ -12,10 +12,12 @@ import java.net.InetAddress;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
@@ -33,6 +35,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private Optional<String> ipv4Address = Optional.empty();
     private Optional<String> ipv6Address = Optional.empty();
     private Optional<String[]> entrypoint = Optional.empty();
+    private Set<String> addCapabilities = new HashSet<>();
+    private Set<String> dropCapabilities = new HashSet<>();
 
     CreateContainerCommandImpl(DockerClient docker,
                                DockerImage dockerImage,
@@ -53,6 +57,18 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
     public Docker.CreateContainerCommand withManagedBy(String manager) {
         labels.put(DockerImpl.LABEL_NAME_MANAGEDBY, manager);
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withAddCapability(String capabilityName) {
+        addCapabilities.add(capabilityName);
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withDropCapability(String capabilityName) {
+        dropCapabilities.add(capabilityName);
         return this;
     }
 
@@ -155,6 +171,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         List<String> ulimitList = ulimits.stream()
                 .map(ulimit -> ulimit.getName() + "=" + ulimit.getSoft() + ":" + ulimit.getHard())
                 .collect(Collectors.toList());
+        List<String> addCapabilitiesList = new ArrayList<>(addCapabilities);
+        List<String> dropCapabilitiesList = new ArrayList<>(dropCapabilities);
 
         return "--name " + containerName.asString() + " "
                 + "--hostname " + hostName + " "
@@ -162,6 +180,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 + toRepeatedOption("--ulimit", ulimitList)
                 + toRepeatedOption("--env", environmentAssignments)
                 + toRepeatedOption("--volume", volumeBindSpecs)
+                + toRepeatedOption("--add-cap", addCapabilitiesList)
+                + toRepeatedOption("--drop-cap", dropCapabilitiesList)
                 + toOptionalOption("--memory", memoryInB)
                 + toOptionalOption("--net", networkMode)
                 + toOptionalOption("--ip", ipv4Address)

@@ -203,7 +203,8 @@ public class DockerOperationsImpl implements DockerOperations {
                     .withEnvironment("CONFIG_SERVER_ADDRESS", configServers)
                     .withUlimit("nofile", 16384, 16384)
                     .withUlimit("nproc", 409600, 409600)
-                    .withUlimit("core", -1, -1);
+                    .withUlimit("core", -1, -1)
+                    .withAddCapability("SYS_NICE"); // Needed for running secret-agent
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {

@@ -23,6 +23,8 @@ public interface Docker {
         CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);
         CreateContainerCommand withEntrypoint(String... entrypoint);
         CreateContainerCommand withManagedBy(String manager);
+        CreateContainerCommand withAddCapability(String capabilityName);
+        CreateContainerCommand withDropCapability(String capabilityName);
 
         void create();
     }
