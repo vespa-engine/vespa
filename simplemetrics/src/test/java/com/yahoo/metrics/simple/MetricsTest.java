@@ -44,7 +44,7 @@ public class MetricsTest extends UnitTestSetup {
         Collection<Entry<Point, UntypedMetric>> values = s.getValuesForMetric(metricName);
         assertEquals(1, values.size());
         Entry<Point, UntypedMetric> value = values.iterator().next();
-        assertNull(value.getKey());
+        assertEquals(Point.emptyPoint(), value.getKey());
         assertEquals(1.0d, value.getValue().getLast(), 0.0d); // using number exactly expressible as doubles
         assertEquals(1L, value.getValue().getCount());
     }

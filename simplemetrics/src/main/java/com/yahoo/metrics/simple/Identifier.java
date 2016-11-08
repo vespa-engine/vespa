@@ -4,7 +4,7 @@ package com.yahoo.metrics.simple;
 /**
  * The name of the metric and its n-dimensional position. Basically a pair of a
  * Point and a metric name. Written to be robust against null input as the API
- * gives very little guidance.
+ * gives very little guidance, converting null to empty string/point.  Immutable.
  *
  * @author Steinar Knutsen
  */
@@ -14,16 +14,16 @@ public class Identifier {
     private final Point location;
 
     public Identifier(String name, Point location) {
-        this.name = name;
-        this.location = location;
+        this.name = (name == null ? "" : name);
+        this.location = (location == null ? Point.emptyPoint() : location);
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((location == null) ? 0 : location.hashCode());
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + location.hashCode();
+        result = prime * result + name.hashCode();
         return result;
     }
 
@@ -34,18 +34,10 @@ public class Identifier {
         if (getClass() != obj.getClass()) return false;
 
         Identifier other = (Identifier) obj;
-        if (location == null) {
-            if (other.location != null) {
-                return false;
-            }
-        } else if (!location.equals(other.location)) {
+        if (!location.equals(other.location)) {
             return false;
         }
-        if (name == null) {
-            if (other.name != null) {
-                return false;
-            }
-        } else if (!name.equals(other.name)) {
+        if (!name.equals(other.name)) {
             return false;
         }
         return true;
