@@ -20,7 +20,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -56,7 +59,7 @@ import static org.mockito.Mockito.when;
  */
 public class RunVespaLocal {
     private static final DockerImage VESPA_BASE_IMAGE = new DockerImage(
-            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/ci:6.38.151");
+            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/ci:6.43.9");
     private static final Environment environment = new Environment(
             Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
             HostName.getLocalhost(), new InetAddressResolver());
@@ -110,9 +113,20 @@ public class RunVespaLocal {
                 environment).getNodeAdminStateUpdater();
 
         logger.info("Ready");
-        while (true) {
-            Thread.sleep(1000);
-        }
+        // TODO: Automatically find correct node to send request to
+        URL url = new URL("http://cnode-1:" + System.getenv("VESPA_WEB_SERVICE_PORT") + "/");
+        Instant start = Instant.now();
+        System.out.println(start);
+        boolean okResponse = false;
+        do {
+            try {
+                HttpURLConnection http = (HttpURLConnection) url.openConnection();
+                if (http != null && http.getResponseCode() == 200) okResponse = true;
+            } catch (IOException e) {
+                Thread.sleep(100);
+            }
+        } while (! okResponse || Instant.now().isBefore(start.plusSeconds(120)));
+        assertTrue(okResponse);
 
 //        LocalZoneUtils.undeployApp();
 //        nodeAdminStateUpdater.deconstruct();

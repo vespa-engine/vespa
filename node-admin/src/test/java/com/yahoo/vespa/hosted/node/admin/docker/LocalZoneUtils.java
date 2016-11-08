@@ -42,6 +42,7 @@ public class LocalZoneUtils {
             Collections.singleton(CONFIG_SERVER_HOSTNAME));
     private static final String APP_HOSTNAME_PREFIX = "cnode-";
     private static final String TENANT_NAME = "localtenant";
+    private static final String APPLICATION_NAME = "default";
 
     public static boolean startConfigServerIfNeeded(Docker docker, Environment environment) throws UnknownHostException {
         Optional<Container> container = docker.getContainer(CONFIG_SERVER_HOSTNAME);
@@ -65,8 +66,11 @@ public class LocalZoneUtils {
 
         docker.startContainer(CONFIG_SERVER_CONTAINER_NAME);
 
-        for (int i = 0; i < 500; i++) {
+        int maxRetries = 2000;
+        for (int i = 0; i < maxRetries; i++) {
             try {
+                if (i % 100 == 0) System.out.println("Check if config server is up, try " + i + " of " + maxRetries);
+
                 URL url = new URL("http://" + CONFIG_SERVER_HOSTNAME + ":" + CONFIG_SERVER_WEB_SERVICE_PORT +
                         "/state/v1/health");
                 Thread.sleep(100);
@@ -132,37 +136,44 @@ public class LocalZoneUtils {
     }
 
     public static void deployApp(Docker docker, Path pathToApp) {
+        deployApp(docker, pathToApp, TENANT_NAME, APPLICATION_NAME);
+    }
+
+    public static void deployApp(Docker docker, Path pathToApp, String tenantName, String applicationName) {
         Path pathToAppOnConfigServer = Paths.get("/tmp");
         docker.copyArchiveToContainer(pathToApp.toAbsolutePath().toString(),
                 CONFIG_SERVER_CONTAINER_NAME, pathToAppOnConfigServer.toString());
 
         try { // Add tenant, ignore exception if tenant already exists
-            requestExecutor.put("/application/v2/tenant/" + TENANT_NAME, CONFIG_SERVER_WEB_SERVICE_PORT, Optional.empty(), Map.class);
+            requestExecutor.put("/application/v2/tenant/" + tenantName, CONFIG_SERVER_WEB_SERVICE_PORT, Optional.empty(), Map.class);
         } catch (RuntimeException e) {
-            if (! e.getMessage().contains("There already exists a tenant '" + TENANT_NAME)) {
+            if (! e.getMessage().contains("There already exists a tenant '" + tenantName)) {
                 throw e;
             }
         }
-
+        System.out.println("prepare " + applicationName);
         final String deployPath = Defaults.getDefaults().underVespaHome("bin/deploy");
         ProcessResult copyProcess = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, deployPath, "-e",
-                TENANT_NAME, "prepare", pathToAppOnConfigServer.resolve(pathToApp.getFileName()).toString());
+                tenantName, "-a", applicationName, "prepare", pathToAppOnConfigServer.resolve(pathToApp.getFileName()).toString());
         if (! copyProcess.isSuccess()) {
             throw new RuntimeException("Could not prepare " + pathToApp + " on " + CONFIG_SERVER_CONTAINER_NAME.asString() +
                     "\n" + copyProcess.getOutput() + "\n" + copyProcess.getErrors());
         }
 
+        System.out.println("activate " + applicationName);
         ProcessResult execProcess = docker.executeInContainer(CONFIG_SERVER_CONTAINER_NAME, deployPath, "-e",
-                TENANT_NAME, "activate");
+                tenantName, "-a", applicationName, "activate");
         if (! execProcess.isSuccess()) {
             throw new RuntimeException("Could not activate application\n" + copyProcess.getOutput() + "\n" + copyProcess.getErrors());
         }
     }
 
-    public static void undeployApp() {
-        final String appName = "default";
+    public static void deleteApplication() {
+        deleteApplication(TENANT_NAME, APPLICATION_NAME);
+    }
 
-        requestExecutor.delete("/application/v2/tenant/" + TENANT_NAME + "/application/" + appName,
+    public static void deleteApplication(String tenantName, String appName) {
+        requestExecutor.delete("/application/v2/tenant/" + tenantName + "/application/" + appName,
                 CONFIG_SERVER_WEB_SERVICE_PORT, Map.class);
     }
 }
