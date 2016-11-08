@@ -91,6 +91,11 @@
       </server>
     </http>
 
+    <accesslog type='json'
+           fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S' />
+    <accesslog type='vespa'
+           fileNamePattern='logs/vespa/qrs/access-vespa.%Y%m%d%H%M%S' />
+
     <document-api>
       <binding>http://*/document-api/</binding>
       <binding>https://*/document-api/</binding>
