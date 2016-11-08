@@ -84,7 +84,7 @@ public class DedicatedAdminV4Test {
         assertEquals("vespa.routing", yamas.getClustername());
         assertEquals(60L, (long)yamas.getIntervalSeconds());
         
-        MetricsConsumer consumer = model.getAdmin().getUserMetricsConsumers().get("yamas");
+        MetricsConsumer consumer = model.getAdmin().getLegacyUserMetricsConsumers().get("yamas");
         assertNotNull(consumer);
         assertEquals(3, consumer.getMetrics().size());
         Metric metric = consumer.getMetrics().get("nginx.upstreams.down.last");

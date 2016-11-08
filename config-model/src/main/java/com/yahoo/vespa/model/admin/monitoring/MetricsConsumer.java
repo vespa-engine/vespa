@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import javax.annotation.concurrent.Immutable;
 import java.util.Map;
 
 /**
@@ -8,6 +9,7 @@ import java.util.Map;
  *
  * @author trygve
  */
+@Immutable
 public class MetricsConsumer {
     private final String id;
     private final MetricSet metricSet;

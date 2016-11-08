@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin.monitoring;
 
+import javax.annotation.concurrent.Immutable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -16,6 +17,7 @@ import static java.util.Collections.unmodifiableMap;
  *
  * @author gjoranv
  */
+@Immutable
 public class MetricSet {
 
     private final String id;
@@ -84,9 +86,7 @@ public class MetricSet {
 
     private Map<String, Metric> toMapByName(Collection<Metric> metrics) {
         Map<String, Metric> metricMap = new LinkedHashMap<>();
-        for (Metric metric : metrics) {
-            metricMap.put(metric.name, metric);
-        }
+        metrics.forEach(metric -> metricMap.put(metric.name, metric));
         return metricMap;
     }
 

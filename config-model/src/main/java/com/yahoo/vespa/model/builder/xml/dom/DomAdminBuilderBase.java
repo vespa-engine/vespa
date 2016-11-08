@@ -10,11 +10,16 @@ import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.*;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Yamas;
+import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
+import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
+import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.config.application.api.FileRegistry;
 import org.w3c.dom.Element;
 
 import java.util.*;
+
+import static com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets.predefinedMetricSets;
 
 /**
  * A base class for admin model builders, to support common functionality across versions.
@@ -56,9 +61,11 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     @Override
     protected Admin doBuild(AbstractConfigProducer parent, Element adminE) {
         Yamas yamas = getYamas(XML.getChild(adminE, "yamas"));
-        Map<String, MetricsConsumer> metricsConsumers = DomMetricBuilderHelper.buildMetricsConsumers(XML.getChild(adminE, "metric-consumers"));
 
-        Admin admin = new Admin(parent, yamas, metricsConsumers, multitenant);
+        Metrics metrics = new MetricsBuilder(predefinedMetricSets).buildMetrics(XML.getChild(adminE, "metrics"));
+        Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper.buildMetricsConsumers(XML.getChild(adminE, "metric-consumers"));
+
+        Admin admin = new Admin(parent, yamas, metrics, legacyMetricsConsumers, multitenant);
 
         doBuildAdmin(admin, adminE);
 
