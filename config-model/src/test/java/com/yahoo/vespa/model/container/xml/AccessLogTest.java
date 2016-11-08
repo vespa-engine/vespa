@@ -60,7 +60,6 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
     private Component<?, ?> getVespaAccessLog(String clusterName) {
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get(clusterName);
         return cluster.getComponentsMap().get(ComponentId.fromString((VespaAccessLog.class.getName())));
-
     }
 
     @Test
@@ -99,9 +98,6 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             assertEquals("interval", fileHandlerConfig.rotation());
             assertEquals(AccessLogConfig.FileHandler.RotateScheme.DATE, fileHandlerConfig.rotateScheme());
         }
-
-
-
     }
 
 }

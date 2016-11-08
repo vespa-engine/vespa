@@ -18,7 +18,8 @@ import java.io.IOException;
 import java.util.Collections;
 
 /**
- * Utility functions for testing the ContainerModelBuilder
+ * Utility functions for testing the ContainerModelBuilder. Note that XML validation will
+ * not be done when using this class
  *
  * @author gjoranv
  * @since 5.5
