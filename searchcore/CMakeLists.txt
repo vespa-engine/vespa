@@ -69,6 +69,7 @@ vespa_define_module(
     src/tests/proton/bucketdb/bucketdb
     src/tests/proton/common
     src/tests/proton/common/document_type_inspector
+    src/tests/proton/common/hw_info_sampler
     src/tests/proton/common/state_reporter_utils
     src/tests/proton/config
     src/tests/proton/docsummary

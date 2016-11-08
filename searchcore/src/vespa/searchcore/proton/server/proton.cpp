@@ -241,7 +241,12 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 {
     assert( _initStarted && ! _initComplete );
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
-    _hwInfoSampler = std::make_unique<HwInfoSampler>(protonConfig.basedir);
+    const auto &samplerCfgArgs = protonConfig.hwinfo.disk;
+    HwInfoSampler::Config samplerCfg(samplerCfgArgs.writespeed,
+                                     samplerCfgArgs.slowwritespeedlimit,
+                                     samplerCfgArgs.samplewritesize);
+    _hwInfoSampler = std::make_unique<HwInfoSampler>(protonConfig.basedir,
+                                                     samplerCfg);
     _hwInfo = _hwInfoSampler->hwInfo();
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>

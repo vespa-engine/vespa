@@ -386,3 +386,15 @@ writefilter.disklimit double default = 0.9
 
 ## Interval between sampling of disk and memory usage. Default is 60 seconds.
 writefilter.sampleinterval double default = 60.0
+
+## Override for disk write speed, measured in MiB/s. When zero, the
+## actual disk write speed is sampled by writing data to a temporary file.
+hwinfo.disk.writespeed double default = 200.0
+
+## Amount of data to write to temporary file when sampling disk write speed.
+## Default is 1 GiB.
+hwinfo.disk.samplewritesize long default = 1073741824
+
+## Minimun write speed needed to avoid disk being considered slow.
+## Unit is MiB/s, default is 100.0 MiB/s.
+hwinfo.disk.slowwritespeedlimit double default = 100.0

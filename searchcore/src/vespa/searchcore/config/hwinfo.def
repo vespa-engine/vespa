@@ -1,0 +1,8 @@
+# Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search.core
+
+## Write speed, MiB/s, typically measured by writing 1 GiB data to disk.
+disk.writespeed double default = 0.0
+
+## Sample time, in seconds since epoch
+disk.sampletime long default = 0
