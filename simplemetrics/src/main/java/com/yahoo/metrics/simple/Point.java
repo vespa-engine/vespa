@@ -40,6 +40,11 @@ public final class Point implements Context {
         this.location = location;
     }
 
+    private static final Point theEmptyPoint = new Point(new String[0], new Value[0]);
+
+    /** the canonical 0-dimensional Point. */
+    public static Point emptyPoint() { return theEmptyPoint; }
+
     private static Tuple2<String[], Value[]> buildParameters(Map<String, ?> properties) {
         String[] dimensions = properties.keySet().toArray(new String[0]);
         Arrays.sort(dimensions);
