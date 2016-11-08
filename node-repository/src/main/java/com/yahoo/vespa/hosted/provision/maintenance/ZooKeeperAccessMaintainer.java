@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 
 import java.time.Duration;
+import java.util.logging.Logger;
 
 /**
  * Maintains the system property which tells ZooKeeper which nodes should have access to it.
@@ -21,6 +22,7 @@ import java.time.Duration;
  */
 public class ZooKeeperAccessMaintainer extends Maintainer {
 
+    private static final Logger log = Logger.getLogger(ZooKeeperAccessMaintainer.class.getName());
     private final Curator curator;
     
     public ZooKeeperAccessMaintainer(NodeRepository nodeRepository, Curator curator, Duration maintenanceInterval) {
@@ -42,6 +44,7 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
         if (hostList.length() > 0)
             hostList.setLength(hostList.length()-1); // remove last comma
 
+        log.fine("On " + Runtime.getRuntime().toString()+ ": Setting " + ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY + " to " + hostList.toString());
         System.setProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY, hostList.toString());
     }
 

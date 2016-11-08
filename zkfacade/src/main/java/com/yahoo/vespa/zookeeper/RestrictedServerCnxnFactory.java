@@ -31,7 +31,7 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
 
         String zookeeperClients = System.getProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY);
         if (zookeeperClients == null || zookeeperClients.isEmpty()) {
-            log.fine("Allowing connection to ZooKeeper from " + remoteHost + ", as " + ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY + " is not set");
+            log.fine("On " + Runtime.getRuntime().toString() + ": Allowing connection to ZooKeeper from " + remoteHost + ", as " + ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY + " is not set");
             return super.createConnection(socket, selection); // client checking is not activated
         }
 
@@ -47,7 +47,7 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
                 log.fine("Would reject if activated: " + errorMessage);
             }
         }
-        log.fine("Allowing connection to ZooKeeper from " + remoteHost + ", as it is in " + zookeeperClients);
+        log.fine("On " + Runtime.getRuntime().toString()+ ": Allowing connection to ZooKeeper from " + remoteHost + ", as it is in " + zookeeperClients);
         return super.createConnection(socket, selection);
     }
 
