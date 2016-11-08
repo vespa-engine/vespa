@@ -4,6 +4,7 @@ package com.yahoo.metrics.simple.jdisc;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import org.HdrHistogram.DoubleHistogram;
 
@@ -22,6 +23,8 @@ import com.yahoo.text.JSON;
  * @author arnej27959
  */
 class SnapshotConverter {
+
+    private static Logger log = Logger.getLogger(SnapshotConverter.class.getName());
 
     final Bucket snapshot;
     final Map<Point, Map<String, MetricValue>> perPointData = new HashMap<>();
@@ -85,7 +88,16 @@ class SnapshotConverter {
         }
         Map<MetricDimensions, MetricSet> data = new HashMap<>();
         for (Map.Entry<Point, Map<String, MetricValue>> entry : perPointData.entrySet()) {
-            data.put(convert(entry.getKey()), new MetricSet(entry.getValue()));
+            MetricDimensions key = convert(entry.getKey());
+            MetricSet newval = new MetricSet(entry.getValue());
+            MetricSet old = data.get(key);
+            if (old != null) {
+                // should not happen, this is bad
+                // TODO: consider merging the two MetricSet instances
+                log.warning("losing MetricSet when converting for: "+entry.getKey());
+            } else {
+                data.put(key, newval);
+            }
         }
         return new MetricSnapshot(snapshot.getFromMillis(),
                                   snapshot.getToMillis(),
@@ -94,6 +106,9 @@ class SnapshotConverter {
     }
 
     private Map<String, MetricValue> getMap(Point point) {
+        if (point == null) {
+            point = Point.emptyPoint();
+        }
         if (! perPointData.containsKey(point)) {
             perPointData.put(point, new HashMap<>());
         }

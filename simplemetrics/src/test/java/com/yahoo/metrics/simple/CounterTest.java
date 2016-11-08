@@ -43,7 +43,7 @@ public class CounterTest {
         assertEquals(1, valuesByMetricName.size());
         List<Entry<Point, UntypedMetric>> x = valuesByMetricName.get(metricName);
         assertEquals(1, x.size());
-        assertNull(x.get(0).getKey());
+        assertEquals(Point.emptyPoint(), x.get(0).getKey());
         assertEquals(1L, x.get(0).getValue().getCount());
     }
 
@@ -58,7 +58,7 @@ public class CounterTest {
         assertEquals(1, valuesByMetricName.size());
         List<Entry<Point, UntypedMetric>> x = valuesByMetricName.get(metricName);
         assertEquals(1, x.size());
-        assertNull(x.get(0).getKey());
+        assertEquals(Point.emptyPoint(), x.get(0).getKey());
         assertEquals(twoToThePowerOfFourtyeight, x.get(0).getValue().getCount());
     }
 
