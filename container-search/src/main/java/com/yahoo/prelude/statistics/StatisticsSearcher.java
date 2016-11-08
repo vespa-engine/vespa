@@ -71,7 +71,7 @@ public class StatisticsSearcher extends Searcher {
 
     private Metric metric;
     private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
-    private Map<String, Metric.Context> yamasOnlyContexts = new CopyOnWriteHashMap<>();
+    private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
 
 
     private void initEvents(com.yahoo.statistics.Statistics manager, MetricReceiver metricReceiver) {
@@ -185,7 +185,7 @@ public class StatisticsSearcher extends Searcher {
         }
         if (result.hits().getError() != null) {
             incrErrorCount(result, metricContext);
-            incrementYamasOnlyErrors(result, execution);
+            incrementStatePageOnlyErrors(result, execution);
         }
         int hitCount = result.getConcreteHitCount();
         hitsPerQuery.put((double) hitCount);
@@ -237,12 +237,12 @@ public class StatisticsSearcher extends Searcher {
     }
 
     /**
-     * Creates error metric for Yamas only. These metrics are only logged to state health page
+     * Creates error metric for StateHandler only. These metrics are only exposed on /state/v1/metrics page
      * and not forwarded to the log file.
      *
      * @param result The result to check for errors
      */
-    private void incrementYamasOnlyErrors(Result result, Execution execution) {
+    private void incrementStatePageOnlyErrors(Result result, Execution execution) {
         if (result == null) return;
 
         ErrorHit error = result.hits().getErrorHit();
@@ -280,14 +280,14 @@ public class StatisticsSearcher extends Searcher {
     }
 
     private Metric.Context getDimensions(String source, Result r, Execution execution) {
-        Metric.Context context = yamasOnlyContexts.get(source == null ? "" : source);
+        Metric.Context context = statePageOnlyContexts.get(source == null ? "" : source);
         if (context == null) {
             Map<String, String> dims = new HashMap<>();
             if (source != null) {
                 dims.put("source", source);
             }
             context = this.metric.createContext(dims);
-            yamasOnlyContexts.put(source == null ? "" : source, context);
+            statePageOnlyContexts.put(source == null ? "" : source, context);
         }
         // TODO add other relevant metric dimensions
         // Would be nice to have chain as a dimension as
