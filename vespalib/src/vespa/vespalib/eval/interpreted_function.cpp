@@ -265,6 +265,14 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
                                  wrap_param<vespalib::string>(stash.create<vespalib::string>(node.dimension())));
         }
     }
+    virtual void visit(const TensorMap &) {
+        // TODO(havardpe): add actual evaluation
+        program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));
+    }
+    virtual void visit(const TensorJoin &) {
+        // TODO(havardpe): add actual evaluation
+        program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));        
+    }
     virtual void visit(const Add &) {
         program.emplace_back(op_binary<operation::Add>);
     }

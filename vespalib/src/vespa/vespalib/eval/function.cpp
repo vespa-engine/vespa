@@ -507,7 +507,9 @@ void parse_tensor_map(ParseContext &ctx) {
     Node_UP child = ctx.pop_expression();
     ctx.eat(',');
     Function lambda = parse_lambda(ctx);
-    if (lambda.num_params() != 1) {
+    if (lambda.num_params() == 1) {
+        ctx.push_expression(std::make_unique<nodes::TensorMap>(std::move(child), std::move(lambda)));
+    } else {
         ctx.fail(make_string("map requires a lambda with 1 parameter, was %zu",
                              lambda.num_params()));
     }
@@ -521,8 +523,10 @@ void parse_tensor_join(ParseContext &ctx) {
     Node_UP rhs = ctx.pop_expression();
     ctx.eat(',');
     Function lambda = parse_lambda(ctx);
-    if (lambda.num_params() != 2) {
-        ctx.fail(make_string("join requires a lambda with 2 parameter, was %zu",
+    if (lambda.num_params() == 2) {
+        ctx.push_expression(std::make_unique<nodes::TensorJoin>(std::move(lhs), std::move(rhs), std::move(lambda)));
+    } else {
+        ctx.fail(make_string("join requires a lambda with 2 parameters, was %zu",
                              lambda.num_params()));
     }
 }

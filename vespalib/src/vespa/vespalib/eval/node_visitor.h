@@ -31,6 +31,8 @@ struct NodeVisitor {
 
     // tensor nodes
     virtual void visit(const nodes::TensorSum    &) = 0;
+    virtual void visit(const nodes::TensorMap    &) = 0;
+    virtual void visit(const nodes::TensorJoin   &) = 0;
 
     // operator nodes
     virtual void visit(const nodes::Add          &) = 0;
@@ -94,6 +96,8 @@ struct EmptyNodeVisitor : NodeVisitor {
     virtual void visit(const nodes::Let          &) {}
     virtual void visit(const nodes::Error        &) {}
     virtual void visit(const nodes::TensorSum    &) {}
+    virtual void visit(const nodes::TensorMap    &) {}
+    virtual void visit(const nodes::TensorJoin   &) {}
     virtual void visit(const nodes::Add          &) {}
     virtual void visit(const nodes::Sub          &) {}
     virtual void visit(const nodes::Mul          &) {}
