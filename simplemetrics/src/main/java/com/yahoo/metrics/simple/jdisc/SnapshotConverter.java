@@ -94,6 +94,9 @@ class SnapshotConverter {
     }
 
     private Map<String, MetricValue> getMap(Point point) {
+        if (point == null) {
+            point = new Point(new HashMap<>());
+        }
         if (! perPointData.containsKey(point)) {
             perPointData.put(point, new HashMap<>());
         }
