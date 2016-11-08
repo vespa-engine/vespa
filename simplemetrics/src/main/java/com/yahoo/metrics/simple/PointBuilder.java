@@ -17,8 +17,6 @@ import com.google.common.annotations.Beta;
 public final class PointBuilder {
     private ArrayList<String> dimensions;
     private ArrayList<Value> location;
-    private static final String[] dimensionsTypeArgument = new String[0];
-    private static final Value[] locationTypeArgument = new Value[0];
 
     public enum Discriminator {
         LONG, DOUBLE, STRING;
@@ -101,11 +99,10 @@ public final class PointBuilder {
      * @return a Point instance reflecting this builder
      */
     public Point build() {
-        Point p;
-        if (dimensions.size() == 0) {
-            p = Point.emptyPoint();
-        } else {
-            p = new Point(dimensions.toArray(dimensionsTypeArgument), location.toArray(locationTypeArgument));
+        Point p = Point.emptyPoint();
+        int size = dimensions.size();
+        if (size != 0) {
+            p = new Point(dimensions.toArray(new String[size]), location.toArray(new Value[size]));
         }
         // deny builder re-use
         dimensions = null;
