@@ -54,8 +54,8 @@ public final class Node {
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation,
                 History history, NodeType type) {
         Objects.requireNonNull(openStackId, "A node must have an openstack id");
-        Objects.requireNonNull(hostname, "A node must have a hostname");
-        Objects.requireNonNull(parentHostname, "A null parentHostname is not permitted.");
+        requireNonEmptyString(hostname, "A node must have a hostname");
+        requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
         Objects.requireNonNull(flavor, "A node must have a flavor");
         Objects.requireNonNull(status, "A node must have a status");
         Objects.requireNonNull(state, "A null node state is not permitted");
@@ -196,6 +196,18 @@ public final class Node {
         return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
+    private void requireNonEmptyString(Optional<String> value, String message) {
+        Objects.requireNonNull(value, message);
+        if (value.isPresent())
+            requireNonEmptyString(value.get(), message);
+    }
+
+    private void requireNonEmptyString(String value, String message) {
+        Objects.requireNonNull(value, message);
+        if (value.trim().isEmpty())
+            throw new IllegalArgumentException(message + ", but was '" + value + "'");
+    }
+    
     @Override
     public int hashCode() {
         return id.hashCode();
