@@ -73,6 +73,34 @@ public class InactiveAndFailedExpirerTest {
         assertEquals(1, failed.get(0).status().failCount());
     }
 
+    @Test
+    public void ensure_reboot_generation_is_increased_when_node_moves_to_dirty() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        List<Node> nodes = tester.makeReadyNodes(1, "default");
+
+        // Allocate and deallocate a single node
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
+        tester.prepare(applicationId, cluster, Capacity.fromNodeCount(1), 1);
+        tester.activate(applicationId, asHosts(nodes));
+        assertEquals(1, tester.getNodes(applicationId, Node.State.active).size());
+        tester.deactivate(applicationId);
+        List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
+        assertEquals(1, inactiveNodes.size());
+
+        // Check reboot generation before node is moved
+        long wantedRebootGeneration = inactiveNodes.get(0).status().reboot().wanted();
+        assertEquals(0, wantedRebootGeneration);
+
+        // Inactive times out and node is moved to dirty
+        tester.advanceTime(Duration.ofMinutes(14));
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        List<Node> dirty = tester.nodeRepository().getNodes(Node.State.dirty);
+        assertEquals(1, dirty.size());
+
+        // Reboot generation is increased
+        assertEquals(wantedRebootGeneration + 1, dirty.get(0).status().reboot().wanted());
+    }
+
     private Set<HostSpec> asHosts(List<Node> nodes) {
         Set<HostSpec> hosts = new HashSet<>(nodes.size());
         for (Node node : nodes)
