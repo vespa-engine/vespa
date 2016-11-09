@@ -10,7 +10,7 @@ import java.util.Map;
  * @author <a href="mailto:trygve@yahoo-inc.com">Trygve Bolsø Berdal</a>
  * @author gjoranv
  */
-public class DefaultMetricConsumers {
+public class DefaultMetricsConsumer {
 
     public static final String VESPA_CONSUMER_ID = "vespa";
 

@@ -9,7 +9,6 @@ import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.admin.monitoring.DefaultMetricConsumers;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Yamas;
@@ -20,7 +19,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricConsumers.VESPA_CONSUMER_ID;
+import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;

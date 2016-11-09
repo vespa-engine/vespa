@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricConsumers.VESPA_CONSUMER_ID;
+import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
 
 /**
  * Helper class for parsing yamasmetric config.

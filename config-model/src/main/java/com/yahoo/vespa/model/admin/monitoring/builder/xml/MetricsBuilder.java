@@ -2,20 +2,18 @@
 package com.yahoo.vespa.model.admin.monitoring.builder.xml;
 
 import com.yahoo.text.XML;
-import com.yahoo.vespa.model.admin.monitoring.DefaultMetricConsumers;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import org.w3c.dom.Element;
 
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricConsumers.VESPA_CONSUMER_ID;
+import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
 
 /**
  * @author gjoranv
