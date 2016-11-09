@@ -195,7 +195,7 @@ public class QueryProperties extends Properties {
                         } else if (key.last().equals(MatchPhase.MAX_HITS)) {
                             matchPhase.setMaxHits(asLong(value, null));
                         } else if (key.last().equals(MatchPhase.MAX_FILTER_COVERAGE)) {
-                            matchPhase.setMaxFilterCoverage(asDouble(value, 1.0));
+                            matchPhase.setMaxFilterCoverage(asDouble(value, 0.2));
                         }
                     } else if (key.size() > 3 && key.get(2).equals(Ranking.DIVERSITY)) {
                         Diversity diversity = query.getRanking().getMatchPhase().getDiversity();
