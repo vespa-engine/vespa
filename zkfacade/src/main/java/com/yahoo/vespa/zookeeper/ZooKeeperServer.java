@@ -28,7 +28,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
      * This belongs logically to the server instance but must be static to make it accessible
      * from RestrictedServerCnxnFactory, which is created by ZK through reflection.
      */
-    private static volatile ImmutableSet<String> allowedClientHostnames = ImmutableSet.of();
+    private static volatile Optional<ImmutableSet<String>> allowedClientHostnames = Optional.empty();
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
@@ -56,11 +56,11 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     
     /** Restrict access to this ZooKeeper server to the given client hosts */
     public static void setAllowedClientHostnames(Collection<String> hostnames) {
-        allowedClientHostnames = ImmutableSet.copyOf(hostnames);
+        allowedClientHostnames = Optional.of(ImmutableSet.copyOf(hostnames));
     }
     
     /** Returns the hosts which are allowed to access this ZooKeeper server, or empty to allow access from anywhere */
-    public static ImmutableSet<String> getAllowedClientHostnames() { return allowedClientHostnames; }
+    public static Optional<ImmutableSet<String>> getAllowedClientHostnames() { return allowedClientHostnames; }
     
     private void writeConfigToDisk(ZookeeperServerConfig config) {
        String cfg = transformConfigToString(config);
