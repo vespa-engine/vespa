@@ -381,8 +381,7 @@ public:
     finishCompact(const std::vector<uint32_t> &toHold);
 
     void
-    fallbackResize(uint32_t bufferId,
-                   uint64_t newSize);
+    fallbackResize(uint32_t bufferId, uint64_t sizeNeeded);
 
     vespalib::GenerationHolder &
     getGenerationHolder(void)

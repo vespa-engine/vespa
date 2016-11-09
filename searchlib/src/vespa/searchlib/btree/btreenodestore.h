@@ -37,10 +37,10 @@ public:
     }
 
     virtual void
-    cleanInitialElements(void *buffer);
+    initializeReservedElements(void *buffer, size_t reservedElements) override;
 
     virtual void
-    cleanHold(void *buffer, uint64_t offset, uint64_t len);
+    cleanHold(void *buffer, uint64_t offset, uint64_t len) override;
 };
 
 

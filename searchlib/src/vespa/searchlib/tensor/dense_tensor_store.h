@@ -45,6 +45,7 @@ public:
         void setUnboundDimSizesSize(uint32_t unboundDimSizesSize_in) {
             _unboundDimSizesSize = unboundDimSizesSize_in;
         }
+        virtual size_t getReservedElements(uint32_t bufferId) const override;
     };
 private:
     DataStoreType _concreteStore;

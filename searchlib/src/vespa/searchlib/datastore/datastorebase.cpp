@@ -352,15 +352,15 @@ DataStoreBase::finishCompact(const std::vector<uint32_t> &toHold)
 
 
 void
-DataStoreBase::fallbackResize(uint32_t bufferId,
-                              uint64_t newSize)
+DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
 {
     BufferState &state = getBufferState(bufferId);
     BufferState::Alloc toHoldBuffer;
     size_t oldUsedElems = state._usedElems;
     size_t oldAllocElems = state._allocElems;
     size_t elementSize = state._typeHandler->elementSize();
-    state.fallbackResize(newSize,
+    state.fallbackResize(bufferId,
+                         sizeNeeded,
                          _maxClusters,
                          _buffers[bufferId],
                          toHoldBuffer);
@@ -394,11 +394,7 @@ DataStoreBase::startCompactWorstBuffer(uint32_t typeId)
     for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
         const auto &state = _states[bufferId];
         if (state.isActive(typeId)) {
-            size_t dead = state.getDeadElems();
-            if (bufferId == 0u) {
-                // buffer 0 is special due to invalid ref -> (buf 0, offset 0)
-                dead -= state.getClusterSize();
-            }
+            size_t dead = state.getDeadElems() - typeHandler->getReservedElements(bufferId);
             if (dead > worstDead) {
                 worstBufferId = bufferId;
                 worstDead = dead;

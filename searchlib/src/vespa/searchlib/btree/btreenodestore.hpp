@@ -13,11 +13,11 @@ namespace btree
 
 template <typename EntryType>
 void
-BTreeNodeBufferType<EntryType>::cleanInitialElements(void *buffer)
+BTreeNodeBufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedElements)
 {
-    ParentType::cleanInitialElements(buffer);
+    ParentType::initializeReservedElements(buffer, reservedElements);
     EntryType *e = static_cast<EntryType *>(buffer);
-    for (size_t j = _clusterSize; j != 0; --j) {
+    for (size_t j = reservedElements; j != 0; --j) {
         e->freeze();
         ++e;
     }

@@ -44,6 +44,12 @@ DenseTensorStore::BufferType::cleanHold(void *buffer, uint64_t offset,
     memset(static_cast<char *>(buffer) + offset - _unboundDimSizesSize, 0, len);
 }
 
+size_t
+DenseTensorStore::BufferType::getReservedElements(uint32_t bufferId) const
+{
+    return datastore::BufferType<char>::getReservedElements(bufferId) +
+        RefType::align(_unboundDimSizesSize);
+}
 
 DenseTensorStore::DenseTensorStore(const ValueType &type)
     : TensorStore(_concreteStore),
@@ -95,14 +101,6 @@ DenseTensorStore::getNumCells(const void *buffer) const
 
 namespace {
 
-void allocateSpaceForFirstUnboundDimSizesInBuffer(char *&buffer, size_t &oldSize, datastore::BufferState &state, size_t alignedUnboundDimSizesSize) {
-    memset(buffer, 0, alignedUnboundDimSizesSize);
-    state.pushed_back(alignedUnboundDimSizesSize);
-    state._deadElems += alignedUnboundDimSizesSize;
-    buffer += alignedUnboundDimSizesSize;
-    oldSize += alignedUnboundDimSizesSize;
-}
-
 void clearPadAreaAfterBuffer(char *buffer, size_t bufSize, size_t alignedBufSize, uint32_t unboundDimSizesSize) {
     size_t padSize = alignedBufSize - unboundDimSizesSize - bufSize;
     memset(buffer + bufSize, 0, padSize);
@@ -113,18 +111,13 @@ void clearPadAreaAfterBuffer(char *buffer, size_t bufSize, size_t alignedBufSize
 std::pair<void *, DenseTensorStore::RefType>
 DenseTensorStore::allocRawBuffer(size_t numCells)
 {
-    size_t alignedUnboundDimSizesSize = RefType::align(unboundDimSizesSize());
     size_t bufSize = numCells * _cellSize;
     size_t alignedBufSize = alignedSize(numCells);
-    size_t ensureSize = alignedBufSize + alignedUnboundDimSizesSize;
-    _store.ensureBufferCapacity(_typeId, ensureSize);
+    _store.ensureBufferCapacity(_typeId, alignedBufSize);
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
     datastore::BufferState &state = _store.getBufferState(activeBufferId);
     size_t oldSize = state.size();
     char *buffer = _store.getBufferEntry<char>(activeBufferId, oldSize);
-    if (oldSize <= alignedUnboundDimSizesSize) {
-        allocateSpaceForFirstUnboundDimSizesInBuffer(buffer, oldSize, state, alignedUnboundDimSizesSize);
-    }
     clearPadAreaAfterBuffer(buffer, bufSize, alignedBufSize, unboundDimSizesSize());
     state.pushed_back(alignedBufSize);
     return std::make_pair(buffer, RefType(oldSize, activeBufferId));
