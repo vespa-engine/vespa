@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
@@ -9,7 +10,9 @@ import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Writes zookeeper config and starts zookeeper server.
@@ -19,7 +22,13 @@ import java.util.List;
  */
 public class ZooKeeperServer extends AbstractComponent implements Runnable {
 
-    public static final String ZOOKEEPER_VESPA_CLIENTS_PROPERTY = "zookeeper.vespa.clients";
+    /** 
+     * The set of hosts which can access the ZooKeeper server in this VM, or empty
+     * to allow access from anywhere.
+     * This belongs logically to the server instance but must be static to make it accessible
+     * from RestrictedServerCnxnFactory, which is created by ZK through reflection.
+     */
+    private static volatile Optional<ImmutableSet<String>> allowedClientHostnames = Optional.empty();
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
@@ -44,6 +53,14 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     public ZooKeeperServer(ZookeeperServerConfig config) {
         this(config, true);
     }
+    
+    /** Restrict access to this ZooKeeper server to the given client hosts */
+    public static void setAllowedClientHostnames(Collection<String> hostnames) {
+        allowedClientHostnames = Optional.of(ImmutableSet.copyOf(hostnames));
+    }
+    
+    /** Returns the hosts which are allowed to access this ZooKeeper server, or empty to allow access from anywhere */
+    public static Optional<ImmutableSet<String>> getAllowedClientHostnames() { return allowedClientHostnames; }
     
     private void writeConfigToDisk(ZookeeperServerConfig config) {
        String cfg = transformConfigToString(config);
