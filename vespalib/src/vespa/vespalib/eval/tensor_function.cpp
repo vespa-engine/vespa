@@ -68,7 +68,7 @@ Node_UP map(size_t map_operation_id, Node_UP tensor) {
 }
 
 Node_UP apply(const BinaryOperation &op, Node_UP lhs_tensor, Node_UP rhs_tensor) {
-    ValueType result_type = lhs_tensor->result_type.add_dimensions_from(rhs_tensor->result_type);
+    ValueType result_type = ValueType::join(lhs_tensor->result_type, rhs_tensor->result_type);
     return std::make_unique<Apply>(result_type, op.clone(), std::move(lhs_tensor), std::move(rhs_tensor));
 }
 

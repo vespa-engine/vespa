@@ -113,29 +113,8 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         bind_type(state.peek(0), node);
     }
 
-    bool maybe_resolve_op2(const Node &node) {
-        if (state.peek(1).is_any() || state.peek(0).is_any()) {
-            bind_type(ValueType::any_type(), node);
-        } else if (state.peek(1).is_double()) {
-            bind_type(state.peek(0), node);
-        } else if (state.peek(0).is_double()) {
-            bind_type(state.peek(1), node);
-        } else {
-            return false;
-        }
-        return true;
-    }
-
     void resolve_op2(const Node &node) {
-        if (!maybe_resolve_op2(node)) {
-            bind_type(ValueType::error_type(), node);
-        }
-    }
-
-    void resolve_op2_union(const Node &node) {
-        if (!maybe_resolve_op2(node)) {
-            bind_type(state.peek(1).add_dimensions_from(state.peek(0)), node);
-        }
+        bind_type(ValueType::join(state.peek(1), state.peek(0)), node);
     }
 
     //-------------------------------------------------------------------------
@@ -188,9 +167,12 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
             bind_type(child.remove_dimensions({node.dimension()}), node);
         }
     }
-    virtual void visit(const Add &node) { resolve_op2_union(node); }
-    virtual void visit(const Sub &node) { resolve_op2_union(node); }
-    virtual void visit(const Mul &node) { resolve_op2_union(node); }
+    virtual void visit(const TensorMap &node) { resolve_op1(node); }
+    virtual void visit(const TensorJoin &node) { resolve_op2(node); }
+
+    virtual void visit(const Add &node) { resolve_op2(node); }
+    virtual void visit(const Sub &node) { resolve_op2(node); }
+    virtual void visit(const Mul &node) { resolve_op2(node); }
     virtual void visit(const Div &node) { resolve_op2(node); }
     virtual void visit(const Pow &node) { resolve_op2(node); }
     virtual void visit(const Equal &node) { resolve_op2(node); }
@@ -225,8 +207,8 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     virtual void visit(const Ldexp &node) { resolve_op2(node); }
     virtual void visit(const Pow2 &node) { resolve_op2(node); }
     virtual void visit(const Fmod &node) { resolve_op2(node); }
-    virtual void visit(const Min &node) { resolve_op2_union(node); }
-    virtual void visit(const Max &node) { resolve_op2_union(node); }
+    virtual void visit(const Min &node) { resolve_op2(node); }
+    virtual void visit(const Max &node) { resolve_op2(node); }
     virtual void visit(const IsNan &node) { resolve_op1(node); }
     virtual void visit(const Relu &node) { resolve_op1(node); }
     virtual void visit(const Sigmoid &node) { resolve_op1(node); }

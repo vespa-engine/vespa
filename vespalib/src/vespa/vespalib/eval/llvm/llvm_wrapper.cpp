@@ -122,6 +122,11 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         values.push_back(value);
     }
 
+    void discard() {
+        assert(!values.empty());
+        values.pop_back();
+    }
+
     llvm::Value *pop_bool() {
         assert(!values.empty());
         llvm::Value *value = values.back();
@@ -341,6 +346,17 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     virtual void visit(const TensorSum &) {
         // sum(x) -> x
+    }
+    virtual void visit(const TensorMap &) {
+        // TODO(havardpe): add actual evaluation
+        discard();
+        push_error();
+    }
+    virtual void visit(const TensorJoin &) {
+        // TODO(havardpe): add actual evaluation
+        discard();
+        discard();
+        push_error();
     }
 
     // operator nodes

@@ -137,7 +137,7 @@ void verify_op1(const char *pattern) {
     TEST_DO(verify(strfmt(pattern, "tensor(x{},y[10],z[])"), "tensor(x{},y[10],z[])"));
 }
 
-void verify_op2_common(const char *pattern) {
+void verify_op2(const char *pattern) {
     TEST_DO(verify(strfmt(pattern, "error", "error"), "error"));
     TEST_DO(verify(strfmt(pattern, "any", "error"), "error"));
     TEST_DO(verify(strfmt(pattern, "error", "any"), "error"));
@@ -155,16 +155,6 @@ void verify_op2_common(const char *pattern) {
     TEST_DO(verify(strfmt(pattern, "double", "tensor"), "tensor"));
     TEST_DO(verify(strfmt(pattern, "tensor(x{})", "double"), "tensor(x{})"));
     TEST_DO(verify(strfmt(pattern, "double", "tensor(x{})"), "tensor(x{})"));
-}
-
-void verify_op2_default(const char *pattern) {
-    TEST_DO(verify_op2_common(pattern));
-    TEST_DO(verify(strfmt(pattern, "tensor", "tensor"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x{})"), "error"));
-}
-
-void verify_op2_union(const char *pattern) {
-    TEST_DO(verify_op2_common(pattern));
     TEST_DO(verify(strfmt(pattern, "tensor", "tensor"), "any"));
     TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x{})"), "tensor(x{})"));
     TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(y{})"), "tensor(x{},y{})"));
@@ -176,47 +166,47 @@ void verify_op2_union(const char *pattern) {
 }
 
 TEST("require that various operations resolve appropriate type") {
-    TEST_DO(verify_op1("-%s"));                  // Neg
-    TEST_DO(verify_op1("!%s"));                  // Not
-    TEST_DO(verify_op2_union("%s+%s"));          // Add
-    TEST_DO(verify_op2_union("%s-%s"));          // Sub
-    TEST_DO(verify_op2_union("%s*%s"));          // Mul
-    TEST_DO(verify_op2_default("%s/%s"));        // Div
-    TEST_DO(verify_op2_default("%s^%s"));        // Pow
-    TEST_DO(verify_op2_default("%s==%s"));       // Equal
-    TEST_DO(verify_op2_default("%s!=%s"));       // NotEqual
-    TEST_DO(verify_op2_default("%s~=%s"));       // Approx
-    TEST_DO(verify_op2_default("%s<%s"));        // Less
-    TEST_DO(verify_op2_default("%s<=%s"));       // LessEqual
-    TEST_DO(verify_op2_default("%s>%s"));        // Greater
-    TEST_DO(verify_op2_default("%s>=%s"));       // GreaterEqual
-    TEST_DO(verify_op2_default("%s&&%s"));       // And
-    TEST_DO(verify_op2_default("%s||%s"));       // Or
-    TEST_DO(verify_op1("cos(%s)"));              // Cos
-    TEST_DO(verify_op1("sin(%s)"));              // Sin
-    TEST_DO(verify_op1("tan(%s)"));              // Tan
-    TEST_DO(verify_op1("cosh(%s)"));             // Cosh
-    TEST_DO(verify_op1("sinh(%s)"));             // Sinh
-    TEST_DO(verify_op1("tanh(%s)"));             // Tanh
-    TEST_DO(verify_op1("acos(%s)"));             // Acos
-    TEST_DO(verify_op1("asin(%s)"));             // Asin
-    TEST_DO(verify_op1("atan(%s)"));             // Atan
-    TEST_DO(verify_op1("exp(%s)"));              // Exp
-    TEST_DO(verify_op1("log10(%s)"));            // Log10
-    TEST_DO(verify_op1("log(%s)"));              // Log
-    TEST_DO(verify_op1("sqrt(%s)"));             // Sqrt
-    TEST_DO(verify_op1("ceil(%s)"));             // Ceil
-    TEST_DO(verify_op1("fabs(%s)"));             // Fabs
-    TEST_DO(verify_op1("floor(%s)"));            // Floor
-    TEST_DO(verify_op2_default("atan2(%s,%s)")); // Atan2
-    TEST_DO(verify_op2_default("ldexp(%s,%s)")); // Ldexp
-    TEST_DO(verify_op2_default("pow(%s,%s)"));   // Pow2
-    TEST_DO(verify_op2_default("fmod(%s,%s)"));  // Fmod
-    TEST_DO(verify_op2_union("min(%s,%s)"));     // min
-    TEST_DO(verify_op2_union("max(%s,%s)"));     // max
-    TEST_DO(verify_op1("isNan(%s)"));            // IsNan
-    TEST_DO(verify_op1("relu(%s)"));             // Relu
-    TEST_DO(verify_op1("sigmoid(%s)"));          // Sigmoid
+    TEST_DO(verify_op1("-%s"));          // Neg
+    TEST_DO(verify_op1("!%s"));          // Not
+    TEST_DO(verify_op2("%s+%s"));        // Add
+    TEST_DO(verify_op2("%s-%s"));        // Sub
+    TEST_DO(verify_op2("%s*%s"));        // Mul
+    TEST_DO(verify_op2("%s/%s"));        // Div
+    TEST_DO(verify_op2("%s^%s"));        // Pow
+    TEST_DO(verify_op2("%s==%s"));       // Equal
+    TEST_DO(verify_op2("%s!=%s"));       // NotEqual
+    TEST_DO(verify_op2("%s~=%s"));       // Approx
+    TEST_DO(verify_op2("%s<%s"));        // Less
+    TEST_DO(verify_op2("%s<=%s"));       // LessEqual
+    TEST_DO(verify_op2("%s>%s"));        // Greater
+    TEST_DO(verify_op2("%s>=%s"));       // GreaterEqual
+    TEST_DO(verify_op2("%s&&%s"));       // And
+    TEST_DO(verify_op2("%s||%s"));       // Or
+    TEST_DO(verify_op1("cos(%s)"));      // Cos
+    TEST_DO(verify_op1("sin(%s)"));      // Sin
+    TEST_DO(verify_op1("tan(%s)"));      // Tan
+    TEST_DO(verify_op1("cosh(%s)"));     // Cosh
+    TEST_DO(verify_op1("sinh(%s)"));     // Sinh
+    TEST_DO(verify_op1("tanh(%s)"));     // Tanh
+    TEST_DO(verify_op1("acos(%s)"));     // Acos
+    TEST_DO(verify_op1("asin(%s)"));     // Asin
+    TEST_DO(verify_op1("atan(%s)"));     // Atan
+    TEST_DO(verify_op1("exp(%s)"));      // Exp
+    TEST_DO(verify_op1("log10(%s)"));    // Log10
+    TEST_DO(verify_op1("log(%s)"));      // Log
+    TEST_DO(verify_op1("sqrt(%s)"));     // Sqrt
+    TEST_DO(verify_op1("ceil(%s)"));     // Ceil
+    TEST_DO(verify_op1("fabs(%s)"));     // Fabs
+    TEST_DO(verify_op1("floor(%s)"));    // Floor
+    TEST_DO(verify_op2("atan2(%s,%s)")); // Atan2
+    TEST_DO(verify_op2("ldexp(%s,%s)")); // Ldexp
+    TEST_DO(verify_op2("pow(%s,%s)"));   // Pow2
+    TEST_DO(verify_op2("fmod(%s,%s)"));  // Fmod
+    TEST_DO(verify_op2("min(%s,%s)"));   // min
+    TEST_DO(verify_op2("max(%s,%s)"));   // max
+    TEST_DO(verify_op1("isNan(%s)"));    // IsNan
+    TEST_DO(verify_op1("relu(%s)"));     // Relu
+    TEST_DO(verify_op1("sigmoid(%s)"));  // Sigmoid
 }
 
 TEST("require that double only expressions can be detected") {
