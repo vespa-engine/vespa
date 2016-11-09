@@ -17,20 +17,19 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 
 import java.io.IOException;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -140,6 +139,12 @@ public class ProvisioningTester implements AutoCloseable {
         provisioner.activate(transaction, application, hosts);
         transaction.commit();
         assertEquals(toHostNames(hosts), toHostNames(nodeRepository.getNodes(application, Node.State.active)));
+    }
+
+    public void deactivate(ApplicationId applicationId) {
+        NestedTransaction deactivateTransaction = new NestedTransaction();
+        nodeRepository.deactivate(applicationId, deactivateTransaction);
+        deactivateTransaction.commit();
     }
 
     public Set<String> toHostNames(Set<HostSpec> hosts) {

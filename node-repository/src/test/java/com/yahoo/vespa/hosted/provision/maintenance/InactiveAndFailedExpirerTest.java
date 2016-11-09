@@ -5,32 +5,24 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.test.ManualClock;
-import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -40,59 +32,43 @@ import static org.junit.Assert.assertFalse;
  */
 public class InactiveAndFailedExpirerTest {
 
-    private Curator curator = new MockCurator();
+    private final ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"),
+            InstanceName.from("fuz"));
 
     @Test
     public void ensure_inactive_and_failed_times_out() throws InterruptedException {
-        ManualClock clock = new ManualClock();
-        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
-        NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock);
-
-        List<Node> nodes = new ArrayList<>(2);
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
-        nodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant));
-        nodeRepository.addNodes(nodes);
-
-        List<Node> hostNodes = new ArrayList<>(2);
-        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
-        hostNodes.add(nodeRepository.createNode(UUID.randomUUID().toString(), UUID.randomUUID().toString(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host));
-        nodeRepository.addNodes(hostNodes);
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
+        List<Node> nodes = tester.makeReadyNodes(2, "default");
+        ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
         // Allocate then deallocate 2 nodes
-        nodeRepository.setReady(nodes);
-        ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
-        provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1, null);
-        NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-        provisioner.activate(transaction, applicationId, asHosts(nodes));
-        transaction.commit();
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
-        NestedTransaction deactivateTransaction = new NestedTransaction();
-        nodeRepository.deactivate(applicationId, deactivateTransaction);
-        deactivateTransaction.commit();
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.inactive).size());
+        tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
+        tester.activate(applicationId, asHosts(nodes));
+        assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
+        tester.deactivate(applicationId);
+        List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
+        assertEquals(2, inactiveNodes.size());
 
         // Inactive times out
-        clock.advance(Duration.ofMinutes(14));
-        new InactiveExpirer(nodeRepository, clock, Duration.ofMinutes(10)).run();
-
-        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.inactive).size());
-        List<Node> dirty = nodeRepository.getNodes(NodeType.tenant, Node.State.dirty);
+        tester.advanceTime(Duration.ofMinutes(14));
+        new InactiveExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        assertEquals(0, tester.nodeRepository().getNodes(Node.State.inactive).size());
+        List<Node> dirty = tester.nodeRepository().getNodes(Node.State.dirty);
         assertEquals(2, dirty.size());
         assertFalse(dirty.get(0).allocation().isPresent());
         assertFalse(dirty.get(1).allocation().isPresent());
 
         // One node is set back to ready
-        Node ready = nodeRepository.setReady(Collections.singletonList(dirty.get(0))).get(0);
+        Node ready = tester.nodeRepository().setReady(Collections.singletonList(dirty.get(0))).get(0);
         assertEquals("Allocated history is removed on readying", 1, ready.history().events().size());
         assertEquals(History.Event.Type.readied, ready.history().events().iterator().next().type());
 
         // Dirty times out for the other one
-        clock.advance(Duration.ofMinutes(14));
-        new DirtyExpirer(nodeRepository, clock, Duration.ofMinutes(10)).run();
-        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
-        List<Node> failed = nodeRepository.getNodes(NodeType.tenant, Node.State.failed);
+        tester.advanceTime(Duration.ofMinutes(14));
+        new DirtyExpirer(tester.nodeRepository(), tester.clock(), Duration.ofMinutes(10)).run();
+        assertEquals(0, tester.nodeRepository().getNodes(NodeType.tenant, Node.State.dirty).size());
+        List<Node> failed = tester.nodeRepository().getNodes(NodeType.tenant, Node.State.failed);
         assertEquals(1, failed.size());
         assertEquals(1, failed.get(0).status().failCount());
     }
