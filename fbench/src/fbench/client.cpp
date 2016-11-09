@@ -37,7 +37,8 @@ void Client::runMe(Client * me) {
 void
 Client::run()
 {
-    char filename[1024];
+    char inputFilename[1024];
+    char outputFilename[1024];
     char timestr[64];
     int  linelen;
     ///   int  reslen;
@@ -45,19 +46,19 @@ Client::run()
     std::this_thread::sleep_for(std::chrono::milliseconds(_args->_delay));
 
     // open query file
-    snprintf(filename, 1024, _args->_filenamePattern, _args->_myNum);
-    if (!_reader->Open(filename)) {
+    snprintf(inputFilename, 1024, _args->_filenamePattern, _args->_myNum);
+    if (!_reader->Open(inputFilename)) {
         printf("Client %d: ERROR: could not open file '%s' [read mode]\n",
-               _args->_myNum, filename);
+               _args->_myNum, inputFilename);
         _status->SetError("Could not open query file.");
         return;
     }
     if (_args->_outputPattern != NULL) {
-        snprintf(filename, 1024, _args->_outputPattern, _args->_myNum);
-        _output = std::make_unique<std::ofstream>(filename, std::ofstream::out | std::ofstream::binary);
+        snprintf(outputFilename, 1024, _args->_outputPattern, _args->_myNum);
+        _output = std::make_unique<std::ofstream>(outputFilename, std::ofstream::out | std::ofstream::binary);
         if (_output->fail()) {
             printf("Client %d: ERROR: could not open file '%s' [write mode]\n",
-                   _args->_myNum, filename);
+                   _args->_myNum, outputFilename);
             _status->SetError("Could not open output file.");
             return;
         }
@@ -94,7 +95,7 @@ Client::run()
             linelen = _reader->ReadLine(_linebuf, _linebufsize);
             if (linelen < 0) {
                 fprintf(stderr, "Client %d: ERROR: could not read any lines from '%s'\n",
-                        _args->_myNum, filename);
+                        _args->_myNum, inputFilename);
                 _status->SetError("Could not read any lines from query file.");
                 break;
             }
