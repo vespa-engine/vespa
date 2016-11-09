@@ -21,6 +21,7 @@ public:
     virtual ~MemoryAllocator() { }
     virtual PtrAndSize alloc(size_t sz) const = 0;
     virtual void free(PtrAndSize alloc) const = 0;
+    virtual size_t extend_inplace(PtrAndSize current, size_t newSize) const = 0;
     static size_t roundUpToHugePages(size_t sz) {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
     }
@@ -35,13 +36,14 @@ public:
 class Alloc
 {
 private:
-    using PtrAndSize = MemoryAllocator::PtrAndSize;;
+    using PtrAndSize = MemoryAllocator::PtrAndSize;
 public:
     size_t size() const { return _alloc.second; }
     void * get() { return _alloc.first; }
     const void * get() const { return _alloc.first; }
     void * operator -> () { return _alloc.first; }
     const void * operator -> () const { return _alloc.first; }
+    bool extend_inplace(size_t newSize);
     Alloc(const Alloc &) = delete;
     Alloc & operator = (const Alloc &) = delete;
     Alloc(Alloc && rhs) :

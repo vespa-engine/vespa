@@ -118,6 +118,7 @@ class HeapAllocator : public MemoryAllocator {
 public:
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const override;
+    size_t extend_inplace(PtrAndSize, size_t) const override { return 0; }
     static PtrAndSize salloc(size_t sz);
     static void sfree(PtrAndSize alloc);
     static MemoryAllocator & getDefault();
@@ -138,7 +139,9 @@ class MMapAllocator : public MemoryAllocator {
 public:
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const override;
-    static PtrAndSize salloc(size_t sz);
+    size_t extend_inplace(PtrAndSize current, size_t newSize) const override;
+    static size_t sextend_inplace(PtrAndSize current, size_t newSize);
+    static PtrAndSize salloc(size_t sz, void * wantedAddress);
     static void sfree(PtrAndSize alloc);
     static MemoryAllocator & getDefault();
 };
@@ -148,6 +151,7 @@ public:
     AutoAllocator(size_t mmapLimit, size_t alignment) : _mmapLimit(mmapLimit), _alignment(alignment) { }
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const override;
+    size_t extend_inplace(PtrAndSize current, size_t newSize) const override;
     static MemoryAllocator & getDefault();
     static MemoryAllocator & getAllocator(size_t mmapLimit, size_t alignment);
 private:
@@ -256,13 +260,18 @@ AlignedHeapAllocator::alloc(size_t sz) const {
     return PtrAndSize(ptr, sz);
 }
 
-MemoryAllocator::PtrAndSize
-MMapAllocator::alloc(size_t sz) const {
-    return salloc(sz);
+size_t
+MMapAllocator::extend_inplace(PtrAndSize current, size_t newSize) const {
+    return sextend_inplace(current, newSize);
 }
 
 MemoryAllocator::PtrAndSize
-MMapAllocator::salloc(size_t sz)
+MMapAllocator::alloc(size_t sz) const {
+    return salloc(sz, nullptr);
+}
+
+MemoryAllocator::PtrAndSize
+MMapAllocator::salloc(size_t sz, void * wantedAddress)
 {
     void * buf(nullptr);
     if (sz > 0) {
@@ -274,7 +283,7 @@ MMapAllocator::salloc(size_t sz)
             stackTrace = getStackTrace(1);
             LOG(info, "mmap %ld of size %ld from %s", mmapId, sz, stackTrace.c_str());
         }
-        buf = mmap(nullptr, sz, prot, flags | _G_HugeFlags, -1, 0);
+        buf = mmap(wantedAddress, sz, prot, flags | _G_HugeFlags, -1, 0);
         if (buf == MAP_FAILED) {
             if ( ! _G_hasHugePageFailureJustHappened ) {
                 _G_hasHugePageFailureJustHappened = true;
@@ -282,7 +291,7 @@ MMapAllocator::salloc(size_t sz)
                           " Will resort to ordinary mmap until it works again.",
                            sz, FastOS_FileInterface::getLastErrorString().c_str());
             }
-            buf = mmap(nullptr, sz, prot, flags, -1, 0);
+            buf = mmap(wantedAddress, sz, prot, flags, -1, 0);
             if (buf == MAP_FAILED) {
                 stackTrace = getStackTrace(1);
                 string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
@@ -313,6 +322,15 @@ MMapAllocator::salloc(size_t sz)
     return PtrAndSize(buf, sz);
 }
 
+size_t
+MMapAllocator::sextend_inplace(PtrAndSize current, size_t newSize) {
+    PtrAndSize got = MMapAllocator::salloc(newSize, current.first);
+    if (current.first == got.first) {
+        return got.second;
+    }
+    return 0;
+}
+
 void MMapAllocator::free(PtrAndSize alloc) const {
     sfree(alloc);
 }
@@ -333,11 +351,21 @@ void MMapAllocator::sfree(PtrAndSize alloc)
     }
 }
 
+size_t
+AutoAllocator::extend_inplace(PtrAndSize current, size_t newSize) const {
+    if (useMMap(current.second) && useMMap(newSize)) {
+        newSize = roundUpToHugePages(newSize);
+        return MMapAllocator::sextend_inplace(current, newSize);
+    } else {
+        return 0;
+    }
+}
+
 MMapAllocator::PtrAndSize
 AutoAllocator::alloc(size_t sz) const {
     if (useMMap(sz)) {
         sz = roundUpToHugePages(sz);
-        return MMapAllocator::salloc(sz);
+        return MMapAllocator::salloc(sz, nullptr);
     } else {
         if (_alignment == 0) {
             return HeapAllocator::salloc(sz);
@@ -360,6 +388,17 @@ Alloc
 Alloc::allocHeap(size_t sz)
 {
     return Alloc(&HeapAllocator::getDefault(), sz);
+}
+
+bool
+Alloc::extend_inplace(size_t newSize)
+{
+    size_t extendedSize = _allocator->extend_inplace(_alloc, newSize);
+    if (extendedSize > newSize) {
+        _alloc.second = extendedSize;
+        return true;
+    }
+    return false;
 }
 
 Alloc
