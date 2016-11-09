@@ -46,6 +46,7 @@ public class StatisticsSearcher extends Searcher {
     private static final String MAX_QUERY_LATENCY_METRIC = "max_query_latency";
     private static final String EMPTY_RESULTS_METRIC = "empty_results";
     private static final String HITS_PER_QUERY_METRIC = "hits_per_query";
+    private static final String TOTALHITS_PER_QUERY_METRIC = "totalhits_per_query";
     private static final String FAILED_QUERIES_METRIC = "failed_queries";
     private static final String MEAN_QUERY_LATENCY_METRIC = "mean_query_latency";
     private static final String QUERY_LATENCY_METRIC = "query_latency";
@@ -190,6 +191,7 @@ public class StatisticsSearcher extends Searcher {
         int hitCount = result.getConcreteHitCount();
         hitsPerQuery.put((double) hitCount);
         metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
+        metric.set(TOTALHITS_PER_QUERY_METRIC, (double) result.getTotalHitCount(), metricContext);
         if (hitCount == 0) {
             emptyResults.increment();
             metric.add(EMPTY_RESULTS_METRIC, 1, metricContext);
