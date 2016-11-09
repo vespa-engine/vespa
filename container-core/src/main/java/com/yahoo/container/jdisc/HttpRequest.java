@@ -359,17 +359,15 @@ public class HttpRequest {
     public static HttpRequest createRequest(CurrentContainer container,
                                             URI uri, Method method, InputStream requestData,
                                             Map<String, String> properties) {
-
-        final com.yahoo.jdisc.http.HttpRequest clientRequest = com.yahoo.jdisc.http.HttpRequest
-                .newClientRequest(new Request(container, uri), uri, method);
+        com.yahoo.jdisc.http.HttpRequest clientRequest = 
+                com.yahoo.jdisc.http.HttpRequest.newClientRequest(new Request(container, uri), uri, method);
         setProperties(clientRequest, properties);
         return new HttpRequest(clientRequest, requestData);
     }
 
     private static void setProperties(com.yahoo.jdisc.http.HttpRequest clientRequest, Map<String, String> properties) {
-        if (properties == null) {
-            return;
-        }
+        if (properties == null) return;
+
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             clientRequest.parameters().put(entry.getKey(), wrap(entry.getValue()));
         }

@@ -7,10 +7,12 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Maintains the system property which tells ZooKeeper which nodes should have access to it.
+ * Maintains the list of hosts that should be allowed to access ZooKeeper in this runtime.
  * These are the zokeeper servers and all tenant and proxy nodes. This is maintained in the background because
  * nodes could be added or removed on another server. 
  * 
@@ -32,20 +34,17 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
     
     @Override
     protected void maintain() {
-        StringBuilder hostList = new StringBuilder();
+        Set<String> hosts = new HashSet<>();
 
         for (Node node : nodeRepository().getNodes(NodeType.tenant))
-            hostList.append(node.hostname()).append(",");
+            hosts.add(node.hostname());
         for (Node node : nodeRepository().getNodes(NodeType.proxy))
-            hostList.append(node.hostname()).append(",");
+            hosts.add(node.hostname());
         for (String hostPort : curator.connectionSpec().split(","))
-            hostList.append(hostPort.split(":")[0]).append(",");
+            hosts.add(hostPort.split(":")[0]);
 
-        if (hostList.length() > 0)
-            hostList.setLength(hostList.length()-1); // remove last comma
-
-        log.fine("On " + Runtime.getRuntime().toString()+ ": Setting " + ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY + " to " + hostList.toString());
-        System.setProperty(ZooKeeperServer.ZOOKEEPER_VESPA_CLIENTS_PROPERTY, hostList.toString());
+        log.fine("Restricting ZooKeeper access to " + hosts);
+        ZooKeeperServer.setAllowedClientHostnames(hosts);
     }
 
     @Override
