@@ -104,19 +104,6 @@ public class ProvisioningTester implements AutoCloseable {
         return b.build();
     }
 
-    private NodeRepositoryConfig.Flavor.Builder addFlavor(String flavorName, NodeRepositoryConfig.Builder b) {
-        NodeRepositoryConfig.Flavor.Builder flavor = new NodeRepositoryConfig.Flavor.Builder();
-        flavor.name(flavorName);
-        b.flavor(flavor);
-        return flavor;
-    }
-
-    private void addReplaces(String replaces, NodeRepositoryConfig.Flavor.Builder flavor) {
-        NodeRepositoryConfig.Flavor.Replaces.Builder flavorReplaces = new NodeRepositoryConfig.Flavor.Replaces.Builder();
-        flavorReplaces.name(replaces);
-        flavor.replaces(flavorReplaces);
-    }
-
     @Override
     public void close() throws IOException {
         //testingServer.close();
@@ -128,7 +115,6 @@ public class ProvisioningTester implements AutoCloseable {
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return new NodeList(nodeRepository.getNodes(id, inState)); }
-    public NodeFlavors flavors() { return nodeFlavors; }
 
     public void patchNode(Node node) { nodeRepository.write(node); }
 
