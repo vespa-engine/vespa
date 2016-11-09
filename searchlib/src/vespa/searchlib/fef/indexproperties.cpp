@@ -189,7 +189,7 @@ const vespalib::string DegradationSamplePercentage::NAME("vespa.matchphase.degra
 const double DegradationSamplePercentage::DEFAULT_VALUE(0.2);
 
 const vespalib::string DegradationMaxFilterCoverage::NAME("vespa.matchphase.degradation.maxfiltercoverage");
-const double DegradationMaxFilterCoverage::DEFAULT_VALUE(1.0);
+const double DegradationMaxFilterCoverage::DEFAULT_VALUE(0.2);
 
 const vespalib::string DegradationPostFilterMultiplier::NAME("vespa.matchphase.degradation.postfiltermultiplier");
 const double DegradationPostFilterMultiplier::DEFAULT_VALUE(1.0);
