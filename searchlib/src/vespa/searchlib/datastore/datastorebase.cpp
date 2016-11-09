@@ -129,12 +129,15 @@ DataStoreBase::initActiveBuffers(void)
 }
 
 
-void
+uint32_t
 DataStoreBase::addType(BufferTypeBase *typeHandler)
 {
+    uint32_t typeId = _activeBufferIds.size();
+    assert(typeId == _typeHandlers.size());
     _activeBufferIds.push_back(0);
     _typeHandlers.push_back(typeHandler);
     _freeListLists.push_back(BufferState::FreeListList());
+    return typeId;
 }
 
 
