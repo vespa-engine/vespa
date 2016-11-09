@@ -318,9 +318,9 @@ TEST("test stuff") {
         }
         { // vespa.matchphase.degradation.maxfiltercoverage
             EXPECT_EQUAL(matchphase::DegradationMaxFilterCoverage::NAME, vespalib::string("vespa.matchphase.degradation.maxfiltercoverage"));
-            EXPECT_EQUAL(matchphase::DegradationMaxFilterCoverage::DEFAULT_VALUE, 1.0);
+            EXPECT_EQUAL(matchphase::DegradationMaxFilterCoverage::DEFAULT_VALUE, 0.2);
             Properties p;
-            EXPECT_EQUAL(matchphase::DegradationMaxFilterCoverage::lookup(p), 1.0);
+            EXPECT_EQUAL(matchphase::DegradationMaxFilterCoverage::lookup(p), 0.2);
             p.add("vespa.matchphase.degradation.maxfiltercoverage", "0.076");
             EXPECT_EQUAL(matchphase::DegradationMaxFilterCoverage::lookup(p), 0.076);
         }
