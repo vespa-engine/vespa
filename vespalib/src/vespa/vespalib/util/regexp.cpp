@@ -7,6 +7,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".vespalib.util.regexp");
 
 namespace vespalib {
 
@@ -33,25 +36,36 @@ Regexp::compile(const vespalib::stringref & re, Flags flags)
     const char * error = re_compile_pattern(re.c_str(), re.size(), preg);
     if (error != 0) {
         vespalib::string msg = make_string("invalid regexp '%s': %s", re.c_str(), error);
-        free(preg->fastmap);
+        regfree(preg);
         delete preg;
+        _data = nullptr;
         throw IllegalArgumentException(msg);
     }
     if (re_compile_fastmap(preg) != 0) {
+        regfree(preg);
+        delete preg;
+        _data = nullptr;
         throw IllegalArgumentException("re_compile_fastmap failed");
     }
 }
 
 
 Regexp::Regexp(const vespalib::stringref & re, Flags flags)
-    : _data(new regex_t)
+    : _valid(false),
+      _data(new regex_t)
 {
-    compile(re, flags);
+    try {
+        compile(re, flags);
+        _valid = true;
+    } catch (const IllegalArgumentException & e) {
+        LOG(warning, e.what());
+    }
 }
 
 bool
 Regexp::match(const vespalib::stringref & s) const
 {
+    if ( ! valid() ) { return false; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
     int pos(re_search(preg, s.c_str(), s.size(), 0, s.size(), NULL));
     if (pos < -1) {
@@ -62,6 +76,7 @@ Regexp::match(const vespalib::stringref & s) const
 
 vespalib::string Regexp::replace(const vespalib::stringref & s, const vespalib::stringref & replacement) const
 {
+    if ( ! valid() ) { return s; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
     vespalib::string modified;
     int prev(0);
@@ -80,10 +95,11 @@ vespalib::string Regexp::replace(const vespalib::stringref & s, const vespalib::
 
 Regexp::~Regexp()
 {
-    regex_t *preg = static_cast<regex_t *>(_data);
-    regfree(preg);
-    //free(preg->buffer);
-    delete preg;
+    if (_data != nullptr) {
+        regex_t *preg = static_cast<regex_t *>(_data);
+        regfree(preg);
+        delete preg;
+    }
 }
 
 namespace {
