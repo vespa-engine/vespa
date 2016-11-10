@@ -14,6 +14,16 @@
       <slobrok hostalias="qrserver" />
       <slobrok hostalias="rtc-1" />
     </slobroks>
+    <metrics>
+      <consumer id="my-consumer">
+        <metric-set id="my-set" />
+        <metric id="my-metric"/>
+        <metric id="my-metric2"/>
+      </consumer>
+      <consumer id="my-consumer2">
+        <metric-set id="my-set2" />
+      </consumer>
+    </metrics>
   </admin>
 
   <config name="bar">
