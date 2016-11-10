@@ -43,7 +43,14 @@ public:
     ~Regexp();
 
     /**
+     * Will tell if the regexp was valid.
+     * @return true if regexp is valid.
+     **/
+    bool valid() const { return _valid; }
+
+    /**
      * Check if the given string is matched by this regexp.
+     * If called on invalid regexp it will return false.
      * @param s text to search for a match.
      * @return true if a match was found.
      **/
@@ -51,6 +58,7 @@ public:
 
     /**
      * Will replace all occurrences of this pattern is string 's' with 'replacement'.
+     * If called on invalid regexp it will return an unmodified copy of the input string.
      * @param s text to search for mathes.
      * @param replacement text to replace the pattern.
      * @return modified string.
@@ -94,8 +102,9 @@ public:
     static vespalib::string make_from_substring(const vespalib::stringref &substring);
 
 private:
+    bool _valid;
     void *_data;
-    void compile(const vespalib::stringref & re, Flags flags);
+    bool compile(const vespalib::stringref & re, Flags flags);
 };
 
 } // namespace vespalib

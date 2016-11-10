@@ -7,6 +7,9 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".vespalib.util.regexp");
 
 namespace vespalib {
 
@@ -21,7 +24,7 @@ Regexp::Flags::enableICASE()
     return *this;
 }
 
-void
+bool
 Regexp::compile(const vespalib::stringref & re, Flags flags)
 {
     re_set_syntax(flags.flags());
@@ -32,26 +35,28 @@ Regexp::compile(const vespalib::stringref & re, Flags flags)
     preg->allocated = 0;
     const char * error = re_compile_pattern(re.c_str(), re.size(), preg);
     if (error != 0) {
-        vespalib::string msg = make_string("invalid regexp '%s': %s", re.c_str(), error);
-        free(preg->fastmap);
-        delete preg;
-        throw IllegalArgumentException(msg);
+        LOG(warning, "invalid regexp '%s': %s", re.c_str(), error);
+        return false;
     }
     if (re_compile_fastmap(preg) != 0) {
-        throw IllegalArgumentException("re_compile_fastmap failed");
+        LOG(warning, "re_compile_fastmap failed for regexp '%s'", re.c_str());
+        return false;
     }
+    return true;
 }
 
 
 Regexp::Regexp(const vespalib::stringref & re, Flags flags)
-    : _data(new regex_t)
+    : _valid(false),
+      _data(new regex_t)
 {
-    compile(re, flags);
+    _valid = compile(re, flags);
 }
 
 bool
 Regexp::match(const vespalib::stringref & s) const
 {
+    if ( ! valid() ) { return false; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
     int pos(re_search(preg, s.c_str(), s.size(), 0, s.size(), NULL));
     if (pos < -1) {
@@ -62,6 +67,7 @@ Regexp::match(const vespalib::stringref & s) const
 
 vespalib::string Regexp::replace(const vespalib::stringref & s, const vespalib::stringref & replacement) const
 {
+    if ( ! valid() ) { return s; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
     vespalib::string modified;
     int prev(0);
@@ -82,7 +88,6 @@ Regexp::~Regexp()
 {
     regex_t *preg = static_cast<regex_t *>(_data);
     regfree(preg);
-    //free(preg->buffer);
     delete preg;
 }
 

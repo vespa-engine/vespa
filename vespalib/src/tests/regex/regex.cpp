@@ -8,6 +8,7 @@ using namespace vespalib;
 
 TEST("require that empty expression works as expected") {
     Regexp empty("");
+    EXPECT_TRUE(empty.valid());
     EXPECT_TRUE(empty.match(""));
     EXPECT_TRUE(empty.match("foo"));
     EXPECT_TRUE(empty.match("bar"));
@@ -35,13 +36,15 @@ TEST("require that it is case insentive") {
 }
 
 TEST("require that invalid expression fails compilation") {
-    try {
-        Regexp bad("[unbalanced");
-        EXPECT_TRUE(false);
-    } catch (Exception& e) {
-        EXPECT_TRUE(true);
-        fprintf(stderr, "got: %s\n", e.getMessage().c_str());
-    }
+    Regexp bad("[unbalanced");
+    EXPECT_FALSE(bad.valid());
+    EXPECT_FALSE(bad.match("nothing"));
+    EXPECT_EQUAL(vespalib::string("nothing"), bad.replace("nothing", "anything"));
+}
+
+TEST("require that * is not valid") {
+    Regexp bad("*");
+    EXPECT_FALSE(bad.valid());
 }
 
 TEST("require that replace works") {
