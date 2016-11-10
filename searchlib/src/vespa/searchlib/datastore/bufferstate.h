@@ -33,12 +33,17 @@ public:
     virtual ~BufferTypeBase();
     virtual void destroyElements(void *buffer, size_t numElements) = 0;
     virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) = 0;
-    virtual void cleanInitialElements(void *buffer) = 0;
+    // Return number of reserved elements at start of buffer, to avoid
+    // invalid reference and handle data at negative offset (alignment
+    // hacks) as used by dense tensor store.
+    virtual size_t getReservedElements(uint32_t bufferId) const;
+    // Initialize reserved elements at start of buffer.
+    virtual void initializeReservedElements(void *buffer, size_t reservedElements) = 0;
     virtual size_t elementSize() const = 0;
     virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len) = 0;
     uint32_t getClusterSize() const { return _clusterSize; }
     void flushLastUsed();
-    void onActive(const size_t *usedElems);
+    virtual void onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems, void *buffer);
     void onHold(const size_t *usedElems);
     virtual void onFree(size_t usedElems);
 
@@ -50,7 +55,7 @@ public:
      *
      * @return number of clusters to allocate for new buffer
      */
-    virtual size_t calcClustersToAlloc(size_t sizeNeeded, uint64_t clusterRefSize) const;
+    virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize) const;
 
     uint32_t getActiveBuffers() const { return _activeBuffers; }
 };
@@ -71,7 +76,7 @@ public:
 
     void destroyElements(void *buffer, size_t numElements) override;
     void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) override;
-    void cleanInitialElements(void *buffer) override;
+    void initializeReservedElements(void *buffer, size_t reservedElements) override;
     void cleanHold(void *buffer, uint64_t offset, uint64_t len) override;
     size_t elementSize() const override { return sizeof(EntryType); }
 };
@@ -107,10 +112,10 @@ BufferType<EntryType>::fallbackCopy(void *newBuffer,
 
 template <typename EntryType>
 void
-BufferType<EntryType>::cleanInitialElements(void *buffer)
+BufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedElems)
 {
     EntryType *e = static_cast<EntryType *>(buffer);
-    for (size_t j = _clusterSize; j != 0; --j) {
+    for (size_t j = reservedElems; j != 0; --j) {
         new (static_cast<void *>(e)) EntryType(_emptyEntry);
         ++e;
     }
@@ -251,7 +256,7 @@ public:
     uint64_t getDeadElems() const { return _deadElems; }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
-    void fallbackResize(uint64_t newSize, size_t maxClusters, void *&buffer, Alloc &holdBuffer);
+    void fallbackResize(uint32_t bufferId, uint64_t sizeNeeded, size_t maxClusters, void *&buffer, Alloc &holdBuffer);
 
     bool isActive(uint32_t typeId) const {
         return ((_state == ACTIVE) && (_typeId == typeId));

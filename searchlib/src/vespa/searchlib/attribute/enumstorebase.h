@@ -313,36 +313,23 @@ public:
 
     typedef std::set<Index, CompareEnumIndex> IndexSet;
 
-private:
-    void verifyBufferSize(uint64_t initBufferSize);
-
 protected:
 
     class EnumBufferType : public datastore::BufferType<char> {
     private:
-        uint64_t _initBufferSize; // in bytes
+        uint64_t _minSizeNeeded; // lower cap for sizeNeeded
+        uint64_t _deadElems;     // dead elements in active buffer
         bool _pendingCompact;
         bool _wantCompact;
     public:
-        EnumBufferType(uint64_t initBufferSize)
-            : datastore::BufferType<char>(Index::align(1),
-                    Index::offsetSize() / Index::align(1),
-                    Index::offsetSize() / Index::align(1)),
-              _initBufferSize(initBufferSize),
-              _pendingCompact(false),
-              _wantCompact(false)
-        {
+        EnumBufferType();
+
+        virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize) const override;
+
+        void setSizeNeededAndDead(uint64_t sizeNeeded, uint64_t deadElems) {
+            _minSizeNeeded = sizeNeeded;
+            _deadElems = deadElems;
         }
-        virtual size_t calcClustersToAlloc(size_t sizeNeeded,
-                uint64_t clusterRefSize) const {
-            (void) sizeNeeded;
-            uint64_t clusterSize = elementSize() * getClusterSize();
-            uint64_t wantedClustersToAlloc = _initBufferSize / clusterSize;
-            assert(_initBufferSize % clusterSize == 0);
-            ++wantedClustersToAlloc; // Index(0,0) is illegal
-            return std::min(wantedClustersToAlloc, clusterRefSize);
-        }
-        void setInitBufferSize(uint64_t newSize) { _initBufferSize = newSize; }
 
         virtual void
         onFree(size_t usedElems)
@@ -460,7 +447,6 @@ public:
     void trimHoldLists(generation_t firstUsed);
 
     static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
-    static uint64_t computeNewSize(uint64_t used, uint64_t dead, uint64_t needed);
 
     // Align buffers and entries to 4 bytes boundary.
     static uint64_t alignBufferSize(uint64_t val) {

@@ -16,20 +16,54 @@ namespace search
 
 using btree::BTreeNode;
 
-void
-EnumStoreBase::verifyBufferSize(uint64_t initBufferSize)
+EnumStoreBase::EnumBufferType::EnumBufferType()
+    : datastore::BufferType<char>(Index::align(1),
+                                  Index::offsetSize() / Index::align(1),
+                                  Index::offsetSize() / Index::align(1)),
+      _minSizeNeeded(0),
+      _deadElems(0),
+      _pendingCompact(false),
+      _wantCompact(false)
 {
-    uint64_t alignedInitBufferSize = alignBufferSize(initBufferSize);
-    if (alignedInitBufferSize > Index::offsetSize()) {
-        failNewSize(alignedInitBufferSize, Index::offsetSize());
+}
+
+size_t
+EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize) const
+{
+    size_t reservedElements = getReservedElements(bufferId);
+    sizeNeeded = std::max(sizeNeeded, _minSizeNeeded);
+    size_t usedElems = _activeUsedElems;
+    if (_lastUsedElems != NULL) {
+        usedElems += *_lastUsedElems;
     }
+    assert((usedElems % _clusterSize) == 0);
+    double growRatio = 1.5f;
+    uint64_t maxSize = clusterRefSize * _clusterSize;
+    uint64_t newSize = usedElems - _deadElems + sizeNeeded;
+    if (usedElems != 0) {
+        newSize *= growRatio;
+    }
+    newSize += reservedElements;
+    newSize = alignBufferSize(newSize);
+    assert((newSize % _clusterSize) == 0);
+    if (newSize <= maxSize) {
+        return newSize / _clusterSize;
+    }
+    newSize = usedElems - _deadElems + sizeNeeded + reservedElements + 1000000;
+    newSize = alignBufferSize(newSize);
+    assert((newSize % _clusterSize) == 0);
+    if (newSize <= maxSize) {
+        return clusterRefSize;
+    }
+    failNewSize(newSize, clusterRefSize * _clusterSize);
+    return 0;
 }
 
 EnumStoreBase::EnumStoreBase(uint64_t initBufferSize,
                              bool hasPostings)
     : _enumDict(NULL),
       _store(),
-      _type(alignBufferSize(initBufferSize)),
+      _type(),
       _nextEnum(0),
       _indexMap(),
       _toHoldBuffers(),
@@ -39,8 +73,8 @@ EnumStoreBase::EnumStoreBase(uint64_t initBufferSize,
         _enumDict = new EnumStoreDict<EnumPostingTree>(*this);
     else
         _enumDict = new EnumStoreDict<EnumTree>(*this);
-    verifyBufferSize(initBufferSize);
     _store.addType(&_type);
+    _type.setSizeNeededAndDead(initBufferSize, 0);
     _store.initActiveBuffers();
 }
 
@@ -54,10 +88,9 @@ EnumStoreBase::~EnumStoreBase()
 void
 EnumStoreBase::reset(uint64_t initBufferSize)
 {
-    verifyBufferSize(initBufferSize);
     _store.clearHoldLists();
     _store.dropBuffers();
-    _type.setInitBufferSize(alignBufferSize(initBufferSize));
+    _type.setSizeNeededAndDead(initBufferSize, 0);
     _store.initActiveBuffers();
     clearIndexMap();
     _enumDict->onReset();
@@ -130,13 +163,10 @@ EnumStoreBase::preCompact(uint64_t bytesNeeded)
     if (getBufferIndex(datastore::BufferState::FREE) == Index::numBuffers()) {
         return false;
     }
-    datastore::BufferState & activeBuf = _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
-
-    // allocate enough space in free buffer
-    uint64_t newSize = computeNewSize(activeBuf.size(), activeBuf._deadElems, bytesNeeded);
-    _type.setInitBufferSize(newSize);
+    uint32_t activeBufId = _store.getActiveBufferId(TYPE_ID);
+    datastore::BufferState & activeBuf = _store.getBufferState(activeBufId);
+    _type.setSizeNeededAndDead(bytesNeeded, activeBuf._deadElems);
     _toHoldBuffers = _store.startCompact(TYPE_ID);
-
     _indexMap.resize(_nextEnum);
     return true;
 }
@@ -146,26 +176,10 @@ void
 EnumStoreBase::fallbackResize(uint64_t bytesNeeded)
 {
     uint32_t activeBufId = _store.getActiveBufferId(TYPE_ID);
-    datastore::BufferState &activeBuf = _store.getBufferState(activeBufId);
-
-    // allocate enough space in free buffer
-    uint64_t newSize = computeNewSize(activeBuf.size(),
-                                      activeBuf._deadElems,
-                                      bytesNeeded);
-
-    uint64_t maxSize = Index::offsetSize();
-
-    uint64_t fallbackNewSize = newSize + activeBuf._deadElems + 16384;
-    fallbackNewSize = alignBufferSize(fallbackNewSize);
-    if (fallbackNewSize > maxSize)
-        fallbackNewSize = maxSize;
-    if (fallbackNewSize <= activeBuf._allocElems ||
-        fallbackNewSize < activeBuf._usedElems + bytesNeeded)
-        failNewSize(activeBuf._usedElems + bytesNeeded, maxSize);
-
-    _type.setInitBufferSize(alignBufferSize(fallbackNewSize));
+    size_t reservedElements = _type.getReservedElements(activeBufId);
+    _type.setSizeNeededAndDead(bytesNeeded, reservedElements);
     _type.setWantCompact();
-    _store.fallbackResize(activeBufId, fallbackNewSize);
+    _store.fallbackResize(activeBufId, bytesNeeded);
 }
 
 
@@ -197,25 +211,6 @@ EnumStoreBase::failNewSize(uint64_t minNewSize, uint64_t maxSize)
 {
     throw vespalib::IllegalStateException(vespalib::make_string("EnumStoreBase::failNewSize: Minimum new size (%" PRIu64 ") exceeds max size (%" PRIu64 ")", minNewSize, maxSize));
 }
-
-uint64_t
-EnumStoreBase::computeNewSize(uint64_t used, uint64_t dead, uint64_t needed)
-{
-    double growRatio = 1.5f;
-    uint64_t maxSize = Index::offsetSize();
-    uint64_t newSize = static_cast<uint64_t>
-                       ((used - dead + needed) * growRatio);
-    newSize = alignBufferSize(newSize);
-    if (newSize <= maxSize)
-        return newSize;
-    newSize = used - dead + needed + 1000000;
-    newSize = alignBufferSize(newSize);
-    if (newSize <= maxSize)
-        return maxSize;
-    failNewSize(newSize, maxSize);
-    return 0;
-}
-
 
 template <class Tree>
 void
