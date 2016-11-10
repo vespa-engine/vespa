@@ -24,7 +24,7 @@ Regexp::Flags::enableICASE()
     return *this;
 }
 
-void
+bool
 Regexp::compile(const vespalib::stringref & re, Flags flags)
 {
     re_set_syntax(flags.flags());
@@ -35,18 +35,14 @@ Regexp::compile(const vespalib::stringref & re, Flags flags)
     preg->allocated = 0;
     const char * error = re_compile_pattern(re.c_str(), re.size(), preg);
     if (error != 0) {
-        vespalib::string msg = make_string("invalid regexp '%s': %s", re.c_str(), error);
-        regfree(preg);
-        delete preg;
-        _data = nullptr;
-        throw IllegalArgumentException(msg);
+        LOG(warning, "invalid regexp '%s': %s", re.c_str(), error);
+        return false;
     }
     if (re_compile_fastmap(preg) != 0) {
-        regfree(preg);
-        delete preg;
-        _data = nullptr;
-        throw IllegalArgumentException("re_compile_fastmap failed");
+        LOG(warning, "re_compile_fastmap failed for regexp '%s'", re.c_str());
+        return false;
     }
+    return true;
 }
 
 
@@ -54,12 +50,7 @@ Regexp::Regexp(const vespalib::stringref & re, Flags flags)
     : _valid(false),
       _data(new regex_t)
 {
-    try {
-        compile(re, flags);
-        _valid = true;
-    } catch (const IllegalArgumentException & e) {
-        LOG(warning, e.what());
-    }
+    _valid = compile(re, flags);
 }
 
 bool
@@ -95,11 +86,9 @@ vespalib::string Regexp::replace(const vespalib::stringref & s, const vespalib::
 
 Regexp::~Regexp()
 {
-    if (_data != nullptr) {
-        regex_t *preg = static_cast<regex_t *>(_data);
-        regfree(preg);
-        delete preg;
-    }
+    regex_t *preg = static_cast<regex_t *>(_data);
+    regfree(preg);
+    delete preg;
 }
 
 namespace {

@@ -104,7 +104,7 @@ public:
 private:
     bool _valid;
     void *_data;
-    void compile(const vespalib::stringref & re, Flags flags);
+    bool compile(const vespalib::stringref & re, Flags flags);
 };
 
 } // namespace vespalib
