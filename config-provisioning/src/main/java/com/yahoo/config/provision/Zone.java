@@ -18,26 +18,35 @@ public class Zone {
 
     private final Environment environment;
     private final RegionName region;
+    private final SystemName systemName;
     private final FlavorDefaults flavorDefaults;
 
     @Inject
     public Zone(ConfigserverConfig configserverConfig) {
-        this(Environment.from(configserverConfig.environment()), RegionName.from(configserverConfig.region()),
-             new FlavorDefaults(configserverConfig));
+        this(SystemName.from(configserverConfig.system()), Environment.from(configserverConfig.environment()),
+                RegionName.from(configserverConfig.region()), new FlavorDefaults(configserverConfig));
     }
 
     /** Create from environment and region */
-    public Zone(Environment environment, RegionName region) { this(environment, region, "default"); }
-
-    /** Create from environment and region. Useful for testing. */
-    public Zone(Environment environment, RegionName region, String defaultFlavor) {
-        this(environment, region, new FlavorDefaults(defaultFlavor));
+    public Zone(Environment environment, RegionName region) {
+        this(SystemName.defaultSystem(), environment, region, "default");
     }
 
-    private Zone(Environment environment, RegionName region, FlavorDefaults flavorDefaults) {
+    /** Create from system, environment and region */
+    public Zone(SystemName systemName, Environment environment, RegionName region) {
+        this(systemName, environment, region, "default");
+    }
+
+    /** Create from environment and region. Useful for testing. */
+    public Zone(SystemName system, Environment environment, RegionName region, String defaultFlavor) {
+        this(system, environment, region, new FlavorDefaults(defaultFlavor));
+    }
+
+    private Zone(SystemName systemName, Environment environment, RegionName region, FlavorDefaults flavorDefaults) {
         this.environment = environment;
         this.region = region;
         this.flavorDefaults = flavorDefaults;
+        this.systemName = systemName;
     }
 
     /** Returns the current environment */
@@ -46,12 +55,15 @@ public class Zone {
     /** Returns the current region */
     public RegionName region() { return region; }
 
+    /** Returns the current system */
+    public SystemName system() { return systemName; }
+
     /** Returns the default hardware flavor to assign in this zone */
     public String defaultFlavor(ClusterSpec.Type clusterType) { return flavorDefaults.flavor(clusterType); }
 
     /** Do not use */
     public static Zone defaultZone() {
-        return new Zone(Environment.defaultEnvironment(), RegionName.defaultName());
+        return new Zone(SystemName.defaultSystem(), Environment.defaultEnvironment(), RegionName.defaultName());
     }
 
     @Override

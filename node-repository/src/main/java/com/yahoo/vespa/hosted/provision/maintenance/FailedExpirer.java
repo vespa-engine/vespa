@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -11,13 +12,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This moves nodes from failed back to dirty if
  * <ul>
  *     <li>No hardware failure is known to be detected on the node
- *     <li>The node has failed less than 5 times OR the environment is dev, test or perf,
+ *     <li>The node has failed less than 5 times OR the environment is dev, test or perf OR system is CI or CD,
  *     as those environments have no protection against users running bogus applications, so
  *     we cannot use the node failure count to conclude the node has a failure.
  * </ul>
@@ -56,6 +56,9 @@ public class FailedExpirer extends Expirer {
     }
 
     private boolean failCountIndicatesHwFail(Zone zone) {
+        if (zone.system() == SystemName.cd || zone.system() == SystemName.ci) {
+            return false;
+        }
         return zone.environment() == Environment.prod || zone.environment() == Environment.staging;
     }
 

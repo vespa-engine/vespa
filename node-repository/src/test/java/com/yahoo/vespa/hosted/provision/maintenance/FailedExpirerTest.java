@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
@@ -33,18 +34,17 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
  */
 public class FailedExpirerTest {
 
-    private Curator curator = new MockCurator();
+    private final Curator curator = new MockCurator();
 
     @Test
     public void ensure_failed_nodes_are_deallocated_in_prod() throws InterruptedException {
-        NodeRepository nodeRepository = failureScenarioIn(Environment.prod);
+        NodeRepository nodeRepository = failureScenarioIn(SystemName.main, Environment.prod);
 
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
         assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
@@ -53,14 +53,32 @@ public class FailedExpirerTest {
 
     @Test
     public void ensure_failed_nodes_are_deallocated_in_dev() throws InterruptedException {
-        NodeRepository nodeRepository = failureScenarioIn(Environment.dev);
+        NodeRepository nodeRepository = failureScenarioIn(SystemName.main, Environment.dev);
 
         assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
         assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
         assertEquals("node2", nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
     }
 
-    private NodeRepository failureScenarioIn(Environment environment) {
+    @Test
+    public void ensure_failed_nodes_are_deallocated_in_ci() throws InterruptedException {
+        NodeRepository nodeRepository = failureScenarioIn(SystemName.ci, Environment.prod);
+
+        assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
+        assertEquals("node2", nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
+    }
+
+    @Test
+    public void ensure_failed_nodes_are_deallocated_in_cd() throws InterruptedException {
+        NodeRepository nodeRepository = failureScenarioIn(SystemName.cd, Environment.prod);
+
+        assertEquals(1, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.dirty).size());
+        assertEquals("node2", nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname());
+    }
+
+    private NodeRepository failureScenarioIn(SystemName system, Environment environment) {
         ManualClock clock = new ManualClock();
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
@@ -109,7 +127,7 @@ public class FailedExpirerTest {
 
         // Failure times out
         clock.advance(Duration.ofDays(5));
-        new FailedExpirer(nodeRepository, new Zone(environment, RegionName.from("us-west-1")), clock, Duration.ofDays(4)).run();
+        new FailedExpirer(nodeRepository, new Zone(system, environment, RegionName.from("us-west-1")), clock, Duration.ofDays(4)).run();
 
         return nodeRepository;
     }
