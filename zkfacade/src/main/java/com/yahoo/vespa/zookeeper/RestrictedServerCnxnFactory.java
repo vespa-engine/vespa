@@ -11,6 +11,7 @@ import java.nio.channels.SocketChannel;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -29,33 +30,37 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
     
     @Override
     protected NIOServerCnxn createConnection(SocketChannel socket, SelectionKey selection) throws IOException {
+        ImmutableSet<String> allowedZooKeeperClients = findAllowedZooKeeperClients();
+        if (allowedZooKeeperClients.isEmpty()) return super.createConnection(socket, selection);
+        
         String remoteHost = ((InetSocketAddress)socket.getRemoteAddress()).getHostName();
-
-        Optional<ImmutableSet<String>> allowedZooKeeperClients = ZooKeeperServer.getAllowedClientHostnames();
-        if ( ! allowedZooKeeperClients.isPresent()) {
-            log.fine("Allowing connection to ZooKeeper from " + remoteHost + ", as allowed zooKeeper clients is not set");
-            return super.createConnection(socket, selection); // client checking is not activated
-        }
-
-        if ( ! remoteHost.equals("localhost") && ! allowedZooKeeperClients.get().contains(remoteHost)) {
+        if ( ! remoteHost.equals("localhost") && ! allowedZooKeeperClients.contains(remoteHost)) {
             String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
-                                  ": This cluster only allow connection from hosts in: " + allowedZooKeeperClients.get();
-            if ("true".equals(System.getenv("vespa_zkfacade__restrict"))) {
-                log.info(errorMessage);
-                throw new IllegalArgumentException(errorMessage);
-            }
-            else {
-                log.fine("Would reject if activated: " + errorMessage);
-            }
+                                  ": This cluster only allow connection from hosts in: " + allowedZooKeeperClients;
+            log.info(errorMessage);
+            throw new IllegalArgumentException(errorMessage); // log and throw as this exception will be suppressed by zk
         }
-        log.fine("Allowing connection to ZooKeeper from " + remoteHost + ", as it is in " + allowedZooKeeperClients.get());
+        log.fine(() -> "Allowing connection to ZooKeeper from " + remoteHost + ", as it is in " + allowedZooKeeperClients);
         return super.createConnection(socket, selection);
+    }
+
+    /** Returns the allowed client host names. If the list is empty any host is allowed. */
+    private ImmutableSet<String> findAllowedZooKeeperClients() {
+        // Environment has precedence. Note that this allows setting restrict to "" to turn off client restriction
+        String environmentAllowedZooKeeperClients = System.getenv("vespa_zkfacade__restrict");
+        if (environmentAllowedZooKeeperClients != null) 
+            return ImmutableSet.copyOf(toHostnameSet(environmentAllowedZooKeeperClients));
+
+        // No environment setting -> use static field
+        return ZooKeeperServer.getAllowedClientHostnames();
     }
 
     private Set<String> toHostnameSet(String commaSeparatedString) {
         Set<String> hostnames = new HashSet<>();
-        for (String hostname : commaSeparatedString.split(","))
-            hostnames.add(hostname.trim());
+        for (String hostname : commaSeparatedString.split(",")) {
+            if ( ! hostname.trim().isEmpty())
+                hostnames.add(hostname.trim());
+        }
         return hostnames;
     }
 
