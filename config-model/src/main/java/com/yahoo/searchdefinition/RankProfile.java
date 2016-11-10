@@ -927,7 +927,7 @@ public class RankProfile implements Serializable, Cloneable {
         private String attribute = null;
         private boolean ascending = false;
         private int maxHits = 0; // try to get this many hits before degrading the match phase
-        private double maxFilterCoverage = 1.0; // Max coverage of original corpus that will trigger the filter.
+        private double maxFilterCoverage = 0.2; // Max coverage of original corpus that will trigger the filter.
         private DiversitySettings diversity = null;
         private double evaluationPoint = 0.20;
         private double prePostFilterTippingPoint = 1.0;
