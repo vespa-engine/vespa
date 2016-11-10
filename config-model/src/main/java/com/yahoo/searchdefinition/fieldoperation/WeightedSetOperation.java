@@ -7,7 +7,7 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.document.WeightedSetDataType;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class WeightedSetOperation implements FieldOperation {
 
@@ -52,6 +52,13 @@ public class WeightedSetOperation implements FieldOperation {
         }
     }
 
+    @Override
+    public int compareTo(FieldOperation other) {
+        // this operation should be executed first because it modifies the type of weighted sets, and other
+        // operation depends on the type of the weighted set
+        return -1;
+    }
+    
     @Override
     public String toString() {
         return "WeightedSetOperation{" +

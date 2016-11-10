@@ -52,8 +52,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      */
     private int literalBoost=-1;
 
-    /** The weight of this field. This is a percentage,
-     * so 100 is default to provide the identity transform. */
+    /** 
+     * The weight of this field. This is a percentage,
+     * so 100 is default to provide the identity transform. 
+     */
     private int weight=100;
 
     /**
@@ -353,10 +355,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         pendingOperations.add(op);
     }
 
+    @Override
     public void applyOperations(SDField field) {
-        if (pendingOperations.isEmpty()) {
-            return;
-        }
+        if (pendingOperations.isEmpty()) return;
+
+        Collections.sort(pendingOperations);
         ListIterator<FieldOperation> ops = pendingOperations.listIterator();
         while (ops.hasNext()) {
             FieldOperation op = ops.next();

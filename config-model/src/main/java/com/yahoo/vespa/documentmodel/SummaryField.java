@@ -21,7 +21,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
      * This class represents a source (field name) and the type of the source (only used for smart summary)
      */
     public static class Source implements Serializable {
-        public static enum Type {
+        public enum Type {
             CONTEXTUAL("contextual"),
             TITLE("title"),
             STATIC("static"),
@@ -110,20 +110,20 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
     /** Creates a summary field with NONE as transform */
     public SummaryField(String name, DataType type) {
-        this(name,type,SummaryTransform.NONE);
+        this(name,type, SummaryTransform.NONE);
     }
 
     /** Creates a summary field with NONE as transform */
     public SummaryField(Field field) {
-        this(field,SummaryTransform.NONE);
+        this(field, SummaryTransform.NONE);
     }
 
 
-    public SummaryField(Field field,SummaryTransform transform) {
+    public SummaryField(Field field, SummaryTransform transform) {
         this(field.getName(), field.getDataType(), transform);
     }
 
-    public SummaryField(String name,DataType type,SummaryTransform transform) {
+    public SummaryField(String name, DataType type, SummaryTransform transform) {
         super(name, type);
         this.transform=transform;
     }
@@ -198,7 +198,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
     }
 
     private String toString(Collection<?> collection) {
-        StringBuffer buffer=new StringBuffer();
+        StringBuilder buffer=new StringBuilder();
         for (Iterator<?> i=collection.iterator(); i.hasNext(); ) {
             buffer.append(i.next().toString());
             if (i.hasNext())
@@ -221,16 +221,13 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         if (merge.isImplicit()) return this;
 
         if (!merge.getName().equals(getName()))
-            throw new IllegalArgumentException(merge + " conflicts with " + this +
-                                       ": different names");
+            throw new IllegalArgumentException(merge + " conflicts with " + this + ": different names");
 
         if (!merge.getTransform().equals(getTransform()))
-            throw new IllegalArgumentException(merge + " conflicts with " + this +
-                                       ": different transforms");
+            throw new IllegalArgumentException(merge + " conflicts with " + this + ": different transforms");
 
         if (!merge.getDataType().equals(getDataType()))
-            throw new IllegalArgumentException(merge + " conflicts with " + this +
-                                       ": different types");
+            throw new IllegalArgumentException(merge + " conflicts with " + this + ": different types");
 
         if (!merge.isImplicit())
             setImplicit(false);
@@ -243,7 +240,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         }
         else {
             throw new IllegalArgumentException(merge + " conflicts with " + this +
-                                       ": on source list must be the start of the other");
+                                               ": on source list must be the start of the other");
         }
 
         destinations.addAll(merge.destinations);
@@ -291,7 +288,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
             "', to '" + toString(destinations) + "']";
     }
 
-    /** returns a string which aids locating this field in the source search definition */
+    /** Returns a string which aids locating this field in the source search definition */
     public String toLocateString() {
         return "'summary " + getName() + " type " + toLowerCase(getDataType().getName()) + "' in '" + getDestinationString() + "'";
     }
@@ -330,6 +327,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
     /**
      * The command used when using data from this SummaryField to generate StreamingSummary config (vsmsummary).
      * Not used for ordinary Summary config.
+     * 
      * @author vegardh
      *
      */
@@ -347,4 +345,5 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
             return cmd;
         }
     }
+
 }

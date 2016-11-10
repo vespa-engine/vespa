@@ -6,13 +6,14 @@ import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.ObjectVisitor;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class WeightedSetDataType extends CollectionDataType {
+
     // The global class identifier shared with C++.
     public static int classId = registerClass(Ids.document + 55, WeightedSetDataType.class);
 
-    /** Should an arith operation to a non-existant member of a weightedset cause the member to be created */
+    /** Should an operation to a non-existent member of a weightedset cause the member to be created */
     private boolean createIfNonExistent = false;
 
     /** Should a member of a weightedset with weight 0 be removed */
@@ -23,7 +24,7 @@ public class WeightedSetDataType extends CollectionDataType {
 
     public WeightedSetDataType(DataType nestedType, boolean createIfNonExistent, boolean removeIfZero) {
         this(nestedType, createIfNonExistent, removeIfZero, 0);
-        if ((nestedType == STRING) && createIfNonExistent && removeIfZero) {
+        if ((nestedType == STRING) && createIfNonExistent && removeIfZero) { // the tag type definition
             setId(18);
         } else {
             setId(getName().toLowerCase().hashCode());
@@ -51,7 +52,8 @@ public class WeightedSetDataType extends CollectionDataType {
 
     /**
      * Called by SD parser if a data type is explicitly tag.
-     * @param tag True if this is a tag set.
+     * 
+     * @param tag true if this is a tag set.
      */
     public void setTag(boolean tag) {
         this.tag = tag;
@@ -59,18 +61,19 @@ public class WeightedSetDataType extends CollectionDataType {
 
     /**
      * Returns whether or not this is a <em>tag</em> type weighted set.
-     * @return True if this is a tag set.
+     * 
+     * @return true if this is a tag set.
      */
     public boolean isTag() {
         return tag;
     }
 
-    static private String createName(DataType nested, boolean createIfNonExistant, boolean removeIfZero) {
-        if (nested == DataType.STRING && createIfNonExistant && removeIfZero) {
+    static private String createName(DataType nested, boolean createIfNonExistent, boolean removeIfZero) {
+        if (nested == DataType.STRING && createIfNonExistent && removeIfZero) {
             return "tag";
         } else {
             String name = "WeightedSet<" + nested.getName() + ">";
-            if (createIfNonExistant) name += ";Add";
+            if (createIfNonExistent) name += ";Add";
             if (removeIfZero) name += ";Remove";
             return name;
         }
@@ -103,6 +106,7 @@ public class WeightedSetDataType extends CollectionDataType {
     public boolean removeIfZero() {
         return removeIfZero;
     }
+
     @Override
     public void visitMembers(ObjectVisitor visitor) {
         super.visitMembers(visitor);
@@ -111,8 +115,8 @@ public class WeightedSetDataType extends CollectionDataType {
     }
 
     @Override
-    public FieldPath buildFieldPath(String remainFieldName)
-    {
+    public FieldPath buildFieldPath(String remainFieldName) {
         return MapDataType.buildFieldPath(remainFieldName, getNestedType(), DataType.INT);
     }
+
 }

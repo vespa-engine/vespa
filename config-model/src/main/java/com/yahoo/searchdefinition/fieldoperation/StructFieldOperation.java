@@ -3,14 +3,16 @@ package com.yahoo.searchdefinition.fieldoperation;
 
 import com.yahoo.searchdefinition.document.SDField;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class StructFieldOperation implements FieldOperation, FieldOperationContainer {
+
     private String structFieldName;
     private List<FieldOperation> pendingOperations = new LinkedList<>();
 
@@ -28,14 +30,16 @@ public class StructFieldOperation implements FieldOperation, FieldOperationConta
         applyOperations(structField);
     }
 
+    @Override
     public void addOperation(FieldOperation op) {
         pendingOperations.add(op);
     }
 
+    @Override
     public void applyOperations(SDField field) {
-        if (pendingOperations.isEmpty()) {
-            return;
-        }
+        if (pendingOperations.isEmpty()) return;
+
+        Collections.sort(pendingOperations);
         ListIterator<FieldOperation> ops = pendingOperations.listIterator();
         while (ops.hasNext()) {
             FieldOperation op = ops.next();
@@ -44,7 +48,9 @@ public class StructFieldOperation implements FieldOperation, FieldOperationConta
         }
     }
 
+    @Override
     public String getName() {
         return structFieldName;
     }
+
 }

@@ -15,7 +15,7 @@ import java.util.*;
  * uses an encapsulated Map (actually a LinkedHashMap) that associates each key
  * with its weight (value).
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public final class WeightedSet<K extends FieldValue> extends CollectionFieldValue<K> implements Map<K, Integer> {
 

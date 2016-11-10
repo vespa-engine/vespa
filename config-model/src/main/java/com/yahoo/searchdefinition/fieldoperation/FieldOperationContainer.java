@@ -4,10 +4,16 @@ package com.yahoo.searchdefinition.fieldoperation;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public interface FieldOperationContainer {
-    public void addOperation(FieldOperation op);
-    public void applyOperations(SDField field);
-    public String getName();
+
+    /** Adds an operation */
+    void addOperation(FieldOperation op);
+
+    /** Apply all operations. Operations must be sorted in thjeir natural order before applying each operation. */
+    void applyOperations(SDField field);
+
+    String getName();
+
 }

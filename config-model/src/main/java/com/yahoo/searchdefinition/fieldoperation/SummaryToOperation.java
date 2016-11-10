@@ -7,9 +7,10 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SummaryToOperation implements FieldOperation {
+
     private Set<String> destinations = new java.util.LinkedHashSet<>();
     private String name;
 
@@ -36,4 +37,5 @@ public class SummaryToOperation implements FieldOperation {
             summary.addDestination(destination);
         }
     }
+
 }

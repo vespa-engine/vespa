@@ -4,9 +4,10 @@ package com.yahoo.searchdefinition.fieldoperation;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class AliasOperation implements FieldOperation {
+
     private String aliasedName;
     private String alias;
 
@@ -37,4 +38,5 @@ public class AliasOperation implements FieldOperation {
         }
         field.getAliasToName().put(alias, aliasedName);
     }
+
 }

@@ -4,8 +4,18 @@ package com.yahoo.searchdefinition.fieldoperation;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * An operation on a field. 
+ * Operations has a natural order of execution.
+ * 
+ * @author Einar M R Rosenvinge
  */
-public interface FieldOperation {
-    public void apply(SDField field);
+public interface FieldOperation extends Comparable<FieldOperation> {
+
+    void apply(SDField field);
+    
+    @Override
+    default int compareTo(FieldOperation other) {
+        return 0; // no order by default
+    }
+
 }
