@@ -9,7 +9,7 @@ package com.yahoo.vespa.model.admin.monitoring;
  */
 public class DefaultMetricsConsumer {
 
-    public static final String VESPA_CONSUMER_ID = "vespa";
+    public static final String VESPA_CONSUMER_ID = "Vespa";
 
     private static final MetricSet vespaMetricSet = new VespaMetricSet();
 

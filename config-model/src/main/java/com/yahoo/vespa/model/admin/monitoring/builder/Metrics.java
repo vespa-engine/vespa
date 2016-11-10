@@ -20,8 +20,12 @@ public class Metrics {
         consumers.put(consumer.getId(), consumer);
     }
 
-    public  Map<String, MetricsConsumer> getConsumers() {
+    public Map<String, MetricsConsumer> getConsumers() {
         return Collections.unmodifiableMap(consumers);
     }
 
+    public boolean hasConsumerIgnoreCase(String id) {
+        return consumers.keySet().stream()
+                .anyMatch(existing -> existing.equalsIgnoreCase(id));
+    }
 }

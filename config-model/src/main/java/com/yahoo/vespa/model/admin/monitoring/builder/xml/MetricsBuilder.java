@@ -32,8 +32,7 @@ public class MetricsBuilder {
         Metrics metrics = new Metrics();
         for (Element consumerElement : XML.getChildren(metricsElement, "consumer")) {
             String consumerId = consumerElement.getAttribute(ID_ATTRIBUTE);
-            if (consumerId.equals(VESPA_CONSUMER_ID))
-                throw new IllegalArgumentException("'vespa' is not allowed as metric consumer id.");
+            throwIfIllegalConsumerId(metrics, consumerId);
 
             MetricSet metricSet = buildMetricSet(consumerId, consumerElement);
             metrics.addConsumer(new MetricsConsumer(consumerId, metricSet));
@@ -55,6 +54,13 @@ public class MetricsBuilder {
 
     private static String metricSetId(String consumerName) {
         return "user-metrics-" + consumerName;
+    }
+
+    private void throwIfIllegalConsumerId(Metrics metrics, String consumerId) {
+        if (consumerId.equalsIgnoreCase(VESPA_CONSUMER_ID))
+            throw new IllegalArgumentException("'Vespa' is not allowed as metrics consumer id (case is ignored.)");
+        if (metrics.hasConsumerIgnoreCase(consumerId))
+            throw new IllegalArgumentException("'" + consumerId + "' is used as id for two metrics consumers (case is ignored.)");
     }
 
 }
