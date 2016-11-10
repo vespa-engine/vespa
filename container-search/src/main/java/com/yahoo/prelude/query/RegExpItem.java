@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query;
 
 import java.nio.ByteBuffer;
+import java.util.regex.Pattern;
 
 /**
  * Match a field with the contained regular expression.
@@ -10,10 +11,11 @@ import java.nio.ByteBuffer;
  */
 public class RegExpItem extends TermItem {
     private String expression;
+    private Pattern regexp;
 
     public RegExpItem(String indexName, boolean isFromQuery, String expression) {
         super(indexName, isFromQuery, null);
-        this.expression = expression;
+        setValue(expression);
     }
 
     @Override
@@ -33,6 +35,7 @@ public class RegExpItem extends TermItem {
 
     @Override
     public void setValue(String expression) {
+        regexp = Pattern.compile(expression);
         this.expression = expression;
     }
 
@@ -102,5 +105,7 @@ public class RegExpItem extends TermItem {
         }
         return true;
     }
+
+    public Pattern getRegexp() { return regexp; }
 
 }
