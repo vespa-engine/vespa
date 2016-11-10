@@ -28,7 +28,7 @@ public class RestApiTest {
 
     /** This test gives examples of all the requests that can be made to nodes/v2 */
     @Test
-    public void testRequests() throws Exception {
+    public void test_requests() throws Exception {
         // GET
         assertFile(new Request("http://localhost:8080/nodes/v2/"), "root.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/state/"), "states.json");
@@ -153,7 +153,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void post_with_patch_method_override_in_header_is_handled_as_patch() throws IOException  {
+    public void post_with_patch_method_override_in_header_is_handled_as_patch() throws Exception  {
         Request req = new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                 Utf8.toBytes("{\"currentRestartGeneration\": 1}"), Request.Method.POST);
         req.getHeaders().add("X-HTTP-Method-Override", "PATCH");
@@ -161,7 +161,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void post_with_invalid_method_override_in_header_gives_sane_error_message() throws IOException  {
+    public void post_with_invalid_method_override_in_header_gives_sane_error_message() throws Exception  {
         Request req = new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                 Utf8.toBytes("{\"currentRestartGeneration\": 1}"), Request.Method.POST);
         req.getHeaders().add("X-HTTP-Method-Override", "GET");
@@ -169,7 +169,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void fails_to_deallocate_node_with_hardware_failure() throws IOException {
+    public void fails_to_deallocate_node_with_hardware_failure() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                         ("[" + asNodeJson("host12.yahoo.com", "default") + "]").
                                 getBytes(StandardCharsets.UTF_8),
@@ -188,7 +188,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void testInvalidRequests() throws IOException {
+    public void test_invalid_requests() throws Exception {
         // Attempt to fail and ready an allocated node without going through dirty
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
@@ -237,7 +237,7 @@ public class RestApiTest {
 
 
     @Test
-    public void testNodePatching() throws IOException {
+    public void test_node_patching() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
                                    Utf8.toBytes("{" +
                                            "\"currentRestartGeneration\": 1," +
@@ -260,7 +260,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void testNodePatchToRemoveDockerReadyFields() throws IOException {
+    public void test_node_patch_to_remove_docker_ready_fields() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com",
                         Utf8.toBytes("{" +
                                 "\"currentVespaVersion\": \"\"," +
@@ -275,7 +275,7 @@ public class RestApiTest {
 
     /** Tests the rendering of each node separately to make it easier to find errors */
     @Test
-    public void testSingleNodeRendering() throws IOException {
+    public void test_single_node_rendering() throws Exception {
         for (int i = 1; i <= 10; i++) {
             if (i == 8 || i == 9) continue; // these nodes are added later
             assertFile(new Request("http://localhost:8080/nodes/v2/node/host" + i + ".yahoo.com"), "node" + i + ".json");
