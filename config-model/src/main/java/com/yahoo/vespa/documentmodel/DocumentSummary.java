@@ -11,23 +11,24 @@ import java.util.List;
 /**
  * A document summary definition - a list of summary fields.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class DocumentSummary extends FieldView {
 
-
     /**
-     * Will create a DocumentSummary with the given name.
+     * Creates a DocumentSummary with the given name.
+     * 
      * @param name The name to use for this summary.
      */
     public DocumentSummary(String name) {
         super(name);
     }
 
-   /**
+    /**
      * The model is constrained to ensure that summary fields of the same name
      * in different classes have the same summary transform, because this is
      * what is supported by the backend currently.
+     * 
      * @param summaryField The summaryfield to add
      */
     public void add(SummaryField summaryField) {
@@ -51,7 +52,7 @@ public class DocumentSummary extends FieldView {
      * Removes implicit fields which shouldn't be included.
      * This is implicitly added fields which are sources for
      * other fields. We then assume they are not intended to be added
-     * implicitly in additon.
+     * implicitly in addition.
      * This should be called when this summary is complete.
      */
     public void purgeImplicits() {

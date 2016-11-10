@@ -1,0 +1,15 @@
+search test {
+
+  document test {
+
+      field w type weightedset<string> {
+          summary-to: mysummary
+          weightedset {
+              create-if-nonexistent
+          }
+      
+      }
+
+  }
+
+}

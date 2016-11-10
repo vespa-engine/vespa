@@ -211,7 +211,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
         return new WeightedSetDataType(type, createIfNonExistent, removeIfZero);
     }
 
-    public java.lang.String getName() {
+    public String getName() {
         return name;
     }
 

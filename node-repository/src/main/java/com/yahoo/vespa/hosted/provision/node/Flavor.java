@@ -47,7 +47,8 @@ public class Flavor {
     /**
      * Get the monthly cost (total cost of ownership) in USD for this flavor, typically total cost
      * divided by 36 months.
-     * @return Monthly cost in USD
+     * 
+     * @return monthly cost in USD
      */
     public int cost() { return cost; }
     
@@ -65,7 +66,7 @@ public class Flavor {
 
     /**
      * Returns the canonical name of this flavor - which is the name which should be used as an interface to users.
-     * The canonical name of this flavor is
+     * The canonical name of this flavor is:
      * <ul>
      *   <li>If it replaces one flavor, the canonical name of the flavor it replaces
      *   <li>If it replaces multiple or no flavors - itself
@@ -122,7 +123,7 @@ public class Flavor {
     public String toString() { return "flavor '" + name + "'"; }
 
     public enum Type {
-        undefined, // Deafult value in config (node-repository.def)
+        undefined, // Default value in config (node-repository.def)
         BARE_METAL,
         VIRTUAL_MACHINE,
         DOCKER_CONTAINER

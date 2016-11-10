@@ -8,9 +8,10 @@ import com.yahoo.tensor.TensorType;
 import java.util.Optional;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class AttributeOperation implements FieldOperation, FieldOperationContainer {
+
     private final String name;
     private Boolean huge;
     private Boolean fastSearch;
@@ -28,16 +29,18 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         this.name = name;
     }
 
+    @Override
     public void addOperation(FieldOperation op) {
         //TODO: Implement this method:
 
     }
 
+    @Override
     public void applyOperations(SDField field) {
         //TODO: Implement this method:
-
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -150,4 +153,5 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
             attribute.setTensorType(tensorType.get());
         }
     }
+
 }
