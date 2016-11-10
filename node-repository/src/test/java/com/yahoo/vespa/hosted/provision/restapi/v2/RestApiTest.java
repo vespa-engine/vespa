@@ -188,6 +188,28 @@ public class RestApiTest {
     }
 
     @Test
+    public void patching_dirty_node_does_not_increase_reboot_generation() throws Exception {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson("foo.yahoo.com", "default") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/foo.yahoo.com",
+                        new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved foo.yahoo.com to failed\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/foo.yahoo.com",
+                        new byte[0], Request.Method.PUT),
+                "{\"message\":\"Moved foo.yahoo.com to dirty\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/foo.yahoo.com"),
+                "\"rebootGeneration\":1");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/foo.yahoo.com",
+                        Utf8.toBytes("{\"currentRebootGeneration\": 42}"), Request.Method.PATCH),
+                "{\"message\":\"Updated foo.yahoo.com\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/foo.yahoo.com"),
+                "\"rebootGeneration\":1");
+    }
+
+    @Test
     public void test_invalid_requests() throws Exception {
         // Attempt to fail and ready an allocated node without going through dirty
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",
