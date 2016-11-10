@@ -8,11 +8,12 @@ import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import org.w3c.dom.Element;
 
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
 
 /**
  * @author gjoranv
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class MetricsBuilder {
 
     private static final String ID_ATTRIBUTE = "id";
+
     private final Map<String, MetricSet> availableMetricSets;
 
     public MetricsBuilder(Map<String, MetricSet> availableMetricSets) {
@@ -30,6 +32,9 @@ public class MetricsBuilder {
         Metrics metrics = new Metrics();
         for (Element consumerElement : XML.getChildren(metricsElement, "consumer")) {
             String consumerId = consumerElement.getAttribute(ID_ATTRIBUTE);
+            if (consumerId.equals(VESPA_CONSUMER_ID))
+                throw new IllegalArgumentException("'vespa' is not allowed as metric consumer id.");
+
             MetricSet metricSet = buildMetricSet(consumerId, consumerElement);
             metrics.addConsumer(new MetricsConsumer(consumerId, metricSet));
         }

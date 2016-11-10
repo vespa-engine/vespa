@@ -13,14 +13,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.yahoo.vespa.model.admin.monitoring.DefaultMetricsConsumer.VESPA_CONSUMER_ID;
+
 /**
  * Helper class for parsing yamasmetric config.
+ *
+ * TODO: Remove when 'metric-consumers' under 'admin' is disallowed
  *
  * @author trygve
  * @since 5.1
  */
 public class DomMetricBuilderHelper {
 
+    private static final String LEGACY_DEFAULT_CONSUMER_ID = "yamas";
 
     /**
      * Build metricConsumer config
@@ -32,7 +37,7 @@ public class DomMetricBuilderHelper {
         Map<String, MetricsConsumer> metricsConsumers = new LinkedHashMap<>();
         List<Element> consumersElem = XML.getChildren(spec, "consumer");
         for (Element consumer : consumersElem) {
-            String consumerName = consumer.getAttribute("name");
+            String consumerName = getConsumerName(consumer);
             Set<Metric> metrics = new LinkedHashSet<>();
             List<Element> metricsEl = XML.getChildren(consumer, "metric");
             if (metricsEl != null) {
@@ -47,6 +52,15 @@ public class DomMetricBuilderHelper {
             metricsConsumers.put(consumerName, metricsConsumer);
         }
         return metricsConsumers;
+    }
+
+    // Converts the old default consumer id to the new default id.
+    private static String getConsumerName(Element consumerElement) {
+        String givenName = consumerElement.getAttribute("name");
+        if (givenName.equals(LEGACY_DEFAULT_CONSUMER_ID))
+            return VESPA_CONSUMER_ID;
+        else
+            return givenName;
     }
 
     private static String metricSetId(String consumerName) {
