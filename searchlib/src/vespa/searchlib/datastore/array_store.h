@@ -38,7 +38,7 @@ private:
     uint32_t _largeArrayTypeId;
 
     void initArrayTypes();
-    // 1-to-1 mapping between type ids and array sizes is enforced during initialization.
+    // 1-to-1 mapping between type ids and sizes for small arrays is enforced during initialization.
     uint32_t getTypeId(size_t arraySize) const { return arraySize; }
     size_t getArraySize(uint32_t typeId) const { return typeId; }
     EntryRef addSmallArray(const ConstArrayRef &array);

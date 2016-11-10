@@ -19,7 +19,7 @@ ArrayStore<EntryT, RefT>::initArrayTypes()
     for (uint32_t arraySize = 1; arraySize <= _maxSmallArraySize; ++arraySize) {
         _smallArrayTypes.push_back(std::make_unique<SmallArrayType>(arraySize, MIN_BUFFER_CLUSTERS, RefT::offsetSize()));
         uint32_t typeId = _store.addType(_smallArrayTypes.back().get());
-        assert(typeId == arraySize); // Enforce 1-to-1 mapping between type ids and array sizes.
+        assert(typeId == arraySize); // Enforce 1-to-1 mapping between type ids and sizes for small arrays
     }
 }
 
