@@ -33,8 +33,9 @@ EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t siz
     size_t reservedElements = getReservedElements(bufferId);
     sizeNeeded = std::max(sizeNeeded, _minSizeNeeded);
     size_t usedElems = _activeUsedElems;
-    if (_lastUsedElems != NULL)
+    if (_lastUsedElems != NULL) {
         usedElems += *_lastUsedElems;
+    }
     assert((usedElems % _clusterSize) == 0);
     double growRatio = 1.5f;
     uint64_t maxSize = clusterRefSize * _clusterSize;
