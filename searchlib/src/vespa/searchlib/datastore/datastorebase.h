@@ -183,7 +183,7 @@ protected:
     clearElemHoldList(void) = 0;
 
 public:
-    void
+    uint32_t
     addType(BufferTypeBase *typeHandler);
 
     void
