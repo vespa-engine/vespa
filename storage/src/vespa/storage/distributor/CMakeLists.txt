@@ -26,6 +26,7 @@ vespa_add_library(storage_distributor
     bucketgctimecalculator.cpp
     distributor_host_info_reporter.cpp
     latency_statistics_provider.cpp
+    ownership_transfer_safe_time_point_calculator.cpp
     $<TARGET_OBJECTS:storage_distributoroperation>
     $<TARGET_OBJECTS:storage_distributoroperationexternal>
     $<TARGET_OBJECTS:storage_distributoroperationidealstate>

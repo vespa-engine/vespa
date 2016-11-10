@@ -27,6 +27,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _maxVisitorsPerNodePerClientVisitor(4),
       _minBucketsPerVisitor(5),
       _minTimeLeftToResend(20),
+      _maxClusterClockSkew(0),
       _doInlineSplit(true),
       _enableJoinForSiblingLessBuckets(false),
       _enableInconsistentJoin(false),
@@ -145,6 +146,11 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 
     configureMaintenancePriorities(config);
+
+    if (config.maxClusterClockSkewSec >= 0) {
+        _maxClusterClockSkew = std::chrono::seconds(
+                config.maxClusterClockSkewSec);
+    }
     
     LOG(debug,
         "Distributor now using new configuration parameters. Split limits: %d docs/%d bytes. "

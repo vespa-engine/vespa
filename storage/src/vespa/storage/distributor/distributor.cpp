@@ -8,6 +8,7 @@
 #include <vespa/storage/distributor/blockingoperationstarter.h>
 #include <vespa/storage/distributor/throttlingoperationstarter.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
+#include <vespa/storage/distributor/ownership_transfer_safe_time_point_calculator.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 
@@ -99,7 +100,10 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _maintenanceStats(),
       _bucketDbStats(),
       _hostInfoReporter(_pendingMessageTracker.getLatencyStatisticsProvider(),
-                        *this)
+                        *this),
+      _ownershipSafeTimeCalc(
+            std::make_unique<OwnershipTransferSafeTimePointCalculator>(
+                std::chrono::seconds(0))) // Set by config later
 {
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook,
@@ -367,6 +371,17 @@ Distributor::enableClusterState(const lib::ClusterState& state)
                 _maintenanceOperationOwner.erase(msgIds[j]);
             }
         }
+    }
+
+    if (_bucketDBUpdater.bucketOwnershipHasChanged()) {
+        using TimePoint = OwnershipTransferSafeTimePointCalculator::TimePoint;
+        // Note: this assumes that std::chrono::system_clock and the framework
+        // system clock have the same epoch, which should be a reasonable
+        // assumption.
+        const auto now = TimePoint(std::chrono::milliseconds(
+                _component.getClock().getTimeInMillis().getTime()));
+        _externalOperationHandler.rejectFeedBeforeTimeReached(
+                _ownershipSafeTimeCalc->safeTimePoint(now));
     }
 }
 
@@ -647,6 +662,8 @@ Distributor::enableNextConfig()
             getConfig().getEnableHostInfoReporting());
     _bucketDBMetricUpdater.setMinimumReplicaCountingMode(
             getConfig().getMinimumReplicaCountingMode());
+    _ownershipSafeTimeCalc->setMaxClusterClockSkew(
+            getConfig().getMaxClusterClockSkew());
 }
 
 void

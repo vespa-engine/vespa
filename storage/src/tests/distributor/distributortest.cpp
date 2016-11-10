@@ -44,6 +44,7 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(replicaCountingModeConfigIsPropagatedToMetricUpdater);
     CPPUNIT_TEST(bucketActivationIsEnabledByDefault);
     CPPUNIT_TEST(bucketActivationConfigIsPropagatedToDistributorConfiguration);
+    CPPUNIT_TEST(max_clock_skew_config_is_propagated_to_distributor_config);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -68,6 +69,7 @@ protected:
     void replicaCountingModeConfigIsPropagatedToMetricUpdater();
     void bucketActivationIsEnabledByDefault();
     void bucketActivationConfigIsPropagatedToDistributorConfiguration();
+    void max_clock_skew_config_is_propagated_to_distributor_config();
 
 public:
     void setUp() {
@@ -683,6 +685,22 @@ Distributor_Test::bucketActivationConfigIsPropagatedToDistributorConfiguration()
     getConfig().configure(builder);
 
     CPPUNIT_ASSERT(getConfig().isBucketActivationDisabled());
+}
+
+void
+Distributor_Test::max_clock_skew_config_is_propagated_to_distributor_config()
+{
+    using namespace vespa::config::content::core;
+    using ConfigBuilder = StorDistributormanagerConfigBuilder;
+
+    setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+
+    ConfigBuilder builder;
+    builder.maxClusterClockSkewSec = 5;
+    getConfig().configure(builder);
+
+    CPPUNIT_ASSERT(getConfig().getMaxClusterClockSkew()
+                   == std::chrono::seconds(5));
 }
 
 }

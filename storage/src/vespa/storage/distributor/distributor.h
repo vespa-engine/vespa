@@ -35,6 +35,7 @@ class SimpleMaintenanceScanner;
 class BlockingOperationStarter;
 class ThrottlingOperationStarter;
 class BucketPriorityDatabase;
+class OwnershipTransferSafeTimePointCalculator;
 
 class Distributor : public StorageLink,
                     public DistributorInterface,
@@ -298,6 +299,7 @@ private:
     SimpleMaintenanceScanner::PendingMaintenanceStats _maintenanceStats;
     BucketDBMetricUpdater::Stats _bucketDbStats;
     DistributorHostInfoReporter _hostInfoReporter;
+    std::unique_ptr<OwnershipTransferSafeTimePointCalculator> _ownershipSafeTimeCalc;
 };
 
 } // distributor

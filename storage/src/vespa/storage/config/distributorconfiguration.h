@@ -5,6 +5,7 @@
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/storage/common/storagecomponent.h>
+#include <chrono>
 
 namespace storage {
 
@@ -225,6 +226,9 @@ public:
     bool isBucketActivationDisabled() const noexcept {
         return _disableBucketActivation;
     }
+    std::chrono::seconds getMaxClusterClockSkew() const noexcept {
+        return _maxClusterClockSkew;
+    }
     
 private:
     DistributorConfiguration(const DistributorConfiguration& other);
@@ -256,6 +260,7 @@ private:
     int64_t  _minTimeLeftToResend;
 
     MaintenancePriorities _maintenancePriorities;
+    std::chrono::seconds _maxClusterClockSkew;
 
     bool _doInlineSplit;
     bool _enableJoinForSiblingLessBuckets;
