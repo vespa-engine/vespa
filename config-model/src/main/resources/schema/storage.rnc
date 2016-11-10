@@ -109,7 +109,7 @@ FleetController20 = element fleetcontroller {
 
 # Common definitions for v2.0 and v3.0
 
-Metrics = element metrics { element log { text }* }
+StorageMetrics = element metrics { element log { text }* }
 
 Disk = element disk {
     attribute index { xsd:nonNegativeInteger } &
@@ -166,7 +166,7 @@ Storage30 = element storage {
       GenericConfig* &
       ( FleetController | FleetControllers ) &
       ClusterParamsV30? &
-      Metrics? &
+      StorageMetrics? &
       OperationsLog20? &
       Tuning20? &
       Merges? &

@@ -11,7 +11,7 @@ AdminV2 =
    FileDistribution? &
    AdminSlobroks? &
    AdminYamas? &
-   MetricConsumers? &
+   (LegacyMetricConsumers | Metrics)? &
    ClusterControllers?
  }
 
@@ -27,7 +27,7 @@ AdminV4 =
     AdminV4Slobroks? &
     AdminV4LogServers? &
     AdminYamas? &
-    MetricConsumers?
+    (LegacyMetricConsumers | Metrics)?
   }
 
 AdminV4Slobroks =
@@ -79,7 +79,15 @@ FileDistribution = element filedistribution {
    element downloadbitrate { xsd:string { pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }?
 }
 
-MetricConsumers = element metric-consumers {
+Metrics = element metrics {
+    element consumer {
+        attribute id { xsd:Name } &
+        element metric-set { attribute id { xsd:Name } }* &
+        element metric { attribute id { xsd:Name } }*
+    }+
+}
+
+LegacyMetricConsumers = element metric-consumers {
     element consumer {
         attribute name { xsd:string { pattern = "[a-zA-Z][_a-zA-Z0-9]*" } }&
         element metric {
