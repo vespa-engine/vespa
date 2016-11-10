@@ -36,10 +36,12 @@ PendingClusterState::PendingClusterState(
       _clock(clock),
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
-      _sender(sender)
+      _sender(sender),
+      _bucketOwnershipTransfer(distributorChanged(
+            _prevClusterState, _newClusterState))
 {
     logConstructionInformation();
-    if (distributorChanged(_prevClusterState, _newClusterState)) {
+    if (hasBucketOwnershipTransfer()) {
         markAllAvailableNodesAsRequiringRequest();
     } else {
         updateSetOfNodesThatAreOutdated();
@@ -63,7 +65,8 @@ PendingClusterState::PendingClusterState(
       _clock(clock),
       _clusterInfo(clusterInfo),
       _creationTimestamp(creationTimestamp),
-      _sender(sender)
+      _sender(sender),
+      _bucketOwnershipTransfer(true)
 {
     logConstructionInformation();
     markAllAvailableNodesAsRequiringRequest();

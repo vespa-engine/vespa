@@ -77,6 +77,9 @@ class BucketDBUpdaterTest : public CppUnit::TestFixture,
     CPPUNIT_TEST_DISABLED(clusterConfigDownsizeOnlySendsToAvailableNodes);
     CPPUNIT_TEST(changedDiskSetTriggersReFetch);
     CPPUNIT_TEST(nodeMissingFromConfigIsTreatedAsNeedingOwnershipTransfer);
+    CPPUNIT_TEST(changed_distributor_set_implies_ownership_transfer);
+    CPPUNIT_TEST(unchanged_distributor_set_implies_no_ownership_transfer);
+    CPPUNIT_TEST(changed_distribution_config_implies_ownership_transfer);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -124,6 +127,9 @@ protected:
     void clusterConfigDownsizeOnlySendsToAvailableNodes();
     void changedDiskSetTriggersReFetch();
     void nodeMissingFromConfigIsTreatedAsNeedingOwnershipTransfer();
+    void changed_distributor_set_implies_ownership_transfer();
+    void unchanged_distributor_set_implies_no_ownership_transfer();
+    void changed_distribution_config_implies_ownership_transfer();
 
     bool bucketExistsThatHasNode(int bucketCount, uint16_t node) const;
 
@@ -480,6 +486,57 @@ public:
                 "group[1].nodes[0].index 0\n"
                 "group[1].nodes[1].index 1\n"
                 "group[1].nodes[2].index 2\n");
+    }
+
+    struct PendingClusterStateFixture {
+        MessageSenderStub sender;
+        framework::defaultimplementation::FakeClock clock;
+        std::unique_ptr<PendingClusterState> state;
+
+        PendingClusterStateFixture(
+                BucketDBUpdaterTest& owner,
+                const std::string& oldClusterState,
+                const std::string& newClusterState)
+        {
+            std::shared_ptr<api::SetSystemStateCommand> cmd(
+                    new api::SetSystemStateCommand(
+                        lib::ClusterState(newClusterState)));
+
+            ClusterInformation::CSP clusterInfo(
+                    owner.createClusterInfo(oldClusterState));
+
+            std::unordered_set<uint16_t> outdatedNodes;
+            state = PendingClusterState::createForClusterStateChange(
+                    clock, clusterInfo, sender, cmd, outdatedNodes,
+                    api::Timestamp(1));
+        }
+
+        PendingClusterStateFixture(
+                BucketDBUpdaterTest& owner,
+                const std::string& oldClusterState)
+        {
+            ClusterInformation::CSP clusterInfo(
+                    owner.createClusterInfo(oldClusterState));
+
+            std::unordered_set<uint16_t> outdatedNodes;
+            state = PendingClusterState::createForDistributionChange(
+                    clock, clusterInfo, sender, api::Timestamp(1));
+        }
+    };
+
+    auto createPendingStateFixtureForStateChange(
+            const std::string& oldClusterState,
+            const std::string& newClusterState)
+    {
+        return std::make_unique<PendingClusterStateFixture>(
+                *this, oldClusterState, newClusterState);
+    }
+
+    auto createPendingStateFixtureForDistributionChange(
+            const std::string& oldClusterState)
+    {
+        return std::make_unique<PendingClusterStateFixture>(
+                *this, oldClusterState);
     }
 };
 
@@ -1362,33 +1419,21 @@ BucketDBUpdaterTest::getSentNodes(
         const std::string& oldClusterState,
         const std::string& newClusterState)
 {
-    MessageSenderStub sender;
+    auto fixture = createPendingStateFixtureForStateChange(
+            oldClusterState, newClusterState);
 
-    std::shared_ptr<api::SetSystemStateCommand> cmd(
-            new api::SetSystemStateCommand(
-                    lib::ClusterState(newClusterState)));
-
-    framework::defaultimplementation::FakeClock clock;
-    ClusterInformation::CSP clusterInfo(createClusterInfo(oldClusterState));
-
-    std::unordered_set<uint16_t> outdatedNodes;
-    std::unique_ptr<PendingClusterState> state(
-            PendingClusterState::createForClusterStateChange(
-                    clock, clusterInfo, sender, cmd, outdatedNodes,
-                    api::Timestamp(1)));
-
-    sortSentMessagesByIndex(sender);
+    sortSentMessagesByIndex(fixture->sender);
 
     std::ostringstream ost;
-    for (uint32_t i = 0; i < sender.commands.size(); i++) {
-        RequestBucketInfoCommand* req =
-            dynamic_cast<RequestBucketInfoCommand*>(sender.commands[i].get());
+    for (uint32_t i = 0; i < fixture->sender.commands.size(); i++) {
+        RequestBucketInfoCommand& req(dynamic_cast<RequestBucketInfoCommand&>(
+                *fixture->sender.commands[i]));
 
         if (i > 0) {
             ost << ",";
         }
 
-        ost << req->getAddress()->getIndex();
+        ost << req.getAddress()->getIndex();
     }
 
     return ost.str();
@@ -2290,6 +2335,38 @@ BucketDBUpdaterTest::nodeMissingFromConfigIsTreatedAsNeedingOwnershipTransfer()
                              expectedMsgs, dummyBucketsToReturn);
 
     CPPUNIT_ASSERT_EQUAL((nodeVec{0, 1}), getSendSet());
+}
+
+void
+BucketDBUpdaterTest::changed_distributor_set_implies_ownership_transfer()
+{
+    auto fixture = createPendingStateFixtureForStateChange(
+            "distributor:2 storage:2", "distributor:1 storage:2");
+    CPPUNIT_ASSERT(fixture->state->hasBucketOwnershipTransfer());
+
+    fixture = createPendingStateFixtureForStateChange(
+            "distributor:2 storage:2", "distributor:2 .1.s:d storage:2");
+    CPPUNIT_ASSERT(fixture->state->hasBucketOwnershipTransfer());
+}
+
+void
+BucketDBUpdaterTest::unchanged_distributor_set_implies_no_ownership_transfer()
+{
+    auto fixture = createPendingStateFixtureForStateChange(
+            "distributor:2 storage:2", "distributor:2 storage:1");
+    CPPUNIT_ASSERT(!fixture->state->hasBucketOwnershipTransfer());
+
+    fixture = createPendingStateFixtureForStateChange(
+            "distributor:2 storage:2", "distributor:2 storage:2 .1.s:d");
+    CPPUNIT_ASSERT(!fixture->state->hasBucketOwnershipTransfer());
+}
+
+void
+BucketDBUpdaterTest::changed_distribution_config_implies_ownership_transfer()
+{
+    auto fixture = createPendingStateFixtureForDistributionChange(
+            "distributor:2 storage:2");
+    CPPUNIT_ASSERT(fixture->state->hasBucketOwnershipTransfer());
 }
 
 } // distributor
