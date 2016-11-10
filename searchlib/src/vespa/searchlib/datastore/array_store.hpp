@@ -4,7 +4,8 @@
 
 #include "array_store.h"
 #include "datastore.hpp"
-#include <tr1/type_traits>
+#include <vespa/vespalib/util/traits.h>
+#include <type_traits>
 
 namespace search {
 namespace datastore {
@@ -60,14 +61,14 @@ namespace {
 
 template <typename EntryT>
 void
-allocInBuffer(EntryT *buf, const vespalib::ConstArrayRef<EntryT> &array, std::tr1::true_type)
+allocInBuffer(EntryT *buf, const vespalib::ConstArrayRef<EntryT> &array, std::true_type)
 {
     memcpy(buf, array.begin(), (sizeof(EntryT)*array.size()));
 }
 
 template <typename EntryT>
 void
-allocInBuffer(EntryT *buf, const vespalib::ConstArrayRef<EntryT> &array, std::tr1::false_type)
+allocInBuffer(EntryT *buf, const vespalib::ConstArrayRef<EntryT> &array, std::false_type)
 {
     for (size_t i = 0; i < array.size(); ++i) {
         new (static_cast<void *>(buf + i)) EntryT(array[i]);
@@ -87,7 +88,7 @@ ArrayStore<EntryT, RefT>::addSmallArray(const ConstArrayRef &array)
     assert(state._state == BufferState::ACTIVE);
     size_t oldBufferSize = state.size();
     EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
-    allocInBuffer(buf, array, std::tr1::has_trivial_destructor<EntryT>());
+    allocInBuffer(buf, array, vespalib::can_skip_destruction<EntryT>());
     state.pushed_back(array.size());
     return RefT((oldBufferSize / array.size()), activeBufferId);
 }

@@ -4,9 +4,9 @@
 LOG_SETUP("array_store_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/traits.h>
 #include <vespa/searchlib/datastore/array_store.hpp>
 #include <vector>
-#include <tr1/type_traits>
 
 using namespace search::datastore;
 
@@ -34,8 +34,8 @@ using StringFixture = Fixture<std::string>;
 
 TEST("require that we test with trivial and non-trivial types")
 {
-    EXPECT_TRUE(std::tr1::has_trivial_destructor<NumberFixture::value_type>::value);
-    EXPECT_FALSE(std::tr1::has_trivial_destructor<StringFixture::value_type>::value);
+    EXPECT_TRUE(vespalib::can_skip_destruction<NumberFixture::value_type>::value);
+    EXPECT_FALSE(vespalib::can_skip_destruction<StringFixture::value_type>::value);
 }
 
 TEST_F("require that we can add and get small arrays of trivial type", NumberFixture(3))
