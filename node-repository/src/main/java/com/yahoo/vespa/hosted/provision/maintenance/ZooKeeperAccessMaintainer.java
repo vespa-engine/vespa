@@ -9,7 +9,6 @@ import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Maintains the list of hosts that should be allowed to access ZooKeeper in this runtime.
@@ -24,7 +23,6 @@ import java.util.logging.Logger;
  */
 public class ZooKeeperAccessMaintainer extends Maintainer {
 
-    private static final Logger log = Logger.getLogger(ZooKeeperAccessMaintainer.class.getName());
     private final Curator curator;
     
     public ZooKeeperAccessMaintainer(NodeRepository nodeRepository, Curator curator, Duration maintenanceInterval) {
@@ -43,7 +41,6 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
         for (String hostPort : curator.connectionSpec().split(","))
             hosts.add(hostPort.split(":")[0]);
 
-        log.fine("Restricting ZooKeeper access to " + hosts);
         ZooKeeperServer.setAllowedClientHostnames(hosts);
     }
 
