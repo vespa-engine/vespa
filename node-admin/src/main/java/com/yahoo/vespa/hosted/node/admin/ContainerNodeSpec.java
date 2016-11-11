@@ -212,4 +212,97 @@ public class ContainerNodeSpec {
                     " }";
         }
     }
+
+    public static class Builder {
+        private String hostname;
+        private Optional<DockerImage> wantedDockerImage;
+        private ContainerName containerName;
+        private Node.State nodeState;
+        private String nodeType;
+        private String nodeFlavor;
+        private Optional<String> vespaVersion = Optional.empty();;
+        private Optional<Owner> owner = Optional.empty();;
+        private Optional<Membership> membership = Optional.empty();;
+        private Optional<Long> wantedRestartGeneration = Optional.empty();
+        private Optional<Long> currentRestartGeneration = Optional.empty();;
+        private Optional<Double> minCpuCores = Optional.of(1d);
+        private Optional<Double> minMainMemoryAvailableGb = Optional.of(1d);
+        private Optional<Double> minDiskAvailableGb = Optional.of(1d);
+
+        public Builder hostname(String hostname) {
+            this.hostname = hostname;
+            return this;
+        }
+
+        public Builder wantedDockerImage(DockerImage wantedDockerImage) {
+            this.wantedDockerImage = Optional.of(wantedDockerImage);
+            return this;
+        }
+
+        public Builder containerName(ContainerName containerName) {
+            this.containerName = containerName;
+            return this;
+        }
+
+        public Builder nodeState(Node.State nodeState) {
+            this.nodeState = nodeState;
+            return this;
+        }
+        public Builder nodeType(String nodeType) {
+            this.nodeType = nodeType;
+            return this;
+        }
+
+        public Builder nodeFlavor(String nodeFlavor) {
+            this.nodeFlavor = nodeFlavor;
+            return this;
+        }
+
+        public Builder vespaVersion(Optional<String> vespaVersion) {
+            this.vespaVersion = vespaVersion;
+            return this;
+        }
+
+        public Builder owner(Optional<Owner> owner) {
+            this.owner = owner;
+            return this;
+        }
+
+        public Builder membership(Optional<Membership> membership) {
+            this.membership = membership;
+            return this;
+        }
+
+        public Builder wantedRestartGeneration(Optional<Long> wantedRestartGeneration) {
+            this.wantedRestartGeneration = wantedRestartGeneration;
+            return this;
+        }
+
+        public Builder currentRestartGeneration(Optional<Long> currentRestartGeneration) {
+            this.currentRestartGeneration = currentRestartGeneration;
+            return this;
+        }
+
+        public Builder minCpuCores(Optional<Double> minCpuCores) {
+            this.minCpuCores = minCpuCores;
+            return this;
+        }
+
+        public Builder minMainMemoryAvailableGb(Optional<Double> minMainMemoryAvailableGb) {
+            this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
+            return this;
+        }
+
+        public Builder minDiskAvailableGb(Optional<Double> minDiskAvailableGb) {
+            this.minDiskAvailableGb = minDiskAvailableGb;
+            return this;
+        }
+
+        public ContainerNodeSpec build() {
+            return new ContainerNodeSpec(hostname, wantedDockerImage, containerName, nodeState, nodeType, nodeFlavor,
+                                         vespaVersion, owner, membership, wantedRestartGeneration, currentRestartGeneration,
+                                         minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
+        }
+
+    }
 }
