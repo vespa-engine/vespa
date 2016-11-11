@@ -41,12 +41,15 @@
 
 #pragma once
 
+#include <cppunit/TestSuite.h>
+
 namespace vdstestlib {
 
 class CppUnitTestRunner {
 public:
     CppUnitTestRunner();
 
+    void listTests(const CppUnit::TestSuite *tests);
     int run(int argc, const char * const * argv);
 
 };

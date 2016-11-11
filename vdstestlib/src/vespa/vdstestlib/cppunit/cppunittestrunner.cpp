@@ -100,6 +100,12 @@ namespace {
     };
 }
 
+void CppUnitTestRunner::listTests(const TestSuite *tests) {
+    for (const auto & test : tests->getTests()) {
+        std::cout << test->getName() << std::endl;
+    }
+}
+
 CppUnitTestRunner::CppUnitTestRunner()
 {
     std::ios::sync_with_stdio();
@@ -108,7 +114,6 @@ CppUnitTestRunner::CppUnitTestRunner()
 int
 CppUnitTestRunner::run(int argc, const char * const * argv)
 {
-    std::cout << "Running cppunit tests.\n";
     CppUnit::TextUi::TestRunner runner;
     CppUnit::TestFactoryRegistry& registry(
             CppUnit::TestFactoryRegistry::getRegistry());
@@ -130,6 +135,9 @@ CppUnitTestRunner::run(int argc, const char * const * argv)
             logStartStop = true;
         } else if (arg == "--includestress") {
             includeStressTests = true;
+        } else if (arg == "--list") {
+            listTests(suite);
+            exit(0);
         } else if (argv[i][0] == '-') {
             std::cerr << "Illegal option " << arg << "\n";
             exit(1);
