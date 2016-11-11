@@ -27,6 +27,13 @@ struct Fixture
         ConstArrayRef output = store.get(ref);
         EXPECT_EQUAL(input, EntryVector(output.begin(), output.end()));
     }
+    EntryRef add(const EntryVector &input) {
+        return store.add(ConstArrayRef(input));
+    }
+    void assertBufferState(EntryRef ref, size_t expUsedElems, size_t expHoldElems) {
+        EXPECT_EQUAL(expUsedElems, store.bufferState(ref)._usedElems);
+        EXPECT_EQUAL(expHoldElems, store.bufferState(ref)._holdElems);
+    }
 };
 
 using NumberFixture = Fixture<uint32_t>;
@@ -64,6 +71,23 @@ TEST_F("require that we can add and get large arrays of non-trivial type", Strin
 {
     TEST_DO(f.assertAdd({"aa", "bb", "cc", "dd"}));
     TEST_DO(f.assertAdd({"ddd", "eee", "ffff", "gggg", "hhhh"}));
+}
+
+TEST_F("require that elements are put on hold when a small array is removed", NumberFixture(3))
+{
+    EntryRef ref = f.add({1,2,3});
+    TEST_DO(f.assertBufferState(ref, 3, 0));
+    f.store.remove(ref);
+    TEST_DO(f.assertBufferState(ref, 3, 3));
+}
+
+TEST_F("require that elements are put on hold when a large array is removed", NumberFixture(3))
+{
+    EntryRef ref = f.add({1,2,3,4});
+    // Note: The first buffer have the first element reserved -> we expect 2 elements used here.
+    TEST_DO(f.assertBufferState(ref, 2, 0));
+    f.store.remove(ref);
+    TEST_DO(f.assertBufferState(ref, 2, 1));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

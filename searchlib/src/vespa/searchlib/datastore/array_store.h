@@ -51,6 +51,10 @@ public:
     ~ArrayStore();
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const;
+    void remove(EntryRef ref);
+
+    // Should only be used for unit testing
+    const BufferState &bufferState(EntryRef ref) const;
 };
 
 }

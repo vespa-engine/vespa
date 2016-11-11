@@ -38,6 +38,7 @@ ArrayStore<EntryT, RefT>::ArrayStore(uint32_t maxSmallArraySize)
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::~ArrayStore()
 {
+    _store.clearHoldLists();
     _store.dropBuffers();
 }
 
@@ -121,6 +122,30 @@ ArrayStore<EntryT, RefT>::getLargeArray(RefT ref) const
     const LargeArray *buf = _store.template getBufferEntry<LargeArray>(ref.bufferId(), ref.offset());
     assert(buf->size() > 0);
     return ConstArrayRef(&(*buf)[0], buf->size());
+}
+
+template <typename EntryT, typename RefT>
+void
+ArrayStore<EntryT, RefT>::remove(EntryRef ref)
+{
+    if (ref.valid()) {
+        RefT internalRef(ref);
+        uint32_t typeId = _store.getTypeId(internalRef.bufferId());
+        if (typeId != _largeArrayTypeId) {
+            size_t arraySize = getArraySize(typeId);
+            _store.holdElem(ref, arraySize);
+        } else {
+            _store.holdElem(ref, 1);
+        }
+    }
+}
+
+template <typename EntryT, typename RefT>
+const BufferState &
+ArrayStore<EntryT, RefT>::bufferState(EntryRef ref) const
+{
+    RefT internalRef(ref);
+    return _store.getBufferState(internalRef.bufferId());
 }
 
 }
