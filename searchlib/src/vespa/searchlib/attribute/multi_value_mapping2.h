@@ -9,6 +9,9 @@
 namespace search {
 namespace attribute {
 
+/**
+ * Class for mapping from from document id to an array of values.
+ */
 template <typename EntryT, typename RefT = datastore::EntryRefT<17> >
 class MultiValueMapping2
 {

@@ -10,7 +10,7 @@ LOG_SETUP("multivaluemapping2_test");
 
 template <typename EntryT>
 void
-assertArray(std::vector<EntryT> exp, vespalib::ConstArrayRef<EntryT> values)
+assertArray(const std::vector<EntryT> &exp, vespalib::ConstArrayRef<EntryT> values)
 {
     EXPECT_EQUAL(exp, std::vector<EntryT>(values.cbegin(), values.cend()));
 }
@@ -29,9 +29,9 @@ public:
     }
     ~Fixture() { }
 
-    void set(uint32_t docId, std::vector<EntryT> values) { _mvMapping.set(docId, values); }
+    void set(uint32_t docId, const std::vector<EntryT> &values) { _mvMapping.set(docId, values); }
     ConstArrayRef get(uint32_t docId) { return _mvMapping.get(docId); }
-    void assertGet(uint32_t docId, std::vector<EntryT> exp)
+    void assertGet(uint32_t docId, const std::vector<EntryT> &exp)
     {
         ConstArrayRef act = get(docId);
         EXPECT_EQUAL(exp, std::vector<EntryT>(act.cbegin(), act.cend()));
