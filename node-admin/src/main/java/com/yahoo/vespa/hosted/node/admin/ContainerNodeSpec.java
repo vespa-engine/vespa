@@ -42,6 +42,12 @@ public class ContainerNodeSpec {
             final Optional<Double> minCpuCores,
             final Optional<Double> minMainMemoryAvailableGb,
             final Optional<Double> minDiskAvailableGb) {
+        Objects.requireNonNull(hostname);
+        Objects.requireNonNull(containerName);
+        Objects.requireNonNull(nodeState);
+        Objects.requireNonNull(nodeType);
+        Objects.requireNonNull(nodeFlavor);
+
         this.hostname = hostname;
         this.wantedDockerImage = wantedDockerImage;
         this.containerName = containerName;
@@ -215,16 +221,16 @@ public class ContainerNodeSpec {
 
     public static class Builder {
         private String hostname;
-        private Optional<DockerImage> wantedDockerImage;
+        private Optional<DockerImage> wantedDockerImage = Optional.empty();
         private ContainerName containerName;
         private Node.State nodeState;
         private String nodeType;
         private String nodeFlavor;
-        private Optional<String> vespaVersion = Optional.empty();;
-        private Optional<Owner> owner = Optional.empty();;
-        private Optional<Membership> membership = Optional.empty();;
+        private Optional<String> vespaVersion = Optional.empty();
+        private Optional<Owner> owner = Optional.empty();
+        private Optional<Membership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
-        private Optional<Long> currentRestartGeneration = Optional.empty();;
+        private Optional<Long> currentRestartGeneration = Optional.empty();
         private Optional<Double> minCpuCores = Optional.of(1d);
         private Optional<Double> minMainMemoryAvailableGb = Optional.of(1d);
         private Optional<Double> minDiskAvailableGb = Optional.of(1d);
