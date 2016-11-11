@@ -39,10 +39,10 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.21.0
+ * @author Einar M R Rosenvinge
  */
 public class StandaloneContainerActivator implements BundleActivator {
+
     @Override
     public void start(BundleContext bundleContext) throws Exception {
         Container container = getContainer();
@@ -73,8 +73,6 @@ public class StandaloneContainerActivator implements BundleActivator {
                 Function.<Path>identity(),
                 StandaloneContainerActivator::getFileChannel));
     }
-
-
 
     private static FileChannel getFileChannel(Path path) {
         try {
@@ -179,6 +177,7 @@ public class StandaloneContainerActivator implements BundleActivator {
             };
         }
     }
+
     public static class DummyOsgiFramework implements OsgiFramework {
         @Override
         public List<Bundle> installBundle(String bundleLocation) {
@@ -213,4 +212,5 @@ public class StandaloneContainerActivator implements BundleActivator {
         public void stop() {
         }
     }
+
 }

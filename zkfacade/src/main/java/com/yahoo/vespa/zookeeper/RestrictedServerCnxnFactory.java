@@ -31,17 +31,17 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
     @Override
     protected NIOServerCnxn createConnection(SocketChannel socket, SelectionKey selection) throws IOException {
         ImmutableSet<String> allowedZooKeeperClients = findAllowedZooKeeperClients();
-        if (allowedZooKeeperClients.isEmpty()) return super.createConnection(socket, selection);
-        
         String remoteHost = ((InetSocketAddress)socket.getRemoteAddress()).getHostName();
-        if ( ! remoteHost.equals("localhost") && ! allowedZooKeeperClients.contains(remoteHost)) {
-            String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
-                                  ": This cluster only allow connection from hosts in: " + allowedZooKeeperClients;
-            log.info(errorMessage);
-            throw new IllegalArgumentException(errorMessage); // log and throw as this exception will be suppressed by zk
-        }
-        log.fine(() -> "Allowing connection to ZooKeeper from " + remoteHost + ", as it is in " + allowedZooKeeperClients);
-        return super.createConnection(socket, selection);
+
+        if (isLocalHost(remoteHost)) return super.createConnection(socket, selection); // always allow localhost
+        if (allowedZooKeeperClients.isEmpty()) return super.createConnection(socket, selection); // inactive: allow all
+        if (allowedZooKeeperClients.contains(remoteHost)) return super.createConnection(socket, selection); // allowed
+
+        // Not allowed: Reject connection
+        String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
+                              ": This cluster only allow connection from hosts in: " + allowedZooKeeperClients;
+        log.info(errorMessage);
+        throw new IllegalArgumentException(errorMessage); // log and throw as this exception will be suppressed by zk
     }
 
     /** Returns the allowed client host names. If the list is empty any host is allowed. */
@@ -64,4 +64,10 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
         return hostnames;
     }
 
+    private boolean isLocalHost(String remoteHost) {
+        if (remoteHost.equals("localhost")) return true;
+        if (remoteHost.equals("localhost.localdomain")) return true;
+        return false;
+    }
+    
 }
