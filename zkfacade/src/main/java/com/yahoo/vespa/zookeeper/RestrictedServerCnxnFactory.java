@@ -1,6 +1,7 @@
 package com.yahoo.vespa.zookeeper;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.net.HostName;
 import org.apache.zookeeper.server.NIOServerCnxn;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 
@@ -9,9 +10,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -67,6 +66,7 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
     private boolean isLocalHost(String remoteHost) {
         if (remoteHost.equals("localhost")) return true;
         if (remoteHost.equals("localhost.localdomain")) return true;
+        if (remoteHost.equals(HostName.getLocalhost())) return true;
         return false;
     }
     
