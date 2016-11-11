@@ -81,6 +81,7 @@ vespa_define_module(
     src/tests/attribute/enumstore
     src/tests/attribute/extendattributes
     src/tests/attribute/guard
+    src/tests/attribute/multi_value_mapping2
     src/tests/attribute/multivaluemapping
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute

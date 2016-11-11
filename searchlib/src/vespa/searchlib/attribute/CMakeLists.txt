@@ -51,6 +51,7 @@ vespa_add_library(searchlib_attribute OBJECT
     loadednumericvalue.cpp
     loadedstringvalue.cpp
     loadedvalue.cpp
+    multi_value_mapping2.cpp
     multienumattribute.cpp
     multienumattributesaver.cpp
     multinumericattribute.cpp
