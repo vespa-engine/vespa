@@ -47,7 +47,7 @@ import java.util.logging.Logger;
  * groupings. The resulting data can be fetched when the query has
  * completed.
  *
- * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
+ * @author Ulf Carlin
  */
 class VdsVisitor extends VisitorDataHandler implements Visitor {
 
@@ -82,9 +82,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
     }
 
-    public static interface VisitorSessionFactory {
-        public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
-        public LoadTypeSet getLoadTypeSet();
+    public interface VisitorSessionFactory {
+        VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
+        LoadTypeSet getLoadTypeSet();
     }
 
     private static class MessageBusVisitorSessionFactory implements VisitorSessionFactory {
@@ -431,4 +431,5 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         Grouping[] array = groupings.toArray(new Grouping[groupings.size()]);
         return Arrays.asList(array);
     }
+
 }

@@ -102,14 +102,13 @@ public class GetSearcher extends Searcher {
                     addDocumentHit(reply);
                 } catch (Exception e) {
                     String msg = "Got exception of type " + e.getClass().getName()
-                            + " during document deserialization: " + e.getMessage();
-                    errorHits.add(new DefaultErrorHit("GetSearcher",
-                            ErrorMessage.createInternalServerError(msg)));
+                                 + " during document deserialization: " + e.getMessage();
+                    errorHits.add(new DefaultErrorHit("GetSearcher", ErrorMessage.createInternalServerError(msg)));
                     log.log(LogLevel.DEBUG, "Got exception during document deserialization: " + stackTraceFromException(e));
                 }
             } else {
                 errorHits.add(new DefaultErrorHit("GetSearcher", new MessageBusErrorMessage(
-                        reply.getError(0).getCode(), 0, reply.getError(0).getMessage())));
+                              reply.getError(0).getCode(), 0, reply.getError(0).getMessage())));
                 if (log.isLoggable(LogLevel.DEBUG)) {
                     log.log(LogLevel.DEBUG, "Received error reply with message " + reply.getError(0).getMessage());
                 }
