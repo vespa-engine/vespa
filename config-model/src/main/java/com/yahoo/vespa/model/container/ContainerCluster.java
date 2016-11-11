@@ -360,12 +360,9 @@ public final class ContainerCluster
     }
 
     private Optional<String> getGlobalServiceId() {
-        Optional<String> globalServiceId = Optional.empty();
         Optional<DeploymentSpec> deploymentSpec = getDeploymentSpec();
-        if (deploymentSpec.isPresent()) {
-            globalServiceId = deploymentSpec.get().globalServiceId();
-        }
-        return globalServiceId;
+        if (deploymentSpec.isPresent()) return deploymentSpec.get().globalServiceId();
+        return Optional.empty();
     }
 
     private Set<Rotation> getRotations() {
@@ -403,7 +400,7 @@ public final class ContainerCluster
     }
 
     private void setRotations(Container container, Set<Rotation> rotations, Optional<String> globalServiceId, String containerClusterName) {
-        if (!rotations.isEmpty() && globalServiceId.isPresent()) {
+        if ( ! rotations.isEmpty() && globalServiceId.isPresent()) {
             if (containerClusterName.equals(globalServiceId.get())) {
                 container.setProp("rotations", rotations.stream().map(Rotation::getId).collect(Collectors.joining(",")));
             }

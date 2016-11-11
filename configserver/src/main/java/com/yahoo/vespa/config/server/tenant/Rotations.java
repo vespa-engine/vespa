@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * @author hmusum
  * @author bratseth
  */
-// TODO: This should be owned by the correct Tenant object
+// TODO: This should be owned by the correct Tenant object and the rotations set should be contained in this
 public class Rotations {
 
     private final Path path;
