@@ -26,6 +26,7 @@ ControlFile::ControlFile(const char *file, Mode mode)
                    O_NOCTTY | (  (mode == READONLY) ? O_RDONLY
                                : (mode == READWRITE) ? O_RDWR
                                : (O_RDWR | O_CREAT))),
+      _fileSize(0),
       _mode(mode),
       _fileName(strdup(file)),
       _prefix(0),
@@ -182,6 +183,7 @@ ControlFile::extendMapping()
         return false;
     }
     _mappedSize = size;
+    _fileSize = fileLen;
 
     return true;
 }
@@ -267,6 +269,7 @@ ControlFile::getLevels(const char *name)
             _fileName, wlen, len, strerror(errno));
         return reinterpret_cast<unsigned int *>(inheritLevels);
     } else {
+        _fileSize += wlen;
     }
 
     if (fileLength + wlen > _mappedSize) {
@@ -421,11 +424,18 @@ Component *
 ComponentIterator::next()
 {
     Component *ret = NULL;
-    if (_next && _next[0]) {
-        ret = new Component(_next);
-        _next = strchr(_next, '\n');
-        if (_next) {
-            ++_next;
+    if (_next && _cf->insideFile(_next) && _next[0]) {
+        char *nn = strchr(_next, '\n');
+        if (nn && _cf->insideFile(nn)) {
+            ret = new Component(_next);
+            _next = ++nn;
+            if (nn != ret->endPointer()) {
+                delete ret;
+                ret = NULL;
+                _next = NULL;
+            }
+        } else {
+            _next = NULL;
         }
     }
     return ret;

@@ -17,6 +17,7 @@ public:
     enum Mode { READONLY, READWRITE, CREATE };
 private:
     Lock _fileBacking;
+    int _fileSize;
     enum Mode _mode;
     char *_fileName;
     void ensureHeader();
@@ -56,6 +57,7 @@ public:
     ~ControlFile();
     unsigned int *getLevels(const char *name);
     void ensureComponent(const char *pattern);
+    bool insideFile(char *p) { return (p >= _mapBase) && (p < _mapBase + _fileSize); }
 
     static unsigned int *defaultLevels();
 
