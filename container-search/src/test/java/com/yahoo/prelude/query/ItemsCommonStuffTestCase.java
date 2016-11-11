@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.regex.PatternSyntaxException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -393,6 +394,27 @@ public class ItemsCommonStuffTestCase {
         assertSame(CompositeItem.class, TermType.DEFAULT.getItemClass());
         assertFalse(TermType.AND.hashCode() == TermType.PHRASE.hashCode());
         assertEquals("term type 'not'", TermType.NOT.toString());
+    }
+
+    @Test
+    public final void testRegexp() {
+        RegExpItem empty = new RegExpItem("a", true, "");
+        assertTrue(empty.isFromQuery());
+        assertTrue(empty.isStemmed());
+        assertEquals("a", empty.getIndexName());
+        assertEquals("", empty.getIndexedString());
+        assertEquals(1, empty.getNumWords());
+        assertEquals(ItemType.REGEXP, empty.getItemType());
+
+        assertEquals("a", new RegExpItem("i", true, "a").getIndexedString());
+        assertEquals(".*", new RegExpItem("i", true, ".*").getIndexedString());
+        PatternSyntaxException last = null;
+        try {
+            assertEquals(0, new RegExpItem("i", true, "*").getNumWords());
+        } catch (PatternSyntaxException e) {
+            last = e;
+        }
+        assertEquals("Dangling meta character '*' near index 0\n" + "*\n" + "^", last.getMessage());
     }
 }
 
