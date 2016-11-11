@@ -35,6 +35,8 @@ private:
     int _mappedSize;
     char *_firstComponent;
 
+    char *nextNewline(char *p);
+
     static const int _maxMapSize = 200000;
     static const int _maxPrefix = 64;
 
@@ -57,7 +59,6 @@ public:
     ~ControlFile();
     unsigned int *getLevels(const char *name);
     void ensureComponent(const char *pattern);
-    bool insideFile(char *p) { return (p >= _mapBase) && (p < _mapBase + _fileSize); }
 
     static unsigned int *defaultLevels();
 

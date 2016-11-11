@@ -144,6 +144,18 @@ ControlFile::pageAlign(unsigned int len)
 }
 
 char *
+ControlFile::nextNewline(char *addr)
+{
+    if (addr < _mapBase) return NULL;
+    char *end = _mapBase + _fileSize;
+    while (addr < end) {
+        if (*addr == '\n') return addr;
+        ++addr;
+    }
+    return NULL;
+}
+
+char *
 ControlFile::alignLevels(char *addr)
 {
     unsigned long x = reinterpret_cast<unsigned long>(addr);
@@ -424,12 +436,13 @@ Component *
 ComponentIterator::next()
 {
     Component *ret = NULL;
-    if (_next && _cf->insideFile(_next) && _next[0]) {
-        char *nn = strchr(_next, '\n');
-        if (nn && _cf->insideFile(nn)) {
+    if (_next) {
+        char *nn = _cf->nextNewline(_next);
+        if (nn) {
             ret = new Component(_next);
             _next = ++nn;
             if (nn != ret->endPointer()) {
+                LOG(warning, "mismatch between component size and line size, aborting ComponentIterator loop");
                 delete ret;
                 ret = NULL;
                 _next = NULL;
