@@ -48,7 +48,7 @@ class LocalDataVisitorHandler extends DumpVisitorDataHandler {
         }
     }
 
-    // TODO: Not sure if we should support removeal or not. Do nothing here maybe?
+    // TODO: Not sure if we should support removal or not. Do nothing here maybe?
     @Override
     public void onRemove(DocumentId documentId) {
         try {
@@ -66,4 +66,5 @@ class LocalDataVisitorHandler extends DumpVisitorDataHandler {
             }
         }
     }
+
 }
