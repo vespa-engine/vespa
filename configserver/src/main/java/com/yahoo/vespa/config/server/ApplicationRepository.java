@@ -130,9 +130,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         NestedTransaction transaction = new NestedTransaction();
         localSessionRepo.removeSession(session.getSessionId(), transaction);
-        session.delete(transaction); // TODO: Not tested
+        session.delete(transaction); // TODO: Not unit tested
 
-        transaction.add(new Rotations(owner.get().getCurator(), owner.get().getPath()).delete(applicationId)); // TODO: Not tested
+        transaction.add(new Rotations(owner.get().getCurator(), owner.get().getPath()).delete(applicationId)); // TODO: Not unit tested
+        // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
+        // this is done asynchronously in application maintenance by the node repository)
 
         transaction.add(tenantApplications.deleteApplication(applicationId));
 
@@ -143,7 +145,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         return true;
     }
-
+    
     public String grabLog(Tenant tenant, ApplicationId applicationId) {
         Application application = getApplication(tenant, applicationId);
         return logServerLogGrabber.grabLog(application);

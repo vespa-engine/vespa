@@ -107,6 +107,7 @@ public class ModelContextImpl implements ModelContext {
     * @author lulf
     */
     public static class Properties implements ModelContext.Properties {
+
         private final ApplicationId applicationId;
         private final boolean multitenant;
         private final List<ConfigServerSpec> configServerSpecs;
