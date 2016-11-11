@@ -36,6 +36,7 @@ private:
     std::vector<std::unique_ptr<SmallArrayType>> _smallArrayTypes;
     LargeArrayType _largeArrayType;
     uint32_t _largeArrayTypeId;
+    using generation_t = vespalib::GenerationHandler::generation_t;
 
     void initArrayTypes();
     // 1-to-1 mapping between type ids and sizes for small arrays is enforced during initialization.
@@ -55,6 +56,11 @@ public:
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
+
+    // Pass on hold list management to underlying store
+    void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
+    void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
+    vespalib::GenerationHolder &getGenerationHolder(void) { return _store.getGenerationHolder(); }
 };
 
 }
