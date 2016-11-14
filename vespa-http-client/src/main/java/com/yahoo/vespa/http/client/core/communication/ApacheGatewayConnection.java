@@ -357,10 +357,6 @@ class ApacheGatewayConnection implements GatewayConnection {
 
     @Override
     public void close() {
-        if (httpClient == null) {
-            log.severe("Close called while not having an httpclient.");
-            return;
-        }
         httpClient = null;
     }
 
