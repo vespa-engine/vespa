@@ -263,6 +263,18 @@ TEST_F("require that undefined ranking constants cannot be used", SimpleModel())
     EXPECT_FALSE(f.verify());
 }
 
+TEST_F("require that ranking expressions can be verified", SimpleModel()) {
+    f.first_phase("rankingExpression(\\\"constant(my_tensor)+attribute(date)\\\")");
+    EXPECT_TRUE(f.verify());
+}
+
+//-----------------------------------------------------------------------------
+
+TEST_F("require that tensor join is not yet supported", SimpleModel()) {
+    f.first_phase("rankingExpression(\\\"join(constant(my_tensor),attribute(date),f(t,d)(t+d))\\\")");
+    EXPECT_FALSE(f.verify());
+}
+
 //-----------------------------------------------------------------------------
 
 TEST_F("cleanup files", Model()) {
