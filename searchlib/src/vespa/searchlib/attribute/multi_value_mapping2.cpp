@@ -5,13 +5,31 @@
 #include "multi_value_mapping2.h"
 #include "multi_value_mapping2.hpp"
 #include <vespa/vespalib/stllike/string.h>
+#include "multivalue.h"
+#include "enumstorebase.h"
 
 LOG_SETUP(".searchlib.attribute.multivaluemapping2");
+
+using search::multivalue::Value;
+using search::multivalue::WeightedValue;
 
 namespace search {
 namespace attribute {
 
-template class MultiValueMapping2<int32_t>;
+template class MultiValueMapping2<Value<EnumStoreIndex>>;
+template class MultiValueMapping2<WeightedValue<EnumStoreIndex>>;
+template class MultiValueMapping2<Value<int8_t>>;
+template class MultiValueMapping2<WeightedValue<int8_t>>;
+template class MultiValueMapping2<Value<int16_t>>;
+template class MultiValueMapping2<WeightedValue<int16_t>>;
+template class MultiValueMapping2<Value<int32_t>>;
+template class MultiValueMapping2<WeightedValue<int32_t>>;
+template class MultiValueMapping2<Value<int64_t>>;
+template class MultiValueMapping2<WeightedValue<int64_t>>;
+template class MultiValueMapping2<Value<float>>;
+template class MultiValueMapping2<WeightedValue<float>>;
+template class MultiValueMapping2<Value<double>>;
+template class MultiValueMapping2<WeightedValue<double>>;
 
 } // namespace search::attribute
 } // namespace search
