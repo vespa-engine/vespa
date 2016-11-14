@@ -28,13 +28,13 @@ public interface CloudConfigOptions {
     String[] configModelPluginDirs();
     Optional<Long> sessionLifeTimeSecs();
 
-    //TODO: which unit?
-    Optional<Long> zookeeperBarrierTimeout();
+    Optional<Long> zookeeperBarrierTimeout(); //in seconds
     Optional<Integer> zookeeperElectionPort();
     Optional<Integer> zookeeperQuorumPort();
     Optional<String> payloadCompressionType();
     Optional<String> environment();
     Optional<String> region();
+    Optional<String> system();
     Optional<String> defaultFlavor();
     Optional<String> defaultAdminFlavor();
     Optional<String> defaultContainerFlavor();

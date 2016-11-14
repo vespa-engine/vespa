@@ -28,6 +28,7 @@ class CloudConfigYinstVariables extends CloudConfigOptions {
   override val payloadCompressionType = optionalYinstVar[java.lang.String]("payload_compression_type")
   override val environment = optionalYinstVar[java.lang.String]("environment")
   override val region = optionalYinstVar[java.lang.String]("region")
+  override val system = optionalYinstVar[java.lang.String]("system")
   override val defaultFlavor = optionalYinstVar[java.lang.String]("default_flavor")
   override val defaultAdminFlavor = optionalYinstVar[java.lang.String]("default_admin_flavor")
   override val defaultContainerFlavor = optionalYinstVar[java.lang.String]("default_container_flavor")
