@@ -440,8 +440,9 @@ ComponentIterator::next()
         char *nn = _cf->nextNewline(_next);
         if (nn) {
             ret = new Component(_next);
-            _next = ++nn;
-            if (nn != ret->endPointer()) {
+            if (nn == ret->endPointer()) {
+                _next = nn + 1;
+            } else {
                 LOG(warning, "mismatch between component size and line size, aborting ComponentIterator loop");
                 delete ret;
                 ret = NULL;
