@@ -134,8 +134,9 @@ TEST("standalone") {
         req = orb.AllocRPCRequest(req);
         req->SetMethodName("frt.rpc.ping");
         sb->InvokeSync(req, 5.0);
-        if (checkOk(req))
+        if (checkOk(req)) {
             break;
+        }
         fprintf(stderr, "ping failed [retry %d]\n", retry);
         FastOS_Thread::Sleep(200);
         sb->SubRef();
