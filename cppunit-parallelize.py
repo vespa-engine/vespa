@@ -28,9 +28,11 @@ def chunkify(lst, chunks):
     return result
 
 def build_processes(test_groups):
+    valgrind = os.getenv("VALGRIND")
+    testrunner = (valgrind, args.testrunner) if valgrind is not None else (args.testrunner,)
     processes = []
     for group in test_groups:
-        cmd = (args.testrunner,) + tuple(group)
+        cmd = testrunner + tuple(group)
         processes.append((group,
                           subprocess.Popen(
                               cmd,
