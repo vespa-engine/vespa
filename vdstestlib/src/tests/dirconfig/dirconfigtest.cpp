@@ -34,6 +34,7 @@ Test::Main()
 #define ASSERT_FILE_CONTENT(file, content) \
 { \
     std::ifstream in(file); \
+    EXPECT_TRUE(bool(in)); \
     std::ostringstream ost; \
     std::string line; \
     while (getline(in, line, '\n')) { \
@@ -45,9 +46,14 @@ Test::Main()
 void Test::testNormalUsage() {
     DirConfig config1;
     DirConfig config2;
-
-    EXPECT_EQUAL("dir:dirconfig.tmp/1", config1.getConfigId());
-    EXPECT_EQUAL("dir:dirconfig.tmp/2", config2.getConfigId());
+    EXPECT_EQUAL(strncmp("dir:dirconfig.tmp.", config1.getConfigId().c_str(), 18), 0);
+    EXPECT_EQUAL(26u, config1.getConfigId().size());
+    EXPECT_EQUAL('/', config1.getConfigId()[24]);
+    EXPECT_EQUAL('0', config1.getConfigId()[25]);
+    EXPECT_EQUAL(strncmp("dir:dirconfig.tmp.", config2.getConfigId().c_str(), 18), 0);
+    EXPECT_EQUAL(26u, config2.getConfigId().size());
+    EXPECT_EQUAL('/', config2.getConfigId()[24]);
+    EXPECT_EQUAL('1', config2.getConfigId()[25]);
 
     try{
         config1.getConfig("testconfig");
@@ -72,7 +78,7 @@ void Test::testNormalUsage() {
         // Trigger publish
     config1.getConfigId();
 
-    ASSERT_FILE_CONTENT("dirconfig.tmp/1/testconfig.cfg",
+    ASSERT_FILE_CONTENT(config1.getDir() + "/testconfig.cfg",
                         "intval 7\n"
                         "stringval \"foo\"\n");
 
@@ -90,9 +96,9 @@ void Test::testNormalUsage() {
     config1.publish();
     config2.publish();
 
-    ASSERT_FILE_CONTENT("dirconfig.tmp/2/testconfig.cfg",
+    ASSERT_FILE_CONTENT(config2.getDir() + "/testconfig.cfg",
                         "intval 4\n");
-    ASSERT_FILE_CONTENT("dirconfig.tmp/1/config2.cfg",
+    ASSERT_FILE_CONTENT(config1.getDir() + "/config2.cfg",
                         "intval 3\n"
                         "myarray[2]\n"
                         "myarray[0].foo 4\n"
