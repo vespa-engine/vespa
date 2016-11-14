@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vespa/log/log.h>
 #include <sstream>
+#include <atomic>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -16,17 +17,38 @@ namespace vdstestlib {
     // When we start up first time, remove old config from the directories
     // we're using
 namespace {
-    std::string configRoot = "dirconfig.tmp";
 
-    int getFirstDirNumber() {
-	if (system(("rm -rf " + configRoot).c_str()) != 0) {
-	    throw vespalib::Exception("system(rm -rf "+configRoot+" failed");
-	}
-        return 0;
+class Root {
+public:
+    Root() :
+        _nextDir(0)
+    {
+        memset(_dirname, 0, sizeof(_dirname));
+        sprintf(_dirname, "dirconfig.tmp.XXXXXX");
+        char * realName = mkdtemp(_dirname);
+        assert(realName == _dirname);
     }
-}
+    ~Root() {
+	if (system((std::string("rm -rf ") + _dirname).c_str()) != 0) {
+	    abort();
+	}
+    }
 
-unsigned int DirConfig::_nextDir(getFirstDirNumber());
+    std::string nextDir() {
+        char name[64];
+        uint32_t id = _nextDir++;
+        sprintf(name, "%s/%u", _dirname, id);
+        return name;
+    }
+private:
+    std::string dir() const { return _dirname; }
+    char                  _dirname[64];
+    std::atomic<uint32_t> _nextDir;
+};
+
+Root _G_root;
+
+}
 
 DirConfig::Config::Config(const ConfigName& name)
     : defFileName(name),
@@ -87,11 +109,8 @@ DirConfig::Config::get(const ConfigKey& key) const
 
 DirConfig::DirConfig()
     : _configs(),
-      _dirName()
+      _dirName(_G_root.nextDir())
 {
-    std::ostringstream ost;
-    ost << configRoot << '/' << ++_nextDir;
-    _dirName = ost.str();
     vespalib::mkdir(_dirName, true);
 }
 

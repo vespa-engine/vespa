@@ -71,6 +71,7 @@ struct DirConfig {
 
     /** Get the id that should be used to get config from this instance. */
     std::string getConfigId() const;
+    std::string getDir() const { return _dirName; }
 
     /** Return whether memory representation currently differ from files. */
     bool isCacheDirty() const;
