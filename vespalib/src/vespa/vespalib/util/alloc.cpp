@@ -24,6 +24,7 @@ namespace {
 volatile bool _G_hasHugePageFailureJustHappened(false);
 bool _G_SilenceCoreOnOOM(false);
 int  _G_HugeFlags = 0;
+size_t _G_pageSize = getpagesize();
 size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
 size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
 Lock _G_lock;
@@ -274,6 +275,7 @@ MemoryAllocator::PtrAndSize
 MMapAllocator::salloc(size_t sz, void * wantedAddress)
 {
     void * buf(nullptr);
+    sz = (sz + (_G_pageSize - 1)) & ~(_G_pageSize - 1);
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
@@ -324,11 +326,13 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
 
 size_t
 MMapAllocator::sextend_inplace(PtrAndSize current, size_t newSize) {
-    PtrAndSize got = MMapAllocator::salloc(newSize, current.first);
+    PtrAndSize got = MMapAllocator::salloc(newSize - current.second, static_cast<char *>(current.first)+current.second);
     if (current.first == got.first) {
         return got.second;
+    } else {
+        MMapAllocator::sfree(got);
+        return 0;
     }
-    return 0;
 }
 
 void MMapAllocator::free(PtrAndSize alloc) const {
