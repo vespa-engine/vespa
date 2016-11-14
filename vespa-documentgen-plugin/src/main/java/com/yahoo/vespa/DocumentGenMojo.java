@@ -570,7 +570,7 @@ public class DocumentGenMojo extends AbstractMojo {
     private static void exportToNamedMap(Writer out, int ind) throws IOException {
         // A helper to convert from SpanTree collection to Map. Can be removed if StringFieldValue is fixed to expose the map.
         out.write(
-                ind()+"private java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> toNamedMap(java.util.Collection<com.yahoo.document.annotation.SpanTree> coll) {\n" +
+                ind()+"private static java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> toNamedMap(java.util.Collection<com.yahoo.document.annotation.SpanTree> coll) {\n" +
                 ind(ind+1)+"if (coll==null) return null;\n" +
                 ind(ind+1)+"java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> ret = new java.util.HashMap<java.lang.String,com.yahoo.document.annotation.SpanTree>();\n" +
                 ind(ind+1)+"for (com.yahoo.document.annotation.SpanTree st : coll) ret.put(st.getName(), st);\n" +
