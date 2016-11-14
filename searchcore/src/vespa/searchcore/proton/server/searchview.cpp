@@ -68,6 +68,7 @@ hasAnyLidsMoved(const DocsumRequest & request,
         uint32_t lid = 0;
         if (h.docid != search::endDocId) {
             if (!metaStore.getLid(h.gid, lid) || (lid != h.docid)) {
+                LOG(debug, "lid = %d moved to %d", h.docid, lid);
                 return true;
             }
         }
@@ -124,10 +125,10 @@ SearchView::getDocsums(const DocsumRequest & req)
     }
     SearchView::InternalDocsumReply reply = getDocsumsInternal(req);
     while ( ! reply.second ) {
+        LOG(debug, "Must refetch docsums since the lids have moved.");
         reply = getDocsumsInternal(req);
     }
     if ( ! req.useRootSlime()) {
-        LOG(info, "Must refetch docsums since the lids have moved.");
         convertLidsToGids(*reply.first, req);
     }
     return std::move(reply.first);
