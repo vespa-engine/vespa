@@ -102,6 +102,9 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.region().isPresent()) {
             builder.region(options.region().get());
         }
+        if (options.system().isPresent()) {
+            builder.environment(options.system().get());
+        }
         if (options.defaultFlavor().isPresent()) {
             builder.defaultFlavor(options.defaultFlavor().get());
         }

@@ -89,6 +89,9 @@ public class TestOptions implements CloudConfigOptions {
     public Optional<String> region() { return region; }
 
     @Override
+    public Optional<String> system() { return Optional.empty(); }
+
+    @Override
     public Optional<String> defaultFlavor() { return defaultFlavor; }
 
     @Override
