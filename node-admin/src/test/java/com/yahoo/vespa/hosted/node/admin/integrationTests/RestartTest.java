@@ -46,19 +46,15 @@ public class RestartTest {
     }
 
     private ContainerNodeSpec createContainerNodeSpec(long wantedRestartGeneration, long currentRestartGeneration) {
-        return new ContainerNodeSpec("host1",
-                                     Optional.of(new DockerImage("dockerImage")),
-                                     new ContainerName("container"),
-                                     Node.State.active,
-                                     "tenant",
-                                     "docker",
-                                     Optional.empty(),
-                                     Optional.empty(),
-                                     Optional.empty(),
-                                     Optional.of(wantedRestartGeneration),
-                                     Optional.of(currentRestartGeneration),
-                                     Optional.of(1d),
-                                     Optional.of(1d),
-                                     Optional.of(1d));
+        return new ContainerNodeSpec.Builder()
+                .hostname("host1")
+                .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                .containerName(new ContainerName("container"))
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(wantedRestartGeneration))
+                .currentRestartGeneration(Optional.of(currentRestartGeneration))
+                .build();
     }
 }

@@ -109,21 +109,17 @@ public class RunInContainerTest {
         // No nodes to suspend, always successful
         assertThat(doPutCall("suspend"), is(true));
 
-        ComponentsProviderWithMocks.nodeRepositoryMock.addContainerNodeSpec(new ContainerNodeSpec(
-                "hostName",
-                Optional.of(new DockerImage("dockerImage")),
-                new ContainerName("container"),
-                Node.State.active,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(1L),
-                Optional.of(1L),
-                Optional.of(1d),
-                Optional.of(1d),
-                Optional.of(1d)));
+        ComponentsProviderWithMocks.nodeRepositoryMock
+                .addContainerNodeSpec(new ContainerNodeSpec.Builder()
+                                              .hostname("hostName")
+                                              .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                                              .containerName(new ContainerName("container"))
+                                              .nodeState(Node.State.active)
+                                              .nodeType("tenant")
+                                              .nodeFlavor("docker")
+                                              .wantedRestartGeneration(Optional.of(1L))
+                                              .currentRestartGeneration(Optional.of(1L))
+                                              .build());
         ComponentsProviderWithMocks.orchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));
         ComponentsProviderWithMocks.callOrderVerifier

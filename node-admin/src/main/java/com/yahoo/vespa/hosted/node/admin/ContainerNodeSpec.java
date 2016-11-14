@@ -240,8 +240,8 @@ public class ContainerNodeSpec {
             return this;
         }
 
-        public Builder wantedDockerImage(DockerImage wantedDockerImage) {
-            this.wantedDockerImage = Optional.of(wantedDockerImage);
+        public Builder wantedDockerImage(Optional<DockerImage> wantedDockerImage) {
+            this.wantedDockerImage = wantedDockerImage;
             return this;
         }
 

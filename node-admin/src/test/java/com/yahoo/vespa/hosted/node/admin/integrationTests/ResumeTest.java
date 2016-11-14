@@ -28,21 +28,16 @@ public class ResumeTest {
             final OrchestratorMock orchestratorMock = dockerTester.getOrchestratorMock();
             final NodeAdminStateUpdater nodeAdminStateUpdater = dockerTester.getNodeAdminStateUpdater();
 
-            dockerTester.addContainerNodeSpec(new ContainerNodeSpec(
-                    "host1",
-                    Optional.of(new DockerImage("dockerImage")),
-                    new ContainerName("container"),
-                    Node.State.active,
-                    "tenant",
-                    "docker",
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(1L),
-                    Optional.of(1L),
-                    Optional.of(1d),
-                    Optional.of(1d),
-                    Optional.of(1d)));
+            dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder()
+                                                      .hostname("host1")
+                                                      .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                                                      .containerName(new ContainerName("container"))
+                                                      .nodeState(Node.State.active)
+                                                      .nodeType("tenant")
+                                                      .nodeFlavor("docker")
+                                                      .wantedRestartGeneration(Optional.of(1L))
+                                                      .currentRestartGeneration(Optional.of(1L))
+                                                      .build());
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
 
