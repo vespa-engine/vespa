@@ -94,6 +94,7 @@ public:
     size_t program_size() const { return _program.size(); }
     size_t num_params() const { return _num_params; }
     const Value &eval(Context &ctx) const;
+    static Function::Issues detect_issues(const Function &function);
 };
 
 } // namespace vespalib::eval

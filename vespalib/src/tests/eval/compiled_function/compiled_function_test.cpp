@@ -6,6 +6,8 @@
 #include <vespa/vespalib/eval/basic_nodes.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
+#include <vespa/vespalib/test/insertion_operators.h>
+#include <iostream>
 
 using namespace vespalib::eval;
 
@@ -165,6 +167,20 @@ TEST("require that tensor operations have sane numeric fallbacks") {
     CompiledFunction cf(Function::parse({"a", "b"}, "sum(a+b)"), PassParams::SEPARATE);
     auto fun = cf.get_function<2>();
     EXPECT_EQUAL(12.0, fun(5.0, 7.0));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require function issues can be detected") {
+    auto simple = Function::parse("a+b");
+    auto complex = Function::parse("join(a,b,f(a,b)(a+b))");
+    EXPECT_FALSE(simple.has_error());
+    EXPECT_FALSE(complex.has_error());
+    EXPECT_FALSE(CompiledFunction::detect_issues(simple));
+    EXPECT_TRUE(CompiledFunction::detect_issues(complex));
+    std::cerr << "Example function issues:" << std::endl
+              << CompiledFunction::detect_issues(complex).list
+              << std::endl;
 }
 
 //-----------------------------------------------------------------------------

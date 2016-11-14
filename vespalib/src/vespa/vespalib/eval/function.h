@@ -67,6 +67,17 @@ public:
                        vespalib::string &wrapper,
                        vespalib::string &body,
                        vespalib::string &error);
+    /**
+     * Issues is used to report issues relating to the function
+     * structure, typically to explain why a function cannot be
+     * evaluated in a specific context due to it using features not
+     * supported in that context.
+     **/
+    struct Issues {
+        std::vector<vespalib::string> list;
+        operator bool() const { return !list.empty(); }
+        Issues(std::vector<vespalib::string> &&list_in) : list(std::move(list_in)) {}
+    };
 };
 
 } // namespace vespalib::eval

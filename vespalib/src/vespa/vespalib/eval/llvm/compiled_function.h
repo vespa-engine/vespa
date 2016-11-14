@@ -56,6 +56,7 @@ public:
     }
     void dump() const { _llvm_wrapper.dump(); }
     double estimate_cost_us(const std::vector<double> &params) const;
+    static Function::Issues detect_issues(const Function &function);
 };
 
 } // namespace vespalib::eval

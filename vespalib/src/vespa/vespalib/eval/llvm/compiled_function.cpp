@@ -3,6 +3,10 @@
 #include <vespa/fastos/fastos.h>
 #include "compiled_function.h"
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/eval/node_traverser.h>
+#include <vespa/vespalib/eval/check_type.h>
+#include <vespa/vespalib/eval/tensor_nodes.h>
+#include <vespa/vespalib/util/classname.h>
 
 namespace vespalib {
 namespace eval {
@@ -44,6 +48,25 @@ CompiledFunction::estimate_cost_us(const std::vector<double> &params) const
     auto actual = [&](){function(&params[0]);};
     auto baseline = [&](){empty_function(&params[0]);};
     return BenchmarkTimer::benchmark(actual, baseline, 4.0) * 1000.0 * 1000.0;
+}
+
+Function::Issues
+CompiledFunction::detect_issues(const Function &function)
+{
+    struct NotSupported : NodeTraverser {
+        std::vector<vespalib::string> issues;
+        bool open(const nodes::Node &) override { return true; }
+        void close(const nodes::Node &node) override {
+            if (nodes::check_type<nodes::TensorSum,
+                                  nodes::TensorMap,
+                                  nodes::TensorJoin>(node)) {
+                issues.push_back(make_string("unsupported node type: %s",
+                                getClassName(node).c_str()));
+            }
+        }
+    } checker;
+    function.root().traverse(checker);
+    return Function::Issues(std::move(checker.issues));
 }
 
 } // namespace vespalib::eval

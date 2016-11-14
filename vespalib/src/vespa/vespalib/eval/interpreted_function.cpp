@@ -11,6 +11,7 @@
 #include <set>
 #include "tensor_spec.h"
 #include "simple_tensor_engine.h"
+#include <vespa/vespalib/util/classname.h>
 
 namespace vespalib {
 namespace eval {
@@ -451,6 +452,24 @@ InterpretedFunction::eval(Context &ctx) const
         state.stack.push_back(state.stash.create<ErrorValue>());
     }
     return state.stack.back();
+}
+
+Function::Issues
+InterpretedFunction::detect_issues(const Function &function)
+{
+    struct NotSupported : NodeTraverser {
+        std::vector<vespalib::string> issues;
+        bool open(const nodes::Node &) override { return true; }
+        void close(const nodes::Node &node) override {
+            if (nodes::check_type<nodes::TensorMap,
+                                  nodes::TensorJoin>(node)) {
+                issues.push_back(make_string("unsupported node type: %s",
+                                getClassName(node).c_str()));
+            }
+        }
+    } checker;
+    function.root().traverse(checker);
+    return Function::Issues(std::move(checker.issues));
 }
 
 } // namespace vespalib::eval
