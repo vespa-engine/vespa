@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -93,7 +94,18 @@ class FastSearcherTester {
         mockDispatcher.searchCluster().ping(node, MoreExecutors.directExecutor());
         mockDispatcher.searchCluster().pingIterationCompleted();
     }
-    
+
     public VipStatus vipStatus() { return vipStatus; }
+
+    /** Retrying is needed because earlier pings from the monitoring thread may interfere with the testing thread */
+    public void waitForInRotationIs(boolean expectedRotationStatus) {
+        int triesLeft = 9000;
+        while (vipStatus.isInRotation() != expectedRotationStatus && triesLeft > 0) {
+            triesLeft--;
+            try { Thread.sleep(10); } catch (InterruptedException e) {}
+        }
+        if (triesLeft == 0)
+            fail("Did not reach VIP in rotation status = " + expectedRotationStatus + " after trying for 90 seconds");
+    }
 
 }

@@ -86,30 +86,30 @@ public class DirectSearchTestCase {
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("Still 1 ping request, 0 search requests because the default coverage is 97%, and we only have 96% locally",
                      1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
-        assertFalse(tester.vipStatus().isInRotation());
+        tester.waitForInRotationIs(false);
 
         tester.setActiveDocuments(FastSearcherTester.selfHostname, (long) (99 * k));
         assertEquals("2 ping request, 0 search requests", 2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("2 ping request, 1 search requests because we now have 99% locally",
                      3, tester.requestCount(FastSearcherTester.selfHostname, 9999));
-        assertTrue(tester.vipStatus().isInRotation());
+        tester.waitForInRotationIs(true);
 
         tester.setActiveDocuments("host1", (long) (104 * k));
         assertEquals("2 ping request, 1 search requests", 3, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("2 ping request, 2 search requests because 99/((104+100)/2) > 0.97",
                      4, tester.requestCount(FastSearcherTester.selfHostname, 9999));
-        assertTrue(tester.vipStatus().isInRotation());
+        tester.waitForInRotationIs(true);
 
         tester.setActiveDocuments("host2", (long) (102 * k));
         assertEquals("2 ping request, 2 search requests", 4, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         tester.search("?query=test&dispatch.direct=true&nocache");
         assertEquals("Still 2 ping request, 2 search requests because 99/((104+102)/2) < 0.97",
                      4, tester.requestCount(FastSearcherTester.selfHostname, 9999));
-        assertFalse(tester.vipStatus().isInRotation());
+        tester.waitForInRotationIs(false);
     }
-
+    
     @Test
     public void testCoverageWithSingleGroup() {
         FastSearcherTester tester = new FastSearcherTester(1, FastSearcherTester.selfHostname + ":9999:0");
