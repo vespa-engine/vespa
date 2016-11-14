@@ -44,7 +44,8 @@ ExternalOperationHandler::ExternalOperationHandler(
     : DistributorComponent(owner, compReg, "Distributor manager"),
       _visitorMetrics(getLoadTypes()->getMetricLoadTypes(),
                       *&VisitorMetricSet(NULL)),
-      _operationGenerator(gen)
+      _operationGenerator(gen),
+      _rejectFeedBeforeTimeReached() // At epoch
 {
 }
 
@@ -63,16 +64,63 @@ ExternalOperationHandler::handleMessage(
     return retVal;
 }
 
+api::ReturnCode
+ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime)
+{
+    std::ostringstream ss;
+    auto now_sec(std::chrono::duration_cast<std::chrono::seconds>(
+                unsafeTime.time_since_epoch()));
+    auto future_sec(std::chrono::duration_cast<std::chrono::seconds>(
+                _rejectFeedBeforeTimeReached.time_since_epoch()));
+    ss << "Operation received at time " << now_sec.count()
+       << ", which is before bucket ownership transfer safe time of "
+       << future_sec.count();
+    return api::ReturnCode(api::ReturnCode::BUSY, ss.str());
+}
+
+bool
+ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
+{
+    const auto now = TimePoint(std::chrono::seconds(
+            getClock().getTimeInSeconds().getTime()));
+    if (now < _rejectFeedBeforeTimeReached) {
+        api::StorageReply::UP reply(cmd.makeReply());
+        reply->setResult(makeSafeTimeRejectionResult(now));
+        sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+        return false;
+    }
+    return true;
+}
+
+bool
+ExternalOperationHandler::checkTimestampMutationPreconditions(
+        api::StorageCommand& cmd,
+        const document::BucketId& bucket,
+        PersistenceOperationMetricSet& persistenceMetrics)
+{
+    if (!checkDistribution(cmd, bucket)) {
+        LOG(debug,
+            "Distributor manager received %s, bucket %s with wrong "
+            "distribution",
+            cmd.toString().c_str(),
+            bucket.toString().c_str());
+
+        persistenceMetrics.failures.wrongdistributor++;
+        return false;
+    }
+    if (!checkSafeTimeReached(cmd)) {
+        persistenceMetrics.failures.safe_time_not_reached++;
+        return false;
+    }
+    return true;
+}
+
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 {
-    if (!checkDistribution(*cmd, getBucketId(cmd->getDocumentId()))) {
-        LOG(debug,
-            "Distributor manager received put for %s, bucket %s with wrong "
-            "distribution",
-            cmd->getDocumentId().toString().c_str(),
-            getBucketId(cmd->getDocumentId()).toString().c_str());
-
-        getMetrics().puts[cmd->getLoadType()].failures.wrongdistributor++;
+    if (!checkTimestampMutationPreconditions(
+            *cmd, getBucketId(cmd->getDocumentId()),
+            getMetrics().puts[cmd->getLoadType()]))
+    {
         return true;
     }
 
@@ -90,10 +138,10 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Put)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
 {
-    if (!checkDistribution(*cmd, getBucketId(cmd->getDocumentId()))) {
-        LOG(debug, "Distributor manager received update for %s, bucket %s with wrong distribution", cmd->getDocumentId().toString().c_str(), getBucketId(cmd->getDocumentId()).toString().c_str());
-
-        getMetrics().updates[cmd->getLoadType()].failures.wrongdistributor++;
+    if (!checkTimestampMutationPreconditions(
+            *cmd, getBucketId(cmd->getDocumentId()),
+            getMetrics().updates[cmd->getLoadType()]))
+    {
         return true;
     }
 
@@ -107,14 +155,10 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Update)
 
 IMPL_MSG_COMMAND_H(ExternalOperationHandler, Remove)
 {
-    if (!checkDistribution(*cmd, getBucketId(cmd->getDocumentId()))) {
-        LOG(debug,
-            "Distributor manager received remove for %s, bucket %s with "
-            "wrong distribution",
-            cmd->getDocumentId().toString().c_str(),
-            getBucketId(cmd->getDocumentId()).toString().c_str());
-
-        getMetrics().removes[cmd->getLoadType()].failures.wrongdistributor++;
+    if (!checkTimestampMutationPreconditions(
+            *cmd, getBucketId(cmd->getDocumentId()),
+            getMetrics().removes[cmd->getLoadType()]))
+    {
         return true;
     }
 
