@@ -102,4 +102,14 @@ TEST("rounding of large mmaped buffer") {
     EXPECT_EQUAL(MemoryAllocator::HUGEPAGE_SIZE*12, buf.size());
 }
 
+TEST("heap alloc can not be extended") {
+   Alloc buf = Alloc::allocHeap(100);
+   void * oldPtr = buf.get();
+   size_t oldSz = buf.size();
+   EXPECT_FALSE(buf.extend_inplace(101));
+   EXPECT_EQUAL(oldPtr, buf.get());
+   EXPECT_EQUAL(oldSz, buf.size());
+}
+
+
 TEST_MAIN() { TEST_RUN_ALL(); }
