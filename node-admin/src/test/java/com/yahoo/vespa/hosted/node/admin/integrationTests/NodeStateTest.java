@@ -20,21 +20,16 @@ import static org.junit.Assert.assertThat;
  * @author valerijf
  */
 public class NodeStateTest {
-    private static ContainerNodeSpec initialContainerNodeSpec = new ContainerNodeSpec(
-            "host1",
-            Optional.of(new DockerImage("dockerImage")),
-            new ContainerName("container"),
-            Node.State.active,
-            "tenant",
-            "docker",
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.of(1L),
-            Optional.of(1L),
-            Optional.of(1d),
-            Optional.of(1d),
-            Optional.of(1d));
+    private static ContainerNodeSpec initialContainerNodeSpec = new ContainerNodeSpec.Builder()
+            .hostname("host1")
+            .wantedDockerImage(new DockerImage("dockerImage"))
+            .containerName(new ContainerName("container"))
+            .nodeState(Node.State.active)
+            .nodeType("tenant")
+            .nodeFlavor("docker")
+            .wantedRestartGeneration(Optional.of(1L))
+            .currentRestartGeneration(Optional.of(1L))
+            .build();
 
     private void setup(DockerTester tester) throws InterruptedException {
         tester.addContainerNodeSpec(initialContainerNodeSpec);
