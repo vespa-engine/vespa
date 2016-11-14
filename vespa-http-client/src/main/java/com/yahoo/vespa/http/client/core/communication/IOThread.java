@@ -306,7 +306,7 @@ class IOThread implements Runnable, AutoCloseable {
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable1) {
                     drainFirstDocumentInQueueIfOld();
-                    log.log(Level.WARNING, "Connect did not work out " + endpoint, throwable1);
+                    log.log(Level.INFO, "Connect did not work out " + endpoint, throwable1);
                     executeProblemsCounter.incrementAndGet();
                     return ThreadState.DISCONNECTED;
                 }
@@ -316,12 +316,12 @@ class IOThread implements Runnable, AutoCloseable {
                     successfullHandshakes.getAndIncrement();
                 } catch (ServerResponseException ser) {
                     executeProblemsCounter.incrementAndGet();
-                    log.log(Level.WARNING, "Handshake did not work out " + endpoint, ser.getMessage());
+                    log.log(Level.INFO, "Handshake did not work out " + endpoint, ser.getMessage());
                     drainFirstDocumentInQueueIfOld();
                     return ThreadState.CONNECTED;
                 } catch (Throwable throwable) { // This cover IOException as well
                     executeProblemsCounter.incrementAndGet();
-                    log.log(Level.WARNING, "Problem with Handshake " + endpoint, throwable.getMessage());
+                    log.log(Level.INFO, "Problem with Handshake " + endpoint, throwable.getMessage());
                     drainFirstDocumentInQueueIfOld();
                     client.close();
                     return ThreadState.DISCONNECTED;
@@ -334,11 +334,11 @@ class IOThread implements Runnable, AutoCloseable {
                     gatewayThrottler.handleCall(processResponse.transitiveErrorCount);
                 }
                 catch (ServerResponseException ser) {
-                    log.severe("Problems while handing data over to gateway " + endpoint + " " + ser.getMessage());
+                    log.info("Problems while handing data over to gateway " + endpoint + " " + ser.getMessage());
                     return ThreadState.CONNECTED;
                 }
                 catch (Throwable e) { // Covers IOException as well
-                    log.severe("Problems while handing data over to gateway  " + endpoint + " " + e.getMessage());
+                    log.info("Problems while handing data over to gateway  " + endpoint + " " + e.getMessage());
                     client.close();
                     return ThreadState.DISCONNECTED;
                 }
