@@ -16,11 +16,11 @@ testSwap(T & a, T & b)
 {
     void * tmpA(a.get());
     void * tmpB(b.get());
-    EXPECT_EQUAL(100u, a.size());
-    EXPECT_EQUAL(200u, b.size());
+    EXPECT_EQUAL(4096u, a.size());
+    EXPECT_EQUAL(8192, b.size());
     std::swap(a, b);
-    EXPECT_EQUAL(100u, b.size());
-    EXPECT_EQUAL(200u, a.size());
+    EXPECT_EQUAL(4096u, b.size());
+    EXPECT_EQUAL(8192, a.size());
     EXPECT_EQUAL(tmpA, b.get());
     EXPECT_EQUAL(tmpB, a.get());
 }
@@ -39,24 +39,24 @@ TEST("test basics") {
     }
     {
         Alloc h = Alloc::allocMMap(100);
-        EXPECT_EQUAL(100u, h.size());
+        EXPECT_EQUAL(4096u, h.size());
         EXPECT_TRUE(h.get() != nullptr);
     }
     {
-        Alloc a = Alloc::allocHeap(100), b = Alloc::allocHeap(200);
+        Alloc a = Alloc::allocHeap(4096), b = Alloc::allocHeap(8192);
         testSwap(a, b);
     }
     {
-        Alloc a = Alloc::allocMMap(100), b = Alloc::allocMMap(200);
+        Alloc a = Alloc::allocMMap(4096), b = Alloc::allocMMap(8192);
         testSwap(a, b);
     }
     {
-        Alloc a = Alloc::allocAlignedHeap(100, 1024), b = Alloc::allocAlignedHeap(200, 1024);
+        Alloc a = Alloc::allocAlignedHeap(4096, 1024), b = Alloc::allocAlignedHeap(8192, 1024);
         testSwap(a, b);
     }
     {
-        Alloc a = Alloc::allocHeap(100);
-        Alloc b = Alloc::allocMMap(200);
+        Alloc a = Alloc::allocHeap(4096);
+        Alloc b = Alloc::allocMMap(8192);
         testSwap(a, b);
     }
     {
@@ -105,11 +105,21 @@ TEST("rounding of large mmaped buffer") {
 TEST("heap alloc can not be extended") {
    Alloc buf = Alloc::allocHeap(100);
    void * oldPtr = buf.get();
-   size_t oldSz = buf.size();
+   EXPECT_EQUAL(100, buf.size());
    EXPECT_FALSE(buf.extend_inplace(101));
    EXPECT_EQUAL(oldPtr, buf.get());
-   EXPECT_EQUAL(oldSz, buf.size());
+   EXPECT_EQUAL(100, buf.size());
 }
+
+TEST("mmap alloc can be extended") {
+   Alloc buf = Alloc::allocMMap(100);
+   void * oldPtr = buf.get();
+   EXPECT_EQUAL(4096, buf.size());
+   EXPECT_TRUE(buf.extend_inplace(4097));
+   EXPECT_EQUAL(oldPtr, buf.get());
+   EXPECT_EQUAL(8192, buf.size());
+}
+
 
 
 TEST_MAIN() { TEST_RUN_ALL(); }
