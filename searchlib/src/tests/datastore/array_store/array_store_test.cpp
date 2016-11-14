@@ -10,34 +10,52 @@ LOG_SETUP("array_store_test");
 
 using namespace search::datastore;
 
-template <typename EntryT>
+template <typename EntryT, typename RefT = EntryRefT<17> >
 struct Fixture
 {
-    using ArrayStoreType = ArrayStore<EntryT>;
+    using EntryRefType = RefT;
+    using ArrayStoreType = ArrayStore<EntryT, RefT>;
     using ConstArrayRef = typename ArrayStoreType::ConstArrayRef;
     using EntryVector = std::vector<EntryT>;
     using value_type = EntryT;
+    using ReferenceStore = std::map<EntryRef, EntryVector>;
 
     ArrayStoreType store;
+    ReferenceStore refStore;
     Fixture(uint32_t maxSmallArraySize)
-        : store(maxSmallArraySize)
+        : store(maxSmallArraySize),
+          refStore()
     {}
     void assertAdd(const EntryVector &input) {
-        EntryRef ref = store.add(ConstArrayRef(input));
+        EntryRef ref = add(input);
         ConstArrayRef output = store.get(ref);
         EXPECT_EQUAL(input, EntryVector(output.begin(), output.end()));
     }
     EntryRef add(const EntryVector &input) {
-        return store.add(ConstArrayRef(input));
+        EntryRef result = store.add(ConstArrayRef(input));
+        EXPECT_EQUAL(0u, refStore.count(result));
+        refStore.insert(std::make_pair(result, input));
+        return result;
     }
-    void assertBufferState(EntryRef ref, size_t expUsedElems, size_t expHoldElems) {
+    uint32_t getBufferId(EntryRef ref) const {
+        return EntryRefType(ref).bufferId();
+    }
+    void assertBufferState(EntryRef ref, size_t expUsedElems, size_t expHoldElems) const {
         EXPECT_EQUAL(expUsedElems, store.bufferState(ref)._usedElems);
         EXPECT_EQUAL(expHoldElems, store.bufferState(ref)._holdElems);
+    }
+    void assertStoreContent() const {
+        for (const auto &elem : refStore) {
+            const EntryVector &exp = elem.second;
+            ConstArrayRef act = store.get(elem.first);
+            EXPECT_EQUAL(exp, EntryVector(act.begin(), act.end()));
+        }
     }
 };
 
 using NumberFixture = Fixture<uint32_t>;
 using StringFixture = Fixture<std::string>;
+using SmallOffsetNumberFixture = Fixture<uint32_t, EntryRefT<10>>;
 
 TEST("require that we test with trivial and non-trivial types")
 {
@@ -88,6 +106,24 @@ TEST_F("require that elements are put on hold when a large array is removed", Nu
     TEST_DO(f.assertBufferState(ref, 2, 0));
     f.store.remove(ref);
     TEST_DO(f.assertBufferState(ref, 2, 1));
+}
+
+TEST_F("require that new underlying buffer is allocated when current is full", SmallOffsetNumberFixture(3))
+{
+    uint32_t firstBufferId = f.getBufferId(f.add({1,1}));
+    for (uint32_t i = 0; i < (F1::EntryRefType::offsetSize() - 1); ++i) {
+        uint32_t bufferId = f.getBufferId(f.add({i, i+1}));
+        EXPECT_EQUAL(firstBufferId, bufferId);
+    }
+    TEST_DO(f.assertStoreContent());
+
+    uint32_t secondBufferId = f.getBufferId(f.add({2,2}));
+    EXPECT_NOT_EQUAL(firstBufferId, secondBufferId);
+    for (uint32_t i = 0; i < 10u; ++i) {
+        uint32_t bufferId = f.getBufferId(f.add({i+2,i}));
+        EXPECT_EQUAL(secondBufferId, bufferId);
+    }
+    TEST_DO(f.assertStoreContent());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
