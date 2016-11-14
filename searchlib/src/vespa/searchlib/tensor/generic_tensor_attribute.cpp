@@ -3,7 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "generic_tensor_attribute.h"
 #include <vespa/vespalib/tensor/tensor.h>
-#include "tensor_attribute_saver.h"
+#include "generic_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
 
 using vespalib::eval::ValueType;
@@ -100,7 +100,7 @@ GenericTensorAttribute::onInitSave()
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
-    return std::make_unique<TensorAttributeSaver>
+    return std::make_unique<GenericTensorAttributeSaver>
         (std::move(guard),
          this->createSaveTargetConfig(),
          getRefCopy(),
