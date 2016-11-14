@@ -18,21 +18,16 @@ public class DockerFailTest {
     @Test
     public void dockerFailTest() throws Exception {
         try (DockerTester dockerTester = new DockerTester()) {
-            final ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec(
-                    "hostName",
-                    Optional.of(new DockerImage("dockerImage")),
-                    new ContainerName("container"),
-                    Node.State.active,
-                    "tenant",
-                    "docker",
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(1L),
-                    Optional.of(1L),
-                    Optional.of(1d),
-                    Optional.of(1d),
-                    Optional.of(1d));
+            ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec.Builder()
+                    .hostname("hostName")
+                    .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                    .containerName(new ContainerName("container"))
+                    .nodeState(Node.State.active)
+                    .nodeType("tenant")
+                    .nodeFlavor("docker")
+                    .wantedRestartGeneration(Optional.of(1L))
+                    .currentRestartGeneration(Optional.of(1L))
+                    .build();
             dockerTester.addContainerNodeSpec(containerNodeSpec);
 
             // Wait for node admin to be notified with node repo state and the docker container has been started

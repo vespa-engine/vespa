@@ -16,7 +16,6 @@ import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -63,19 +62,16 @@ public class RebootTest {
     }
 
     private ContainerNodeSpec createContainerNodeSpec() {
-        return new ContainerNodeSpec("host1",
-                                     Optional.of(new DockerImage("dockerImage")),
-                                     new ContainerName("container"),
-                                     Node.State.active,
-                                     "tenant",
-                                     "docker",
-                                     Optional.of("6.50.0"),
-                                     Optional.empty(),
-                                     Optional.empty(),
-                                     Optional.of(1L),
-                                     Optional.of(1L),
-                                     Optional.of(1d),
-                                     Optional.of(1d),
-                                     Optional.of(1d));
+        return new ContainerNodeSpec.Builder()
+                .hostname("host1")
+                .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                .containerName(new ContainerName("container"))
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .vespaVersion(Optional.of("6.50.0"))
+                .wantedRestartGeneration(Optional.of(1L))
+                .currentRestartGeneration(Optional.of(1L))
+                .build();
     }
 }

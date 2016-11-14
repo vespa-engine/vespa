@@ -22,7 +22,7 @@ import static org.junit.Assert.assertThat;
 public class NodeStateTest {
     private static ContainerNodeSpec initialContainerNodeSpec = new ContainerNodeSpec.Builder()
             .hostname("host1")
-            .wantedDockerImage(new DockerImage("dockerImage"))
+            .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
             .containerName(new ContainerName("container"))
             .nodeState(Node.State.active)
             .nodeType("tenant")
