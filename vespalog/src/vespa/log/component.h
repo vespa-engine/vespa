@@ -15,8 +15,8 @@ public:
     bool matches(const char *pattern);
     void modifyLevels(char *levels);
     void display();
+    const char *endPointer() const { return _charLevels + Logger::NUM_LOGLEVELS*sizeof(int); }
     explicit Component(char *);
 };
 
 } // end namespace ns_log
-

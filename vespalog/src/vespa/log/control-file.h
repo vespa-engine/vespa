@@ -17,6 +17,7 @@ public:
     enum Mode { READONLY, READWRITE, CREATE };
 private:
     Lock _fileBacking;
+    int _fileSize;
     enum Mode _mode;
     char *_fileName;
     void ensureHeader();
@@ -33,6 +34,8 @@ private:
     char *_mapBase;
     int _mappedSize;
     char *_firstComponent;
+
+    char *nextNewline(char *p);
 
     static const int _maxMapSize = 200000;
     static const int _maxPrefix = 64;
