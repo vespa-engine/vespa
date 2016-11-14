@@ -188,6 +188,7 @@ public:
      */
     void removeComplete(DocId lid) override;
     void move(DocId fromLid, DocId toLid) override;
+    bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
     bool validLid(DocId lid) const override { return validLidFast(lid); }
     void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override;
@@ -201,6 +202,7 @@ public:
      * Implements search::IDocumentMetaStore
      **/
     bool getGid(DocId lid, GlobalId &gid) const override;
+    bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const override;
     bool getLid(const GlobalId & gid, DocId &lid) const override;
     search::DocumentMetaData getMetaData(const GlobalId &gid) const override;
     void getMetaData(const BucketId &bucketId, search::DocumentMetaData::Vector &result) const override;

@@ -101,7 +101,7 @@ ResultProcessor::makeReply()
         search::engine::SearchReply::Hit &dst = r.hits[i];
         const search::RankedHit &src = result.hit(hitOffset + i);
         uint32_t docId = src._docId;
-        if (metaStore.getGid(docId, gid)) {
+        if (metaStore.getGidEvenIfMoved(docId, gid)) {
             dst.gid = gid;
         }
         dst.metric = src._rankValue;

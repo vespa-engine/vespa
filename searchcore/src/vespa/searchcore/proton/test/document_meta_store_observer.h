@@ -30,6 +30,9 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     virtual bool getGid(DocId lid, GlobalId &gid) const override {
         return _store.getGid(lid, gid);
     }
+    virtual bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const override {
+        return _store.getGidEvenIfMoved(lid, gid);
+    }
     virtual bool getLid(const GlobalId &gid, DocId &lid) const override {
         return _store.getLid(gid, lid);
     }

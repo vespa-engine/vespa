@@ -86,6 +86,11 @@ struct IDocumentMetaStore {
      * Returns true if found, false otherwise.
      **/
     virtual bool getGid(DocId lid, GlobalId &gid) const = 0;
+    /**
+     * Retrieves the gid associated with the given lid, even if the lid has moved.
+     * Returns true if found, false otherwise.
+     **/
+    virtual bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const = 0;
 
     /**
      * Retrieves the lid associated with the given gid.
