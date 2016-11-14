@@ -32,6 +32,18 @@ using search::fef::FeatureType;
 namespace search {
 namespace features {
 
+namespace {
+
+vespalib::string list_issues(const std::vector<vespalib::string> &issues) {
+    vespalib::string result;
+    for (const auto &issue: issues) {
+        result += vespalib::make_string("  issue: %s\n", issue.c_str());
+    }
+    return result;
+}
+
+} // namespace search::features::<unnamed>
+
 //-----------------------------------------------------------------------------
 
 /**
@@ -166,6 +178,19 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     }
     if (root_type.is_any()) {
         LOG(warning, "rank expression could produce run-time type errors: %s\n", script.c_str());
+    }
+    auto compile_issues = CompiledFunction::detect_issues(rank_function);
+    auto interpret_issues = InterpretedFunction::detect_issues(rank_function);
+    if (do_compile && compile_issues && !interpret_issues) {
+        LOG(warning, "rank expression compilation disabled: %s\n%s",
+            script.c_str(), list_issues(compile_issues.list).c_str());
+        do_compile = false;
+    }
+    const auto &issues = do_compile ? compile_issues : interpret_issues;
+    if (issues) {
+        LOG(error, "rank expression cannot be evaluated: %s\n%s",
+            script.c_str(), list_issues(issues.list).c_str());
+        return false;
     }
     // avoid costly compilation when only verifying setup
     if (env.getFeatureMotivation() != env.FeatureMotivation::VERIFY_SETUP) {
