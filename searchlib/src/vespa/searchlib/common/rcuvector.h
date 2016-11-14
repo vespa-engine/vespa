@@ -146,8 +146,7 @@ public:
     fillMapped(GenerationHolder &genHolder,
                Reader &reader,
                uint64_t numValues,
-               const T *map,
-               size_t mapSize,
+               vespalib::ConstArrayRef<T> map,
                Saver &saver,
                uint32_t numDocs);
 };
@@ -238,8 +237,7 @@ void
 RcuVectorBase<T>::fillMapped(GenerationHolder &genHolder,
                              Reader &reader,
                              uint64_t numValues,
-                             const T *map,
-                             size_t mapSize,
+                             vespalib::ConstArrayRef<T> map,
                              Saver &saver,
                              uint32_t numDocs)
 {
@@ -250,8 +248,7 @@ RcuVectorBase<T>::fillMapped(GenerationHolder &genHolder,
     unsafe_reserve(numDocs);
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t e = reader.getNextEnum();
-        assert(e < mapSize);
-        (void) mapSize;
+        assert(e < map.size());
         push_back(map[e]);
         saver.save(e, doc, 0, 1);
     }
