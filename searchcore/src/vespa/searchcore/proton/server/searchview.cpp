@@ -117,7 +117,7 @@ SearchView::SearchView(const ISummaryManager::ISummarySetup::SP & summarySetup,
 DocsumReply::UP
 SearchView::getDocsums(const DocsumRequest & req)
 {
-    LOG(debug, "getDocsums(): resultClass(%s), numHits(%zu)", req.resultClassName.c_str(), req.hits.size());
+    LOG(spam, "getDocsums(): resultClass(%s), numHits(%zu)", req.resultClassName.c_str(), req.hits.size());
     if (_summarySetup->getResultConfig().  LookupResultClassId(req.resultClassName.c_str()) == ResultConfig::NoClassID()) {
         LOG(warning, "There is no summary class with name '%s' in the summary config. Returning empty document summary for %zu hit(s)",
                      req.resultClassName.c_str(), req.hits.size());
