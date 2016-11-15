@@ -310,13 +310,12 @@ public class DocumentGenMojo extends AbstractMojo {
                 out.write(ind()+"@Override public boolean hasFieldValue() { return true; }\n\n");
                 out.write(ind()+"@Override public com.yahoo.document.datatypes.FieldValue getFieldValue() {\n");
                 out.write(ind(2)+"com.yahoo.document.datatypes.Struct ret = new Fields();\n");
-                out.write(ind(2)+"com.yahoo.document.datatypes.FieldValue fv; com.yahoo.document.Field f;\n");
 
                 for (Field f : annStruct.getFields()) {
                     out.write(
                             ind(2)+"if ("+getter(f.getName()) +"()!=null) {\n" +
-                            ind(3)+"f = new com.yahoo.document.Field(\""+f.getName()+"\", "+toJavaReference(f.getDataType())+");\n" +
-                            ind(3)+"fv = f.getDataType().createFieldValue("+getter(f.getName())+"());\n" +
+                            ind(3)+"com.yahoo.document.Field f = ret.getField(\"" + f.getName() + "\");\n" +
+                            ind(3)+"com.yahoo.document.datatypes.FieldValue fv = f.getDataType().createFieldValue(" + getter(f.getName()) + "());\n" +
                             ind(3)+"ret.setFieldValue(f, fv);\n" +
                             ind(2)+"}\n");
                 }
@@ -527,17 +526,19 @@ public class DocumentGenMojo extends AbstractMojo {
         out.write(ind(ind+1)+"return ret;\n");
         out.write(ind(ind)+"}\n\n");
     }
+    private static void addExtendedField(String className, Field f, Writer out, int ind) throws IOException {
+        out.write(ind(ind)+ "ret.addField(new com.yahoo.document.ExtendedField(\""+f.getName()+"\", " + toJavaReference(f.getDataType()) + ",\n");
+        out.write(ind(ind+1) + "new com.yahoo.document.ExtendedField.Extract() {\n");
+        out.write(ind(ind+2) + "public Object get(com.yahoo.document.datatypes.StructuredFieldValue doc) {return ((" + className + ")doc)." + getter(f.getName()) + "(); }\n");
+        out.write(ind(ind+2) + "public void set(com.yahoo.document.datatypes.StructuredFieldValue doc, Object value) { ((" + className + ")doc)." + setter(f.getName())+"((" + toJavaType(f.getDataType()) + ")value); }\n");
+        out.write(ind(ind+1) + "}\n");
+        out.write(ind(ind) + "));\n");
+    }
     private static void exportExtendedStructTypeGetter(String className, String name, Collection<Field> fields, Writer out, int ind, String methodName, String retType) throws IOException {
         out.write(ind(ind)+"private static "+retType+" "+methodName+"() {\n" +
                 ind(ind+1)+retType+" ret = new "+retType+"(\""+name+"\");\n");
         for (Field f : fields) {
-            out.write(ind(ind+1)+
-                    "ret.addField(new com.yahoo.document.ExtendedField(\""+f.getName()+"\", " + toJavaReference(f.getDataType())+
-                    ", new com.yahoo.document.ExtendedField.Extract() {\n");
-            out.write(ind(ind+2)+"public Object get(com.yahoo.document.datatypes.StructuredFieldValue doc) {return ((" + className + ")doc)." + getter(f.getName()) + "(); }\n");
-            out.write(ind(ind+2)+"public void set(com.yahoo.document.datatypes.StructuredFieldValue doc, Object value) { ((" + className + ")doc)." + setter(f.getName())+"((" + toJavaType(f.getDataType()) + ")value); }\n");
-            out.write(ind(ind+1)+"}));\n" );
-
+            addExtendedField(className, f, out, ind + 1);
         }
         out.write(ind(ind+1)+"return ret;\n");
         out.write(ind(ind)+"}\n\n");
@@ -613,24 +614,20 @@ public class DocumentGenMojo extends AbstractMojo {
 
     private static void exportIterator(Collection<Field> fieldSet, Writer out, int ind) throws IOException {
         out.write(ind(ind)+"@Override public java.util.Iterator<java.util.Map.Entry<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue>> iterator() {\n");
-        out.write(
-                ind(ind+1)+"java.util.Map<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue> ret = new java.util.HashMap<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue>();\n" +
-                ind(ind+1)+"com.yahoo.document.Field f;\n");
+        out.write(ind(ind+1)+"java.util.Map<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue> ret = new java.util.HashMap<>();\n");
         for (Field field: fieldSet) {
             String name = field.getName();
             out.write(
                     ind(ind+1)+"if ("+getter(name)+"()!=null) {\n" +
-                    ind(ind+2)+"f = new com.yahoo.document.Field(\""+name+"\", "+toJavaReference(field.getDataType())+");\n" +
-                    ind(ind+2)+"com.yahoo.document.datatypes.FieldValue fv = f.getDataType().createFieldValue("+getter(name)+"());\n");
+                    ind(ind+2)+"com.yahoo.document.Field f = getField(\""+name+"\");\n" +
+                    ind(ind+2)+"com.yahoo.document.datatypes.FieldValue fv = ((com.yahoo.document.ExtendedField)f).getFieldValue(this);\n");
                     if (field.getDataType().equals(DataType.STRING)) {
                         out.write(
                             ind(ind+2)+"if (fv instanceof com.yahoo.document.datatypes.StringFieldValue) if ("+spanTreeGetter(name)+"()!=null) {\n" +
                             ind(ind+3)+"for (com.yahoo.document.annotation.SpanTree tree : "+spanTreeGetter(name)+"().values()) ((com.yahoo.document.datatypes.StringFieldValue)fv).setSpanTree(tree);\n"+
                             ind(ind+2)+"}\n");
                     }
-                    out.write(
-                            ind(ind+2)+"ret.put(f, fv);\n" +
-                    ind(ind+1)+"}\n");
+                    out.write(ind(ind+2)+"ret.put(f, fv);\n" + ind(ind+1)+"}\n");
 
         }
         out.write(
@@ -737,7 +734,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(ind+2)+"super("+structClassName+".type);\n" +
                 ind(ind+1)+"}\n\n");
                 exportCopyConstructor(structClassName, structType.getFields(), out, ind+1, false);
-                exportStructTypeGetter(structType.getName(), structType.getFields(), out, ind+1, "getStructType", "com.yahoo.document.StructDataType");
+                exportExtendedStructTypeGetter(structClassName, structType.getName(), structType.getFields(), out, ind+1, "getStructType", "com.yahoo.document.StructDataType");
                 exportAssign(structType, structClassName, out, ind+1);
                 exportFieldsAndAccessors(structClassName, structType.getFields(), out, ind+1, true);
 
