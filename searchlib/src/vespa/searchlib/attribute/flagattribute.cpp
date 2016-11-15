@@ -34,9 +34,8 @@ public:
     }
     
     void
-    save(uint32_t e, uint32_t docId, uint32_t vci, int32_t weight)
+    save(uint32_t e, uint32_t docId, int32_t weight)
     {
-        (void) vci;
         (void) weight;
         assert(e < _map.size());
         _fa.setNewBVValue(docId, _map[e]);

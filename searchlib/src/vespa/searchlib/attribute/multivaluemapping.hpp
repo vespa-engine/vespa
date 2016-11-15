@@ -33,7 +33,7 @@ MultiValueMappingT<T, I>::fillMapped(AttributeVector::ReaderBase &attrReader,
             (void) mapSize;
             int32_t weight = hasWeights ? attrReader.getNextWeight() : 1;
             indices.push_back(T(map[e], weight));
-            saver.save(e, doc, vci, weight);
+            saver.save(e, doc, weight);
         }
         if (maxvc < indices.size()) {
             maxvc = indices.size();
