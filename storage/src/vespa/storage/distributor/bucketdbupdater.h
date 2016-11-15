@@ -72,7 +72,7 @@ public:
      * is active, such as from within a enableClusterState() call.
      */
     bool bucketOwnershipHasChanged() const {
-        return (_pendingClusterState.get()
+        return ((_pendingClusterState.get() != nullptr)
                 && _pendingClusterState->hasBucketOwnershipTransfer());
     }
 
