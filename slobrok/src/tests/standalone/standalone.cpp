@@ -118,7 +118,6 @@ public:
 TEST("standalone") {
     slobrok::SlobrokServer slobrokServer(18541);
     Stopper<slobrok::SlobrokServer> ssCleaner(slobrokServer);
-    FastOS_Thread::Sleep(300);
 
     FRT_Supervisor orb;
     orb.Start();
@@ -130,10 +129,19 @@ TEST("standalone") {
     FRT_RPCRequest *req = NULL;
     SubReferer<FRT_RPCRequest> reqCleaner(req);
 
-    // test ping against slobrok
-    req = orb.AllocRPCRequest(req);
-    req->SetMethodName("frt.rpc.ping");
-    sb->InvokeSync(req, 5.0);
+    for (int retry=0; retry < 5*61; retry++) {
+        // test ping against slobrok
+        req = orb.AllocRPCRequest(req);
+        req->SetMethodName("frt.rpc.ping");
+        sb->InvokeSync(req, 5.0);
+        if (checkOk(req)) {
+            break;
+        }
+        fprintf(stderr, "ping failed [retry %d]\n", retry);
+        FastOS_Thread::Sleep(200);
+        sb->SubRef();
+        sb = orb.GetTarget(18541);
+    }
     ASSERT_TRUE(checkOk(req));
 
     // lookup '*' on empty slobrok
