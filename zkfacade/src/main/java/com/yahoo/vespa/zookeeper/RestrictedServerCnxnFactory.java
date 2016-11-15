@@ -29,18 +29,31 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
     
     @Override
     protected NIOServerCnxn createConnection(SocketChannel socket, SelectionKey selection) throws IOException {
-        ImmutableSet<String> allowedZooKeeperClients = findAllowedZooKeeperClients();
-        String remoteHost = ((InetSocketAddress)socket.getRemoteAddress()).getHostName();
+        NIOServerCnxn ret = super.createConnection(socket, selection);
+        validateRemoteOrClose(socket);
+        return ret;
+    }
 
-        if (isLocalHost(remoteHost)) return super.createConnection(socket, selection); // always allow localhost
-        if (allowedZooKeeperClients.isEmpty()) return super.createConnection(socket, selection); // inactive: allow all
-        if (allowedZooKeeperClients.contains(remoteHost)) return super.createConnection(socket, selection); // allowed
+    private void validateRemoteOrClose(SocketChannel socket) {
+        try {
+            String remoteHost = ((InetSocketAddress)socket.getRemoteAddress()).getHostName();
 
-        // Not allowed: Reject connection
-        String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
-                              ": This cluster only allow connection from hosts in: " + allowedZooKeeperClients;
-        log.info(errorMessage);
-        throw new IllegalArgumentException(errorMessage); // log and throw as this exception will be suppressed by zk
+            if (isLocalHost(remoteHost)) return; // always allow localhost
+
+            ImmutableSet<String> allowedZooKeeperClients = findAllowedZooKeeperClients();
+
+            if (allowedZooKeeperClients.isEmpty()) return; // inactive: allow all
+            if (allowedZooKeeperClients.contains(remoteHost)) return; // allowed
+
+            // Not allowed: Reject connection
+            String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
+                                  ": This cluster only allow connection from hosts in: " + allowedZooKeeperClients;
+            log.info(errorMessage);
+            socket.shutdownInput();
+            socket.shutdownOutput();
+        } catch (Exception e) {
+            log.warning("Unexpected exception: "+e);
+        }
     }
 
     /** Returns the allowed client host names. If the list is empty any host is allowed. */
