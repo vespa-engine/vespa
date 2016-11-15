@@ -15,7 +15,7 @@ class GenericTensorStore;
 /*
  * Class for saving a tensor attribute.
  */
-class TensorAttributeSaver : public AttributeSaver
+class GenericTensorAttributeSaver : public AttributeSaver
 {
 public:
     using RefCopyVector = TensorAttribute::RefCopyVector;
@@ -26,12 +26,12 @@ private:
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
-    TensorAttributeSaver(GenerationHandler::Guard &&guard,
+    GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
                          const IAttributeSaveTarget::Config &cfg,
                          RefCopyVector &&refs,
                          const GenericTensorStore &tensorStore);
 
-    virtual ~TensorAttributeSaver();
+    virtual ~GenericTensorAttributeSaver();
 };
 
 } // namespace search::attribute

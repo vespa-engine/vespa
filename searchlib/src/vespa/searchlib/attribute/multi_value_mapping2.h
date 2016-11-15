@@ -15,6 +15,9 @@ namespace attribute {
 template <typename EntryT, typename RefT = datastore::EntryRefT<17> >
 class MultiValueMapping2
 {
+public:
+    using MultiValueType = EntryT;
+private:
     using EntryRef = datastore::EntryRef;
     using IndexVector = RcuVectorBase<EntryRef>;
     using ArrayStore = datastore::ArrayStore<EntryT, RefT>;

@@ -12,6 +12,8 @@
 
 namespace vespalib {
 
+template <typename T> class Array;
+
 /**
  * This is a simple wrapper class for a typed array with no memory ownership.
  * It is similar to vespalib::stringref
@@ -21,6 +23,7 @@ class ArrayRef {
 public:
     ArrayRef(T * v, size_t sz) : _v(v), _sz(sz) { }
     ArrayRef(std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
+    inline ArrayRef(Array<T> &v);
     T & operator [] (size_t i) { return _v[i]; }
     const T & operator [] (size_t i) const { return _v[i]; }
     size_t size() const { return _sz; }
@@ -34,6 +37,7 @@ class ConstArrayRef {
 public:
     ConstArrayRef(const T *v, size_t sz) : _v(v), _sz(sz) { }
     ConstArrayRef(const std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
+    inline ConstArrayRef(const Array<T> &v);
     ConstArrayRef() : _v(nullptr), _sz(0) {}
     const T & operator [] (size_t i) const { return _v[i]; }
     size_t size() const { return _sz; }
@@ -206,6 +210,20 @@ private:
     Alloc  _array;
     size_t _sz;
 };
+
+template <typename T>
+ArrayRef<T>::ArrayRef(Array<T> &v)
+    : _v(&v[0]),
+      _sz(v.size())
+{
+}
+
+template <typename T>
+ConstArrayRef<T>::ConstArrayRef(const Array<T> &v)
+    : _v(&v[0]),
+      _sz(v.size())
+{
+}
 
 template <typename T>
 void construct(T * dest, const T * source, size_t sz, std::tr1::false_type)

@@ -91,17 +91,16 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(typename B::ReaderBase &
     this->setCommittedDocIdLimit(numDocs);
 
     FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
-    const T *map = reinterpret_cast<const T *>(udatBuffer->buffer());
     assert((udatBuffer->size() % sizeof(T)) == 0);
-    size_t mapSize = udatBuffer->size() / sizeof(T);
+    vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
+                                   udatBuffer->size() / sizeof(T));
     attribute::NoSaveLoadedEnum saver;
     _data.fillMapped(getGenerationHolder(),
                      attrReader,
                      numValues,
                      map,
-                     mapSize,
                      saver,
-                      numDocs);
+                     numDocs);
     return true;
 }
 

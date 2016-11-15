@@ -202,8 +202,7 @@ SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
     _enumIndices.fillMapped(getGenerationHolder(),
                             attrReader,
                             numValues,
-                            &eidxs[0],
-                            eidxs.size(),
+                            eidxs,
                             saver,
                             this->getNumDocs());
 }
@@ -220,8 +219,7 @@ SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
     _enumIndices.fillMapped(getGenerationHolder(),
                             attrReader,
                             numValues,
-                            &eidxs[0],
-                            eidxs.size(),
+                            eidxs,
                             saver,
                             this->getNumDocs());
 }

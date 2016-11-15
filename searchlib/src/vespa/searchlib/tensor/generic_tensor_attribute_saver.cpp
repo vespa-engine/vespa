@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include "tensor_attribute_saver.h"
+#include "generic_tensor_attribute_saver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include "generic_tensor_store.h"
 
@@ -12,11 +12,11 @@ namespace search {
 
 namespace attribute {
 
-TensorAttributeSaver::
-TensorAttributeSaver(GenerationHandler::Guard &&guard,
-                     const IAttributeSaveTarget::Config &cfg,
-                     RefCopyVector &&refs,
-                     const GenericTensorStore &tensorStore)
+GenericTensorAttributeSaver::
+GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
+                            const IAttributeSaveTarget::Config &cfg,
+                            RefCopyVector &&refs,
+                            const GenericTensorStore &tensorStore)
     : AttributeSaver(std::move(guard), cfg),
       _refs(std::move(refs)),
       _tensorStore(tensorStore)
@@ -24,13 +24,13 @@ TensorAttributeSaver(GenerationHandler::Guard &&guard,
 }
 
 
-TensorAttributeSaver::~TensorAttributeSaver()
+GenericTensorAttributeSaver::~GenericTensorAttributeSaver()
 {
 }
 
 
 bool
-TensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
+GenericTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 {
     std::unique_ptr<BufferWriter>
         datWriter(saveTarget.datWriter().allocBufferWriter());

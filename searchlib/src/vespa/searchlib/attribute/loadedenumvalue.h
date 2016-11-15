@@ -147,13 +147,11 @@ public:
 
 class SaveEnumHist
 {
-    uint32_t *const _hist;
-    const size_t _histSize;
+    vespalib::ArrayRef<uint32_t> _hist;
 
 public:
     SaveEnumHist(EnumStoreBase::EnumVector &enumHist)
-        : _hist(&enumHist[0]),
-          _histSize(enumHist.size())
+        : _hist(enumHist)
     {
     }
 
@@ -163,7 +161,7 @@ public:
         (void) docId;
         (void) vci;
         (void) weight;
-        assert(e < _histSize);
+        assert(e < _hist.size());
         ++_hist[e];
     }
 };

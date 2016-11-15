@@ -7,7 +7,7 @@ vespa_add_library(searchlib_tensor OBJECT
     generic_tensor_attribute.cpp
     generic_tensor_store.cpp
     tensor_attribute.cpp
-    tensor_attribute_saver.cpp
+    generic_tensor_attribute_saver.cpp
     tensor_store.cpp
     DEPENDS
 )
