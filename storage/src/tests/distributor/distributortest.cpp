@@ -45,6 +45,7 @@ class Distributor_Test : public CppUnit::TestFixture,
     CPPUNIT_TEST(bucketActivationIsEnabledByDefault);
     CPPUNIT_TEST(bucketActivationConfigIsPropagatedToDistributorConfiguration);
     CPPUNIT_TEST(max_clock_skew_config_is_propagated_to_distributor_config);
+    CPPUNIT_TEST(configured_safe_time_point_rejection_works_end_to_end);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -70,6 +71,7 @@ protected:
     void bucketActivationIsEnabledByDefault();
     void bucketActivationConfigIsPropagatedToDistributorConfiguration();
     void max_clock_skew_config_is_propagated_to_distributor_config();
+    void configured_safe_time_point_rejection_works_end_to_end();
 
 public:
     void setUp() {
@@ -166,6 +168,8 @@ private:
         getBucketDatabase().clear();
         return retVal;
     }
+
+    void configureMaxClusterClockSkew(int seconds);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Distributor_Test);
@@ -688,19 +692,78 @@ Distributor_Test::bucketActivationConfigIsPropagatedToDistributorConfiguration()
 }
 
 void
-Distributor_Test::max_clock_skew_config_is_propagated_to_distributor_config()
-{
+Distributor_Test::configureMaxClusterClockSkew(int seconds) {
     using namespace vespa::config::content::core;
     using ConfigBuilder = StorDistributormanagerConfigBuilder;
 
+    ConfigBuilder builder;
+    builder.maxClusterClockSkewSec = seconds;
+    getConfig().configure(builder);
+    _distributor->enableNextConfig();
+}
+
+void
+Distributor_Test::max_clock_skew_config_is_propagated_to_distributor_config() {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
-    ConfigBuilder builder;
-    builder.maxClusterClockSkewSec = 5;
-    getConfig().configure(builder);
-
+    configureMaxClusterClockSkew(5);
     CPPUNIT_ASSERT(getConfig().getMaxClusterClockSkew()
                    == std::chrono::seconds(5));
+}
+
+namespace {
+
+auto makeDummyRemoveCommand() {
+    return std::make_shared<api::RemoveCommand>(
+            document::BucketId(0),
+            document::DocumentId("id:foo:testdoctype1:n=1:foo"),
+            api::Timestamp(0));
+}
+
+}
+
+// TODO refactor this to set proper highest timestamp as part of bucket info
+// reply once we have the "highest timestamp across all owned buckets" feature
+// in place.
+void
+Distributor_Test::configured_safe_time_point_rejection_works_end_to_end() {
+    setupDistributor(Redundancy(2), NodeCount(2),
+                     "bits:1 storage:1 distributor:2");
+    getClock().setAbsoluteTimeInSeconds(1000);
+    configureMaxClusterClockSkew(10);
+
+    lib::ClusterState newState("bits:1 storage:1 distributor:1");
+    auto stateCmd = std::make_shared<api::SetSystemStateCommand>(newState);
+    _distributor->handleMessage(stateCmd);
+
+    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
+    auto& bucketReq(dynamic_cast<api::RequestBucketInfoCommand&>(
+            *_sender.commands[0]));
+    auto bucketReply = bucketReq.makeReply();
+    // Make sure we have a bucket to route our remove op to, or we'd get
+    // an immediate reply anyway.
+    dynamic_cast<api::RequestBucketInfoReply&>(*bucketReply)
+        .getBucketInfo().push_back(
+            api::RequestBucketInfoReply::Entry(document::BucketId(1, 1),
+                api::BucketInfo(20, 10, 12, 50, 60, true, true)));
+    _distributor->handleMessage(std::move(bucketReply));
+    _sender.commands.clear();
+    // SetSystemStateCommand sent down chain at this point.
+
+    _distributor->handleMessage(makeDummyRemoveCommand());
+
+    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size()); // Rejected remove
+    CPPUNIT_ASSERT_EQUAL(api::MessageType::REMOVE_REPLY,
+                         _sender.replies[0]->getType());
+    auto& reply(static_cast<api::RemoveReply&>(*_sender.replies[0]));
+    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::BUSY, reply.getResult().getResult());
+    _sender.replies.clear();
+
+    // Increment time to first whole second of clock + 10 seconds of skew.
+    // Should now not get any feed rejections.
+    getClock().setAbsoluteTimeInSeconds(1011);
+    _distributor->handleMessage(makeDummyRemoveCommand());
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
 }
 
 }
