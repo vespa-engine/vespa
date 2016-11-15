@@ -115,12 +115,6 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getInactive() { return zkClient.getNodes(Node.State.inactive); }
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
 
-    public int getNodeCount(String tenantId, Node.State ... inState) {
-        return zkClient.getNodes(inState).stream()
-            .filter(node -> node.allocation().get().owner().tenant().value().equals(tenantId))
-            .collect(Collectors.counting()).intValue();
-    }
-
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo */
