@@ -25,7 +25,7 @@ public class ExtendedField extends Field {
     }
     public FieldValue setFieldValue(StructuredFieldValue doc, FieldValue fv) {
         FieldValue old = getFieldValue(doc);
-        extract.set(doc, fv.getWrappedValue());
+        extract.set(doc, (fv == null) ? null : fv.getWrappedValue());
         return old;
     }
 }
