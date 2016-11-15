@@ -22,16 +22,13 @@ namespace
 template <class FA, typename T>
 class SaveBits
 {
-    const T  *_map;
-    const size_t _mapSize;
+    vespalib::ConstArrayRef<T> _map;
     FA &_fa;
     
 public:
-    SaveBits(const T *map,
-             const size_t mapSize,
+    SaveBits(vespalib::ConstArrayRef<T> map,
              FA &fa)
         : _map(map),
-          _mapSize(mapSize),
           _fa(fa)
     {
     }
@@ -41,7 +38,7 @@ public:
     {
         (void) vci;
         (void) weight;
-        assert(e < _mapSize);
+        assert(e < _map.size());
         _fa.setNewBVValue(docId, _map[e]);
     }
 };
@@ -99,14 +96,15 @@ FlagAttributeT<B>::onLoadEnumerated(typename B::ReaderBase &attrReader)
         _bitVectorSize = numDocs;
 
     FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
-    const TT *map = reinterpret_cast<const TT *>(udatBuffer->buffer());
     assert((udatBuffer->size() % sizeof(TT)) == 0);
-    size_t mapSize = udatBuffer->size() / sizeof(TT);
-    SaveBits<FlagAttributeT<B>, TT> saver(map, mapSize, *this);
+    vespalib::ConstArrayRef<TT> map(reinterpret_cast<const TT *>
+                                    (udatBuffer->buffer()),
+                                    udatBuffer->size() / sizeof(TT));
+    SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
     uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
                                                  numValues,
-                                                 map,
-                                                 mapSize,
+                                                 &map[0],
+                                                 map.size(),
                                                  saver,
                                                  this->getNumDocs(),
                                                  this->hasWeightedSetType());
