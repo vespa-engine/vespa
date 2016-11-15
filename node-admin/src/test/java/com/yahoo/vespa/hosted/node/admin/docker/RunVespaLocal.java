@@ -59,7 +59,7 @@ import static org.mockito.Mockito.when;
  */
 public class RunVespaLocal {
     private static final DockerImage VESPA_BASE_IMAGE = new DockerImage(
-            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/ci:6.43.9");
+            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/ci:6.47.3");
     private static final Environment environment = new Environment(
             Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
             HostName.getLocalhost(), new InetAddressResolver());
@@ -128,7 +128,7 @@ public class RunVespaLocal {
         } while (! okResponse || Instant.now().isBefore(start.plusSeconds(120)));
         assertTrue(okResponse);
 
-//        LocalZoneUtils.undeployApp();
+//        LocalZoneUtils.deleteApplication();
 //        nodeAdminStateUpdater.deconstruct();
     }
 

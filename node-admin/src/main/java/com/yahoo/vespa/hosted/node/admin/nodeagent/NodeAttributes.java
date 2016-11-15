@@ -11,6 +11,7 @@ import java.util.Objects;
 // serialization-related dependencies it needs not have.
 public class NodeAttributes {
     private Long restartGeneration = null;
+    private Long rebootGeneration = null;
     private DockerImage dockerImage = null;
     private String vespaVersion = null;
 
@@ -18,6 +19,11 @@ public class NodeAttributes {
 
     public NodeAttributes withRestartGeneration(Long restartGeneration) {
         this.restartGeneration = restartGeneration;
+        return this;
+    }
+
+    public NodeAttributes withRebootGeneration(Long rebootGeneration) {
+        this.rebootGeneration = rebootGeneration;
         return this;
     }
 
@@ -35,6 +41,10 @@ public class NodeAttributes {
         return restartGeneration;
     }
 
+    public Long getRebootGeneration() {
+        return rebootGeneration;
+    }
+
     public DockerImage getDockerImage() {
         return dockerImage;
     }
@@ -45,7 +55,7 @@ public class NodeAttributes {
 
     @Override
     public int hashCode() {
-        return Objects.hash(restartGeneration, dockerImage, vespaVersion);
+        return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion);
     }
 
     @Override
@@ -56,6 +66,7 @@ public class NodeAttributes {
         final NodeAttributes other = (NodeAttributes) o;
 
         return Objects.equals(restartGeneration, other.restartGeneration)
+                && Objects.equals(rebootGeneration, other.rebootGeneration)
                 && Objects.equals(dockerImage, other.dockerImage)
                 && Objects.equals(vespaVersion, other.vespaVersion);
     }
@@ -64,6 +75,7 @@ public class NodeAttributes {
     public String toString() {
         return "NodeAttributes{" +
                 "restartGeneration=" + restartGeneration +
+                ", rebootGeneration=" + rebootGeneration +
                 ", dockerImage=" + dockerImage +
                 ", vespaVersion='" + vespaVersion + '\'' +
                 '}';

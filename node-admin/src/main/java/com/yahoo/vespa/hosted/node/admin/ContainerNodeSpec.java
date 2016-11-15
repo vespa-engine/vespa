@@ -11,6 +11,7 @@ import java.util.Optional;
 /**
  * @author stiankri
  */
+// TODO: Rename to Node or NodeRepositoryNode
 public class ContainerNodeSpec {
     public final String hostname;
     public final Optional<DockerImage> wantedDockerImage;
@@ -23,6 +24,8 @@ public class ContainerNodeSpec {
     public final Optional<Membership> membership;
     public final Optional<Long> wantedRestartGeneration;
     public final Optional<Long> currentRestartGeneration;
+    public final Optional<Long> wantedRebootGeneration;
+    public final Optional<Long> currentRebootGeneration;
     public final Optional<Double> minCpuCores;
     public final Optional<Double> minMainMemoryAvailableGb;
     public final Optional<Double> minDiskAvailableGb;
@@ -39,6 +42,8 @@ public class ContainerNodeSpec {
             final Optional<Membership> membership,
             final Optional<Long> wantedRestartGeneration,
             final Optional<Long> currentRestartGeneration,
+            final Optional<Long> wantedRebootGeneration,
+            final Optional<Long> currentRebootGeneration,
             final Optional<Double> minCpuCores,
             final Optional<Double> minMainMemoryAvailableGb,
             final Optional<Double> minDiskAvailableGb) {
@@ -59,6 +64,8 @@ public class ContainerNodeSpec {
         this.membership = membership;
         this.wantedRestartGeneration = wantedRestartGeneration;
         this.currentRestartGeneration = currentRestartGeneration;
+        this.wantedRebootGeneration = wantedRebootGeneration;
+        this.currentRebootGeneration = currentRebootGeneration;
         this.minCpuCores = minCpuCores;
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
         this.minDiskAvailableGb = minDiskAvailableGb;
@@ -82,6 +89,8 @@ public class ContainerNodeSpec {
                 Objects.equals(membership, that.membership) &&
                 Objects.equals(wantedRestartGeneration, that.wantedRestartGeneration) &&
                 Objects.equals(currentRestartGeneration, that.currentRestartGeneration) &&
+                Objects.equals(wantedRebootGeneration, that.wantedRebootGeneration) &&
+                Objects.equals(currentRebootGeneration, that.currentRebootGeneration) &&
                 Objects.equals(minCpuCores, that.minCpuCores) &&
                 Objects.equals(minMainMemoryAvailableGb, that.minMainMemoryAvailableGb) &&
                 Objects.equals(minDiskAvailableGb, that.minDiskAvailableGb);
@@ -101,6 +110,8 @@ public class ContainerNodeSpec {
                 membership,
                 wantedRestartGeneration,
                 currentRestartGeneration,
+                wantedRebootGeneration,
+                currentRebootGeneration,
                 minCpuCores,
                 minMainMemoryAvailableGb,
                 minDiskAvailableGb);
@@ -118,9 +129,11 @@ public class ContainerNodeSpec {
                 + " vespaVersion = " + vespaVersion
                 + " owner = " + owner
                 + " membership = " + membership
-                + " wantedRestartGeneration=" + wantedRestartGeneration
                 + " minCpuCores=" + minCpuCores
+                + " wantedRestartGeneration=" + wantedRestartGeneration
                 + " currentRestartGeneration=" + currentRestartGeneration
+                + " wantedRebootGeneration=" + wantedRebootGeneration
+                + " currentRebootGeneration=" + currentRebootGeneration
                 + " minMainMemoryAvailableGb=" + minMainMemoryAvailableGb
                 + " minDiskAvailableGb=" + minDiskAvailableGb
                 + " }";
@@ -231,6 +244,8 @@ public class ContainerNodeSpec {
         private Optional<Membership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
         private Optional<Long> currentRestartGeneration = Optional.empty();
+        private Optional<Long> wantedRebootGeneration = Optional.empty();
+        private Optional<Long> currentRebootGeneration = Optional.empty();
         private Optional<Double> minCpuCores = Optional.of(1d);
         private Optional<Double> minMainMemoryAvailableGb = Optional.of(1d);
         private Optional<Double> minDiskAvailableGb = Optional.of(1d);
@@ -289,6 +304,16 @@ public class ContainerNodeSpec {
             return this;
         }
 
+        public Builder wantedRebootGeneration(Optional<Long> wantedRebootGeneration) {
+            this.wantedRebootGeneration = wantedRebootGeneration;
+            return this;
+        }
+
+        public Builder currentRebootGeneration(Optional<Long> currentRebootGeneration) {
+            this.currentRebootGeneration = currentRebootGeneration;
+            return this;
+        }
+
         public Builder minCpuCores(Optional<Double> minCpuCores) {
             this.minCpuCores = minCpuCores;
             return this;
@@ -306,7 +331,9 @@ public class ContainerNodeSpec {
 
         public ContainerNodeSpec build() {
             return new ContainerNodeSpec(hostname, wantedDockerImage, containerName, nodeState, nodeType, nodeFlavor,
-                                         vespaVersion, owner, membership, wantedRestartGeneration, currentRestartGeneration,
+                                         vespaVersion, owner, membership,
+                                         wantedRestartGeneration, currentRestartGeneration,
+                                         wantedRebootGeneration, currentRebootGeneration,
                                          minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb);
         }
 

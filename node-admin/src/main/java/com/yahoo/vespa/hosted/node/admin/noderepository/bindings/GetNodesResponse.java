@@ -36,6 +36,8 @@ public class GetNodesResponse {
         public final Membership membership;
         public final Long wantedRestartGeneration;
         public final Long currentRestartGeneration;
+        public final Long wantedRebootGeneration;
+        public final Long currentRebootGeneration;
         public final Double minCpuCores;
         public final Double minMainMemoryAvailableGb;
         public final Double minDiskAvailableGb;
@@ -52,6 +54,8 @@ public class GetNodesResponse {
                     @JsonProperty("membership") Membership membership,
                     @JsonProperty("restartGeneration") Long wantedRestartGeneration,
                     @JsonProperty("currentRestartGeneration") Long currentRestartGeneration,
+                    @JsonProperty("rebootGeneration") Long wantedRebootGeneration,
+                    @JsonProperty("currentRebootGeneration") Long currentRebootGeneration,
                     @JsonProperty("minCpuCores") Double minCpuCores,
                     @JsonProperty("minMainMemoryAvailableGb") Double minMainMemoryAvailableGb,
                     @JsonProperty("minDiskAvailableGb") Double minDiskAvailableGb) {
@@ -66,6 +70,8 @@ public class GetNodesResponse {
             this.membership = membership;
             this.wantedRestartGeneration = wantedRestartGeneration;
             this.currentRestartGeneration = currentRestartGeneration;
+            this.wantedRebootGeneration = wantedRebootGeneration;
+            this.currentRebootGeneration = currentRebootGeneration;
             this.minCpuCores = minCpuCores;
             this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
             this.minDiskAvailableGb = minDiskAvailableGb;
@@ -84,6 +90,8 @@ public class GetNodesResponse {
                     + " membership = " + membership
                     + " wantedRestartGeneration = " + wantedRestartGeneration
                     + " currentRestartGeneration = " + currentRestartGeneration
+                    + " wantedRebootGeneration = " + wantedRebootGeneration
+                    + " currentRebootGeneration = " + currentRebootGeneration
                     + " minCpuCores = " + minCpuCores
                     + " minMainMemoryAvailableGb = " + minMainMemoryAvailableGb
                     + " minDiskAvailableGb = " + minDiskAvailableGb

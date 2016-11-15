@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -58,29 +56,22 @@ public class NodeRepoMock implements NodeRepository {
 
         synchronized (monitor) {
             if (cns.isPresent()) {
-                updateContainerNodeSpec(cns.get().hostname,
-                        cns.get().wantedDockerImage, cns.get().containerName, Node.State.ready,
-                        cns.get().wantedRestartGeneration, cns.get().currentRestartGeneration,
-                        cns.get().minCpuCores, cns.get().minMainMemoryAvailableGb, cns.get().minDiskAvailableGb);
+                updateContainerNodeSpec(new ContainerNodeSpec.Builder()
+                                                .hostname(cns.get().hostname)
+                                                .wantedDockerImage(cns.get().wantedDockerImage)
+                                                .containerName(cns.get().containerName)
+                                                .nodeState(Node.State.ready)
+                                                .nodeType("tenant")
+                                                .nodeFlavor("docker")
+                                                .wantedRestartGeneration(cns.get().wantedRestartGeneration)
+                                                .currentRestartGeneration(cns.get().currentRestartGeneration)
+                                                .minCpuCores(cns.get().minCpuCores)
+                                                .minMainMemoryAvailableGb(cns.get().minMainMemoryAvailableGb)
+                                                .minDiskAvailableGb(cns.get().minDiskAvailableGb)
+                                                .build());
             }
             callOrderVerifier.add("markAsReady with HostName: " + hostName);
         }
-    }
-
-    public void updateContainerNodeSpec(String hostName,
-                                               Optional<DockerImage> wantedDockerImage,
-                                               ContainerName containerName,
-                                               Node.State nodeState,
-                                               Optional<Long> wantedRestartGeneration,
-                                               Optional<Long> currentRestartGeneration,
-                                               Optional<Double> minCpuCores,
-                                               Optional<Double> minMainMemoryAvailableGb,
-                                               Optional<Double> minDiskAvailableGb) {
-        updateContainerNodeSpec(new ContainerNodeSpec(hostName,
-                wantedDockerImage, containerName, nodeState, "tenant", "docker",
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                wantedRestartGeneration, currentRestartGeneration,
-                minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb));
     }
 
     public void updateContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {
