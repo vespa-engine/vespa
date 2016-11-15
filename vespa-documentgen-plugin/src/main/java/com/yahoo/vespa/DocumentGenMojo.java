@@ -674,8 +674,8 @@ public class DocumentGenMojo extends AbstractMojo {
                 out.write(ind(ind + 1) + "}\n");
             }
         }
-        out.write(ind(ind+1)+"if (field instanceof com.yahoo.document.ExtendedField) return ((com.yahoo.document.ExtendedField)field).setFieldValue(this, value);\n");
-        out.write(ind(ind+1)+"return super.setFieldValue(field, value);\n");
+        out.write(ind(ind+1)+"com.yahoo.document.ExtendedField ef = ensureExtended(field);\n");
+        out.write(ind(ind+1)+"return (ef != null) ? ef.setFieldValue(this, value) : super.setFieldValue(field, value);\n");
         out.write(ind(ind)+"}\n\n");
     }
 
@@ -699,16 +699,19 @@ public class DocumentGenMojo extends AbstractMojo {
             }
         }
 
-        out.write(ind(ind+1)+"if (field instanceof com.yahoo.document.ExtendedField) return ((com.yahoo.document.ExtendedField)field).getFieldValue(this);\n");
-        out.write(ind(ind+1)+"return super.getFieldValue(field);\n");
+        out.write(ind(ind+1)+"com.yahoo.document.ExtendedField ef = ensureExtended(field);\n");
+        out.write(ind(ind+1)+"return (ef != null) ? ef.getFieldValue(this) : super.getFieldValue(field);\n");
         out.write(ind(ind)+"}\n\n");
     }
 
     private static void exportGetField(Collection<Field> fieldSet, Writer out, int ind) throws IOException {
+        out.write(ind(ind) + "private com.yahoo.document.ExtendedField ensureExtended(com.yahoo.document.Field f) {\n");
+        out.write(ind(ind+1) + "return (com.yahoo.document.ExtendedField)((f instanceof com.yahoo.document.ExtendedField) ? f : getField(f.getName()));\n");
+        out.write(ind(ind) + "}\n\n");
         out.write(ind(ind)   + "@Override public com.yahoo.document.Field getField(String fieldName) {\n");
         out.write(ind(ind+1) + "if (fieldName==null) return null;\n");
         out.write(ind(ind+1) + "return type.getField(fieldName);\n");
-        out.write(ind(ind)+"}\n\n");
+        out.write(ind(ind) + "}\n\n");
     }
 
     /**
