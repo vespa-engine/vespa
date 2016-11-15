@@ -75,7 +75,7 @@ ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime)
     ss << "Operation received at time " << now_sec.count()
        << ", which is before bucket ownership transfer safe time of "
        << future_sec.count();
-    return api::ReturnCode(api::ReturnCode::BUSY, ss.str());
+    return api::ReturnCode(api::ReturnCode::STALE_TIMESTAMP, ss.str());
 }
 
 bool

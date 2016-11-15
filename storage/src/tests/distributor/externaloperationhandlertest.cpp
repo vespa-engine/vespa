@@ -220,7 +220,7 @@ void ExternalOperationHandlerTest::assert_rejection_due_to_unsafe_time(
     CPPUNIT_ASSERT(generated.get() == nullptr);
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
     CPPUNIT_ASSERT_EQUAL(
-            std::string("ReturnCode(BUSY, "
+            std::string("ReturnCode(STALE_TIMESTAMP, "
                         "Operation received at time 9, which is before "
                         "bucket ownership transfer safe time of 10)"),
             _sender.replies[0]->getResult().toString());

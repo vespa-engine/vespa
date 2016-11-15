@@ -14,7 +14,10 @@ using NamedErrorCodes = std::map<std::string, uint32_t>;
 // DocumentAPI C++ module uses Ye Olde Test Framework.
 class ErrorCodesTest : public vespalib::TestApp {
     int Main() override;
+
     void error_codes_match_java_definitions();
+    void stringification_is_defined_for_all_error_codes();
+
     NamedErrorCodes all_document_protocol_error_codes();
     std::string path_prefixed(const std::string& file_name) const;
 };
@@ -115,11 +118,30 @@ ErrorCodesTest::error_codes_match_java_definitions()
     EXPECT_EQUAL(cpp_golden_data, java_golden_data);
 }
 
+void
+ErrorCodesTest::stringification_is_defined_for_all_error_codes()
+{
+    using documentapi::DocumentProtocol;
+    NamedErrorCodes codes(all_document_protocol_error_codes());
+    for (auto& kv : codes) {
+        // Ugh, special casing due to divergence between Java and C++ naming.
+        // Can we fix this without breaking anything in exciting ways?
+        if (kv.second != DocumentProtocol::ERROR_EXISTS) {
+            EXPECT_EQUAL(kv.first, "ERROR_" +
+                    DocumentProtocol::getErrorName(kv.second));
+        } else {
+            EXPECT_EQUAL("EXISTS", DocumentProtocol::getErrorName(kv.second));
+        }
+    }
+}
+
 int
 ErrorCodesTest::Main()
 {
     TEST_INIT("error_codes_test");
     error_codes_match_java_definitions();
+    TEST_FLUSH();
+    stringification_is_defined_for_all_error_codes();
     TEST_FLUSH();
     TEST_DONE();
 }

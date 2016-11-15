@@ -759,7 +759,8 @@ void Distributor_Test::assertSingleBouncedRemoveReplyPresent() {
     CPPUNIT_ASSERT_EQUAL(api::MessageType::REMOVE_REPLY,
                          _sender.replies[0]->getType());
     auto& reply(static_cast<api::RemoveReply&>(*_sender.replies[0]));
-    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::BUSY, reply.getResult().getResult());
+    CPPUNIT_ASSERT_EQUAL(api::ReturnCode::STALE_TIMESTAMP,
+                         reply.getResult().getResult());
     _sender.replies.clear();
 }
 

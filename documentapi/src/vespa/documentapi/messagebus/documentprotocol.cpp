@@ -181,6 +181,7 @@ string
 DocumentProtocol::getErrorName(uint32_t errorCode) {
     switch (errorCode) {
         case ERROR_MESSAGE_IGNORED:               return "MESSAGE_IGNORED";
+        case ERROR_POLICY_FAILURE:                return "POLICY_FAILURE";
         case ERROR_DOCUMENT_NOT_FOUND:            return "DOCUMENT_NOT_FOUND";
         case ERROR_EXISTS:                        return "EXISTS";
         case ERROR_BUCKET_NOT_FOUND:              return "BUCKET_NOT_FOUND";
@@ -194,6 +195,7 @@ DocumentProtocol::getErrorName(uint32_t errorCode) {
         case ERROR_INTERNAL_FAILURE:              return "INTERNAL_FAILURE";
         case ERROR_PROCESSING_FAILURE:            return "PROCESSING_FAILURE";
         case ERROR_TIMESTAMP_EXIST:               return "TIMESTAMP_EXIST";
+        case ERROR_STALE_TIMESTAMP:               return "STALE_TIMESTAMP";
         case ERROR_NODE_NOT_READY:                return "NODE_NOT_READY";
         case ERROR_WRONG_DISTRIBUTION:            return "WRONG_DISTRIBUTION";
         case ERROR_REJECTED:                      return "REJECTED";
