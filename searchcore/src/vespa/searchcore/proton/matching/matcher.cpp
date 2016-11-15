@@ -39,16 +39,16 @@ namespace {
 // used to give out empty blacklist blueprints
 struct StupidMetaStore : IDocumentMetaStore {
     bool getGid(DocId, GlobalId &) const override { return false; }
+    bool getGidEvenIfMoved(DocId, GlobalId &) const override { return false; }
     bool getLid(const GlobalId &, DocId &) const override { return false; }
     DocumentMetaData getMetaData(const GlobalId &) const override { return DocumentMetaData(); }
     void getMetaData(const BucketId &, DocumentMetaData::Vector &) const override { }
     DocId getCommittedDocIdLimit() const override { return 1; }
     DocId getNumUsedLids() const override { return 0; }
     DocId getNumActiveLids() const override { return 0; }
+    uint64_t getCurrentGeneration() const override { return 0; }
     LidUsageStats getLidUsageStats() const override { return LidUsageStats(); }
-    Blueprint::UP createBlackListBlueprint() const override {
-        return Blueprint::UP();
-    }
+    Blueprint::UP createBlackListBlueprint() const override { return Blueprint::UP(); }
 };
 
 FeatureSet::SP findFeatureSet(const DocsumRequest &req,

@@ -86,6 +86,11 @@ struct IDocumentMetaStore {
      * Returns true if found, false otherwise.
      **/
     virtual bool getGid(DocId lid, GlobalId &gid) const = 0;
+    /**
+     * Retrieves the gid associated with the given lid, even if the lid has moved.
+     * Returns true if found, false otherwise.
+     **/
+    virtual bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const = 0;
 
     /**
      * Retrieves the lid associated with the given gid.
@@ -145,6 +150,11 @@ struct IDocumentMetaStore {
      * that gives hits for all documents that should not be visible.
      **/
     virtual std::unique_ptr<queryeval::Blueprint> createBlackListBlueprint() const = 0;
+
+    /**
+     * Give read access to the current generation of the metastore.
+     **/
+    virtual uint64_t getCurrentGeneration() const = 0;
 };
 
 

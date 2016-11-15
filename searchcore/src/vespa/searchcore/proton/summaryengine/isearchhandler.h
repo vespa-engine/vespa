@@ -15,31 +15,29 @@ namespace proton {
  * class to delegate operations to the appropriate db.
  */
 class ISearchHandler {
+protected:
+    ISearchHandler() = default;
+    using DocsumReply = search::engine::DocsumReply;
+    using SearchReply = search::engine::SearchReply;
+    using SearchRequest = search::engine::SearchRequest;
+    using DocsumRequest = search::engine::DocsumRequest;
 public:
-    /**
-     * Convenience typedefs.
-     */
     typedef std::unique_ptr<ISearchHandler> UP;
     typedef std::shared_ptr<ISearchHandler> SP;
 
     ISearchHandler(const ISearchHandler &) = delete;
     ISearchHandler & operator = (const ISearchHandler &) = delete;
-    /**
-     * Virtual destructor to allow inheritance.
-     */
     virtual ~ISearchHandler() { }
 
     /**
      * @return Use the request and produce the document summary result.
      */
-    virtual search::engine::DocsumReply::UP getDocsums(const search::engine::DocsumRequest & request) = 0;
+    virtual DocsumReply::UP getDocsums(const DocsumRequest & request) = 0;
 
-    virtual search::engine::SearchReply::UP match(
+    virtual SearchReply::UP match(
             const ISearchHandler::SP &self,
-            const search::engine::SearchRequest &req,
+            const SearchRequest &req,
             vespalib::ThreadBundle &threadBundle) const = 0;
-protected:
-    ISearchHandler() = default;
 };
 
 } // namespace proton

@@ -72,6 +72,9 @@ public:
     bool isFreeListConstructed() const {
         return _lidFreeListConstructed;
     }
+    bool validButMaybeUnusedLid(DocId lid) const {
+        return lid < _usedLids.size();
+    }
     bool validLid(DocId lid) const {
         return (lid < _usedLids.size() && _usedLids.testBit(lid));
     }

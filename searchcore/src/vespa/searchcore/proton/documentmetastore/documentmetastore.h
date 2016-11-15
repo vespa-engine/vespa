@@ -57,6 +57,7 @@ public:
     using DocumentMetaStoreAttribute::commit;
     using DocumentMetaStoreAttribute::getCommittedDocIdLimit;
     using DocumentMetaStoreAttribute::removeAllOldGenerations;
+    using DocumentMetaStoreAttribute::getCurrentGeneration;
 
 private:
     // maps from lid -> meta data
@@ -87,19 +88,15 @@ private:
     VESPA_DLL_LOCAL void ensureSpace(DocId lid);
     bool insert(DocId lid, const RawDocumentMetaData &metaData);
 
-    const GlobalId &
-    getRawGid(DocId lid) const
-    {
-        return getRawMetaData(lid).getGid();
-    }
+    const GlobalId & getRawGid(DocId lid) const { return getRawMetaData(lid).getGid(); }
 
-    virtual void onUpdateStat() override;
+    void onUpdateStat() override;
 
     // Implements AttributeVector
-    virtual void onGenerationChange(generation_t generation) override;
-    virtual void removeOldGenerations(generation_t firstUsed) override;
-    virtual std::unique_ptr<search::AttributeSaver> onInitSave() override;
-    virtual bool onLoad() override;
+    void onGenerationChange(generation_t generation) override;
+    void removeOldGenerations(generation_t firstUsed) override;
+    std::unique_ptr<search::AttributeSaver> onInitSave() override;
+    bool onLoad() override;
 
     bool
     checkBuckets(const GlobalId &gid,
@@ -122,22 +119,22 @@ private:
                                    const RawDocumentMetaData &newMetaData);
 
     void unload();
-
-    virtual void
-    updateActiveLids(const BucketId &bucketId, bool active) override;
+    void updateActiveLids(const BucketId &bucketId, bool active) override;
 
     /**
      * Implements DocumentMetaStoreAdapter
      */
-    virtual void doCommit(search::SerialNum firstSerialNum,
-                          search::SerialNum lastSerialNum) override {
+    void doCommit(SerialNum firstSerialNum, SerialNum lastSerialNum) override {
         commit(firstSerialNum, lastSerialNum);
     }
-    virtual DocId doGetCommittedDocIdLimit() const override {
+    DocId doGetCommittedDocIdLimit() const override {
         return getCommittedDocIdLimit();
     }
-    virtual void doRemoveAllOldGenerations() override {
+    void doRemoveAllOldGenerations() override {
         removeAllOldGenerations();
+    }
+    uint64_t doGetCurrentGeneration() const override {
+        return getCurrentGeneration();
     }
 
     VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder);
@@ -161,8 +158,8 @@ public:
     /**
      * Implements documentmetastore::IStore.
      */
-    virtual Result inspectExisting(const GlobalId &gid) const override;
-    virtual Result inspect(const GlobalId &gid) override;
+    Result inspectExisting(const GlobalId &gid) const override;
+    Result inspect(const GlobalId &gid) override;
     /**
      * Puts the given <lid, meta data> pair to this store.
      * This function should only be called before constructFreeList()
@@ -171,17 +168,17 @@ public:
      * map is then re-built the same way it was originally where add()
      * was used to create the <lid, gid> pairs.
      **/
-    virtual Result put(const GlobalId &gid,
-                       const BucketId &bucketId,
-                       const Timestamp &timestamp,
-                       DocId lid) override;
-    virtual bool updateMetaData(DocId lid,
-                                const BucketId &bucketId,
-                                const Timestamp &timestamp) override;
-    virtual bool remove(DocId lid) override;
+    Result put(const GlobalId &gid,
+               const BucketId &bucketId,
+               const Timestamp &timestamp,
+               DocId lid) override;
+    bool updateMetaData(DocId lid,
+                        const BucketId &bucketId,
+                        const Timestamp &timestamp) override;
+    bool remove(DocId lid) override;
 
-    virtual BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;
-    virtual vespalib::GenerationHandler::Guard getGuard() const override;
+    BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;
+    vespalib::GenerationHandler::Guard getGuard() const override;
 
     /**
      * Put lid on a hold list, for later reuse.  Typically called
@@ -189,45 +186,30 @@ public:
      * document has been torn down (memory index, attribute vectors,
      * document store).
      */
-    virtual void removeComplete(DocId lid) override;
-    virtual void move(DocId fromLid, DocId toLid) override;
+    void removeComplete(DocId lid) override;
+    void move(DocId fromLid, DocId toLid) override;
+    bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
-    virtual bool validLid(DocId lid) const override {
-        return validLidFast(lid);
-    }
-    virtual void removeBatch(const std::vector<DocId> &lidsToRemove,
-                             const DocId docIdLimit) override;
+    bool validLid(DocId lid) const override { return validLidFast(lid); }
+    void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override;
     /**
      * Put lids on a hold list, for laster reuse.
      */
-    virtual void
-    removeBatchComplete(const std::vector<DocId> &lidsToRemove) override;
-    virtual const RawDocumentMetaData &
-    getRawMetaData(DocId lid) const override { return _metaDataStore[lid]; }
-
-
+    void removeBatchComplete(const std::vector<DocId> &lidsToRemove) override;
+    const RawDocumentMetaData & getRawMetaData(DocId lid) const override { return _metaDataStore[lid]; }
 
     /**
      * Implements search::IDocumentMetaStore
      **/
-    virtual bool getGid(DocId lid, GlobalId &gid) const override;
-    virtual bool getLid(const GlobalId & gid, DocId &lid) const override;
-    virtual search::DocumentMetaData
-    getMetaData(const GlobalId &gid) const override;
-    virtual void
-    getMetaData(const BucketId &bucketId,
-                search::DocumentMetaData::Vector &result) const override;
-    virtual DocId getNumUsedLids() const override {
-        return _lidAlloc.getNumUsedLids();
-    }
-    virtual DocId getNumActiveLids() const override {
-        return _lidAlloc.getNumActiveLids();
-    }
-    virtual search::LidUsageStats getLidUsageStats() const override;
-    virtual search::queryeval::Blueprint::UP
-    createBlackListBlueprint() const override;
-
-
+    bool getGid(DocId lid, GlobalId &gid) const override;
+    bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const override;
+    bool getLid(const GlobalId & gid, DocId &lid) const override;
+    search::DocumentMetaData getMetaData(const GlobalId &gid) const override;
+    void getMetaData(const BucketId &bucketId, search::DocumentMetaData::Vector &result) const override;
+    DocId   getNumUsedLids() const override { return _lidAlloc.getNumUsedLids(); }
+    DocId getNumActiveLids() const override { return _lidAlloc.getNumActiveLids(); }
+    search::LidUsageStats getLidUsageStats() const override;
+    search::queryeval::Blueprint::UP createBlackListBlueprint() const override;
 
     /**
      * Implements search::AttributeVector
@@ -237,69 +219,44 @@ public:
               const search::AttributeVector::SearchContext::Params & params)
         const override;
 
-
-
     /**
      * Implements proton::IDocumentMetaStore
      */
-    virtual void constructFreeList() override;
+    void constructFreeList() override;
+    Iterator begin() const override;
+    Iterator lowerBound(const BucketId &bucketId) const override;
+    Iterator upperBound(const BucketId &bucketId) const override;
+    Iterator lowerBound(const GlobalId &gid) const override;
+    Iterator upperBound(const GlobalId &gid) const override;
 
-    virtual Iterator begin() const override;
+    void getLids(const BucketId &bucketId, std::vector<DocId> &lids) override;
 
-    virtual Iterator lowerBound(const BucketId &bucketId) const override;
-
-    virtual Iterator upperBound(const BucketId &bucketId) const override;
-
-    virtual Iterator lowerBound(const GlobalId &gid) const override;
-
-    virtual Iterator upperBound(const GlobalId &gid) const override;
-
-    virtual void
-    getLids(const BucketId &bucketId, std::vector<DocId> &lids) override;
-
-    virtual search::AttributeGuard getActiveLidsGuard() const override {
+    search::AttributeGuard getActiveLidsGuard() const override {
         return _lidAlloc.getActiveLidsGuard();
     }
 
-    virtual bool getFreeListActive() const override {
+    bool getFreeListActive() const override {
         return _lidAlloc.isFreeListConstructed();
     }
 
-    virtual void compactLidSpace(DocId wantedLidLimit) override;
+    void compactLidSpace(DocId wantedLidLimit) override;
+    void holdUnblockShrinkLidSpace() override;
+    bool canShrinkLidSpace() const override;
 
-    virtual void holdUnblockShrinkLidSpace() override;
-
-    virtual bool canShrinkLidSpace() const override;
-
-    virtual search::SerialNum getLastSerialNum() const override {
+    SerialNum getLastSerialNum() const override {
         return getStatus().getLastSyncToken();
     }
-
-
 
     /**
      * Implements documentmetastore::IBucketHandler.
      */
-    virtual BucketDBOwner &getBucketDB() const override {
-        return *_bucketDB;
-    }
+    BucketDBOwner &getBucketDB() const override { return *_bucketDB; }
 
-    virtual bucketdb::BucketDeltaPair
-    handleSplit(const bucketdb::SplitBucketSession &session) override;
-
-    virtual bucketdb::BucketDeltaPair
-    handleJoin(const bucketdb::JoinBucketsSession &session) override;
-
-    virtual void
-    setBucketState(const BucketId &bucketId, bool active) override;
-
-    virtual void
-    populateActiveBuckets(const BucketId::List &buckets) override;
-
-
-
-    ConstIterator
-    beginFrozen() const;
+    bucketdb::BucketDeltaPair handleSplit(const bucketdb::SplitBucketSession &session) override;
+    bucketdb::BucketDeltaPair handleJoin(const bucketdb::JoinBucketsSession &session) override;
+    void setBucketState(const BucketId &bucketId, bool active) override;
+    void populateActiveBuckets(const BucketId::List &buckets) override;
+    ConstIterator beginFrozen() const;
 
     const vespalib::GenerationHandler & getGenerationHandler() const {
         return AttributeVector::getGenerationHandler();
@@ -310,22 +267,16 @@ public:
     }
 
     const BitAttribute &getActiveLids() const { return _lidAlloc.getActiveLids(); }
-
-    virtual void
-    clearDocs(DocId lidLow, DocId lidLimit) override;
+    void clearDocs(DocId lidLow, DocId lidLimit) override;
 
     /*
      * Called by document db executor to unblock shrinking of lid
      * space after all lids held by holdLid() operations have been
      * unheld.
      */
-    void
-    unblockShrinkLidSpace();
-
-    virtual void
-    onShrinkLidSpace() override;
-
-    virtual uint64_t getEstimatedSaveByteSize() const override;
+    void unblockShrinkLidSpace();
+    void onShrinkLidSpace() override;
+    uint64_t getEstimatedSaveByteSize() const override;
 };
 
 }
@@ -335,5 +286,3 @@ BTreeIterator<proton::DocumentMetaStore::DocId,
               search::btree::BTreeNoLeafData,
               search::btree::NoAggregated,
               const proton::DocumentMetaStore::KeyComp &>;
-
-
