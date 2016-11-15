@@ -85,24 +85,31 @@ public class DockerTester implements AutoCloseable {
     }
 
     public void updateContainerNodeSpec(final String hostname,
-                            final Optional<DockerImage> wantedDockerImage,
-                            final ContainerName containerName,
-                            final Node.State nodeState,
-                            final Optional<Long> wantedRestartGeneration,
-                            final Optional<Long> currentRestartGeneration,
-                            final Optional<Double> minCpuCores,
-                            final Optional<Double> minMainMemoryAvailableGb,
-                            final Optional<Double> minDiskAvailableGb) {
+                                        final Optional<DockerImage> wantedDockerImage,
+                                        final ContainerName containerName,
+                                        final Node.State nodeState,
+                                        final String nodeType,
+                                        final String nodeFlavor,
+                                        final Optional<Long> wantedRestartGeneration,
+                                        final Optional<Long> currentRestartGeneration,
+                                        final Optional<Double> minCpuCores,
+                                        final Optional<Double> minMainMemoryAvailableGb,
+                                        final Optional<Double> minDiskAvailableGb) {
 
-        nodeRepositoryMock.updateContainerNodeSpec(hostname,
-                wantedDockerImage,
-                containerName,
-                nodeState,
-                wantedRestartGeneration,
-                currentRestartGeneration,
-                minCpuCores,
-                minMainMemoryAvailableGb,
-                minDiskAvailableGb);
+        nodeRepositoryMock.updateContainerNodeSpec(
+                new ContainerNodeSpec.Builder()
+                        .hostname(hostname)
+                        .wantedDockerImage(wantedDockerImage)
+                        .containerName(containerName)
+                        .nodeState(nodeState)
+                        .nodeType(nodeType)
+                        .nodeFlavor(nodeFlavor)
+                        .wantedRestartGeneration(wantedRestartGeneration)
+                        .currentRestartGeneration(currentRestartGeneration)
+                        .minCpuCores(minCpuCores)
+                        .minMainMemoryAvailableGb(minMainMemoryAvailableGb)
+                        .minDiskAvailableGb(minDiskAvailableGb)
+                        .build());
     }
 
     public void updateContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {

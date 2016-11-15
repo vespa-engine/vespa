@@ -200,6 +200,7 @@ public class NodeAgentImpl implements NodeAgent {
                 // Clear current Docker image and vespa version, as nothing is running on this node
                 new NodeAttributes()
                         .withDockerImage(new DockerImage(""))
+                        .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(null))
                         .withVespaVersion(""));
         nodeRepository.markAsReady(nodeSpec.hostname);
     }
@@ -208,6 +209,9 @@ public class NodeAgentImpl implements NodeAgent {
         final Optional<String> containerVespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
         final NodeAttributes nodeAttributes = new NodeAttributes()
                 .withRestartGeneration(nodeSpec.wantedRestartGeneration.get())
+                // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
+                // want the two to be equal in node repo
+                .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(null))
                 .withDockerImage(nodeSpec.wantedDockerImage.get())
                 .withVespaVersion(containerVespaVersion.orElse(null));
 

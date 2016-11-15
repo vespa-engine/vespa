@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAttributes;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UpdateNodeAttributesRequestBody {
     public Long currentRestartGeneration;
+    public Long currentRebootGeneration;
     public String currentDockerImage;
     public String currentVespaVersion;
 
@@ -28,5 +29,6 @@ public class UpdateNodeAttributesRequestBody {
 
         this.currentRestartGeneration = nodeAttributes.getRestartGeneration();
         this.currentVespaVersion = nodeAttributes.getVespaVersion();
+        this.currentRebootGeneration = nodeAttributes.getRebootGeneration();
     }
 }

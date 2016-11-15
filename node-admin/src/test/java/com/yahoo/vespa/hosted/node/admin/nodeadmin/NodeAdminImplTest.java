@@ -64,21 +64,17 @@ public class NodeAdminImplTest {
         final ContainerName containerName = new ContainerName("container");
         final boolean isRunning = true;
         final Container existingContainer = new Container(hostName, dockerImage, containerName, isRunning);
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(dockerImage),
-                containerName,
-                Node.State.active,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(1L),
-                Optional.of(1L),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(dockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         final InOrder inOrder = inOrder(nodeAgentFactory, nodeAgent1, nodeAgent2);
         nodeAdmin.synchronizeNodeSpecsToNodeAgents(Collections.emptyList(), asList(existingContainer));

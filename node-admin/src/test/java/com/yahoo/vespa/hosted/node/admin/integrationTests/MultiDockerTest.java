@@ -28,6 +28,8 @@ public class MultiDockerTest {
                     containerNodeSpec2.wantedDockerImage,
                     containerNodeSpec2.containerName,
                     Node.State.dirty,
+                    containerNodeSpec2.nodeType,
+                    containerNodeSpec2.nodeFlavor,
                     containerNodeSpec2.wantedRestartGeneration,
                     containerNodeSpec2.currentRestartGeneration,
                     containerNodeSpec2.minCpuCores,
@@ -65,10 +67,10 @@ public class MultiDockerTest {
                                                              "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }");
 
             callOrderVerifier.assertInOrder(
-                    "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}",
-                    "updateNodeAttributes with HostName: host2, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image2 }, vespaVersion='null'}",
+                    "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=null, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}",
+                    "updateNodeAttributes with HostName: host2, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=null, dockerImage=DockerImage { imageId=image2 }, vespaVersion='null'}",
                     "markAsReady with HostName: host2",
-                    "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}");
+                    "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=null, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}");
         }
     }
 

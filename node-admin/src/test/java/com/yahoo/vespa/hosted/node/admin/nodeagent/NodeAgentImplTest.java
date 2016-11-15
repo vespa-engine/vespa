@@ -73,21 +73,19 @@ public class NodeAgentImplTest {
         final long restartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(dockerImage),
-                containerName,
-                Node.State.active,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(restartGeneration),
-                Optional.of(restartGeneration),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(dockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(restartGeneration))
+                .currentRestartGeneration(Optional.of(restartGeneration))
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
@@ -121,21 +119,19 @@ public class NodeAgentImplTest {
         final long restartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(dockerImage),
-                containerName,
-                Node.State.active,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(restartGeneration),
-                Optional.of(restartGeneration),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(dockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(restartGeneration))
+                .currentRestartGeneration(Optional.of(restartGeneration))
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.empty());
@@ -169,21 +165,19 @@ public class NodeAgentImplTest {
         final DockerImage newDockerImage = new DockerImage("new-image");
         final long wantedRestartGeneration = 2;
         final long currentRestartGeneration = 1;
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(newDockerImage),
-                containerName,
-                Node.State.active,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(wantedRestartGeneration),
-                Optional.of(currentRestartGeneration),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(newDockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(wantedRestartGeneration))
+                .currentRestartGeneration(Optional.of(currentRestartGeneration))
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(true);
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
@@ -206,21 +200,19 @@ public class NodeAgentImplTest {
         final long currentRestartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(dockerImage),
-                containerName,
-                Node.State.active,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(wantedRestartGeneration),
-                Optional.of(currentRestartGeneration),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(dockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(wantedRestartGeneration))
+                .currentRestartGeneration(Optional.of(currentRestartGeneration))
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
 
@@ -239,21 +231,19 @@ public class NodeAgentImplTest {
         final long restartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(dockerImage),
-                containerName,
-                Node.State.failed,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(restartGeneration),
-                Optional.of(restartGeneration),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(dockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.failed)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(restartGeneration))
+                .currentRestartGeneration(Optional.of(restartGeneration))
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
@@ -270,21 +260,19 @@ public class NodeAgentImplTest {
         final long restartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.empty(),
-                containerName,
-                Node.State.failed,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(restartGeneration),
-                Optional.of(restartGeneration),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(dockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.ready)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(restartGeneration))
+                .currentRestartGeneration(Optional.of(restartGeneration))
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
@@ -302,21 +290,19 @@ public class NodeAgentImplTest {
         final long restartGeneration = 1;
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(dockerImage),
-                containerName,
-                Node.State.inactive,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(restartGeneration),
-                Optional.of(restartGeneration),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(dockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.inactive)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(restartGeneration))
+                .currentRestartGeneration(Optional.of(restartGeneration))
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
@@ -335,21 +321,19 @@ public class NodeAgentImplTest {
             throws Exception {
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(dockerImage),
-                containerName,
-                nodeState,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                wantedRestartGeneration,
-                wantedRestartGeneration, //currentRestartGeneration
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(dockerImage))
+                .containerName(containerName)
+                .nodeState(nodeState)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(wantedRestartGeneration)
+                .currentRestartGeneration(wantedRestartGeneration)
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(
@@ -394,21 +378,19 @@ public class NodeAgentImplTest {
         final String hostName = "hostname";
         final DockerImage wantedDockerImage = new DockerImage("wantedDockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec(
-                hostName,
-                Optional.of(wantedDockerImage),
-                containerName,
-                Node.State.active,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.of(restartGeneration),
-                Optional.of(restartGeneration),
-                MIN_CPU_CORES,
-                MIN_MAIN_MEMORY_AVAILABLE_GB,
-                MIN_DISK_AVAILABLE_GB);
+        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .wantedDockerImage(Optional.of(wantedDockerImage))
+                .containerName(containerName)
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .wantedRestartGeneration(Optional.of(restartGeneration))
+                .currentRestartGeneration(Optional.of(restartGeneration))
+                .minCpuCores(MIN_CPU_CORES)
+                .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
+                .build();
 
         Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
@@ -465,8 +447,16 @@ public class NodeAgentImplTest {
         Optional<String> version = Optional.of("1.2.3");
         ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner("tester", "testapp", "testinstance");
         ContainerNodeSpec.Membership membership = new ContainerNodeSpec.Membership("clustType", "clustId", "grp", 3, false);
-        nodeAgent.lastNodeSpec = new ContainerNodeSpec(hostName, null, containerName, Node.State.active, "tenants",
-                "docker", version, Optional.of(owner), Optional.of(membership), null, null, null, null, null);
+        nodeAgent.lastNodeSpec = new ContainerNodeSpec.Builder()
+                .hostname(hostName)
+                .containerName(containerName)
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .vespaVersion(version)
+                .owner(Optional.of(owner))
+                .membership(Optional.of(membership))
+                .build();
 
         long totalContainerCpuTime = (long) ((Map) cpu_stats.get("cpu_usage")).get("total_usage");
         long totalSystemCpuTime = (long) cpu_stats.get("system_cpu_usage");

@@ -82,20 +82,12 @@ public class NodeAdminStateUpdaterTest {
     }
 
     private ContainerNodeSpec createSample() {
-        return new ContainerNodeSpec(
-                "hostname",
-                Optional.empty(),
-                new ContainerName("containername"),
-                Node.State.active,
-                "tenant",
-                "docker",
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty());
+        return new ContainerNodeSpec.Builder()
+                .hostname("hostName")
+                .containerName(new ContainerName("containerName"))
+                .nodeState(Node.State.active)
+                .nodeType("tenant")
+                .nodeFlavor("docker")
+                .build();
     }
 }
