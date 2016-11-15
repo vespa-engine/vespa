@@ -440,7 +440,7 @@ public class DocumentGenMojo extends AbstractMojo {
         exportStructTypeGetter(docType.getName()+".header", docType.allHeader().getFields(), out, 1, "getHeaderStructType", "com.yahoo.document.StructDataType");
         exportStructTypeGetter(docType.getName()+".body", docType.allBody().getFields(), out, 1, "getBodyStructType", "com.yahoo.document.StructDataType");
 
-        exportExtendedStructTypeGetter(docType.getName(), docType.getAllFields(), out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
+        exportExtendedStructTypeGetter(className, docType.getName(), docType.getAllFields(), out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
         exportCopyConstructor(className, docType.getAllFields(), out, 1, true);
         exportFieldsAndAccessors(className, "com.yahoo.document.Document".equals(superType) ? docType.getAllFields() : docType.getFields(), out, 1, true);
         exportDocumentMethods(docType.getAllFields(), out, 1);
@@ -527,12 +527,16 @@ public class DocumentGenMojo extends AbstractMojo {
         out.write(ind(ind+1)+"return ret;\n");
         out.write(ind(ind)+"}\n\n");
     }
-    private static void exportExtendedStructTypeGetter(String name, Collection<Field> fields, Writer out, int ind, String methodName, String retType) throws IOException {
+    private static void exportExtendedStructTypeGetter(String className, String name, Collection<Field> fields, Writer out, int ind, String methodName, String retType) throws IOException {
         out.write(ind(ind)+"private static "+retType+" "+methodName+"() {\n" +
                 ind(ind+1)+retType+" ret = new "+retType+"(\""+name+"\");\n");
         for (Field f : fields) {
-            out.write(ind(ind+1)+"ret.addField(new com.yahoo.document.ExtendedField(\""+f.getName()+"\", "+ toJavaReference(f.getDataType())+
-                    ", new com.yahoo.document.ExtendedField.Extract() { Object get(com.yahoo.document.Document doc) {return doc." + getter(f.getName()) + "(); } }));\n" );
+            out.write(ind(ind+1)+
+                    "ret.addField(new com.yahoo.document.ExtendedField(\""+f.getName()+"\", " + toJavaReference(f.getDataType())+
+                    ", new com.yahoo.document.ExtendedField.Extract() {\n");
+            out.write(ind(ind+2)+"public Object get(com.yahoo.document.datatypes.StructuredFieldValue doc) {return ((" + className + ")doc)." + getter(f.getName()) + "(); }\n");
+            out.write(ind(ind+2)+"public void set(com.yahoo.document.datatypes.StructuredFieldValue doc, Object value) { ((" + className + ")doc)." + setter(f.getName())+"((" + toJavaType(f.getDataType()) + ")value); }\n");
+            out.write(ind(ind+1)+"}));\n" );
 
         }
         out.write(ind(ind+1)+"return ret;\n");
@@ -663,22 +667,19 @@ public class DocumentGenMojo extends AbstractMojo {
     private static void exportSetFieldValue(Collection<Field> fieldSet, Writer out, int ind) throws IOException {
         out.write(ind(ind)+"@Override public com.yahoo.document.datatypes.FieldValue setFieldValue(com.yahoo.document.Field field, com.yahoo.document.datatypes.FieldValue value) {\n");
         for (Field field: fieldSet) {
-            String name = field.getName();
-            out.write(
-                    ind(ind+1)+"if (\""+name+"\".equals(field.getName())) {\n");
             if (field.getDataType().equals(DataType.STRING)) {
-                out.write(
-                    ind(ind+2)+"if (value instanceof com.yahoo.document.datatypes.StringFieldValue) "+spanTreeSetter(name)+"(toNamedMap(((com.yahoo.document.datatypes.StringFieldValue)value).getSpanTrees()));\n");
+                String name = field.getName();
+                out.write(ind(ind+1)+"if (\""+name+"\".equals(field.getName())) {\n");
+                out.write(ind(ind + 2) + "if (value instanceof com.yahoo.document.datatypes.StringFieldValue) " + spanTreeSetter(name) + "(toNamedMap(((com.yahoo.document.datatypes.StringFieldValue)value).getSpanTrees()));\n");
+                out.write(ind(ind + 2) + "com.yahoo.document.datatypes.FieldValue old=getFieldValue(field);\n");
+                out.write(ind(ind + 2) + setter(name) + "((" + toJavaType(field.getDataType()) + ")value.getWrappedValue());\n");
+                out.write(ind(ind + 2) + "return old;\n");
+                out.write(ind(ind + 1) + "}\n");
             }
-            out.write(
-                    ind(ind+2)+"com.yahoo.document.datatypes.FieldValue old=getFieldValue(field);\n"+
-                    ind(ind+2)+setter(name)+"(("+toJavaType(field.getDataType())+")value.getWrappedValue());\n" +
-                    ind(ind+2)+"return old;\n" +
-                    ind(ind+1)+"}\n");
         }
-        out.write(
-                ind(ind+1)+"return super.setFieldValue(field, value);\n" +
-                ind(ind)+"}\n\n");
+        out.write(ind(ind+1)+"if (field instanceof com.yahoo.document.ExtendedField) return ((com.yahoo.document.ExtendedField)field).setFieldValue(this, value);\n");
+        out.write(ind(ind+1)+"return super.setFieldValue(field, value);\n");
+        out.write(ind(ind)+"}\n\n");
     }
 
     private static void exportGetFieldValue(Collection<Field> fieldSet, Writer out, int ind) throws IOException {
@@ -701,7 +702,7 @@ public class DocumentGenMojo extends AbstractMojo {
             }
         }
 
-        out.write(ind(ind+1)+"if (field instanceof ExtendedField) return ((ExtendedField)field).extractFieldValue(this);\n");
+        out.write(ind(ind+1)+"if (field instanceof com.yahoo.document.ExtendedField) return ((com.yahoo.document.ExtendedField)field).getFieldValue(this);\n");
         out.write(ind(ind+1)+"return super.getFieldValue(field);\n");
         out.write(ind(ind)+"}\n\n");
     }
