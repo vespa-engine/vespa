@@ -250,7 +250,7 @@ RcuVectorBase<T>::fillMapped(GenerationHolder &genHolder,
         uint32_t e = reader.getNextEnum();
         assert(e < map.size());
         push_back(map[e]);
-        saver.save(e, doc, 0, 1);
+        saver.save(e, doc, 1);
     }
 }
 

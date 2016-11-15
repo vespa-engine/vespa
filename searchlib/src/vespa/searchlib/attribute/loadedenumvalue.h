@@ -21,7 +21,6 @@ class LoadedEnumAttribute
 private:
     uint32_t _enum;
     uint32_t _docId;
-    uint32_t _idx;
     int32_t  _weight;
 
 public:
@@ -53,18 +52,15 @@ public:
     LoadedEnumAttribute(void)
         : _enum(0),
           _docId(0),
-          _idx(0),
           _weight(1)
     {
     }
 
     LoadedEnumAttribute(uint32_t e,
                         uint32_t docId,
-                        uint32_t idx,
                         int32_t weight)
         : _enum(e),
           _docId(docId),
-          _idx(idx),
           _weight(weight)
     {
     }
@@ -79,12 +75,6 @@ public:
     getDocId(void) const
     {
         return _docId;
-    }
-
-    uint32_t
-    getIdx(void) const
-    {
-        return _idx;
     }
 
     int32_t
@@ -115,9 +105,9 @@ public:
     }
         
     void
-    save(uint32_t e, uint32_t docId, uint32_t vci, int32_t weight)
+    save(uint32_t e, uint32_t docId, int32_t weight)
     {
-        _loaded.push_back(LoadedEnumAttribute(e, docId, vci, weight));
+        _loaded.push_back(LoadedEnumAttribute(e, docId, weight));
     }
 };
     
@@ -130,11 +120,10 @@ class NoSaveLoadedEnum
 {
 public:
     static void
-    save(uint32_t e, uint32_t docId, uint32_t vci, int32_t weight)
+    save(uint32_t e, uint32_t docId, int32_t weight)
     {
         (void) e;
         (void) docId;
-        (void) vci;
         (void) weight;
     }
 };
@@ -156,10 +145,9 @@ public:
     }
 
     void
-    save(uint32_t e, uint32_t docId, uint32_t vci, int32_t weight)
+    save(uint32_t e, uint32_t docId, int32_t weight)
     {
         (void) docId;
-        (void) vci;
         (void) weight;
         assert(e < _hist.size());
         ++_hist[e];
