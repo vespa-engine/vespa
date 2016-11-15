@@ -1775,7 +1775,6 @@ TEST("requireThatMoveWorks")
     EXPECT_TRUE(dms.getGid(1u, gid));
     EXPECT_FALSE(dms.getGid(2u, gid));
     EXPECT_TRUE(dms.getGidEvenIfMoved(2u, gid));
-    EXPECT_TRUE(dms.getGid(1u, gid));
     EXPECT_TRUE(dms.getLid(gid2, lid));
     EXPECT_EQUAL(gid2, gid);
     EXPECT_EQUAL(1u, lid);
