@@ -116,7 +116,6 @@ public class RunVespaLocal {
         // TODO: Automatically find correct node to send request to
         URL url = new URL("http://cnode-1:" + System.getenv("VESPA_WEB_SERVICE_PORT") + "/");
         Instant start = Instant.now();
-        System.out.println(start);
         boolean okResponse = false;
         do {
             try {
@@ -125,11 +124,11 @@ public class RunVespaLocal {
             } catch (IOException e) {
                 Thread.sleep(100);
             }
-        } while (! okResponse || Instant.now().isBefore(start.plusSeconds(120)));
+        } while (! okResponse && Instant.now().isBefore(start.plusSeconds(120)));
         assertTrue(okResponse);
 
 //        LocalZoneUtils.deleteApplication();
-//        nodeAdminStateUpdater.deconstruct();
+        nodeAdminStateUpdater.deconstruct();
     }
 
     @Before
@@ -138,7 +137,7 @@ public class RunVespaLocal {
         Docker docker = DockerTestUtils.getDocker();
 
         if (!docker.imageIsDownloaded(VESPA_BASE_IMAGE)) {
-            logger.info("Pulling base image (This may take a while)");
+            logger.info("Pulling " + VESPA_BASE_IMAGE.asString() + " (This may take a while)");
             docker.pullImageAsync(VESPA_BASE_IMAGE).get();
         }
     }

@@ -5,6 +5,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Capability;
 import com.github.dockerjava.api.model.Ulimit;
 
 import java.net.Inet6Address;
@@ -35,8 +36,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private Optional<String> ipv4Address = Optional.empty();
     private Optional<String> ipv6Address = Optional.empty();
     private Optional<String[]> entrypoint = Optional.empty();
-    private Set<String> addCapabilities = new HashSet<>();
-    private Set<String> dropCapabilities = new HashSet<>();
+    private Set<Capability> addCapabilities = new HashSet<>();
+    private Set<Capability> dropCapabilities = new HashSet<>();
 
     CreateContainerCommandImpl(DockerClient docker,
                                DockerImage dockerImage,
@@ -62,13 +63,13 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
     @Override
     public Docker.CreateContainerCommand withAddCapability(String capabilityName) {
-        addCapabilities.add(capabilityName);
+        addCapabilities.add(Capability.valueOf(capabilityName));
         return this;
     }
 
     @Override
     public Docker.CreateContainerCommand withDropCapability(String capabilityName) {
-        dropCapabilities.add(capabilityName);
+        dropCapabilities.add(Capability.valueOf(capabilityName));
         return this;
     }
 
@@ -141,7 +142,9 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withLabels(labels)
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds)
-                .withUlimits(ulimits);
+                .withUlimits(ulimits)
+                .withCapAdd(new ArrayList<>(addCapabilities))
+                .withCapDrop(new ArrayList<>(dropCapabilities));
 
         if (memoryInB.isPresent()) containerCmd = containerCmd.withMemory(memoryInB.get());
         if (networkMode.isPresent()) containerCmd = containerCmd.withNetworkMode(networkMode.get());
@@ -171,8 +174,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         List<String> ulimitList = ulimits.stream()
                 .map(ulimit -> ulimit.getName() + "=" + ulimit.getSoft() + ":" + ulimit.getHard())
                 .collect(Collectors.toList());
-        List<String> addCapabilitiesList = new ArrayList<>(addCapabilities);
-        List<String> dropCapabilitiesList = new ArrayList<>(dropCapabilities);
+        List<String> addCapabilitiesList = addCapabilities.stream().map(Enum::toString).collect(Collectors.toList());
+        List<String> dropCapabilitiesList = dropCapabilities.stream().map(Enum::toString).collect(Collectors.toList());
 
         return "--name " + containerName.asString() + " "
                 + "--hostname " + hostName + " "
