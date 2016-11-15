@@ -37,6 +37,23 @@ TEST("require that array parameter passing works") {
 
 //-----------------------------------------------------------------------------
 
+std::vector<vespalib::string> unsupported = {
+    "sum(",
+    "map(",
+    "join("
+};
+
+bool is_unsupported(const vespalib::string &expression) {
+    for (const auto &prefix: unsupported) {
+        if (starts_with(expression, prefix)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+
 struct MyEvalTest : test::EvalSpec::EvalTest {
     size_t pass_cnt = 0;
     size_t fail_cnt = 0;
@@ -49,20 +66,33 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
                              const vespalib::string &expression,
                              double expected_result) override
     {
-        CompiledFunction cfun(Function::parse(param_names, expression), PassParams::ARRAY);
-        auto fun = cfun.get_function();
-        EXPECT_EQUAL(cfun.num_params(), param_values.size());
-        double result = fun(&param_values[0]);
-        if (is_same(expected_result, result)) {
-            print_pass && fprintf(stderr, "verifying: %s -> %g ... PASS\n",
+        Function function = Function::parse(param_names, expression);
+        bool is_supported = !is_unsupported(expression);
+        bool has_issues = CompiledFunction::detect_issues(function);
+        if (is_supported == has_issues) {
+            const char *supported_str = is_supported ? "supported" : "not supported";
+            const char *issues_str = has_issues ? "has issues" : "does not have issues";
+            print_fail && fprintf(stderr, "expression %s is %s, but %s\n",
                                   as_string(param_names, param_values, expression).c_str(),
-                                  expected_result);
-            ++pass_cnt;
-        } else {
-            print_fail && fprintf(stderr, "verifying: %s -> %g ... FAIL: got %g\n",
-                                  as_string(param_names, param_values, expression).c_str(),
-                                  expected_result, result);
+                                  supported_str, issues_str);
             ++fail_cnt;
+        }
+        if (is_supported && !has_issues) {
+            CompiledFunction cfun(Function::parse(param_names, expression), PassParams::ARRAY);
+            auto fun = cfun.get_function();
+            EXPECT_EQUAL(cfun.num_params(), param_values.size());
+            double result = fun(&param_values[0]);
+            if (is_same(expected_result, result)) {
+                print_pass && fprintf(stderr, "verifying: %s -> %g ... PASS\n",
+                                      as_string(param_names, param_values, expression).c_str(),
+                                      expected_result);
+                ++pass_cnt;
+            } else {
+                print_fail && fprintf(stderr, "verifying: %s -> %g ... FAIL: got %g\n",
+                                      as_string(param_names, param_values, expression).c_str(),
+                                      expected_result, result);
+                ++fail_cnt;
+            }
         }
     }
 };
@@ -163,15 +193,9 @@ TEST_MT("require that multithreaded compilation works", 64) {
     }
 }
 
-TEST("require that tensor operations have sane numeric fallbacks") {
-    CompiledFunction cf(Function::parse({"a", "b"}, "sum(a+b)"), PassParams::SEPARATE);
-    auto fun = cf.get_function<2>();
-    EXPECT_EQUAL(12.0, fun(5.0, 7.0));
-}
-
 //-----------------------------------------------------------------------------
 
-TEST("require function issues can be detected") {
+TEST("require that function issues can be detected") {
     auto simple = Function::parse("a+b");
     auto complex = Function::parse("join(a,b,f(a,b)(a+b))");
     EXPECT_FALSE(simple.has_error());
