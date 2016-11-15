@@ -278,6 +278,8 @@ void ExternalOperationHandlerTest::mutation_not_rejected_when_safe_point_reached
             generated);
     CPPUNIT_ASSERT(generated.get() != nullptr);
     CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), safe_time_not_reached_metric_count(
+            getDistributor().getMetrics().removes));
 }
 
 } // distributor
