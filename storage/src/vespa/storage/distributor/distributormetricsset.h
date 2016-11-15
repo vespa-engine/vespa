@@ -16,7 +16,8 @@ public:
           notconnected("notconnected", "", "The number of operations discarded because there were no available storage nodes to send to", this),
           wrongdistributor("wrongdistributor", "", "The number of operations discarded because they were sent to the wrong distributor", this),
           safe_time_not_reached("safe_time_not_reached", "",
-                                "The number of operations that were transiently"                                " failed due to them arriving before the safe "
+                                "The number of operations that were transiently"
+                                " failed due to them arriving before the safe "
                                 "time point for bucket ownership handovers has "
                                 "passed", this),
           storagefailure("storagefailure", "", "The number of operations that failed in storage", this),
