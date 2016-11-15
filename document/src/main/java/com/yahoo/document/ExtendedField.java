@@ -1,10 +1,13 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 
 /**
- * Created by balder on 14/11/2016.
+ * This adds an Extractor to the Field that can be used to get access the backed value
+ * used in the concrete document types.
+ * @author baldersheim
  */
 public class ExtendedField extends Field {
     public static interface Extract {

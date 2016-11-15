@@ -771,12 +771,11 @@ public class DocumentGenMojo extends AbstractMojo {
      */
     private static void exportGetFields(Collection<Field> fields, Writer out, int ind) throws IOException {
         out.write(ind(ind)+"@Override public java.util.Set<java.util.Map.Entry<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue>> getFields() {\n" +
-                ind(ind+1)+"java.util.Map<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue> ret = new java.util.LinkedHashMap<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue>();\n" +
-                ind(ind+1)+"com.yahoo.document.Field f;\n");
+                ind(ind+1)+"java.util.Map<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue> ret = new java.util.LinkedHashMap<com.yahoo.document.Field, com.yahoo.document.datatypes.FieldValue>();\n");
         for (Field f : fields) {
             out.write(ind(ind+1)+"if ("+getter(f.getName())+"()!=null) {\n");
-            out.write(ind(ind+2)+"f = new com.yahoo.document.Field(\""+f.getName()+"\", "+toJavaReference(f.getDataType())+");\n");
-            out.write(ind(ind+2)+"ret.put(f, f.getDataType().createFieldValue("+getter(f.getName())+"()));\n");
+            out.write(ind(ind+2)+"com.yahoo.document.Field f = getField(\""+f.getName()+"\");\n");
+            out.write(ind(ind+2)+"ret.put(f, ((com.yahoo.document.ExtendedField)f).getFieldValue(this));\n");
             out.write(ind(ind+1)+"}\n");
         }
         out.write(ind(ind+1)+"return ret.entrySet();\n");
