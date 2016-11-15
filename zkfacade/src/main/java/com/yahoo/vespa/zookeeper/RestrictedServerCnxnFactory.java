@@ -40,6 +40,7 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
         String errorMessage = "Rejecting connection to ZooKeeper from " + remoteHost +
                               ": This cluster only allow connection from hosts in: " + allowedZooKeeperClients;
         log.info(errorMessage);
+        tryToClose(socket);
         throw new IllegalArgumentException(errorMessage); // log and throw as this exception will be suppressed by zk
     }
 
@@ -68,6 +69,15 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
         if (remoteHost.equals("localhost.localdomain")) return true;
         if (remoteHost.equals(HostName.getLocalhost())) return true;
         return false;
+    }
+    
+    private void tryToClose(SocketChannel socket) {
+        try {
+            socket.close();
+        }
+        catch (IOException e) {
+            // Ignore - this is just to avoid socket leakage
+        }
     }
     
 }
