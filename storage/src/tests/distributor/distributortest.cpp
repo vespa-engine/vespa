@@ -170,6 +170,11 @@ private:
     }
 
     void configureMaxClusterClockSkew(int seconds);
+    void sendDownClusterStateCommand();
+    void replyToSingleRequestBucketInfoCommandWith1Bucket();
+    void sendDownDummyRemoveCommand();
+    void assertSingleBouncedRemoveReplyPresent();
+    void assertNoMessageBounced();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(Distributor_Test);
@@ -722,22 +727,17 @@ auto makeDummyRemoveCommand() {
 
 }
 
-// TODO refactor this to set proper highest timestamp as part of bucket info
-// reply once we have the "highest timestamp across all owned buckets" feature
-// in place.
-void
-Distributor_Test::configured_safe_time_point_rejection_works_end_to_end() {
-    setupDistributor(Redundancy(2), NodeCount(2),
-                     "bits:1 storage:1 distributor:2");
-    getClock().setAbsoluteTimeInSeconds(1000);
-    configureMaxClusterClockSkew(10);
-
+void Distributor_Test::sendDownClusterStateCommand() {
     lib::ClusterState newState("bits:1 storage:1 distributor:1");
     auto stateCmd = std::make_shared<api::SetSystemStateCommand>(newState);
     _distributor->handleMessage(stateCmd);
+}
 
+void Distributor_Test::replyToSingleRequestBucketInfoCommandWith1Bucket() {
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.commands.size());
-    auto& bucketReq(dynamic_cast<api::RequestBucketInfoCommand&>(
+    CPPUNIT_ASSERT_EQUAL(api::MessageType::REQUESTBUCKETINFO,
+                         _sender.commands[0]->getType());
+    auto& bucketReq(static_cast<api::RequestBucketInfoCommand&>(
             *_sender.commands[0]));
     auto bucketReply = bucketReq.makeReply();
     // Make sure we have a bucket to route our remove op to, or we'd get
@@ -748,22 +748,47 @@ Distributor_Test::configured_safe_time_point_rejection_works_end_to_end() {
                 api::BucketInfo(20, 10, 12, 50, 60, true, true)));
     _distributor->handleMessage(std::move(bucketReply));
     _sender.commands.clear();
-    // SetSystemStateCommand sent down chain at this point.
+}
 
+void Distributor_Test::sendDownDummyRemoveCommand() {
     _distributor->handleMessage(makeDummyRemoveCommand());
+}
 
+void Distributor_Test::assertSingleBouncedRemoveReplyPresent() {
     CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size()); // Rejected remove
     CPPUNIT_ASSERT_EQUAL(api::MessageType::REMOVE_REPLY,
                          _sender.replies[0]->getType());
     auto& reply(static_cast<api::RemoveReply&>(*_sender.replies[0]));
     CPPUNIT_ASSERT_EQUAL(api::ReturnCode::BUSY, reply.getResult().getResult());
     _sender.replies.clear();
+}
+
+void Distributor_Test::assertNoMessageBounced() {
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
+}
+
+// TODO refactor this to set proper highest timestamp as part of bucket info
+// reply once we have the "highest timestamp across all owned buckets" feature
+// in place.
+void
+Distributor_Test::configured_safe_time_point_rejection_works_end_to_end() {
+    setupDistributor(Redundancy(2), NodeCount(2),
+                     "bits:1 storage:1 distributor:2");
+    getClock().setAbsoluteTimeInSeconds(1000);
+    configureMaxClusterClockSkew(10);
+
+    sendDownClusterStateCommand();
+    replyToSingleRequestBucketInfoCommandWith1Bucket();
+    // SetSystemStateCommand sent down chain at this point.
+    sendDownDummyRemoveCommand();
+    assertSingleBouncedRemoveReplyPresent();
 
     // Increment time to first whole second of clock + 10 seconds of skew.
     // Should now not get any feed rejections.
     getClock().setAbsoluteTimeInSeconds(1011);
-    _distributor->handleMessage(makeDummyRemoveCommand());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
+
+    sendDownDummyRemoveCommand();
+    assertNoMessageBounced();
 }
 
 }
