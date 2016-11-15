@@ -174,8 +174,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
         List<String> ulimitList = ulimits.stream()
                 .map(ulimit -> ulimit.getName() + "=" + ulimit.getSoft() + ":" + ulimit.getHard())
                 .collect(Collectors.toList());
-        List<String> addCapabilitiesList = addCapabilities.stream().map(Enum::toString).collect(Collectors.toList());
-        List<String> dropCapabilitiesList = dropCapabilities.stream().map(Enum::toString).collect(Collectors.toList());
+        List<String> addCapabilitiesList = addCapabilities.stream().map(Enum<Capability>::toString).collect(Collectors.toList());
+        List<String> dropCapabilitiesList = dropCapabilities.stream().map(Enum<Capability>::toString).collect(Collectors.toList());
 
         return "--name " + containerName.asString() + " "
                 + "--hostname " + hostName + " "
