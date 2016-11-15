@@ -1,10 +1,11 @@
 package com.yahoo.tensor.functions;
 
+import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 
 /**
- * The join tensor function.
+ * The <i>map</i> tensor function produces a tensor where the given function is applied on each cell value.
  *
  * @author bratseth
  */
@@ -14,6 +15,8 @@ public class Map extends PrimitiveTensorFunction {
     private final DoubleUnaryOperator mapper;
 
     public Map(TensorFunction argument, DoubleUnaryOperator mapper) {
+        Objects.requireNonNull(argument, "The argument tensor cannot be null");
+        Objects.requireNonNull(mapper, "The argument function cannot be null");
         this.argument = argument;
         this.mapper = mapper;
     }
@@ -28,7 +31,7 @@ public class Map extends PrimitiveTensorFunction {
 
     @Override
     public String toString() {
-        return "map(" + argument.toString() + ", lambda(a) (...))";
+        return "map(" + argument.toString() + ", lambda(a) (" + mapper + "))";
     }
 
 }

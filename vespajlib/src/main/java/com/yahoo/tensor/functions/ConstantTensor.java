@@ -7,11 +7,11 @@ import com.yahoo.tensor.MapTensor;
  * 
  * @author bratseth
  */
-public class Constant extends PrimitiveTensorFunction {
+public class ConstantTensor extends PrimitiveTensorFunction {
 
     private final MapTensor constant;
     
-    public Constant(String tensorString) {
+    public ConstantTensor(String tensorString) {
         this.constant = MapTensor.from(tensorString);
     }
     

@@ -1,9 +1,12 @@
 package com.yahoo.tensor.functions;
 
+import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 
 /**
- * The join tensor function. 
+ * The <i>join</i> tensor operation produces a tensor from the argument tensors containing the set of cells
+ * given by the cross product of the cells of the given tensors, having as values the value produced by
+ * applying the given combinator function on the values from the two source cells.
  * 
  * @author bratseth
  */
@@ -13,6 +16,9 @@ public class Join extends PrimitiveTensorFunction {
     private final DoubleBinaryOperator combinator;
 
     public Join(TensorFunction argumentA, TensorFunction argumentB, DoubleBinaryOperator combinator) {
+        Objects.requireNonNull(argumentA, "The first argument tensor cannot be null");
+        Objects.requireNonNull(argumentB, "The second argument tensor cannot be null");
+        Objects.requireNonNull(combinator, "The combinator function cannot be null");
         this.argumentA = argumentA;
         this.argumentB = argumentB;
         this.combinator = combinator;
@@ -29,7 +35,7 @@ public class Join extends PrimitiveTensorFunction {
     
     @Override
     public String toString() {
-        return "join(" + argumentA.toString() + ", " + argumentB.toString() + ", lambda(a, b) (...))";
+        return "join(" + argumentA.toString() + ", " + argumentB.toString() + ", lambda(a, b) (" + combinator + "))";
     }
 
 }

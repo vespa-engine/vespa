@@ -13,7 +13,7 @@ public class TensorFunctionTestCase {
     @Test
     public void testTranslation() {
         assertTranslated("join({{x:1}:1.0}, {{x:2}:1.0}, lambda(a, b) (...))", 
-                         new Product(new Constant("{{x:1}:1.0}"), new Constant("{{x:2}:1.0}")));
+                         new Product(new ConstantTensor("{{x:1}:1.0}"), new ConstantTensor("{{x:2}:1.0}")));
     }
     
     private void assertTranslated(String expectedTranslation, TensorFunction inputFunction) {
