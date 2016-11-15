@@ -7,6 +7,8 @@
 #include <vespa/vespalib/eval/basic_nodes.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/test/insertion_operators.h>
+#include <iostream>
 
 using namespace vespalib::eval;
 using vespalib::Stash;
@@ -184,6 +186,20 @@ TEST("require that matrix multiplication works with tensor function") {
     const Value &result = interpreted.eval(ctx);
     ASSERT_TRUE(result.is_tensor());
     EXPECT_EQUAL(expect, engine.to_spec(*result.as_tensor()));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require function issues can be detected") {
+    auto simple = Function::parse("a+b");
+    auto complex = Function::parse("join(a,b,f(a,b)(a+b))");
+    EXPECT_FALSE(simple.has_error());
+    EXPECT_FALSE(complex.has_error());
+    EXPECT_FALSE(InterpretedFunction::detect_issues(simple));
+    EXPECT_TRUE(InterpretedFunction::detect_issues(complex));
+    std::cerr << "Example function issues:" << std::endl
+              << InterpretedFunction::detect_issues(complex).list
+              << std::endl;
 }
 
 //-----------------------------------------------------------------------------
