@@ -83,4 +83,14 @@ public class ErrorCodesTest {
         codes.put("ERROR_STALE_TIMESTAMP", DocumentProtocol.ERROR_STALE_TIMESTAMP);
         codes.put("ERROR_SUSPENDED", DocumentProtocol.ERROR_SUSPENDED);
     }
+
+    @Test
+    public void getErrorNameIsDefinedForAllKnownProtocolErrorCodes() {
+        final NamedErrorCodes codes = new NamedErrorCodes();
+        enumerateAllDocumentProtocolErrorCodes(codes);
+        codes.nameAndCode.entrySet().forEach(kv -> {
+            // Error names are not prefixed by "ERROR_" unlike their enum counterparts.
+            assertEquals(kv.getKey(), "ERROR_" + DocumentProtocol.getErrorName(kv.getValue()));
+        });
+    }
 }

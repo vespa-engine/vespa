@@ -412,6 +412,8 @@ public class DocumentProtocol implements Protocol {
         switch (code) {
         case ERROR_MESSAGE_IGNORED:
             return "MESSAGE_IGNORED";
+        case ERROR_POLICY_FAILURE:
+            return "POLICY_FAILURE";
         case ERROR_DOCUMENT_NOT_FOUND:
             return "DOCUMENT_NOT_FOUND";
         case ERROR_DOCUMENT_EXISTS:
@@ -438,6 +440,8 @@ public class DocumentProtocol implements Protocol {
             return "PROCESSING_FAILURE";
         case ERROR_TIMESTAMP_EXIST:
             return "TIMESTAMP_EXIST";
+        case ERROR_STALE_TIMESTAMP:
+            return "STALE_TIMESTAMP";
         case ERROR_NODE_NOT_READY:
             return "NODE_NOT_READY";
         case ERROR_WRONG_DISTRIBUTION:
