@@ -588,6 +588,10 @@ public class NodeAgentImpl implements NodeAgent {
             double cpuUsagePct = (deltaSystemUsage == 0 || totalSystemUsage == 0) ?
                     0 : 100.0 * (currentContainerUsage - totalContainerUsage) / deltaSystemUsage;
 
+            logger.info("Previous container usage: " + totalContainerUsage + ", previous system usage: " +
+                    totalSystemUsage + " | Current container usage: " + currentContainerUsage +
+                    ", current system usage: " + currentSystemUsage + " -> CPU usage: " + cpuUsagePct);
+
             totalContainerUsage = currentContainerUsage;
             totalSystemUsage = currentSystemUsage;
             return cpuUsagePct;
