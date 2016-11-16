@@ -384,6 +384,23 @@ public:
         return getDataForIdx(this->_indices[key], handle);
     }
     inline uint32_t getValueCount(uint32_t key) const;
+    vespalib::ConstArrayRef<T> getDataForIdx(Index idx) const {
+        if (__builtin_expect(idx.values() < Index::maxValues(), true)) {
+            // We do not need to specialcase 0 as _singleVectors will refer to valid stuff
+            // and handle SHALL not be used as the number of values returned shall be obeyed.
+            const SingleVector & vec = _singleVectors[idx.vectorIdx()];
+            const T *handle = &vec[idx.offset() * idx.values()];
+            __builtin_prefetch(handle, 0, 0);
+            return vespalib::ConstArrayRef<T>(handle, idx.values());
+        } else {
+            const VectorBase & vec =
+                _vectorVectors[idx.alternative()][idx.offset()];
+            return vespalib::ConstArrayRef<T>(&vec[0], vec.size());
+        }
+    }
+    vespalib::ConstArrayRef<T> get(uint32_t key) const {
+        return getDataForIdx(this->_indices[key]);
+    }
     void set(uint32_t key, const std::vector<T> & values);
     void set(uint32_t key, const T * values, uint32_t numValues);
 
