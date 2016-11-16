@@ -6,4 +6,9 @@ vespa_add_executable(persistence_testrunner_app TEST
     persistence_testdummyimpl
     persistence_testspi
 )
-vespa_add_test(NAME persistence_testrunner_app COMMAND persistence_testrunner_app)
+
+# TODO: Test with a larget chunk size to parallelize test suite runs 
+vespa_add_test(
+    NAME persistence_testrunner_app
+    COMMAND python ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:persistence_testrunner_app>
+)
