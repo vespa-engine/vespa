@@ -56,7 +56,9 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
                     return function.apply(jaxRsClient);
                 } catch (ProcessingException e) {
                     sampleException = e;
-                    logger.log(Level.WARNING, "Failed REST API call (in retry loop)", e);
+                    logger.log(Level.INFO, "Failed REST API call to "
+                            + hostName + ":" + port + pathPrefix + " (in retry loop): "
+                            + e.getMessage());
                 }
             }
         }
