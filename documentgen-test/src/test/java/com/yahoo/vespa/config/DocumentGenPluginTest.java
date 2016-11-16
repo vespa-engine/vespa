@@ -129,6 +129,13 @@ public class DocumentGenPluginTest {
     }
 
     @Test
+    public void testSetString() {
+        Book book = new Book(new DocumentId("doc:book:0"));
+        book.setFieldValue("author", "Herman Melville");
+        assertNotEquals(null, book.authorSpanTrees());
+    }
+
+    @Test
     public void testremoveFieldValue() {
         Book book = getBook();
         book.setAuthor(null);
