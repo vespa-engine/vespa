@@ -19,7 +19,7 @@ loadFromEnumeratedMultiValue(MvMapping &mapping,
                              Saver saver) __attribute((noinline));
 
 /*
- * Function for loading mapping from document id to of enum index or
+ * Function for loading mapping from document id to enum index or
  * value from enumerated attribute reader.
  */
 template <class Vector, class Saver>
