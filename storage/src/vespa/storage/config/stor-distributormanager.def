@@ -167,3 +167,10 @@ minimum_replica_counting_mode enum { TRUSTED, ANY } default=TRUSTED
 ## Activation is always disabled entirely for clusters using VDS as their
 ## engine, regardless of the value of this setting.
 disable_bucket_activation bool default=false
+
+
+## Maximum clock skew across nodes in the cluster, in whole seconds.
+## Used to prevent timestamp collisions during distributor bucket ownership
+## transfers.
+## Zero means this mechanism is disabled.
+max_cluster_clock_skew_sec int default=1

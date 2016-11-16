@@ -65,6 +65,17 @@ public:
 
     DistributorComponent& getDistributorComponent() { return _distributorComponent; }
 
+    /**
+     * Returns whether the current PendingClusterState indicates that there has
+     * been a transfer of bucket ownership amongst the distributors in the
+     * cluster. This method only makes sense to call when _pendingClusterState
+     * is active, such as from within a enableClusterState() call.
+     */
+    bool bucketOwnershipHasChanged() const {
+        return ((_pendingClusterState.get() != nullptr)
+                && _pendingClusterState->hasBucketOwnershipTransfer());
+    }
+
 private:
     DistributorComponent _distributorComponent;
     class MergeReplyGuard {

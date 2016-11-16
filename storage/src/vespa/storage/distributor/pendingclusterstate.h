@@ -113,6 +113,10 @@ public:
         return _sentMessages.empty() && _delayedRequests.empty();
     }
 
+    bool hasBucketOwnershipTransfer() const noexcept {
+        return _bucketOwnershipTransfer;
+    }
+
     std::shared_ptr<api::SetSystemStateCommand> getCommand() {
         return _cmd;
     }
@@ -267,8 +271,6 @@ private:
 
     std::vector<Range> _missingEntries;
 
-    bool _distributionChange;
-
     lib::ClusterState _prevClusterState;
     lib::ClusterState _newClusterState;
 
@@ -277,6 +279,9 @@ private:
     api::Timestamp _creationTimestamp;
 
     DistributorMessageSender& _sender;
+
+    bool _distributionChange;
+    bool _bucketOwnershipTransfer;
 };
 
 }

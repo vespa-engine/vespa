@@ -6,6 +6,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/document/base/testdocman.h>
 
 namespace storage {
 namespace distributor {
@@ -13,10 +14,17 @@ namespace distributor {
 class ExternalOperationHandlerTest : public CppUnit::TestFixture,
                                      public DistributorTestUtil
 {
+    document::TestDocMan _testDocMan;
+
     CPPUNIT_TEST_SUITE(ExternalOperationHandlerTest);
     CPPUNIT_TEST(testBucketSplitMask);
     CPPUNIT_TEST(testOperationRejectedOnWrongDistribution);
     CPPUNIT_TEST(testOperationRejectedOnPendingWrongDistribution);
+    CPPUNIT_TEST(reject_put_if_not_past_safe_time_point);
+    CPPUNIT_TEST(reject_remove_if_not_past_safe_time_point);
+    CPPUNIT_TEST(reject_update_if_not_past_safe_time_point);
+    CPPUNIT_TEST(get_not_rejected_by_unsafe_time_point);
+    CPPUNIT_TEST(mutation_not_rejected_when_safe_point_reached);
     CPPUNIT_TEST_SUITE_END();
 
     document::BucketId findNonOwnedUserBucketInState(vespalib::stringref state);
@@ -24,15 +32,29 @@ class ExternalOperationHandlerTest : public CppUnit::TestFixture,
             vespalib::stringref state1,
             vespalib::stringref state2);
 
-    std::shared_ptr<api::StorageMessage> makeGetCommandForUser(uint64_t id);
+    std::shared_ptr<api::GetCommand> makeGetCommandForUser(uint64_t id);
+    std::shared_ptr<api::UpdateCommand> makeUpdateCommand();
 
+    int64_t safe_time_not_reached_metric_count(
+            const metrics::LoadMetric<PersistenceOperationMetricSet>& metrics) const {
+        return metrics[documentapi::LoadType::DEFAULT].failures
+                .safe_time_not_reached.getLongValue("count");
+    }
 protected:
     void testBucketSplitMask();
     void testOperationRejectedOnWrongDistribution();
     void testOperationRejectedOnPendingWrongDistribution();
+    void reject_put_if_not_past_safe_time_point();
+    void reject_remove_if_not_past_safe_time_point();
+    void reject_update_if_not_past_safe_time_point();
+    void get_not_rejected_by_unsafe_time_point();
+    void mutation_not_rejected_when_safe_point_reached();
+
+    void assert_rejection_due_to_unsafe_time(
+            std::shared_ptr<api::StorageCommand> cmd);
 
 public:
-    void tearDown() {
+    void tearDown() override {
         close();
     }
 
@@ -111,13 +133,22 @@ ExternalOperationHandlerTest::findOwned1stNotOwned2ndInStates(
     throw std::runtime_error("no appropriate bucket found");
 }
 
-std::shared_ptr<api::StorageMessage>
+std::shared_ptr<api::GetCommand>
 ExternalOperationHandlerTest::makeGetCommandForUser(uint64_t id)
 {
     document::DocumentId docId(document::UserDocIdString("userdoc:foo:" + vespalib::make_string("%lu", id) + ":bar"));
-    std::shared_ptr<api::StorageMessage> cmd(
-            new api::GetCommand(document::BucketId(0), docId, "[all]"));
-    return cmd;
+    return std::make_shared<api::GetCommand>(
+            document::BucketId(0), docId, "[all]");
+}
+
+std::shared_ptr<api::UpdateCommand>
+ExternalOperationHandlerTest::makeUpdateCommand()
+{
+    auto update = std::make_shared<document::DocumentUpdate>(
+            *_testDocMan.getTypeRepo().getDocumentType("testdoctype1"),
+            document::DocumentId("id:foo:testdoctype1::baz"));
+    return std::make_shared<api::UpdateCommand>(
+            document::BucketId(0), std::move(update), api::Timestamp(0));
 }
 
 void
@@ -172,5 +203,84 @@ ExternalOperationHandlerTest::testOperationRejectedOnPendingWrongDistribution()
                         "distributor:3 storage:3)"),
             _sender.replies[0]->getResult().toString());
 }
+
+using TimePoint = ExternalOperationHandler::TimePoint;
+using namespace std::literals::chrono_literals;
+
+void ExternalOperationHandlerTest::assert_rejection_due_to_unsafe_time(
+        std::shared_ptr<api::StorageCommand> cmd)
+{
+    createLinks();
+    setupDistributor(1, 2, "distributor:1 storage:1");
+    getClock().setAbsoluteTimeInSeconds(9);
+    getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
+
+    Operation::SP generated;
+    getExternalOperationHandler().handleMessage(cmd, generated);
+    CPPUNIT_ASSERT(generated.get() == nullptr);
+    CPPUNIT_ASSERT_EQUAL(size_t(1), _sender.replies.size());
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("ReturnCode(STALE_TIMESTAMP, "
+                        "Operation received at time 9, which is before "
+                        "bucket ownership transfer safe time of 10)"),
+            _sender.replies[0]->getResult().toString());
+}
+
+void ExternalOperationHandlerTest::reject_put_if_not_past_safe_time_point() {
+    auto doc = _testDocMan.createDocument("foo", "id:foo:testdoctype1::bar");
+    auto cmd = std::make_shared<api::PutCommand>(
+            document::BucketId(0), std::move(doc), api::Timestamp(0));
+    assert_rejection_due_to_unsafe_time(cmd);
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), safe_time_not_reached_metric_count(
+            getDistributor().getMetrics().puts));
+}
+
+void ExternalOperationHandlerTest::reject_remove_if_not_past_safe_time_point() {
+    document::DocumentId id("id:foo:testdoctype1::bar");
+    assert_rejection_due_to_unsafe_time(std::make_shared<api::RemoveCommand>(
+            document::BucketId(0), id, api::Timestamp(0)));
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), safe_time_not_reached_metric_count(
+            getDistributor().getMetrics().removes));
+}
+
+void ExternalOperationHandlerTest::reject_update_if_not_past_safe_time_point() {
+    assert_rejection_due_to_unsafe_time(makeUpdateCommand());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), safe_time_not_reached_metric_count(
+            getDistributor().getMetrics().updates));
+}
+
+void ExternalOperationHandlerTest::get_not_rejected_by_unsafe_time_point() {
+    createLinks();
+    setupDistributor(1, 2, "distributor:1 storage:1");
+    getClock().setAbsoluteTimeInSeconds(9);
+    getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
+
+    Operation::SP generated;
+    getExternalOperationHandler().handleMessage(
+            makeGetCommandForUser(0), generated);
+    CPPUNIT_ASSERT(generated.get() != nullptr);
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), safe_time_not_reached_metric_count(
+            getDistributor().getMetrics().gets));
+}
+
+void ExternalOperationHandlerTest::mutation_not_rejected_when_safe_point_reached() {
+    createLinks();
+    setupDistributor(1, 2, "distributor:1 storage:1");
+    getClock().setAbsoluteTimeInSeconds(10);
+    getExternalOperationHandler().rejectFeedBeforeTimeReached(TimePoint(10s));
+
+    Operation::SP generated;
+    document::DocumentId id("id:foo:testdoctype1::bar");
+    getExternalOperationHandler().handleMessage(
+            std::make_shared<api::RemoveCommand>(
+                document::BucketId(0), id, api::Timestamp(0)),
+            generated);
+    CPPUNIT_ASSERT(generated.get() != nullptr);
+    CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.replies.size());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), safe_time_not_reached_metric_count(
+            getDistributor().getMetrics().removes));
+}
+
 } // distributor
 } // storage

@@ -15,6 +15,11 @@ public:
           notready("notready", "", "The number of operations discarded because distributor was not ready", this),
           notconnected("notconnected", "", "The number of operations discarded because there were no available storage nodes to send to", this),
           wrongdistributor("wrongdistributor", "", "The number of operations discarded because they were sent to the wrong distributor", this),
+          safe_time_not_reached("safe_time_not_reached", "",
+                                "The number of operations that were transiently"
+                                " failed due to them arriving before the safe "
+                                "time point for bucket ownership handovers has "
+                                "passed", this),
           storagefailure("storagefailure", "", "The number of operations that failed in storage", this),
           timeout("timeout", "", "The number of operations that failed because the operation timed out towards storage", this),
           busy("busy", "", "The number of messages from storage that failed because the storage node was busy", this),
@@ -23,6 +28,7 @@ public:
         sum.addMetricToSum(notready);
         sum.addMetricToSum(notconnected);
         sum.addMetricToSum(wrongdistributor);
+        sum.addMetricToSum(safe_time_not_reached);
         sum.addMetricToSum(storagefailure);
         sum.addMetricToSum(timeout);
         sum.addMetricToSum(busy);
@@ -33,6 +39,7 @@ public:
     metrics::LongCountMetric notready;
     metrics::LongCountMetric notconnected;
     metrics::LongCountMetric wrongdistributor;
+    metrics::LongCountMetric safe_time_not_reached;
     metrics::LongCountMetric storagefailure;
     metrics::LongCountMetric timeout;
     metrics::LongCountMetric busy;
