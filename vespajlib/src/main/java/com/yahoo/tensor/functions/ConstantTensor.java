@@ -1,6 +1,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.Tensor;
 
 /**
  * A function which returns a constant tensor.
@@ -9,10 +10,14 @@ import com.yahoo.tensor.MapTensor;
  */
 public class ConstantTensor extends PrimitiveTensorFunction {
 
-    private final MapTensor constant;
+    private final Tensor constant;
     
     public ConstantTensor(String tensorString) {
         this.constant = MapTensor.from(tensorString);
+    }
+    
+    public ConstantTensor(Tensor tensor) {
+        this.constant = tensor;
     }
     
     @Override

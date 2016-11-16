@@ -1,5 +1,7 @@
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.Tensor;
+
 /**
  * A primitive tensor function is a tensor function which cannot be expressed in terms of other tensor functions.
  * All tensor implementations must implement all primitive tensor functions.
@@ -8,4 +10,7 @@ package com.yahoo.tensor.functions;
  * @author bratseth
  */
 public abstract class PrimitiveTensorFunction extends TensorFunction {
+    
+    public abstract Tensor execute();
+    
 }

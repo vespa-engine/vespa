@@ -30,7 +30,7 @@ public class Map extends PrimitiveTensorFunction {
 
     @Override
     public String toString() {
-        return "map(" + argument.toString() + ", lambda(a) (" + mapper + "))";
+        return "map(" + argument.toString() + ", f(a) (" + mapper + "))";
     }
 
 }

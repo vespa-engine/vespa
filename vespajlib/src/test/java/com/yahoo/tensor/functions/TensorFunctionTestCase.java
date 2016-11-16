@@ -12,8 +12,8 @@ public class TensorFunctionTestCase {
 
     @Test
     public void testTranslation() {
-        assertTranslated("join({{x:1}:1.0}, {{x:2}:1.0}, lambda(a, b) (...))", 
-                         new Product(new ConstantTensor("{{x:1}:1.0}"), new ConstantTensor("{{x:2}:1.0}")));
+        assertTranslated("join({{x:1}:1.0}, reduce({{x:1}:1.0}, avg, x), f(a, b) (a * b))",
+                         new L1Normalize(new ConstantTensor("{{x:1}:1.0}"), "x"));
     }
     
     private void assertTranslated(String expectedTranslation, TensorFunction inputFunction) {

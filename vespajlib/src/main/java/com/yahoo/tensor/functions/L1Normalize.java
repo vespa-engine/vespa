@@ -6,14 +6,19 @@ package com.yahoo.tensor.functions;
 public class L1Normalize extends CompositeTensorFunction {
 
     private final TensorFunction argument;
+    private final String dimension;
     
-    public L1Normalize(TensorFunction argument) {
+    public L1Normalize(TensorFunction argument, String dimension) {
         this.argument = argument;
+        this.dimension = dimension;
     }
     
     @Override
     public PrimitiveTensorFunction toPrimitive() {
-        return new Join(argument.toPrimitive(), new Reduce(argument.toPrimitive(), Reduce.Aggregator.avg, "dimension"), ScalarFunctions.multiply());
+        TensorFunction primitiveArgument = argument.toPrimitive();
+        return new Join(primitiveArgument, 
+                        new Reduce(primitiveArgument, Reduce.Aggregator.avg, dimension), 
+                        ScalarFunctions.multiply());
     }
     
     @Override

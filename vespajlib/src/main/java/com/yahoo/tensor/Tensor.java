@@ -2,6 +2,11 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.tensor.functions.ConstantTensor;
+import com.yahoo.tensor.functions.Join;
+import com.yahoo.tensor.functions.L1Normalize;
+import com.yahoo.tensor.functions.L2Normalize;
+import com.yahoo.tensor.functions.Reduce;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +18,7 @@ import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleFunction;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -49,19 +55,52 @@ public interface Tensor {
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
     
-    // ----------------- Level 0 functions
+    // ----------------- Primitive tensor functions
     
-    default Tensor map(Tensor tensor, DoubleUnaryOperator mapper) {
+    default Tensor map(DoubleUnaryOperator mapper) {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-    default Tensor reduce(Tensor tensor, String dimension, 
-                          DoubleBinaryOperator reductor, Optional<DoubleBinaryOperator> postTransformation) {
+    default Tensor reduce(Reduce.Aggregator aggregator, List<String> dimensions) {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-    default Tensor join(Tensor tensorA, Tensor tensorB, DoubleBinaryOperator combinator) {
+    default Tensor join(Tensor tensor, DoubleBinaryOperator combinator) {
         throw new UnsupportedOperationException("Not implemented");
+    }
+    
+    default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+    
+    static Tensor from(TensorType type, Function<List<Integer>, Double> valueSupplier) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+    
+    // ----------------- Composite tensor functions
+    
+    default Tensor l1Normalize(String dimension) {
+        return new L1Normalize(new ConstantTensor(this), dimension).toPrimitive().execute();
+    }
+
+    default Tensor l2Normalize(String dimension) {
+        return new L2Normalize(new ConstantTensor(this), dimension).toPrimitive().execute();
+    }
+
+    default Tensor multiply(Tensor argument) {
+        return new Join(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> ( a * b )).execute();
+    }
+
+    default Tensor sum(Tensor argument) {
+        return new Join(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> ( a + b )).execute();
+    }
+
+    default Tensor divide(Tensor argument) {
+        return new Join(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> ( a / b )).execute();
+    }
+
+    default Tensor subtract(Tensor argument) {
+        return new Join(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> ( a - b )).execute();
     }
 
     // ----------------- Old stuff
@@ -80,7 +119,7 @@ public interface Tensor {
      * @param argument the tensor to multiply by this
      * @return the resulting tensor.
      */
-    default Tensor multiply(Tensor argument) {
+    default Tensor oldMultiply(Tensor argument) {
         return new TensorProduct(this, argument).result();
     }
 
@@ -140,7 +179,7 @@ public interface Tensor {
      * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
      * and have the value undefined for any non-shared dimension.
      */
-    default Tensor subtract(Tensor argument) {
+    default Tensor oldSubtract(Tensor argument) {
         return new TensorDifference(this, argument).result();
     }
 

@@ -35,7 +35,7 @@ public class Join extends PrimitiveTensorFunction {
     
     @Override
     public String toString() {
-        return "join(" + argumentA.toString() + ", " + argumentB.toString() + ", lambda(a, b) (" + combinator + "))";
+        return "join(" + argumentA.toString() + ", " + argumentB.toString() + ", f(a, b) (" + combinator + "))";
     }
 
 }
