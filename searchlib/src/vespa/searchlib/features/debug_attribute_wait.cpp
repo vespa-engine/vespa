@@ -8,13 +8,30 @@ LOG_SETUP(".features.debug_wait");
 using search::attribute::IAttributeVector;
 
 namespace search {
+
+using namespace fef;
+
 namespace features {
 
 //-----------------------------------------------------------------------------
 
-DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const search::fef::IQueryEnvironment &env,
-        const IAttributeVector *attribute,
-        const DebugAttributeWaitParams &params)
+class DebugAttributeWaitExecutor : public FeatureExecutor
+{
+private:
+    const IAttributeVector *_attribute;
+    attribute::FloatContent  _buf;
+    DebugAttributeWaitParams _params;
+
+public:
+    DebugAttributeWaitExecutor(const IQueryEnvironment &env,
+                               const IAttributeVector * attribute,
+                               const DebugAttributeWaitParams &params);
+    void execute(MatchData & data) override;
+};
+
+DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const IQueryEnvironment &env,
+                                                       const IAttributeVector *attribute,
+                                                       const DebugAttributeWaitParams &params)
     : _attribute(attribute),
       _buf(),
       _params(params)
@@ -23,7 +40,7 @@ DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const search::fef::IQuery
 }
 
 void
-DebugAttributeWaitExecutor::execute(search::fef::MatchData &data)
+DebugAttributeWaitExecutor::execute(MatchData &data)
 {
     double waitTime = 0.0;
     FastOS_Time time;
@@ -56,22 +73,20 @@ DebugAttributeWaitBlueprint::DebugAttributeWaitBlueprint()
 }
 
 void
-DebugAttributeWaitBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                      search::fef::IDumpFeatureVisitor &visitor) const
+DebugAttributeWaitBlueprint::visitDumpFeatures(const IIndexEnvironment &env, IDumpFeatureVisitor &visitor) const
 {
     (void)env;
     (void)visitor;
 }
 
-search::fef::Blueprint::UP
+Blueprint::UP
 DebugAttributeWaitBlueprint::createInstance() const
 {
     return Blueprint::UP(new DebugAttributeWaitBlueprint());
 }
 
 bool
-DebugAttributeWaitBlueprint::setup(const search::fef::IIndexEnvironment &env,
-                          const search::fef::ParameterList &params)
+DebugAttributeWaitBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
     (void)env;
     _attribute = params[0].getValue();
@@ -82,12 +97,12 @@ DebugAttributeWaitBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-DebugAttributeWaitBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+FeatureExecutor::LP
+DebugAttributeWaitBlueprint::createExecutor(const IQueryEnvironment &env) const
 {
     // Get attribute vector
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attribute);
-    return search::fef::FeatureExecutor::LP(new DebugAttributeWaitExecutor(env, attribute, _params));
+    return FeatureExecutor::LP(new DebugAttributeWaitExecutor(env, attribute, _params));
 }
 
 //-----------------------------------------------------------------------------

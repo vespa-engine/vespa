@@ -6,19 +6,31 @@ LOG_SETUP(".features.debug_wait");
 #include "debug_wait.h"
 
 namespace search {
+
+using namespace fef;
+
 namespace features {
 
 //-----------------------------------------------------------------------------
 
-DebugWaitExecutor::DebugWaitExecutor(const search::fef::IQueryEnvironment &env,
-                                     const DebugWaitParams &params)
+class DebugWaitExecutor : public FeatureExecutor
+{
+private:
+    DebugWaitParams _params;
+
+public:
+    DebugWaitExecutor(const IQueryEnvironment &env, const DebugWaitParams &params);
+    void execute(MatchData & data) override;
+};
+
+DebugWaitExecutor::DebugWaitExecutor(const IQueryEnvironment &env, const DebugWaitParams &params)
     : _params(params)
 {
     (void)env;
 }
 
 void
-DebugWaitExecutor::execute(search::fef::MatchData &data)
+DebugWaitExecutor::execute(MatchData &data)
 {
     FastOS_Time time;
     time.SetNow();
@@ -45,22 +57,20 @@ DebugWaitBlueprint::DebugWaitBlueprint()
 }
 
 void
-DebugWaitBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &env,
-                                      search::fef::IDumpFeatureVisitor &visitor) const
+DebugWaitBlueprint::visitDumpFeatures(const IIndexEnvironment &env, IDumpFeatureVisitor &visitor) const
 {
     (void)env;
     (void)visitor;
 }
 
-search::fef::Blueprint::UP
+Blueprint::UP
 DebugWaitBlueprint::createInstance() const
 {
     return Blueprint::UP(new DebugWaitBlueprint());
 }
 
 bool
-DebugWaitBlueprint::setup(const search::fef::IIndexEnvironment &env,
-                          const search::fef::ParameterList &params)
+DebugWaitBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
     (void)env;
     _params.waitTime = params[0].asDouble();
@@ -70,10 +80,10 @@ DebugWaitBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-DebugWaitBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+FeatureExecutor::LP
+DebugWaitBlueprint::createExecutor(const IQueryEnvironment &env) const
 {
-    return search::fef::FeatureExecutor::LP(new DebugWaitExecutor(env, _params));
+    return FeatureExecutor::LP(new DebugWaitExecutor(env, _params));
 }
 
 //-----------------------------------------------------------------------------

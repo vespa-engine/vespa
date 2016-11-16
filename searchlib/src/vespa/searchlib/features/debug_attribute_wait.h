@@ -18,24 +18,7 @@ struct DebugAttributeWaitParams {
 
 //-----------------------------------------------------------------------------
 
-class DebugAttributeWaitExecutor : public search::fef::FeatureExecutor
-{
-private:
-    const search::attribute::IAttributeVector *_attribute;
-    search::attribute::FloatContent _buf;
-    DebugAttributeWaitParams _params;
-
-public:
-    DebugAttributeWaitExecutor(const search::fef::IQueryEnvironment &env,
-                               const search::attribute::IAttributeVector *
-                               attribute,
-                      const DebugAttributeWaitParams &params);
-    virtual void execute(search::fef::MatchData & data);
-};
-
-//-----------------------------------------------------------------------------
-
-class DebugAttributeWaitBlueprint : public search::fef::Blueprint
+class DebugAttributeWaitBlueprint : public fef::Blueprint
 {
 private:
     vespalib::string _attribute;
@@ -43,25 +26,13 @@ private:
 
 public:
     DebugAttributeWaitBlueprint();
-
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().attribute(search::fef::ParameterCollection::ANY).number();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().attribute(fef::ParameterCollection::ANY).number();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment & env) const;
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const override;
 };
 
 //-----------------------------------------------------------------------------

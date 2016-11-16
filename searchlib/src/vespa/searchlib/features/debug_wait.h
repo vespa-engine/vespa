@@ -18,20 +18,7 @@ struct DebugWaitParams {
 
 //-----------------------------------------------------------------------------
 
-class DebugWaitExecutor : public search::fef::FeatureExecutor
-{
-private:
-    DebugWaitParams _params;
-
-public:
-    DebugWaitExecutor(const search::fef::IQueryEnvironment &env,
-                      const DebugWaitParams &params);
-    virtual void execute(search::fef::MatchData & data);
-};
-
-//-----------------------------------------------------------------------------
-
-class DebugWaitBlueprint : public search::fef::Blueprint
+class DebugWaitBlueprint : public fef::Blueprint
 {
 private:
     DebugWaitParams _params;
@@ -39,24 +26,13 @@ private:
 public:
     DebugWaitBlueprint();
 
-    // Inherit doc from Blueprint.
-    virtual void visitDumpFeatures(const search::fef::IIndexEnvironment & env,
-                                   search::fef::IDumpFeatureVisitor & visitor) const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::Blueprint::UP createInstance() const;
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::ParameterDescriptions getDescriptions() const {
-        return search::fef::ParameterDescriptions().desc().number().number();
+    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    fef::Blueprint::UP createInstance() const override;
+    fef::ParameterDescriptions getDescriptions() const override {
+        return fef::ParameterDescriptions().desc().number().number();
     }
-
-    // Inherit doc from Blueprint.
-    virtual bool setup(const search::fef::IIndexEnvironment &env,
-                       const search::fef::ParameterList &params);
-
-    // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment & env) const;
+    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const override;
 };
 
 //-----------------------------------------------------------------------------
