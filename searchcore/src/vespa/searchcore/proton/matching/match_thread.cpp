@@ -176,7 +176,7 @@ MatchThread::inner_match_loop(Context & context, IteratorT & search, DocidRange 
 {
     search->initRange(docid_range.begin, docid_range.end);
     uint32_t docId = search->seekFirst(docid_range.begin);
-    while ((docId < docid_range.end) && !context.getSoftDoom()) {
+    while ((docId < docid_range.end) && !context.atSoftDoom()) {
         if (do_rank) {
             search->unpack(docId);
             context.rankHit(docId);
@@ -251,7 +251,6 @@ MatchThread::match_loop_helper(MatchTools &matchTools, IteratorT search,
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &matchTools)
 {
-    const Doom & hardDoom = matchTools.getHardDoom();
     RankProgram::UP ranking = matchTools.first_phase_program();
     SearchIterator::UP search = matchTools.createSearch(ranking->match_data());
     LOG(debug, "SearchIterator: %s", search->asString().c_str());
@@ -280,7 +279,7 @@ MatchThread::findMatches(MatchTools &matchTools)
             size_t useHits = communicator.selectBest(sorted_scores);
             select_best_timer.done();
             DocumentScorer scorer(*ranking, *search);
-            uint32_t reRanked = hits.reRank(scorer, hardDoom.doom() ? 0 : useHits);
+            uint32_t reRanked = hits.reRank(scorer, matchTools.getHardDoom().doom() ? 0 : useHits);
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling
@@ -392,7 +391,7 @@ MatchThread::run()
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time.stop();
     match_time_s = match_time.elapsed().sec();
-    resultContext = resultProcessor.createThreadContext(matchTools->getSoftDoom(), thread_id);
+    resultContext = resultProcessor.createThreadContext(matchTools->getHardDoom(), thread_id);
     {
         WaitTimer get_token_timer(wait_time_s);
         QueryLimiter::Token::UP processToken(

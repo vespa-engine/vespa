@@ -56,7 +56,7 @@ private:
         void addHit(uint32_t docId) { _hits.addHit(docId, 0.0); }
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
-        bool  getSoftDoom() const { return _softDoom.doom(); }
+        bool   atSoftDoom() const { return _softDoom.doom(); }
         MaybeMatchPhaseLimiter & limiter() { return _limiter; }
         uint32_t                  matches;
     private:

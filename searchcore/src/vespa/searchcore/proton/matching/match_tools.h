@@ -81,7 +81,7 @@ public:
 
     MatchToolsFactory(QueryLimiter & queryLimiter,
                       const vespalib::Doom & softDoom,
-                      const vespalib::Doom & doom,
+                      const vespalib::Doom & hardDoom,
                       ISearchContext &searchContext,
                       search::attribute::IAttributeContext &attributeContext,
                       const vespalib::stringref &queryStack,
