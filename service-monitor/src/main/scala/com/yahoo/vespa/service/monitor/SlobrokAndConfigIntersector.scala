@@ -52,12 +52,12 @@ class SlobrokAndConfigIntersector(
   private val zoneConfigServerCluster: Map[ApplicationInstanceReference, ApplicationInstance[Void]] =
     if (multiTenantConfigServerHostNames.isEmpty) Map()
     else Map(
-      new ApplicationInstanceReference(syntheticHostedVespaTenantId, configServerApplicationInstanceId ) ->
-        new ApplicationInstance[Void](
+      ApplicationInstanceReference(syntheticHostedVespaTenantId, configServerApplicationInstanceId ) ->
+        ApplicationInstance[Void](
           syntheticHostedVespaTenantId,
           configServerApplicationInstanceId,
-          Collections.singleton(new ServiceCluster[Void](
-            new ClusterId("zone-config-servers"),
+          Collections.singleton(ServiceCluster[Void](
+            ClusterId("zone-config-servers"),
             SlobrokServiceNameUtil.configServerServiceType,
             configServer_ServerInstances(multiTenantConfigServerHostNames)
           ))))
@@ -79,13 +79,10 @@ class SlobrokAndConfigIntersector(
       }
 
       val serviceClustersWithStatus = applicationInstance.serviceClusters.asScala.map { serviceCluster =>
-        val serviceInstancesWithStatus = serviceCluster.serviceInstances().asScala.map { serviceInstance =>
-          new ServiceInstance[ServiceMonitorStatus](
-            serviceInstance.configId(),
-            serviceInstance.hostName(),
-            monitoredStatus(serviceCluster.serviceType, serviceInstance.configId))
+        val serviceInstancesWithStatus = serviceCluster.serviceInstances.asScala.map { serviceInstance =>
+          serviceInstance.copy(serviceStatus = monitoredStatus(serviceCluster.serviceType, serviceInstance.configId))
         }
-        new ServiceCluster[ServiceMonitorStatus](serviceCluster.clusterId(), serviceCluster.serviceType(), serviceInstancesWithStatus.asJava)
+        serviceCluster.copy(serviceInstances = serviceInstancesWithStatus.asJava)
       }
       val applicationInstanceWithStatus: ApplicationInstance[ServiceMonitorStatus] = new ApplicationInstance(
         applicationInstanceReference.tenantId,
@@ -143,8 +140,8 @@ class SlobrokAndConfigIntersector(
 object SlobrokAndConfigIntersector {
   private val log = Logger.getLogger(getClass.getName)
 
-  val syntheticHostedVespaTenantId = new TenantId("hosted-vespa")
-  val configServerApplicationInstanceId = new ApplicationInstanceId("zone-config-servers")
+  val syntheticHostedVespaTenantId = TenantId("hosted-vespa")
+  val configServerApplicationInstanceId = ApplicationInstanceId("zone-config-servers")
 
   implicit class AsJavaOptional[T <: AnyRef](private val option: Option[T]) extends AnyVal {
     def asJava: Optional[T] = option match {
@@ -169,10 +166,10 @@ object SlobrokAndConfigIntersector {
     val serviceInstances =
       for {
         serviceCluster <- applicationInstance.serviceClusters.asScala
-        serviceInstance <- serviceCluster.serviceInstances().asScala
+        serviceInstance <- serviceCluster.serviceInstances.asScala
       } yield serviceInstance
 
-    val serviceInstancesGroupedByStatus = serviceInstances.groupBy(_.serviceStatus())
+    val serviceInstancesGroupedByStatus = serviceInstances.groupBy(_.serviceStatus)
 
     def mkString(services: Traversable[ServiceInstance[ServiceMonitorStatus]]) = services.mkString("\t", "\n\t", "\n")
 
@@ -188,15 +185,15 @@ object SlobrokAndConfigIntersector {
   private def configServerHostNames(config: ConfigserverConfig): Set[HostName] =
     //Each Zookeeper server in this config is started by a config server.
     //Each config server starts a single zookeeper server.
-    config.zookeeperserver().asScala map {server => new HostName(server.hostname())} toSet
+    config.zookeeperserver().asScala map {server => HostName(server.hostname())} toSet
 
   private def configServer_ServerInstances(multiTenantConfigServerHostNames: Set[HostName])
   : java.util.Set[ServiceInstance[Void]] =
   {
-    def serviceInstance(hostName: HostName) = new ServiceInstance[Void](
-      new ConfigId("configId." + hostName.s),
+    def serviceInstance(hostName: HostName) = ServiceInstance[Void](
+      ConfigId("configId." + hostName.s),
       hostName,
-      null)
+      serviceStatus = null)
 
     multiTenantConfigServerHostNames map serviceInstance asJava
   }

@@ -13,7 +13,7 @@ object PrintServiceStates {
   def main(args: Array[String]): Unit = {
     val intersector = new SlobrokAndConfigIntersector(
       new ConfigSourceSet("tcp/test1-node:19070"),
-      multiTenantConfigServerHostNames = Set("config-server1", "config-server2").map(s => new HostName(s)),
+      multiTenantConfigServerHostNames = Set("config-server1", "config-server2") map HostName,
       new GenerationCounter {
         override def increment = ???
         override def get = 1L
