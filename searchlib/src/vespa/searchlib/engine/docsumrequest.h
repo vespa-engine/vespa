@@ -88,9 +88,6 @@ public:
     DocsumRequest();
     explicit DocsumRequest(bool useRootSlime_);
 
-    const vespalib::stringref getStackRef() const {
-        return vespalib::stringref(&stackDump[0], stackDump.size());
-    }
     bool useRootSlime() const { return _useRootSlime; }
 };
 

@@ -57,9 +57,9 @@ ResultProcessor::prepareThreadContextCreation(size_t num_threads)
 }
 
 ResultProcessor::Context::UP
-ResultProcessor::createThreadContext(const vespalib::Doom & doom, size_t thread_id)
+ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id)
 {
-    Sort::UP sort(new Sort(doom, _attrContext, _sortSpec));
+    Sort::UP sort(new Sort(hardDoom, _attrContext, _sortSpec));
     PartialResult::LP result(new PartialResult((_offset + _hits), sort->hasSortData()));
     if (thread_id == 0) {
         _result = result;

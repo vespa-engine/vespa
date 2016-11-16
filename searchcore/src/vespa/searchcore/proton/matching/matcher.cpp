@@ -113,18 +113,14 @@ Matcher::getFeatureSet(const DocsumRequest & req,
     }
 
     StupidMetaStore metaStore;
-    MatchToolsFactory mtf(_queryLimiter, Doom(_clock, req.getTimeOfDoom()), searchCtx, attrCtx,
-                          req.getStackRef(), req.location, _viewResolver,
-                          metaStore, _indexEnv,
-                          *_rankSetup, req.propertiesMap.rankProperties(),
-                          req.propertiesMap.featureOverrides());
-    if (!mtf.valid()) {
+    MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, metaStore, req.propertiesMap.featureOverrides());
+    if (!mtf->valid()) {
         LOG(warning, "getFeatureSet(%s): query execution failed "
             "(invalid query). Returning empty feature set",
             (summaryFeatures ? "summary features" : "rank features"));
         return FeatureSet::SP(new FeatureSet());
     }
-    return findFeatureSet(req, mtf, summaryFeatures);
+    return findFeatureSet(req, *mtf, summaryFeatures);
 }
 
 Matcher::Matcher(const index::Schema &schema,
@@ -161,6 +157,22 @@ Matcher::getStats()
     return stats;
 }
 
+MatchToolsFactory::UP
+Matcher::create_match_tools_factory(const search::engine::Request &request,
+                                    ISearchContext &searchContext,
+                                    IAttributeContext &attrContext,
+                                    const IDocumentMetaStore &metaStore,
+                                    const Properties &feature_overrides) const
+{
+    uint64_t safeLeft = request.getTimeLeft() * computeFirstPhase2RestRatio()*0.95;
+    fastos::TimeStamp safeDoom(fastos::ClockSystem::now() + safeLeft);
+    return std::make_unique<MatchToolsFactory>(_queryLimiter, vespalib::Doom(_clock, safeDoom),
+                                               vespalib::Doom(_clock, request.getTimeOfDoom()), searchContext,
+                                               attrContext, request.getStackRef(), request.location, _viewResolver,
+                                               metaStore, _indexEnv, *_rankSetup,
+                                               request.propertiesMap.rankProperties(), feature_overrides);
+}
+
 SearchReply::UP
 Matcher::handleGroupingSession(SessionManager &sessionMgr,
                                GroupingContext & groupingContext,
@@ -181,6 +193,11 @@ size_t Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits) const {
         threads = (hits.empty) ? 1 : std::min(threads, numThreads(hits.estHits, _rankSetup->getMinHitsPerThread()));
     }
     return threads;
+}
+
+double
+Matcher::computeFirstPhase2RestRatio() const {
+    return 1.0;
 }
 
 SearchReply::UP

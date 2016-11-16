@@ -56,7 +56,7 @@ private:
         void addHit(uint32_t docId) { _hits.addHit(docId, 0.0); }
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
-        bool         doom() const { return _doom.doom(); }
+        bool   atSoftDoom() const { return _softDoom.doom(); }
         MaybeMatchPhaseLimiter & limiter() { return _limiter; }
         uint32_t                  matches;
     private:
@@ -65,7 +65,7 @@ private:
         RankProgram             & _ranking;
         double                    _rankDropLimit;
         HitCollector            & _hits;
-        const Doom              & _doom;
+        const Doom              & _softDoom;
         MaybeMatchPhaseLimiter  & _limiter;
     };
 
@@ -91,7 +91,7 @@ private:
 
     search::ResultSet::UP findMatches(MatchTools &matchTools);
 
-    void processResult(const Doom & doom, search::ResultSet::UP result, ResultProcessor::Context &context);
+    void processResult(const Doom & hardDoom, search::ResultSet::UP result, ResultProcessor::Context &context);
 public:
     MatchThread(size_t thread_id_in,
                 size_t num_threads_in,

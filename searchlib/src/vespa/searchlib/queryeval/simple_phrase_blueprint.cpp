@@ -17,7 +17,7 @@ namespace queryeval {
 
 SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext)
     : ComplexLeafBlueprint(field),
-      _doom(requestContext.getDoom()),
+      _doom(requestContext.getSoftDoom()),
       _field(field),
       _estimate(),
       _layout(),

@@ -10,13 +10,15 @@ namespace proton {
 class RequestContext : public search::queryeval::IRequestContext
 {
 public:
-    RequestContext(const vespalib::Doom & doom, search::attribute::IAttributeContext & attributeContext);
-    const vespalib::Doom & getDoom() const override;
+    using IAttributeContext = search::attribute::IAttributeContext;
+    using Doom = vespalib::Doom;
+    RequestContext(const Doom & softDoom, IAttributeContext & attributeContext);
+    const Doom & getSoftDoom() const override { return _softDoom; }
     const search::AttributeVector * getAttribute(const vespalib::string & name) const override;
     const search::AttributeVector * getAttributeStableEnum(const vespalib::string & name) const override;
 private:
-    const vespalib::Doom                   _doom;
-    search::attribute::IAttributeContext & _attributeContext;
+    const Doom          _softDoom;
+    IAttributeContext & _attributeContext;
 };
 
 }

@@ -100,7 +100,7 @@ public:
 
     size_t countFS4Hits();
     void prepareThreadContextCreation(size_t num_threads);
-    Context::UP createThreadContext(const vespalib::Doom & doom, size_t thread_id);
+    Context::UP createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id);
     Result::UP makeReply();
 };
 

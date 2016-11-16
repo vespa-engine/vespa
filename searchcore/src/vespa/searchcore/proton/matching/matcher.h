@@ -68,6 +68,7 @@ private:
             std::unique_ptr<search::grouping::GroupingSession> gs);
 
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits) const;
+    double computeFirstPhase2RestRatio() const;
 public:
     /**
      * Convenience typedefs.
@@ -107,19 +108,11 @@ public:
      * Create the low-level tools needed to perform matching. This
      * function is exposed for testing purposes.
      **/
-    MatchToolsFactory::UP create_match_tools_factory(const search::engine::SearchRequest &request,
+    MatchToolsFactory::UP create_match_tools_factory(const search::engine::Request &request,
                                                      ISearchContext &searchContext,
                                                      search::attribute::IAttributeContext &attrContext,
                                                      const search::IDocumentMetaStore &metaStore,
-                                                     const search::fef::Properties &feature_overrides) const
-    {
-        return MatchToolsFactory::UP(new MatchToolsFactory(
-                        _queryLimiter, vespalib::Doom(_clock, request.getTimeOfDoom()),
-                        searchContext, attrContext, request.getStackRef(),
-                        request.location, _viewResolver, metaStore, _indexEnv,
-                        *_rankSetup, request.propertiesMap.rankProperties(),
-                        feature_overrides));
-    }
+                                                     const search::fef::Properties &feature_overrides) const;
 
     /**
      * Perform a search against this matcher.
