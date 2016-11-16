@@ -81,7 +81,7 @@ public class FailedExpirerTest {
     private NodeRepository failureScenarioIn(SystemName system, Environment environment) {
         ManualClock clock = new ManualClock();
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(3);

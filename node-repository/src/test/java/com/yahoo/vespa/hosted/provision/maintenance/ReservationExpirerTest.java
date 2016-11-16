@@ -37,7 +37,7 @@ public class ReservationExpirerTest {
     public void ensure_reservation_times_out() throws InterruptedException {
         ManualClock clock = new ManualClock();
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock);
+        NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(2);

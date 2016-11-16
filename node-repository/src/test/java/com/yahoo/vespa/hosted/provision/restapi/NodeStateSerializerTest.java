@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.restapi.v2.NodeStateSerializer;
 import org.junit.Test;
 
 import java.util.HashSet;

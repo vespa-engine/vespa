@@ -77,7 +77,7 @@ public class RestApiTest {
         private static final NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
 
         public MockNodeRepository() throws Exception {
-            super(flavors, new MockCurator(), Clock.systemUTC());
+            super(flavors, new MockCurator(), Clock.systemUTC(), Zone.defaultZone());
             populate();
         }
 

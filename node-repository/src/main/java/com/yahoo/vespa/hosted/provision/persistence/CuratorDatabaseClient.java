@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.provision.persistence;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
@@ -46,9 +48,12 @@ public class CuratorDatabaseClient {
     private final ObjectMapper jsonMapper = new ObjectMapper();
 
     private final Clock clock;
+    
+    private final Zone zone;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock) {
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone) {
         this.nodeSerializer = new NodeSerializer(flavors);
+        this.zone = zone;
         jsonMapper.registerModule(new JodaModule());
         this.curatorDatabase = new CuratorDatabase(curator, root, /* useCache: */ false);
         this.clock = clock;
@@ -164,10 +169,17 @@ public class CuratorDatabaseClient {
     private Status newNodeStatus(Node node, Node.State toState) {
         if (node.state() != Node.State.failed && toState == Node.State.failed) return node.status().withIncreasedFailCount();
         if (node.state() == Node.State.failed && toState == Node.State.active) return node.status().withDecreasedFailCount(); // fail undo
-        // Increase reboot generation when node is moved to dirty. This is done to reset the state on the node
-        // (e.g. get rid of lingering processes).
-        if (node.state() != Node.State.dirty && toState == Node.State.dirty) return node.status().withReboot(node.status().reboot().withIncreasedWanted());
+        // Increase reboot generation when node is moved to dirty unless quick reuse is prioritized. 
+        // This gets rid of lingering processes, updates OS packages if necessary and tests that reboot succeeds.
+        if (node.state() != Node.State.dirty && toState == Node.State.dirty && !needsFastNodeReuse(zone))
+            return node.status().withReboot(node.status().reboot().withIncreasedWanted());
+
         return node.status();
+    }
+
+    /** In automated test environments, nodes need to be reused quickly to achieve fast test turnaronud time */
+    private boolean needsFastNodeReuse(Zone zone) {
+        return zone.environment() == Environment.staging || zone.environment() == Environment.test;
     }
 
     private History newNodeHistory(Node node, Node.State toState) {

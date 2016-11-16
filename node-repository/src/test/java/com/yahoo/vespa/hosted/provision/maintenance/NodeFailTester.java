@@ -86,7 +86,7 @@ public class NodeFailTester {
     public NodeFailTester() {
         clock = new ManualClock();
         curator = new MockCurator();
-        nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
         provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
         hostLivenessTracker = new TestHostLivenessTracker(clock);
         orchestrator = new OrchestratorMock();

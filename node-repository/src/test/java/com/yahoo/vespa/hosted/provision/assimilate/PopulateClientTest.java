@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -54,9 +55,11 @@ public class PopulateClientTest {
     @Test
     public void testCorrectDataIsWrittenToZooKeeper() {
         Curator curator = new MockCurator();
-        CuratorDatabaseClient curatorDatabaseClient = new CuratorDatabaseClient(flavors, curator, Clock.systemUTC());
+        CuratorDatabaseClient curatorDatabaseClient = new CuratorDatabaseClient(flavors, curator, 
+                                                                                Clock.systemUTC(), Zone.defaultZone());
 
-        PopulateClient populateClient = new PopulateClient(curator, flavors, tenantId, applicationId, instanceId, servicesXmlFilename, hostsXmlFilename, flavorSpec, false);
+        PopulateClient populateClient = new PopulateClient(curator, flavors, tenantId, applicationId, instanceId, 
+                                                           servicesXmlFilename, hostsXmlFilename, flavorSpec, false);
         populateClient.populate(PopulateClient.CONTAINER_CLUSTER_TYPE);
         populateClient.populate(PopulateClient.CONTENT_CLUSTER_TYPE);
 

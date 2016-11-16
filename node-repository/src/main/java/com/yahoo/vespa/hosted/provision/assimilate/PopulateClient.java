@@ -58,7 +58,7 @@ public class PopulateClient {
         this.hostMapping = XmlUtils.getHostMapping(XmlUtils.parseXml(hostsXmlFilename));
         this.flavorSpec = flavorSpec;
         this.dryRun = dryRun;
-        this.zkClient = new CuratorDatabaseClient(nodeFlavors, curator, creationClock);
+        this.zkClient = new CuratorDatabaseClient(nodeFlavors, curator, creationClock, Zone.defaultZone());
         
         ensureFlavorIsDefinedForEveryCluster();
     }

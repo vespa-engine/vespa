@@ -6,6 +6,7 @@ import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
@@ -62,16 +63,16 @@ public class NodeRepository extends AbstractComponent {
      * This will use the system time to make time-sensitive decisions
      */
     @Inject
-    public NodeRepository(NodeFlavors flavors, Curator curator) {
-        this(flavors, curator, Clock.systemUTC());
+    public NodeRepository(NodeFlavors flavors, Curator curator, Zone zone) {
+        this(flavors, curator, Clock.systemUTC(), zone);
     }
 
     /**
      * Creates a node repository form a zookeeper provider and a clock instance
      * which will be used for time-sensitive decisions.
      */
-    public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock) {
-        this.zkClient = new CuratorDatabaseClient(flavors, curator, clock);
+    public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone) {
+        this.zkClient = new CuratorDatabaseClient(flavors, curator, clock, zone);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())

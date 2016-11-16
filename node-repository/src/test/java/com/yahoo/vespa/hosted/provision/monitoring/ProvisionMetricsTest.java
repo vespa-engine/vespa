@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.monitoring;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -25,15 +26,15 @@ public class ProvisionMetricsTest {
 
     @Test(timeout = 10_000L)
     public void test_registered_metric() throws InterruptedException {
-        final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        final Curator curator = new MockCurator();
-        final NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator);
-        final Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
+        Curator curator = new MockCurator();
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Zone.defaultZone());
+        Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
-        final Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
         nodeRepository.addNodes(Collections.singletonList(hostNode));
 
-        final Map<String, Number> expectedMetrics = new HashMap<>();
+        Map<String, Number> expectedMetrics = new HashMap<>();
         expectedMetrics.put("hostedVespa.provisionedHosts", 1);
         expectedMetrics.put("hostedVespa.parkedHosts", 0);
         expectedMetrics.put("hostedVespa.readyHosts", 0);
@@ -43,8 +44,8 @@ public class ProvisionMetricsTest {
         expectedMetrics.put("hostedVespa.dirtyHosts", 0);
         expectedMetrics.put("hostedVespa.failedHosts", 0);
 
-        final TestMetric metric = new TestMetric(expectedMetrics.size());
-        final ProvisionMetrics provisionMetrics = new ProvisionMetrics(metric, nodeRepository);
+        TestMetric metric = new TestMetric(expectedMetrics.size());
+        ProvisionMetrics provisionMetrics = new ProvisionMetrics(metric, nodeRepository);
 
         metric.latch.await();
         assertEquals(expectedMetrics, metric.values);

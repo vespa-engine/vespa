@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
-import com.yahoo.vespa.hosted.provision.restapi.NodeStateSerializer;
 
 import java.io.IOException;
 import java.io.OutputStream;
