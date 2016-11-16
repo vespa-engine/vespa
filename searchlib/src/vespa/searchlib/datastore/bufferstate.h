@@ -261,6 +261,10 @@ public:
     bool isActive(uint32_t typeId) const {
         return ((_state == ACTIVE) && (_typeId == typeId));
     }
+    bool isActive() const { return (_state == ACTIVE); }
+    bool isOnHold() const { return (_state == HOLD); }
+    bool isFree() const { return (_state == FREE); }
+    const BufferTypeBase *getTypeHandler() const { return _typeHandler; }
 
 private:
     Alloc _buffer;

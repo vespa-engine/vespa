@@ -378,8 +378,7 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
 
 
 uint32_t
-DataStoreBase::startCompactWorstBuffer(uint32_t typeId)
-{
+DataStoreBase::startCompactWorstBuffer(uint32_t typeId) {
     uint32_t activeBufferId = getActiveBufferId(typeId);
     const BufferTypeBase *typeHandler = _typeHandlers[typeId];
     assert(typeHandler->getActiveBuffers() >= 1u);
@@ -392,25 +391,41 @@ DataStoreBase::startCompactWorstBuffer(uint32_t typeId)
         return activeBufferId;
     }
     // Multiple active buffers for type, must perform full scan
-    uint32_t worstBufferId = activeBufferId;
-    uint32_t worstDead = 0;
+    return startCompactWorstBuffer(activeBufferId,
+                                   [=](const BufferState &state) { return state.isActive(typeId); });
+}
+
+uint32_t
+DataStoreBase::startCompactWorstBuffer()
+{
+   return startCompactWorstBuffer(0, [](const BufferState &state){ return state.isActive(); });
+}
+
+template <typename BufferStateActiveFilter>
+uint32_t
+DataStoreBase::startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc)
+{
+    uint32_t worstBufferId = initWorstBufferId;
+    size_t worstDeadElems = 0;
     for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
-        const auto &state = _states[bufferId];
-        if (state.isActive(typeId)) {
-            size_t dead = state.getDeadElems() - typeHandler->getReservedElements(bufferId);
-            if (dead > worstDead) {
+        const auto &state = getBufferState(bufferId);
+        if (filterFunc(state)) {
+            size_t deadElems = state.getDeadElems() - state.getTypeHandler()->getReservedElements(bufferId);
+            if (deadElems > worstDeadElems) {
                 worstBufferId = bufferId;
-                worstDead = dead;
+                worstDeadElems = deadElems;
             }
         }
     }
+    auto &worstBufferState = getBufferState(worstBufferId);
+    uint32_t activeBufferId = getActiveBufferId(worstBufferState.getTypeId());
     if ((worstBufferId == activeBufferId) ||
-        activeWriteBufferTooDead(_states[activeBufferId]))
+        activeWriteBufferTooDead(getBufferState(activeBufferId)))
     {
-        switchActiveBuffer(typeId, 0u);
+        switchActiveBuffer(worstBufferState.getTypeId(), 0u);
     }
-    _states[worstBufferId].setCompacting();
-    _states[worstBufferId].disableElemHoldList();
+    worstBufferState.setCompacting();
+    worstBufferState.disableElemHoldList();
     disableFreeList(worstBufferId);
     return worstBufferId;
 }

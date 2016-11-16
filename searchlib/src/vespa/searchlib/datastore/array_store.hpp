@@ -4,6 +4,7 @@
 
 #include "array_store.h"
 #include "datastore.hpp"
+#include <atomic>
 
 namespace search {
 namespace datastore {
@@ -138,6 +139,52 @@ ArrayStore<EntryT, RefT>::remove(EntryRef ref)
             _store.holdElem(ref, 1);
         }
     }
+}
+
+namespace arraystore {
+
+template <typename EntryT, typename RefT>
+class CompactionContext : public ICompactionContext {
+private:
+    using ArrayStoreType = ArrayStore<EntryT, RefT>;
+    DataStoreBase &_dataStore;
+    ArrayStoreType &_store;
+    uint32_t _bufferIdToCompact;
+
+public:
+    CompactionContext(DataStoreBase &dataStore,
+                      ArrayStoreType &store,
+                      uint32_t bufferIdToCompact)
+        : _dataStore(dataStore),
+          _store(store),
+          _bufferIdToCompact(bufferIdToCompact)
+    {}
+    virtual ~CompactionContext() {
+        _dataStore.holdBuffer(_bufferIdToCompact);
+    }
+    virtual void compact(vespalib::ArrayRef<EntryRef> refs) override {
+        for (auto &ref : refs) {
+            if (ref.valid()) {
+                RefT internalRef(ref);
+                if (internalRef.bufferId() == _bufferIdToCompact) {
+                    EntryRef newRef = _store.add(_store.get(ref));
+                    std::atomic_thread_fence(std::memory_order_release);
+                    ref = newRef;
+                }
+            }
+        }
+    }
+};
+
+}
+
+template <typename EntryT, typename RefT>
+ICompactionContext::UP
+ArrayStore<EntryT, RefT>::compactWorst()
+{
+    uint32_t bufferIdToCompact = _store.startCompactWorstBuffer();
+    return std::make_unique<arraystore::CompactionContext<EntryT, RefT>>
+            (_store, *this, bufferIdToCompact);
 }
 
 template <typename EntryT, typename RefT>

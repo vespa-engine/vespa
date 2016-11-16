@@ -9,35 +9,104 @@ LOG_SETUP("array_store_test");
 #include <vector>
 
 using namespace search::datastore;
+using vespalib::ArrayRef;
+using generation_t = vespalib::GenerationHandler::generation_t;
 
-template <typename EntryT>
+struct MemStats
+{
+    size_t _used;
+    size_t _hold;
+    size_t _dead;
+    MemStats() : _used(0), _hold(0), _dead(0) {}
+    MemStats &used(size_t val) { _used = val; return *this; }
+    MemStats &hold(size_t val) { _hold = val; return *this; }
+    MemStats &dead(size_t val) { _dead = val; return *this; }
+};
+
+template <typename EntryT, typename RefT = EntryRefT<17> >
 struct Fixture
 {
-    using ArrayStoreType = ArrayStore<EntryT>;
+    using EntryRefType = RefT;
+    using ArrayStoreType = ArrayStore<EntryT, RefT>;
     using ConstArrayRef = typename ArrayStoreType::ConstArrayRef;
     using EntryVector = std::vector<EntryT>;
     using value_type = EntryT;
+    using ReferenceStore = std::map<EntryRef, EntryVector>;
 
     ArrayStoreType store;
+    ReferenceStore refStore;
+    generation_t generation;
     Fixture(uint32_t maxSmallArraySize)
-        : store(maxSmallArraySize)
+        : store(maxSmallArraySize),
+          refStore(),
+          generation(1)
     {}
     void assertAdd(const EntryVector &input) {
-        EntryRef ref = store.add(ConstArrayRef(input));
-        ConstArrayRef output = store.get(ref);
-        EXPECT_EQUAL(input, EntryVector(output.begin(), output.end()));
+        EntryRef ref = add(input);
+        assertGet(ref, input);
     }
     EntryRef add(const EntryVector &input) {
-        return store.add(ConstArrayRef(input));
+        EntryRef result = store.add(ConstArrayRef(input));
+        ASSERT_EQUAL(0u, refStore.count(result));
+        refStore.insert(std::make_pair(result, input));
+        return result;
     }
-    void assertBufferState(EntryRef ref, size_t expUsedElems, size_t expHoldElems) {
-        EXPECT_EQUAL(expUsedElems, store.bufferState(ref)._usedElems);
-        EXPECT_EQUAL(expHoldElems, store.bufferState(ref)._holdElems);
+    void assertGet(EntryRef ref, const EntryVector &exp) const {
+        ConstArrayRef act = store.get(ref);
+        EXPECT_EQUAL(exp, EntryVector(act.begin(), act.end()));
     }
+    void remove(EntryRef ref) {
+        ASSERT_EQUAL(1u, refStore.count(ref));
+        store.remove(ref);
+        refStore.erase(ref);
+    }
+    uint32_t getBufferId(EntryRef ref) const {
+        return EntryRefType(ref).bufferId();
+    }
+    void assertBufferState(EntryRef ref, const MemStats expStats) const {
+        EXPECT_EQUAL(expStats._used, store.bufferState(ref)._usedElems);
+        EXPECT_EQUAL(expStats._hold, store.bufferState(ref)._holdElems);
+        EXPECT_EQUAL(expStats._dead, store.bufferState(ref)._deadElems);
+    }
+    void assertStoreContent() const {
+        for (const auto &elem : refStore) {
+            TEST_DO(assertGet(elem.first, elem.second));
+        }
+    }
+    EntryRef getEntryRef(const EntryVector &input) {
+        for (auto itr = refStore.begin(); itr != refStore.end(); ++itr) {
+            if (itr->second == input) {
+                return itr->first;
+            }
+        }
+        return EntryRef();
+    }
+    void trimHoldLists() {
+        store.transferHoldLists(generation++);
+        store.trimHoldLists(generation);
+    }
+    void compactWorst() {
+        ICompactionContext::UP ctx = store.compactWorst();
+        std::vector<EntryRef> refs;
+        for (auto itr = refStore.begin(); itr != refStore.end(); ++itr) {
+            refs.push_back(itr->first);
+        }
+        std::vector<EntryRef> compactedRefs = refs;
+        ctx->compact(ArrayRef<EntryRef>(compactedRefs));
+        ReferenceStore compactedRefStore;
+        for (size_t i = 0; i < refs.size(); ++i) {
+            ASSERT_EQUAL(0u, compactedRefStore.count(compactedRefs[i]));
+            ASSERT_EQUAL(1u, refStore.count(refs[i]));
+            compactedRefStore.insert(std::make_pair(compactedRefs[i], refStore[refs[i]]));
+        }
+        refStore = compactedRefStore;
+    }
+
 };
 
 using NumberFixture = Fixture<uint32_t>;
 using StringFixture = Fixture<std::string>;
+using SmallOffsetNumberFixture = Fixture<uint32_t, EntryRefT<10>>;
 
 TEST("require that we test with trivial and non-trivial types")
 {
@@ -76,18 +145,65 @@ TEST_F("require that we can add and get large arrays of non-trivial type", Strin
 TEST_F("require that elements are put on hold when a small array is removed", NumberFixture(3))
 {
     EntryRef ref = f.add({1,2,3});
-    TEST_DO(f.assertBufferState(ref, 3, 0));
+    TEST_DO(f.assertBufferState(ref, MemStats().used(3).hold(0)));
     f.store.remove(ref);
-    TEST_DO(f.assertBufferState(ref, 3, 3));
+    TEST_DO(f.assertBufferState(ref, MemStats().used(3).hold(3)));
 }
 
 TEST_F("require that elements are put on hold when a large array is removed", NumberFixture(3))
 {
     EntryRef ref = f.add({1,2,3,4});
     // Note: The first buffer have the first element reserved -> we expect 2 elements used here.
-    TEST_DO(f.assertBufferState(ref, 2, 0));
+    TEST_DO(f.assertBufferState(ref, MemStats().used(2).hold(0).dead(1)));
     f.store.remove(ref);
-    TEST_DO(f.assertBufferState(ref, 2, 1));
+    TEST_DO(f.assertBufferState(ref, MemStats().used(2).hold(1).dead(1)));
+}
+
+TEST_F("require that new underlying buffer is allocated when current is full", SmallOffsetNumberFixture(3))
+{
+    uint32_t firstBufferId = f.getBufferId(f.add({1,1}));
+    for (uint32_t i = 0; i < (F1::EntryRefType::offsetSize() - 1); ++i) {
+        uint32_t bufferId = f.getBufferId(f.add({i, i+1}));
+        EXPECT_EQUAL(firstBufferId, bufferId);
+    }
+    TEST_DO(f.assertStoreContent());
+
+    uint32_t secondBufferId = f.getBufferId(f.add({2,2}));
+    EXPECT_NOT_EQUAL(firstBufferId, secondBufferId);
+    for (uint32_t i = 0; i < 10u; ++i) {
+        uint32_t bufferId = f.getBufferId(f.add({i+2,i}));
+        EXPECT_EQUAL(secondBufferId, bufferId);
+    }
+    TEST_DO(f.assertStoreContent());
+}
+
+TEST_F("require that the buffer with most dead space is compacted", NumberFixture(2))
+{
+    EntryRef size1Ref = f.add({1});
+    EntryRef size2Ref = f.add({2,2});
+    EntryRef size3Ref = f.add({3,3,3});
+    f.remove(f.add({5,5}));
+    f.trimHoldLists();
+    TEST_DO(f.assertBufferState(size1Ref, MemStats().used(1).dead(0)));
+    TEST_DO(f.assertBufferState(size2Ref, MemStats().used(4).dead(2)));
+    TEST_DO(f.assertBufferState(size3Ref, MemStats().used(2).dead(1))); // Note: First element is reserved
+    uint32_t size1BufferId = f.getBufferId(size1Ref);
+    uint32_t size2BufferId = f.getBufferId(size2Ref);
+    uint32_t size3BufferId = f.getBufferId(size3Ref);
+
+    EXPECT_EQUAL(3u, f.refStore.size());
+    f.compactWorst();
+    EXPECT_EQUAL(3u, f.refStore.size());
+    f.assertStoreContent();
+
+    EXPECT_EQUAL(size1BufferId, f.getBufferId(f.getEntryRef({1})));
+    EXPECT_EQUAL(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
+    // Buffer for size 2 arrays has been compacted
+    EXPECT_NOT_EQUAL(size2BufferId, f.getBufferId(f.getEntryRef({2,2})));
+    f.assertGet(size2Ref, {2,2}); // Old ref should still point to data.
+    EXPECT_TRUE(f.store.bufferState(size2Ref).isOnHold());
+    f.trimHoldLists();
+    EXPECT_TRUE(f.store.bufferState(size2Ref).isFree());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
