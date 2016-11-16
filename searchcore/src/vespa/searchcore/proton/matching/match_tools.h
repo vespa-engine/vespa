@@ -20,7 +20,7 @@
 namespace proton {
 namespace matching {
 
-class MatchTools : public vespalib::noncopyable
+class MatchTools
 {
 private:
     using IRequestContext = search::queryeval::IRequestContext;
@@ -34,9 +34,10 @@ private:
     const search::fef::Properties      & _featureOverrides;
     search::fef::MatchDataLayout         _mdl;
     HandleRecorder                       _handleRecorder;
-
 public:
     typedef std::unique_ptr<MatchTools> UP;
+    MatchTools(const MatchTools &) = delete;
+    MatchTools & operator = (const MatchTools &) = delete;
     MatchTools(QueryLimiter & queryLimiter,
                const vespalib::Doom & softDoom,
                const vespalib::Doom & hardDoom,

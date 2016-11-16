@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/session_manager_explorer.h>
 #include <vespa/searchcore/proton/matching/search_session.h>
+#include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>

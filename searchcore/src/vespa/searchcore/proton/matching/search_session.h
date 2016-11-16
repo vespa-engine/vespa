@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include "match_context.h"
-#include "match_tools.h"
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
 namespace proton {
 namespace matching {
+
+class MatchToolsFactory;
+class MatchContext;
 
 /**
  * Holds enough data to perform a GetDocSum request. Makes sure the
@@ -18,9 +19,13 @@ namespace matching {
 class SearchSession {
 public:
     struct OwnershipBundle {
+        OwnershipBundle();
+        OwnershipBundle(OwnershipBundle &&) = default;
+        OwnershipBundle & operator = (OwnershipBundle &&) = default;
+        ~OwnershipBundle();
         ISearchHandler::SP search_handler;
         search::fef::Properties::UP feature_overrides;
-        MatchContext::UP context;
+        std::unique_ptr<MatchContext> context;
     };
 private:
     typedef vespalib::string SessionId;
@@ -29,24 +34,18 @@ private:
     fastos::TimeStamp _create_time;
     fastos::TimeStamp _time_of_doom;
     OwnershipBundle _owned_objects;
-    MatchToolsFactory::UP _match_tools_factory;
+    std::unique_ptr<MatchToolsFactory> _match_tools_factory;
 
 public:
     typedef std::shared_ptr<SearchSession> SP;
 
     SearchSession(const SessionId &id, fastos::TimeStamp time_of_doom,
-                  MatchToolsFactory::UP match_tools_factory,
-                  OwnershipBundle &&owned_objects)
-        : _session_id(id),
-          _create_time(fastos::ClockSystem::now()),
-          _time_of_doom(time_of_doom),
-          _owned_objects(std::move(owned_objects)),
-          _match_tools_factory(std::move(match_tools_factory)) {
-    }
+                  std::unique_ptr<MatchToolsFactory> match_tools_factory,
+                  OwnershipBundle &&owned_objects);
+    ~SearchSession();
 
     const SessionId &getSessionId() const { return _session_id; }
-
-    void releaseEnumGuards() { _owned_objects.context->releaseEnumGuards(); }
+    void releaseEnumGuards();
 
     /**
      * Gets this session's create time.

@@ -6,13 +6,14 @@
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/common/featureset.h>
-#include "match_tools.h"
 #include "result_processor.h"
 #include "match_params.h"
 #include "matching_stats.h"
 
 namespace proton {
 namespace matching {
+
+class MatchToolsFactory;
 
 /**
  * Handles overall matching and keeps track of match threads.
@@ -25,11 +26,11 @@ private:
 public:
     const MatchingStats &getStats() const { return _stats; }
     ResultProcessor::Result::UP match(const MatchParams &params,
-                                          vespalib::ThreadBundle &threadBundle,
-                                          const MatchToolsFactory &matchToolsFactory,
-                                          ResultProcessor &resultProcessor,
-                                          uint32_t distributionKey,
-                                          uint32_t numSearchPartitions);
+                                      vespalib::ThreadBundle &threadBundle,
+                                      const MatchToolsFactory &matchToolsFactory,
+                                      ResultProcessor &resultProcessor,
+                                      uint32_t distributionKey,
+                                      uint32_t numSearchPartitions);
 
     static search::FeatureSet::SP
     getFeatureSet(const MatchToolsFactory &matchToolsFactory,

@@ -5,7 +5,6 @@
 #include "i_constant_value_repo.h"
 #include "indexenvironment.h"
 #include "matching_stats.h"
-#include "match_tools.h"
 #include "search_session.h"
 #include "viewresolver.h"
 #include <vespa/searchcore/proton/matching/querylimiter.h>
@@ -14,6 +13,7 @@
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/searchrequest.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/clock.h>
@@ -38,6 +38,7 @@ namespace matching {
 
 class ISearchContext;
 class SessionManager;
+class MatchToolsFactory;
 
 /**
  * The Matcher is responsible for performing searches.
@@ -108,11 +109,12 @@ public:
      * Create the low-level tools needed to perform matching. This
      * function is exposed for testing purposes.
      **/
-    MatchToolsFactory::UP create_match_tools_factory(const search::engine::Request &request,
-                                                     ISearchContext &searchContext,
-                                                     search::attribute::IAttributeContext &attrContext,
-                                                     const search::IDocumentMetaStore &metaStore,
-                                                     const search::fef::Properties &feature_overrides) const;
+    std::unique_ptr<MatchToolsFactory>
+    create_match_tools_factory(const search::engine::Request &request,
+                               ISearchContext &searchContext,
+                               search::attribute::IAttributeContext &attrContext,
+                               const search::IDocumentMetaStore &metaStore,
+                               const search::fef::Properties &feature_overrides) const;
 
     /**
      * Perform a search against this matcher.
