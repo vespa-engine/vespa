@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 public class ClusterId {
 
-    public final String id;
+    private final String id;
 
     public ClusterId(String id) {
         this.id = id;

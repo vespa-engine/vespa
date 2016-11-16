@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 public class ConfigId {
 
-    public final String id;
+    private final String id;
 
     public ConfigId(String id) {
         this.id = id;
