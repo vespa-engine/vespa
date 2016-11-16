@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/enumattribute.hpp>
 #include "ipostinglistattributebase.h"
 #include "singleenumattributesaver.h"
+#include "load_utils.h"
 
 namespace search {
 
@@ -194,34 +195,28 @@ SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
 template <typename B>
 void
 SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
-                                         uint64_t numValues,
                                          const EnumStoreBase::IndexVector &eidxs,
                                          LoadedEnumAttributeVector &loaded)
 {
-    attribute::SaveLoadedEnum saver(loaded);
-    _enumIndices.fillMapped(getGenerationHolder(),
-                            attrReader,
-                            numValues,
-                            eidxs,
-                            saver,
-                            this->getNumDocs());
+    attribute::loadFromEnumeratedSingleValue(_enumIndices,
+                                             getGenerationHolder(),
+                                             attrReader,
+                                             eidxs,
+                                             attribute::SaveLoadedEnum(loaded));
 }
     
 
 template <typename B>
 void
 SingleValueEnumAttribute<B>::fillEnumIdx(ReaderBase &attrReader,
-                                         uint64_t numValues,
                                          const EnumStoreBase::IndexVector &eidxs,
                                          EnumStoreBase::EnumVector &enumHist)
 {
-    attribute::SaveEnumHist saver(enumHist);
-    _enumIndices.fillMapped(getGenerationHolder(),
-                            attrReader,
-                            numValues,
-                            eidxs,
-                            saver,
-                            this->getNumDocs());
+    attribute::loadFromEnumeratedSingleValue(_enumIndices,
+                                             getGenerationHolder(),
+                                             attrReader,
+                                             eidxs,
+                                             attribute::SaveEnumHist(enumHist));
 }
     
 

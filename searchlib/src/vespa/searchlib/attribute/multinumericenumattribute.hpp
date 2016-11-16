@@ -66,13 +66,11 @@ MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(typename B::ReaderBase &
     if (this->hasPostings()) {
         loaded.reserve(numValues);
         this->fillEnumIdx(attrReader,
-                          numValues,
                           eidxs,
                           loaded);
     } else {
         EnumVector(eidxs.size(), 0).swap(enumHist);
         this->fillEnumIdx(attrReader,
-                          numValues,
                           eidxs,
                           enumHist);
     }

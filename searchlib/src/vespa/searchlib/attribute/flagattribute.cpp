@@ -101,12 +101,8 @@ FlagAttributeT<B>::onLoadEnumerated(typename B::ReaderBase &attrReader)
                                     udatBuffer->size() / sizeof(TT));
     SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
     uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 numValues,
-                                                 &map[0],
-                                                 map.size(),
-                                                 saver,
-                                                 this->getNumDocs(),
-                                                 this->hasWeightedSetType());
+                                                 map,
+                                                 saver);
     this->checkSetMaxValueCount(maxvc);
     
     return true;

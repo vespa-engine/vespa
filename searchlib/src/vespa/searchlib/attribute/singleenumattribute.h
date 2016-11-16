@@ -92,13 +92,11 @@ protected:
 
     virtual void
     fillEnumIdx(ReaderBase &attrReader,
-                uint64_t numValues,
                 const EnumStoreBase::IndexVector &eidxs,
                 LoadedEnumAttributeVector &loaded);
     
     virtual void
     fillEnumIdx(ReaderBase &attrReader,
-                uint64_t numValues,
                 const EnumStoreBase::IndexVector &eidxs,
                 EnumStoreBase::EnumVector &enumHist);
     

@@ -270,6 +270,7 @@ public:
     typedef MultiValueMappingBaseBase::Histogram Histogram;
     typedef MultiValueMappingBaseBase::VectorStatus VectorStatus;
     typedef typename MultiValueMappingBase<I>::Index Index;
+    using MultiValueType = T;
 
 private:
     using MultiValueMappingBase<I>::_pendingCompactSingleVector;
@@ -399,12 +400,8 @@ public:
     template <typename V, class Saver>
     uint32_t
     fillMapped(AttributeVector::ReaderBase &attrReader,
-               uint64_t numValues,
-               const V *map,
-               size_t mapSize,
-               Saver &saver,
-               uint32_t numDocs,
-               bool hasWeights);
+               vespalib::ConstArrayRef<V> enumValueToValueMap,
+               Saver saver);
 
     virtual void doneHoldElem(Index idx) override;
 };

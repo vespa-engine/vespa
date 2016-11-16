@@ -82,13 +82,11 @@ private:
 
     virtual void
     fillEnumIdx(ReaderBase &attrReader,
-                uint64_t numValues,
                 const EnumIndexVector &eidxs,
                 attribute::LoadedEnumAttributeVector &loaded);
 
     virtual void
     fillEnumIdx(ReaderBase &attrReader,
-                uint64_t numValues,
                 const EnumIndexVector &eidxs,
                 EnumVector &enumHist);
 

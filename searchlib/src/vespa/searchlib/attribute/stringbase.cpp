@@ -373,12 +373,10 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     LOG(debug, "start fillEnumIdx");
     if(hasPostings()) {
         fillEnumIdx(attrReader,
-                    numValues,
                     eidxs,
                     loaded);
     } else {
         fillEnumIdx(attrReader,
-                    numValues,
                     eidxs,
                     enumHist);
     }
@@ -499,12 +497,10 @@ StringAttribute::fillEnum0(const void *src,
 
 void
 StringAttribute::fillEnumIdx(ReaderBase &attrReader,
-                             uint64_t numValues,
                              const EnumIndexVector &eidxs,
                              LoadedEnumAttributeVector &loaded)
 {
     (void) attrReader;
-    (void) numValues;
     (void) eidxs;
     (void) loaded;
     fprintf(stderr, "StringAttribute::fillEnumIdx (loaded)\n");
@@ -513,12 +509,10 @@ StringAttribute::fillEnumIdx(ReaderBase &attrReader,
 
 void
 StringAttribute::fillEnumIdx(ReaderBase &attrReader,
-                             uint64_t numValues,
                              const EnumIndexVector &eidxs,
                              EnumVector &enumHist)
 {
     (void) attrReader;
-    (void) numValues;
     (void) eidxs;
     (void) enumHist;
     fprintf(stderr, "StringAttribute::fillEnumIdx (enumHist)\n");
