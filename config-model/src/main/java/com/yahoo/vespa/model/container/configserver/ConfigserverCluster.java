@@ -6,6 +6,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
@@ -47,7 +48,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         // so we need to propagate the zone options into the container from here
         Environment environment = options.environment().isPresent() ? Environment.from(options.environment().get()) : Environment.defaultEnvironment();
         RegionName region = options.region().isPresent() ? RegionName.from(options.region().get()) : RegionName.defaultName();
-        containerCluster.setZone(new Zone(environment, region));
+        SystemName system = options.region().isPresent() ? SystemName.from(options.system().get()) : SystemName.defaultSystem();
+        containerCluster.setZone(new Zone(system, environment, region));
     }
 
     @Override
