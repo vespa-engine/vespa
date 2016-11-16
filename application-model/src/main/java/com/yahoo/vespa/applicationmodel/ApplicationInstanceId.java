@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 // TODO: Remove this and use ApplicationName/InstanceName instead (if you need it for the JSON stuff move it to that layer and don't let it leak)
 public class ApplicationInstanceId {
-    public final String id;
+    private final String id;
 
     public ApplicationInstanceId(String id) {
         this.id = id;

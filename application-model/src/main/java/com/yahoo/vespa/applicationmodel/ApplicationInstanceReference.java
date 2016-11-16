@@ -33,7 +33,7 @@ public class ApplicationInstanceReference {
     @JsonValue
     @Override
     public String toString() {
-        return tenantId.id + ":" + applicationInstanceId.id;
+        return tenantId.s() + ":" + applicationInstanceId.s();
     }
 
     @Override

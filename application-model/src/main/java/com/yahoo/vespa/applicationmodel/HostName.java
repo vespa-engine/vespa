@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 public class HostName {
 
-    public final String id;
+    private final String id;
 
     public HostName(String id) {
         this.id = id;

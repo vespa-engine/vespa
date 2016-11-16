@@ -33,7 +33,7 @@ public class ServiceClusterKey {
     @JsonValue
     @Override
     public String toString() {
-        return clusterId.id + ":" + serviceType.id;
+        return clusterId.s() + ":" + serviceType.s();
     }
 
     @Override

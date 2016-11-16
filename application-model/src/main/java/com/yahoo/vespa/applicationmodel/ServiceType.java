@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 public class ServiceType {
 
-    public final String id;
+    private final String id;
 
     public ServiceType(String id) {
         this.id = id;
