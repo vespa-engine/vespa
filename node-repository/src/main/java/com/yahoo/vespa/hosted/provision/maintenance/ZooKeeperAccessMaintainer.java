@@ -38,6 +38,8 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
             hosts.add(node.hostname());
         for (Node node : nodeRepository().getNodes(NodeType.proxy))
             hosts.add(node.hostname());
+        for (Node node : nodeRepository().getNodes(NodeType.host))
+            hosts.add(node.hostname());
         for (String hostPort : curator.connectionSpec().split(","))
             hosts.add(hostPort.split(":")[0]);
 
