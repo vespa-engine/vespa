@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.nodes.NodeRepositoryConfig;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -29,7 +30,7 @@ public class NodeRepositoryTester {
         clock = new ManualClock();
         curator = new MockCurator();
         curator.setConnectionSpec("server1:1234,server2:5678");
-        nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone());
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }

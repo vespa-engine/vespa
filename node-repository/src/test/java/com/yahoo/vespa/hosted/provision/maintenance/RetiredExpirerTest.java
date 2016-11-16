@@ -45,7 +45,7 @@ public class RetiredExpirerTest {
         ManualClock clock = new ManualClock();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(7, nodeRepository, nodeFlavors);
@@ -83,7 +83,7 @@ public class RetiredExpirerTest {
         ManualClock clock = new ManualClock();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(8, nodeRepository, nodeFlavors);

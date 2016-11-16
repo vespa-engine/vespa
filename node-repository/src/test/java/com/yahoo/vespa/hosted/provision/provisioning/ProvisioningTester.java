@@ -61,7 +61,7 @@ public class ProvisioningTester implements AutoCloseable {
         try {
             nodeFlavors = new NodeFlavors(createConfig());
             clock = new ManualClock();
-            nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+            nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
             provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
             capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             provisionLogger = new NullProvisionLogger();
@@ -75,7 +75,7 @@ public class ProvisioningTester implements AutoCloseable {
         try {
             nodeFlavors = new NodeFlavors(config);
             clock = new ManualClock();
-            nodeRepository = new NodeRepository(nodeFlavors, curator, clock);
+            nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
             provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
             capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             provisionLogger = new NullProvisionLogger();
