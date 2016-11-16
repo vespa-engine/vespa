@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
@@ -86,7 +87,7 @@ public class NodeFailTester {
     public NodeFailTester() {
         clock = new ManualClock();
         curator = new MockCurator();
-        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
+        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, new MockNameResolver().mockAnyLookup());
         provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
         hostLivenessTracker = new TestHostLivenessTracker(clock);
         orchestrator = new OrchestratorMock();

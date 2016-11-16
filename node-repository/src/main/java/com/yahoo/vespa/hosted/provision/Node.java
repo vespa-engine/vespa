@@ -24,6 +24,7 @@ import java.util.Optional;
 public final class Node {
 
     private final String id;
+    private final String ipAddress;
     private final String hostname;
     private final String openStackId;
     private final Optional<String> parentHostname;
@@ -39,21 +40,22 @@ public final class Node {
     private Optional<Allocation> allocation;
 
     /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Node(openStackId, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
+    public static Node create(String openStackId, String ipAddress, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return new Node(openStackId, ipAddress, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
                         Optional.empty(), History.empty(), type);
     }
 
     /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
-    public Node(String openStackId, String hostname, Optional<String> parentHostname,
+    private Node(String openStackId, String ipAddress, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Allocation allocation, History history, NodeType type) {
-        this(openStackId, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
+        this(openStackId, ipAddress, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
     }
 
-    public Node(String openStackId, String hostname, Optional<String> parentHostname,
+    public Node(String openStackId, String ipAddress, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation,
                 History history, NodeType type) {
         Objects.requireNonNull(openStackId, "A node must have an openstack id");
+        requireNonEmptyString(ipAddress, "A node must have an IP address");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
         Objects.requireNonNull(flavor, "A node must have a flavor");
@@ -64,6 +66,7 @@ public final class Node {
         Objects.requireNonNull(type, "A null node type is not permitted");
 
         this.id = hostname;
+        this.ipAddress = ipAddress;
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.openStackId = openStackId;
@@ -80,6 +83,9 @@ public final class Node {
      * This may be the host name or some other opaque id which is unique across hosts
      */
     public String id() { return id; }
+
+    /** Returns the IP address of this node */
+    public String ipAddress() { return ipAddress; }
 
     /** Returns the host name of this node */
     public String hostname() { return hostname; }
@@ -142,22 +148,22 @@ public final class Node {
 
     /** Returns a node with the status assigned to the given value */
     public Node with(Status status) {
-        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddress, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the type assigned to the given value */
     public Node with(NodeType type) {
-        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddress, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the flavor assigned to the given value */
     public Node with(Flavor flavor) {
-        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddress, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this with the current reboot generation set to generation */
     public Node withReboot(Generation generation) {
-        return new Node(openStackId, hostname, parentHostname, flavor, status.withReboot(generation), state,
+        return new Node(openStackId, ipAddress, hostname, parentHostname, flavor, status.withReboot(generation), state,
                         allocation, history, type);
     }
 
@@ -182,18 +188,18 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node with(Allocation allocation) {
-        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddress, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node withParentHostname(String parentHostname) {
-        return new Node(openStackId, hostname, Optional.of(parentHostname), flavor, status, state, 
+        return new Node(openStackId, ipAddress, hostname, Optional.of(parentHostname), flavor, status, state,
                         allocation, history, type);
     }
 
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
-        return new Node(openStackId, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddress, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     private void requireNonEmptyString(Optional<String> value, String message) {

@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
 import java.io.IOException;
 import java.time.temporal.TemporalAmount;
@@ -61,7 +62,8 @@ public class ProvisioningTester implements AutoCloseable {
         try {
             nodeFlavors = new NodeFlavors(createConfig());
             clock = new ManualClock();
-            nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
+            nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
+                    new MockNameResolver().mockAnyLookup());
             provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
             capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             provisionLogger = new NullProvisionLogger();
@@ -75,7 +77,8 @@ public class ProvisioningTester implements AutoCloseable {
         try {
             nodeFlavors = new NodeFlavors(config);
             clock = new ManualClock();
-            nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
+            nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
+                    new MockNameResolver().mockAnyLookup());
             provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
             capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             provisionLogger = new NullProvisionLogger();

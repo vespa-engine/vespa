@@ -10,14 +10,17 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
 
+import java.time.Clock;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author oyving
@@ -28,7 +31,8 @@ public class ProvisionMetricsTest {
     public void test_registered_metric() throws InterruptedException {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
         Curator curator = new MockCurator();
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Zone.defaultZone());
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, Clock.systemUTC(), Zone.defaultZone(),
+                new MockNameResolver().mockAnyLookup());
         Node node = nodeRepository.createNode("openStackId", "hostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
         nodeRepository.addNodes(Collections.singletonList(node));
         Node hostNode = nodeRepository.createNode("openStackId2", "parent", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);

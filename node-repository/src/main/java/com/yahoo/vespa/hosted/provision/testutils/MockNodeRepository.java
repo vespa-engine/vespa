@@ -39,7 +39,8 @@ public class MockNodeRepository extends NodeRepository {
      * @param flavors flavors to have in node repo
      */
     public MockNodeRepository(NodeFlavors flavors) throws Exception {
-        super(flavors, new MockCurator(), Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone());
+        super(flavors, new MockCurator(), Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
+                new MockNameResolver().mockAnyLookup());
         this.flavors = flavors;
         populate();
     }

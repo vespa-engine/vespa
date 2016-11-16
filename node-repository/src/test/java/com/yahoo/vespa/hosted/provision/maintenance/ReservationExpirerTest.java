@@ -13,11 +13,11 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
-import java.time.Duration;
-
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +37,8 @@ public class ReservationExpirerTest {
     public void ensure_reservation_times_out() throws InterruptedException {
         ManualClock clock = new ManualClock();
         NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone());
+        NodeRepository nodeRepository = new NodeRepository(flavors, curator, clock, Zone.defaultZone(),
+                new MockNameResolver().mockAnyLookup());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, flavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(2);

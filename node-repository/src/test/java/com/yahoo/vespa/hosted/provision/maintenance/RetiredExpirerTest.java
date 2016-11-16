@@ -16,12 +16,13 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
-import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -45,7 +46,8 @@ public class RetiredExpirerTest {
         ManualClock clock = new ManualClock();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
+                new MockNameResolver().mockAnyLookup());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(7, nodeRepository, nodeFlavors);
@@ -83,7 +85,8 @@ public class RetiredExpirerTest {
         ManualClock clock = new ManualClock();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
+                new MockNameResolver().mockAnyLookup());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone);
 
         createReadyNodes(8, nodeRepository, nodeFlavors);

@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
 public class NodeRepository extends AbstractComponent {
 
     private final CuratorDatabaseClient zkClient;
+    private final NameResolver nameResolver;
 
     /**
      * Creates a node repository form a zookeeper provider.
@@ -64,15 +66,16 @@ public class NodeRepository extends AbstractComponent {
      */
     @Inject
     public NodeRepository(NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone);
+        this(flavors, curator, Clock.systemUTC(), zone, new NameResolver() {} /* use default implementation */);
     }
 
     /**
      * Creates a node repository form a zookeeper provider and a clock instance
      * which will be used for time-sensitive decisions.
      */
-    public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone) {
-        this.zkClient = new CuratorDatabaseClient(flavors, curator, clock, zone);
+    public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver) {
+        this.zkClient = new CuratorDatabaseClient(flavors, curator, clock, zone, nameResolver);
+        this.nameResolver = nameResolver;
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -118,9 +121,9 @@ public class NodeRepository extends AbstractComponent {
     // ----------------- Node lifecycle -----------------------------------------------------------
 
     /** Creates a new node object, without adding it to the node repo */
-    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname, 
+    public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
                            Flavor flavor, NodeType type) {
-        return Node.create(openStackId, hostname, parentHostname, flavor, type);
+        return Node.create(openStackId, nameResolver.getByNameOrThrow(hostname), hostname, parentHostname, flavor, type);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */

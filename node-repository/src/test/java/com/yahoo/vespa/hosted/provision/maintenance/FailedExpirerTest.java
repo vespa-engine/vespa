@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -81,7 +82,8 @@ public class FailedExpirerTest {
     private NodeRepository failureScenarioIn(SystemName system, Environment environment) {
         ManualClock clock = new ManualClock();
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone());
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
+                new MockNameResolver().mockAnyLookup());
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, Zone.defaultZone(), clock);
 
         List<Node> nodes = new ArrayList<>(3);

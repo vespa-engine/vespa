@@ -18,8 +18,11 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -29,12 +32,19 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
+ * @author mpolden
  */
 public class SerializationTest {
 
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "large", "ugccloud-container");
-    private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors);
+    private final MockNameResolver nameResolver = new MockNameResolver();
+    private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors, nameResolver);
     private final ManualClock clock = new ManualClock();
+
+    @Before
+    public void before() {
+        nameResolver.reset();
+    }
 
     @Test
     public void testProvisionedNodeSerialization() {
@@ -101,6 +111,7 @@ public class SerializationTest {
 
     @Test
     public void testRebootAndRestartAndTypeNoCurrentValuesSerialization() {
+        nameResolver.addRecord("myHostname", "127.0.0.1");
         String nodeData = 
                 "{\n" +
                 "   \"type\" : \"tenant\",\n" +
@@ -140,6 +151,7 @@ public class SerializationTest {
     // TODO: Remove when 6.31 is deployed everywhere
     @Test
     public void testLegacyFlavor() {
+        nameResolver.addRecord("myHostname", "127.0.0.1");
         String nodeData =
                 "{\n" +
                 "   \"type\" : \"tenant\",\n" +
@@ -196,7 +208,8 @@ public class SerializationTest {
 
     @Test
     public void testAssimilatedDeserialization() {
-        Node node = nodeSerializer.fromJson(Node.State.active, "{\"type\":\"tenant\",\"hostname\":\"assimilate2.vespahosted.corp.bf1.yahoo.com\",\"openStackId\":\"\",\"flavor\":\"ugccloud-container\",\"instance\":{\"tenantId\":\"by_mortent\",\"applicationId\":\"ugc-assimilate\",\"instanceId\":\"default\",\"serviceId\":\"container/ugccloud-container/0/0\",\"restartGeneration\":0}}\n".getBytes());
+        nameResolver.addRecord("assimilate2.vespahosted.yahoo.tld", "127.0.0.1");
+        Node node = nodeSerializer.fromJson(Node.State.active, "{\"type\":\"tenant\",\"hostname\":\"assimilate2.vespahosted.yahoo.tld\",\"openStackId\":\"\",\"flavor\":\"ugccloud-container\",\"instance\":{\"tenantId\":\"by_mortent\",\"applicationId\":\"ugc-assimilate\",\"instanceId\":\"default\",\"serviceId\":\"container/ugccloud-container/0/0\",\"restartGeneration\":0}}\n".getBytes());
         assertEquals(0, node.history().events().size());
         assertTrue(node.allocation().isPresent());
         assertEquals("ugccloud-container", node.allocation().get().membership().cluster().id().value());
@@ -243,14 +256,54 @@ public class SerializationTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node = Node.create("myId", "myIp", "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
     }
 
+
+    @Test
+    public void resolves_hostname_when_deserializing() throws Exception {
+        nameResolver.addRecord("node1.yahoo.tld", "127.0.0.1");
+        byte[] nodeWithoutIp = createNodeJson("node1.yahoo.tld");
+        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithoutIp);
+        assertEquals("127.0.0.1", deserializedNode.ipAddress());
+    }
+
+    @Test
+    public void throws_when_hostname_cannot_be_resolved() throws Exception {
+        byte[] nodeWithoutIp = createNodeJson("node2.yahoo.tld");
+        try {
+            nodeSerializer.fromJson(State.provisioned, nodeWithoutIp);
+            assertTrue("Expected exception to be thrown", false);
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    @Test
+    public void resolver_is_not_invoked_when_ip_address_is_present() throws Exception {
+        nameResolver.failIfInvoked();
+        byte[] nodeWithIp = createNodeJson("node3.yahoo.tld", "127.0.0.3");
+        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithIp);
+        assertEquals("127.0.0.3", deserializedNode.ipAddress());
+    }
+
+    private byte[] createNodeJson(String hostname, String ipAddress) {
+        return ("{\"hostname\":\"" + hostname + "\"," +
+                (ipAddress.isEmpty() ? "" : "\"ipAddress\":\"" + ipAddress + "\",") +
+                "\"openStackId\":\"myId\"," +
+                "\"flavor\":\"default\",\"rebootGeneration\":0," +
+                "\"currentRebootGeneration\":0,\"failCount\":0,\"history\":[],\"type\":\"tenant\"}")
+                .getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] createNodeJson(String hostname) {
+        return createNodeJson(hostname, "");
+    }
+
     private Node createNode() {
-        return Node.create("myId", "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        return Node.create("myId", "myIp", "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
     }
 
 }

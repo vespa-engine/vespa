@@ -8,6 +8,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
 import java.time.Clock;
 import java.util.Collections;
@@ -30,7 +31,8 @@ public class NodeRepositoryTester {
         clock = new ManualClock();
         curator = new MockCurator();
         curator.setConnectionSpec("server1:1234,server2:5678");
-        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone());
+        nodeRepository = new NodeRepository(nodeFlavors, curator, clock, Zone.defaultZone(),
+                new MockNameResolver().mockAnyLookup());
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }
