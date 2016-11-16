@@ -7,5 +7,4 @@ package com.yahoo.tensor.functions;
  * @author bratseth
  */
 public abstract class CompositeTensorFunction extends TensorFunction {
-
 }

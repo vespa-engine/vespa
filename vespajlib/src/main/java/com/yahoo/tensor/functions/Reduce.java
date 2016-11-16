@@ -2,10 +2,9 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.function.DoubleBinaryOperator;
 
 /**
  * The <i>reduce</i> tensor operation returns a tensor produced from the argument tensor where some dimensions 
@@ -18,6 +17,16 @@ public class Reduce extends PrimitiveTensorFunction {
     private final TensorFunction argument;
     private final List<String> dimensions;
     private final Aggregator aggregator;
+
+    /** Creates a reduce function reducing aLL dimensions */
+    public Reduce(TensorFunction argument, Aggregator aggregator) {
+        this(argument, aggregator, Collections.emptyList());
+    }
+
+    /** Creates a reduce function reducing a single dimension */
+    public Reduce(TensorFunction argument, Aggregator aggregator, String dimension) {
+        this(argument, aggregator, Collections.singletonList(dimension));
+    }
 
     /**
      * Creates a reduce function.

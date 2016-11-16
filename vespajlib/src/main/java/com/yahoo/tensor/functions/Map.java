@@ -1,7 +1,6 @@
 package com.yahoo.tensor.functions;
 
 import java.util.Objects;
-import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 
 /**
