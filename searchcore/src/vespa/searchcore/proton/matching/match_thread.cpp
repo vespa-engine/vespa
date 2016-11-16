@@ -105,7 +105,7 @@ MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, Ran
     _ranking(ranking),
     _rankDropLimit(rankDropLimit),
     _hits(hits),
-    _doom(matchTools.doom()),
+    _doom(matchTools.getHardDoom()),
     _limiter(matchTools.match_limiter())
 {
 }
@@ -251,7 +251,7 @@ MatchThread::match_loop_helper(MatchTools &matchTools, IteratorT search,
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &matchTools)
 {
-    const Doom &doom = matchTools.doom();
+    const Doom &doom = matchTools.getHardDoom();
     RankProgram::UP ranking = matchTools.first_phase_program();
     SearchIterator::UP search = matchTools.createSearch(ranking->match_data());
     LOG(debug, "SearchIterator: %s", search->asString().c_str());
@@ -392,17 +392,17 @@ MatchThread::run()
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time.stop();
     match_time_s = match_time.elapsed().sec();
-    resultContext = resultProcessor.createThreadContext(matchTools->softDoom(), thread_id);
+    resultContext = resultProcessor.createThreadContext(matchTools->getSoftDoom(), thread_id);
     {
         WaitTimer get_token_timer(wait_time_s);
         QueryLimiter::Token::UP processToken(
-                matchTools->getQueryLimiter().getToken(matchTools->softDoom(),
+                matchTools->getQueryLimiter().getToken(matchTools->getHardDoom(),
                         scheduler.total_size(thread_id),
                         result->getNumHits(),
                         resultContext->sort->hasSortData(),
                         resultContext->grouping.get() != 0));
         get_token_timer.done();
-        processResult(matchTools->doom(), std::move(result), *resultContext);
+        processResult(matchTools->getHardDoom(), std::move(result), *resultContext);
     }
     total_time.stop();
     total_time_s = total_time.elapsed().sec();

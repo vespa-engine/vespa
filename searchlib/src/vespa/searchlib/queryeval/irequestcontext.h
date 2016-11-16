@@ -15,11 +15,6 @@ class IRequestContext
 {
 public:
     virtual ~IRequestContext() { }
-    /**
-     * Provides the time of doom for the query.
-     * @return time of doom.
-     */
-    virtual const vespalib::Doom & getDoom() const = 0;
 
     /**
      * Provides the time of soft doom for the query. Now it is time to start cleaning up and return what you have.

@@ -5,10 +5,8 @@ namespace proton {
 
 using search::attribute::IAttributeVector;
 
-RequestContext::RequestContext(const Doom & softDoom, const Doom & doom,
-                               IAttributeContext & attributeContext) :
+RequestContext::RequestContext(const Doom & softDoom, IAttributeContext & attributeContext) :
     _softDoom(softDoom),
-    _doom(doom),
     _attributeContext(attributeContext)
 { }
 
@@ -22,7 +20,7 @@ RequestContext::getAttribute(const vespalib::string & name) const
 const search::AttributeVector *
 RequestContext::getAttributeStableEnum(const vespalib::string & name) const
 {
-    const MatchThreadIAttributeVector * iav = _attributeContext.getAttributeStableEnum(name);
+    const IAttributeVector * iav = _attributeContext.getAttributeStableEnum(name);
     return dynamic_cast<const search::AttributeVector *>(iav);
 }
 

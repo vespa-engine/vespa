@@ -25,7 +25,8 @@ class MatchTools : public vespalib::noncopyable
 private:
     using IRequestContext = search::queryeval::IRequestContext;
     QueryLimiter                       & _queryLimiter;
-    const IRequestContext              & _requestContext;
+    const vespalib::Doom               & _softDoom;
+    const vespalib::Doom               & _hardDoom;
     const Query                        & _query;
     MaybeMatchPhaseLimiter             & _match_limiter;
     const QueryEnvironment             & _queryEnv;
@@ -37,15 +38,16 @@ private:
 public:
     typedef std::unique_ptr<MatchTools> UP;
     MatchTools(QueryLimiter & queryLimiter,
-               const IRequestContext & requestContext,
+               const vespalib::Doom & softDoom,
+               const vespalib::Doom & hardDoom,
                const Query &query,
                MaybeMatchPhaseLimiter &match_limiter_in,
                const QueryEnvironment &queryEnv,
                const search::fef::MatchDataLayout &mdl,
                const search::fef::RankSetup &rankSetup,
                const search::fef::Properties &featureOverrides);
-    const vespalib::Doom &softDoom() const { return _requestContext.getSoftDoom(); }
-    const vespalib::Doom &doom() const { return _requestContext.getDoom(); }
+    const vespalib::Doom &getSoftDoom() const { return _softDoom; }
+    const vespalib::Doom &getHardDoom() const { return _hardDoom; }
     QueryLimiter & getQueryLimiter() { return _queryLimiter; }
     MaybeMatchPhaseLimiter &match_limiter() { return _match_limiter; }
     search::queryeval::SearchIterator::UP
@@ -65,6 +67,7 @@ class MatchToolsFactory : public vespalib::noncopyable
 private:
     QueryLimiter                  & _queryLimiter;
     RequestContext                  _requestContext;
+    const vespalib::Doom          & _hardDoom;
     Query                           _query;
     MaybeMatchPhaseLimiter::UP      _match_limiter;
     QueryEnvironment                _queryEnv;

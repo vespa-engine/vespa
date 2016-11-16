@@ -49,7 +49,8 @@ search::fef::RankProgram::UP setup_program(search::fef::RankProgram::UP program,
 }
 
 MatchTools::MatchTools(QueryLimiter & queryLimiter,
-                       const IRequestContext & requestContext,
+                       const vespalib::Doom & softDoom,
+                       const vespalib::Doom & hardDoom,
                        const Query &query,
                        MaybeMatchPhaseLimiter & match_limiter_in,
                        const QueryEnvironment & queryEnv,
@@ -57,7 +58,8 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
                        const RankSetup & rankSetup,
                        const Properties & featureOverrides)
     : _queryLimiter(queryLimiter),
-      _requestContext(requestContext),
+      _softDoom(softDoom),
+      _hardDoom(hardDoom),
       _query(query),
       _match_limiter(match_limiter_in),
       _queryEnv(queryEnv),
@@ -100,7 +102,7 @@ MatchTools::dump_program() const {
 MatchToolsFactory::
 MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const vespalib::Doom       & softDoom,
-                  const vespalib::Doom       & doom,
+                  const vespalib::Doom       & hardDoom,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
                   const vespalib::stringref  & queryStack,
@@ -112,7 +114,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const Properties           & rankProperties,
                   const Properties           & featureOverrides)
     : _queryLimiter(queryLimiter),
-      _requestContext(softDoom, doom, attributeContext),
+      _requestContext(softDoom, attributeContext),
+      _hardDoom(hardDoom),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties),
@@ -167,7 +170,7 @@ MatchToolsFactory::createMatchTools() const
 {
     assert(_valid);
     return MatchTools::UP(
-            new MatchTools(_queryLimiter, _requestContext, _query, *_match_limiter, _queryEnv,
+            new MatchTools(_queryLimiter, _requestContext.getSoftDoom(), _hardDoom, _query, *_match_limiter, _queryEnv,
                            _mdl, _rankSetup, _featureOverrides));
 }
 
