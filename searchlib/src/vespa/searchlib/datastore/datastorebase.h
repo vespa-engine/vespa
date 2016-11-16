@@ -182,8 +182,8 @@ protected:
     virtual void
     clearElemHoldList(void) = 0;
 
-    template <typename BufferStateActiveFunctor>
-    uint32_t startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFunctor func);
+    template <typename BufferStateActiveFilter>
+    uint32_t startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc);
 
 public:
     uint32_t

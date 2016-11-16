@@ -401,15 +401,15 @@ DataStoreBase::startCompactWorstBuffer()
    return startCompactWorstBuffer(0, [](const BufferState &state){ return state.isActive(); });
 }
 
-template <typename BufferStateActiveFunctor>
+template <typename BufferStateActiveFilter>
 uint32_t
-DataStoreBase::startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFunctor func)
+DataStoreBase::startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc)
 {
     uint32_t worstBufferId = initWorstBufferId;
     size_t worstDeadElems = 0;
     for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
         const auto &state = getBufferState(bufferId);
-        if (func(state)) {
+        if (filterFunc(state)) {
             size_t deadElems = state.getDeadElems() - state.getTypeHandler()->getReservedElements(bufferId);
             if (deadElems > worstDeadElems) {
                 worstBufferId = bufferId;
