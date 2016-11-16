@@ -6,6 +6,8 @@ LOG_SETUP(".proton.matching.matcher");
 
 #include "isearchcontext.h"
 #include "match_master.h"
+#include "match_context.h"
+#include "match_tools.h"
 #include "match_params.h"
 #include "matcher.h"
 #include "query.h"
@@ -157,7 +159,7 @@ Matcher::getStats()
     return stats;
 }
 
-MatchToolsFactory::UP
+std::unique_ptr<MatchToolsFactory>
 Matcher::create_match_tools_factory(const search::engine::Request &request,
                                     ISearchContext &searchContext,
                                     IAttributeContext &attrContext,

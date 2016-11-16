@@ -10,22 +10,22 @@ namespace proton {
 namespace matching {
 
 class MatchContext {
-    search::attribute::IAttributeContext::UP _attrCtx;
-    ISearchContext::UP _searchCtx;
+    using IAttributeContext = search::attribute::IAttributeContext;
+    IAttributeContext::UP _attrCtx;
+    ISearchContext::UP    _searchCtx;
 
 public:
     typedef std::unique_ptr<MatchContext> UP;
 
-    MatchContext(search::attribute::IAttributeContext::UP attrCtx,
-                 ISearchContext::UP searchCtx)
+    MatchContext(IAttributeContext::UP attrCtx, ISearchContext::UP searchCtx)
         : _attrCtx(std::move(attrCtx)),
-          _searchCtx(std::move(searchCtx)) {
+          _searchCtx(std::move(searchCtx))
+    {
         assert(_attrCtx.get());
         assert(_searchCtx.get());
     }
 
-    search::attribute::IAttributeContext &getAttributeContext() const
-    { return *_attrCtx; }
+    IAttributeContext &getAttributeContext() const { return *_attrCtx; }
     ISearchContext &getSearchContext() const { return *_searchCtx; }
     void releaseEnumGuards() { _attrCtx->releaseEnumGuards(); }
 };

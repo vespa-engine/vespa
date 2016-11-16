@@ -29,6 +29,8 @@ LOG_SETUP("matching_test");
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/searchcore/proton/matching/match_params.h>
+#include <vespa/searchcore/proton/matching/match_tools.h>
+#include <vespa/searchcore/proton/matching/match_context.h>
 
 using namespace proton::matching;
 using namespace proton;
