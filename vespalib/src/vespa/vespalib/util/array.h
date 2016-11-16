@@ -27,6 +27,8 @@ public:
     T & operator [] (size_t i) { return _v[i]; }
     const T & operator [] (size_t i) const { return _v[i]; }
     size_t size() const { return _sz; }
+    T *begin() { return _v; }
+    T *end() { return _v + _sz; }
 private:
     T    * _v;
     size_t _sz;

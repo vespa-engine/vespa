@@ -182,6 +182,9 @@ protected:
     virtual void
     clearElemHoldList(void) = 0;
 
+    template <typename BufferStateActiveFunctor>
+    uint32_t startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFunctor func);
+
 public:
     uint32_t
     addType(BufferTypeBase *typeHandler);
@@ -390,6 +393,12 @@ public:
     }
 
     uint32_t startCompactWorstBuffer(uint32_t typeId);
+
+    /**
+     * Prepare for compacting the buffer with most dead usage among all buffers
+     * and return the bufferId for this buffer.
+     */
+    uint32_t startCompactWorstBuffer();
 };
 
 

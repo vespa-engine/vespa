@@ -5,6 +5,7 @@
 #include "bufferstate.h"
 #include "datastore.h"
 #include "entryref.h"
+#include "i_compaction_context.h"
 #include <vespa/vespalib/util/array.h>
 #include <unordered_map>
 
@@ -53,6 +54,7 @@ public:
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const;
     void remove(EntryRef ref);
+    ICompactionContext::UP compactWorst();
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
