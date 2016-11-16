@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Clock;
@@ -72,12 +73,14 @@ public class RestApiTest {
     }
 
     // Instantiated by DI from application package above
+    @SuppressWarnings("unused")
     public static class MockNodeRepository extends NodeRepository {
 
         private static final NodeFlavors flavors = FlavorConfigBuilder.createDummies("default");
 
         public MockNodeRepository() throws Exception {
-            super(flavors, new MockCurator(), Clock.systemUTC(), Zone.defaultZone());
+            super(flavors, new MockCurator(), Clock.systemUTC(), Zone.defaultZone(),
+                    new MockNameResolver().mockAnyLookup());
             populate();
         }
 

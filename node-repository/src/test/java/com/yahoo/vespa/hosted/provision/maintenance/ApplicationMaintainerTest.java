@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -46,7 +47,8 @@ public class ApplicationMaintainerTest {
         ManualClock clock = new ManualClock();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
-        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone);
+        NodeRepository nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
+                new MockNameResolver().mockAnyLookup());
 
         createReadyNodes(15, nodeRepository, nodeFlavors);
         createHostNodes(2, nodeRepository, nodeFlavors);

@@ -11,23 +11,26 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Clock;
 import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Oyvind Gronnesby
+ * @author mpolden
  */
 public class CuratorDatabaseClientTest {
 
-    private Curator curator = new MockCurator();
-    private CuratorDatabaseClient zkClient = new CuratorDatabaseClient(FlavorConfigBuilder.createDummies("default"), 
-                                                                       curator, Clock.systemUTC(), Zone.defaultZone());
+    private final Curator curator = new MockCurator();
+    private final CuratorDatabaseClient zkClient = new CuratorDatabaseClient(
+            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), Zone.defaultZone(),
+            new MockNameResolver().mockAnyLookup());
 
     @Test
-    public void ensure_can_read_stored_host_information() throws Exception {
+    public void can_read_stored_host_information() throws Exception {
         String zkline = "{\"hostname\":\"oxy-oxygen-0a4ae4f1.corp.bf1.yahoo.com\",\"openStackId\":\"7951bb9d-3989-4a60-a21c-13690637c8ea\",\"flavor\":\"default\",\"created\":1421054425159, \"type\":\"host\"}";
         curator.framework().create().creatingParentsIfNeeded().forPath("/provision/v1/ready/oxy-oxygen-0a4ae4f1.corp.bf1.yahoo.com", zkline.getBytes());
 
@@ -36,9 +39,8 @@ public class CuratorDatabaseClientTest {
         assertEquals(NodeType.host, allocatedNodes.get(0).type());
     }
 
-    /** Test that locks can be acquired and released */
     @Test
-    public void testLocking() {
+    public void locks_can_be_acquired_and_released() {
         ApplicationId app = ApplicationId.from(TenantName.from("testTenant"), ApplicationName.from("testApp"), InstanceName.from("testInstance"));
 
         try (CuratorMutex mutex1 = zkClient.lock(app)) {

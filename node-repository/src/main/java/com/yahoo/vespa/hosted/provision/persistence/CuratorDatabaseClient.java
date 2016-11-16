@@ -10,12 +10,11 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
-
-import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Clock;
@@ -51,8 +50,8 @@ public class CuratorDatabaseClient {
     
     private final Zone zone;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone) {
-        this.nodeSerializer = new NodeSerializer(flavors);
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver) {
+        this.nodeSerializer = new NodeSerializer(flavors, nameResolver);
         this.zone = zone;
         jsonMapper.registerModule(new JodaModule());
         this.curatorDatabase = new CuratorDatabase(curator, root, /* useCache: */ false);
@@ -146,7 +145,8 @@ public class CuratorDatabaseClient {
 
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
-            Node newNode = new Node(node.openStackId(), node.hostname(), node.parentHostname(), node.flavor(),
+            Node newNode = new Node(node.openStackId(), node.ipAddress(), node.hostname(),
+                                    node.parentHostname(), node.flavor(),
                                     newNodeStatus(node, toState),
                                     toState,
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),

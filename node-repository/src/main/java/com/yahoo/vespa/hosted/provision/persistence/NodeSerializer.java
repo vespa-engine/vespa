@@ -40,8 +40,11 @@ public class NodeSerializer {
     /** The configured node flavors */
     private final NodeFlavors flavors;
 
+    private final NameResolver nameResolver;
+
     // Node fields
     private static final String hostnameKey = "hostname";
+    private static final String ipAddressKey = "ipAddress";
     private static final String openStackIdKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
@@ -76,8 +79,9 @@ public class NodeSerializer {
 
     // ---------------- Serialization ----------------------------------------------------
 
-    public NodeSerializer(NodeFlavors flavors) {
+    public NodeSerializer(NodeFlavors flavors, NameResolver nameResolver) {
         this.flavors = flavors;
+        this.nameResolver = nameResolver;
     }
 
     public byte[] toJson(Node node) {
@@ -93,6 +97,7 @@ public class NodeSerializer {
 
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
+        object.setString(ipAddressKey, node.ipAddress());
         object.setString(openStackIdKey, node.openStackId());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         object.setString(flavorKey, node.flavor().name());
@@ -141,6 +146,7 @@ public class NodeSerializer {
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(openStackIdKey).asString(),
+                        ipAddressFromResolverOrSlime(object),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),
@@ -216,6 +222,14 @@ public class NodeSerializer {
             return Optional.of(object.field(parentHostnameKey).asString());
         else
             return Optional.empty();
+    }
+
+    // TODO: Remove this and use the field directly after 6.48 has been deployed everywhere
+    private String ipAddressFromResolverOrSlime(Inspector object) {
+        if (!object.field(ipAddressKey).valid()) {
+            return nameResolver.getByNameOrThrow(object.field("hostname").asString());
+        }
+        return object.field(ipAddressKey).asString();
     }
     
     private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {
