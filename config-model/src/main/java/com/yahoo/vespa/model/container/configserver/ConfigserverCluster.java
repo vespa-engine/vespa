@@ -48,7 +48,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
         // so we need to propagate the zone options into the container from here
         Environment environment = options.environment().isPresent() ? Environment.from(options.environment().get()) : Environment.defaultEnvironment();
         RegionName region = options.region().isPresent() ? RegionName.from(options.region().get()) : RegionName.defaultName();
-        SystemName system = options.region().isPresent() ? SystemName.from(options.system().get()) : SystemName.defaultSystem();
+        SystemName system = options.system().isPresent() ? SystemName.from(options.system().get()) : SystemName.defaultSystem();
         containerCluster.setZone(new Zone(system, environment, region));
     }
 
