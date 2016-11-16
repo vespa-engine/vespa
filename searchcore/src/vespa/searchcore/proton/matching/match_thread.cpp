@@ -105,7 +105,7 @@ MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, Ran
     _ranking(ranking),
     _rankDropLimit(rankDropLimit),
     _hits(hits),
-    _doom(matchTools.getHardDoom()),
+    _softDoom(matchTools.getSoftDoom()),
     _limiter(matchTools.match_limiter())
 {
 }
@@ -176,7 +176,7 @@ MatchThread::inner_match_loop(Context & context, IteratorT & search, DocidRange 
 {
     search->initRange(docid_range.begin, docid_range.end);
     uint32_t docId = search->seekFirst(docid_range.begin);
-    while ((docId < docid_range.end) && !context.doom()) {
+    while ((docId < docid_range.end) && !context.getSoftDoom()) {
         if (do_rank) {
             search->unpack(docId);
             context.rankHit(docId);
@@ -251,7 +251,7 @@ MatchThread::match_loop_helper(MatchTools &matchTools, IteratorT search,
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &matchTools)
 {
-    const Doom &doom = matchTools.getHardDoom();
+    const Doom & hardDoom = matchTools.getHardDoom();
     RankProgram::UP ranking = matchTools.first_phase_program();
     SearchIterator::UP search = matchTools.createSearch(ranking->match_data());
     LOG(debug, "SearchIterator: %s", search->asString().c_str());
@@ -280,7 +280,7 @@ MatchThread::findMatches(MatchTools &matchTools)
             size_t useHits = communicator.selectBest(sorted_scores);
             select_best_timer.done();
             DocumentScorer scorer(*ranking, *search);
-            uint32_t reRanked = hits.reRank(scorer, doom.doom() ? 0 : useHits);
+            uint32_t reRanked = hits.reRank(scorer, hardDoom.doom() ? 0 : useHits);
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling
@@ -295,16 +295,16 @@ MatchThread::findMatches(MatchTools &matchTools)
 }
 
 void
-MatchThread::processResult(const Doom & doom, 
+MatchThread::processResult(const Doom & hardDoom,
                            search::ResultSet::UP result,
                            ResultProcessor::Context &context)
 {
-    if (doom.doom()) return;
+    if (hardDoom.doom()) return;
     bool hasGrouping = (context.grouping.get() != 0);
     if (context.sort->hasSortData() || hasGrouping) {
         result->mergeWithBitOverflow();
     }
-    if (doom.doom()) return;
+    if (hardDoom.doom()) return;
     size_t             totalHits = result->getNumHits();
     search::RankedHit *hits      = result->getArray();
     size_t             numHits   = result->getArrayUsed();
@@ -312,20 +312,20 @@ MatchThread::processResult(const Doom & doom,
     if (bits != nullptr && hits != nullptr) {
         bits->andNotWithT(search::RankedHitIterator(hits, numHits));
     }
-    if (doom.doom()) return;
+    if (hardDoom.doom()) return;
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
         man.groupUnordered(hits, numHits, bits);
     }
-    if (doom.doom()) return;
+    if (hardDoom.doom()) return;
     size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
     context.sort->sorter->sortResults(hits, numHits, sortLimit);
-    if (doom.doom()) return;
+    if (hardDoom.doom()) return;
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
         man.groupInRelevanceOrder(hits, numHits);
     }
-    if (doom.doom()) return;
+    if (hardDoom.doom()) return;
     PartialResult &pr = *context.result;
     pr.totalHits(totalHits);
     size_t maxHits = std::min(numHits, pr.maxSize());
