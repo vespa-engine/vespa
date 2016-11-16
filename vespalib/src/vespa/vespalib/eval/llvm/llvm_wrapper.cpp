@@ -235,13 +235,16 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         push(llvm::ConstantFP::get(builder.getDoubleTy(), value));
     }
 
-    void push_error() {
+    void make_error(size_t num_children) {
+        for (size_t i = 0; i < num_children; ++i) {
+            discard();
+        }
         push_double(error_value);
     }
 
     void make_call_1(llvm::Function *fun) {
         if (fun == nullptr || fun->arg_size() != 1) {
-            return push_error();
+            return make_error(1);
         }
         llvm::Value *a = pop_double();
         push(builder.CreateCall(fun, a));
@@ -257,7 +260,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     void make_call_2(llvm::Function *fun) {
         if (fun == nullptr || fun->arg_size() != 2) {
-            return push_error();
+            return make_error(2);
         }
         llvm::Value *b = pop_double();
         llvm::Value *a = pop_double();
@@ -339,24 +342,19 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         let_values.pop_back();
     }
     virtual void visit(const Error &) {
-        push_error();
+        make_error(0);
     }
 
-    // tensor nodes
+    // tensor nodes (not supported in compiled expressions)
 
-    virtual void visit(const TensorSum &) {
-        // sum(x) -> x
+    virtual void visit(const TensorSum &node) {
+        make_error(node.num_children());
     }
-    virtual void visit(const TensorMap &) {
-        // TODO(havardpe): add actual evaluation
-        discard();
-        push_error();
+    virtual void visit(const TensorMap &node) {
+        make_error(node.num_children());
     }
-    virtual void visit(const TensorJoin &) {
-        // TODO(havardpe): add actual evaluation
-        discard();
-        discard();
-        push_error();
+    virtual void visit(const TensorJoin &node) {
+        make_error(node.num_children());
     }
 
     // operator nodes
