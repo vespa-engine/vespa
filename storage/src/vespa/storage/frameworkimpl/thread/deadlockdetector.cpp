@@ -23,8 +23,7 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg,
       _enableWarning(true),
       _enableShutdown(false),
       _processSlackMs(30 * 1000),
-      _waitSlackMs(5 * 1000),
-      _reportedBucketDBLocksAtState(OK)
+      _waitSlackMs(5 * 1000)
 {
     DistributorComponentRegister* dComp(
             dynamic_cast<DistributorComponentRegister*>(&compReg));
@@ -125,23 +124,6 @@ DeadLockDetector::isAboveWarnThreshold(
     return (tick._lastTickMs + tp.getMaxCycleTime() + slack / 4 < time.getTime());
 }
 
-vespalib::string
-DeadLockDetector::getBucketLockInfo() const
-{
-    vespalib::asciistream ost;
-    if (_dComponent.get()) {
-        if (_dComponent->getBucketDatabase().size() > 0) {
-            //_dComponent->getBucketDatabase().showLockClients(ost);
-            ost << "No bucket lock information available for distributor\n";
-        }
-    } else {
-        if (_slComponent->getBucketDatabase().size() > 0) {
-            _slComponent->getBucketDatabase().showLockClients(ost);
-        }
-    }
-    return ost.str();
-}
-
 namespace {
     struct ThreadChecker : public DeadLockDetector::ThreadVisitor
     {
@@ -202,12 +184,6 @@ DeadLockDetector::handleDeadlock(const framework::MilliSecTime& currentTime,
         if (_enableWarning) {
             LOGBT(warning, "deadlockw-" + id, "%s",
                   error.str().c_str());
-            if (_reportedBucketDBLocksAtState != WARNED) {
-                _reportedBucketDBLocksAtState = WARNED;
-                LOG(info, "Locks in bucket database at deadlock time:"
-                          "\n%s",
-                    getBucketLockInfo().c_str());
-            }
         }
         return;
     } else {
@@ -217,11 +193,6 @@ DeadLockDetector::handleDeadlock(const framework::MilliSecTime& currentTime,
         }
     }
     if (!_enableShutdown) return;
-    if (_reportedBucketDBLocksAtState != HALTED) {
-        _reportedBucketDBLocksAtState = HALTED;
-        LOG(info, "Locks in bucket database at deadlock time:"
-                  "\n%s", getBucketLockInfo().c_str());
-    }
     if (_enableShutdown) {
         _killer->kill();
     }
@@ -326,14 +297,6 @@ DeadLockDetector::reportHtmlStatus(std::ostream& os,
         out << "<p>The deadlock detector is disabled and will only monitor "
             << "tick times.</p>\n";
     }
-    out << "<h2>Current locks in the bucket database</h2>\n"
-        << "<p>In case of a software bug causing a deadlock in the code, bucket"
-        << " database locks are a likely reason. Thus, we list current locks "
-        << "here in hopes that it will simplify debugging.</p>\n"
-        << "<p>Bucket database</p>\n"
-        << "<pre>\n"
-        << getBucketLockInfo()
-        << "</pre>\n";
     os << out.str();
 }
 

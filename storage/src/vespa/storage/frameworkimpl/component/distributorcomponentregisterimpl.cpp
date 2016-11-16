@@ -11,11 +11,11 @@ LOG_SETUP(".storage.component.register.distributor");
 namespace storage {
 
 DistributorComponentRegisterImpl::DistributorComponentRegisterImpl()
-    : _timeCalculator(0),
-      _bucketDatabase(),
-      _idealNodeCalculator(new lib::IdealNodeCalculatorImpl)
+    : _timeCalculator(0)
 {
-    _idealNodeCalculator->setClusterState(_clusterState);
+}
+
+DistributorComponentRegisterImpl::~DistributorComponentRegisterImpl() {
 }
 
 void
@@ -33,20 +33,8 @@ DistributorComponentRegisterImpl::registerDistributorComponent(
     if (_timeCalculator != 0) {
         smc.setTimeCalculator(*_timeCalculator);
     }
-    smc.setBucketDatabase(_bucketDatabase);
     smc.setDistributorConfig(_distributorConfig);
     smc.setVisitorConfig(_visitorConfig);
-    smc.setIdealNodeCalculator(*_idealNodeCalculator);
-}
-
-void
-DistributorComponentRegisterImpl::setIdealNodeCalculator(
-        std::unique_ptr<lib::IdealNodeCalculatorConfigurable> calc)
-{
-    _idealNodeCalculator = std::move(calc);
-    for (uint32_t i=0; i<_components.size(); ++i) {
-        _components[i]->setIdealNodeCalculator(*_idealNodeCalculator);
-    }
 }
 
 void
@@ -83,13 +71,6 @@ DistributorComponentRegisterImpl::setVisitorConfig(const VisitorConfig& c)
     for (uint32_t i=0; i<_components.size(); ++i) {
         _components[i]->setVisitorConfig(c);
     }
-}
-
-void
-DistributorComponentRegisterImpl::setDistribution(lib::Distribution::SP d)
-{
-    StorageComponentRegisterImpl::setDistribution(d);
-    _idealNodeCalculator->setDistribution(*d);
 }
 
 void

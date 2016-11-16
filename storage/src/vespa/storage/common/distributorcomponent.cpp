@@ -7,7 +7,7 @@ namespace storage {
 DistributorComponent::DistributorComponent(DistributorComponentRegister& compReg,
                                            vespalib::stringref name)
     : StorageComponent(compReg, name),
-      _bucketDatabase(0), _timeCalculator(0),
+      _timeCalculator(0),
       _totalConfig(*this)
 {
     compReg.registerDistributorComponent(*this);

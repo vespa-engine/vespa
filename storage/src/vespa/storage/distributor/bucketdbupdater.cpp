@@ -23,10 +23,11 @@ namespace storage {
 namespace distributor {
 
 BucketDBUpdater::BucketDBUpdater(Distributor& owner,
+                                 BucketSpace& bucketSpace,
                                  DistributorMessageSender& sender,
                                  DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _distributorComponent(owner, compReg, "Bucket DB Updater"),
+      _distributorComponent(owner, bucketSpace, compReg, "Bucket DB Updater"),
       _sender(sender)
 {
 }

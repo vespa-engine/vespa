@@ -158,14 +158,11 @@ public:
         return _distributor;
     }
 
-    virtual BucketDatabase& getBucketDatabase()
-    { return _distributor.getBucketDatabase(); }
-
-    virtual const BucketDatabase& getBucketDatabase() const
-    { return _distributor.getBucketDatabase(); }
-
-    const lib::Distribution& getDistribution() const
-    { return _distributor.getDistribution(); };
+    virtual BucketDatabase& getBucketDatabase() = 0;
+    virtual const BucketDatabase& getBucketDatabase() const = 0;
+    // FIXME this hides the StorageComponent::getDistribution method, which
+    // even has a different signature altogether...!
+    virtual const lib::Distribution& getDistribution() const = 0;
 
     /**
      * Finds a bucket that has the same direct parent as the given bucket
