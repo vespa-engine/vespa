@@ -44,7 +44,7 @@ class InstancesObservables(configSourceSet: ConfigSourceSet) {
   val servicesPerInstance: Observable[Map[ApplicationInstanceReference, ApplicationInstance[Void]]] =
     lbServicesConfigObservable.map( _.map { case (applicationInstanceReference, x) =>
       val serviceClusters: java.util.Set[ServiceCluster[Void]] = asServiceClusterSet(x)
-      val applicationInstance = ApplicationInstance(
+      val applicationInstance = new ApplicationInstance(
         applicationInstanceReference.tenantId,
         applicationInstanceReference.applicationInstanceId,
         serviceClusters)
@@ -66,9 +66,9 @@ object InstancesObservables {
       (tenantIdString, tenantConfig) <- config.tenants()
       (applicationIdString, applicationConfig) <- tenantConfig.applications()
     } yield {
-      val applicationInstanceReference: ApplicationInstanceReference = ApplicationInstanceReference(
-        TenantId(tenantIdString),
-        ApplicationInstanceId(applicationIdString))
+      val applicationInstanceReference: ApplicationInstanceReference = new ApplicationInstanceReference(
+        new TenantId(tenantIdString),
+        new ApplicationInstanceId(applicationIdString))
 
       (applicationInstanceReference, applicationConfig.hosts())
     }
@@ -94,13 +94,13 @@ object InstancesObservables {
       (hostName, hostConfig) <- hostsConfigs.view
       (serviceName, servicesConfig) <- hostConfig.services()
     } yield {
-      (ServiceClusterKey(ClusterId(servicesConfig.clustername()), ServiceType(servicesConfig.`type`())),
-        ServiceInstance(ConfigId(servicesConfig.configId()), HostName(hostName), null.asInstanceOf[Void]))
+      (new ServiceClusterKey(new ClusterId(servicesConfig.clustername()), new ServiceType(servicesConfig.`type`())),
+        new ServiceInstance(new ConfigId(servicesConfig.configId()), new HostName(hostName), null.asInstanceOf[Void]))
     }).groupByKeyWithValue(_._1, _._2)
 
     val serviceClusterSet: Set[ServiceCluster[Void]] = serviceInstancesGroupedByCluster.map {
       case (serviceClusterKey, serviceInstances) =>
-        ServiceCluster(
+        new ServiceCluster(
           serviceClusterKey.clusterId,
           serviceClusterKey.serviceType,
           serviceInstances.toSet.asJava)
