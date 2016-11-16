@@ -169,7 +169,7 @@ public class CuratorDatabaseClient {
     private Status newNodeStatus(Node node, Node.State toState) {
         if (node.state() != Node.State.failed && toState == Node.State.failed) return node.status().withIncreasedFailCount();
         if (node.state() == Node.State.failed && toState == Node.State.active) return node.status().withDecreasedFailCount(); // fail undo
-        // Increase reboot generation when node is moved to dirty unless qick reuse is prioritized. 
+        // Increase reboot generation when node is moved to dirty unless quick reuse is prioritized. 
         // This gets rid of lingering processes, updates OS packages if necessary and tests that reboot succeeds.
         if (node.state() != Node.State.dirty && toState == Node.State.dirty && !needsFastNodeReuse(zone))
             return node.status().withReboot(node.status().reboot().withIncreasedWanted());
