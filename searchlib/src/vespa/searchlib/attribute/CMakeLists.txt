@@ -47,6 +47,7 @@ vespa_add_library(searchlib_attribute OBJECT
     integerbase.cpp
     ipostinglistsearchcontext.cpp
     iterator_pack.cpp
+    load_utils.cpp
     loadedenumvalue.cpp
     loadednumericvalue.cpp
     loadedstringvalue.cpp

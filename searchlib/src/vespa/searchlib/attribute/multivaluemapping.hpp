@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "load_utils.hpp"
+
 namespace search
 {
 
@@ -16,33 +18,15 @@ MultiValueMappingT<T, I>::fillMapped(AttributeVector::ReaderBase &attrReader,
                                      uint32_t numDocs,
                                      bool hasWeights)
 {
-    typedef AttributeVector::DocId DocId;
+    (void) numValues;
+    (void) hasWeights;
     Histogram capacityNeeded = this->getHistogram(attrReader);
     reset(numDocs, capacityNeeded);
     attrReader.rewind();
-    std::vector<T> indices;
-    uint64_t di = 0;
-    uint32_t maxvc = 0;
-    for (DocId doc = 0; doc < numDocs; ++doc) {
-        indices.clear();
-        uint32_t vc = attrReader.getNextValueCount();
-        indices.reserve(vc);
-        for (uint32_t vci = 0; vci < vc; ++vci, ++di) {
-            uint32_t e = attrReader.getNextEnum();
-            assert(e < mapSize);
-            (void) mapSize;
-            int32_t weight = hasWeights ? attrReader.getNextWeight() : 1;
-            indices.push_back(T(map[e], weight));
-            saver.save(e, doc, weight);
-        }
-        if (maxvc < indices.size()) {
-            maxvc = indices.size();
-        }
-        set(doc, indices);
-    }
-    assert(di == numValues);
-    (void) numValues;
-    return maxvc;
+    using Map = vespalib::ConstArrayRef<V>;
+    return attribute::loadFromEnumeratedMultiValue(*this, attrReader,
+                                                   Map(map, mapSize),
+                                                   saver);
 }
 
 } // namespace search

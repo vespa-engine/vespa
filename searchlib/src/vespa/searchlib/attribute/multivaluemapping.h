@@ -270,6 +270,7 @@ public:
     typedef MultiValueMappingBaseBase::Histogram Histogram;
     typedef MultiValueMappingBaseBase::VectorStatus VectorStatus;
     typedef typename MultiValueMappingBase<I>::Index Index;
+    using MultiValueType = T;
 
 private:
     using MultiValueMappingBase<I>::_pendingCompactSingleVector;
