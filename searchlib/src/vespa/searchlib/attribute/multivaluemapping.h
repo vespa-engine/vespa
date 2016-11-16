@@ -400,12 +400,8 @@ public:
     template <typename V, class Saver>
     uint32_t
     fillMapped(AttributeVector::ReaderBase &attrReader,
-               uint64_t numValues,
-               const V *map,
-               size_t mapSize,
-               Saver &saver,
-               uint32_t numDocs,
-               bool hasWeights);
+               vespalib::ConstArrayRef<V> map,
+               Saver saver);
 
     virtual void doneHoldElem(Index idx) override;
 };

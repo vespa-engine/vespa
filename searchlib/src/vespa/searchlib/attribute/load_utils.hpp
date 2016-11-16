@@ -45,5 +45,25 @@ loadFromEnumeratedMultiValue(MvMapping &mapping,
     return maxvc;
 }
 
+template <class Vector, class Saver>
+void
+loadFromEnumeratedSingleValue(Vector &vector,
+                              vespalib::GenerationHolder &genHolder,
+                              AttributeVector::ReaderBase &attrReader,
+                              vespalib::ConstArrayRef<typename Vector::ValueType> map,
+                              Saver saver)
+{
+    uint32_t numDocs = attrReader.getEnumCount();
+    genHolder.clearHoldLists();
+    vector.reset();
+    vector.unsafe_reserve(numDocs);
+    for (uint32_t doc = 0; doc < numDocs; ++doc) {
+        uint32_t e = attrReader.getNextEnum();
+        assert(e < map.size());
+        vector.push_back(map[e]);
+        saver.save(e, doc, 1);
+    }
+}
+
 } // namespace search::attribute
 } // namespace search

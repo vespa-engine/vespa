@@ -101,26 +101,16 @@ MultiValueNumericAttribute<B, M>::onLoadEnumerated(typename B::ReaderBase &
                                                    attrReader)
 {
     uint32_t numDocs = attrReader.getNumIdx() - 1;
-    uint64_t numValues = attrReader.getNumValues();
-    uint64_t enumCount = attrReader.getEnumCount();
-    assert(numValues == enumCount);
-    (void) enumCount;
-
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
 
     FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
-    const T *map = reinterpret_cast<const T *>(udatBuffer->buffer());
     assert((udatBuffer->size() % sizeof(T)) == 0);
-    size_t mapSize = udatBuffer->size() / sizeof(T);
-    attribute::NoSaveLoadedEnum saver;
+    vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
+                                   udatBuffer->size() / sizeof(T));
     uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 numValues,
                                                  map,
-                                                 mapSize,
-                                                 saver,
-                                                 this->getNumDocs(),
-                                                 this->hasWeightedSetType());
+                                                 attribute::NoSaveLoadedEnum());
     this->checkSetMaxValueCount(maxvc);
     
     return true;

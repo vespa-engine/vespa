@@ -11,22 +11,14 @@ template <typename T, typename I>
 template <typename V, class Saver>
 uint32_t
 MultiValueMappingT<T, I>::fillMapped(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const V *map,
-                                     size_t mapSize,
-                                     Saver &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights)
+                                     vespalib::ConstArrayRef<V> map,
+                                     Saver saver)
 {
-    (void) numValues;
-    (void) hasWeights;
+    uint32_t numDocs = attrReader.getNumIdx() - 1;
     Histogram capacityNeeded = this->getHistogram(attrReader);
     reset(numDocs, capacityNeeded);
     attrReader.rewind();
-    using Map = vespalib::ConstArrayRef<V>;
-    return attribute::loadFromEnumeratedMultiValue(*this, attrReader,
-                                                   Map(map, mapSize),
-                                                   saver);
+    return attribute::loadFromEnumeratedMultiValue(*this, attrReader, map, saver);
 }
 
 } // namespace search

@@ -123,36 +123,24 @@ MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
 template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
-                                           uint64_t numValues,
                                            const EnumIndexVector &eidxs,
                                            LoadedEnumAttributeVector &loaded)
 {
-    attribute::SaveLoadedEnum saver(loaded);
     uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 numValues,
-                                                 &eidxs[0],
-                                                 eidxs.size(),
-                                                 saver,
-                                                 this->getNumDocs(),
-                                                 this->hasWeightedSetType());
+                                                 vespalib::ConstArrayRef<EnumIndex>(eidxs),
+                                                 attribute::SaveLoadedEnum(loaded));
     this->checkSetMaxValueCount(maxvc);
 }
 
 template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
-                                           uint64_t numValues,
                                            const EnumIndexVector &eidxs,
                                            EnumVector &enumHist)
 {
-    attribute::SaveEnumHist saver(enumHist);
     uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 numValues,
-                                                 &eidxs[0],
-                                                 eidxs.size(),
-                                                 saver,
-                                                 this->getNumDocs(),
-                                                 this->hasWeightedSetType());
+                                                 vespalib::ConstArrayRef<EnumIndex>(eidxs),
+                                                 attribute::SaveEnumHist(enumHist));
     this->checkSetMaxValueCount(maxvc);
 }
 

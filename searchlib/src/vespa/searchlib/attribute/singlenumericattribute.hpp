@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include "singlenumericattributesaver.h"
+#include "load_utils.h"
 
 namespace search {
 
@@ -84,8 +85,7 @@ bool
 SingleValueNumericAttribute<B>::onLoadEnumerated(typename B::ReaderBase &
                                                  attrReader)
 {
-    uint64_t numValues = attrReader.getEnumCount();
-    uint32_t numDocs = numValues;
+    uint32_t numDocs = attrReader.getEnumCount();
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
@@ -94,13 +94,11 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(typename B::ReaderBase &
     assert((udatBuffer->size() % sizeof(T)) == 0);
     vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
                                    udatBuffer->size() / sizeof(T));
-    attribute::NoSaveLoadedEnum saver;
-    _data.fillMapped(getGenerationHolder(),
-                     attrReader,
-                     numValues,
-                     map,
-                     saver,
-                     numDocs);
+    attribute::loadFromEnumeratedSingleValue(_data,
+                                             getGenerationHolder(),
+                                             attrReader,
+                                             map,
+                                             attribute::NoSaveLoadedEnum());
     return true;
 }
 

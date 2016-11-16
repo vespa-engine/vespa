@@ -18,5 +18,14 @@ loadFromEnumeratedMultiValue(MvMapping &mapping,
                              vespalib::ConstArrayRef<typename MvMapping::MultiValueType::ValueType> map,
                              Saver saver) __attribute((noinline));
 
+
+template <class Vector, class Saver>
+void
+loadFromEnumeratedSingleValue(Vector &vector,
+                              vespalib::GenerationHolder &genHolder,
+                              AttributeVector::ReaderBase &attrReader,
+                              vespalib::ConstArrayRef<typename Vector::ValueType> map,
+                              Saver saver) __attribute((noinline));
+
 } // namespace search::attribute
 } // namespace search

@@ -30,12 +30,10 @@ NumericAttribute::fillEnum0(const void *src,
 
 void
 NumericAttribute::fillEnumIdx(ReaderBase &attrReader,
-                             uint64_t numValues,
                              const EnumIndexVector &eidxs,
                              LoadedEnumAttributeVector &loaded)
 {
     (void) attrReader;
-    (void) numValues;
     (void) eidxs;
     (void) loaded;
     fprintf(stderr, "NumericAttribute::fillEnumIdx (loaded)\n");
@@ -44,12 +42,10 @@ NumericAttribute::fillEnumIdx(ReaderBase &attrReader,
 
 void
 NumericAttribute::fillEnumIdx(ReaderBase &attrReader,
-                             uint64_t numValues,
                              const EnumIndexVector &eidxs,
                              EnumVector &enumHist)
 {
     (void) attrReader;
-    (void) numValues;
     (void) eidxs;
     (void) enumHist;
     fprintf(stderr, "NumericAttribute::fillEnumIdx (enumHist)\n");

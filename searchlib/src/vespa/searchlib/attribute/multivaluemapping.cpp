@@ -468,386 +468,226 @@ typedef EnumStoreBase::Index EnumIndex;
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<EnumIndex>,
-                   multivalue::Index32>::
-fillMapped<EnumIndex, SaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const EnumIndex *map,
-                                      size_t mapSize,
-                                      SaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::Value<EnumIndex>, multivalue::Index32>::
+fillMapped<EnumIndex, SaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<EnumIndex>,
+                                      SaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<EnumIndex>,
-                   multivalue::Index32>::
-fillMapped<EnumIndex, SaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                           uint64_t numValues,
-                           const EnumIndex *map,
-                           size_t mapSize,
-                           SaveLoadedEnum &saver,
-                           uint32_t numDocs,
-                           bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<EnumIndex>, multivalue::Index32>::
+fillMapped<EnumIndex, SaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<EnumIndex>,
+                                      SaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<EnumIndex>,
-                   multivalue::Index64>::
-fillMapped<EnumIndex, SaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const EnumIndex *map,
-                                      size_t mapSize,
-                                      SaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::Value<EnumIndex>, multivalue::Index64>::
+fillMapped<EnumIndex, SaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<EnumIndex>,
+                                      SaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<EnumIndex>,
-                   multivalue::Index64>::
-fillMapped<EnumIndex, SaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const EnumIndex *map,
-                                      size_t mapSize,
-                                      SaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<EnumIndex>, multivalue::Index64>::
+fillMapped<EnumIndex, SaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<EnumIndex>,
+                                      SaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<EnumIndex>,
-                   multivalue::Index32>::
-fillMapped<EnumIndex, SaveEnumHist>(AttributeVector::ReaderBase &attrReader,
-                                    uint64_t numValues,
-                                    const EnumIndex *map,
-                                    size_t mapSize,
-                                    SaveEnumHist &saver,
-                                    uint32_t numDocs,
-                                    bool hasWeights);
+MultiValueMappingT<multivalue::Value<EnumIndex>, multivalue::Index32>::
+fillMapped<EnumIndex, SaveEnumHist>(AttributeVector::ReaderBase &,
+                                    vespalib::ConstArrayRef<EnumIndex>,
+                                    SaveEnumHist);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<EnumIndex>,
-                   multivalue::Index32>::
-fillMapped<EnumIndex, SaveEnumHist>(AttributeVector::ReaderBase &attrReader,
-                                    uint64_t numValues,
-                                    const EnumIndex *map,
-                                    size_t mapSize,
-                                    SaveEnumHist &saver,
-                                    uint32_t numDocs,
-                                    bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<EnumIndex>, multivalue::Index32>::
+fillMapped<EnumIndex, SaveEnumHist>(AttributeVector::ReaderBase &,
+                                    vespalib::ConstArrayRef<EnumIndex>,
+                                    SaveEnumHist);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<EnumIndex>,
-                   multivalue::Index64>::
-fillMapped<EnumIndex, SaveEnumHist>(AttributeVector::ReaderBase &attrReader,
-                                    uint64_t numValues,
-                                    const EnumIndex *map,
-                                    size_t mapSize,
-                                    SaveEnumHist &saver,
-                                    uint32_t numDocs,
-                                    bool hasWeights);
+MultiValueMappingT<multivalue::Value<EnumIndex>, multivalue::Index64>::
+fillMapped<EnumIndex, SaveEnumHist>(AttributeVector::ReaderBase &,
+                                    vespalib::ConstArrayRef<EnumIndex>,
+                                    SaveEnumHist);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<EnumIndex>,
-                   multivalue::Index64>::
-fillMapped<EnumIndex, SaveEnumHist>(AttributeVector::ReaderBase &attrReader,
-                                    uint64_t numValues,
-                                    const EnumIndex *map,
-                                    size_t mapSize,
-                                    SaveEnumHist &saver,
-                                    uint32_t numDocs,
-                                    bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<EnumIndex>, multivalue::Index64>::
+fillMapped<EnumIndex, SaveEnumHist>(AttributeVector::ReaderBase &,
+                                    vespalib::ConstArrayRef<EnumIndex>,
+                                    SaveEnumHist);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<int8_t>,
-                   multivalue::Index32>::
-fillMapped<int8_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const int8_t *map,
-                                     size_t mapSize,
-                                     NoSaveLoadedEnum &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights);
+MultiValueMappingT<multivalue::Value<int8_t>, multivalue::Index32>::
+fillMapped<int8_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                     vespalib::ConstArrayRef<int8_t>,
+                                     NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<int16_t>,
-                   multivalue::Index32>::
-fillMapped<int16_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int16_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::Value<int16_t>, multivalue::Index32>::
+fillMapped<int16_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int16_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<int32_t>,
-                   multivalue::Index32>::
-fillMapped<int32_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int32_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::Value<int32_t>, multivalue::Index32>::
+fillMapped<int32_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int32_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<int64_t>,
-                   multivalue::Index32>::
-fillMapped<int64_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int64_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::Value<int64_t>, multivalue::Index32>::
+fillMapped<int64_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int64_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<float>,
-                   multivalue::Index32>::
-fillMapped<float, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                    uint64_t numValues,
-                                    const float *map,
-                                    size_t mapSize,
-                                    NoSaveLoadedEnum &saver,
-                                    uint32_t numDocs,
-                                    bool hasWeights);
+MultiValueMappingT<multivalue::Value<float>, multivalue::Index32>::
+fillMapped<float, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                    vespalib::ConstArrayRef<float>,
+                                    NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<double>,
-                   multivalue::Index32>::
-fillMapped<double, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const double *map,
-                                     size_t mapSize,
-                                     NoSaveLoadedEnum &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights);
+MultiValueMappingT<multivalue::Value<double>, multivalue::Index32>::
+fillMapped<double, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                     vespalib::ConstArrayRef<double>,
+                                     NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<int8_t>,
-                   multivalue::Index32>::
-fillMapped<int8_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const int8_t *map,
-                                     size_t mapSize,
-                                     NoSaveLoadedEnum &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<int8_t>, multivalue::Index32>::
+fillMapped<int8_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                     vespalib::ConstArrayRef<int8_t>,
+                                     NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<int16_t>,
-                   multivalue::Index32>::
-fillMapped<int16_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int16_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<int16_t>, multivalue::Index32>::
+fillMapped<int16_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int16_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<int32_t>,
-                   multivalue::Index32>::
-fillMapped<int32_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int32_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<int32_t>, multivalue::Index32>::
+fillMapped<int32_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int32_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<int64_t>,
-                   multivalue::Index32>::
-fillMapped<int64_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int64_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<int64_t>, multivalue::Index32>::
+fillMapped<int64_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int64_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<float>,
-                   multivalue::Index32>::
-fillMapped<float, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                    uint64_t numValues,
-                                    const float *map,
-                                    size_t mapSize,
-                                    NoSaveLoadedEnum &saver,
-                                    uint32_t numDocs,
-                                    bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<float>, multivalue::Index32>::
+fillMapped<float, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                    vespalib::ConstArrayRef<float>,
+                                    NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<double>,
-                   multivalue::Index32>::
-fillMapped<double, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const double *map,
-                                     size_t mapSize,
-                                     NoSaveLoadedEnum &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<double>, multivalue::Index32>::
+fillMapped<double, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                     vespalib::ConstArrayRef<double>,
+                                     NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<int8_t>,
-                   multivalue::Index64>::
-fillMapped<int8_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const int8_t *map,
-                                     size_t mapSize,
-                                     NoSaveLoadedEnum &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights);
+MultiValueMappingT<multivalue::Value<int8_t>, multivalue::Index64>::
+fillMapped<int8_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                     vespalib::ConstArrayRef<int8_t>,
+                                     NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<int16_t>,
-                   multivalue::Index64>::
-fillMapped<int16_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int16_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::Value<int16_t>, multivalue::Index64>::
+fillMapped<int16_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int16_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<int32_t>,
-                   multivalue::Index64>::
-fillMapped<int32_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int32_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::Value<int32_t>, multivalue::Index64>::
+fillMapped<int32_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int32_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<int64_t>,
-                   multivalue::Index64>::
-fillMapped<int64_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int64_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::Value<int64_t>, multivalue::Index64>::
+fillMapped<int64_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int64_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<float>,
-                   multivalue::Index64>::
-fillMapped<float, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                    uint64_t numValues,
-                                    const float *map,
-                                    size_t mapSize,
-                                    NoSaveLoadedEnum &saver,
-                                    uint32_t numDocs,
-                                    bool hasWeights);
+MultiValueMappingT<multivalue::Value<float>, multivalue::Index64>::
+fillMapped<float, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                    vespalib::ConstArrayRef<float>,
+                                    NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::Value<double>,
-                   multivalue::Index64>::
-fillMapped<double, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const double *map,
-                                     size_t mapSize,
-                                     NoSaveLoadedEnum &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights);
+MultiValueMappingT<multivalue::Value<double>, multivalue::Index64>::
+fillMapped<double, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                     vespalib::ConstArrayRef<double>,
+                                     NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<int8_t>,
-                   multivalue::Index64>::
-fillMapped<int8_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const int8_t *map,
-                                     size_t mapSize,
-                                     NoSaveLoadedEnum &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<int8_t>, multivalue::Index64>::
+fillMapped<int8_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                     vespalib::ConstArrayRef<int8_t>,
+                                     NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<int16_t>,
-                   multivalue::Index64>::
-fillMapped<int16_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int16_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<int16_t>, multivalue::Index64>::
+fillMapped<int16_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int16_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<int32_t>,
-                   multivalue::Index64>::
-fillMapped<int32_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int32_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<int32_t>, multivalue::Index64>::
+fillMapped<int32_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int32_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<int64_t>,
-                   multivalue::Index64>::
-fillMapped<int64_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                      uint64_t numValues,
-                                      const int64_t *map,
-                                      size_t mapSize,
-                                      NoSaveLoadedEnum &saver,
-                                      uint32_t numDocs,
-                                      bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<int64_t>, multivalue::Index64>::
+fillMapped<int64_t, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                      vespalib::ConstArrayRef<int64_t>,
+                                      NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<float>,
-                   multivalue::Index64>::
-fillMapped<float, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                    uint64_t numValues,
-                                    const float *map,
-                                    size_t mapSize,
-                                    NoSaveLoadedEnum &saver,
-                                    uint32_t numDocs,
-                                    bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<float>, multivalue::Index64>::
+fillMapped<float, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                    vespalib::ConstArrayRef<float>,
+                                    NoSaveLoadedEnum);
 
 template
 uint32_t
-MultiValueMappingT<multivalue::WeightedValue<double>,
-                   multivalue::Index64>::
-fillMapped<double, NoSaveLoadedEnum>(AttributeVector::ReaderBase &attrReader,
-                                     uint64_t numValues,
-                                     const double *map,
-                                     size_t mapSize,
-                                     NoSaveLoadedEnum &saver,
-                                     uint32_t numDocs,
-                                     bool hasWeights);
+MultiValueMappingT<multivalue::WeightedValue<double>, multivalue::Index64>::
+fillMapped<double, NoSaveLoadedEnum>(AttributeVector::ReaderBase &,
+                                     vespalib::ConstArrayRef<double>,
+                                     NoSaveLoadedEnum);
 
 } // namespace search

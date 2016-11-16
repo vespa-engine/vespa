@@ -67,6 +67,7 @@ protected:
     void expandAndInsert(const T & v);
 
 public:
+    using ValueType = T;
     RcuVectorBase(GenerationHolder &genHolder);
 
     /**
@@ -140,15 +141,6 @@ public:
 
     void
     shrink(size_t newSize) __attribute__((noinline));
-
-    template <class Reader, class Saver>
-    void
-    fillMapped(GenerationHolder &genHolder,
-               Reader &reader,
-               uint64_t numValues,
-               vespalib::ConstArrayRef<T> map,
-               Saver &saver,
-               uint32_t numDocs);
 };
 
 template <typename T>
@@ -228,30 +220,6 @@ RcuVectorBase<T>::getMemoryUsage() const
     retval.incAllocatedBytes(_data.capacity() * sizeof(T));
     retval.incUsedBytes(_data.size() * sizeof(T));
     return retval;
-}
-
-
-template <class T>
-template <class Reader, class Saver>
-void
-RcuVectorBase<T>::fillMapped(GenerationHolder &genHolder,
-                             Reader &reader,
-                             uint64_t numValues,
-                             vespalib::ConstArrayRef<T> map,
-                             Saver &saver,
-                             uint32_t numDocs)
-{
-    assert(numDocs == numValues);
-    (void) numValues;
-    genHolder.clearHoldLists();
-    reset();
-    unsafe_reserve(numDocs);
-    for (uint32_t doc = 0; doc < numDocs; ++doc) {
-        uint32_t e = reader.getNextEnum();
-        assert(e < map.size());
-        push_back(map[e]);
-        saver.save(e, doc, 1);
-    }
 }
 
 
