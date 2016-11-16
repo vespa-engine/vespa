@@ -39,6 +39,8 @@ public:
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
+    template <class Reader>
+    void prepareLoadFromMultiValue(Reader &) { }
 };
 
 } // namespace search::attribute

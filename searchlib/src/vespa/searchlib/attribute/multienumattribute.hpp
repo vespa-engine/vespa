@@ -5,6 +5,7 @@
 #include <vespa/searchlib/attribute/multienumattribute.h>
 #include <vespa/searchlib/attribute/multivalueattribute.hpp>
 #include "multienumattributesaver.h"
+#include "load_utils.h"
 
 #include <stdexcept>
 
@@ -126,9 +127,7 @@ MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
                                            const EnumIndexVector &eidxs,
                                            LoadedEnumAttributeVector &loaded)
 {
-    uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 vespalib::ConstArrayRef<EnumIndex>(eidxs),
-                                                 attribute::SaveLoadedEnum(loaded));
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, vespalib::ConstArrayRef<EnumIndex>(eidxs), attribute::SaveLoadedEnum(loaded));
     this->checkSetMaxValueCount(maxvc);
 }
 
@@ -138,9 +137,7 @@ MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
                                            const EnumIndexVector &eidxs,
                                            EnumVector &enumHist)
 {
-    uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 vespalib::ConstArrayRef<EnumIndex>(eidxs),
-                                                 attribute::SaveEnumHist(enumHist));
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, vespalib::ConstArrayRef<EnumIndex>(eidxs), attribute::SaveEnumHist(enumHist));
     this->checkSetMaxValueCount(maxvc);
 }
 

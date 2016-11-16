@@ -137,6 +137,7 @@ protected:
     virtual const MemoryUsage & getVectorVectorUsage(size_t i) const = 0;
     virtual size_t getSingleVectorAddressSpaceUsed(size_t i) const = 0;
     virtual size_t getVectorVectorAddressSpaceUsed(size_t i) const = 0;
+    Histogram getHistogram(AttributeVector::ReaderBase & reader) const;
 
 private:
     size_t       _totalValueCnt;
@@ -144,7 +145,6 @@ private:
 public:
     virtual Histogram getEmptyHistogram() const = 0;
     virtual MemoryUsage getMemoryUsage() const = 0;
-    Histogram getHistogram(AttributeVector::ReaderBase & reader) const;
     size_t getTotalValueCnt() const { return _totalValueCnt; }
     static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
     void clearPendingCompact();
@@ -397,13 +397,8 @@ public:
     bool enoughCapacity(const Histogram & capacityNeeded);
     void performCompaction(Histogram & capacityNeeded);
 
-    template <typename V, class Saver>
-    uint32_t
-    fillMapped(AttributeVector::ReaderBase &attrReader,
-               vespalib::ConstArrayRef<V> enumValueToValueMap,
-               Saver saver);
-
     virtual void doneHoldElem(Index idx) override;
+    void prepareLoadFromMultiValue(AttributeVector::ReaderBase &attrReader);
 };
 
 //-----------------------------------------------------------------------------
@@ -1121,6 +1116,16 @@ MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
         }
     }
     assert(!_pendingCompact);
+}
+
+template <typename T, typename I>
+void
+MultiValueMappingT<T, I>::prepareLoadFromMultiValue(AttributeVector::ReaderBase &attrReader)
+{
+    uint32_t numDocs = attrReader.getNumIdx() - 1;
+    Histogram capacityNeeded = this->getHistogram(attrReader);
+    reset(numDocs, capacityNeeded);
+    attrReader.rewind();
 }
 
 extern template class MultiValueMappingFallbackVectorHold<
