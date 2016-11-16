@@ -67,7 +67,7 @@ class MatchToolsFactory : public vespalib::noncopyable
 private:
     QueryLimiter                  & _queryLimiter;
     RequestContext                  _requestContext;
-    const vespalib::Doom          & _hardDoom;
+    const vespalib::Doom            _hardDoom;
     Query                           _query;
     MaybeMatchPhaseLimiter::UP      _match_limiter;
     QueryEnvironment                _queryEnv;
@@ -75,7 +75,6 @@ private:
     const search::fef::RankSetup  & _rankSetup;
     const search::fef::Properties & _featureOverrides;
     bool                            _valid;
-
 public:
     typedef std::unique_ptr<MatchToolsFactory> UP;
 
