@@ -83,7 +83,7 @@ struct Fixture
     }
     void trimHoldLists() {
         store.transferHoldLists(generation++);
-        store.trimHoldLists(generation++);
+        store.trimHoldLists(generation);
     }
     void compactWorst() {
         ICompactionContext::UP ctx = store.compactWorst();
