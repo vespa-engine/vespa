@@ -578,7 +578,6 @@ public class DocumentGenMojo extends AbstractMojo {
         exportGetFieldCount(fieldSet, out, ind);
         exportGetField(out, ind);
         exportGetFieldValue(fieldSet, out, ind);
-        exportToNamedMap(out, ind);
         exportSetFieldValue(fieldSet, out, ind);
         exportRemoveFieldValue(fieldSet, out, ind);
         exportIterator(fieldSet, out, ind);
@@ -596,18 +595,6 @@ public class DocumentGenMojo extends AbstractMojo {
         }
         out.write(ind(ind+1)+"return true;\n");
         out.write(ind(ind)+"}\n\n");
-    }
-
-    private static void exportToNamedMap(Writer out, int ind) throws IOException {
-        // A helper to convert from SpanTree collection to Map. Can be removed if StringFieldValue is fixed to expose the map.
-        out.write(
-                ind()+"private static java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> toNamedMap(java.util.Collection<com.yahoo.document.annotation.SpanTree> coll) {\n" +
-                ind(ind+1)+"if (coll==null) return null;\n" +
-                ind(ind+1)+"java.util.Map<java.lang.String,com.yahoo.document.annotation.SpanTree> ret = new java.util.HashMap<java.lang.String,com.yahoo.document.annotation.SpanTree>();\n" +
-                ind(ind+1)+"for (com.yahoo.document.annotation.SpanTree st : coll) ret.put(st.getName(), st);\n" +
-                ind(ind+1)+"return ret;\n" +
-                ind()+"}\n\n"
-        );
     }
 
     private static void exportHashCode(Collection<Field> fieldSet, Writer out, int ind, String hcBase) throws IOException {

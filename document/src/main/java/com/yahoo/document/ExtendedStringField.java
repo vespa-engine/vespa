@@ -5,6 +5,8 @@ import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
+
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -13,7 +15,7 @@ import java.util.Map;
  * @author baldersheim
  */
 public class ExtendedStringField extends ExtendedField {
-    public static interface ExtractSpanTrees {
+    public interface ExtractSpanTrees {
         Map<String, SpanTree> get(StructuredFieldValue doc);
         void set(StructuredFieldValue doc, Map<String, SpanTree> trees);
     }
@@ -40,7 +42,14 @@ public class ExtendedStringField extends ExtendedField {
         FieldValue old = getFieldValue(doc);
         StringFieldValue sfv = (StringFieldValue) fv;
         super.setFieldValue(doc, sfv);
-        extractSpanTrees.set(doc, (sfv == null) ? null : sfv.getSpanTreeMap());
+        Map<String, SpanTree> trees = null;
+        if (sfv != null) {
+            trees = sfv.getSpanTreeMap();
+            if (trees == null) {
+                trees = new HashMap<>();
+            }
+        }
+        extractSpanTrees.set(doc, trees);
         return old;
     }
 
