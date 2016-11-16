@@ -18,7 +18,7 @@ template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping2<Value<ValueTyp
 #define INSTANTIATE_WSET(ValueType, Saver) \
 template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping2<WeightedValue<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver) \
-template void loadFromEnumeratedSingleValue(RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType> map, Saver saver);
+template void loadFromEnumeratedSingleValue(RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver);
 
 #define INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, Saver) \
 INSTANTIATE_SINGLE(ValueType, Saver); \

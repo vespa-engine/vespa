@@ -400,7 +400,7 @@ public:
     template <typename V, class Saver>
     uint32_t
     fillMapped(AttributeVector::ReaderBase &attrReader,
-               vespalib::ConstArrayRef<V> map,
+               vespalib::ConstArrayRef<V> enumValueToValueMap,
                Saver saver);
 
     virtual void doneHoldElem(Index idx) override;
