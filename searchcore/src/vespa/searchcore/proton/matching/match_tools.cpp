@@ -12,6 +12,7 @@ using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
+using search::IDocumentMetaStore;
 
 namespace proton {
 namespace matching {
@@ -48,7 +49,7 @@ search::fef::RankProgram::UP setup_program(search::fef::RankProgram::UP program,
 }
 
 MatchTools::MatchTools(QueryLimiter & queryLimiter,
-                       const vespalib::Doom & doom_in,
+                       const IRequestContext & requestContext,
                        const Query &query,
                        MaybeMatchPhaseLimiter & match_limiter_in,
                        const QueryEnvironment & queryEnv,
@@ -56,7 +57,7 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
                        const RankSetup & rankSetup,
                        const Properties & featureOverrides)
     : _queryLimiter(queryLimiter),
-      _doom(doom_in),
+      _requestContext(requestContext),
       _query(query),
       _match_limiter(match_limiter_in),
       _queryEnv(queryEnv),
@@ -97,20 +98,21 @@ MatchTools::dump_program() const {
 //-----------------------------------------------------------------------------
 
 MatchToolsFactory::
-MatchToolsFactory(QueryLimiter                    & queryLimiter,
-             const vespalib::Doom                 & doom_in,
-             ISearchContext                       & searchContext,
-             IAttributeContext                    & attributeContext,
-             const vespalib::stringref            & queryStack,
-             const vespalib::string               & location,
-             const ViewResolver                   & viewResolver,
-             const search::IDocumentMetaStore     & metaStore,
-             const IIndexEnvironment & indexEnv,
-             const RankSetup         & rankSetup,
-             const Properties        & rankProperties,
-             const Properties        & featureOverrides)
+MatchToolsFactory(QueryLimiter               & queryLimiter,
+                  const vespalib::Doom       & softDoom,
+                  const vespalib::Doom       & doom,
+                  ISearchContext             & searchContext,
+                  IAttributeContext          & attributeContext,
+                  const vespalib::stringref  & queryStack,
+                  const vespalib::string     & location,
+                  const ViewResolver         & viewResolver,
+                  const IDocumentMetaStore   & metaStore,
+                  const IIndexEnvironment    & indexEnv,
+                  const RankSetup            & rankSetup,
+                  const Properties           & rankProperties,
+                  const Properties           & featureOverrides)
     : _queryLimiter(queryLimiter),
-      _requestContext(doom_in, attributeContext),
+      _requestContext(softDoom, doom, attributeContext),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties),
@@ -165,7 +167,7 @@ MatchToolsFactory::createMatchTools() const
 {
     assert(_valid);
     return MatchTools::UP(
-            new MatchTools(_queryLimiter, _requestContext.getDoom(), _query, *_match_limiter, _queryEnv,
+            new MatchTools(_queryLimiter, _requestContext, _query, *_match_limiter, _queryEnv,
                            _mdl, _rankSetup, _featureOverrides));
 }
 

@@ -392,11 +392,11 @@ MatchThread::run()
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time.stop();
     match_time_s = match_time.elapsed().sec();
-    resultContext = resultProcessor.createThreadContext(matchTools->doom(), thread_id);
+    resultContext = resultProcessor.createThreadContext(matchTools->softDoom(), thread_id);
     {
         WaitTimer get_token_timer(wait_time_s);
         QueryLimiter::Token::UP processToken(
-                matchTools->getQueryLimiter().getToken(matchTools->doom(),
+                matchTools->getQueryLimiter().getToken(matchTools->softDoom(),
                         scheduler.total_size(thread_id),
                         result->getNumHits(),
                         resultContext->sort->hasSortData(),

@@ -22,6 +22,12 @@ public:
     virtual const vespalib::Doom & getDoom() const = 0;
 
     /**
+     * Provides the time of soft doom for the query. Now it is time to start cleaning up and return what you have.
+     * @return time of soft doom.
+     */
+    virtual const vespalib::Doom & getSoftDoom() const = 0;
+
+    /**
      * Provide access to attributevectors
      * @return AttributeVector or nullptr if it does not exist.
      */
