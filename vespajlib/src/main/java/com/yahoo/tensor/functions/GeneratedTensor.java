@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.List;
@@ -40,6 +41,11 @@ public class GeneratedTensor extends PrimitiveTensorFunction {
     
     @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
+    
+    @Override
+    public Tensor execute() {
+        throw new UnsupportedOperationException("Not implemented"); // TODO
+    }
 
     @Override
     public String toString() { return type + "(" + generator + ")"; }

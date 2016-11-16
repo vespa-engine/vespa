@@ -32,7 +32,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-// TODO: Rename to XmlRenderer and make this a deprecated empty subclass.
+// TODO: RenameFunction to XmlRenderer and make this a deprecated empty subclass.
 
 /**
  * XML rendering of search results. This is NOT the default (but it once was).

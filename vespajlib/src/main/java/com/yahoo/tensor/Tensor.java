@@ -3,20 +3,21 @@ package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.tensor.functions.ConstantTensor;
-import com.yahoo.tensor.functions.Join;
+import com.yahoo.tensor.functions.GeneratedTensor;
+import com.yahoo.tensor.functions.JoinFunction;
 import com.yahoo.tensor.functions.L1Normalize;
 import com.yahoo.tensor.functions.L2Normalize;
-import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.tensor.functions.MapFunction;
+import com.yahoo.tensor.functions.ReduceFunction;
+import com.yahoo.tensor.functions.RenameFunction;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
-import java.util.function.DoubleFunction;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -58,26 +59,26 @@ public interface Tensor {
     // ----------------- Primitive tensor functions
     
     default Tensor map(DoubleUnaryOperator mapper) {
-        throw new UnsupportedOperationException("Not implemented");
+        return new MapFunction(new ConstantTensor(this), mapper).execute();
     }
 
-    default Tensor reduce(Reduce.Aggregator aggregator, List<String> dimensions) {
-        throw new UnsupportedOperationException("Not implemented");
+    default Tensor reduce(ReduceFunction.Aggregator aggregator, List<String> dimensions) {
+        return new ReduceFunction(new ConstantTensor(this), aggregator, dimensions).execute();
     }
 
     default Tensor join(Tensor tensor, DoubleBinaryOperator combinator) {
-        throw new UnsupportedOperationException("Not implemented");
+        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(tensor), combinator).execute();
     }
     
     default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
-        throw new UnsupportedOperationException("Not implemented");
+        return new RenameFunction(new ConstantTensor(this), fromDimensions, toDimensions).execute();
     }
     
     static Tensor from(TensorType type, Function<List<Integer>, Double> valueSupplier) {
-        throw new UnsupportedOperationException("Not implemented");
+        return new GeneratedTensor(type, valueSupplier).execute();
     }
     
-    // ----------------- Composite tensor functions
+    // ----------------- Composite tensor functions which have a defined primitive mapping
     
     default Tensor l1Normalize(String dimension) {
         return new L1Normalize(new ConstantTensor(this), dimension).toPrimitive().execute();
@@ -87,20 +88,22 @@ public interface Tensor {
         return new L2Normalize(new ConstantTensor(this), dimension).toPrimitive().execute();
     }
 
+    // ----------------- Composite tensor functions where we map to primitives here on the fly
+
     default Tensor multiply(Tensor argument) {
-        return new Join(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> ( a * b )).execute();
+        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> (a * b )).execute();
     }
 
     default Tensor sum(Tensor argument) {
-        return new Join(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> ( a + b )).execute();
+        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> (a + b )).execute();
     }
 
     default Tensor divide(Tensor argument) {
-        return new Join(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> ( a / b )).execute();
+        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> (a / b )).execute();
     }
 
     default Tensor subtract(Tensor argument) {
-        return new Join(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> ( a - b )).execute();
+        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> (a - b )).execute();
     }
 
     // ----------------- Old stuff

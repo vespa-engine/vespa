@@ -1,5 +1,7 @@
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.Tensor;
+
 import java.util.Objects;
 import java.util.function.DoubleUnaryOperator;
 
@@ -8,12 +10,12 @@ import java.util.function.DoubleUnaryOperator;
  *
  * @author bratseth
  */
-public class Map extends PrimitiveTensorFunction {
+public class MapFunction extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;
     private final DoubleUnaryOperator mapper;
 
-    public Map(TensorFunction argument, DoubleUnaryOperator mapper) {
+    public MapFunction(TensorFunction argument, DoubleUnaryOperator mapper) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(mapper, "The argument function cannot be null");
         this.argument = argument;
@@ -25,7 +27,12 @@ public class Map extends PrimitiveTensorFunction {
 
     @Override
     public PrimitiveTensorFunction toPrimitive() {
-        return new Map(argument.toPrimitive(), mapper);
+        return new MapFunction(argument.toPrimitive(), mapper);
+    }
+
+    @Override
+    public Tensor execute() {
+        throw new UnsupportedOperationException("Not implemented"); // TODO
     }
 
     @Override

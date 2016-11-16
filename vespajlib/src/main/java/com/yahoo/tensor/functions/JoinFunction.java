@@ -1,5 +1,7 @@
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.Tensor;
+
 import java.util.Objects;
 import java.util.function.DoubleBinaryOperator;
 
@@ -10,12 +12,12 @@ import java.util.function.DoubleBinaryOperator;
  * 
  * @author bratseth
  */
-public class Join extends PrimitiveTensorFunction {
+public class JoinFunction extends PrimitiveTensorFunction {
     
     private final TensorFunction argumentA, argumentB;
     private final DoubleBinaryOperator combinator;
 
-    public Join(TensorFunction argumentA, TensorFunction argumentB, DoubleBinaryOperator combinator) {
+    public JoinFunction(TensorFunction argumentA, TensorFunction argumentB, DoubleBinaryOperator combinator) {
         Objects.requireNonNull(argumentA, "The first argument tensor cannot be null");
         Objects.requireNonNull(argumentB, "The second argument tensor cannot be null");
         Objects.requireNonNull(combinator, "The combinator function cannot be null");
@@ -30,9 +32,14 @@ public class Join extends PrimitiveTensorFunction {
     
     @Override
     public PrimitiveTensorFunction toPrimitive() {
-        return new Join(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
+        return new JoinFunction(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
     }
-    
+
+    @Override
+    public Tensor execute() {
+        throw new UnsupportedOperationException("Not implemented"); // TODO
+    }
+
     @Override
     public String toString() {
         return "join(" + argumentA.toString() + ", " + argumentB.toString() + ", f(a, b) (" + combinator + "))";

@@ -16,12 +16,12 @@ public class L2Normalize extends CompositeTensorFunction {
     @Override
     public PrimitiveTensorFunction toPrimitive() {
         TensorFunction primitiveArgument = argument.toPrimitive();
-        return new Join(primitiveArgument, 
-                        new Map(new Reduce(new Map(primitiveArgument, ScalarFunctions.square()), 
-                                           Reduce.Aggregator.sum,
-                                           dimension), 
-                                ScalarFunctions.square()), 
-                        ScalarFunctions.divide());
+        return new JoinFunction(primitiveArgument,
+                                new MapFunction(new ReduceFunction(new MapFunction(primitiveArgument, ScalarFunctions.square()),
+                                                           ReduceFunction.Aggregator.sum,
+                                                           dimension),
+                                        ScalarFunctions.square()),
+                                ScalarFunctions.divide());
     }
     
     @Override

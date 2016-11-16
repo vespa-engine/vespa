@@ -24,6 +24,9 @@ public class ConstantTensor extends PrimitiveTensorFunction {
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
+    public Tensor execute() { return constant; }
+
+    @Override
     public String toString() { return constant.toString(); }
 
 }

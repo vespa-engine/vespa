@@ -11,13 +11,13 @@ import java.util.Objects;
  * 
  * @author bratseth
  */
-public class Rename extends PrimitiveTensorFunction {
+public class RenameFunction extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;
     private final List<String> fromDimensions;
     private final List<String> toDimensions;
 
-    public Rename(TensorFunction argument, List<String> fromDimensions, List<String> toDimensions) {
+    public RenameFunction(TensorFunction argument, List<String> fromDimensions, List<String> toDimensions) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(fromDimensions, "The 'from' dimensions cannot be null");
         Objects.requireNonNull(toDimensions, "The 'to' dimensions cannot be null");
@@ -28,7 +28,12 @@ public class Rename extends PrimitiveTensorFunction {
 
     @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
-    
+
+    @Override
+    public Tensor execute() {
+        throw new UnsupportedOperationException("Not implemented"); // TODO
+    }
+
     @Override
     public String toString() { 
         return "rename(" + argument + ", " + 

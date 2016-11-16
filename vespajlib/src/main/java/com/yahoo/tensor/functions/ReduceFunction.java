@@ -1,6 +1,7 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.tensor.Tensor;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,19 +13,19 @@ import java.util.Objects;
  *
  * @author bratseth
  */
-public class Reduce extends PrimitiveTensorFunction {
+public class ReduceFunction extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;
     private final List<String> dimensions;
     private final Aggregator aggregator;
 
     /** Creates a reduce function reducing aLL dimensions */
-    public Reduce(TensorFunction argument, Aggregator aggregator) {
+    public ReduceFunction(TensorFunction argument, Aggregator aggregator) {
         this(argument, aggregator, Collections.emptyList());
     }
 
     /** Creates a reduce function reducing a single dimension */
-    public Reduce(TensorFunction argument, Aggregator aggregator, String dimension) {
+    public ReduceFunction(TensorFunction argument, Aggregator aggregator, String dimension) {
         this(argument, aggregator, Collections.singletonList(dimension));
     }
 
@@ -37,7 +38,7 @@ public class Reduce extends PrimitiveTensorFunction {
      *                   producing a dimensionless tensor (a scalar).
      * @throws IllegalArgumentException if any of the tensor dimensions are not present in the input tensor
      */
-    public Reduce(TensorFunction argument, Aggregator aggregator, List<String> dimensions) {
+    public ReduceFunction(TensorFunction argument, Aggregator aggregator, List<String> dimensions) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(aggregator, "The aggregator cannot be null");
         Objects.requireNonNull(dimensions, "The dimensions cannot be null");
@@ -50,7 +51,12 @@ public class Reduce extends PrimitiveTensorFunction {
 
     @Override
     public PrimitiveTensorFunction toPrimitive() {
-        return new Reduce(argument.toPrimitive(), aggregator, dimensions);
+        return new ReduceFunction(argument.toPrimitive(), aggregator, dimensions);
+    }
+
+    @Override
+    public Tensor execute() {
+        throw new UnsupportedOperationException("Not implemented"); // TODO
     }
 
     @Override
