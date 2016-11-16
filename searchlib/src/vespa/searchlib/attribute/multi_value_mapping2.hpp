@@ -8,9 +8,12 @@ namespace search {
 namespace attribute {
 
 template <typename EntryT, typename RefT>
-MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize)
+MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize, const GrowStrategy &gs)
     : _store(maxSmallArraySize),
-      _indices(_store.getGenerationHolder())
+      _indices(gs.getDocsInitialCapacity(),
+               gs.getDocsGrowPercent(),
+               gs.getDocsGrowDelta(),
+               _store.getGenerationHolder())
 {
 }
 
@@ -39,6 +42,17 @@ MultiValueMapping2<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
     for (auto &src : values) {
         *dst = src;
         ++dst;
+    }
+}
+
+template <typename EntryT, typename RefT>
+void
+MultiValueMapping2<EntryT,RefT>::compactWorst()
+{
+    datastore::ICompactionContext::UP compactionContext(_store.compactWorst());
+    if (compactionContext) {
+        compactionContext->compact(vespalib::ArrayRef<EntryRef>(&_indices[0],
+                                                                _indices.size()));
     }
 }
 
