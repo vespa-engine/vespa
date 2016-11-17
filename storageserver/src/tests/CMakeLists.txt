@@ -10,4 +10,9 @@ vespa_add_executable(storageserver_testrunner_app TEST
     vdstestlib
     searchlib_searchlib_uca
 )
-vespa_add_test(NAME storageserver_testrunner_app COMMAND storageserver_testrunner_app)
+
+# TODO: Test with a larget chunk size to parallelize test suite runs 
+vespa_add_test(
+    NAME storageserver_testrunner_app
+    COMMAND python ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:storageserver_testrunner_app>
+)

@@ -8,4 +8,9 @@ vespa_add_executable(storageframework_testrunner_app TEST
     storageframework_testmemory
     storageframework_testthread
 )
-vespa_add_test(NAME storageframework_testrunner_app COMMAND storageframework_testrunner_app)
+
+# TODO: Test with a larget chunk size to parallelize test suite runs 
+vespa_add_test(
+    NAME storageframework_testrunner_app
+    COMMAND python ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:storageframework_testrunner_app>
+)

@@ -15,4 +15,9 @@ vespa_add_executable(metrics_testrunner_app TEST
     metrics
     vdstestlib
 )
-vespa_add_test(NAME metrics_testrunner_app COMMAND metrics_testrunner_app)
+
+# TODO: Test with a larget chunk size to parallelize test suite runs 
+vespa_add_test(
+    NAME metrics_testrunner_app
+    COMMAND python ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:metrics_testrunner_app>
+)
