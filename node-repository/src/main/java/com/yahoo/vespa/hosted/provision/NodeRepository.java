@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,8 @@ import java.util.stream.Collectors;
 public class NodeRepository extends AbstractComponent {
 
     private final CuratorDatabaseClient zkClient;
+    private final Curator curator;
+    private final NodeFlavors flavors;
     private final NameResolver nameResolver;
 
     /**
@@ -75,6 +78,8 @@ public class NodeRepository extends AbstractComponent {
      */
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver) {
         this.zkClient = new CuratorDatabaseClient(flavors, curator, clock, zone, nameResolver);
+        this.curator = curator;
+        this.flavors = flavors;
         this.nameResolver = nameResolver;
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
@@ -117,6 +122,33 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return zkClient.getNodes(id, inState); }
     public List<Node> getInactive() { return zkClient.getNodes(Node.State.inactive); }
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
+
+    /**
+     * Returns a list of nodes that should be trusted by the given node. The list will contain:
+     *
+     * - All nodes in the same application as the given node (if node is allocated)
+     * - All proxy nodes
+     * - All config servers
+     */
+    public List<Node> getTrustedNodes(Node node) {
+        final List<Node> trustedNodes = new ArrayList<>();
+
+        // Add nodes in application
+        node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+
+        // Add proxy nodes
+        trustedNodes.addAll(getNodes(NodeType.proxy));
+
+        // Add config servers
+        // TODO: Revisit this when config servers are added to the repository
+        Arrays.stream(curator.connectionSpec().split(","))
+                .map(hostPort -> hostPort.split(":")[0])
+                .map(host -> createNode(host, host, Optional.empty(), flavors.getFlavorOrThrow("default"),
+                        NodeType.config))
+                .forEach(trustedNodes::add);
+
+        return Collections.unmodifiableList(trustedNodes);
+    }
 
     // ----------------- Node lifecycle -----------------------------------------------------------
 

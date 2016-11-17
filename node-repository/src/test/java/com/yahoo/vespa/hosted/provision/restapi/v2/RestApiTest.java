@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -210,6 +211,23 @@ public class RestApiTest {
     }
 
     @Test
+    public void acl_request() throws Exception {
+        String hostName = "foo.yahoo.com";
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson(hostName, "default") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        Pattern responsePattern = Pattern.compile("\\{\"hostname\":\"foo.yahoo.com\",\"ipAddress\":\".+?\"," +
+                "\"trustedNodes\":\\[" +
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
+                "]}");
+        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/" + hostName), responsePattern);
+    }
+
+    @Test
     public void test_invalid_requests() throws Exception {
         // Attempt to fail and ready an allocated node without going through dirty
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",
@@ -340,6 +358,11 @@ public class RestApiTest {
     private void assertResponseContains(Request request, String responseSnippet) throws IOException {
         assertTrue("Response contains " + responseSnippet,
                    container.handleRequest(request).getBodyAsString().contains(responseSnippet));
+    }
+
+    private void assertResponseMatches(Request request, Pattern pattern) throws IOException {
+        assertTrue("Response matches " + pattern.toString(),
+                pattern.matcher(container.handleRequest(request).getBodyAsString()).matches());
     }
 
     private void assertFile(Request request, String responseFile) throws IOException {
