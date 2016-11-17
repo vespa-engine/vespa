@@ -55,8 +55,7 @@ public class ApplicationPackageXmlFilesValidator {
     public void checkApplication() throws IOException {
         validateHostsFile(SchemaValidator.hostsXmlSchemaName);
         validateServicesFile(SchemaValidator.servicesXmlSchemaName);
-        // TODO: Disable temporarily, need to get out feature to support ignoring validation errors
-        //validateDeploymentFile(SchemaValidator.deploymentXmlSchemaName);
+        validateDeploymentFile(SchemaValidator.deploymentXmlSchemaName);
 
         if (appDirs.searchdefinitions().exists()) {
             if (FilesApplicationPackage.getSearchDefinitionFiles(appDirs.root()).isEmpty()) {
