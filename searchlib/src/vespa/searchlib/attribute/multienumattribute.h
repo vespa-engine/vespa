@@ -35,6 +35,7 @@ protected:
     typedef typename EnumStoreBase::EnumVector   EnumVector;
     typedef typename MultiValueAttribute<B, M>::MultiValueType WeightedIndex;
     typedef typename MultiValueAttribute<B, M>::ValueVector    WeightedIndexVector;
+    using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
     typedef typename MultiValueAttribute<B, M>::Histogram      Histogram;
     typedef typename MultiValueAttribute<B, M>::DocumentValues DocIndices;
     typedef AttributeVector::ReaderBase     ReaderBase;
@@ -86,25 +87,24 @@ public:
     // Attribute read API
     //-----------------------------------------------------------------------------------------------------------------
     virtual EnumHandle getEnum(DocId doc) const {
-        if (this->getValueCount(doc) == 0) {
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        if (indices.size() == 0) {
             return std::numeric_limits<uint32_t>::max();
         } else {
-            WeightedIndex idx;
-            this->_mvMapping.get(doc, 0, idx);
-            return idx.value().ref();
+            return indices[0].value().ref();
         }
     }
     virtual uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const {
-        const WeightedIndex * indices;
-        uint32_t valueCount = this->_mvMapping.get(doc, indices);
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
             e[i] = indices[i].value().ref();
         }
         return valueCount;
     }
     virtual uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const {
-        const WeightedIndex * indices;
-        uint32_t valueCount = this->_mvMapping.get(doc, indices);
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
             e[i] = WeightedEnum(indices[i].value().ref(), indices[i].weight());
         }

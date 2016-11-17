@@ -14,6 +14,9 @@ public enum NodeType {
     proxy,
 
     /** A node to be assigned to a tenant to run application workloads */
-    tenant
+    tenant,
+
+    /** A config server */
+    config
 
 }

@@ -86,6 +86,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, nodeRepository);
         if (path.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, nodeRepository);
         if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, nodeRepository);
+        if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
         if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
         return ErrorResponse.notFoundError("Nothing at path '" + request.getUri().getPath() + "'");
     }

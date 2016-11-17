@@ -21,6 +21,7 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -50,45 +51,39 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProvisioningTester implements AutoCloseable {
 
-    private Curator curator = new MockCurator();
-    private NodeFlavors nodeFlavors;
-    private ManualClock clock;
-    private NodeRepository nodeRepository;
-    private NodeRepositoryProvisioner provisioner;
-    private CapacityPolicies capacityPolicies;
-    private ProvisionLogger provisionLogger;
+    private final Curator curator;
+    private final NodeFlavors nodeFlavors;
+    private final ManualClock clock;
+    private final NodeRepository nodeRepository;
+    private final NodeRepositoryProvisioner provisioner;
+    private final CapacityPolicies capacityPolicies;
+    private final ProvisionLogger provisionLogger;
 
     public ProvisioningTester(Zone zone) {
-        try {
-            nodeFlavors = new NodeFlavors(createConfig());
-            clock = new ManualClock();
-            nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-                    new MockNameResolver().mockAnyLookup());
-            provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
-            capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
-            provisionLogger = new NullProvisionLogger();
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        this(zone, createConfig());
     }
 
     public ProvisioningTester(Zone zone, NodeRepositoryConfig config) {
+        this(zone, config, new MockCurator());
+    }
+
+    public ProvisioningTester(Zone zone, NodeRepositoryConfig config, Curator curator) {
         try {
-            nodeFlavors = new NodeFlavors(config);
-            clock = new ManualClock();
-            nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
+            this.nodeFlavors = new NodeFlavors(config);
+            this.clock = new ManualClock();
+            this.curator = curator;
+            this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
                     new MockNameResolver().mockAnyLookup());
-            provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
-            capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
-            provisionLogger = new NullProvisionLogger();
+            this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
+            this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
+            this.provisionLogger = new NullProvisionLogger();
         }
         catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private NodeRepositoryConfig createConfig() {
+    public static NodeRepositoryConfig createConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
         b.addFlavor("default", 2., 4., 100, Flavor.Type.BARE_METAL).cost(3);
         b.addFlavor("small", 1., 2., 50, Flavor.Type.BARE_METAL).cost(2);
@@ -264,6 +259,12 @@ public class ProvisioningTester implements AutoCloseable {
 
     private Flavor getNodeFlavor(String hostname) {
         return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
+    }
+
+    public static Set<HostSpec> toHostSpecs(List<Node> nodes) {
+        return nodes.stream()
+                .map(node -> new HostSpec(node.hostname(), node.allocation().map(Allocation::membership)))
+                .collect(Collectors.toSet());
     }
 
     private static class NullProvisionLogger implements ProvisionLogger {

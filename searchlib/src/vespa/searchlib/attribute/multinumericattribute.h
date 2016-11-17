@@ -39,6 +39,7 @@ private:
     typedef typename MultiValueAttribute<B, M>::Change            Change;
     typedef typename MultiValueAttribute<B, M>::ValueType         MValueType; // = B::BaseType
     typedef typename MultiValueAttribute<B, M>::MultiValueType    MultiValueType; // = B::BaseType
+    using MultiValueArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
 
     virtual bool extractChangeData(const Change & c, MValueType & data) {
         data = static_cast<MValueType>(c._data.get());
@@ -57,7 +58,11 @@ private:
 protected:
     typedef typename B::generation_t generation_t;
     typedef MultiValueType WType;
-    uint32_t get(DocId doc, const WType * & values) const { return this->_mvMapping.get(doc, values); }
+    uint32_t get(DocId doc, const WType * & values) const {
+        MultiValueArrayRef array(this->_mvMapping.get(doc));
+        values = &array[0];
+        return array.size();
+    }
 
 public:
     virtual uint32_t getRawValues(DocId doc, const WType * & values) const { return get(doc, values); }
@@ -98,12 +103,10 @@ public:
         bool
         cmp(DocId doc, int32_t & weight) const
         {
-            const MultiValueType * buffer;
-            for (uint32_t i = 0, m = _toBeSearched._mvMapping.get(doc, buffer);
-                 i < m; i++) {
-                T v(buffer[i].value());
-                if (this->match(v)) {
-                    weight = buffer[i].weight();
+            MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
+            for (const MultiValueType &mv : values) {
+                if (this->match(mv.value())) {
+                    weight = mv.weight();
                     return true;
                 }
             }
@@ -113,11 +116,9 @@ public:
         bool
         cmp(DocId doc) const
         {
-            const MultiValueType * buffer;
-            for (uint32_t i = 0, m = _toBeSearched._mvMapping.get(doc, buffer);
-                 i < m; i++) {
-                T v(buffer[i].value());
-                if (this->match(v)) {
+            MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
+            for (const MultiValueType &mv : values) {
+                if (this->match(mv.value())) {
                     return true;
                 }
             }
@@ -179,11 +180,9 @@ public:
         cmp(DocId doc, int32_t & weight) const
         {
             uint32_t hitCount = 0;
-            const MultiValueType * buffer;
-            for (uint32_t i = 0, m = _toBeSearched._mvMapping.get(doc, buffer);
-                 i < m; i++) {
-                T v = buffer[i].value();
-                if (this->match(v)) {
+            MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
+            for (const MultiValueType &mv : values) {
+                if (this->match(mv.value())) {
                     hitCount++;
                 }
             }
@@ -195,11 +194,9 @@ public:
         bool
         cmp(DocId doc) const
         {
-            const MultiValueType * buffer;
-            for (uint32_t i = 0, m = _toBeSearched._mvMapping.get(doc, buffer);
-                 i < m; i++) {
-                T v = buffer[i].value();
-                if (this->match(v)) {
+            MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
+            for (const MultiValueType &mv : values) {
+                if (this->match(mv.value())) {
                     return true;
                 }
             }
@@ -255,19 +252,16 @@ public:
     // new read api
     //-------------------------------------------------------------------------
     virtual T get(DocId doc) const {
-        MultiValueType value;
-        this->_mvMapping.get(doc, 0, value);
-        return value;
+        MultiValueArrayRef values(this->_mvMapping.get(doc));
+        return ((values.size() > 0) ? values[0].value() : T());
     }
     virtual largeint_t getInt(DocId doc) const {
-        MultiValueType value;
-        this->_mvMapping.get(doc, 0, value);
-        return static_cast<largeint_t>(value.value());
+        MultiValueArrayRef values(this->_mvMapping.get(doc));
+        return static_cast<largeint_t>((values.size() > 0) ? values[0].value() : T());
     }
     virtual double getFloat(DocId doc) const {
-        MultiValueType value;
-        this->_mvMapping.get(doc, 0, value);
-        return static_cast<double>(value.value());
+        MultiValueArrayRef values(this->_mvMapping.get(doc));
+        return static_cast<double>((values.size() > 0) ? values[0].value() : T());
     }
     virtual EnumHandle getEnum(DocId doc) const {
         (void) doc;
@@ -284,8 +278,8 @@ public:
     }
     template <typename BufferType>
     uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
-        const MultiValueType * handle;
-        uint32_t ret = this->_mvMapping.get(doc, handle);
+        MultiValueArrayRef handle(this->_mvMapping.get(doc));
+        uint32_t ret = handle.size();
         for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
             buffer[i] = static_cast<BufferType>(handle[i].value());
         }
@@ -299,7 +293,8 @@ public:
     }
     template <typename E>
     uint32_t getEnumHelper(DocId doc, E * e, uint32_t sz) const {
-        uint32_t available = getValueCount(doc);
+        MultiValueArrayRef values(this->_mvMapping.get(doc));
+        uint32_t available = values.size();
         uint32_t num2Read = std::min(available, sz);
         for (uint32_t i = 0; i < num2Read; ++i) {
             e[i] = E(std::numeric_limits<uint32_t>::max()); // does not have enum
@@ -317,8 +312,8 @@ public:
     }
     template <typename WeightedType, typename ValueType>
     uint32_t getWeightedHelper(DocId doc, WeightedType * buffer, uint32_t sz) const {
-        const MultiValueType * handle;
-        uint32_t ret = this->_mvMapping.get(doc, handle);
+        MultiValueArrayRef handle(this->_mvMapping.get(doc));
+        uint32_t ret = handle.size();
         for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
             buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()),
                                      handle[i].weight());

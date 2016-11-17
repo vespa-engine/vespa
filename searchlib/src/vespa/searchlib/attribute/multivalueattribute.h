@@ -26,6 +26,7 @@ protected:
     typedef typename MultiValueMappingBaseBase::Histogram Histogram;
     typedef typename MultiValueType::ValueType            ValueType;
     typedef std::vector<MultiValueType>                   ValueVector;
+    using MultiValueArrayRef = vespalib::ConstArrayRef<MultiValueType>;
     typedef typename ValueVector::iterator                ValueVectorIterator;
     typedef std::vector<std::pair<DocId, ValueVector> >   DocumentValues;
 

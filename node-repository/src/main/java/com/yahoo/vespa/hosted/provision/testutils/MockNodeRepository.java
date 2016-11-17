@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -39,10 +40,16 @@ public class MockNodeRepository extends NodeRepository {
      * @param flavors flavors to have in node repo
      */
     public MockNodeRepository(NodeFlavors flavors) throws Exception {
-        super(flavors, new MockCurator(), Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
+        super(flavors, mockCurator(), Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z")), Zone.defaultZone(),
                 new MockNameResolver().mockAnyLookup());
         this.flavors = flavors;
         populate();
+    }
+
+    private static Curator mockCurator() {
+        MockCurator mockCurator = new MockCurator();
+        mockCurator.setConnectionSpec("cfg1:1234,cfg2:1234,cfg3:1234");
+        return mockCurator;
     }
 
     private void populate() {

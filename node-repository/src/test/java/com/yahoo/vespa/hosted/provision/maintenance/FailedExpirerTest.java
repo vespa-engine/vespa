@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
@@ -23,16 +22,15 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -117,7 +115,7 @@ public class FailedExpirerTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         provisioner.prepare(applicationId, cluster, Capacity.fromNodeCount(3), 1, null);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-        provisioner.activate(transaction, applicationId, asHosts(nodes));
+        provisioner.activate(transaction, applicationId, ProvisioningTester.toHostSpecs(nodes));
         transaction.commit();
         assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.active).size());
 
@@ -133,14 +131,4 @@ public class FailedExpirerTest {
 
         return nodeRepository;
     }
-
-    private Set<HostSpec> asHosts(List<Node> nodes) {
-        Set<HostSpec> hosts = new HashSet<>(nodes.size());
-        for (Node node : nodes)
-            hosts.add(new HostSpec(node.hostname(),
-                                   node.allocation().isPresent() ? Optional.of(node.allocation().get().membership()) :
-                                                                   Optional.empty()));
-        return hosts;
-    }
-
 }

@@ -230,21 +230,21 @@ MultiValueMappingBase<I>::reset(uint32_t numKeys)
 
 template <typename I>
 void
-MultiValueMappingBase<I>::addKey(uint32_t & key)
+MultiValueMappingBase<I>::addDoc(uint32_t & docId)
 {
     uint32_t retval = _indices.size();
     _indices.push_back(Index());
-    key = retval;
+    docId = retval;
 }
 
 
 template <typename I>
 void
-MultiValueMappingBase<I>::shrinkKeys(uint32_t newSize)
+MultiValueMappingBase<I>::shrink(uint32_t docIdLimit)
 {
-    assert(newSize >= _committedDocIdLimit);
-    assert(newSize < _indices.size());
-    _indices.shrink(newSize);
+    assert(docIdLimit >= _committedDocIdLimit);
+    assert(docIdLimit < _indices.size());
+    _indices.shrink(docIdLimit);
 }
 
 

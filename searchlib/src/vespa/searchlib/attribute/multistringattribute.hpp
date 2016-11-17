@@ -89,11 +89,10 @@ template <typename Collector>
 bool
 MultiValueStringAttributeT<B, M>::StringImplSearchContext::collectWeight(DocId doc, int32_t & weight, Collector & collector) const
 {
-    const WeightedIndex * indices;
-    uint32_t valueCount = myAttribute()._mvMapping.get(doc, indices);
+    WeightedIndexArrayRef indices(myAttribute()._mvMapping.get(doc));
 
     EnumAccessor<typename B::EnumStore> accessor(myAttribute()._enumStore);
-    collectMatches(indices, valueCount, accessor, collector);
+    collectMatches(indices, accessor, collector);
     weight = collector.getWeight();
     return collector.hasMatch();
 }
@@ -103,11 +102,9 @@ bool
 MultiValueStringAttributeT<B, M>::StringImplSearchContext::onCmp(DocId doc) const
 {
     const MultiValueStringAttributeT<B, M> & attr(static_cast< const MultiValueStringAttributeT<B, M> & > (attribute()));
-    const WeightedIndex * indices;
-    uint32_t valueCount = attr._mvMapping.get(doc, indices);
-
-    for (uint32_t i(0); (i < valueCount); i++) {
-        if (isMatch(attr._enumStore.getValue(indices[i].value()))) {
+    WeightedIndexArrayRef indices(attr._mvMapping.get(doc));
+    for (const WeightedIndex &wi : indices) {
+        if (isMatch(attr._enumStore.getValue(wi.value()))) {
             return true;
         }
     }
