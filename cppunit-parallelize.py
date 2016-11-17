@@ -12,7 +12,11 @@ def parse_arguments():
     argparser = argparse.ArgumentParser(description="Run Vespa cppunit tests in parallell")
     argparser.add_argument("testrunner", type=str, help="Test runner executable")
     argparser.add_argument("--chunks", type=int, help="Number of chunks", default=5)
-    return argparser.parse_args()
+    args = argparser.parse_args()
+    if args.chunks < 1:
+        raise RuntimeError, "I require at least one chunk" 
+
+    return args
 
 def take(lst, n):
     return [ lst.pop() for i in xrange(n) ]
@@ -60,7 +64,7 @@ def cleanup_processes(processes):
 
 args = parse_arguments()
 test_suites = subprocess.check_output((args.testrunner, "--list")).strip().split("\n")
-test_suite_groups = chunkify(test_suites, args.chunks)
+test_suite_groups = chunkify(test_suites, min(len(test_suites), args.chunks))
 processes = build_processes(test_suite_groups)
 
 print "Running %d test suites in %d parallel chunks with ~%d tests each" % (len(test_suites), len(test_suite_groups), len(test_suite_groups[0]))
