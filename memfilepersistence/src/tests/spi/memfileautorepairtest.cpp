@@ -125,8 +125,7 @@ MemFileAutoRepairTest::testFileMetadataCorruptionIsAutoRepaired()
     prepareBucket(*this, *_file);
     document::DocumentId id(_slotIds[1]);
     MetaSlot slot(getSlot(1));
-    CPPUNIT_ASSERT_EQUAL(slot._gid,
-                         id.getGlobalId()); // Sanity checking...
+    CPPUNIT_ASSERT(slot._gid == id.getGlobalId()); // Sanity checking...
     {
         MetaSlot s(slot);
         s.setTimestamp(Timestamp(40));

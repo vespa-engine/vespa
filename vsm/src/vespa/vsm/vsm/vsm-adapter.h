@@ -15,6 +15,8 @@
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
+#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
+#include <vespa/juniper/rpinterface.h>
 
 using search::docsummary::ResultConfig;
 using search::docsummary::ResultClass;

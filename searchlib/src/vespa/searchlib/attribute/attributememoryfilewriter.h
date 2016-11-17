@@ -3,6 +3,7 @@
 #pragma once
 
 #include "iattributefilewriter.h"
+#include <vector>
 
 namespace search
 {

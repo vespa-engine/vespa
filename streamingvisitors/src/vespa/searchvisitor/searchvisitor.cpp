@@ -21,6 +21,7 @@
 #include <vespa/fastlib/text/wordfolder.h>
 #include <vespa/vdslib/container/documentlist.h>
 #include <vespa/vsm/config/vsm-cfif.h>
+#include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vsm/vsm/docsumfilter.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include "querytermdata.h"

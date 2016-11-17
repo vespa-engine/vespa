@@ -965,7 +965,7 @@ MemFile::printUserFriendly(const MemSlot& slot,
                            std::ostream& out,
                            const std::string& indent) const
 {
-    out << "MemSlot(" << slot.getGlobalId()
+    out << "MemSlot(" << slot.getGlobalId().toString()
         << std::setfill(' ')
         << std::dec << "\n"
         << indent << "  Header pos: "
@@ -1012,7 +1012,7 @@ MemFile::print(const MemSlot& slot,
     if (verbose) {
         out << "MemSlot(";
     }
-    out << std::dec << slot.getTimestamp() << ", " << slot.getGlobalId() << ", h "
+    out << std::dec << slot.getTimestamp() << ", " << slot.getGlobalId().toString() << ", h "
         << slot.getLocation(HEADER)._pos << " - " << slot.getLocation(HEADER)._size << ", b "
         << slot.getLocation(BODY)._pos << " - " << slot.getLocation(BODY)._size << ", f "
 

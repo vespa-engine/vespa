@@ -349,9 +349,9 @@ MemFileV1Verifier::verifyDataBlock(
             foundBucket = foundBucket.stripUnused();
             if (id.getGlobalId() != slots[i]->_gid) {
                 REPORT(report) << *slots[i]
-                               << " has gid " << slots[i]->_gid
+                               << " has gid " << slots[i]->_gid.toString()
                                << " but its header block contains document id "
-                               << id << " with " << id.getGlobalId();
+                               << id << " with " << id.getGlobalId().toString();
             }
             else if (bucket == foundBucket) {
                 okSlots.push_back(slots[i]);

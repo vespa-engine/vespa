@@ -180,7 +180,7 @@ void GetBucketDiffCommand::Entry::print(std::ostream& out, bool verbose,
                                         const std::string& indent) const
 {
     out << "Entry(timestamp: " << _timestamp
-        << ", " << _gid << ", hasMask: 0x" << _hasMask;
+        << ", " << _gid.toString() << ", hasMask: 0x" << _hasMask;
     if (verbose) {
         out << ",\n" << indent << "      " << "header size: "
             << std::dec << _headerSize << ", body size: " << _bodySize
@@ -312,7 +312,7 @@ void ApplyBucketDiffCommand::Entry::print(
                                  _headerBlob.size());
         if (_repo) {
             document::Document doc(*_repo, buf);
-            out << ",\n" << indent << "  " << doc.getId().getGlobalId();
+            out << ",\n" << indent << "  " << doc.getId().getGlobalId().toString();
         } else {
             out << ",\n" << indent << "  unknown global id. (repo missing)";
         }
