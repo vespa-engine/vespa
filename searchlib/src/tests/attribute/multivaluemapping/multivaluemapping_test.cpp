@@ -243,7 +243,7 @@ MultiValueMappingTest::testSimpleSetAndGet()
     // add more keys
     for (uint32_t i = 0; i < 5; ++i) {
         uint32_t key;
-        mvm.addKey(key);
+        mvm.addDoc(key);
         EXPECT_TRUE(key == 10 + i);
         EXPECT_TRUE(mvm.getNumKeys() == 11 + i);
     }
@@ -673,14 +673,14 @@ MultiValueMappingTest::testShrink()
     MvMapping mvm(committedDocIdLimit);
     for (uint32_t i = 0; i < 10; ++i) {
         uint32_t k;
-        mvm.addKey(k);
+        mvm.addDoc(k);
         EXPECT_EQUAL(i, k);
     }
     mvm.transferHoldLists(0);
     mvm.trimHoldLists(1);
     uint32_t shrinkTarget = 4;
     committedDocIdLimit = shrinkTarget;
-    mvm.shrinkKeys(shrinkTarget);
+    mvm.shrink(shrinkTarget);
     mvm.transferHoldLists(1);
     mvm.trimHoldLists(2);
     EXPECT_EQUAL(shrinkTarget, mvm.getNumKeys());

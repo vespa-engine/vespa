@@ -29,8 +29,15 @@ protected:
     virtual ~MultiValueMapping2Base();
 
 public:
+    using IndexCopyVector = vespalib::Array<EntryRef>;
+
     virtual MemoryUsage getMemoryUsage() const = 0;
     virtual size_t getTotalValueCnt() const = 0;
+    IndexCopyVector getIndicesCopy(uint32_t size) const;
+
+    void addDoc(uint32_t &docId);
+    void shrink(uint32_t docidLimit);
+    void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
 
     // Mockups to temporarily silence code written for old multivalue mapping
     class Histogram
@@ -88,17 +95,6 @@ public:
     AddressSpace getAddressSpaceUsage() const { return AddressSpace(0, 0); }
     MemoryUsage getMemoryUsage() const override { return MemoryUsage(); }
     virtual size_t getTotalValueCnt() const override { return 0; }
-    void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v) {
-        (void) lidLow;
-        (void) lidLimit;
-        (void) v;
-    }
-    void shrinkKeys(uint32_t newSize) { (void) newSize; }
-    void addKey(uint32_t &docId) {
-        uint32_t oldVal = _indices.size();
-        _indices.push_back(EntryRef());
-        docId = oldVal;
-    }
 
     // Mockups to temporarily silence code written for old multivalue mapping
     bool enoughCapacity(const Histogram &) { return true; }

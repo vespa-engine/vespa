@@ -150,7 +150,7 @@ bool
 MultiValueAttribute<B, M>::addDoc(DocId & doc)
 {
     bool incGen = this->_mvMapping.isFull();
-    this->_mvMapping.addKey(doc);
+    this->_mvMapping.addDoc(doc);
     this->incNumDocs();
     this->updateUncommittedDocIdLimit(doc);
     incGen |= onAddDoc(doc);
@@ -194,7 +194,7 @@ void
 MultiValueAttribute<B, M>::onShrinkLidSpace()
 {
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
-    _mvMapping.shrinkKeys(committedDocIdLimit);
+    _mvMapping.shrink(committedDocIdLimit);
     this->setNumDocs(committedDocIdLimit);
 }
 

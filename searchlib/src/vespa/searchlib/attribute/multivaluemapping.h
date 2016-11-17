@@ -209,8 +209,8 @@ public:
 
     bool hasKey(uint32_t key) const { return key < _indices.size(); }
     bool isFull() const { return _indices.isFull(); }
-    void addKey(uint32_t & key);
-    void shrinkKeys(uint32_t newSize);
+    void addDoc(uint32_t & docId);
+    void shrink(uint32_t docIdLimit);
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
     void holdElem(Index idx, size_t size);
     virtual void doneHoldElem(Index idx) = 0;
