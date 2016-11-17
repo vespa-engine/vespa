@@ -3,7 +3,12 @@ package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.document.select.OrderingSpecification;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.AckToken;
+import com.yahoo.documentapi.DocumentAccess;
+import com.yahoo.documentapi.VisitorControlHandler;
+import com.yahoo.documentapi.VisitorDataHandler;
+import com.yahoo.documentapi.VisitorParameters;
+import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
@@ -16,12 +21,11 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
-import com.yahoo.search.Query;
 import com.yahoo.prelude.fastsearch.TimeoutException;
-import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.Query;
+import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
-import com.yahoo.search.query.Presentation;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
@@ -29,14 +33,13 @@ import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.objects.BufferSerializer;
 
-import java.lang.IllegalArgumentException;
-import java.lang.Integer;
-import java.lang.InterruptedException;
-import java.lang.Object;
-import java.lang.RuntimeException;
-import java.lang.String;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -294,7 +297,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
             session.destroy();
         }
 
-        query.trace(session.getTrace().toString(), false, query.getTraceLevel());
+        query.trace(session.getTrace().toString(), false, 9);
 
         if (params.getControlHandler().getResult().code == VisitorControlHandler.CompletionCode.SUCCESS) {
             if (log.isLoggable(LogLevel.DEBUG)) {
