@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "buffer_type.h"
 #include "bufferstate.h"
 #include "datastore.h"
 #include "entryref.h"
