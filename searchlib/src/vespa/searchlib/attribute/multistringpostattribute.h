@@ -82,7 +82,7 @@ private:
     virtual void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused);
 
 public:
-    typedef MultiValueMappingBaseBase::Histogram Histogram;
+    typedef attribute::MultiValueMapping2Base::Histogram Histogram;
 
     MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                                       AttributeVector::Config(AttributeVector::BasicType::STRING,

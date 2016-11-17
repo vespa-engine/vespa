@@ -99,7 +99,7 @@ onSave(IAttributeSaveTarget &saveTarget)
     DatWriter datWriter(saveTarget, _enumSaver.getEnumStore());
     _enumSaver.writeUdat(saveTarget);
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
-        Index idx = _frozenIndices[docId];
+        datastore::EntryRef idx = _frozenIndices[docId];
         vespalib::ConstArrayRef<MultiValueType> handle(_mvMapping.getDataForIdx(idx));
         countWriter.writeCount(handle.size());
         weightWriter.writeWeights(handle);

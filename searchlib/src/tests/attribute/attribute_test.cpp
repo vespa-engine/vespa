@@ -2149,10 +2149,10 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
     }
     if (attrPtr->hasMultiValue()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has multi-value", attrName.c_str());
-        EXPECT_EQUAL(before.multiValueUsage().used(), 0u);
-        EXPECT_GREATER(after.multiValueUsage().used(), before.multiValueUsage().used());
+        EXPECT_EQUAL(before.multiValueUsage().used(), 15u);
+        EXPECT_GREATER_EQUAL(after.multiValueUsage().used(), before.multiValueUsage().used());
         EXPECT_EQUAL(after.multiValueUsage().limit(), before.multiValueUsage().limit());
-        EXPECT_EQUAL(134217728u, after.multiValueUsage().limit()); // multivalue::Index32::offsetSize()
+        EXPECT_EQUAL(8192u, after.multiValueUsage().limit());
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT multi-value", attrName.c_str());
         EXPECT_EQUAL(before.multiValueUsage().used(), 0u);

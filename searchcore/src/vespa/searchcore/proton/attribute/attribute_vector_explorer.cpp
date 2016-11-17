@@ -7,6 +7,7 @@ LOG_SETUP(".proton.attribute.attribute_vector_explorer");
 #include "attribute_vector_explorer.h"
 #include <vespa/searchlib/attribute/enumstorebase.h>
 #include <vespa/searchlib/attribute/multivaluemapping.h>
+#include <vespa/searchlib/attribute/multi_value_mapping2.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
 using search::attribute::Status;
@@ -15,7 +16,7 @@ using search::AddressSpaceUsage;
 using search::AttributeVector;
 using search::EnumStoreBase;
 using search::MemoryUsage;
-using search::MultiValueMappingBaseBase;
+using search::attribute::MultiValueMapping2Base;
 using namespace vespalib::slime;
 
 namespace proton {
@@ -83,7 +84,7 @@ convertEnumStoreToSlime(const EnumStoreBase &enumStore, Cursor &object)
 }
 
 void
-convertMultiValueToSlime(const MultiValueMappingBaseBase &multiValue, Cursor &object)
+convertMultiValueToSlime(const MultiValueMapping2Base &multiValue, Cursor &object)
 {
     object.setLong("totalValueCnt", multiValue.getTotalValueCnt());
     convertMemoryUsageToSlime(multiValue.getMemoryUsage(), object.setObject("memoryUsage"));
@@ -111,7 +112,7 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
         if (enumStore) {
             convertEnumStoreToSlime(*enumStore, object.setObject("enumStore"));
         }
-        const MultiValueMappingBaseBase *multiValue = attr.getMultiValueBase();
+        const MultiValueMapping2Base *multiValue = attr.getMultiValueBase();
         if (multiValue) {
             convertMultiValueToSlime(*multiValue, object.setObject("multiValue"));
         }
