@@ -55,7 +55,7 @@ public:
 
     matching::MatchContext::UP createContext() const;
 
-    search::engine::SearchReply::UP
+    std::unique_ptr<search::engine::SearchReply>
     match(const ISearchHandler::SP &searchHandler,
           const search::engine::SearchRequest &req,
           vespalib::ThreadBundle &threadBundle) const;

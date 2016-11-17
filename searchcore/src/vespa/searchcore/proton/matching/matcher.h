@@ -10,9 +10,6 @@
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/resultset.h>
-#include <vespa/searchlib/engine/docsumrequest.h>
-#include <vespa/searchlib/engine/searchreply.h>
-#include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/base.h>
@@ -23,11 +20,17 @@
 
 namespace search {
 namespace grouping {
-class GroupingContext;
-class GroupingSession;
+    class GroupingContext;
+    class GroupingSession;
 }  // namespace search::grouping;
 namespace index { class Schema; }
 namespace attribute { class IAttributeContext; }
+namespace engine {
+    class Request;
+    class SearchRequest;
+    class DocsumRequest;
+    class SearchReply;
+}
 
 class IDocumentMetaStore;
 
@@ -62,7 +65,7 @@ private:
                   search::attribute::IAttributeContext & attrCtx,
                   SessionManager &sessionMgr,
                   bool summaryFeatures);
-    search::engine::SearchReply::UP
+    std::unique_ptr<search::engine::SearchReply>
     handleGroupingSession(
             SessionManager &sessionMgr,
             search::grouping::GroupingContext & groupingContext,
@@ -127,7 +130,7 @@ public:
      * @param sessionManager multilevel grouping session cache
      * @param metaStore the document meta store used to map from lid to gid
      **/
-    search::engine::SearchReply::UP
+    std::unique_ptr<search::engine::SearchReply>
     match(const search::engine::SearchRequest &request,
           vespalib::ThreadBundle &threadBundle,
           ISearchContext &searchContext,

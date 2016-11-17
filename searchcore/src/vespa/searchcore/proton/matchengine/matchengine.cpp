@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include "matchengine.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matchengine.matchengine");
 #include <vespa/searchcore/proton/common/state_reporter_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <algorithm>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matchengine.matchengine");
 
 namespace {
 
@@ -36,7 +37,6 @@ public:
 
 namespace proton {
 
-using namespace matching;
 using namespace vespalib::slime;
 
 MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey)

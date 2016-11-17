@@ -1,16 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("summaryengine_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchlib/engine/docsumapi.h>
+#include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/document/util/compressor.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP("summaryengine_test");
 
 using namespace search::engine;
 using namespace document;

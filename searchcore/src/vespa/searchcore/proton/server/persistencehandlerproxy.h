@@ -3,19 +3,22 @@
 #pragma once
 
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
-#include "documentdb.h"
 
 namespace proton {
 
+class DocumentDB;
+class FeedHandler;
+class BucketHandler;
+class ClusterStateHandler;
 class PersistenceHandlerProxy : public IPersistenceHandler
 {
 private:
-    DocumentDB::SP       _documentDB;
+    std::shared_ptr<DocumentDB>       _documentDB;
     FeedHandler         &_feedHandler;
     BucketHandler       &_bucketHandler;
     ClusterStateHandler &_clusterStateHandler;
 public:
-    PersistenceHandlerProxy(const DocumentDB::SP &documentDB);
+    PersistenceHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
 
     virtual ~PersistenceHandlerProxy();
 

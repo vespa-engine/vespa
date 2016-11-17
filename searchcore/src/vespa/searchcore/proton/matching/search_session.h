@@ -6,6 +6,10 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
+namespace search {
+namespace fef { class Properties; }
+}
+
 namespace proton {
 namespace matching {
 
@@ -24,7 +28,7 @@ public:
         OwnershipBundle & operator = (OwnershipBundle &&) = default;
         ~OwnershipBundle();
         ISearchHandler::SP search_handler;
-        search::fef::Properties::UP feature_overrides;
+        std::unique_ptr<search::fef::Properties> feature_overrides;
         std::unique_ptr<MatchContext> context;
     };
 private:

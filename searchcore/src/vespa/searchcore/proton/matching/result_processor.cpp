@@ -7,9 +7,17 @@ LOG_SETUP(".proton.matching.result_processor");
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/common/docstamp.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
+#include <vespa/searchlib/engine/searchreply.h>
 
 namespace proton {
 namespace matching {
+
+ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> reply, size_t numFs4Hits)
+    : _reply(std::move(reply)),
+      _numFs4Hits(numFs4Hits)
+{ }
+
+ResultProcessor::Result::~Result() { }
 
 ResultProcessor::Sort::Sort(const vespalib::Doom & doom, search::attribute::IAttributeContext &ac, const vespalib::string &ss)
     : sorter(FastS_DefaultResultSorter::instance()),

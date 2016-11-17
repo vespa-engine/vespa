@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
+#include "persistencehandlerproxy.h"
+#include "documentretriever.h"
+#include <vespa/persistence/spi/result.h>
+#include "documentdb.h"
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.persistencehandlerproxy");
-#include "documentretriever.h"
-#include "persistencehandlerproxy.h"
-#include <vespa/persistence/spi/result.h>
 
 using storage::spi::Bucket;
 using storage::spi::Timestamp;

@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.matchhandlerproxy");
 #include "matchhandlerproxy.h"
+#include "documentdb.h"
+#include <vespa/searchlib/engine/searchreply.h>
 
 namespace proton {
 
@@ -20,7 +20,7 @@ MatchHandlerProxy::~MatchHandlerProxy(void)
 }
 
 
-search::engine::SearchReply::UP
+std::unique_ptr<search::engine::SearchReply>
 MatchHandlerProxy::match(const ISearchHandler::SP &searchHandler,
                          const search::engine::SearchRequest &req,
                          vespalib::ThreadBundle &threadBundle) const

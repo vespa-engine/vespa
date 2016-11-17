@@ -3,33 +3,21 @@
 #pragma once
 
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
-#include "documentdb.h"
 
 namespace proton {
+
+class DocumentDB;
 
 class SearchHandlerProxy : public ISearchHandler
 {
 private:
-    DocumentDB::SP _documentDB;
+    std::shared_ptr<DocumentDB> _documentDB;
 public:
-    SearchHandlerProxy(const DocumentDB::SP &documentDB);
+    SearchHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
 
-    virtual
-    ~SearchHandlerProxy(void);
-
-    /**
-     * Implements ISearchHandler.
-     */
-    virtual search::engine::DocsumReply::UP
-    getDocsums(const search::engine::DocsumRequest & request);
-
-    /**
-     * @return Use the request and produce the matching result.
-     */
-    virtual search::engine::SearchReply::UP match(
-            const ISearchHandler::SP &searchHandler,
-            const search::engine::SearchRequest &req,
-            vespalib::ThreadBundle &threadBundle) const;
+    virtual~SearchHandlerProxy();
+    std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & request) override;
+    std::unique_ptr<SearchReply> match(const ISearchHandler::SP &searchHandler, const SearchRequest &req, ThreadBundle &threadBundle) const override;
 };
 
 } // namespace proton

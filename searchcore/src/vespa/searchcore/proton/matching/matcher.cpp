@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.matcher");
-
 #include "isearchcontext.h"
 #include "match_master.h"
 #include "match_context.h"
@@ -16,11 +13,17 @@ LOG_SETUP(".proton.matching.matcher");
 #include "sessionmanager.h"
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/engine/errorcodes.h>
+#include <vespa/searchlib/engine/docsumrequest.h>
+#include <vespa/searchlib/engine/searchrequest.h>
+#include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".proton.matching.matcher");
 
 using search::fef::Properties;
 using namespace search;
