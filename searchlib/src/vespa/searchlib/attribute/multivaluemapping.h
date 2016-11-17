@@ -209,8 +209,8 @@ public:
 
     bool hasKey(uint32_t key) const { return key < _indices.size(); }
     bool isFull() const { return _indices.isFull(); }
-    void addKey(uint32_t & key);
-    void shrinkKeys(uint32_t newSize);
+    void addDoc(uint32_t & docId);
+    void shrink(uint32_t docIdLimit);
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
     void holdElem(Index idx, size_t size);
     virtual void doneHoldElem(Index idx) = 0;
@@ -361,29 +361,6 @@ public:
     ~MultiValueMappingT();
     void reset(uint32_t numKeys, size_t initSize = 0);
     void reset(uint32_t numKeys, const Histogram & initCapacity);
-    uint32_t get(uint32_t key, std::vector<T> & buffer) const;
-    template <typename BufferType>
-    uint32_t get(uint32_t key, BufferType * buffer, uint32_t sz) const;
-    bool get(uint32_t key, uint32_t index, T & value) const;
-    uint32_t getDataForIdx(Index idx, const T * & handle) const {
-        if (__builtin_expect(idx.values() < Index::maxValues(), true)) {
-            // We do not need to specialcase 0 as _singleVectors will refer to valid stuff
-            // and handle SHALL not be used as the number of values returned shall be obeyed.
-            const SingleVector & vec = _singleVectors[idx.vectorIdx()];
-            handle = &vec[idx.offset() * idx.values()];
-            __builtin_prefetch(handle, 0, 0);
-            return idx.values();
-        } else {
-            const VectorBase & vec =
-                _vectorVectors[idx.alternative()][idx.offset()];
-            handle = &vec[0];
-            return vec.size();
-        }
-    }
-    uint32_t get(uint32_t key, const T * & handle) const {
-        return getDataForIdx(this->_indices[key], handle);
-    }
-    inline uint32_t getValueCount(uint32_t key) const;
     vespalib::ConstArrayRef<T> getDataForIdx(Index idx) const {
         if (__builtin_expect(idx.values() < Index::maxValues(), true)) {
             // We do not need to specialcase 0 as _singleVectors will refer to valid stuff
@@ -803,82 +780,6 @@ MultiValueMappingT<T, I>::reset(uint32_t numKeys,
     initVectors(initCapacity);
 }
 
-
-template <typename T, typename I>
-uint32_t
-MultiValueMappingT<T, I>::get(uint32_t key, std::vector<T> & buffer) const
-{
-    return get(key, &buffer[0], buffer.size());
-}
-
-template <typename T, typename I>
-template <typename BufferType>
-uint32_t
-MultiValueMappingT<T, I>::get(uint32_t key,
-                              BufferType * buffer,
-                              uint32_t sz) const
-{
-    Index idx = this->_indices[key];
-    if (idx.values() < Index::maxValues()) {
-        uint32_t available = idx.values();
-        uint32_t num2Read = std::min(available, sz);
-        const SingleVector & vec = _singleVectors[idx.vectorIdx()];
-        for (uint64_t i = 0, j = idx.offset() * idx.values();
-             i < num2Read && j < (idx.offset() + 1) * idx.values(); ++i, ++j) {
-            buffer[i] = static_cast<BufferType>(vec[j]);
-        }
-        return available;
-    } else {
-        const VectorBase & vec =
-            _vectorVectors[idx.alternative()][idx.offset()];
-        uint32_t available = vec.size();
-        uint32_t num2Read = std::min(available, sz);
-        for (uint32_t i = 0; i < num2Read; ++i) {
-            buffer[i] = static_cast<BufferType>(vec[i]);
-        }
-        return available;
-    }
-}
-
-template <typename T, typename I>
-bool
-MultiValueMappingT<T, I>::get(uint32_t key, uint32_t index, T & value) const
-{
-    if (!this->hasReaderKey(key)) {
-        return false;
-    }
-    Index idx = this->_indices[key];
-    if (idx.values() < Index::maxValues()) {
-        if (index >= idx.values()) {
-            return false;
-        }
-        uint64_t offset = idx.offset() * idx.values() + index;
-        value = _singleVectors[idx.vectorIdx()][offset];
-        return true;
-    } else {
-        if (index >= _vectorVectors[idx.alternative()][idx.offset()].size()) {
-            return false;
-        }
-        value = _vectorVectors[idx.alternative()][idx.offset()][index];
-        return true;
-    }
-    return false;
-}
-
-template <typename T, typename I>
-inline uint32_t
-MultiValueMappingT<T, I>::getValueCount(uint32_t key) const
-{
-    if (!this->hasReaderKey(key)) {
-        return 0;
-    }
-    Index idx = this->_indices[key];
-    if (idx.values() < Index::maxValues()) {
-        return idx.values();
-    } else {
-        return _vectorVectors[idx.alternative()][idx.offset()].size();
-    }
-}
 
 template <typename T, typename I>
 void

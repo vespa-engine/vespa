@@ -9,11 +9,8 @@ namespace attribute {
 
 template <typename EntryT, typename RefT>
 MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize, const GrowStrategy &gs)
-    : _store(maxSmallArraySize),
-      _indices(gs.getDocsInitialCapacity(),
-               gs.getDocsGrowPercent(),
-               gs.getDocsGrowDelta(),
-               _store.getGenerationHolder())
+    : MultiValueMapping2Base(gs, _store.getGenerationHolder()),
+      _store(maxSmallArraySize)
 {
 }
 
@@ -21,7 +18,6 @@ template <typename EntryT, typename RefT>
 MultiValueMapping2<EntryT,RefT>::~MultiValueMapping2()
 {
 }
-
 
 template <typename EntryT, typename RefT>
 void

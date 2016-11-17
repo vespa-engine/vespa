@@ -16,7 +16,45 @@ uint32_t dummyCommittedDocIdLimit = std::numeric_limits<uint32_t>::max();
 
 }
 
-typedef MultiValueMappingT<uint32_t> MvMapping;
+class MvMapping : public MultiValueMappingT<uint32_t>
+{
+    using ArrayRef = vespalib::ConstArrayRef<uint32_t>;
+public:
+    using MultiValueMappingT<uint32_t>::MultiValueMappingT;
+    using MultiValueMappingT<uint32_t>::get;
+
+    uint32_t getValueCount(uint32_t key) {
+        ArrayRef values = get(key);
+        return values.size();
+    }
+    uint32_t get(uint32_t key, const uint32_t *&handle) {
+        ArrayRef values = get(key);
+        handle = &values[0];
+        return values.size();
+    }
+    uint32_t get(uint32_t key, uint32_t *buffer, uint32_t bufferSize)
+    {
+        ArrayRef values = get(key);
+        uint32_t valueCount = values.size();
+        for (uint32_t i = 0, m(std::min(valueCount,bufferSize)); i < m; ++i) {
+            buffer[i] = values[i];
+        }
+        return valueCount;
+    }
+    uint32_t get(uint32_t key, std::vector<uint32_t> &buffer) {
+        return get(key, &buffer[0], buffer.size());
+    }
+    bool get(uint32_t key, uint32_t index, uint32_t &value) const {
+        ArrayRef values = get(key);
+        if (values.size() <= index) {
+            return false;
+        } else {
+            value = values[0];
+            return true;
+        }
+    }
+};
+
 typedef MvMapping::Index Index;
 typedef multivalue::Index64 Index64;
 typedef multivalue::Index32 Index32;
@@ -205,7 +243,7 @@ MultiValueMappingTest::testSimpleSetAndGet()
     // add more keys
     for (uint32_t i = 0; i < 5; ++i) {
         uint32_t key;
-        mvm.addKey(key);
+        mvm.addDoc(key);
         EXPECT_TRUE(key == 10 + i);
         EXPECT_TRUE(mvm.getNumKeys() == 11 + i);
     }
@@ -635,14 +673,14 @@ MultiValueMappingTest::testShrink()
     MvMapping mvm(committedDocIdLimit);
     for (uint32_t i = 0; i < 10; ++i) {
         uint32_t k;
-        mvm.addKey(k);
+        mvm.addDoc(k);
         EXPECT_EQUAL(i, k);
     }
     mvm.transferHoldLists(0);
     mvm.trimHoldLists(1);
     uint32_t shrinkTarget = 4;
     committedDocIdLimit = shrinkTarget;
-    mvm.shrinkKeys(shrinkTarget);
+    mvm.shrink(shrinkTarget);
     mvm.transferHoldLists(1);
     mvm.trimHoldLists(2);
     EXPECT_EQUAL(shrinkTarget, mvm.getNumKeys());
