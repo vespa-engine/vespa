@@ -14,6 +14,7 @@ FastS_TimeKeeper::FastS_TimeKeeper()
 {
     bool ok = _thread_pool.NewThread(&_clock);
     assert(ok);
+    (void) ok;
 }
 
 

@@ -19,6 +19,7 @@ using CellRef = std::reference_wrapper<const Cell>;
 namespace {
 
 void assert_type(const ValueType &type) {
+    (void) type;
     assert(!type.is_abstract());
     assert(type.is_double() || type.is_tensor());
 }

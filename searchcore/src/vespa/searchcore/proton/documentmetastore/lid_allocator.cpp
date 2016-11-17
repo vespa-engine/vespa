@@ -121,6 +121,7 @@ LidAllocator::trimHoldLists(generation_t firstUsed)
 void
 LidAllocator::moveLidBegin(DocId fromLid, DocId toLid)
 {
+    (void) fromLid;
     assert(!_pendingHoldLids.testBit(fromLid));
     assert(!_pendingHoldLids.testBit(toLid));
     if (isFreeListConstructed()) {
@@ -149,6 +150,7 @@ LidAllocator::holdLid(DocId lid,
                       DocId lidLimit,
                       generation_t currentGeneration)
 {
+    (void) lidLimit;
     assert(holdLidOK(lid, lidLimit));
     assert(isFreeListConstructed());
     assert(lid < _usedLids.size());
@@ -163,6 +165,7 @@ LidAllocator::holdLids(const std::vector<DocId> &lids,
                        DocId lidLimit,
                        generation_t currentGeneration)
 {
+    (void) lidLimit;
     for (const auto &lid : lids) {
         assert(lid > 0);
         assert(holdLidOK(lid, lidLimit));
@@ -295,6 +298,8 @@ LidAllocator::commitActiveLids()
 void
 LidAllocator::clearDocs(DocId lidLow, DocId lidLimit)
 {
+    (void) lidLow;
+    (void) lidLimit;
     assert(_usedLids.getNextTrueBit(lidLow) >= lidLimit);
 }
 

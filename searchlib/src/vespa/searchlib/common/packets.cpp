@@ -468,6 +468,7 @@ bool
 FS4Packet_Shared::Decode(FNET_DataBuffer *, uint32_t )
 {
     assert(false);
+    return false;
 }
 
 vespalib::string
@@ -536,6 +537,7 @@ bool
 FS4Packet_PreSerialized::Decode(FNET_DataBuffer *, uint32_t)
 {
     assert(false);
+    return false;
 }
 
 vespalib::string

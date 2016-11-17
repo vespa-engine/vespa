@@ -4,7 +4,6 @@
 
 #include <vespa/vespalib/util/clock.h>
 #include <vespa/vespalib/util/thread_bundle.h>
-#include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/common/featureset.h>
 #include "result_processor.h"
 #include "match_params.h"

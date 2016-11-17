@@ -1,11 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/engine/docsumreply.h>
-#include <vespa/searchlib/engine/docsumrequest.h>
-#include <vespa/searchlib/engine/searchreply.h>
-#include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+
+namespace search {
+namespace engine {
+    class SearchRequest;
+    class SearchReply;
+    class DocsumRequest;
+    class DocsumReply;
+}
+}
 
 namespace proton {
 
@@ -21,6 +26,7 @@ protected:
     using SearchReply = search::engine::SearchReply;
     using SearchRequest = search::engine::SearchRequest;
     using DocsumRequest = search::engine::DocsumRequest;
+    using ThreadBundle = vespalib::ThreadBundle;
 public:
     typedef std::unique_ptr<ISearchHandler> UP;
     typedef std::shared_ptr<ISearchHandler> SP;
@@ -32,12 +38,10 @@ public:
     /**
      * @return Use the request and produce the document summary result.
      */
-    virtual DocsumReply::UP getDocsums(const DocsumRequest & request) = 0;
+    virtual std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & request) = 0;
 
-    virtual SearchReply::UP match(
-            const ISearchHandler::SP &self,
-            const SearchRequest &req,
-            vespalib::ThreadBundle &threadBundle) const = 0;
+    virtual std::unique_ptr<SearchReply>
+    match(const ISearchHandler::SP &self, const SearchRequest &req, ThreadBundle &threadBundle) const = 0;
 };
 
 } // namespace proton

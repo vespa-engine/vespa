@@ -175,6 +175,7 @@ BucketDB::checkEmpty(void) const
     for (auto &entry : _map) {
         const BucketState &state = entry.second;
         assert(state.empty());
+        (void) state;
     }
 }
 

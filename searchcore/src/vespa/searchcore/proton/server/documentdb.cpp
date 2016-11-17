@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.documentdb");
-
 #include "documentdb.h"
-
 #include "combiningfeedview.h"
 #include "configvalidator.h"
 #include "document_meta_store_read_guards.h"
@@ -31,6 +27,8 @@ LOG_SETUP(".proton.server.documentdb");
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/vespalib/data/fileheader.h>
@@ -41,6 +39,9 @@ LOG_SETUP(".proton.server.documentdb");
 #include <sstream>
 #include "documentdbconfigscout.h"
 #include "commit_and_wait_document_retriever.h"
+#include <vespa/log/log.h>
+
+LOG_SETUP(".proton.server.documentdb");
 
 
 using vespa::config::search::AttributesConfig;
@@ -764,17 +765,15 @@ DocumentDB::getNewestFlushedSerial()
     return _subDBs.getNewestFlushedSerial();
 }
 
-search::engine::SearchReply::UP
-DocumentDB::match(const ISearchHandler::SP &,
-                  const search::engine::SearchRequest &req,
-                  vespalib::ThreadBundle &threadBundle) const
+std::unique_ptr<SearchReply>
+DocumentDB::match(const ISearchHandler::SP &, const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const
 {
     // Ignore input searchhandler. Use readysubdb's searchhandler instead.
     ISearchHandler::SP view(_subDBs.getReadySubDB()->getSearchView());
     return view->match(view, req, threadBundle);
 }
 
-DocsumReply::UP
+std::unique_ptr<DocsumReply>
 DocumentDB::getDocsums(const DocsumRequest & request)
 {
     ISearchHandler::SP view(_subDBs.getReadySubDB()->getSearchView());

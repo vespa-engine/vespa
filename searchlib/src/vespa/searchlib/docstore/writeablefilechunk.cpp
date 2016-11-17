@@ -310,6 +310,7 @@ WriteableFileChunk::drainQ()
 void
 WriteableFileChunk::insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChunkQ & newChunks, const uint32_t nextChunkId)
 {
+    (void) nextChunkId;
     for (auto &chunk : newChunks) {
         if (chunk.get() != 0) {
             assert(chunk->getChunkId() >= nextChunkId);
@@ -372,6 +373,7 @@ WriteableFileChunk::computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, 
     ChunkMetaV cmetaV;
     cmetaV.reserve(chunks.size());
     uint64_t lastSerial(_lastPersistedSerialNum);
+    (void) lastSerial;
     LockGuard guard(_lock);
 
     if (!_pendingChunks.empty()) {
@@ -468,6 +470,7 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
         assert(_writeQ.empty());
         assert(_chunkMap.empty());
         for (const ChunkInfo & cm : _chunkInfo) {
+            (void) cm;
             assert(cm.valid() && cm.getSize() != 0);
         }
         _writeTaskIsRunning = false;
@@ -530,6 +533,7 @@ WriteableFileChunk::getDiskFootprint() const
 size_t
 WriteableFileChunk::getDiskFootprint(const vespalib::MonitorGuard & guard) const
 {
+    (void) guard;
     assert(guard.monitors(_lock));
     return frozen()
            ? FileChunk::getDiskFootprint()
@@ -756,6 +760,7 @@ WriteableFileChunk::needFlushPendingChunks(uint64_t serialNum, uint64_t datFileL
 bool
 WriteableFileChunk::needFlushPendingChunks(const MonitorGuard & guard, uint64_t serialNum, uint64_t datFileLen)
 {
+    (void) guard;
     assert(guard.monitors(_lock));
     if (_pendingChunks.empty())
         return false;
@@ -796,6 +801,7 @@ WriteableFileChunk::flushPendingChunks(uint64_t serialNum) {
 fastos::TimeStamp
 WriteableFileChunk::unconditionallyFlushPendingChunks(const vespalib::LockGuard &flushGuard, uint64_t serialNum, uint64_t datFileLen)
 {
+    (void) flushGuard;
     assert(flushGuard.locks(_flushLock));
     if ( ! _dataFile.Sync()) {
         throw SummaryException("Failed fsync of dat file", _dataFile, VESPA_STRLOC);

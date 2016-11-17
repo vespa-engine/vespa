@@ -3,27 +3,21 @@
 #pragma once
 
 #include <vespa/searchcore/proton/matchengine/imatchhandler.h>
-#include "documentdb.h"
 
 namespace proton {
+
+class DocumentDB;
 
 class MatchHandlerProxy : public IMatchHandler
 {
 private:
-    DocumentDB::SP _documentDB;
+    std::shared_ptr<DocumentDB> _documentDB;
 public:
-    MatchHandlerProxy(const DocumentDB::SP &documentDB);
+    MatchHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
+    virtual~MatchHandlerProxy();
 
-    virtual
-    ~MatchHandlerProxy(void);
-
-    /**
-     * Implements IMatchHandler.
-     */
-    virtual search::engine::SearchReply::UP
-    match(const ISearchHandler::SP &searchHandler,
-          const search::engine::SearchRequest &req,
-          vespalib::ThreadBundle &threadBundle) const;
+    std::unique_ptr<SearchReply>
+    match(const ISearchHandler::SP &searchHandler, const SearchRequest &req, ThreadBundle &threadBundle) const override;
 };
 
 } // namespace proton

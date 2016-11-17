@@ -3,16 +3,17 @@
 #pragma once
 
 #include <vespa/searchcore/proton/flushengine/iflushhandler.h>
-#include "documentdb.h"
 
 namespace proton {
+
+class DocumentDB;
 
 class FlushHandlerProxy : public IFlushHandler
 {
 private:
-    DocumentDB::SP _documentDB;
+    std::shared_ptr<DocumentDB> _documentDB;
 public:
-    FlushHandlerProxy(const DocumentDB::SP &documentDB);
+    FlushHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
 
     virtual ~FlushHandlerProxy();
 

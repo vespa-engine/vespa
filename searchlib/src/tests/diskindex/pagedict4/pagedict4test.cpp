@@ -499,6 +499,7 @@ checkCounts(const std::string &word,
     (void) word;
     (void) fileOffset;
     const WordIndexCounts *j = &i._counts;
+    (void) j;
     assert(counts._bitLength == j->_bitLength);
     assert(counts._numDocs == j->_numDocs);
     assert(fileOffset._fileOffset == j->_fileOffset);
@@ -662,6 +663,7 @@ testWords(const std::string &logname,
                                 tuneFileWrite,
                                 fileHeaderContext);
         assert(openres);
+        (void) openres;
 
         for (std::vector<WordCounts>::const_iterator
                  i = myrand.begin(),
@@ -730,6 +732,7 @@ testWords(const std::string &logname,
         PostingListCounts rCounts;
         uint64_t wOffset;
         uint64_t rOffset;
+        (void) rOffset;
         PostingListOffsetAndCounts rOffsetAndCounts;
         uint64_t wordNum = 1;
         uint64_t checkWordNum = 5;

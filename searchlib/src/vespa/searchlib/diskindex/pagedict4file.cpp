@@ -439,6 +439,9 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
     assert(pFileSize >= pBufferStartFilePos);
     assert(spFileSize >= spBufferStartFilePos);
     assert(ssFileSize >= ssBufferStartFilePos);
+    (void) pFileSize;
+    (void) spFileSize;
+    (void) ssFileSize;
     _pfile.SetSize(pBufferStartFilePos);
     _spfile.SetSize(spBufferStartFilePos);
     _ssfile.SetSize(ssBufferStartFilePos);

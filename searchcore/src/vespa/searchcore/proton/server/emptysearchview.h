@@ -16,13 +16,12 @@ public:
     /**
      * Implements ISearchHandler
      */
-    virtual search::engine::DocsumReply::UP
-    getDocsums(const search::engine::DocsumRequest & req);
+    virtual std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & req) override;
 
-    virtual search::engine::SearchReply::UP
+    virtual std::unique_ptr<SearchReply>
     match(const ISearchHandler::SP &searchHandler,
-          const search::engine::SearchRequest &req,
-          vespalib::ThreadBundle &threadBundle) const;
+          const SearchRequest &req,
+          vespalib::ThreadBundle &threadBundle) const override;
 };
 
 } // namespace proton

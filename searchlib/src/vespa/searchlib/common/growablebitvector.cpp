@@ -43,6 +43,7 @@ GrowableBitVector::shrink(Index newCapacity)
 {
     Index oldCapacity = capacity();
     assert(newCapacity <= oldCapacity);
+    (void) oldCapacity;
     hold(grow(newCapacity, std::max(capacity(), newCapacity)));
 }
 

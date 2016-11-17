@@ -263,6 +263,7 @@ void
 cache<P>::invalidate(const vespalib::LockGuard & guard, const K & key)
 {
     assert(guard.locks(_hashLock));
+    (void) guard;
     if (Lru::hasKey(key)) {
         _sizeBytes -= calcSize(key, (*this)[key]);
         _invalidate++;
@@ -274,6 +275,7 @@ template< typename P >
 bool
 cache<P>::hasKey(const vespalib::LockGuard & guard, const K & key) const
 {
+    (void) guard;
     assert(guard.locks(_hashLock));
     _lookup++;
     return Lru::hasKey(key);

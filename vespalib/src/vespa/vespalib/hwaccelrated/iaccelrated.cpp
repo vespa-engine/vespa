@@ -60,7 +60,10 @@ void verifyAccelrator(const IAccelrated & accel)
             sum += i*i;
         }
         T hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
-        assert(sum == hwComputedSum);
+        if (sum != hwComputedSum) {
+            fprintf(stderr, "Accelrator is not computing dotproduct correctly.\n");
+            abort();
+        }
     }
     delete [] a;
     delete [] b;

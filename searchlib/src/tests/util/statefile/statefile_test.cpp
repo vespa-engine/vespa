@@ -72,6 +72,7 @@ void
 setSize(const char *name, int64_t newSize)
 {
     int truncRes = truncate(name, newSize);
+    (void) truncRes;
     assert(truncRes == 0);
 }
 

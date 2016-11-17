@@ -12,7 +12,7 @@ class SearchView : public ISearchHandler
 {
 public:
     using IndexSearchable = searchcorespi::IndexSearchable;
-    using InternalDocsumReply = std::pair<DocsumReply::UP, bool>;
+    using InternalDocsumReply = std::pair<std::unique_ptr<DocsumReply>, bool>;
     typedef std::shared_ptr<SearchView> SP;
 
     SearchView(const ISummaryManager::ISummarySetup::SP &summarySetup, const MatchView::SP &matchView);
@@ -27,8 +27,8 @@ public:
     DocIdLimit &getDocIdLimit() const { return _matchView->getDocIdLimit(); }
     matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const { return _matchView->getMatcherStats(rankProfile); }
 
-    DocsumReply::UP getDocsums(const DocsumRequest & req) override;
-    SearchReply::UP match(const ISearchHandler::SP &self, const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;
+    std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & req) override;
+    std::unique_ptr<SearchReply> match(const ISearchHandler::SP &self, const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const override;
 private:
     InternalDocsumReply getDocsumsInternal(const DocsumRequest & req);
     ISummaryManager::ISummarySetup::SP _summarySetup;

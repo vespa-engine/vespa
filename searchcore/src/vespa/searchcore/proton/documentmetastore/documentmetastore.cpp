@@ -896,6 +896,7 @@ DocumentMetaStore::handleJoin(const bucketdb::JoinBucketsSession &session)
         assert(validLid(lid));
         RawDocumentMetaData &metaData = _metaDataStore[lid];
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
+        (void) bucketUsedBits;
         assert(bucketUsedBits >= BucketId::minNumBits() &&
                bucketUsedBits <= BucketId::maxNumBits());
         BucketId s(metaData.getBucketId());

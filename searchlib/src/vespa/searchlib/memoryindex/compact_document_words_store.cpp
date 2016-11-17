@@ -112,6 +112,7 @@ CompactDocumentWordsStore::Store::insert(const Builder &builder)
     uint32_t *begin = _store.getBufferEntry<uint32_t>(activeBufferId, oldSize);
     uint32_t *end = serialize(builder, begin);
     assert(size_t(end - begin) == serializedSize);
+    (void) end;
     state.pushed_back(serializedSize);
 
     return ref;

@@ -69,6 +69,7 @@ IndexEnvironment::addConstantValue(const vespalib::string &name,
                                         Constant(std::move(type),
                                                  std::move(value)));
     assert(insertRes.second); // successful insert
+    (void) insertRes;
 }
 
 } // namespace test

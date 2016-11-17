@@ -98,6 +98,7 @@ PostingStore<DataT>::removeSparseBitVectors()
     for (auto &i : _bvs) {
         RefType iRef(i);
         uint32_t typeId = getTypeId(iRef);
+        (void) typeId;
         assert(isBitVector(typeId));
         BitVectorEntry *bve = getWBitVectorEntry(iRef);
         GrowableBitVector &bv = *bve->_bv.get();
@@ -107,6 +108,7 @@ PostingStore<DataT>::removeSparseBitVectors()
             assert(isBTree(iRef2));
             const BTreeType *tree = getTreeEntry(iRef2);
             assert(tree->size(_allocator) == docFreq);
+            (void) tree;
         }
         if (docFreq < _minBvDocFreq)
             needscan = true;
@@ -145,6 +147,7 @@ PostingStore<DataT>::removeSparseBitVectors()
                 assert(isBTree(iRef2));
                 const BTreeType *tree = getTreeEntry(iRef2);
                 assert(tree->size(_allocator) == docFreq);
+                (void) tree;
             }
             if (docFreq < _minBvDocFreq) {
                 dropBitVector(ref);
@@ -218,6 +221,7 @@ PostingStore<DataT>::dropBitVector(EntryRef &ref)
     RefType iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     assert(isBitVector(typeId));
+    (void) typeId;
     BitVectorEntry *bve = getWBitVectorEntry(iRef);
     AllocatedBitVector *bv = bve->_bv.get();
     assert(bv);
@@ -230,6 +234,8 @@ PostingStore<DataT>::dropBitVector(EntryRef &ref)
     assert(isBTree(ref2));
     const BTreeType *tree = getTreeEntry(ref2);
     assert(tree->size(_allocator) == docFreq);
+    (void) tree;
+    (void) docFreq;
     _bvs.erase(ref.ref());
     _store.holdElem(iRef, 1);
     _status.decBitVectors();
@@ -246,11 +252,13 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     RefType iRef(ref);
     uint32_t typeId = getTypeId(iRef);
     assert(isBTree(typeId));
+    (void) typeId;
     std::shared_ptr<GrowableBitVector> bvsp;
     vespalib::GenerationHolder &genHolder = _store.getGenerationHolder();
     bvsp.reset(new GrowableBitVector(_bvSize, _bvCapacity, genHolder));
     AllocatedBitVector &bv = *bvsp.get();
     uint32_t docIdLimit = _bvSize;
+    (void) docIdLimit;
     Iterator it = begin(ref);
     uint32_t expDocFreq = it.size();
     (void) expDocFreq;
@@ -292,6 +300,7 @@ PostingStore<DataT>::applyNewBitVector(EntryRef &ref,
     bvsp.reset(new GrowableBitVector(_bvSize, _bvCapacity, genHolder));
     AllocatedBitVector &bv = *bvsp.get();
     uint32_t docIdLimit = _bvSize;
+    (void) docIdLimit;
     uint32_t expDocFreq = ae - aOrg;
     (void) expDocFreq;
     for (AddIter a = aOrg; a != ae; ++a) {

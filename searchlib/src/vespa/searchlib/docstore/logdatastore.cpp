@@ -428,6 +428,7 @@ bool LogDataStore::shouldCompactToActiveFile(size_t compactedSize) const {
 
 void LogDataStore::setNewFileChunk(const LockGuard & guard, FileChunk::UP file)
 {
+    (void) guard;
     assert(guard.locks(_updateLock));
     size_t fileId = file->getFileId().getId();
     assert( ! _fileChunks[fileId]);

@@ -25,12 +25,17 @@ public:
         const SourceDescription _desc;
     public:
 
-        Source(SearchRequest * request) : _request(request), _fs4Packet(NULL), _desc(0)
-        {}
+        Source(SearchRequest * request)
+          : _request(request),
+            _fs4Packet(NULL),
+            _desc(0)
+        { }
 
-        Source(FS4Packet_QUERYX *query, SourceDescription desc) : _request(), _fs4Packet(query), _desc(desc)
-        {
-        }
+        Source(FS4Packet_QUERYX *query, SourceDescription desc)
+          : _request(),
+            _fs4Packet(query),
+            _desc(desc)
+        { }
 
         Source(Source && rhs)
           : _request(std::move(rhs._request)),
@@ -71,10 +76,6 @@ public:
     std::vector<char> sessionId;
 
     SearchRequest();
-
-    const vespalib::stringref getStackRef() const {
-        return vespalib::stringref(&stackDump[0], stackDump.size());
-    }
 };
 
 } // namespace engine

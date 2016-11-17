@@ -12,9 +12,14 @@
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/common/resultset.h>
-#include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/dual_merge_director.h>
 #include <vespa/vespalib/util/noncopyable.hpp>
+
+namespace search {
+namespace engine {
+    class SearchReply;
+}
+}
 
 namespace proton {
 namespace matching {
@@ -72,8 +77,9 @@ public:
 
     struct Result {
         typedef std::unique_ptr<Result> UP;
-        Result(search::engine::SearchReply::UP reply, size_t numFs4Hits) : _reply(std::move(reply)), _numFs4Hits(numFs4Hits) { }
-        search::engine::SearchReply::UP _reply;
+        Result(std::unique_ptr<search::engine::SearchReply> reply, size_t numFs4Hits);
+        ~Result();
+        std::unique_ptr<search::engine::SearchReply> _reply;
         size_t _numFs4Hits;
     };
 

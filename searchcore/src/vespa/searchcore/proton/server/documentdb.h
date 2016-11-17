@@ -33,7 +33,6 @@
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchlib/docstore/cachestats.h>
-#include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
@@ -385,12 +384,12 @@ public:
 
     virtual SerialNum getNewestFlushedSerial();
 
-    search::engine::SearchReply::UP
+    std::unique_ptr<search::engine::SearchReply>
     match(const ISearchHandler::SP &searchHandler,
           const search::engine::SearchRequest &req,
           vespalib::ThreadBundle &threadBundle) const;
 
-    search::engine::DocsumReply::UP
+    std::unique_ptr<search::engine::DocsumReply>
     getDocsums(const search::engine::DocsumRequest & request);
 
     IFlushTarget::List getFlushTargets();

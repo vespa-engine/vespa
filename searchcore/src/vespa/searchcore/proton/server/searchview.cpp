@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.searchview");
-
 #include "searchcontext.h"
 #include "searchview.h"
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
+#include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.searchview");
 
 using proton::matching::MatchContext;
 using search::AttributeGuard;
@@ -18,6 +18,7 @@ using search::docsummary::ResultConfig;
 using search::engine::DocsumReply;
 using search::engine::DocsumRequest;
 using search::engine::SearchReply;
+using vespalib::ThreadBundle;
 
 namespace proton {
 
@@ -161,10 +162,8 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
     return reply;
 }
 
-SearchReply::UP
-SearchView::match(const ISearchHandler::SP &self,
-                  const SearchRequest &req,
-                  vespalib::ThreadBundle &threadBundle) const {
+std::unique_ptr<SearchReply>
+SearchView::match(const ISearchHandler::SP &self, const SearchRequest &req, ThreadBundle &threadBundle) const {
     return _matchView->match(self, req, threadBundle);
 }
 

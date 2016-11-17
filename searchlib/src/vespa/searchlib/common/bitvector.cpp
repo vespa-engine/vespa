@@ -284,6 +284,7 @@ BitVector::grow(Index newSize, Index newCapacity)
     (void) newSize;
     (void) newCapacity;
     assert(false);
+    return GenerationHeldBase::UP();
 }
 
 size_t
