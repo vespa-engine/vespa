@@ -26,9 +26,12 @@ protected:
     IndexVector _indices;
 
     MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
-    ~MultiValueMapping2Base();
+    virtual ~MultiValueMapping2Base();
 
 public:
+    virtual MemoryUsage getMemoryUsage() const = 0;
+    virtual size_t getTotalValueCnt() const = 0;
+
     // Mockups to temporarily silence code written for old multivalue mapping
     class Histogram
     {
@@ -64,7 +67,7 @@ private:
 public:
     MultiValueMapping2(uint32_t maxSmallArraySize,
                        const GrowStrategy &gs = GrowStrategy());
-    ~MultiValueMapping2();
+    virtual ~MultiValueMapping2();
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
     void set(uint32_t docId, ConstArrayRef values);
@@ -83,8 +86,8 @@ public:
 
     // Following methods are not yet properly implemented.
     AddressSpace getAddressSpaceUsage() const { return AddressSpace(0, 0); }
-    MemoryUsage getMemoryUsage() const { return MemoryUsage(); }
-    size_t getTotalValueCnt() const { return 0; }
+    MemoryUsage getMemoryUsage() const override { return MemoryUsage(); }
+    virtual size_t getTotalValueCnt() const override { return 0; }
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v) {
         (void) lidLow;
         (void) lidLimit;
