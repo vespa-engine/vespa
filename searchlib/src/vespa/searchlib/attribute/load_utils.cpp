@@ -6,6 +6,7 @@
 #include "enumstorebase.h"
 #include "loadedenumvalue.h"
 #include "multi_value_mapping2.h"
+#include "multivaluemapping.h"
 
 using search::multivalue::Value;
 using search::multivalue::WeightedValue;
@@ -14,16 +15,20 @@ namespace search {
 namespace attribute {
 
 #define INSTANTIATE_ARRAY(ValueType, Saver) \
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMappingT<multivalue::Value<ValueType>, multivalue::Index32> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver); \
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMappingT<multivalue::Value<ValueType>, multivalue::Index64> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver); \
 template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping2<Value<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 #define INSTANTIATE_WSET(ValueType, Saver) \
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMappingT<multivalue::WeightedValue<ValueType>, multivalue::Index32> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver); \
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMappingT<multivalue::WeightedValue<ValueType>, multivalue::Index64> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver); \
 template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping2<WeightedValue<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver) \
-template void loadFromEnumeratedSingleValue(RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver);
+template void loadFromEnumeratedSingleValue(RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 
 #define INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, Saver) \
 INSTANTIATE_SINGLE(ValueType, Saver); \
 INSTANTIATE_ARRAY(ValueType, Saver); \
-INSTANTIATE_WSET(ValueType, Saver);
+INSTANTIATE_WSET(ValueType, Saver)
 
 #define INSTANTIATE_ENUM(Saver) \
 INSTANTIATE_SINGLE_ARRAY_WSET(EnumStoreIndex, Saver)

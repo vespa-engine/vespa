@@ -137,6 +137,7 @@ protected:
     virtual const MemoryUsage & getVectorVectorUsage(size_t i) const = 0;
     virtual size_t getSingleVectorAddressSpaceUsed(size_t i) const = 0;
     virtual size_t getVectorVectorAddressSpaceUsed(size_t i) const = 0;
+    Histogram getHistogram(AttributeVector::ReaderBase & reader) const;
 
 private:
     size_t       _totalValueCnt;
@@ -144,7 +145,6 @@ private:
 public:
     virtual Histogram getEmptyHistogram() const = 0;
     virtual MemoryUsage getMemoryUsage() const = 0;
-    Histogram getHistogram(AttributeVector::ReaderBase & reader) const;
     size_t getTotalValueCnt() const { return _totalValueCnt; }
     static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
     void clearPendingCompact();
@@ -384,6 +384,23 @@ public:
         return getDataForIdx(this->_indices[key], handle);
     }
     inline uint32_t getValueCount(uint32_t key) const;
+    vespalib::ConstArrayRef<T> getDataForIdx(Index idx) const {
+        if (__builtin_expect(idx.values() < Index::maxValues(), true)) {
+            // We do not need to specialcase 0 as _singleVectors will refer to valid stuff
+            // and handle SHALL not be used as the number of values returned shall be obeyed.
+            const SingleVector & vec = _singleVectors[idx.vectorIdx()];
+            const T *handle = &vec[idx.offset() * idx.values()];
+            __builtin_prefetch(handle, 0, 0);
+            return vespalib::ConstArrayRef<T>(handle, idx.values());
+        } else {
+            const VectorBase & vec =
+                _vectorVectors[idx.alternative()][idx.offset()];
+            return vespalib::ConstArrayRef<T>(&vec[0], vec.size());
+        }
+    }
+    vespalib::ConstArrayRef<T> get(uint32_t key) const {
+        return getDataForIdx(this->_indices[key]);
+    }
     void set(uint32_t key, const std::vector<T> & values);
     void set(uint32_t key, const T * values, uint32_t numValues);
 
@@ -397,13 +414,8 @@ public:
     bool enoughCapacity(const Histogram & capacityNeeded);
     void performCompaction(Histogram & capacityNeeded);
 
-    template <typename V, class Saver>
-    uint32_t
-    fillMapped(AttributeVector::ReaderBase &attrReader,
-               vespalib::ConstArrayRef<V> enumValueToValueMap,
-               Saver saver);
-
     virtual void doneHoldElem(Index idx) override;
+    void prepareLoadFromMultiValue(AttributeVector::ReaderBase &attrReader);
 };
 
 //-----------------------------------------------------------------------------
@@ -1121,6 +1133,16 @@ MultiValueMappingT<T, I>::performCompaction(Histogram & capacityNeeded)
         }
     }
     assert(!_pendingCompact);
+}
+
+template <typename T, typename I>
+void
+MultiValueMappingT<T, I>::prepareLoadFromMultiValue(AttributeVector::ReaderBase &attrReader)
+{
+    uint32_t numDocs = attrReader.getNumIdx() - 1;
+    Histogram capacityNeeded = this->getHistogram(attrReader);
+    reset(numDocs, capacityNeeded);
+    attrReader.rewind();
 }
 
 extern template class MultiValueMappingFallbackVectorHold<

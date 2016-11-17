@@ -57,12 +57,12 @@ public:
 
     template <typename MultiValueT>
     void
-    writeValues(const MultiValueT *values, uint32_t count) {
-        for (uint32_t i = 0; i < count; ++i) {
+    writeValues(vespalib::ConstArrayRef<MultiValueT> values) {
+        for (const MultiValueT &valueRef : values) {
             if (_indexes.size() >= _indexes.capacity()) {
                 flush();
             }
-            _indexes.push_back(values[i].value());
+            _indexes.push_back(valueRef.value());
         }
     }
 };
@@ -100,11 +100,10 @@ onSave(IAttributeSaveTarget &saveTarget)
     _enumSaver.writeUdat(saveTarget);
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
         Index idx = _frozenIndices[docId];
-        const MultiValueType *handle;
-        uint32_t count = _mvMapping.getDataForIdx(idx, handle);
-        countWriter.writeCount(count);
-        weightWriter.writeWeights(handle, count);
-        datWriter.writeValues(handle, count);
+        vespalib::ConstArrayRef<MultiValueType> handle(_mvMapping.getDataForIdx(idx));
+        countWriter.writeCount(handle.size());
+        weightWriter.writeWeights(handle);
+        datWriter.writeValues(handle);
     }
     datWriter.flush();
     _enumSaver.enableReEnumerate();

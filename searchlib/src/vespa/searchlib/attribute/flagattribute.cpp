@@ -9,7 +9,7 @@ LOG_SETUP(".searchlib.attribute.flagattribute");
 
 #include <vespa/searchlib/attribute/multinumericattribute.hpp>
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include "multivaluemapping.hpp"
+#include "load_utils.hpp"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 
 namespace search {
@@ -100,9 +100,7 @@ FlagAttributeT<B>::onLoadEnumerated(typename B::ReaderBase &attrReader)
                                     (udatBuffer->buffer()),
                                     udatBuffer->size() / sizeof(TT));
     SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
-    uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 map,
-                                                 saver);
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, saver);
     this->checkSetMaxValueCount(maxvc);
     
     return true;

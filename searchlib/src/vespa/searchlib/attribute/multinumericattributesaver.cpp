@@ -30,9 +30,9 @@ public:
 
     template <typename MultiValueT>
     void
-    writeValues(const MultiValueT *values, uint32_t count) {
-        for (uint32_t i = 0; i < count; ++i) {
-            typename MultiValueT::ValueType value(values[i]);
+    writeValues(vespalib::ConstArrayRef<MultiValueT> values) {
+        for (const MultiValueT &valueRef : values) {
+            typename MultiValueT::ValueType value(valueRef);
             _datWriter->write(&value, sizeof(typename MultiValueT::ValueType));
         }
     }
@@ -69,11 +69,10 @@ onSave(IAttributeSaveTarget &saveTarget)
 
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
         Index idx = _frozenIndices[docId];
-        const MultiValueType *handle;
-        uint32_t count = _mvMapping.getDataForIdx(idx, handle);
-        countWriter.writeCount(count);
-        weightWriter.writeWeights(handle, count);
-        datWriter.writeValues(handle, count);
+        vespalib::ConstArrayRef<MultiValueType> values(_mvMapping.getDataForIdx(idx));
+        countWriter.writeCount(values.size());
+        weightWriter.writeWeights(values);
+        datWriter.writeValues(values);
     }
     return true;
 }

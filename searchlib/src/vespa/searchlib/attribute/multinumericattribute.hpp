@@ -7,6 +7,7 @@
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include "multinumericattributesaver.h"
+#include "load_utils.h"
 
 namespace search {
 
@@ -108,9 +109,7 @@ MultiValueNumericAttribute<B, M>::onLoadEnumerated(typename B::ReaderBase &
     assert((udatBuffer->size() % sizeof(T)) == 0);
     vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
                                    udatBuffer->size() / sizeof(T));
-    uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 map,
-                                                 attribute::NoSaveLoadedEnum());
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, attribute::NoSaveLoadedEnum());
     this->checkSetMaxValueCount(maxvc);
     
     return true;
@@ -134,14 +133,11 @@ MultiValueNumericAttribute<B, M>::onLoad()
     bool hasWeight(attrReader.hasWeight());
     size_t numDocs = attrReader.getNumIdx() - 1;
 
-    typename MultiValueMappingBaseBase::Histogram capacityNeeded =
-        this->_mvMapping.getHistogram(attrReader);
-    this->_mvMapping.reset(numDocs, capacityNeeded);
+    this->_mvMapping.prepareLoadFromMultiValue(attrReader);
     // set values
     std::vector<MultiValueType> values;
     B::setNumDocs(numDocs);
     B::setCommittedDocIdLimit(numDocs);
-    attrReader.rewind();
     for (DocId doc = 0; doc < numDocs; ++doc) {
         const uint32_t valueCount(attrReader.getNextValueCount());
         for (uint32_t i(0); i < valueCount; i++) {

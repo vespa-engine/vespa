@@ -5,6 +5,7 @@
 #include <vespa/searchlib/attribute/multienumattribute.h>
 #include <vespa/searchlib/attribute/multivalueattribute.hpp>
 #include "multienumattributesaver.h"
+#include "load_utils.h"
 
 #include <stdexcept>
 
@@ -45,15 +46,13 @@ MultiValueEnumAttribute<B, M>::reEnumerate()
     // update MultiValueMapping with new EnumIndex values.
     EnumModifier enumGuard(this->getEnumModifier());
     for (DocId doc = 0; doc < this->getNumDocs(); ++doc) {
-        uint32_t valueCount = this->_mvMapping.getValueCount(doc);
-        WeightedIndexVector indices(valueCount);
-        this->_mvMapping.get(doc, &indices[0], valueCount);
+        vespalib::ConstArrayRef<WeightedIndex> indicesRef(this->_mvMapping.get(doc));
+        WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
 
         for (uint32_t i = 0; i < indices.size(); ++i) {
             EnumIndex oldIndex = indices[i].value();
             EnumIndex newIndex;
             this->_enumStore.getCurrentIndex(oldIndex, newIndex);
-            std::atomic_thread_fence(std::memory_order_release);
             indices[i] = WeightedIndex(newIndex, indices[i].weight());
         }
 
@@ -69,8 +68,8 @@ MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices & docIndices, 
     // set new set of indices for documents with changes
     ValueModifier valueGuard(this->getValueModifier());
     for (typename DocIndices::const_iterator iter = docIndices.begin(); iter != docIndices.end(); ++iter) {
-        const WeightedIndex * oldIndices = NULL;
-        uint32_t valueCount(this->_mvMapping.get(iter->first, oldIndices));
+        vespalib::ConstArrayRef<WeightedIndex> oldIndices(this->_mvMapping.get(iter->first));
+        uint32_t valueCount = oldIndices.size();
         this->_mvMapping.set(iter->first, iter->second);
         for (uint32_t i = 0; i < iter->second.size(); ++i) {
             incRefCount(iter->second[i]);
@@ -126,9 +125,7 @@ MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
                                            const EnumIndexVector &eidxs,
                                            LoadedEnumAttributeVector &loaded)
 {
-    uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 vespalib::ConstArrayRef<EnumIndex>(eidxs),
-                                                 attribute::SaveLoadedEnum(loaded));
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, vespalib::ConstArrayRef<EnumIndex>(eidxs), attribute::SaveLoadedEnum(loaded));
     this->checkSetMaxValueCount(maxvc);
 }
 
@@ -138,9 +135,7 @@ MultiValueEnumAttribute<B, M>::fillEnumIdx(ReaderBase &attrReader,
                                            const EnumIndexVector &eidxs,
                                            EnumVector &enumHist)
 {
-    uint32_t maxvc = this->_mvMapping.fillMapped(attrReader,
-                                                 vespalib::ConstArrayRef<EnumIndex>(eidxs),
-                                                 attribute::SaveEnumHist(enumHist));
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, vespalib::ConstArrayRef<EnumIndex>(eidxs), attribute::SaveEnumHist(enumHist));
     this->checkSetMaxValueCount(maxvc);
 }
 
