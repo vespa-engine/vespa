@@ -59,7 +59,14 @@ def cleanup_processes(processes):
                 print >>sys.stderr, e.message
 
 args = parse_arguments()
-test_suites = subprocess.check_output((args.testrunner, "--list")).strip().split("\n")
+
+try:
+    test_suites = subprocess.check_output((args.testrunner, "--list")).strip().split("\n")
+except OSError as e:
+    if e.errno == os.errno.ENOENT: # "No such file or directory"
+        print >>sys.stderr, "No such file or directory: %s" % args.testrunner
+        sys.exit(1)
+
 test_suite_groups = chunkify(test_suites, args.chunks)
 processes = build_processes(test_suite_groups)
 
