@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
@@ -19,10 +18,8 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,12 +36,11 @@ public class InactiveAndFailedExpirerTest {
     public void ensure_inactive_and_failed_times_out() throws InterruptedException {
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")));
         List<Node> nodes = tester.makeReadyNodes(2, "default");
-        ApplicationId applicationId = ApplicationId.from(TenantName.from("foo"), ApplicationName.from("bar"), InstanceName.from("fuz"));
 
         // Allocate then deallocate 2 nodes
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
-        tester.activate(applicationId, asHosts(nodes));
+        tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
         assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
@@ -81,7 +77,7 @@ public class InactiveAndFailedExpirerTest {
         // Allocate and deallocate a single node
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), Optional.empty());
         tester.prepare(applicationId, cluster, Capacity.fromNodeCount(1), 1);
-        tester.activate(applicationId, asHosts(nodes));
+        tester.activate(applicationId, ProvisioningTester.toHostSpecs(nodes));
         assertEquals(1, tester.getNodes(applicationId, Node.State.active).size());
         tester.deactivate(applicationId);
         List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
@@ -100,14 +96,4 @@ public class InactiveAndFailedExpirerTest {
         // Reboot generation is increased
         assertEquals(wantedRebootGeneration + 1, dirty.get(0).status().reboot().wanted());
     }
-
-    private Set<HostSpec> asHosts(List<Node> nodes) {
-        Set<HostSpec> hosts = new HashSet<>(nodes.size());
-        for (Node node : nodes)
-            hosts.add(new HostSpec(node.hostname(),
-                                   node.allocation().isPresent() ? Optional.of(node.allocation().get().membership()) :
-                                                                   Optional.empty()));
-        return hosts;
-    }
-
 }

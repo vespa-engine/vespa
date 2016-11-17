@@ -21,6 +21,7 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
@@ -264,6 +265,12 @@ public class ProvisioningTester implements AutoCloseable {
 
     private Flavor getNodeFlavor(String hostname) {
         return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
+    }
+
+    public static Set<HostSpec> toHostSpecs(List<Node> nodes) {
+        return nodes.stream()
+                .map(node -> new HostSpec(node.hostname(), node.allocation().map(Allocation::membership)))
+                .collect(Collectors.toSet());
     }
 
     private static class NullProvisionLogger implements ProvisionLogger {
