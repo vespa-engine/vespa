@@ -63,9 +63,9 @@ public:
 
     template <typename MultiValueT>
     void
-    writeWeights(const MultiValueT *values, uint32_t count) {
-        for (uint32_t i = 0; i < count; ++i) {
-            int32_t weight = values[i].weight();
+    writeWeights(vespalib::ConstArrayRef<MultiValueT> values) {
+        for (const MultiValueT &valueRef : values) {
+            int32_t weight = valueRef.weight();
             _weightWriter->write(&weight, sizeof(int32_t));
         }
     }
@@ -88,7 +88,7 @@ public:
 
     template <typename MultiValueT>
     void
-    writeWeights(const MultiValueT *, uint32_t) {
+    writeWeights(vespalib::ConstArrayRef<MultiValueT>) {
     }
 };
 
