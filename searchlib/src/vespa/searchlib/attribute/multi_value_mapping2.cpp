@@ -16,6 +16,16 @@ using search::multivalue::WeightedValue;
 namespace search {
 namespace attribute {
 
+MultiValueMapping2Base::MultiValueMapping2Base(const GrowStrategy &gs,
+                                               vespalib::GenerationHolder &genHolder)
+    : _indices(gs, genHolder)
+{
+}
+
+MultiValueMapping2Base::~MultiValueMapping2Base()
+{
+}
+
 template class MultiValueMapping2<Value<EnumStoreIndex>>;
 template class MultiValueMapping2<WeightedValue<EnumStoreIndex>>;
 template class MultiValueMapping2<Value<int8_t>>;

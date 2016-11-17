@@ -14,22 +14,53 @@ class AttributeVector;
 namespace attribute {
 
 /**
+ * Base class for mapping from from document id to an array of values.
+ */
+class MultiValueMapping2Base
+{
+public:
+    using EntryRef = datastore::EntryRef;
+    using IndexVector = RcuVectorBase<EntryRef>;
+
+protected:
+    IndexVector _indices;
+
+    MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
+    ~MultiValueMapping2Base();
+
+public:
+    // Mockups to temporarily silence code written for old multivalue mapping
+    class Histogram
+    {
+    private:
+        using HistogramM = std::vector<size_t>;
+    public:
+        using const_iterator = HistogramM::const_iterator;
+        Histogram() : _histogram(1) { }
+        size_t & operator [] (uint32_t) { return _histogram[0]; }
+        const_iterator begin() const { return _histogram.begin(); }
+        const_iterator   end() const { return _histogram.end(); }
+    private:
+        HistogramM _histogram;
+    };
+    Histogram getEmptyHistogram() const { return Histogram(); }
+    static size_t maxValues() { return 0; }
+};
+
+/**
  * Class for mapping from from document id to an array of values.
  */
 template <typename EntryT, typename RefT = datastore::EntryRefT<17> >
-class MultiValueMapping2
+class MultiValueMapping2 : public MultiValueMapping2Base
 {
 public:
     using MultiValueType = EntryT;
 private:
-    using EntryRef = datastore::EntryRef;
-    using IndexVector = RcuVectorBase<EntryRef>;
     using ArrayStore = datastore::ArrayStore<EntryT, RefT>;
     using generation_t = vespalib::GenerationHandler::generation_t;
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
 
     ArrayStore _store;
-    IndexVector _indices;
 public:
     MultiValueMapping2(uint32_t maxSmallArraySize,
                        const GrowStrategy &gs = GrowStrategy());
@@ -67,23 +98,8 @@ public:
     }
 
     // Mockups to temporarily silence code written for old multivalue mapping
-    class Histogram
-    {
-    private:
-        using HistogramM = std::vector<size_t>;
-    public:
-        using const_iterator = HistogramM::const_iterator;
-        Histogram() : _histogram(1) { }
-        size_t & operator [] (uint32_t) { return _histogram[0]; }
-        const_iterator begin() const { return _histogram.begin(); }
-        const_iterator   end() const { return _histogram.end(); }
-    private:
-        HistogramM _histogram;
-    };
-    Histogram getEmptyHistogram() const { return Histogram(); }
     bool enoughCapacity(const Histogram &) { return true; }
     void performCompaction(Histogram &) { }
-    static size_t maxValues() { return 0; }
 };
 
 } // namespace search::attribute
