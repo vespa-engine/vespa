@@ -7,7 +7,7 @@ vespa_add_executable(vdstestlib_testrunner_app TEST
     vdstestlib
 )
 
-# TODO: Test with a larget chunk size to parallelize test suite runs 
+# TODO: Test with a larger chunk size to parallelize test suite runs 
 vespa_add_test(
     NAME vdstestlib_testrunner_app
     NO_VALGRIND
