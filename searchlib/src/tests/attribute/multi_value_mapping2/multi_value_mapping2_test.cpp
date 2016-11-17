@@ -67,6 +67,7 @@ public:
     ~Fixture() { }
 
     void set(uint32_t docId, const std::vector<EntryT> &values) { _mvMapping.set(docId, values); }
+    void replace(uint32_t docId, const std::vector<EntryT> &values) { _mvMapping.replace(docId, values); }
     ConstArrayRef get(uint32_t docId) { return _mvMapping.get(docId); }
     void assertGet(uint32_t docId, const std::vector<EntryT> &exp)
     {
@@ -93,6 +94,7 @@ public:
     void clearDocs(uint32_t lidLow, uint32_t lidLimit) {
         _mvMapping.clearDocs(lidLow, lidLimit, _attr);
     }
+    size_t getTotalValueCnt() const { return _mvMapping.getTotalValueCnt(); }
 };
 
 TEST_F("Test that set and get works", Fixture<int>(3))
@@ -153,6 +155,38 @@ TEST_F("Test that clearDocs works", Fixture<int>(3))
     TEST_DO(f.assertGet(3, {}));
     TEST_DO(f.assertGet(4, {}));
     TEST_DO(f.assertGet(5, {3}));
+}
+
+TEST_F("Test that totalValueCnt works", Fixture<int>(3))
+{
+    f.addDocs(10);
+    EXPECT_EQUAL(0u, f.getTotalValueCnt());
+    f.set(1, {});
+    EXPECT_EQUAL(0u, f.getTotalValueCnt());
+    f.set(2, {4, 7});
+    EXPECT_EQUAL(2u, f.getTotalValueCnt());
+    f.set(3, {5});
+    EXPECT_EQUAL(3u, f.getTotalValueCnt());
+    f.set(4, {10, 14, 17, 16});
+    EXPECT_EQUAL(7u, f.getTotalValueCnt());
+    f.set(5, {3});
+    EXPECT_EQUAL(8u, f.getTotalValueCnt());
+    f.set(4, {10, 16});
+    EXPECT_EQUAL(6u, f.getTotalValueCnt());
+    f.set(2, {4});
+    EXPECT_EQUAL(5u, f.getTotalValueCnt());
+}
+
+TEST_F("Test that replace works", Fixture<int>(3))
+{
+    f.addDocs(10);
+    f.set(4, {10, 14, 17, 16});
+    typename F1::ConstArrayRef old4 = f.get(4);
+    TEST_DO(assertArray({10, 14, 17, 16}, old4));
+    EXPECT_EQUAL(4u, f.getTotalValueCnt());
+    f.replace(4, {20, 24, 27, 26});
+    TEST_DO(assertArray({20, 24, 27, 26}, old4));
+    EXPECT_EQUAL(4u, f.getTotalValueCnt());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

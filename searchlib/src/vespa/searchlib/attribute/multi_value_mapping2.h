@@ -46,7 +46,6 @@ public:
     // Following methods are not yet properly implemented.
     AddressSpace getAddressSpaceUsage() const { return AddressSpace(0, 0); }
     virtual MemoryUsage getMemoryUsage() const override { return MemoryUsage(); }
-    virtual size_t getTotalValueCnt() const override { return 0; }
 
     // Mockups to temporarily silence code written for old multivalue mapping
     bool enoughCapacity(const Histogram &) { return true; }

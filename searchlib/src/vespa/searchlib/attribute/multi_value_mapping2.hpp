@@ -24,15 +24,18 @@ void
 MultiValueMapping2<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
 {
     _indices.ensure_size(docId + 1);
-    _store.remove(_indices[docId]);
+    EntryRef oldRef(_indices[docId]);
+    ConstArrayRef oldValues = _store.get(oldRef);
     _indices[docId] = _store.add(values);
+    updateValueCount(oldValues.size(), values.size());
+    _store.remove(oldRef);
 }
 
 template <typename EntryT, typename RefT>
 void
 MultiValueMapping2<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
 {
-    ConstArrayRef oldValues = _store.get(docId);
+    ConstArrayRef oldValues = _store.get(_indices[docId]);
     assert(oldValues.size() == values.size());
     EntryT *dst = const_cast<EntryT *>(&oldValues[0]);
     for (auto &src : values) {

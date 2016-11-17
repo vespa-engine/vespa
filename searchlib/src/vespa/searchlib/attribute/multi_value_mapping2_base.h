@@ -22,15 +22,19 @@ public:
 
 protected:
     RefVector _indices;
+    size_t    _totalValues;
 
     MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMapping2Base();
 
+    void updateValueCount(size_t oldValues, size_t newValues) {
+        _totalValues += newValues - oldValues;
+    }
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
     virtual MemoryUsage getMemoryUsage() const = 0;
-    virtual size_t getTotalValueCnt() const = 0;
+    size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 
     void addDoc(uint32_t &docId);
