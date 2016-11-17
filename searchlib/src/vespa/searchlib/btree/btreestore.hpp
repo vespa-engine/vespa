@@ -79,7 +79,7 @@ allocNewKeyData(uint32_t clusterSize)
     _store.ensureBufferCapacity(typeId, clusterSize);
     uint32_t activeBufferId = _store.getActiveBufferId(typeId);
     BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     size_t oldSize = state.size();
     KeyDataType *node =
         _store.getBufferEntry<KeyDataType>(activeBufferId, oldSize);
@@ -104,7 +104,7 @@ allocKeyData(uint32_t clusterSize)
     if (freeListList._head == NULL)
         return allocNewKeyData(clusterSize);
     BufferState &state = *freeListList._head;
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     RefType ref(state.popFreeList());
     KeyDataType *node =
         _store.getBufferEntry<KeyDataType>(ref.bufferId(),
@@ -125,7 +125,7 @@ allocNewKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
     _store.ensureBufferCapacity(typeId, clusterSize);
     uint32_t activeBufferId = _store.getActiveBufferId(typeId);
     BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     size_t oldSize = state.size();
     KeyDataType *node =
         _store.getBufferEntry<KeyDataType>(activeBufferId, oldSize);
@@ -150,7 +150,7 @@ allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
     if (freeListList._head == NULL)
         return allocNewKeyDataCopy(rhs, clusterSize);
     BufferState &state = *freeListList._head;
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     RefType ref(state.popFreeList());
     KeyDataType *node =
         _store.getBufferEntry<KeyDataType>(ref.bufferId(),

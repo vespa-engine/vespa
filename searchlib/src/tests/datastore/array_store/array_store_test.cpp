@@ -64,9 +64,9 @@ struct Fixture
         return EntryRefType(ref).bufferId();
     }
     void assertBufferState(EntryRef ref, const MemStats expStats) const {
-        EXPECT_EQUAL(expStats._used, store.bufferState(ref)._usedElems);
-        EXPECT_EQUAL(expStats._hold, store.bufferState(ref)._holdElems);
-        EXPECT_EQUAL(expStats._dead, store.bufferState(ref)._deadElems);
+        EXPECT_EQUAL(expStats._used, store.bufferState(ref).size());
+        EXPECT_EQUAL(expStats._hold, store.bufferState(ref).getHoldElems());
+        EXPECT_EQUAL(expStats._dead, store.bufferState(ref).getDeadElems());
     }
     void assertStoreContent() const {
         for (const auto &elem : refStore) {

@@ -24,7 +24,7 @@ PredicateIntervalStore::Entry<T> PredicateIntervalStore::allocNewEntry(
     _store.ensureBufferCapacity(type_id, size);
     uint32_t active_buffer_id = _store.getActiveBufferId(type_id);
     datastore::BufferState &state = _store.getBufferState(active_buffer_id);
-    assert(state._state == datastore::BufferState::ACTIVE);
+    assert(state.isActive());
     size_t old_size = state.size();
     T *buf = _store.getBufferEntry<T>(active_buffer_id, old_size);
     state.pushed_back(size);

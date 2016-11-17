@@ -65,7 +65,7 @@ ArrayStore<EntryT, RefT>::addSmallArray(const ConstArrayRef &array)
     _store.ensureBufferCapacity(typeId, array.size());
     uint32_t activeBufferId = _store.getActiveBufferId(typeId);
     BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     size_t oldBufferSize = state.size();
     EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
     for (size_t i = 0; i < array.size(); ++i) {
@@ -82,7 +82,7 @@ ArrayStore<EntryT, RefT>::addLargeArray(const ConstArrayRef &array)
     _store.ensureBufferCapacity(_largeArrayTypeId, 1);
     uint32_t activeBufferId = _store.getActiveBufferId(_largeArrayTypeId);
     BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     size_t oldBufferSize = state.size();
     LargeArray *buf = _store.template getBufferEntry<LargeArray>(activeBufferId, oldBufferSize);
     new (static_cast<void *>(buf)) LargeArray(array.cbegin(), array.cend());

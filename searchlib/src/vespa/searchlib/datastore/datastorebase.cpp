@@ -107,7 +107,7 @@ DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t sizeNeeded)
     do {
         // start using next buffer
         activeBufferId = nextBufferId(activeBufferId);
-    } while (_states[activeBufferId]._state != BufferState::FREE);
+    } while (!_states[activeBufferId].isFree());
     onActive(activeBufferId, typeId, sizeNeeded, _maxClusters);
     _activeBufferIds[typeId] = activeBufferId;
 }
@@ -119,7 +119,7 @@ DataStoreBase::initActiveBuffers(void)
     uint32_t numTypes = _activeBufferIds.size();
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
         size_t activeBufferId = 0;
-        while (_states[activeBufferId]._state != BufferState::FREE) {
+        while (!_states[activeBufferId].isFree()) {
             // start using next buffer
             activeBufferId = nextBufferId(activeBufferId);
         }
@@ -224,9 +224,10 @@ void
 DataStoreBase::enableFreeLists(void)
 {
     for (BufferState & bState : _states) {
-        if (bState._state != BufferState::ACTIVE || bState.getCompacting())
+        if (!bState.isActive() || bState.getCompacting()) {
             continue;
-        bState.setFreeListList(&_freeListLists[bState._typeId]);
+        }
+        bState.setFreeListList(&_freeListLists[bState.getTypeId()]);
     }
     _freeListsEnabled = true;
 }
@@ -247,9 +248,10 @@ DataStoreBase::enableFreeList(uint32_t bufferId)
 {
     BufferState &state = _states[bufferId];
     if (_freeListsEnabled &&
-        state._state == BufferState::ACTIVE &&
-        !state.getCompacting())
-        state.setFreeListList(&_freeListLists[state._typeId]);
+        state.isActive() &&
+        !state.getCompacting()) {
+        state.setFreeListList(&_freeListLists[state.getTypeId()]);
+    }
 }
 
 
@@ -264,8 +266,9 @@ void
 DataStoreBase::disableElemHoldList(void)
 {
     for (auto &state : _states) {
-        if (state._state != BufferState::FREE)
+        if (!state.isFree()) {
             state.disableElemHoldList();
+        }
     }
 }
 
@@ -276,32 +279,32 @@ DataStoreBase::getMemStats(void) const
     MemStats stats;
 
     for (const BufferState & bState: _states) {
-        auto typeHandler = bState._typeHandler;
-        BufferState::State state = bState._state;
+        auto typeHandler = bState.getTypeHandler();
+        BufferState::State state = bState.getState();
         if ((state == BufferState::FREE) || (typeHandler == nullptr)) {
             ++stats._freeBuffers;
         } else if (state == BufferState::ACTIVE) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._activeBuffers;
-            stats._allocElems += bState._allocElems;
-            stats._usedElems += bState._usedElems;
-            stats._deadElems += bState._deadElems;
-            stats._holdElems += bState._holdElems;
-            stats._allocBytes += bState._allocElems * elementSize;
-            stats._usedBytes += bState._usedElems * elementSize;
-            stats._deadBytes += bState._deadElems * elementSize;
-            stats._holdBytes += bState._holdElems * elementSize;
+            stats._allocElems += bState.capacity();
+            stats._usedElems += bState.size();
+            stats._deadElems += bState.getDeadElems();
+            stats._holdElems += bState.getHoldElems();
+            stats._allocBytes += bState.capacity() * elementSize;
+            stats._usedBytes += bState.size() * elementSize;
+            stats._deadBytes += bState.getDeadElems() * elementSize;
+            stats._holdBytes += bState.getHoldElems() * elementSize;
         } else if (state == BufferState::HOLD) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._holdBuffers;
-            stats._allocElems += bState._allocElems;
-            stats._usedElems += bState._usedElems;
-            stats._deadElems += bState._deadElems;
-            stats._holdElems += bState._holdElems;
-            stats._allocBytes += bState._allocElems * elementSize;
-            stats._usedBytes += bState._usedElems * elementSize;
-            stats._deadBytes += bState._deadElems * elementSize;
-            stats._holdBytes += bState._holdElems * elementSize;
+            stats._allocElems += bState.capacity();
+            stats._usedElems += bState.size();
+            stats._deadElems += bState.getDeadElems();
+            stats._holdElems += bState.getHoldElems();
+            stats._allocBytes += bState.capacity() * elementSize;
+            stats._usedBytes += bState.size() * elementSize;
+            stats._deadBytes += bState.getDeadElems() * elementSize;
+            stats._holdBytes += bState.getHoldElems() * elementSize;
         } else {
             abort();
         }
@@ -333,7 +336,7 @@ DataStoreBase::startCompact(uint32_t typeId)
 
     for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
         BufferState &state = getBufferState(bufferId);
-        if (state._state == BufferState::ACTIVE &&
+        if (state.isActive() &&
             state.getTypeId() == typeId &&
             !state.getCompacting()) {
             state.setCompacting();
@@ -359,9 +362,9 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
 {
     BufferState &state = getBufferState(bufferId);
     BufferState::Alloc toHoldBuffer;
-    size_t oldUsedElems = state._usedElems;
-    size_t oldAllocElems = state._allocElems;
-    size_t elementSize = state._typeHandler->elementSize();
+    size_t oldUsedElems = state.size();
+    size_t oldAllocElems = state.capacity();
+    size_t elementSize = state.getTypeHandler()->elementSize();
     state.fallbackResize(bufferId,
                          sizeNeeded,
                          _maxClusters,
@@ -371,8 +374,8 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
         hold(new FallbackHold(oldAllocElems * elementSize,
                               std::move(toHoldBuffer),
                               oldUsedElems,
-                              state._typeHandler,
-                              state._typeId));
+                              state.getTypeHandler(),
+                              state.getTypeId()));
     _genHolder.hold(std::move(hold));
 }
 

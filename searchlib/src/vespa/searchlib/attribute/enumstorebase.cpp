@@ -101,7 +101,7 @@ uint32_t
 EnumStoreBase::getBufferIndex(datastore::BufferState::State status)
 {
     for (uint32_t i = 0; i < _store.getNumBuffers(); ++i) {
-        if (_store.getBufferState(i)._state == status) {
+        if (_store.getBufferState(i).getState() == status) {
             return i;
         }
     }
@@ -165,7 +165,7 @@ EnumStoreBase::preCompact(uint64_t bytesNeeded)
     }
     uint32_t activeBufId = _store.getActiveBufferId(TYPE_ID);
     datastore::BufferState & activeBuf = _store.getBufferState(activeBufId);
-    _type.setSizeNeededAndDead(bytesNeeded, activeBuf._deadElems);
+    _type.setSizeNeededAndDead(bytesNeeded, activeBuf.getDeadElems());
     _toHoldBuffers = _store.startCompact(TYPE_ID);
     _indexMap.resize(_nextEnum);
     return true;

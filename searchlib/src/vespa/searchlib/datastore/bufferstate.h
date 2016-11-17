@@ -39,6 +39,7 @@ public:
         HOLD
     };
 
+private:
     size_t _usedElems;
     size_t _allocElems;
     uint64_t _deadElems;
@@ -56,7 +57,9 @@ public:
     uint32_t        _typeId;
     uint32_t        _clusterSize;
     bool            _compacting;
+    Alloc           _buffer;
 
+public:
     /*
      * TODO: Check if per-buffer free lists are useful, or if
      *compaction should always be used to free up whole buffers.
@@ -137,6 +140,7 @@ public:
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getClusterSize() const { return _clusterSize; }
     uint64_t getDeadElems() const { return _deadElems; }
+    uint64_t getHoldElems() const { return _holdElems; }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
     void fallbackResize(uint32_t bufferId, uint64_t sizeNeeded, size_t maxClusters, void *&buffer, Alloc &holdBuffer);
@@ -147,10 +151,23 @@ public:
     bool isActive() const { return (_state == ACTIVE); }
     bool isOnHold() const { return (_state == HOLD); }
     bool isFree() const { return (_state == FREE); }
+    State getState() const { return _state; }
     const BufferTypeBase *getTypeHandler() const { return _typeHandler; }
+    BufferTypeBase *getTypeHandler() { return _typeHandler; }
 
-private:
-    Alloc _buffer;
+    void incDeadElems(uint64_t value) { _deadElems += value; }
+    void incHoldElems(uint64_t value) { _holdElems += value; }
+    void decHoldElems(uint64_t value) {
+        assert(_holdElems >= value);
+        _holdElems -= value;
+    }
+
+    bool hasDisabledElemHoldList() const { return _disableElemHoldList; }
+    const FreeList &freeList() const { return _freeList; }
+    FreeList &freeList() { return _freeList; }
+    const FreeListList *freeListList() const { return _freeListList; }
+    FreeListList *freeListList() { return _freeListList; }
+
 };
 
 

@@ -139,10 +139,12 @@ BufferState::dropBuffer(void *&buffer)
         return;
     }
     assert(buffer != NULL);
-    if (_state == ACTIVE)
+    if (_state == ACTIVE) {
         onHold();
-    if (_state == HOLD)
+    }
+    if (_state == HOLD) {
         onFree(buffer);
+    }
     assert(_state == FREE);
     assert(buffer == NULL);
 }
@@ -151,18 +153,22 @@ BufferState::dropBuffer(void *&buffer)
 void
 BufferState::setFreeListList(FreeListList *freeListList)
 {
-    if (_state == FREE && freeListList != NULL)
+    if (_state == FREE && freeListList != NULL) {
         return;
-    if (freeListList == _freeListList)
-        return;				// No change
-    if (_freeListList != NULL && !_freeList.empty())
-        removeFromFreeListList();	// Remove from old free list	
+    }
+    if (freeListList == _freeListList) {
+        return; // No change
+    }
+    if (_freeListList != NULL && !_freeList.empty()) {
+        removeFromFreeListList(); // Remove from old free list
+    }
     _freeListList = freeListList;
     if (!_freeList.empty()) {
-        if (freeListList != NULL)
-            addToFreeListList();	// Changed free list list
-        else
-            FreeList().swap(_freeList);	// Free lists have been disabled
+        if (freeListList != NULL) {
+            addToFreeListList(); // Changed free list list
+        } else {
+            FreeList().swap(_freeList); // Free lists have been disabled
+        }
     }
 }
 
