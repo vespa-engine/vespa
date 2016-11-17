@@ -50,6 +50,7 @@ public:
     // Mockups to temporarily silence code written for old multivalue mapping
     bool enoughCapacity(const Histogram &) { return true; }
     void performCompaction(Histogram &) { }
+    void reset(uint32_t, const Histogram &) { }
 };
 
 } // namespace search::attribute

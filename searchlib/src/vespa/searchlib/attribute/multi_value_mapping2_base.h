@@ -37,6 +37,7 @@ public:
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 
+    bool isFull() const { return _indices.isFull(); }
     void addDoc(uint32_t &docId);
     void shrink(uint32_t docidLimit);
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
@@ -58,6 +59,8 @@ public:
     };
     Histogram getEmptyHistogram() const { return Histogram(); }
     static size_t maxValues() { return 0; }
+    uint32_t getNumKeys() const { return _indices.size(); }
+    uint32_t getCapacityKeys() const { return _indices.capacity(); }
 };
 
 } // namespace search::attribute
