@@ -104,6 +104,53 @@ public:
     }
 };
 
+enum class Aggr { AVG, COUNT, PROD, SUM, MAX, MIN };
+class AggrNames {
+private:
+    static const AggrNames _instance;
+    std::map<vespalib::string,Aggr> _name_aggr_map;
+    std::map<Aggr,vespalib::string> _aggr_name_map;
+    void add(Aggr aggr, const vespalib::string &name);
+    AggrNames();
+public:
+    static const vespalib::string *name_of(Aggr aggr);
+    static const Aggr *from_name(const vespalib::string &name);
+};
+
+class TensorReduce : public Node {
+private:
+    Node_UP _child;
+    Aggr _aggr;
+    std::vector<vespalib::string> _dimensions;
+public:
+    TensorReduce(Node_UP child, Aggr aggr_in, std::vector<vespalib::string> dimensions_in)
+        : _child(std::move(child)), _aggr(aggr_in), _dimensions(std::move(dimensions_in)) {}
+    const std::vector<vespalib::string> &dimensions() const { return _dimensions; }
+    Aggr aggr() const { return _aggr; }
+    virtual vespalib::string dump(DumpContext &ctx) const {
+        vespalib::string str;
+        str += "reduce(";
+        str += _child->dump(ctx);
+        str += ",";
+        str += *AggrNames::name_of(_aggr);
+        for (const auto &dimension: _dimensions) {
+            str += ",";
+            str += dimension;
+        }
+        str += ")";
+        return str;
+    }
+    virtual void accept(NodeVisitor &visitor) const;
+    virtual size_t num_children() const { return 1; }
+    virtual const Node &get_child(size_t idx) const {
+        assert(idx == 0);
+        return *_child;
+    }
+    virtual void detach_children(NodeHandler &handler) {
+        handler.handle(std::move(_child));
+    }
+};
+
 } // namespace vespalib::eval::nodes
 } // namespace vespalib::eval
 } // namespace vespalib

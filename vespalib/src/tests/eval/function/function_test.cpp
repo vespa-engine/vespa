@@ -782,6 +782,57 @@ TEST("require that outer let bindings are hidden within a lambda") {
     verify_error("let(b,x,map(b,f(a)(b)))", "[let(b,x,map(b,f(a)(b]...[unknown symbol: 'b']...[)))]");
 }
 
+TEST("require that tensor reduce can be parsed") {
+    EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, "reduce(x,sum,a,b,c)").dump());
+    EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, " reduce ( x , sum , a , b , c ) ").dump());
+    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce(x,sum)").dump());
+    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce( x , sum )").dump());
+    EXPECT_EQUAL("reduce(x,avg)", Function::parse({"x"}, "reduce(x,avg)").dump());
+    EXPECT_EQUAL("reduce(x,count)", Function::parse({"x"}, "reduce(x,count)").dump());
+    EXPECT_EQUAL("reduce(x,prod)", Function::parse({"x"}, "reduce(x,prod)").dump());
+    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce(x,sum)").dump());
+    EXPECT_EQUAL("reduce(x,min)", Function::parse({"x"}, "reduce(x,min)").dump());
+    EXPECT_EQUAL("reduce(x,max)", Function::parse({"x"}, "reduce(x,max)").dump());
+}
+
+TEST("require that tensor reduce with unknown aggregator fails") {
+    verify_error("reduce(x,bogus)", "[reduce(x,bogus]...[unknown aggregator: 'bogus']...[)]");
+}
+
+TEST("require that tensor reduce with duplicate dimensions fails") {
+    verify_error("reduce(x,sum,a,a)", "[reduce(x,sum,a,a]...[duplicate identifiers]...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
+struct CheckExpressions : test::EvalSpec::EvalTest {
+    bool failed = false;
+    size_t seen_cnt = 0;
+    virtual void next_expression(const std::vector<vespalib::string> &param_names,
+                                 const vespalib::string &expression) override
+    {
+        Function function = Function::parse(param_names, expression);
+        if (function.has_error()) {
+            failed = true;
+            fprintf(stderr, "parse error: %s\n", function.get_error().c_str());
+        }
+        ++seen_cnt;
+    }
+    virtual void handle_case(const std::vector<vespalib::string> &,
+                             const std::vector<double> &,
+                             const vespalib::string &,
+                             double) override {}
+};
+
+TEST_FF("require that all conformance test expressions can be parsed",
+        CheckExpressions(), test::EvalSpec())
+{
+    f2.add_all_cases();
+    f2.each_case(f1);
+    EXPECT_TRUE(!f1.failed);
+    EXPECT_GREATER(f1.seen_cnt, 42u);
+}
+
 //-----------------------------------------------------------------------------
 
 TEST_MAIN() { TEST_RUN_ALL(); }

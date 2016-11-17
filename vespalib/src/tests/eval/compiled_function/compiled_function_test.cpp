@@ -40,7 +40,8 @@ TEST("require that array parameter passing works") {
 std::vector<vespalib::string> unsupported = {
     "sum(",
     "map(",
-    "join("
+    "join(",
+    "reduce("
 };
 
 bool is_unsupported(const vespalib::string &expression) {
@@ -67,6 +68,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
                              double expected_result) override
     {
         Function function = Function::parse(param_names, expression);
+        ASSERT_TRUE(!function.has_error());
         bool is_supported = !is_unsupported(expression);
         bool has_issues = CompiledFunction::detect_issues(function);
         if (is_supported == has_issues) {
@@ -78,9 +80,9 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
             ++fail_cnt;
         }
         if (is_supported && !has_issues) {
-            CompiledFunction cfun(Function::parse(param_names, expression), PassParams::ARRAY);
+            CompiledFunction cfun(function, PassParams::ARRAY);
             auto fun = cfun.get_function();
-            EXPECT_EQUAL(cfun.num_params(), param_values.size());
+            ASSERT_EQUAL(cfun.num_params(), param_values.size());
             double result = fun(&param_values[0]);
             if (is_same(expected_result, result)) {
                 print_pass && fprintf(stderr, "verifying: %s -> %g ... PASS\n",

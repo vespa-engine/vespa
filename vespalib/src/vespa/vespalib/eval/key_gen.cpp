@@ -34,49 +34,50 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     virtual void visit(const If       &node) { add_byte( 7); add_double(node.p_true()); }
     virtual void visit(const Let          &) { add_byte( 8); }
     virtual void visit(const Error        &) { add_byte( 9); }
-    virtual void visit(const TensorSum    &) { add_byte(10); }
-    virtual void visit(const TensorMap    &) { add_byte(11); }
-    virtual void visit(const TensorJoin   &) { add_byte(12); }
-    virtual void visit(const Add          &) { add_byte(13); }
-    virtual void visit(const Sub          &) { add_byte(14); }
-    virtual void visit(const Mul          &) { add_byte(15); }
-    virtual void visit(const Div          &) { add_byte(16); }
-    virtual void visit(const Pow          &) { add_byte(17); }
-    virtual void visit(const Equal        &) { add_byte(18); }
-    virtual void visit(const NotEqual     &) { add_byte(19); }
-    virtual void visit(const Approx       &) { add_byte(20); }
-    virtual void visit(const Less         &) { add_byte(21); }
-    virtual void visit(const LessEqual    &) { add_byte(22); }
-    virtual void visit(const Greater      &) { add_byte(23); }
-    virtual void visit(const GreaterEqual &) { add_byte(24); }
-    virtual void visit(const In           &) { add_byte(25); }
-    virtual void visit(const And          &) { add_byte(26); }
-    virtual void visit(const Or           &) { add_byte(27); }
-    virtual void visit(const Cos          &) { add_byte(28); }
-    virtual void visit(const Sin          &) { add_byte(29); }
-    virtual void visit(const Tan          &) { add_byte(30); }
-    virtual void visit(const Cosh         &) { add_byte(31); }
-    virtual void visit(const Sinh         &) { add_byte(32); }
-    virtual void visit(const Tanh         &) { add_byte(33); }
-    virtual void visit(const Acos         &) { add_byte(34); }
-    virtual void visit(const Asin         &) { add_byte(35); }
-    virtual void visit(const Atan         &) { add_byte(36); }
-    virtual void visit(const Exp          &) { add_byte(37); }
-    virtual void visit(const Log10        &) { add_byte(38); }
-    virtual void visit(const Log          &) { add_byte(39); }
-    virtual void visit(const Sqrt         &) { add_byte(40); }
-    virtual void visit(const Ceil         &) { add_byte(41); }
-    virtual void visit(const Fabs         &) { add_byte(42); }
-    virtual void visit(const Floor        &) { add_byte(43); }
-    virtual void visit(const Atan2        &) { add_byte(44); }
-    virtual void visit(const Ldexp        &) { add_byte(45); }
-    virtual void visit(const Pow2         &) { add_byte(46); }
-    virtual void visit(const Fmod         &) { add_byte(47); }
-    virtual void visit(const Min          &) { add_byte(48); }
-    virtual void visit(const Max          &) { add_byte(49); }
-    virtual void visit(const IsNan        &) { add_byte(50); }
-    virtual void visit(const Relu         &) { add_byte(51); }
-    virtual void visit(const Sigmoid      &) { add_byte(52); }
+    virtual void visit(const TensorSum    &) { add_byte(10); } // dimensions should be part of key
+    virtual void visit(const TensorMap    &) { add_byte(11); } // lambda should be part of key
+    virtual void visit(const TensorJoin   &) { add_byte(12); } // lambda should be part of key
+    virtual void visit(const TensorReduce &) { add_byte(13); } // aggr/dimensions should be part of key
+    virtual void visit(const Add          &) { add_byte(20); }
+    virtual void visit(const Sub          &) { add_byte(21); }
+    virtual void visit(const Mul          &) { add_byte(22); }
+    virtual void visit(const Div          &) { add_byte(23); }
+    virtual void visit(const Pow          &) { add_byte(24); }
+    virtual void visit(const Equal        &) { add_byte(25); }
+    virtual void visit(const NotEqual     &) { add_byte(26); }
+    virtual void visit(const Approx       &) { add_byte(27); }
+    virtual void visit(const Less         &) { add_byte(28); }
+    virtual void visit(const LessEqual    &) { add_byte(29); }
+    virtual void visit(const Greater      &) { add_byte(30); }
+    virtual void visit(const GreaterEqual &) { add_byte(31); }
+    virtual void visit(const In           &) { add_byte(32); }
+    virtual void visit(const And          &) { add_byte(33); }
+    virtual void visit(const Or           &) { add_byte(34); }
+    virtual void visit(const Cos          &) { add_byte(35); }
+    virtual void visit(const Sin          &) { add_byte(36); }
+    virtual void visit(const Tan          &) { add_byte(37); }
+    virtual void visit(const Cosh         &) { add_byte(38); }
+    virtual void visit(const Sinh         &) { add_byte(39); }
+    virtual void visit(const Tanh         &) { add_byte(40); }
+    virtual void visit(const Acos         &) { add_byte(41); }
+    virtual void visit(const Asin         &) { add_byte(42); }
+    virtual void visit(const Atan         &) { add_byte(43); }
+    virtual void visit(const Exp          &) { add_byte(44); }
+    virtual void visit(const Log10        &) { add_byte(45); }
+    virtual void visit(const Log          &) { add_byte(46); }
+    virtual void visit(const Sqrt         &) { add_byte(47); }
+    virtual void visit(const Ceil         &) { add_byte(48); }
+    virtual void visit(const Fabs         &) { add_byte(49); }
+    virtual void visit(const Floor        &) { add_byte(50); }
+    virtual void visit(const Atan2        &) { add_byte(51); }
+    virtual void visit(const Ldexp        &) { add_byte(52); }
+    virtual void visit(const Pow2         &) { add_byte(53); }
+    virtual void visit(const Fmod         &) { add_byte(54); }
+    virtual void visit(const Min          &) { add_byte(55); }
+    virtual void visit(const Max          &) { add_byte(56); }
+    virtual void visit(const IsNan        &) { add_byte(57); }
+    virtual void visit(const Relu         &) { add_byte(58); }
+    virtual void visit(const Sigmoid      &) { add_byte(59); }
 
     // traverse
     virtual bool open(const Node &node) { node.accept(*this); return true; }

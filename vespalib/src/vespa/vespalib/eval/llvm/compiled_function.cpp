@@ -59,7 +59,8 @@ CompiledFunction::detect_issues(const Function &function)
         void close(const nodes::Node &node) override {
             if (nodes::check_type<nodes::TensorSum,
                                   nodes::TensorMap,
-                                  nodes::TensorJoin>(node)) {
+                                  nodes::TensorJoin,
+                                  nodes::TensorReduce>(node)) {
                 issues.push_back(make_string("unsupported node type: %s",
                                 getClassName(node).c_str()));
             }
