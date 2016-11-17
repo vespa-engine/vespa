@@ -36,6 +36,7 @@ public:
     void addDoc(uint32_t &docId);
     void shrink(uint32_t docidLimit);
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
+    uint32_t size() const { return _indices.size(); }
 
     // Mockups to temporarily silence code written for old multivalue mapping
     class Histogram
