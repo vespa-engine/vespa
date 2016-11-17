@@ -36,6 +36,7 @@ protected:
     typedef typename B::BaseClass::WeightedEnum    WeightedEnum;
 
     typedef typename MultiValueEnumAttribute<B, M>::MultiValueType WeightedIndex;
+    using WeightedIndexArrayRef = typename MultiValueEnumAttribute<B, M>::MultiValueArrayRef;
     typedef attribute::LoadedEnumAttribute         LoadedEnumAttribute;
     typedef attribute::LoadedEnumAttributeVector   LoadedEnumAttributeVector;
     typedef EnumStoreBase::IndexVector             EnumIndexVector;
@@ -76,12 +77,11 @@ protected:
         bool
         cmp(DocId doc, int32_t & weight) const
         {
-            const WeightedIndex * indices;
-            uint32_t valueCount = _toBeSearched._mvMapping.get(doc, indices);
-            for (uint32_t i = 0; i < valueCount; ++i) {
-                T v = _toBeSearched._enumStore.getValue(indices[i].value());
+            WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
+            for (const WeightedIndex &wi : indices) {
+                T v = _toBeSearched._enumStore.getValue(wi.value());
                 if (this->match(v)) {
-                    weight = indices[i].weight();
+                    weight = wi.weight();
                     return true;
                 }
             }
@@ -91,10 +91,9 @@ protected:
         bool
         cmp(DocId doc) const
         {
-            const WeightedIndex * indices;
-            uint32_t valueCount = _toBeSearched._mvMapping.get(doc, indices);
-            for (uint32_t i = 0; i < valueCount; ++i) {
-                T v = _toBeSearched._enumStore.getValue(indices[i].value());
+            WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
+            for (const WeightedIndex &wi : indices) {
+                T v = _toBeSearched._enumStore.getValue(wi.value());
                 if (this->match(v)) {
                     return true;
                 }
@@ -163,10 +162,9 @@ protected:
         cmp(DocId doc, int32_t & weight) const
         {
             uint32_t hitCount = 0;
-            const WeightedIndex * indices;
-            uint32_t valueCount = _toBeSearched._mvMapping.get(doc, indices);
-            for (uint32_t i = 0; i < valueCount; ++i) {
-                T v = _toBeSearched._enumStore.getValue(indices[i].value());
+            WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
+            for (const WeightedIndex &wi : indices) {
+                T v = _toBeSearched._enumStore.getValue(wi.value());
                 if (this->match(v)) {
                     hitCount++;
                 }
@@ -179,10 +177,9 @@ protected:
         bool
         cmp(DocId doc) const
         {
-            const WeightedIndex * indices;
-            uint32_t valueCount = _toBeSearched._mvMapping.get(doc, indices);
-            for (uint32_t i = 0; i < valueCount; ++i) {
-                T v = _toBeSearched._enumStore.getValue(indices[i].value());
+            WeightedIndexArrayRef indices(_toBeSearched._mvMapping.get(doc));
+            for (const WeightedIndex &wi : indices) {
+                T v = _toBeSearched._enumStore.getValue(wi.value());
                 if (this->match(v)) {
                     return true;
                 }
@@ -227,12 +224,11 @@ public:
     // Attribute read API
     //-------------------------------------------------------------------------
     virtual T get(DocId doc) const {
-        if (this->getValueCount(doc) == 0) {
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        if (indices.size() == 0) {
             return T();
         } else {
-            WeightedIndex idx;
-            this->_mvMapping.get(doc, 0, idx);
-            return this->_enumStore.getValue(idx.value());
+            return this->_enumStore.getValue(indices[0].value());
         }
     }
     virtual largeint_t getInt(DocId doc) const {
@@ -244,8 +240,8 @@ public:
 
     template <typename BufferType>
     uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
-        const WeightedIndex * indices;
-        uint32_t valueCount = this->_mvMapping.get(doc, indices);
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        uint32_t valueCount = indices.size();
         for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
             buffer[i] = static_cast<BufferType>(this->_enumStore.getValue(indices[i].value()));
         }
@@ -263,8 +259,8 @@ public:
 
     template <typename WeightedType, typename ValueType>
     uint32_t getWeightedHelper(DocId doc, WeightedType * buffer, uint32_t sz) const {
-        const WeightedIndex * indices;
-        uint32_t valueCount = this->_mvMapping.get(doc, indices);
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
             buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.getValue(indices[i].value())), indices[i].weight());
         }

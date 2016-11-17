@@ -31,6 +31,7 @@ protected:
     typedef typename MultiValueAttribute<B, M>::ValueType         EnumIndex;
     typedef typename MultiValueAttribute<B, M>::MultiValueMapping MultiValueMapping;
     typedef typename MultiValueAttribute<B, M>::ValueVector       WeightedIndexVector;
+    using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
     typedef typename MultiValueAttribute<B, M>::DocumentValues    DocIndices;
 
     typedef StringAttribute::DocId             DocId;
@@ -65,18 +66,17 @@ public:
     // new read api
     //-------------------------------------------------------------------------
     virtual const char * get(DocId doc) const {
-        if (this->getValueCount(doc) == 0) {
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        if (indices.size() == 0) {
             return NULL;
         } else {
-            WeightedIndex idx;
-            this->_mvMapping.get(doc, 0, idx);
-            return this->_enumStore.getValue(idx.value());
+            return this->_enumStore.getValue(indices[0].value());
         }
     }
     template <typename BufferType>
     uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
-        const WeightedIndex * indices;
-        uint32_t valueCount = this->_mvMapping.get(doc, indices);
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        uint32_t valueCount = indices.size();
         for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
             buffer[i] = this->_enumStore.getValue(indices[i].value());
         }
@@ -92,8 +92,8 @@ public:
     /// Weighted interface
     template <typename WeightedType>
     uint32_t getWeightedHelper(DocId doc, WeightedType * buffer, uint32_t sz) const {
-        const WeightedIndex * indices;
-        uint32_t valueCount = this->_mvMapping.get(doc, indices);
+        WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
+        uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
             buffer[i] = WeightedType(this->_enumStore.getValue(indices[i].value()), indices[i].weight());
         }
