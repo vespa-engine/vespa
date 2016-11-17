@@ -7,6 +7,7 @@ import copy
 import os
 import subprocess
 import time
+import shlex
 
 def parse_arguments():
     argparser = argparse.ArgumentParser(description="Run Vespa cppunit tests in parallell")
@@ -28,6 +29,20 @@ def chunkify(lst, chunks):
 
     return result
 
+def error_if_file_not_found(function):
+    def wrapper(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except OSError as e:
+            if e.errno == os.errno.ENOENT: # "No such file or directory"
+                print >>sys.stderr, "Error: could not find testrunner or valgrind executable"
+                sys.exit(1)
+    return wrapper
+
+@error_if_file_not_found
+def get_test_suites(testrunner):
+    return subprocess.check_output((testrunner, "--list")).strip().split("\n")
+
 class Process:
     def __init__(self, cmd, group):
         self.group = group
@@ -39,13 +54,14 @@ class Process:
             stderr=subprocess.STDOUT,
             preexec_fn=os.setpgrp)
 
+@error_if_file_not_found
 def build_processes(test_groups):
     valgrind = os.getenv("VALGRIND")
-    testrunner = (valgrind, args.testrunner) if valgrind else (args.testrunner,)
+    testrunner = shlex.split(valgrind) + [args.testrunner] if valgrind else [args.testrunner]
     processes = []
 
     for group in test_groups:
-        cmd = testrunner + tuple(group)
+        cmd = testrunner + group
         processes.append(Process(cmd, group))
 
     return processes
@@ -59,7 +75,7 @@ def cleanup_processes(processes):
                 print >>sys.stderr, e.message
 
 args = parse_arguments()
-test_suites = subprocess.check_output((args.testrunner, "--list")).strip().split("\n")
+test_suites = get_test_suites(args.testrunner)
 test_suite_groups = chunkify(test_suites, args.chunks)
 processes = build_processes(test_suite_groups)
 
@@ -81,7 +97,7 @@ while True:
                     print "All test suites ran successfully"
                     sys.exit(0)
             elif return_code is not None:
-                print "One of '%s' test suites failed:" % ", ".join(proc.group)
+                print "Error: one of '%s' test suites failed:" % ", ".join(proc.group)
                 print >>sys.stderr, proc.output
                 sys.exit(return_code)
 
