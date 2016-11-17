@@ -4,6 +4,7 @@
 #include "positionsdfw.h"
 #include <vespa/log/log.h>
 #include <cmath>
+#include "docsumstate.h"
 
 LOG_SETUP(".searchlib.docsummary.positionsdfw");
 

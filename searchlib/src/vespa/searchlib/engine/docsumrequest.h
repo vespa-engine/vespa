@@ -7,19 +7,18 @@
 #include "propertiesmap.h"
 #include "request.h"
 #include "source_description.h"
-#include <vespa/searchlib/common/packets.h>
-#include <vespa/vespalib/data/slime/slime.h>
 
 namespace search {
+namespace fs4transport { class FS4Packet_GETDOCSUMSX; }
 namespace engine {
 
 class DocsumRequest : public Request
 {
 public:
-    typedef fs4transport::FS4Packet_GETDOCSUMSX FS4Packet_GETDOCSUMSX;
+    using FS4Packet_GETDOCSUMSX = fs4transport::FS4Packet_GETDOCSUMSX;
 
-    typedef std::unique_ptr<DocsumRequest> UP;
-    typedef std::shared_ptr<DocsumRequest> SP;
+    using UP = std::unique_ptr<DocsumRequest>;
+    using SP = std::shared_ptr<DocsumRequest>;
 
     class Source {
     private:
@@ -41,11 +40,7 @@ public:
             rhs._fs4Packet = NULL;
         }
 
-        ~Source() {
-            if (_fs4Packet != NULL) {
-                _fs4Packet->Free();
-            }
-        }
+        ~Source();
 
         const DocsumRequest * operator -> () const { return get(); }
 

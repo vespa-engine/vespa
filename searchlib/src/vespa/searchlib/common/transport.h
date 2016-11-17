@@ -123,8 +123,8 @@ enum monitorquery_flags {
 
 enum monitorresult_features {
     MRF_MLD		    = 0x00000001,
-    MRF_RFLAGS		    = 0x00000008,
-    MRF_ACTIVEDOCS	    = 0x00000010,
+    MRF_RFLAGS		= 0x00000008,
+    MRF_ACTIVEDOCS	= 0x00000010,
 };
 
 /**

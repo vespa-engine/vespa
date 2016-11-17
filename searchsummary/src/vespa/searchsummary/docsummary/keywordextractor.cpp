@@ -6,8 +6,8 @@
 #include <vespa/log/log.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchsummary/docsummary/docsumstate.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
+#include "docsumstate.h"
+#include "keywordextractor.h"
 
 
 LOG_SETUP(".searchlib.docsummary.keywordextractor");

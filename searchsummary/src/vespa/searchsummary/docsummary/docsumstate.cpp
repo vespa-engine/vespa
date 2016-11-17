@@ -3,7 +3,9 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/searchsummary/docsummary/docsumstate.h>
+#include "docsumstate.h"
+#include <vespa/juniper/rpinterface.h>
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 
 namespace search {
 namespace docsummary {

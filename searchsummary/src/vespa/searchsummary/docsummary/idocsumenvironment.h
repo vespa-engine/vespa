@@ -3,8 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/juniper/rpinterface.h>
 
+namespace juniper { class Juniper; }
 namespace search {
 namespace docsummary {
 

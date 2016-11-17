@@ -10,6 +10,8 @@
 namespace search {
 namespace docsummary {
 
+class IDocsumEnvironment;
+
 class FeaturesDFW : public IDocsumFieldWriter
 {
 protected:

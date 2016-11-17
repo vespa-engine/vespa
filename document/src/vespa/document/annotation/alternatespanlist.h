@@ -39,8 +39,6 @@ public:
     double getProbability(size_t index) const;
 
     virtual void accept(SpanTreeVisitor &visitor) const { visitor.visit(*this); }
-    virtual void print(
-            std::ostream& out, bool verbose, const std::string& indent) const;
 };
 
 }  // namespace document

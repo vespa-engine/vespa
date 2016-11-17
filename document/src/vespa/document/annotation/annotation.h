@@ -4,13 +4,12 @@
 
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/vespalib/util/printable.h>
 #include <memory>
 
 namespace document {
 class SpanNode;
 
-class Annotation : public Printable {
+class Annotation {
     const AnnotationType * _type;
     const SpanNode *_node;
     FieldValue::CP _value;
@@ -36,8 +35,6 @@ public:
     bool valid() const { return _type != nullptr; }
     int32_t getTypeId() const { return _type->getId(); }
     const FieldValue *getFieldValue() const { return _value.get(); }
-
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 inline bool operator==(const Annotation &a1, const Annotation &a2) {

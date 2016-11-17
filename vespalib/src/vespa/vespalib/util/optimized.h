@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
+#include <vespa/fastos/types.h>
 
 namespace vespalib {
 

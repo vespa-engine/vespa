@@ -5,11 +5,12 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 #include <vespa/fastlib/text/normwordfolder.h>
-#include <vespa/searchsummary/docsummary/docsumwriter.h>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
-#include <vespa/searchsummary/docsummary/docsumstore.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
-#include <vespa/searchsummary/docsummary/docsumformat.h>
+#include "docsumwriter.h"
+#include "docsumfieldwriter.h"
+#include "docsumstore.h"
+#include "keywordextractor.h"
+#include "docsumformat.h"
+#include "docsumstate.h"
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>

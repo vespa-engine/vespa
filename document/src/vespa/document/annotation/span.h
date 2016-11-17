@@ -5,7 +5,6 @@
 #include "spannode.h"
 #include "spantreevisitor.h"
 #include <memory>
-#include <ostream>
 
 namespace document {
 
@@ -24,7 +23,6 @@ public:
     Span & length(int32_t length_pos) { _length = length_pos; return *this; }
 
     void accept(SpanTreeVisitor &visitor) const override { visitor.visit(*this); }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 inline bool operator==(const Span &span1, const Span &span2) {

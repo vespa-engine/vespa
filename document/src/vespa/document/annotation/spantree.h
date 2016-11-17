@@ -3,14 +3,13 @@
 #pragma once
 
 #include <vespa/document/annotation/annotation.h>
-#include <vespa/vespalib/util/printable.h>
 #include <vector>
 
 namespace document {
 class SpanNode;
 class SpanTreeVisitor;
 
-class SpanTree : public Printable {
+class SpanTree {
     typedef std::vector<Annotation> AnnotationVector;
     vespalib::string _name;
     std::unique_ptr<SpanNode> _root;
@@ -37,8 +36,6 @@ public:
     const Annotation & annotation(size_t index) const { return _annotations[index]; }
 
     void accept(SpanTreeVisitor &visitor) const;
-    virtual void print(
-            std::ostream& out, bool verbose, const std::string& indent) const;
 
     const vespalib::string & getName() const { return _name; }
     const SpanNode &getRoot() const { return *_root; }

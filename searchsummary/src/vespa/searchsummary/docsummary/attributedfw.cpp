@@ -6,8 +6,9 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/searchsummary/docsummary/docsumwriter.h>
-#include <vespa/searchsummary/docsummary/attributedfw.h>
+#include "docsumwriter.h"
+#include "attributedfw.h"
+#include "docsumstate.h"
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/serialization/slime_binary_format.h>
 
@@ -55,6 +56,11 @@ ResType inferType(const IAttributeVector & vec) {
 AttrDFW::AttrDFW(const vespalib::string & attrName) :
     _attrName(attrName)
 {
+}
+
+const attribute::IAttributeVector &
+AttrDFW::vec(const GetDocsumsState & s) const {
+    return *s.getAttribute(getIndex());
 }
 
 //-----------------------------------------------------------------------------

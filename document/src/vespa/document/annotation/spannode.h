@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include <vespa/document/util/printable.h>
 #include <memory>
 
 namespace document {
 class SpanTreeVisitor;
 
-struct SpanNode : Printable {
+struct SpanNode {
     typedef std::unique_ptr<SpanNode> UP;
 
     virtual ~SpanNode() {}

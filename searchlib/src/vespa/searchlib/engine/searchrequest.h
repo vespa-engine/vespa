@@ -6,9 +6,9 @@
 #include "propertiesmap.h"
 #include "request.h"
 #include "source_description.h"
-#include <vespa/searchlib/common/packets.h>
 
 namespace search {
+namespace fs4transport { class FS4Packet_QUERYX; }
 namespace engine {
 
 class SearchRequest : public Request
@@ -45,11 +45,7 @@ public:
             rhs._fs4Packet = NULL;
         }
 
-        ~Source() {
-            if (_fs4Packet != NULL) {
-                _fs4Packet->Free();
-            }
-        }
+        ~Source();
 
         const SearchRequest * operator -> () const { return get(); }
 

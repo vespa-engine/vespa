@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".engine.docsumrequest");
 #include "docsumrequest.h"
 #include "packetconverter.h"
 
@@ -31,6 +29,12 @@ void DocsumRequest::Source::lazyDecode() const
         PacketConverter::toDocsumRequest(*_fs4Packet, *_request);
         _fs4Packet->Free();
         _fs4Packet = NULL;
+    }
+}
+
+DocsumRequest::Source::~Source() {
+    if (_fs4Packet != NULL) {
+        _fs4Packet->Free();
     }
 }
 

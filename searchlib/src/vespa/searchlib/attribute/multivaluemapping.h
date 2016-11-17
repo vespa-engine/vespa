@@ -13,7 +13,6 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include "address_space.h"
 #include "enumstorebase.h"
-#include <iostream>
 
 namespace search {
 

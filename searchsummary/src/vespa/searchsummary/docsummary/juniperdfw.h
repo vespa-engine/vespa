@@ -4,10 +4,10 @@
 
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchsummary/docsummary/urlresult.h>
-#include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include "docsumfieldwriter.h"
+#include <vespa/juniper/rpinterface.h>
 
 namespace search {
 namespace docsummary {

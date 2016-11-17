@@ -32,7 +32,6 @@ public:
     const_iterator end() const { return _span_vector.end(); }
 
     void accept(SpanTreeVisitor &visitor) const override { visitor.visit(*this); }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 class SimpleSpanList : public SpanNode {
@@ -54,7 +53,6 @@ public:
     const_iterator end() const { return _span_vector.end(); }
 
     void accept(SpanTreeVisitor &visitor) const override { visitor.visit(*this); }
-    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 }  // namespace document

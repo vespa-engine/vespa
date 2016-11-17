@@ -349,7 +349,7 @@ RawBuf::addSignedHitRank(SignedHitRank num)
  * given number of bytes and no more than will fit in the buffer.
  */
 size_t
-RawBuf::readFile(FastOS_File &file, size_t maxlen)
+RawBuf::readFile(FastOS_FileInterface &file, size_t maxlen)
 {
     size_t  got = file.Read(_bufFillPos, smin((_bufEnd - _bufFillPos), maxlen));
     if (got > 0)

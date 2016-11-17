@@ -7,16 +7,16 @@
 #include <vespa/vespalib/util/memory.h>
 #include <memory>
 #include <vespa/searchlib/engine/docsumrequest.h>
-#include "tracereply.h"
 
+namespace vespalib { class Slime; }
 namespace search {
 namespace engine {
 
 struct DocsumReply
 {
-    typedef std::unique_ptr<DocsumReply> UP;
+    using UP = std::unique_ptr<DocsumReply>;
 
-    typedef vespalib::MallocPtr Blob;
+    using Blob = vespalib::MallocPtr;
 
     struct Docsum {
         uint32_t docid;
@@ -37,10 +37,11 @@ struct DocsumReply
     std::vector<Docsum> docsums;
 
     mutable DocsumRequest::UP request;
-    vespalib::Slime::UP _root;
+    std::unique_ptr<vespalib::Slime> _root;
 
     DocsumReply();
-    DocsumReply(vespalib::Slime::UP root);
+    DocsumReply(std::unique_ptr<vespalib::Slime> root);
+    ~DocsumReply();
 };
 
 } // namespace engine

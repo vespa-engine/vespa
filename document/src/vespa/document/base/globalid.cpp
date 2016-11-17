@@ -189,10 +189,4 @@ GlobalId::calculateLastInBucket(const BucketId& bucket)
     return GlobalId(raw);
 }
 
-void
-GlobalId::print(std::ostream& out) const
-{
-    out << toString();
-}
-
 } // document

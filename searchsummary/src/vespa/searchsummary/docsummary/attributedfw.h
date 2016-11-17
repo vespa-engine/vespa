@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
+#include "docsumfieldwriter.h"
 
 namespace search {
 namespace docsummary {
@@ -13,9 +13,7 @@ class AttrDFW : public IDocsumFieldWriter
 private:
     vespalib::string _attrName;
 protected:
-    const attribute::IAttributeVector & vec(const GetDocsumsState & s) const {
-        return *s.getAttribute(getIndex());
-    }
+    const attribute::IAttributeVector & vec(const GetDocsumsState & s) const;
     virtual const vespalib::string & getAttributeName() const { return _attrName; }
 public:
     AttrDFW(const vespalib::string & attrName);

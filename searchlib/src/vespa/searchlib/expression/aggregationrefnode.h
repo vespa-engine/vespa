@@ -7,7 +7,6 @@
 #include <vespa/searchlib/expression/serializer.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
-#include <iostream>
 
 namespace search {
 namespace expression {

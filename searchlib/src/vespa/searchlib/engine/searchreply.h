@@ -15,7 +15,7 @@ namespace engine {
 class SearchReply
 {
 public:
-    typedef std::unique_ptr<SearchReply> UP;
+    using UP = std::unique_ptr<SearchReply>;
 
     class Hit
     {

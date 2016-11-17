@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
-
 #include <vespa/searchlib/common/hitrank.h>
+
+class FastOS_FileInterface;
 
 namespace search {
 /**
@@ -16,7 +16,7 @@ namespace search {
  * insufficient room.
  */
 
-class FASTOS_LOADABLE_EXPORT RawBuf
+class RawBuf
 {
 private:
     RawBuf(const RawBuf &);
@@ -36,19 +36,19 @@ public:
 
     void	operator+=(const char *src);
     void	operator+=(const RawBuf& buffer);
-    bool        operator==(const RawBuf &buffer);
+    bool    operator==(const RawBuf &buffer);
     void	addNum(size_t num, size_t fieldw, char fill);
-    void        addNum32(int32_t num, size_t fieldw, char fill);
+    void    addNum32(int32_t num, size_t fieldw, char fill);
     void	addNum64(int64_t num, size_t fieldw, char fill);
 
-    void        addHitRank(HitRank num);
-    void        addSignedHitRank(SignedHitRank num);
+    void    addHitRank(HitRank num);
+    void    addSignedHitRank(SignedHitRank num);
 
     void	append(const void *data, size_t len);
     void	append(uint8_t byte);
-    void        appendLong(uint64_t n);
-    void        appendCompressedPositiveNumber(uint64_t n);
-    void        appendCompressedNumber(int64_t n);
+    void    appendLong(uint64_t n);
+    void    appendCompressedPositiveNumber(uint64_t n);
+    void    appendCompressedNumber(int64_t n);
     bool	IsEmpty(void);	// Return whether all written.
     void 	expandBuf(size_t needlen);
     size_t      GetFreeLen(void) const { return _bufEnd - _bufFillPos; }
@@ -58,16 +58,16 @@ public:
     char *      GetWritableFillPos(void) const { return _bufFillPos; }
     char *      GetWritableFillPos(size_t len) { preAlloc(len); return _bufFillPos; }
     char *      GetWritableDrainPos(size_t offset) { return _bufDrainPos + offset; }
-    void        truncate(size_t offset) { _bufFillPos = _bufDrainPos + offset; }
+    void    truncate(size_t offset) { _bufFillPos = _bufDrainPos + offset; }
     void	preAlloc(size_t len);	// Ensure room for 'len' more bytes.
-    size_t      readFile(FastOS_File &file, size_t maxlen);
+    size_t  readFile(FastOS_FileInterface &file, size_t maxlen);
     void	reset(void) { _bufDrainPos = _bufFillPos = _bufStart; }
-    void        Compact(void);
-    void        Reuse(void);
-    size_t      GetUsedAndDrainLen(void) const { return _bufFillPos - _bufStart; }
-    size_t      GetUsedLen(void) const { return _bufFillPos - _bufDrainPos; }
+    void    Compact(void);
+    void    Reuse(void);
+    size_t  GetUsedAndDrainLen(void) const { return _bufFillPos - _bufStart; }
+    size_t  GetUsedLen(void) const { return _bufFillPos - _bufDrainPos; }
     void	Drain(size_t len);	// Adjust drain pos.
-    void        Fill(size_t len) { _bufFillPos += len; }
+    void    Fill(size_t len) { _bufFillPos += len; }
 
     void ensureSize(size_t size) {
         if (static_cast<size_t>(_bufEnd - _bufFillPos) < size) {
@@ -138,25 +138,6 @@ public:
                               reinterpret_cast<unsigned char*>(_bufFillPos)));
     };
 
-    /**
-     * Check that char-s are loaded to and stored from the 8 least
-     * significant bits of a 32 bit value, and that shift works the usual
-     * way.  (It is placed in this class to keep it out of view.)
-     */
-    static void CheckHardware(void) {
-        uint32_t i = 0xe2345678;
-        unsigned char b = 67,		// 'C'
-                      c = 65,			// 'A'
-                      d = 66;			// 'B'
-        unsigned char* p = &c;
-        assert(sizeof(uint32_t) == 4 &&
-               sizeof(long int) == 8 &&
-               static_cast<uint32_t>(*p) << 16 == 4259840);
-        *p = i >> 16;
-        if ( !(b == 67 && c == 52 && d == 66)) {
-            abort();
-        }
-    };
 };
 
 }

@@ -7,9 +7,10 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
-#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
-#include <vespa/searchsummary/docsummary/docsumformat.h>
+#include "docsumfieldwriter.h"
+#include "idocsumenvironment.h"
+#include "docsumformat.h"
+#include "docsumstate.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 
 LOG_SETUP(".searchlib.docsummary.docsumfieldwriter");

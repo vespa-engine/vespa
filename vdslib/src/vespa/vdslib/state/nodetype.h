@@ -11,7 +11,6 @@
 
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <stdint.h>
-#include <iostream>
 
 namespace storage {
 namespace lib {
@@ -34,9 +33,6 @@ public:
     operator uint16_t() const { return _enumValue; }
 
     const vespalib::string & toString() const { return _name; }
-    friend std::ostream & operator << (std::ostream & os, const NodeType & n) {
-        return os << n.toString();
-    }
     friend asciistream & operator << (asciistream & os, const NodeType & n) {
         return os << n.toString();
     }
