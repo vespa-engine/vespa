@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "postingchange.h"
 #include "multivaluemapping.h"
+#include "multi_value_mapping2.h"
 #include "postinglistattribute.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <map>
@@ -346,8 +347,10 @@ typedef multivalue::Value<EnumIndex> ValueIndex;
 
 typedef MultiValueMappingT<WeightedIndex, multivalue::Index32> NormalWeightedMultiValueMapping;
 typedef MultiValueMappingT<WeightedIndex, multivalue::Index64> HugeWeightedMultiValueMapping;
+using WeightedMultiValueMapping2 = attribute::MultiValueMapping2<WeightedIndex>;
 typedef MultiValueMappingT<ValueIndex, multivalue::Index32> NormalValueMultiValueMapping;
 typedef MultiValueMappingT<ValueIndex, multivalue::Index64> HugeValueMultiValueMapping;
+using ValueMultiValueMapping2 = attribute::MultiValueMapping2<ValueIndex>;
 typedef std::vector<std::pair<uint32_t, std::vector<WeightedIndex>>> DocIndicesWeighted;
 typedef std::vector<std::pair<uint32_t, std::vector<ValueIndex>>> DocIndicesValue;
 
@@ -363,6 +366,12 @@ template WeightedPostingChangeMap PostingChangeComputerT<WeightedIndex, Weighted
                                                       const EnumStoreComparator &,
                                                       const EnumIndexMapper &);
                                        
+template WeightedPostingChangeMap PostingChangeComputerT<WeightedIndex, WeightedPostingChangeMap>
+             ::compute<WeightedMultiValueMapping2>(const WeightedMultiValueMapping2 &,
+                                                   const DocIndicesWeighted &,
+                                                   const EnumStoreComparator &,
+                                                   const EnumIndexMapper &);
+
 template WeightedPostingChangeMap PostingChangeComputerT<ValueIndex, WeightedPostingChangeMap>
              ::compute<NormalValueMultiValueMapping>(const NormalValueMultiValueMapping &,
                                                      const DocIndicesValue &,
@@ -374,5 +383,11 @@ template WeightedPostingChangeMap PostingChangeComputerT<ValueIndex, WeightedPos
                                                    const DocIndicesValue &,
                                                    const EnumStoreComparator &,
                                                    const EnumIndexMapper &);
+
+template WeightedPostingChangeMap PostingChangeComputerT<ValueIndex, WeightedPostingChangeMap>
+             ::compute<ValueMultiValueMapping2>(const ValueMultiValueMapping2 &,
+                                                const DocIndicesValue &,
+                                                const EnumStoreComparator &,
+                                                const EnumIndexMapper &);
 
 }
