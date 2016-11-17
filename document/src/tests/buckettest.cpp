@@ -5,26 +5,32 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/document/bucket/bucketspace.h>
+#include <vespa/document/bucket/bucket.h>
 
 namespace document {
 
 class BucketTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_SUITE(BucketTest);
-    CPPUNIT_TEST(testBucket);
+    CPPUNIT_TEST(testBucketId);
     CPPUNIT_TEST(testBucketGeneration);
     CPPUNIT_TEST(testBucketSerialization);
     CPPUNIT_TEST(testReverseBucket);
     CPPUNIT_TEST(testContains);
     CPPUNIT_TEST(testGetBit);
+    CPPUNIT_TEST(testToString);
+    CPPUNIT_TEST(testOperators);
     CPPUNIT_TEST_SUITE_END();
 
 public:
-    void testBucket();
+    void testBucketId();
     void testBucketGeneration();
     void testBucketSerialization();
     void testReverseBucket();
     void testContains();
     void testGetBit();
+    void testToString();
+    void testOperators();
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(BucketTest);
@@ -41,7 +47,7 @@ inline std::ostream& operator<<(std::ostream& out, const Hex& h) {
     return out;
 }
 
-void BucketTest::testBucket()
+void BucketTest::testBucketId()
 {
     // Test empty (invalid) buckets
     BucketId id1;
@@ -253,6 +259,32 @@ void BucketTest::testContains() {
     CPPUNIT_ASSERT(id.contains(BucketId(24, 0x888456789ULL)));
     CPPUNIT_ASSERT(!id.contains(BucketId(24, 0x888886789ULL)));
     CPPUNIT_ASSERT(!id.contains(BucketId(16, 0x123456789ULL)));
+}
+
+void BucketTest::testToString() {
+    BucketSpace bucketSpace(0x123450006789ULL);
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("BucketSpace(0x0000123450006789)"), bucketSpace.toString());
+    Bucket bucket(bucketSpace, BucketId(0x123456789ULL));
+    CPPUNIT_ASSERT_EQUAL(
+            vespalib::string("Bucket(BucketSpace(0x0000123450006789), BucketId(0x0000000123456789))"),
+            bucket.toString());
+}
+
+void BucketTest::testOperators() {
+    CPPUNIT_ASSERT(BucketSpace(0x1) == BucketSpace(0x1));
+    CPPUNIT_ASSERT(BucketSpace(0x1) != BucketSpace(0x2));
+    CPPUNIT_ASSERT(BucketSpace(0x1) < BucketSpace(0x2));
+
+    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) ==
+                           Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)));
+    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) !=
+                           Bucket(BucketSpace(0x2), BucketId(0x123456789ULL)));
+    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) !=
+                           Bucket(BucketSpace(0x1), BucketId(0x987654321ULL)));
+    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) <
+                           Bucket(BucketSpace(0x1), BucketId(0x987654321ULL)));
+    CPPUNIT_ASSERT(Bucket(BucketSpace(0x1), BucketId(0x123456789ULL)) <
+                           Bucket(BucketSpace(0x2), BucketId(0x123456789ULL)));
 }
 
 } // document
