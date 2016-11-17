@@ -23,9 +23,8 @@ MultiValueAttribute<B, M>::~MultiValueAttribute()
 template <typename B, typename M>
 int32_t MultiValueAttribute<B, M>::getWeight(DocId doc, uint32_t idx) const
 {
-    MultiValueType value;
-    this->_mvMapping.get(doc, idx, value);
-    return (value.weight());
+    MultiValueArrayRef values(this->_mvMapping.get(doc));
+    return ((idx < values.size()) ? values[idx].weight() : 1);
 }
 
 
@@ -39,8 +38,8 @@ MultiValueAttribute<B, M>::applyAttributeChanges(DocumentValues & docValues)
     for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
         DocId doc = current->_doc;
 
-        ValueVector newValues(_mvMapping.getValueCount(doc));
-        _mvMapping.get(doc, newValues);
+        MultiValueArrayRef oldValues(_mvMapping.get(doc));
+        ValueVector newValues(oldValues.cbegin(), oldValues.cend());
 
         // find last clear doc
         ChangeVectorIterator lastClearDoc = end;
@@ -169,7 +168,8 @@ MultiValueAttribute<B, M>::getValueCount(DocId doc) const
     if (doc >= this->getNumDocs()) {
         return 0;
     }
-    return this->_mvMapping.getValueCount(doc);
+    MultiValueArrayRef values(this->_mvMapping.get(doc));
+    return values.size();
 }
 
 

@@ -39,7 +39,8 @@ uint32_t MultiValueNumericAttribute<B, M>::getValueCount(DocId doc) const
     if (doc >= B::getNumDocs()) {
         return 0;
     }
-    return this->_mvMapping.getValueCount(doc);
+    MultiValueArrayRef values(this->_mvMapping.get(doc));
+    return values.size();
 }
 
 template <typename B, typename M>

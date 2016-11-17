@@ -267,7 +267,7 @@ StringAttribute::StringSearchContext::onCmp(DocId docId, int32_t & weight) const
 
     CollectWeight collector;
     DirectAccessor accessor;
-    collectMatches(buffer, std::min(valueCount, _bufferLen), accessor, collector);
+    collectMatches(vespalib::ConstArrayRef<WeightedConstChar>(buffer, std::min(valueCount, _bufferLen)), accessor, collector);
     weight = collector.getWeight();
     return collector.hasMatch();
 }
