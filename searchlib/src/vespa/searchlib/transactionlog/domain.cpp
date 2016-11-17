@@ -135,6 +135,7 @@ Domain::begin() const
 SerialNum
 Domain::begin(const LockGuard & guard) const
 {
+    (void) guard;
     assert(guard.locks(_lock));
     SerialNum s(0);
     if ( ! _parts.empty() ) {
@@ -152,6 +153,7 @@ Domain::end() const
 SerialNum
 Domain::end(const LockGuard & guard) const
 {
+    (void) guard;
     assert(guard.locks(_lock));
     SerialNum s(0);
     if ( ! _parts.empty() ) {
@@ -169,6 +171,7 @@ Domain::byteSize() const
 size_t
 Domain::byteSize(const LockGuard & guard) const
 {
+    (void) guard;
     assert(guard.locks(_lock));
     size_t size = 0;
     for (const auto &entry : _parts) {
@@ -232,6 +235,7 @@ uint64_t Domain::size() const
 
 uint64_t Domain::size(const LockGuard & guard) const
 {
+    (void) guard;
     assert(guard.locks(_lock));
     uint64_t sz(0);
     for (const auto & part : _parts) {

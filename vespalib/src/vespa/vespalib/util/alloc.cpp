@@ -178,6 +178,7 @@ AutoAllocatorsMap createAutoAllocators() {
             size_t mmapLimit = pages * MemoryAllocator::HUGEPAGE_SIZE;
             MMapLimitAndAlignment key(mmapLimit, alignment);
             auto result = map.emplace(key, AutoAllocator::UP(new AutoAllocator(mmapLimit, alignment)));
+            (void) result;
             assert( result.second );
         }
     }

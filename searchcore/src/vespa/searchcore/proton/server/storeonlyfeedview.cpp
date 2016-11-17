@@ -613,6 +613,7 @@ moveMetaData(documentmetastore::IStore &meta_store,
              const DocumentId &doc_id,
              const DocumentOperation &op)
 {
+    (void) doc_id;
     assert(op.getLid() != op.getPrevLid());
     assert(meta_store.validLid(op.getPrevLid()));
     assert(!meta_store.validLid(op.getLid()));

@@ -35,6 +35,7 @@ DomainPart::Crc getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
             return DomainPart::xxh64;
     }
     assert(false);
+    return DomainPart::xxh64;
 }
 
 }

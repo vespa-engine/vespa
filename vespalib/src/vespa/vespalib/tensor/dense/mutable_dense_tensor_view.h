@@ -28,6 +28,7 @@ private:
                 *unboundDimSize = *unboundDimSizePtr++;
             }
             assert(unboundDimSizePtr == unboundDimSizeEnd);
+            (void) unboundDimSizeEnd;
         }
         void setUnboundDimensionsForEmptyTensor() {
             for (auto unboundDimSize : _unboundDimSizes) {

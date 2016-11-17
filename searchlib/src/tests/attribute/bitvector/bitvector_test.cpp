@@ -408,6 +408,7 @@ BitVectorTest::checkSearch(AttributePtr v,
                            bool weights,
                            bool checkStride)
 {
+    (void) checkStride;
     sb->initFullRange();
     sb->seek(1u);
     uint32_t docId = sb->getDocId();

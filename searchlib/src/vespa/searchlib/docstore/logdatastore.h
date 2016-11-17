@@ -190,6 +190,7 @@ public:
     }
     FileId getActiveFileId(const vespalib::LockGuard & guard) const {
         assert(guard.locks(_updateLock));
+        (void) guard;
         return _active;
     }
 
@@ -230,20 +231,24 @@ private:
 
     WriteableFileChunk & getActive(const LockGuard & guard) {
         assert(guard.locks(_updateLock));
+        (void) guard;
         return static_cast<WriteableFileChunk &>(*_fileChunks[_active.getId()]);
     }
 
     const WriteableFileChunk & getActive(const LockGuard & guard) const {
         assert(guard.locks(_updateLock));
+        (void) guard;
         return static_cast<const WriteableFileChunk &>(*_fileChunks[_active.getId()]);
     }
 
     const FileChunk * getPrevActive(const LockGuard & guard) const {
         assert(guard.locks(_updateLock));
+        (void) guard;
         return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : NULL;
     }
     void setActive(const LockGuard & guard, FileId fileId) {
         assert(guard.locks(_updateLock));
+        (void) guard;
         _prevActive = _active;
         _active = fileId;
     }

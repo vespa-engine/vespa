@@ -174,6 +174,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     assert(_freeListList == NULL || _freeListList->_head != this);
 
     size_t reservedElements = typeHandler->getReservedElements(bufferId);
+    (void) reservedElements;
     size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, maxClusters);
     size_t allocSize = allocClusters * typeHandler->getClusterSize();
     assert(allocSize >= reservedElements + sizeNeeded);

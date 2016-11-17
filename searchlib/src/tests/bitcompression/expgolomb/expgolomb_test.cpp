@@ -203,6 +203,7 @@ public:
     void
     addConstKFactory(int kValue, IDecodeFuncFactory factory)
     {
+        (void) kValue;
         assert(static_cast<unsigned int>(kValue) == _constK.size());
         _constK.push_back(factory);
     }

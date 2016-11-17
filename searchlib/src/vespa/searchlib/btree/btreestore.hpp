@@ -691,6 +691,7 @@ applyNewTree(EntryRef &ref,
     BTreeType *tree = tPair.second;
     applyBuildTree(tree, a, ae, nullptr, nullptr, comp);
     assert(tree->size(_allocator) == additionSize);
+    (void) additionSize;
     ref = tPair.first;
 }
  

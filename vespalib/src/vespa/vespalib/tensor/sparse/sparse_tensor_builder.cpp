@@ -51,6 +51,7 @@ SparseTensorBuilder::define_dimension(const vespalib::string &dimension)
     assert(!_type_made);
     Dimension res = _dimensionsEnum.size();
     auto insres = _dimensionsEnum.insert(std::make_pair(dimension, res));
+    (void) insres;
     assert(insres.second);
     assert(insres.first->second == res);
     assert(_dimensions.size() == res);

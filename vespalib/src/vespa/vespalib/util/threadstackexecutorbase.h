@@ -57,6 +57,7 @@ private:
         TaggedTask task;
         Worker() : monitor(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
         void verify(bool expect_idle) {
+            (void) expect_idle;
             assert(pre_guard == 0xaaaaaaaa);
             assert(post_guard == 0x55555555);
             assert(idle == expect_idle);

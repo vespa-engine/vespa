@@ -40,6 +40,7 @@ callInitFlush(IFlushTarget *target, IFlushTarget::SerialNum serial,
               const IGetSerialNum *getSerialNum) {
     // Serial number from flush engine might have become stale, obtain
     // a fresh serial number now.
+    (void) serial;
     search::SerialNum freshSerial = getSerialNum->getSerialNum();
     assert(freshSerial >= serial);
     return target->initFlush(freshSerial);

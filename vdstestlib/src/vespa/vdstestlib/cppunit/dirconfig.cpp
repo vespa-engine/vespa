@@ -27,6 +27,7 @@ public:
         sprintf(_dirname, "dirconfig.tmp.XXXXXX");
         char * realName = mkdtemp(_dirname);
         assert(realName == _dirname);
+        (void) realName;
     }
     ~Root() {
 	if (system((std::string("rm -rf ") + _dirname).c_str()) != 0) {

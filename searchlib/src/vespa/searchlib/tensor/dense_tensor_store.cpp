@@ -223,10 +223,13 @@ namespace
 void
 checkMatchingType(const ValueType &lhs, const ValueType &rhs, size_t numCells)
 {
+    (void) numCells;
     size_t checkNumCells = 1u;
     auto rhsItr = rhs.dimensions().cbegin();
     auto rhsItrEnd = rhs.dimensions().cend();
+    (void) rhsItrEnd;
     for (const auto &dim : lhs.dimensions()) {
+        (void) dim;
         assert(rhsItr != rhsItrEnd);
         assert(dim.name == rhsItr->name);
         assert(rhsItr->is_bound());
@@ -245,6 +248,7 @@ setDenseTensorUnboundDimSizes(void *buffer, const ValueType &lhs, uint32_t numUn
     uint32_t *unboundDimSize = unboundDimSizeEnd - numUnboundDims;
     auto rhsItr = rhs.dimensions().cbegin();
     auto rhsItrEnd = rhs.dimensions().cend();
+    (void) rhsItrEnd;
     for (const auto &dim : lhs.dimensions()) {
         assert (rhsItr != rhsItrEnd);
         if (!dim.is_bound()) {

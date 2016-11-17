@@ -34,6 +34,7 @@ public:
     virtual void accept(NodeVisitor &visitor) const;
     virtual size_t num_children() const { return 1; }
     virtual const Node &get_child(size_t idx) const {
+        (void) idx;
         assert(idx == 0);
         return *_child;
     }
@@ -62,6 +63,7 @@ public:
     virtual void accept(NodeVisitor &visitor) const;
     virtual size_t num_children() const { return 1; }
     virtual const Node &get_child(size_t idx) const {
+        (void) idx;
         assert(idx == 0);
         return *_child;
     }

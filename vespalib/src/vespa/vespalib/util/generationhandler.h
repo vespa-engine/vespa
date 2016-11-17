@@ -72,6 +72,7 @@ public:
                 return nullptr;
             } else {
                 uint32_t oldRefCount = self->_refCount.fetch_add(2);
+                (void) oldRefCount;
                 assert(valid(oldRefCount));
                 return self;
             }

@@ -108,6 +108,7 @@ TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap,
     _index.reset(new DiskIndex(dir));
     bool ok(_index->setup(tuneFileRead));
     assert(ok);
+    (void) ok;
 }
 
 TestDiskIndex::TestDiskIndex() :

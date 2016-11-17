@@ -210,6 +210,7 @@ readHeader(vespalib::GenericHeader &header, int64_t fileSize)
         dataBuffer.moveFreeToData(headerLen - hhSize);
     }
     uint32_t len = header.read(bufferReader);
+    (void) len;
     assert(len >= header.getSize());
     assert(len == headerLen);
     return headerLen;

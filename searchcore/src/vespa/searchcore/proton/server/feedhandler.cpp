@@ -579,6 +579,7 @@ FeedHandler::replayTransactionLog(SerialNum flushedIndexMgrSerial,
                                   SerialNum newestFlushedSerial,
                                   ConfigStore &config_store)
 {
+    (void) newestFlushedSerial;
     assert(_activeFeedView);
     assert(_bucketDBHandler);
     FeedState::SP state = std::make_shared<ReplayTransactionLogState>

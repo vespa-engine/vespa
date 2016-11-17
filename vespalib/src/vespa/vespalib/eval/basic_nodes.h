@@ -78,7 +78,10 @@ const T *as(const Node &node) { return dynamic_cast<const T *>(&node); }
  **/
 struct Leaf : public Node {
     virtual size_t num_children() const override { return 0; }
-    virtual const Node &get_child(size_t) const override { assert(false); }
+    virtual const Node &get_child(size_t) const override {
+        assert(false);
+        return *static_cast<const Node *>(nullptr);
+    }
     virtual void detach_children(NodeHandler &) override {}
 };
 
@@ -197,6 +200,7 @@ public:
     const Node &child() const { return *_child; }
     virtual size_t num_children() const override { return _child ? 1 : 0; }
     virtual const Node &get_child(size_t idx) const override {
+        (void) idx;
         assert(idx == 0);
         return child();
     }
@@ -223,6 +227,7 @@ public:
     const Node &child() const { return *_child; }
     virtual size_t num_children() const override { return _child ? 1 : 0; }
     virtual const Node &get_child(size_t idx) const override {
+        (void) idx;
         assert(idx == 0);
         return child();
     }

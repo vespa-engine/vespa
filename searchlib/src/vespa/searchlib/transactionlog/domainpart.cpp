@@ -672,6 +672,7 @@ int32_t DomainPart::calcCrc(Crc version, const void * buf, size_t sz)
         return calculator.checksum();
     } else {
         assert(false);
+        return 0;
     }
 }
 
