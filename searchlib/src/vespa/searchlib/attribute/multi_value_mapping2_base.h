@@ -18,20 +18,20 @@ class MultiValueMapping2Base
 {
 public:
     using EntryRef = datastore::EntryRef;
-    using IndexVector = RcuVectorBase<EntryRef>;
+    using RefVector = RcuVectorBase<EntryRef>;
 
 protected:
-    IndexVector _indices;
+    RefVector _indices;
 
     MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMapping2Base();
 
 public:
-    using IndexCopyVector = vespalib::Array<EntryRef>;
+    using RefCopyVector = vespalib::Array<EntryRef>;
 
     virtual MemoryUsage getMemoryUsage() const = 0;
     virtual size_t getTotalValueCnt() const = 0;
-    IndexCopyVector getIndicesCopy(uint32_t size) const;
+    RefCopyVector getRefCopy(uint32_t size) const;
 
     void addDoc(uint32_t &docId);
     void shrink(uint32_t docidLimit);

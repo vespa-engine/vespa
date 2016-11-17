@@ -17,10 +17,10 @@ MultiValueMapping2Base::~MultiValueMapping2Base()
 {
 }
 
-MultiValueMapping2Base::IndexCopyVector
-MultiValueMapping2Base::getIndicesCopy(uint32_t size) const {
+MultiValueMapping2Base::RefCopyVector
+MultiValueMapping2Base::getRefCopy(uint32_t size) const {
     assert(size <= _indices.size());
-    return IndexCopyVector(&_indices[0], &_indices[0] + size);
+    return RefCopyVector(&_indices[0], &_indices[0] + size);
 }
 
 void
