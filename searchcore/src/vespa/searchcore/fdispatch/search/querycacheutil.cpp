@@ -27,7 +27,6 @@ FastS_QueryCacheUtil::FastS_QueryCacheUtil()
       _alignedSearchOffset(0),
       _ranking(),
       _dateTime(0),
-      _forceStrictLimits(false),
       _query(),
       _queryResult(),
       _docsumsResult(),
@@ -81,7 +80,7 @@ FastS_QueryCacheUtil::SetupQuery(uint32_t maxhits,
 void
 FastS_QueryCacheUtil::AdjustSearchParameters(uint32_t partitions)
 {
-    bool     strict = _forceStrictLimits || (partitions > 1);
+    bool strict = (partitions > 1);
 
     if (_searchInfo._maxHits == 0) {
         _searchInfo._searchOffset = 0;
@@ -150,14 +149,6 @@ FastS_QueryCacheUtil::IsEstimate(void) const
 {
     return _query.IsFlagSet(search::fs4transport::QFLAG_ESTIMATE);
 }
-
-
-void
-FastS_QueryCacheUtil::ForceStrictLimits(void)
-{
-    _forceStrictLimits = true;
-}
-
 
 void
 FastS_QueryCacheUtil::InitEstimateMode(void)

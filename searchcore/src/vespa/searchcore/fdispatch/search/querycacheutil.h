@@ -27,8 +27,6 @@ private:
     uint32_t _randomSeed;        // seed for random rank values
     uint32_t _dateTime;		 // datetime used for freshness boost
 
-    bool _forceStrictLimits;      // use strict limits (offset/maxhits)
-
     FastS_query _query;		// NB: Here it is!
 
     FastS_QueryResult _queryResult;
