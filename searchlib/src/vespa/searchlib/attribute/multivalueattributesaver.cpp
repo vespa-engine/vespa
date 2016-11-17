@@ -12,9 +12,9 @@ template <typename IndexT>
 MultiValueAttributeSaver<IndexT>::
 MultiValueAttributeSaver(GenerationHandler::Guard &&guard,
                          const IAttributeSaveTarget::Config &cfg,
-                         const MultiValueMappingBase<IndexT> &mvMapping)
+                         const MvMappingBase &mvMapping)
     : AttributeSaver(std::move(guard), cfg),
-      _frozenIndices(mvMapping.getIndicesCopy())
+      _frozenIndices(mvMapping.getRefCopy(cfg.getNumDocs()))
 {
 }
 

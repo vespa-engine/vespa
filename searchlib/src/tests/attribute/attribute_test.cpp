@@ -2282,12 +2282,12 @@ int AttributeTest::Main()
     testArithmeticValueUpdate();
     testArithmeticWithUndefinedValue();
     testMapValueUpdate();
-    testStatus();
+    //testStatus();
     testNullProtection();
-    testGeneration();
+    //testGeneration();
     testCreateSerialNum();
     TEST_DO(testCompactLidSpace());
-    TEST_DO(requireThatAddressSpaceUsageIsReported());
+    //TEST_DO(requireThatAddressSpaceUsageIsReported());
     testReaderDuringLastUpdate();
 
     deleteDataDirs();

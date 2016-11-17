@@ -185,11 +185,6 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
         EXPECT_EQUAL(expectedUsers, attr.getEnumStore().getRefCount(idx));
     }
 
-    typename Attribute::Histogram remaining = attr.getMultiValueMapping().getRemaining();
-    for (typename Attribute::Histogram::const_iterator it(remaining.begin()), mt(remaining.end()); it != mt; ++it) {
-        EXPECT_TRUE(it->second == 0);
-    }
-
     // clear and insert new unique strings
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t oldValueCount = doc;
