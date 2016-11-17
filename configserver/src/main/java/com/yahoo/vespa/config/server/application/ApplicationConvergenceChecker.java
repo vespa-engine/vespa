@@ -15,6 +15,7 @@ import org.json.JSONObject;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -173,7 +174,7 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
             answer.put("debug", debug);
             answer.put("converged", generation >= application.getApplicationGeneration());
             return new JsonHttpResponse(200, answer);
-        } catch(JSONException e) {
+        } catch (JSONException | ProcessingException e) {
             try {
                 answer.put("error", e.getMessage());
             } catch (JSONException e1) {
@@ -187,8 +188,8 @@ public class ApplicationConvergenceChecker extends AbstractComponent {
 
         private final JSONObject answer;
 
-        JsonHttpResponse(int returncode, JSONObject answer) {
-            super(returncode);
+        JsonHttpResponse(int returnCode, JSONObject answer) {
+            super(returnCode);
             this.answer = answer;
         }
 
