@@ -10,6 +10,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/document/util/compressor.h>
+#include <vespa/searchlib/common/transport.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP("summaryengine_test");
