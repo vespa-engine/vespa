@@ -13,4 +13,5 @@ vespa_add_executable(vdslib_testrunner_app TEST
 vespa_add_test(
     NAME vdslib_testrunner_app
     COMMAND python ${PROJECT_SOURCE_DIR}/cppunit-parallelize.py --chunks 1 $<TARGET_FILE:vdslib_testrunner_app>
+    DEPENDS vdslib_testrunner_app
 )
