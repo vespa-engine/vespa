@@ -3,14 +3,11 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include "docsumstate.h"
 #include "keywordextractor.h"
-
-
-LOG_SETUP(".searchlib.docsummary.keywordextractor");
+#include "idocsumenvironment.h"
 
 /** Tell us what parts of the query we are interested in */
 

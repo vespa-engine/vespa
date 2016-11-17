@@ -6,6 +6,7 @@
 #include "docsumstate.h"
 #include <vespa/juniper/rpinterface.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/common/location.h>
 
 namespace search {
 namespace docsummary {

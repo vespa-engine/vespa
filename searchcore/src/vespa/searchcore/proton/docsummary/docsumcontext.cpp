@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.docsummary.docsumcontext");
 #include "docsumcontext.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
+#include <vespa/searchlib/common/transport.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.docsummary.docsumcontext");
 
 using document::PositionDataType;
 using search::common::Location;
@@ -152,8 +153,7 @@ DocsumContext::FillSummaryFeatures(search::docsummary::GetDocsumsState * state, 
     assert(&_docsumState == state);
     if (_matcher->canProduceSummaryFeatures()) {
         state->_summaryFeatures =
-            _matcher->getSummaryFeatures(_request, _searchCtx, _attrCtx,
-                                         _sessionMgr);
+            _matcher->getSummaryFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
     }
     state->_summaryFeaturesCached = false;
 }

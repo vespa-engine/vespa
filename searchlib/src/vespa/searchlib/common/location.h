@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include "documentlocations.h"
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search {
 namespace common {
