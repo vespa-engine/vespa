@@ -13,7 +13,11 @@ def parse_arguments():
     argparser = argparse.ArgumentParser(description="Run Vespa cppunit tests in parallell")
     argparser.add_argument("testrunner", type=str, help="Test runner executable")
     argparser.add_argument("--chunks", type=int, help="Number of chunks", default=5)
-    return argparser.parse_args()
+    args = argparser.parse_args()
+    if args.chunks < 1:
+        raise RuntimeError("Error: Chunk size must be greater than 0")
+
+    return args
 
 def take(lst, n):
     return [ lst.pop() for i in xrange(n) ]
