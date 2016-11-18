@@ -88,4 +88,8 @@ SpanNode::toString() const {
     return os.str();
 }
 
+std::ostream & operator << (std::ostream & os, const SpanNode & node) {
+    return os << node.toString();
+}
+
 }

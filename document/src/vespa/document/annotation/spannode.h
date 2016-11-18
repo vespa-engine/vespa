@@ -16,5 +16,7 @@ struct SpanNode {
     virtual void accept(SpanTreeVisitor &visitor) const = 0;
 };
 
+std::ostream & operator << (std::ostream & os, const SpanNode & node);
+
 }  // namespace document
 

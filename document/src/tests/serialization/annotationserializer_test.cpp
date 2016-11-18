@@ -103,9 +103,7 @@ struct AnnotationComparator {
     template <typename ITR>
     AnnotationComparator &addActual(ITR pos, ITR end) {
         for (; pos != end; ++pos) {
-            ostringstream ost;
-            pos->print(ost, true, "");
-            actual.push_back(ost.str());
+            actual.push_back(pos->toString());
         }
         return *this;
     }

@@ -13,8 +13,7 @@
 
 #pragma once
 
-#include <iostream>
-#include <sstream>
+#include <iosfwd>
 #include <string>
 
 namespace document
@@ -57,22 +56,16 @@ public:
      * Utility function, since default arguments used in virtual functions is
      * kinda sketchy.
      */
-    void print(std::ostream& out) const
-    { print(out, false, ""); }
-    void print(std::ostream& out, bool verbose) const
-    { print(out, verbose, ""); }
-    void print(std::ostream& out, const std::string& indent) const
-    { print(out, false, indent); }
+    void print(std::ostream& out) const;
+    void print(std::ostream& out, bool verbose) const;
+    void print(std::ostream& out, const std::string& indent) const;
 
     /** Utility function to get this output as a string.  */
     std::string toString(bool verbose=false,
                          const std::string& indent="") const;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const Printable& p) {
-    p.print(out);
-    return out;
-}
+std::ostream& operator<<(std::ostream& out, const Printable& p);
 
 } // document
 

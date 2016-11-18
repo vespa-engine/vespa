@@ -8,6 +8,7 @@
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
+#include <vespa/document/annotation/spantreevisitor.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/datatype/arraydatatype.h>
@@ -19,8 +20,6 @@
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <memory>
-#include <vespa/log/log.h>
-LOG_SETUP("annotation_test");
 
 using std::unique_ptr;
 using namespace document;
