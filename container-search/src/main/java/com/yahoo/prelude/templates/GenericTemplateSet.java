@@ -11,8 +11,10 @@ import java.util.Properties;
 
 /**
  * Superclass of a set of templates for rendering (serializing) results
+ * 
+ * @deprecated use a renderer instead
  */
-// TODO: Deprecate everything having to do with Templates - we should only support Renderers to serialize a Result.
+@Deprecated // TODO: Remove on Vespa 7
 public class GenericTemplateSet {
 
     public static final String  DEFAULT_MIMETYPE    = "text/xml";
