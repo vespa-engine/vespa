@@ -594,7 +594,7 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
 
     for (uint32_t bufferId = 0; bufferId < numBuffers; ++bufferId) {
         datastore::BufferState &state = valueHandle.getBufferState(bufferId);
-        if (state._state == datastore::BufferState::ACTIVE) {
+        if (state.isActive()) {
             toHold.push_back(bufferId);
             // Freelists already disabled due to variable sized data
         }

@@ -28,6 +28,7 @@ class BTreeNodeBufferType : public datastore::BufferType<EntryType>
     typedef datastore::BufferType<EntryType> ParentType;
     using ParentType::_emptyEntry;
     using ParentType::_clusterSize;
+    using CleanContext = typename ParentType::CleanContext;
 public:
     BTreeNodeBufferType(uint32_t minClusters,
                         uint32_t maxClusters)
@@ -40,7 +41,7 @@ public:
     initializeReservedElements(void *buffer, size_t reservedElements) override;
 
     virtual void
-    cleanHold(void *buffer, uint64_t offset, uint64_t len) override;
+    cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
 };
 
 

@@ -12,6 +12,24 @@ namespace datastore {
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
 
 template <typename EntryT, typename RefT>
+ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType()
+    : BufferType<LargeArray>(1, MIN_BUFFER_CLUSTERS, RefT::offsetSize())
+{
+}
+
+template <typename EntryT, typename RefT>
+void
+ArrayStore<EntryT, RefT>::LargeArrayType::cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx)
+{
+    LargeArray *elem = static_cast<LargeArray *>(buffer) + offset;
+    for (size_t i = 0; i < len; ++i) {
+        cleanCtx.extraBytesCleaned(sizeof(EntryT) * elem->size());
+        *elem = _emptyEntry;
+        ++elem;
+    }
+}
+
+template <typename EntryT, typename RefT>
 void
 ArrayStore<EntryT, RefT>::initArrayTypes()
 {
@@ -29,7 +47,7 @@ ArrayStore<EntryT, RefT>::ArrayStore(uint32_t maxSmallArraySize)
     : _store(),
       _maxSmallArraySize(maxSmallArraySize),
       _smallArrayTypes(),
-      _largeArrayType(1, MIN_BUFFER_CLUSTERS, RefT::offsetSize()),
+      _largeArrayType(),
       _largeArrayTypeId()
 {
     initArrayTypes();
@@ -65,7 +83,7 @@ ArrayStore<EntryT, RefT>::addSmallArray(const ConstArrayRef &array)
     _store.ensureBufferCapacity(typeId, array.size());
     uint32_t activeBufferId = _store.getActiveBufferId(typeId);
     BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     size_t oldBufferSize = state.size();
     EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
     for (size_t i = 0; i < array.size(); ++i) {
@@ -82,11 +100,11 @@ ArrayStore<EntryT, RefT>::addLargeArray(const ConstArrayRef &array)
     _store.ensureBufferCapacity(_largeArrayTypeId, 1);
     uint32_t activeBufferId = _store.getActiveBufferId(_largeArrayTypeId);
     BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     size_t oldBufferSize = state.size();
     LargeArray *buf = _store.template getBufferEntry<LargeArray>(activeBufferId, oldBufferSize);
     new (static_cast<void *>(buf)) LargeArray(array.cbegin(), array.cend());
-    state.pushed_back(1);
+    state.pushed_back(1, sizeof(EntryT) * array.size());
     return RefT(oldBufferSize, activeBufferId);
 }
 
@@ -136,7 +154,7 @@ ArrayStore<EntryT, RefT>::remove(EntryRef ref)
             size_t arraySize = getArraySize(typeId);
             _store.holdElem(ref, arraySize);
         } else {
-            _store.holdElem(ref, 1);
+            _store.holdElem(ref, 1, sizeof(EntryT) * get(ref).size());
         }
     }
 }

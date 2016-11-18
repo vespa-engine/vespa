@@ -27,16 +27,17 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
 {
     RefType intRef(ref);
     BufferState &state = _states[intRef.bufferId()];
-    if (state._state == BufferState::ACTIVE) {
-        if (state._freeListList != NULL && len == state.getClusterSize()) {
-            if (state._freeList.empty())
+    if (state.isActive()) {
+        if (state.freeListList() != NULL && len == state.getClusterSize()) {
+            if (state.freeList().empty()) {
                 state.addToFreeListList();
-            state._freeList.push_back(ref);
+            }
+            state.freeList().push_back(ref);
         }
     } else {
-        assert(state._state == BufferState::HOLD);
+        assert(state.isOnHold());
     }
-    state._deadElems += len;
+    state.incDeadElems(len);
     state.cleanHold(_buffers[intRef.bufferId()],
                     (intRef.offset() / RefType::align(1)) *
                     state.getClusterSize(), len);
@@ -45,18 +46,19 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
 
 template <typename RefT>
 void
-DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len)
+DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len, size_t extraBytes)
 {
     RefType intRef(ref);
     uint64_t alignedLen = RefType::align(len);
     BufferState &state = _states[intRef.bufferId()];
-    assert(state._state == BufferState::ACTIVE);
-    if (state._disableElemHoldList) {
-        state._deadElems += alignedLen;
+    assert(state.isActive());
+    if (state.hasDisabledElemHoldList()) {
+        state.incDeadElems(alignedLen);
         return;
     }
     _elemHold1List.push_back(ElemHold1ListElem(ref, alignedLen));
-    state._holdElems += alignedLen;
+    state.incHoldElems(alignedLen);
+    state.incExtraHoldBytes(extraBytes);
 }
 
 
@@ -75,8 +77,7 @@ DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
         RefType intRef(it->_ref);
         BufferState &state = _states[intRef.bufferId()];
         freeElem(it->_ref, it->_len);
-        assert(state._holdElems >= it->_len);
-        state._holdElems -= it->_len;
+        state.decHoldElems(it->_len);
         ++freed;
     }
     if (freed != 0) {
@@ -97,8 +98,7 @@ DataStoreT<RefT>::clearElemHoldList(void)
         RefType intRef(it->_ref);
         BufferState &state = _states[intRef.bufferId()];
         freeElem(it->_ref, it->_len);
-        assert(state._holdElems >= it->_len);
-        state._holdElems -= it->_len;
+        state.decHoldElems(it->_len);
     }
     elemHold2List.clear();
 }
@@ -112,7 +112,7 @@ DataStoreT<RefT>::allocNewEntry(uint32_t typeId)
     ensureBufferCapacity(typeId, 1);
     uint32_t activeBufferId = getActiveBufferId(typeId);
     BufferState &state = getBufferState(activeBufferId);
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     size_t oldSize = state.size();
     EntryType *entry = getBufferEntry<EntryType>(activeBufferId, oldSize);
     new (static_cast<void *>(entry)) EntryType();
@@ -131,7 +131,7 @@ DataStoreT<RefT>::allocEntry(uint32_t typeId)
         return allocNewEntry<EntryType>(typeId);
     }
     BufferState &state = *freeListList._head;
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     RefType ref(state.popFreeList());
     EntryType *entry =
         getBufferEntry<EntryType>(ref.bufferId(), ref.offset());
@@ -148,7 +148,7 @@ DataStoreT<RefT>::allocNewEntryCopy(uint32_t typeId, const EntryType &rhs)
     ensureBufferCapacity(typeId, 1);
     uint32_t activeBufferId = getActiveBufferId(typeId);
     BufferState &state = getBufferState(activeBufferId);
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     size_t oldSize = state.size();
     EntryType *entry = getBufferEntry<EntryType>(activeBufferId, oldSize);
     new (static_cast<void *>(entry)) EntryType(rhs);
@@ -167,7 +167,7 @@ DataStoreT<RefT>::allocEntryCopy(uint32_t typeId, const EntryType &rhs)
         return allocNewEntryCopy<EntryType>(typeId, rhs);
     }
     BufferState &state = *freeListList._head;
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     RefType ref(state.popFreeList());
     EntryType *entry =
         getBufferEntry<EntryType>(ref.bufferId(), ref.offset());
@@ -217,7 +217,7 @@ DataStore<EntryType, RefT>::addEntry2(const EntryType &e)
     if (freeListList._head == NULL)
         return addEntry(e);
     BufferState &state = *freeListList._head;
-    assert(state._state == BufferState::ACTIVE);
+    assert(state.isActive());
     RefType ref(state.popFreeList());
     EntryType *be =
         this->template

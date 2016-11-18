@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "buffer_type.h"
 #include "bufferstate.h"
 #include "datastore.h"
 #include "entryref.h"
@@ -29,9 +30,19 @@ public:
     using DataStoreType  = DataStoreT<RefT>;
     using SmallArrayType = BufferType<EntryT>;
     using LargeArray = vespalib::Array<EntryT>;
-    using LargeArrayType = BufferType<LargeArray>;
 
 private:
+    class LargeArrayType : public BufferType<LargeArray> {
+    private:
+        using ParentType = BufferType<LargeArray>;
+        using ParentType::_emptyEntry;
+        using CleanContext = typename ParentType::CleanContext;
+    public:
+        LargeArrayType();
+        virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
+    };
+
+
     DataStoreType _store;
     uint32_t _maxSmallArraySize;
     std::vector<std::unique_ptr<SmallArrayType>> _smallArrayTypes;
@@ -55,14 +66,15 @@ public:
     ConstArrayRef get(EntryRef ref) const;
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst();
-
-    // Should only be used for unit testing
-    const BufferState &bufferState(EntryRef ref) const;
+    MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
     vespalib::GenerationHolder &getGenerationHolder(void) { return _store.getGenerationHolder(); }
+
+    // Should only be used for unit testing
+    const BufferState &bufferState(EntryRef ref) const;
 };
 
 }

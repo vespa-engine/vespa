@@ -315,7 +315,7 @@ public:
     incDead(uint32_t bufferId, uint64_t dead)
     {
         BufferState &state = _states[bufferId];
-        state._deadElems += dead;
+        state.incDeadElems(dead);
     }
 
     /**

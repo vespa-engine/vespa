@@ -9,6 +9,7 @@ LOG_SETUP("array_store_test");
 #include <vector>
 
 using namespace search::datastore;
+using search::MemoryUsage;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 
@@ -18,9 +19,23 @@ struct MemStats
     size_t _hold;
     size_t _dead;
     MemStats() : _used(0), _hold(0), _dead(0) {}
-    MemStats &used(size_t val) { _used = val; return *this; }
-    MemStats &hold(size_t val) { _hold = val; return *this; }
-    MemStats &dead(size_t val) { _dead = val; return *this; }
+    MemStats(const MemoryUsage &usage)
+        : _used(usage.usedBytes()),
+          _hold(usage.allocatedBytesOnHold()),
+          _dead(usage.deadBytes()) {}
+    MemStats &used(size_t val) { _used += val; return *this; }
+    MemStats &hold(size_t val) { _hold += val; return *this; }
+    MemStats &dead(size_t val) { _dead += val; return *this; }
+    MemStats &holdToDead(size_t val) {
+        decHold(val);
+        _dead += val;
+        return *this;
+    }
+    MemStats &decHold(size_t val) {
+        ASSERT_TRUE(_hold >= val);
+        _hold -= val;
+        return *this;
+    }
 };
 
 template <typename EntryT, typename RefT = EntryRefT<17> >
@@ -28,6 +43,7 @@ struct Fixture
 {
     using EntryRefType = RefT;
     using ArrayStoreType = ArrayStore<EntryT, RefT>;
+    using LargeArray = typename ArrayStoreType::LargeArray;
     using ConstArrayRef = typename ArrayStoreType::ConstArrayRef;
     using EntryVector = std::vector<EntryT>;
     using value_type = EntryT;
@@ -60,13 +76,22 @@ struct Fixture
         store.remove(ref);
         refStore.erase(ref);
     }
+    void remove(const EntryVector &input) {
+        remove(getEntryRef(input));
+    }
     uint32_t getBufferId(EntryRef ref) const {
         return EntryRefType(ref).bufferId();
     }
     void assertBufferState(EntryRef ref, const MemStats expStats) const {
-        EXPECT_EQUAL(expStats._used, store.bufferState(ref)._usedElems);
-        EXPECT_EQUAL(expStats._hold, store.bufferState(ref)._holdElems);
-        EXPECT_EQUAL(expStats._dead, store.bufferState(ref)._deadElems);
+        EXPECT_EQUAL(expStats._used, store.bufferState(ref).size());
+        EXPECT_EQUAL(expStats._hold, store.bufferState(ref).getHoldElems());
+        EXPECT_EQUAL(expStats._dead, store.bufferState(ref).getDeadElems());
+    }
+    void assertMemoryUsage(const MemStats expStats) const {
+        MemoryUsage act = store.getMemoryUsage();
+        EXPECT_EQUAL(expStats._used, act.usedBytes());
+        EXPECT_EQUAL(expStats._hold, act.allocatedBytesOnHold());
+        EXPECT_EQUAL(expStats._dead, act.deadBytes());
     }
     void assertStoreContent() const {
         for (const auto &elem : refStore) {
@@ -101,7 +126,8 @@ struct Fixture
         }
         refStore = compactedRefStore;
     }
-
+    size_t entrySize() const { return sizeof(EntryT); }
+    size_t largeArraySize() const { return sizeof(LargeArray); }
 };
 
 using NumberFixture = Fixture<uint32_t>;
@@ -204,6 +230,29 @@ TEST_F("require that the buffer with most dead space is compacted", NumberFixtur
     EXPECT_TRUE(f.store.bufferState(size2Ref).isOnHold());
     f.trimHoldLists();
     EXPECT_TRUE(f.store.bufferState(size2Ref).isFree());
+}
+
+TEST_F("require that used, onHold and dead memory usage is tracked for small arrays", NumberFixture(2))
+{
+    MemStats exp(f.store.getMemoryUsage());
+    f.add({2,2});
+    TEST_DO(f.assertMemoryUsage(exp.used(f.entrySize() * 2)));
+    f.remove({2,2});
+    TEST_DO(f.assertMemoryUsage(exp.hold(f.entrySize() * 2)));
+    f.trimHoldLists();
+    TEST_DO(f.assertMemoryUsage(exp.holdToDead(f.entrySize() * 2)));
+}
+
+TEST_F("require that used, onHold and dead memory usage is tracked for large arrays", NumberFixture(2))
+{
+    MemStats exp(f.store.getMemoryUsage());
+    f.add({3,3,3});
+    TEST_DO(f.assertMemoryUsage(exp.used(f.largeArraySize() + f.entrySize() * 3)));
+    f.remove({3,3,3});
+    TEST_DO(f.assertMemoryUsage(exp.hold(f.largeArraySize() + f.entrySize() * 3)));
+    f.trimHoldLists();
+    TEST_DO(f.assertMemoryUsage(exp.decHold(f.largeArraySize() + f.entrySize() * 3).
+                                    dead(f.largeArraySize())));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

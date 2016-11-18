@@ -28,7 +28,8 @@ template <typename EntryType>
 void
 BTreeNodeBufferType<EntryType>::cleanHold(void *buffer,
                                           uint64_t offset,
-                                          uint64_t len)
+                                          uint64_t len,
+                                          CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
     for (size_t j = len; j != 0; --j) {

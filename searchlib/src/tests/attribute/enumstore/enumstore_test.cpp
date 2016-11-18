@@ -287,7 +287,7 @@ EnumStoreTest::testAddEnum(bool hasPostings)
                  ses.getBuffer(0).capacity());
     EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0).size());
     EXPECT_EQUAL(enumStoreAlign(100u), ses.getBuffer(0).remaining());
-    EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0)._deadElems);
+    EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
 
     EnumIndex idx;
     uint64_t offset = ses.getBuffer(0).size();
@@ -390,7 +390,7 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
     EXPECT_EQUAL(0u, ses.getRemaining());
     EXPECT_EQUAL(0u, ses.getBuffer(0).remaining());
     EXPECT_EQUAL(entrySize * 5 + RESERVED_BYTES, ses.getBuffer(0).size());
-    EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0)._deadElems);
+    EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
     uint32_t failEntrySize = ses.getEntrySize("enum05");
     EXPECT_TRUE(failEntrySize > ses.getRemaining());
 
@@ -415,7 +415,7 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
     // free unused enums
     ses.freeUnusedEnums(true);
     EXPECT_TRUE(!ses.findIndex("enum00", idx));
-    EXPECT_EQUAL(entrySize + RESERVED_BYTES, ses.getBuffer(0)._deadElems);
+    EXPECT_EQUAL(entrySize + RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
 
     // perform compaction
     if (disableReEnumerate) {
@@ -428,7 +428,7 @@ EnumStoreTest::testCompaction(bool hasPostings, bool disableReEnumerate)
     EXPECT_TRUE(ses.getRemaining() >= 3 * entrySize);
     EXPECT_TRUE(ses.getBuffer(1).remaining() >= 3 * entrySize);
     EXPECT_TRUE(ses.getBuffer(1).size() == entrySize * 4);
-    EXPECT_TRUE(ses.getBuffer(1)._deadElems == 0);
+    EXPECT_TRUE(ses.getBuffer(1).getDeadElems() == 0);
 
     EXPECT_EQUAL((disableReEnumerate ? 4u : 3u), ses.getLastEnum());
 
@@ -594,7 +594,7 @@ EnumStoreTest::testHoldListAndGeneration()
     }
 
     EXPECT_EQUAL(0u, ses.getRemaining());
-    EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0)._deadElems);
+    EXPECT_EQUAL(RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
 
     // remove all uniques
     for (uint32_t i = 0; i < 100; ++i) {
@@ -603,7 +603,7 @@ EnumStoreTest::testHoldListAndGeneration()
         EXPECT_EQUAL(0u, ses.getRefCount(idx));
     }
     ses.freeUnusedEnums(true);
-    EXPECT_EQUAL(100 * entrySize + RESERVED_BYTES, ses.getBuffer(0)._deadElems);
+    EXPECT_EQUAL(100 * entrySize + RESERVED_BYTES, ses.getBuffer(0).getDeadElems());
 
     // perform compaction
     uint32_t newEntrySize = StringEnumStore::alignEntrySize(8 + 1 + 8);

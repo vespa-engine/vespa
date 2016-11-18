@@ -35,12 +35,12 @@ public:
 
     class BufferType : public datastore::BufferType<char>
     {
+        using CleanContext = datastore::BufferType<char>::CleanContext;
         uint32_t _unboundDimSizesSize;
     public:
         BufferType();
         virtual ~BufferType();
-        virtual void
-        cleanHold(void *buffer, uint64_t offset, uint64_t len) override;
+        virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
         uint32_t unboundDimSizesSize() const { return _unboundDimSizesSize; }
         void setUnboundDimSizesSize(uint32_t unboundDimSizesSize_in) {
             _unboundDimSizesSize = unboundDimSizesSize_in;

@@ -8,114 +8,6 @@ using vespalib::alloc::Alloc;
 namespace search {
 namespace datastore {
 
-BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
-                               uint32_t minClusters,
-                               uint32_t maxClusters)
-    : _clusterSize(clusterSize),
-      _minClusters(std::min(minClusters, maxClusters)),
-      _maxClusters(maxClusters),
-      _activeBuffers(0),
-      _holdBuffers(0),
-      _activeUsedElems(0),
-      _holdUsedElems(0),
-      _lastUsedElems(NULL)
-{
-}
-
-
-BufferTypeBase::~BufferTypeBase(void)
-{
-    assert(_activeBuffers == 0);
-    assert(_holdBuffers == 0);
-    assert(_activeUsedElems == 0);
-    assert(_holdUsedElems == 0);
-    assert(_lastUsedElems == NULL);
-}
-
-size_t
-BufferTypeBase::getReservedElements(uint32_t bufferId) const
-{
-    return bufferId == 0 ? _clusterSize : 0u;
-}
-
-void
-BufferTypeBase::flushLastUsed(void)
-{
-    if (_lastUsedElems != NULL) {
-        _activeUsedElems += *_lastUsedElems;
-        _lastUsedElems = NULL;
-    }
-}
-
-
-void
-BufferTypeBase::onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems, void *buffer)
-{
-    flushLastUsed();
-    ++_activeBuffers;
-    _lastUsedElems = usedElems;
-    size_t reservedElements = getReservedElements(bufferId);
-    if (reservedElements != 0u) {
-        initializeReservedElements(buffer, reservedElements);
-        *usedElems = reservedElements;
-        deadElems = reservedElements;
-    }
-}
-
-
-void
-BufferTypeBase::onHold(const size_t *usedElems)
-{
-    if (usedElems == _lastUsedElems)
-        flushLastUsed();
-    --_activeBuffers;
-    ++_holdBuffers;
-    assert(_activeUsedElems >= *usedElems);
-    _activeUsedElems -= *usedElems;
-    _holdUsedElems += *usedElems;
-}
-
-
-void
-BufferTypeBase::onFree(size_t usedElems)
-{
-    --_holdBuffers;
-    assert(_holdUsedElems >= usedElems);
-    _holdUsedElems -= usedElems;
-}
-
-
-size_t
-BufferTypeBase::calcClustersToAlloc(uint32_t bufferId,
-                                    size_t sizeNeeded,
-                                    uint64_t clusterRefSize) const
-{
-    size_t reservedElements = getReservedElements(bufferId);
-    size_t usedElems = _activeUsedElems;
-    if (_lastUsedElems != NULL)
-        usedElems += *_lastUsedElems;
-    assert((usedElems % _clusterSize) == 0);
-    uint64_t maxClusters = std::numeric_limits<size_t>::max() / _clusterSize;
-    uint64_t maxClusters2 = clusterRefSize;
-    if (maxClusters > maxClusters2)
-        maxClusters = maxClusters2;
-    if (maxClusters > _maxClusters)
-        maxClusters = _maxClusters;
-    uint32_t minClusters = _minClusters;
-    if (minClusters > maxClusters)
-        minClusters = maxClusters;
-    size_t usedClusters = usedElems / _clusterSize;
-    size_t needClusters = (sizeNeeded + reservedElements + _clusterSize - 1) / _clusterSize;
-    uint64_t wantClusters = usedClusters + minClusters;
-    if (wantClusters < needClusters)
-        wantClusters = needClusters;
-    if (wantClusters > maxClusters)
-        wantClusters = maxClusters;
-    assert(wantClusters >= needClusters);
-    return wantClusters;
-}
-
-
 BufferState::FreeListList::~FreeListList(void)
 {
     assert(_head == NULL);	// Owner should have disabled free lists
@@ -129,6 +21,8 @@ BufferState::BufferState(void)
       _state(FREE),
       _disableElemHoldList(false),
       _holdElems(0u),
+      _extraUsedBytes(0),
+      _extraHoldBytes(0),
       _freeList(),
       _freeListList(NULL),
       _nextHasFree(NULL),
@@ -168,6 +62,8 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     assert(_usedElems == 0);
     assert(_deadElems == 0u);
     assert(_holdElems == 0);
+    assert(_extraUsedBytes == 0);
+    assert(_extraHoldBytes == 0);
     assert(_freeList.empty());
     assert(_nextHasFree == NULL);
     assert(_prevHasFree == NULL);
@@ -228,6 +124,8 @@ BufferState::onFree(void *&buffer)
     _allocElems = 0;
     _deadElems = 0u;
     _holdElems = 0u;
+    _extraUsedBytes = 0;
+    _extraHoldBytes = 0;
     _state = FREE;
     _typeHandler = NULL;
     _clusterSize = 0;
@@ -248,10 +146,12 @@ BufferState::dropBuffer(void *&buffer)
         return;
     }
     assert(buffer != NULL);
-    if (_state == ACTIVE)
+    if (_state == ACTIVE) {
         onHold();
-    if (_state == HOLD)
+    }
+    if (_state == HOLD) {
         onFree(buffer);
+    }
     assert(_state == FREE);
     assert(buffer == NULL);
 }
@@ -260,18 +160,22 @@ BufferState::dropBuffer(void *&buffer)
 void
 BufferState::setFreeListList(FreeListList *freeListList)
 {
-    if (_state == FREE && freeListList != NULL)
+    if (_state == FREE && freeListList != NULL) {
         return;
-    if (freeListList == _freeListList)
-        return;				// No change
-    if (_freeListList != NULL && !_freeList.empty())
-        removeFromFreeListList();	// Remove from old free list	
+    }
+    if (freeListList == _freeListList) {
+        return; // No change
+    }
+    if (_freeListList != NULL && !_freeList.empty()) {
+        removeFromFreeListList(); // Remove from old free list
+    }
     _freeListList = freeListList;
     if (!_freeList.empty()) {
-        if (freeListList != NULL)
-            addToFreeListList();	// Changed free list list
-        else
-            FreeList().swap(_freeList);	// Free lists have been disabled
+        if (freeListList != NULL) {
+            addToFreeListList(); // Changed free list list
+        } else {
+            FreeList().swap(_freeList); // Free lists have been disabled
+        }
     }
 }
 
