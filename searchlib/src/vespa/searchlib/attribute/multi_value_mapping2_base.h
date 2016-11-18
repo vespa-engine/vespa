@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <functional>
 
 namespace search {
@@ -45,11 +46,11 @@ public:
     class Histogram
     {
     private:
-        using HistogramM = std::vector<size_t>;
+        using HistogramM = vespalib::hash_map<uint32_t, size_t>;
     public:
         using const_iterator = HistogramM::const_iterator;
-        Histogram() : _histogram(1) { }
-        size_t & operator [] (uint32_t) { return _histogram[0]; }
+        Histogram() : _histogram() { _histogram.insert({0, 0}); }
+        size_t & operator [] (uint32_t) { return _histogram[0u]; }
         const_iterator begin() const { return _histogram.begin(); }
         const_iterator   end() const { return _histogram.end(); }
     private:
