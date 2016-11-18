@@ -71,7 +71,7 @@ private:
         for (size_t i = 0; i < list.getNumSubtrees(); ++i) {
             newline();
             _os << "Probability " << list.getProbability(i) << " : ";
-            visitChildren(list.getSubtree(i));
+            visit(list.getSubtree(i));
         }
         _indent = oldIndent;
         newline();

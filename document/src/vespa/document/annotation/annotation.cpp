@@ -17,15 +17,14 @@ Annotation::~Annotation() { }
 vespalib::string
 Annotation::toString() const {
     std::ostringstream os;
-    vespalib::string indent("");
     os << "Annotation(" << *_type;
     if (_value.get()) {
-        os << "\n" << indent << "  ";
-        _value->print(os, false, indent + "  ");
+        os << "\n";
+        _value->print(os, false, "");
     }
     if (_node) {
-        os << "\n" << indent << "  ";
-        _node->toString();
+        os << "\n";
+        os << _node->toString();
     }
     os << ")";
     return os.str();
