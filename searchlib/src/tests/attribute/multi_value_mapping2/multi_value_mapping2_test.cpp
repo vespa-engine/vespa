@@ -8,6 +8,8 @@ LOG_SETUP("multivaluemapping2_test");
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/searchlib/util/rand48.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 template <typename EntryT>
 void
@@ -28,6 +30,12 @@ class MyAttribute : public search::NotImplementedAttribute
         uint32_t committedDocIdLimit = getCommittedDocIdLimit();
         _mvMapping.shrink(committedDocIdLimit);
         setNumDocs(committedDocIdLimit);
+    }
+    virtual void removeOldGenerations(generation_t firstUsed) {
+        _mvMapping.trimHoldLists(firstUsed);
+    }
+    virtual void onGenerationChange(generation_t generation) {
+        _mvMapping.transferHoldLists(generation - 1);
     }
 
 public:
@@ -52,6 +60,7 @@ public:
 template <typename EntryT>
 class Fixture
 {
+protected:
     using MvMapping = search::attribute::MultiValueMapping2<EntryT>;
     MvMapping _mvMapping;
     MyAttribute<MvMapping> _attr;
@@ -95,6 +104,89 @@ public:
         _mvMapping.clearDocs(lidLow, lidLimit, _attr);
     }
     size_t getTotalValueCnt() const { return _mvMapping.getTotalValueCnt(); }
+
+    uint32_t countBuffers() {
+        using RefVector = typename MvMapping::RefCopyVector;
+        using RefType = typename MvMapping::RefType;
+        RefVector refs = _mvMapping.getRefCopy(_mvMapping.size());
+        vespalib::hash_set<uint32_t> buffers;
+        for (const auto &ref : refs) {
+            if (ref.valid()) {
+                RefType iRef = ref;
+                buffers.insert(iRef.bufferId());
+            }
+        }
+        return buffers.size();
+    }
+
+    void compactWorst() {
+        _mvMapping.compactWorst();
+        _attr.commit();
+        _attr.incGeneration();
+    }
+};
+
+class IntFixture : public Fixture<int>
+{
+    search::Rand48 _rnd;
+    std::map<uint32_t, std::vector<int>> _refMapping;
+    uint32_t _maxSmallArraySize;
+public:
+    IntFixture(uint32_t maxSmallArraySize)
+        : Fixture<int>(maxSmallArraySize),
+          _rnd(),
+          _refMapping(),
+          _maxSmallArraySize(maxSmallArraySize)
+    {
+        _rnd.srand48(32);
+    }
+
+    std::vector<int> makeValues() {
+        std::vector<int> result;
+        uint32_t numValues = _rnd.lrand48() % (_maxSmallArraySize + 2);
+        for (uint32_t i = 0; i < numValues; ++i)
+        {
+            result.emplace_back(_rnd.lrand48());
+        }
+        return result;
+    }
+
+    void addRandomDoc() {
+        uint32_t docId = 0;
+        _attr.addDoc(docId);
+        std::vector<int> values = makeValues();
+        _refMapping[docId] = values;
+        set(docId, values);
+        _attr.commit();
+        _attr.incGeneration();
+    }
+
+    void addRandomDocs(uint32_t count) {
+        for (uint32_t i = 0; i < count; ++i) {
+            addRandomDoc();
+        }
+    }
+
+    void checkRefMapping() {
+        uint32_t docId = 0;
+        for (const auto &kv : _refMapping) {
+            while (docId < kv.first) {
+                TEST_DO(assertGet(docId, {}));
+                ++docId;
+            }
+            TEST_DO(assertGet(docId, kv.second));
+            ++docId;
+        }
+        while (docId < size()) {
+            TEST_DO(assertGet(docId, {}));
+            ++docId;
+        }
+    }
+
+    void clearDoc(uint32_t docId) {
+        set(docId, {});
+        _refMapping.erase(docId);
+    }
 };
 
 TEST_F("Test that set and get works", Fixture<int>(3))
@@ -187,6 +279,32 @@ TEST_F("Test that replace works", Fixture<int>(3))
     f.replace(4, {20, 24, 27, 26});
     TEST_DO(assertArray({20, 24, 27, 26}, old4));
     EXPECT_EQUAL(4u, f.getTotalValueCnt());
+}
+
+TEST_F("Test that compaction works", IntFixture(3))
+{
+    uint32_t addDocs = 10;
+    uint32_t bufferCountBefore = 0;
+    do {
+        f.addRandomDocs(addDocs);
+        addDocs *= 2;
+        bufferCountBefore = f.countBuffers();
+    } while (bufferCountBefore < 10);
+    uint32_t docIdLimit = f.size();
+    uint32_t clearLimit = docIdLimit / 2;
+    LOG(info, "Have %u buffers, %u docs, clearing to %u",
+        bufferCountBefore, docIdLimit, clearLimit);
+    for (uint32_t docId = 0; docId < clearLimit; ++docId) {
+        f.clearDoc(docId);
+    }
+    uint32_t bufferCountAfter = bufferCountBefore;
+    for (uint32_t compactIter = 0; compactIter < 10; ++compactIter) {
+        f.compactWorst();
+        bufferCountAfter = f.countBuffers();
+        f.checkRefMapping();
+        LOG(info, "Have %u buffers after compacting", bufferCountAfter);
+    }
+    EXPECT_LESS(bufferCountAfter, bufferCountBefore);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
