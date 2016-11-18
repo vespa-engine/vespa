@@ -1,4 +1,5 @@
 #include <vespa/vespalib/util/alloc.h>
+#include <vector>
 
 using namespace vespalib::alloc;
 
