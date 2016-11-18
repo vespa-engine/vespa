@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".engine.searchrequest");
 #include "searchrequest.h"
 #include "packetconverter.h"
 
@@ -26,6 +24,12 @@ void SearchRequest::Source::lazyDecode() const
         PacketConverter::toSearchRequest(*_fs4Packet, *_request);
         _fs4Packet->Free();
         _fs4Packet = NULL;
+    }
+}
+
+SearchRequest::Source::~Source() {
+    if (_fs4Packet != NULL) {
+        _fs4Packet->Free();
     }
 }
 

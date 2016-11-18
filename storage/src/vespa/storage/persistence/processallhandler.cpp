@@ -59,11 +59,11 @@ public:
         ost << "  Timestamp: " << e.getTimestamp() << ", ";
         if (e.getDocument() != 0) {
             ost << "Doc(" << e.getDocument()->getId() << ")"
-                << ", " << e.getDocument()->getId().getGlobalId()
+                << ", " << e.getDocument()->getId().getGlobalId().toString()
                 << ", size: " << e.getPersistedDocumentSize();
         } else if (e.getDocumentId() != 0) {
             ost << *e.getDocumentId()
-                << ", " << e.getDocumentId()->getGlobalId();
+                << ", " << e.getDocumentId()->getGlobalId().toString();
         } else {
             ost << "metadata only";
         }

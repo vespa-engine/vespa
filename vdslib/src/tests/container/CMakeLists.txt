@@ -5,7 +5,6 @@ vespa_add_library(vdslib_containertest
     parameterstest.cpp
     searchresulttest.cpp
     documentsummarytest.cpp
-    lruordertest.cpp
     DEPENDS
     vdslib
 )

@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/attributeguard.h>
-
 namespace search {
+
+    namespace attribute { class IAttributeVector; }
+    class AttributeGuard;
+
 namespace common {
 
 
@@ -17,16 +19,16 @@ class DocumentLocations
 {
 
 private:
-    search::AttributeGuard::UP _vec_guard;
+    std::unique_ptr<search::AttributeGuard> _vec_guard;
     const search::attribute::IAttributeVector *_vec;
 
 public:
-    DocumentLocations(void);
+    DocumentLocations(DocumentLocations &&) = default;
+    DocumentLocations & operator = (DocumentLocations &&) = default;
+    DocumentLocations();
+    virtual ~DocumentLocations();
 
-    void setVecGuard(search::AttributeGuard::UP guard) {
-        _vec_guard = std::move(guard);
-        setVec(_vec_guard.get()->get());
-    }
+    void setVecGuard(std::unique_ptr<search::AttributeGuard> guard);
 
     void setVec(const search::attribute::IAttributeVector &vec) {
         _vec = &vec;

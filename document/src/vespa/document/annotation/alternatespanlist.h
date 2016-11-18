@@ -4,7 +4,6 @@
 
 #include "spanlist.h"
 #include "spannode.h"
-#include "spantreevisitor.h"
 #include <memory>
 #include <vector>
 
@@ -17,17 +16,18 @@ class AlternateSpanList : public SpanNode {
     };
     std::vector<Subtree> _subtrees;
 
-    void add(size_t index, std::unique_ptr<SpanNode> node);
+    void addInternal(size_t index, std::unique_ptr<SpanNode> node);
 
 public:
     typedef std::unique_ptr<AlternateSpanList> UP;
+    typedef std::vector<Subtree>::const_iterator const_iterator;
 
     ~AlternateSpanList();
 
     template <typename T>
     T &add(size_t index, std::unique_ptr<T> node) {
         T *n = node.get();
-        add(index, std::unique_ptr<SpanNode>(std::move(node)));
+        addInternal(index, std::unique_ptr<SpanNode>(std::move(node)));
         return *n;
     }
 
@@ -38,9 +38,10 @@ public:
     SpanList &getSubtree(size_t index) const;
     double getProbability(size_t index) const;
 
-    virtual void accept(SpanTreeVisitor &visitor) const { visitor.visit(*this); }
-    virtual void print(
-            std::ostream& out, bool verbose, const std::string& indent) const;
+    size_t size() const { return _subtrees.size(); }
+    const_iterator begin() const { return _subtrees.begin(); }
+    const_iterator end() const { return _subtrees.end(); }
+    void accept(SpanTreeVisitor &visitor) const override;
 };
 
 }  // namespace document

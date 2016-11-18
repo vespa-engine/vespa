@@ -41,4 +41,15 @@ AsciiPrintable::toString(const PrintProperties& p) const
     return as.str();
 }
 
+std::ostream& operator<<(std::ostream& out, const Printable& p) {
+    p.print(out);
+    return out;
+}
+
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const AsciiPrintable& p)
+{
+    p.print(out);
+    return out;
+}
+
 } // vespalib

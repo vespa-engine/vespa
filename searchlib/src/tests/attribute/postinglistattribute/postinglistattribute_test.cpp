@@ -16,6 +16,7 @@ LOG_SETUP("postinglistattribute_test");
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/vespalib/util/compress.h>
+#include <iostream>
 
 using std::shared_ptr;
 

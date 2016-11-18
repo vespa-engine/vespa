@@ -14,6 +14,7 @@ LOG_SETUP("groupingengine_test");
 #include <vespa/searchlib/grouping/groupingengine.h>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 using namespace vespalib;
 using namespace search;

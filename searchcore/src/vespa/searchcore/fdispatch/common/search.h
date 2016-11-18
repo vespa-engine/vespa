@@ -9,6 +9,7 @@
 #include <vespa/searchlib/engine/errorcodes.h>
 #include <vespa/searchsummary/docsummary/getdocsumargs.h>
 #include <vespa/searchlib/engine/searchrequest.h>
+#include <vespa/searchlib/common/packets.h>
 
 #include <limits>
 

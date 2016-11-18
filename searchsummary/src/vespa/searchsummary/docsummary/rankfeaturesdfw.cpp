@@ -4,9 +4,10 @@
 #include <vespa/log/log.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/packets.h>
-#include <vespa/searchsummary/docsummary/rankfeaturesdfw.h>
+#include "rankfeaturesdfw.h"
 #include <vespa/searchlib/common/feature.h>
 #include "docsumformat.h"
+#include "docsumstate.h"
 
 LOG_SETUP(".searchlib.docsummary.rankfeaturesdfw");
 

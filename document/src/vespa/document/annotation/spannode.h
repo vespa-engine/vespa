@@ -2,19 +2,21 @@
 
 #pragma once
 
-#include <vespa/document/util/printable.h>
-#include <memory>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace document {
 class SpanTreeVisitor;
 
-struct SpanNode : Printable {
+struct SpanNode {
     typedef std::unique_ptr<SpanNode> UP;
 
     virtual ~SpanNode() {}
 
+    vespalib::string toString() const;
     virtual void accept(SpanTreeVisitor &visitor) const = 0;
 };
+
+std::ostream & operator << (std::ostream & os, const SpanNode & node);
 
 }  // namespace document
 

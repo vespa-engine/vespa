@@ -6,10 +6,11 @@
 
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 
 namespace search {
 namespace docsummary {
+
+class IDocsumEnvironment;
 
 class KeywordExtractor
 {

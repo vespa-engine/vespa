@@ -2,6 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
+#include <iostream>
 
 int main(int argc, char** argv)
 {

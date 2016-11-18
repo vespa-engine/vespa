@@ -189,10 +189,14 @@ GlobalId::calculateLastInBucket(const BucketId& bucket)
     return GlobalId(raw);
 }
 
-void
-GlobalId::print(std::ostream& out) const
+vespalib::asciistream & operator << (vespalib::asciistream & os, const GlobalId & gid)
 {
-    out << toString();
+    return os << gid.toString();
+}
+
+std::ostream & operator << (std::ostream & os, const GlobalId & gid)
+{
+    return os << gid.toString();
 }
 
 } // document

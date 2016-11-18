@@ -13,6 +13,7 @@ LOG_SETUP("grouping_test");
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 using namespace vespalib;
 using namespace search;

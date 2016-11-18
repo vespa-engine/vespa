@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/document_runnable.h>
 #include <vespa/storage/bucketdb/judymultimap.h>
+#include <vespa/storage/bucketdb/judymultimap.hpp>
 #include <vespa/storage/bucketdb/lockablemap.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -108,6 +109,8 @@ namespace {
 
     typedef LockableMap<JudyMultiMap<A> > Map;
 }
+
+template class JudyMultiMap<A>;
 
 void
 LockableMapTest::testSimpleUsage() {

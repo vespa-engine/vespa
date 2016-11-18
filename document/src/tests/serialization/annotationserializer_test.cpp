@@ -103,9 +103,7 @@ struct AnnotationComparator {
     template <typename ITR>
     AnnotationComparator &addActual(ITR pos, ITR end) {
         for (; pos != end; ++pos) {
-            ostringstream ost;
-            pos->print(ost, true, "");
-            actual.push_back(ost.str());
+            actual.push_back(pos->toString());
         }
         return *this;
     }
@@ -163,58 +161,65 @@ void Test::requireThatAdvancedSpanTreeIsDeserialized() {
     AnnotationComparator comparator;
     comparator.addActual(span_tree->begin(), span_tree->end())
         .addExpected("Annotation(AnnotationType(20001, begintag)\n"
-                     "  Span(6, 3))")
+                     "Span(6, 3))")
         .addExpected("Annotation(AnnotationType(20000, text)\n"
-                     "  Span(9, 10))")
+                     "Span(9, 10))")
         .addExpected("Annotation(AnnotationType(20000, text)\n"
-                     "  Span(19, 4))")
+                     "Span(19, 4))")
         .addExpected("Annotation(AnnotationType(20002, endtag)\n"
-                     "  Span(23, 4))")
+                     "Span(23, 4))")
         .addExpected("Annotation(AnnotationType(20000, text)\n"
-                     "  Span(6, 13))")
+                     "Span(6, 13))")
         .addExpected("Annotation(AnnotationType(20003, body)\n"
-                     "  Span(19, 8))")
+                     "Span(19, 8))")
         .addExpected("Annotation(AnnotationType(20004, paragraph)\n"
+                     "AlternateSpanList(\n"
+                     "  Probability 0.9 : SpanList(\n"
+                     "    Span(6, 3)\n"
+                     "    Span(9, 10)\n"
+                     "    Span(19, 4)\n"
+                     "    Span(23, 4)\n"
+                     "  )\n"
+                     "  Probability 0.1 : SpanList(\n"
+                     "    Span(6, 13)\n"
+                     "    Span(19, 8)\n"
+                     "  )\n"
+                     "))")
+        .addExpected("Annotation(AnnotationType(20001, begintag)\n"
+                     "Span(0, 6))")
+        .addExpected("Annotation(AnnotationType(20000, text)\n"
+                     "Span(27, 9))")
+        .addExpected("Annotation(AnnotationType(20002, endtag)\n"
+                     "Span(36, 8))")
+        .addExpected("Annotation(AnnotationType(20003, body)\n"
+                     "SpanList(\n"
+                     "  Span(0, 6)\n"
                      "  AlternateSpanList(\n"
                      "    Probability 0.9 : SpanList(\n"
                      "      Span(6, 3)\n"
                      "      Span(9, 10)\n"
                      "      Span(19, 4)\n"
-                     "      Span(23, 4)),\n"
+                     "      Span(23, 4)\n"
+                     "    )\n"
                      "    Probability 0.1 : SpanList(\n"
                      "      Span(6, 13)\n"
-                     "      Span(19, 8))))")
-        .addExpected("Annotation(AnnotationType(20001, begintag)\n"
-                     "  Span(0, 6))")
-        .addExpected("Annotation(AnnotationType(20000, text)\n"
-                     "  Span(27, 9))")
-        .addExpected("Annotation(AnnotationType(20002, endtag)\n"
-                     "  Span(36, 8))")
-        .addExpected("Annotation(AnnotationType(20003, body)\n"
-                     "  SpanList(\n"
-                     "    Span(0, 6)\n"
-                     "    AlternateSpanList(\n"
-                     "      Probability 0.9 : SpanList(\n"
-                     "        Span(6, 3)\n"
-                     "        Span(9, 10)\n"
-                     "        Span(19, 4)\n"
-                     "        Span(23, 4)),\n"
-                     "      Probability 0.1 : SpanList(\n"
-                     "        Span(6, 13)\n"
-                     "        Span(19, 8)))\n"
-                     "    Span(27, 9)\n"
-                     "    Span(36, 8)))")
-        .addExpected("Annotation(AnnotationType(20005, city)\n"
-                     "  Struct annotation.city(\n"
-                     "    position - Struct myposition(\n"
-                     "      latitude - 37,\n"
-                     "      longitude - -122\n"
-                     "    ),\n"
-                     "    references - Array(size: 2,\n"
-                     "      AnnotationReferenceFieldValue(n),\n"
-                     "      AnnotationReferenceFieldValue(n)\n"
+                     "      Span(19, 8)\n"
                      "    )\n"
-                     "  ))");
+                     "  )\n"
+                     "  Span(27, 9)\n"
+                     "  Span(36, 8)\n"
+                     "))")
+        .addExpected("Annotation(AnnotationType(20005, city)\n"
+                     "Struct annotation.city(\n"
+                     "  position - Struct myposition(\n"
+                     "    latitude - 37,\n"
+                     "    longitude - -122\n"
+                     "  ),\n"
+                     "  references - Array(size: 2,\n"
+                     "    AnnotationReferenceFieldValue(n),\n"
+                     "    AnnotationReferenceFieldValue(n)\n"
+                     "  )\n"
+                     "))");
     TEST_DO(comparator.compare());
 }
 

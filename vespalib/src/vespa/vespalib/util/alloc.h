@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <algorithm>
 #include <vespa/vespalib/util/optimized.h>
+#include <memory>
 
 namespace vespalib {
 

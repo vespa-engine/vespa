@@ -2,7 +2,9 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
+#include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchlib/util/rawbuf.h>
+#include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/simple_buffer.h>
 #include <vespa/vespalib/data/slime/json_format.h>

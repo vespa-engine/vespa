@@ -2,6 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include "storbucketdb.h"
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include "judymultimap.hpp"
 
 namespace storage {
 namespace bucketdb {
@@ -11,6 +12,18 @@ StorageBucketInfo::
 print(std::ostream& out, bool, const std::string&) const
 {
     out << info << ", disk " << disk;
+}
+
+bool StorageBucketInfo::operator == (const StorageBucketInfo & b) const {
+    return disk == b.disk;
+}
+
+bool StorageBucketInfo::operator != (const StorageBucketInfo & b) const {
+    return !(*this == b);
+}
+
+bool StorageBucketInfo::operator < (const StorageBucketInfo & b) const {
+    return disk < b.disk;
 }
 
 } // bucketdb
@@ -62,5 +75,6 @@ StorBucketDatabase::get(const document::BucketId& bucket,
 #endif
 }
 
+template class JudyMultiMap<bucketdb::StorageBucketInfo>;
 
 } // storage

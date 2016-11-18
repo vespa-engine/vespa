@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <string>
 #include "resultlist.h"
 #include "context.h"

@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.docsummary.summarymanager");
 #include "documentstoreadapter.h"
 #include "summarycompacttarget.h"
 #include "summaryflushtarget.h"
 #include "summarymanager.h"
-#include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/config/print/ostreamconfigwriter.h>
+#include <vespa/juniper/rpinterface.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.docsummary.summarymanager");
 
 using namespace config;
 using namespace document;
@@ -17,6 +17,10 @@ using namespace search::docsummary;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
+using vespalib::make_string;
+using vespalib::IllegalArgumentException;
+using search::DocumentStore;
+using search::LogDocumentStore;
 
 using search::TuneFileSummary;
 using search::common::FileHeaderContext;
@@ -43,17 +47,13 @@ SummarySetup(const vespalib::string & baseDir,
       _markupFields()
 {
     std::unique_ptr<ResultConfig> resultConfig(new ResultConfig());
-    if (!resultConfig->ReadConfig(summaryCfg,
-                                  vespalib::make_string("SummaryManager(%s)",
-                                          baseDir.c_str()).c_str())) {
+    if (!resultConfig->ReadConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str())) {
         std::ostringstream oss;
         config::OstreamConfigWriter writer(oss);
         writer.write(summaryCfg);
-        throw vespalib::IllegalArgumentException
-            (vespalib::make_string("Could not initialize "
-                                   "summary result config for directory '%s' "
-                                   "based on summary config '%s'",
-                                   baseDir.c_str(), oss.str().c_str()));
+        throw IllegalArgumentException
+            (make_string("Could not initialize summary result config for directory '%s' based on summary config '%s'",
+                         baseDir.c_str(), oss.str().c_str()));
     }
 
     _juniperConfig.reset(new juniper::Juniper(&_juniperProps, &_wordFolder));
@@ -62,8 +62,7 @@ SummarySetup(const vespalib::string & baseDir,
     dynCfg.configure(summarymapCfg);
     for (size_t i = 0; i < summarymapCfg.override.size(); ++i) {
         const SummarymapConfig::Override & o = summarymapCfg.override[i];
-        if (o.command == "dynamicteaser" ||
-            o.command == "textextractor") {
+        if (o.command == "dynamicteaser" || o.command == "textextractor") {
             vespalib::string markupField = o.arguments;
             if (markupField.empty())
                 continue;
@@ -75,24 +74,19 @@ SummarySetup(const vespalib::string & baseDir,
     if (docType != NULL) {
         _fieldCacheRepo.reset(new FieldCacheRepo(getResultConfig(), *docType));
     } else if (getResultConfig().GetNumResultClasses() == 0) {
-        LOG(debug, "Create empty field cache repo for document type '%s'",
-            docTypeName.toString().c_str());
+        LOG(debug, "Create empty field cache repo for document type '%s'", docTypeName.toString().c_str());
         _fieldCacheRepo.reset(new FieldCacheRepo());
     } else {
-        throw vespalib::IllegalArgumentException
-            (vespalib::make_string("Did not find document type '%s' in current document type repo. "
-                                   "Cannot setup field cache repo for the summary setup",
-                                   docTypeName.toString().c_str()));
+        throw IllegalArgumentException(make_string("Did not find document type '%s' in current document type repo."
+                                                   " Cannot setup field cache repo for the summary setup",
+                                                   docTypeName.toString().c_str()));
     }
 }
 
-IDocsumStore::UP SummaryManager::SummarySetup::createDocsumStore(
-        const vespalib::string &resultClassName) {
-    return search::docsummary::IDocsumStore::UP(
-            new DocumentStoreAdapter(
-                    *_docStore, *_repo, getResultConfig(), resultClassName,
-                    _fieldCacheRepo->getFieldCache(resultClassName),
-                    _markupFields));
+IDocsumStore::UP
+SummaryManager::SummarySetup::createDocsumStore(const vespalib::string &resultClassName) {
+    return std::make_unique<DocumentStoreAdapter>(*_docStore, *_repo, getResultConfig(), resultClassName,
+                                                  _fieldCacheRepo->getFieldCache(resultClassName), _markupFields);
 }
 
 
@@ -103,10 +97,8 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
                                    const DocumentTypeRepo::SP &repo,
                                    const search::IAttributeManager::SP &attributeMgr)
 {
-    ISummarySetup::SP newSetup(new SummarySetup(_baseDir, _docTypeName, summaryCfg,
-                                                summarymapCfg, juniperCfg,
-                                                attributeMgr, _docStore, repo));
-    return newSetup;
+    return std::make_shared<SummarySetup>(_baseDir, _docTypeName, summaryCfg, summarymapCfg,
+                                          juniperCfg, attributeMgr, _docStore, repo);
 }
 
 namespace {
@@ -122,9 +114,10 @@ deriveCompression(const T & config) {
     return compression;
 }
 
-search::DocumentStore::Config getStoreConfig(const ProtonConfig::Summary::Cache & cache)
+DocumentStore::Config
+getStoreConfig(const ProtonConfig::Summary::Cache & cache)
 {
-    return search::DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
+    return DocumentStore::Config(deriveCompression(cache.compression), cache.maxbytes, cache.initialentries).allowVisitCaching(cache.allowvisitcaching);
 }
 
 }
@@ -144,29 +137,19 @@ SummaryManager::SummaryManager(vespalib::ThreadStackExecutorBase & executor,
       _tuneFileSummary(tuneFileSummary),
       _currentSerial(0u)
 {
-    search::DocumentStore::Config config(getStoreConfig(summary.cache));
+    DocumentStore::Config config(getStoreConfig(summary.cache));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
 
     search::WriteableFileChunk::Config fileConfig(deriveCompression(chunk.compression), chunk.maxbytes, chunk.maxentries);
-    search::LogDataStore::Config logConfig(log.maxfilesize,
-                                           log.maxdiskbloatfactor,
-                                           log.maxbucketspread,
-                                           log.minfilesizefactor,
-                                           log.numthreads,
-                                           log.compact2activefile,
-                                           deriveCompression(log.compact.compression),
-                                           fileConfig);
+    search::LogDataStore::Config logConfig(log.maxfilesize, log.maxdiskbloatfactor, log.maxbucketspread,
+                                           log.minfilesizefactor, log.numthreads, log.compact2activefile,
+                                           deriveCompression(log.compact.compression), fileConfig);
     logConfig.disableCrcOnRead(chunk.skipcrconread);
     logConfig.setMaxEntriesPerFile(log.maxentriesperfile);
-    _docStore.reset(
-            new search::LogDocumentStore(executor, baseDir,
-                                         search::LogDocumentStore::
-                                         Config(config, logConfig),
-                                         growStrategy,
-                                         tuneFileSummary,
-                                         fileHeaderContext,
-                                         tlSyncer,
+    _docStore.reset(new LogDocumentStore(executor, baseDir,
+                                         search::LogDocumentStore::Config(config, logConfig),
+                                         growStrategy, tuneFileSummary, fileHeaderContext, tlSyncer,
                                          summary.compact2buckets ? bucketizer : search::IBucketizer::SP()));
 }
 

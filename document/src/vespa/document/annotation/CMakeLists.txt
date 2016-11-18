@@ -5,6 +5,7 @@ vespa_add_library(document_annotation OBJECT
     annotation.cpp
     span.cpp
     spanlist.cpp
+    spannode.cpp
     spantree.cpp
     DEPENDS
     AFTER

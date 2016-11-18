@@ -8,7 +8,6 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchsummary/docsummary/urlresult.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
-#include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsumstore.h>
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/searchsummary/docsummary/docsumfieldwriter.h>

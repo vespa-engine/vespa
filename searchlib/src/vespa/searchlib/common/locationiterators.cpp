@@ -1,17 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".locationiterators");
 #include <vespa/vespalib/geo/zcurve.h>
 
 #include <vespa/searchlib/bitcompression/compression.h>
 
 #include "locationiterators.h"
+#include <vespa/searchlib/attribute/attributevector.h>
 
 using namespace search::common;
 
-class FastS_2DZLocationIterator : public search::queryeval::SearchIterator, public vespalib::noncopyable
+class FastS_2DZLocationIterator : public search::queryeval::SearchIterator
 {
 private:
     const unsigned int _numDocs;

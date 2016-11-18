@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespadoclocator");
-
 #include <boost/program_options.hpp>
 #include <vespa/config/common/exceptions.h>
 #include "application.h"
+#include <iostream>
+#include <vespa/log/log.h>
+LOG_SETUP("vespadoclocator");
+
 
 bool
 Application::printDocumentLocation(Locator &locator, const std::string &docIdStr)

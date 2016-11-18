@@ -108,7 +108,7 @@ MemSlot::print(std::ostream& out, bool verbose,
     if (verbose) {
         out << "MemSlot(";
     }
-    out << std::dec << _timestamp << ", " << _gid << ", h "
+    out << std::dec << _timestamp << ", " << _gid.toString() << ", h "
         << _header._pos << " - " << _header._size << ", b "
         << _body._pos << " - " << _body._size << ", f "
 

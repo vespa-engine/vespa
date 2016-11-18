@@ -5,7 +5,6 @@
 #pragma once
 
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/propertiesmap.h>
 

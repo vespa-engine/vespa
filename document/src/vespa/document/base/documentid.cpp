@@ -47,8 +47,7 @@ DocumentId::toString() const {
 }
 
 void
-DocumentId::print(std::ostream& out, bool verbose,
-                  const std::string& indent) const
+DocumentId::print(std::ostream& out, bool verbose, const std::string& indent) const
 {
     (void) indent;
     if (verbose) {
@@ -56,7 +55,7 @@ DocumentId::print(std::ostream& out, bool verbose,
     }
     out << _id->toString().c_str();
     if (verbose) {
-        out << ", " << getGlobalId() << ")";
+        out << ", " << getGlobalId().toString() << ")";
     }
 }
 
@@ -72,8 +71,7 @@ DocumentId::calculateGlobalId() const
     vespalib::string id(_id->toString());
 
     unsigned char key[16];
-    fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()),
-                 id.size(), key);
+    fastc_md5sum(reinterpret_cast<const unsigned char*>(id.c_str()), id.size(), key);
 
     IdString::LocationType location(_id->getLocation());
     memcpy(key, &location, 4);

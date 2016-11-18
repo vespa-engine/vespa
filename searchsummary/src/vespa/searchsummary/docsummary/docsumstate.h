@@ -4,22 +4,28 @@
 
 #pragma once
 
-#include <vespa/juniper/rpinterface.h>
-
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchsummary/docsummary/getdocsumargs.h>
-#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
-#include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 
+namespace juniper {
+    class Config;
+    class QueryHandle;
+    class Result;
+}
 
 namespace search {
+namespace common { class Location; }
+namespace attribute {
+    class IAttributeContext;
+    class IAttributeVector;
+}
 namespace docsummary {
 
 class GetDocsumsState;
+class IDocsumEnvironment;
+class KeywordExtractor;
 
 class GetDocsumsStateCallback
 {
@@ -40,8 +46,6 @@ protected:
 class GetDocsumsState
 {
 private:
-    GetDocsumsState(const GetDocsumsState &);
-    GetDocsumsState& operator=(const GetDocsumsState &);
 
 public:
     const search::attribute::IAttributeVector * getAttribute(size_t index) const { return _attributes[index]; }
@@ -67,9 +71,9 @@ public:
 
     search::RawBuf               _docSumFieldSpace;
     char                         _docSumFieldSpaceStore[2048];
-    search::attribute::IAttributeContext::UP _attrCtx;
+    std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;
     std::vector<const search::attribute::IAttributeVector *> _attributes;
-    vespalib::JSONStringer           _jsonStringer;
+    vespalib::JSONStringer        _jsonStringer;
 
     // used by AbsDistanceDFW
     std::unique_ptr<search::common::Location> _parsedLocation;
@@ -81,6 +85,8 @@ public:
     // used by RankFeaturesDFW
     FeatureSet::SP _rankFeatures;
 
+    GetDocsumsState(const GetDocsumsState &) = delete;
+    GetDocsumsState& operator=(const GetDocsumsState &) = delete;
     GetDocsumsState(GetDocsumsStateCallback &callback);
     ~GetDocsumsState();
 };

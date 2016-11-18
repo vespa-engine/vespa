@@ -24,7 +24,6 @@
  */
 #pragma once
 
-#include <iostream>
 #include <stdint.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/bucket/bucketid.h>
@@ -149,13 +148,6 @@ public:
     }
 
     /**
-     * Writes a string representation of this global id to the given output stream.
-     *
-     * @param out The stream to write to.
-     */
-    void print(std::ostream &out) const;
-
-    /**
      * Returns a string representation of this global id.
      */
     vespalib::string toString() const;
@@ -213,25 +205,8 @@ public:
     static GlobalId calculateLastInBucket(const BucketId &bucket);
 };
 
-/**
- * Implements stream writing of a global id.
- *
- * @param out The stream to write to.
- * @param gid The global id to write.
- * @return The output stream.
- */
-inline std::ostream&
-operator<<(std::ostream& out, const GlobalId& gid)
-{
-    gid.print(out);
-    return out;
-}
-
-inline vespalib::asciistream &
-operator << (vespalib::asciistream & os, const GlobalId & gid)
-{
-    return os << gid.toString();
-}
+vespalib::asciistream & operator << (vespalib::asciistream & os, const GlobalId & gid);
+std::ostream& operator<<(std::ostream& out, const GlobalId& gid);
 
 } // document
 

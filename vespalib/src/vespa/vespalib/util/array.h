@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <algorithm>
+#include <vector>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/optimized.h>
 #include <tr1/type_traits>

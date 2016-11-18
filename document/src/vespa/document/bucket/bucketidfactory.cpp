@@ -4,6 +4,7 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/base/documentid.h>
+#include <iostream>
 
 namespace document {
 

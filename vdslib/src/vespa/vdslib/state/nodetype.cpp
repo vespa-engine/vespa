@@ -32,5 +32,13 @@ NodeType::NodeType(const vespalib::stringref & name, uint16_t enumValue)
 {
 }
 
+std::ostream & operator << (std::ostream & os, const NodeType & n) {
+    return os << n.toString();
+}
+
+vespalib::asciistream & operator << (vespalib::asciistream & os, const NodeType & n) {
+    return os << n.toString();
+}
+
 } // lib
 } // storage

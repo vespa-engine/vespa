@@ -2,15 +2,13 @@
 // Unit tests for annotation.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("annotation_test");
-
 #include <stdlib.h>
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
+#include <vespa/document/annotation/spantreevisitor.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/datatype/arraydatatype.h>

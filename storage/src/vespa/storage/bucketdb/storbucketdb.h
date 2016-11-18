@@ -43,6 +43,9 @@ struct StorageBucketInfo {
     bool verifyLegal() const { return (disk != 0xff); }
     uint32_t getMetaCount() { return info.getMetaCount(); }
     void setChecksum(uint32_t crc) { info.setChecksum(crc); }
+    bool operator == (const StorageBucketInfo & b) const;
+    bool operator != (const StorageBucketInfo & b) const;
+    bool operator < (const StorageBucketInfo & b) const;
 };
 
 inline std::ostream& operator<<(std::ostream& out,

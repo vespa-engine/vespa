@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
+#include <vespa/fastos/timestamp.h>
 
 namespace search {
 namespace fef { class Properties; }

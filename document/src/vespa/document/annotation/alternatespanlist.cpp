@@ -1,15 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".alternatespanlist");
-
 #include "alternatespanlist.h"
-#include "spanlist.h"
+#include "spantreevisitor.h"
 
 using std::unique_ptr;
-using std::ostream;
-using std::string;
 
 namespace document {
 namespace {
@@ -21,7 +16,7 @@ void ensureSize(size_t size, T &t) {
 }
 }  // namespace
 
-void AlternateSpanList::add(size_t index, unique_ptr<SpanNode> node) {
+void AlternateSpanList::addInternal(size_t index, unique_ptr<SpanNode> node) {
     ensureSize(index + 1, _subtrees);
     Subtree &subtree = _subtrees[index];
     if (!subtree.span_list) {
@@ -36,8 +31,7 @@ AlternateSpanList::~AlternateSpanList() {
     }
 }
 
-void AlternateSpanList::setSubtree(size_t index,
-                                   std::unique_ptr<SpanList> subtree) {
+void AlternateSpanList::setSubtree(size_t index, std::unique_ptr<SpanList> subtree) {
     ensureSize(index + 1, _subtrees);
     _subtrees[index].span_list = subtree.release();
 }
@@ -58,17 +52,8 @@ double AlternateSpanList::getProbability(size_t index) const {
     return _subtrees[index].probability;
 }
 
-void AlternateSpanList::print(ostream& out, bool verbose,
-                              const string& indent) const {
-    out << "AlternateSpanList(\n" << indent << "  ";
-    for (size_t i = 0; i < _subtrees.size(); ++i) {
-        out << "Probability " << _subtrees[i].probability << " : ";
-        _subtrees[i].span_list->print(out, verbose, indent + "  ");
-        if (i < _subtrees.size() - 1) {
-            out << ",\n" << indent << "  ";
-        }
-    }
-    out << ")";
+void AlternateSpanList::accept(SpanTreeVisitor &visitor) const {
+    visitor.visit(*this);
 }
 
 }  // namespace document

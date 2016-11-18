@@ -2,8 +2,11 @@
 
 #include <vespa/fastos/fastos.h>
 #include "positionsdfw.h"
-#include <vespa/log/log.h>
 #include <cmath>
+#include "docsumstate.h"
+#include "idocsumenvironment.h"
+#include <vespa/searchlib/common/location.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.docsummary.positionsdfw");
 
