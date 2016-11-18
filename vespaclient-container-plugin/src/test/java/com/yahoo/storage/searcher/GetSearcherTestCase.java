@@ -41,6 +41,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.*;
 
+@SuppressWarnings("deprecation")
 public class GetSearcherTestCase {
 
     private DocumentTypeManager docMan = null;
