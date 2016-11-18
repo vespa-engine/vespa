@@ -309,6 +309,10 @@ DataStoreBase::getMemStats(void) const
             abort();
         }
     }
+    size_t genHolderHeldBytes = _genHolder.getHeldBytes();
+    stats._holdBytes += genHolderHeldBytes;
+    stats._allocBytes += genHolderHeldBytes;
+    stats._usedBytes += genHolderHeldBytes;
     return stats;
 }
 
