@@ -13,6 +13,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include "address_space.h"
 #include "enumstorebase.h"
+#include <functional>
 
 namespace search {
 
@@ -210,7 +211,7 @@ public:
     bool isFull() const { return _indices.isFull(); }
     void addDoc(uint32_t & docId);
     void shrink(uint32_t docIdLimit);
-    void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
+    void clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc);
     void holdElem(Index idx, size_t size);
     virtual void doneHoldElem(Index idx) = 0;
 

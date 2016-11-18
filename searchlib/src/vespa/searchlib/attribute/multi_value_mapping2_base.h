@@ -4,11 +4,9 @@
 
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/common/rcuvector.h>
+#include <functional>
 
 namespace search {
-
-class AttributeVector;
-
 namespace attribute {
 
 /**
@@ -40,7 +38,7 @@ public:
     bool isFull() const { return _indices.isFull(); }
     void addDoc(uint32_t &docId);
     void shrink(uint32_t docidLimit);
-    void clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v);
+    void clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc);
     uint32_t size() const { return _indices.size(); }
 
     // Mockups to temporarily silence code written for old multivalue mapping

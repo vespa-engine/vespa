@@ -101,7 +101,7 @@ public:
         _attr.shrinkLidSpace();
     }
     void clearDocs(uint32_t lidLow, uint32_t lidLimit) {
-        _mvMapping.clearDocs(lidLow, lidLimit, _attr);
+        _mvMapping.clearDocs(lidLow, lidLimit, [=](uint32_t docId) { _attr.clearDoc(docId); });
     }
     size_t getTotalValueCnt() const { return _mvMapping.getTotalValueCnt(); }
 

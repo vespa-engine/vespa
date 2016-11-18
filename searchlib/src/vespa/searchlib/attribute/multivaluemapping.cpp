@@ -250,15 +250,13 @@ MultiValueMappingBase<I>::shrink(uint32_t docIdLimit)
 
 template <typename I>
 void
-MultiValueMappingBase<I>::clearDocs(uint32_t lidLow, uint32_t lidLimit,
-                                    AttributeVector &v)
+MultiValueMappingBase<I>::clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc)
 {
     assert(lidLow <= lidLimit);
-    assert(lidLimit <= v.getNumDocs());
     assert(lidLimit <= _indices.size());
     for (uint32_t lid = lidLow; lid < lidLimit; ++lid) {
         if (_indices[lid].idx() != 0) {
-            v.clearDoc(lid);
+            clearDoc(lid);
         }
     }
 }
