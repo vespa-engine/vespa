@@ -13,6 +13,7 @@ LOG_SETUP("docsummary_test");
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
+#include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>

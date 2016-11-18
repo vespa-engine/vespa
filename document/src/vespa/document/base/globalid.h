@@ -205,11 +205,8 @@ public:
     static GlobalId calculateLastInBucket(const BucketId &bucket);
 };
 
-inline vespalib::asciistream &
-operator << (vespalib::asciistream & os, const GlobalId & gid)
-{
-    return os << gid.toString();
-}
+vespalib::asciistream & operator << (vespalib::asciistream & os, const GlobalId & gid);
+std::ostream& operator<<(std::ostream& out, const GlobalId& gid);
 
 } // document
 
