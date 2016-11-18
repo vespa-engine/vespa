@@ -9,7 +9,8 @@ namespace attribute {
 
 MultiValueMapping2Base::MultiValueMapping2Base(const GrowStrategy &gs,
                                                vespalib::GenerationHolder &genHolder)
-    : _indices(gs, genHolder)
+    : _indices(gs, genHolder),
+      _totalValues(0u)
 {
 }
 
