@@ -20,11 +20,9 @@ import java.util.logging.Logger;
  * A subclass of UserTemplate must implement header(), footer(), hit(),
  * hitFooter(), error() and noHits().
  *
- * @deprecated use a renderer instead
  * @author Steinar Knutsen
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
 public abstract class UserTemplate<T extends Writer> extends GenericTemplateSet {
 
     // &amp;

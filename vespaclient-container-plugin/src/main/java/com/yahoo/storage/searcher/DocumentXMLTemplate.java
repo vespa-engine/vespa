@@ -15,11 +15,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.logging.Logger;
 
-/**
- * @deprecated use a renderer instead
- */
-@Deprecated // TODO: Remove on Vespa 7
-@SuppressWarnings("deprecation")
 public class DocumentXMLTemplate extends UserTemplate<Writer> {
 
     private static final Logger log = Logger.getLogger(DocumentXMLTemplate.class.getName());
