@@ -23,6 +23,8 @@ private:
     const search::attribute::IAttributeVector *_vec;
 
 public:
+    DocumentLocations(DocumentLocations &&) = default;
+    DocumentLocations & operator = (DocumentLocations &&) = default;
     DocumentLocations();
     virtual ~DocumentLocations();
 
