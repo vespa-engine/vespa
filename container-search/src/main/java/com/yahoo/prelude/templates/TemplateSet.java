@@ -18,7 +18,10 @@ import java.io.Writer;
  * like returning different templates for different hit types.</p>
  *
  * @author bratseth
+ * @deprecated use a renderer instead
  */
+@SuppressWarnings("deprecation")
+@Deprecated // TODO: Remove on Vespa 7
 public class TemplateSet<T extends Writer> extends UserTemplate<T> {
 
     private static final String queryContextTemplateName = "queryContext";
