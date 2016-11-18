@@ -12,6 +12,7 @@ class Annotation;
 class FixedTypeRepo;
 class SpanList;
 class SpanTree;
+class SimpleSpanList;
 
 class AnnotationDeserializer {
 public:

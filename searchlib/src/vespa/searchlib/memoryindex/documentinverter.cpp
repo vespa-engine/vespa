@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.documentinverter");
 #include "documentinverter.h"
 #include <vespa/document/datatype/urldatatype.h>
+#include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/searchlib/util/url.h>
 #include <stdexcept>
 #include <vespa/vespalib/text/utf8.h>
@@ -16,6 +15,8 @@ LOG_SETUP(".memoryindex.documentinverter");
 #include "dictionary.h"
 #include "ordereddocumentinserter.h"
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".memoryindex.documentinverter");
 
 namespace search
 {

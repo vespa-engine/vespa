@@ -8,6 +8,27 @@
 
 namespace document {
 
+std::ostream & operator << (std::ostream & os, const Annotation &annotation) {
+    return os << annotation.toString();
+}
+
 Annotation::~Annotation() { }
+
+vespalib::string
+Annotation::toString() const {
+    std::ostringstream os;
+    vespalib::string indent("");
+    os << "Annotation(" << *_type;
+    if (_value.get()) {
+        os << "\n" << indent << "  ";
+        _value->print(os, false, indent + "  ");
+    }
+    if (_node) {
+        os << "\n" << indent << "  ";
+        _node->toString();
+    }
+    os << ")";
+    return os.str();
+}
 
 }  // namespace document

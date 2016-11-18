@@ -2,9 +2,6 @@
 // Unit tests for annotation.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("annotation_test");
-
 #include <stdlib.h>
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
@@ -22,6 +19,8 @@ LOG_SETUP("annotation_test");
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <memory>
+#include <vespa/log/log.h>
+LOG_SETUP("annotation_test");
 
 using std::unique_ptr;
 using namespace document;

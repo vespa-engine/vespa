@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "spanlist.h"
+#include "spantreevisitor.h"
 
 namespace document {
 
@@ -11,6 +12,10 @@ SpanList::~SpanList() {
     }
 }
 
+void SpanList::accept(SpanTreeVisitor &visitor) const {
+    visitor.visit(*this);
+}
+
 SimpleSpanList::SimpleSpanList(size_t sz) :
     _span_vector(sz)
 {
@@ -18,6 +23,10 @@ SimpleSpanList::SimpleSpanList(size_t sz) :
 
 SimpleSpanList::~SimpleSpanList()
 {
+}
+
+void SimpleSpanList::accept(SpanTreeVisitor &visitor) const {
+    visitor.visit(*this);
 }
 
 }  // namespace document

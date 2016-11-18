@@ -35,6 +35,7 @@ public:
     bool valid() const { return _type != nullptr; }
     int32_t getTypeId() const { return _type->getId(); }
     const FieldValue *getFieldValue() const { return _value.get(); }
+    vespalib::string toString() const;
 };
 
 inline bool operator==(const Annotation &a1, const Annotation &a2) {
@@ -44,6 +45,8 @@ inline bool operator==(const Annotation &a1, const Annotation &a2) {
              (*a1.getFieldValue() == *a2.getFieldValue()))
             );
 }
+
+std::ostream & operator << (std::ostream & os, const Annotation & span);
 
 }  // namespace document
 

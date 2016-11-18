@@ -3,7 +3,6 @@
 #pragma once
 
 #include "span.h"
-#include "spantreevisitor.h"
 #include <memory>
 #include <vector>
 
@@ -31,7 +30,7 @@ public:
     const_iterator begin() const { return _span_vector.begin(); }
     const_iterator end() const { return _span_vector.end(); }
 
-    void accept(SpanTreeVisitor &visitor) const override { visitor.visit(*this); }
+    void accept(SpanTreeVisitor &visitor) const override;
 };
 
 class SimpleSpanList : public SpanNode {
@@ -52,7 +51,7 @@ public:
     const_iterator begin() const { return _span_vector.begin(); }
     const_iterator end() const { return _span_vector.end(); }
 
-    void accept(SpanTreeVisitor &visitor) const override { visitor.visit(*this); }
+    void accept(SpanTreeVisitor &visitor) const override;
 };
 
 }  // namespace document

@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "alternatespanlist.h"
-#include "spanlist.h"
+#include "spantreevisitor.h"
 
 using std::unique_ptr;
 
@@ -16,7 +16,7 @@ void ensureSize(size_t size, T &t) {
 }
 }  // namespace
 
-void AlternateSpanList::add(size_t index, unique_ptr<SpanNode> node) {
+void AlternateSpanList::addInternal(size_t index, unique_ptr<SpanNode> node) {
     ensureSize(index + 1, _subtrees);
     Subtree &subtree = _subtrees[index];
     if (!subtree.span_list) {
@@ -50,6 +50,10 @@ SpanList &AlternateSpanList::getSubtree(size_t index) const {
 double AlternateSpanList::getProbability(size_t index) const {
     assert(index < _subtrees.size());
     return _subtrees[index].probability;
+}
+
+void AlternateSpanList::accept(SpanTreeVisitor &visitor) const {
+    visitor.visit(*this);
 }
 
 }  // namespace document

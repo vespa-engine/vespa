@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <memory>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace document {
 class SpanTreeVisitor;
@@ -12,6 +12,7 @@ struct SpanNode {
 
     virtual ~SpanNode() {}
 
+    vespalib::string toString() const;
     virtual void accept(SpanTreeVisitor &visitor) const = 0;
 };
 

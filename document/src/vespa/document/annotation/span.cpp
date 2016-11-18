@@ -2,10 +2,10 @@
 
 #include <vespa/fastos/fastos.h>
 #include "span.h"
-
-using std::ostream;
-using std::string;
+#include "spantreevisitor.h"
 
 namespace document {
+
+void Span::accept(SpanTreeVisitor &visitor) const { visitor.visit(*this); }
 
 }  // namespace document
