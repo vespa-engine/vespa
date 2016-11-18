@@ -22,7 +22,8 @@ GenerationHeldMalloc::~GenerationHeldMalloc(void)
 
 GenerationHolder::GenerationHolder(void)
     : _hold1List(),
-      _hold2List()
+      _hold2List(),
+      _heldBytes(0)
 {
 }
 
@@ -30,12 +31,14 @@ GenerationHolder::~GenerationHolder(void)
 {
     assert(_hold1List.empty());
     assert(_hold2List.empty());
+    assert(_heldBytes == 0);
 }
 
 void
 GenerationHolder::hold(GenerationHeldBase::UP data)
 {
     _hold1List.push_back(GenerationHeldBase::SP(data.release()));
+    _heldBytes += _hold1List.back()->getSize();
 }
 
 void
@@ -61,6 +64,7 @@ GenerationHolder::trimHoldListsSlow(generation_t usedGen)
         GenerationHeldBase &first = *_hold2List.front();
         if (static_cast<sgeneration_t>(first._generation - usedGen) >= 0)
             break;
+        _heldBytes -= first.getSize();
         _hold2List.erase(_hold2List.begin());
     }
 }
@@ -70,24 +74,7 @@ GenerationHolder::clearHoldLists(void)
 {
     _hold1List.clear();
     _hold2List.clear();
-}
-
-size_t
-GenerationHolder::getHeldBytes(void) const
-{
-    size_t ret = 0;
-    HoldList::const_iterator it(_hold1List.begin());
-    HoldList::const_iterator ite(_hold1List.end());
-    for (; it != ite; ++it) {
-        assert((*it)->_generation == 0u);
-        ret += (*it)->getSize();
-    }
-    it =_hold2List.begin();
-    ite = _hold2List.end();
-    for (; it != ite; ++it) {
-        ret += (*it)->getSize();
-    }
-    return ret;
+    _heldBytes = 0;
 }
 
 }

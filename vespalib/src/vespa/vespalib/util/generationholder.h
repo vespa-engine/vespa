@@ -63,6 +63,7 @@ private:
 
     HoldList _hold1List;
     HoldList _hold2List;
+    size_t _heldBytes;
 
     /**
      * Transfer holds from hold1 to hold2 lists, assigning generation.
@@ -102,7 +103,7 @@ public:
     }
 
     void clearHoldLists(void);
-    size_t getHeldBytes(void) const;
+    size_t getHeldBytes(void) const { return _heldBytes; }
 };
 
 }
