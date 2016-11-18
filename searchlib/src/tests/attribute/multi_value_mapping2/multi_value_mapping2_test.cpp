@@ -130,18 +130,20 @@ class IntFixture : public Fixture<int>
 {
     search::Rand48 _rnd;
     std::map<uint32_t, std::vector<int>> _refMapping;
+    uint32_t _maxSmallArraySize;
 public:
     IntFixture(uint32_t maxSmallArraySize)
         : Fixture<int>(maxSmallArraySize),
           _rnd(),
-          _refMapping()
+          _refMapping(),
+          _maxSmallArraySize(maxSmallArraySize)
     {
         _rnd.srand48(32);
     }
 
     std::vector<int> makeValues() {
         std::vector<int> result;
-        uint32_t numValues = _rnd.lrand48() % 5;
+        uint32_t numValues = _rnd.lrand48() % (_maxSmallArraySize + 2);
         for (uint32_t i = 0; i < numValues; ++i)
         {
             result.emplace_back(_rnd.lrand48());
