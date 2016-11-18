@@ -1,12 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,14 +20,21 @@ public class GeminiTestCase extends AbstractExportingTestCase {
     public void testRanking2() throws IOException, ParseException {
         DerivedConfiguration c = assertCorrectDeriving("gemini2");
         RawRankProfile p = c.getRankProfileList().getRankProfile("test");
-        Map<String, String> ranking = removePartKeySuffixes(p.configProperties());
+        Map<String, String> ranking = removePartKeySuffixes(asMap(p.configProperties()));
         assertEquals("attribute(right)", resolve(lookup("toplevel", ranking), ranking));
     }
+    
+    private Map<String, String> asMap(List<Pair<String, String>> properties) {
+        Map<String, String> map = new HashMap<>();
+        for (Pair<String, String> property : properties)
+            map.put(property.getFirst(), property.getSecond());
+        return map;
+    }
 
-    private Map<String, String> removePartKeySuffixes(Map<String, Object> p) {
+    private Map<String, String> removePartKeySuffixes(Map<String, String> p) {
         Map<String, String> pWithoutSuffixes = new HashMap<>();
-        for (Map.Entry<String, Object> entry : p.entrySet())
-            pWithoutSuffixes.put(removePartSuffix(entry.getKey()), entry.getValue().toString());
+        for (Map.Entry<String, String> entry : p.entrySet())
+            pWithoutSuffixes.put(removePartSuffix(entry.getKey()), entry.getValue());
         return pWithoutSuffixes;
     }
 

@@ -1,0 +1,4 @@
+if (query(socialboostfactor) > 0,
+    query(socialboostfactor) *
+    log(dotProduct("socialvector", "social"))
+    , 0)

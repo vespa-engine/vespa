@@ -2,12 +2,15 @@
 package com.yahoo.searchlib.rankingexpression;
 
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
 import com.yahoo.searchlib.rankingexpression.parser.TokenMgrError;
+import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
+import com.yahoo.searchlib.rankingexpression.rule.SetMembershipNode;
 
 import java.io.*;
 import java.util.*;
@@ -71,13 +74,20 @@ public class RankingExpression implements Serializable {
     private String name = "";
     private ExpressionNode root;
 
+    /** Creates an anonymous ranking expression by consuming from the reader */
+    public RankingExpression(Reader reader) throws ParseException {
+        root = parse(reader);
+    }
+
     /**
      * Creates a new ranking expression by consuming from the reader
      *
+     * @param name the name of the ranking expression
      * @param reader the reader that contains the string to parse.
      * @throws ParseException if the string could not be parsed.
      */
-    public RankingExpression(Reader reader) throws ParseException {
+    public RankingExpression(String name, Reader reader) throws ParseException {
+        this.name = name;
         root = parse(reader);
     }
 

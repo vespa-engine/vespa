@@ -15,6 +15,7 @@ import static org.junit.Assert.assertTrue;
  * @author  bratseth
  */
 public class OutsideTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testOutsideIndex() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/outsidedoc.sd");
@@ -23,8 +24,10 @@ public class OutsideTestCase extends SearchDefinitionTestCase {
         assertTrue(defaultIndex.isPrefix());
         assertEquals("default.default",defaultIndex.aliasIterator().next());
     }
+
     @Test
     public void testOutsideSummary() throws IOException, ParseException {
         SearchBuilder.buildFromFile("src/test/examples/outsidesummary.sd");
     }
+
 }

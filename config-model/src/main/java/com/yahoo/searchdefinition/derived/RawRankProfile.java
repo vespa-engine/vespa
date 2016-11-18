@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.google.common.collect.ImmutableList;
+import com.yahoo.collections.Pair;
+import com.yahoo.compress.Compressor;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -9,7 +12,15 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import java.util.*;
+
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A rank profile derived from a search definition, containing exactly the features available natively in the server
@@ -18,12 +29,60 @@ import java.util.*;
  */
 public class RawRankProfile implements RankProfilesConfig.Producer {
 
-    private String name;
+    /** A reusable compressor with default settings */
+    private static final Compressor compressor = new Compressor();
+    
+    private final String keyEndMarker = "\r=";
+    private final String valueEndMarker = "\r\n";
+    
+    // TODO: These are to expose coupling between the strings used here and elsewhere
+    public final static String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
+    public final static String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
 
-    public String getName() {
-        return name;
+    private final String name;
+
+    private final Compressor.Compression compressedProperties;
+
+    /**
+     * Creates a raw rank profile from the given rank profile
+     */
+    public RawRankProfile(RankProfile rankProfile, AttributeFields attributeFields) {
+        this.name = rankProfile.getName();
+        compressedProperties = compress(removePartFromKeys(new Deriver(rankProfile, attributeFields).derive()));
+    }
+    
+    private List<Pair<String, String>> removePartFromKeys(Map<String, String> map) {
+        ImmutableList.Builder<Pair<String, String>> replaced = new ImmutableList.Builder<>();
+        for (Map.Entry<String, String> e : map.entrySet()) {
+            String key = e.getKey().replaceFirst(".part\\d+$", "");
+            String val = e.getValue();
+            replaced.add(new Pair<>(key, val));
+        }
+        return replaced.build();
+    }
+    
+    private Compressor.Compression compress(List<Pair<String, String>> properties) {
+        StringBuilder b = new StringBuilder();
+        for (Pair<String, String> property : properties)
+            b.append(property.getFirst()).append(keyEndMarker).append(property.getSecond()).append(valueEndMarker);
+        return compressor.compress(b.toString().getBytes(Charset.forName("utf8")));
     }
 
+    private List<Pair<String, String>> decompress(Compressor.Compression compression) {
+        String propertiesString = new String(compressor.decompress(compression), Charset.forName("utf8"));
+        if (propertiesString.isEmpty()) return ImmutableList.of();
+
+        ImmutableList.Builder<Pair<String, String>> properties = new ImmutableList.Builder<>();
+        for (String propertyString : propertiesString.split(valueEndMarker)) {
+            String[] property = propertyString.split(keyEndMarker);
+            properties.add(new Pair<>(property[0], property[1]));
+        }
+        return properties.build();
+    }
+
+    public String getName() { return name; }
+
+    @Override
     public String toString() {
         return " rank profile " + name;
     }
@@ -37,35 +96,17 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     private void getRankProperties(RankProfilesConfig.Rankprofile.Builder b) {
         RankProfilesConfig.Rankprofile.Fef.Builder fefB = new RankProfilesConfig.Rankprofile.Fef.Builder();
-        for (Map.Entry<String, Object> e : configProperties.entrySet()) {
-            String key = e.getKey().replaceFirst(".part\\d+$", "");
-            String val = e.getValue().toString();
-            fefB.property(new RankProfilesConfig.Rankprofile.Fef.Property.Builder().name(key).value(val));
-        }
+        for (Pair<String, String> p : decompress(compressedProperties))
+            fefB.property(new RankProfilesConfig.Rankprofile.Fef.Property.Builder().name(p.getFirst()).value(p.getSecond()));
         b.fef(fefB);
     }
 
-    // TODO: These are to expose coupling between the strings used here and elsewhere
-    public final static String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
-    public final static String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
-
-    /**
-     * Returns an immutable view of the config properties this returns
+    /** 
+     * Returns the properties of this as an unmodifiable list.
+     * Note: This method is expensive.
      */
-    public Map<String, Object> configProperties() {
-        return Collections.unmodifiableMap(configProperties);
-    }
-
-    private final Map<String, Object> configProperties;
-
-    /**
-     * Creates a raw rank profile from the given rank profile
-     */
-    public RawRankProfile(RankProfile rankProfile, AttributeFields attributeFields) {
-        this.name = rankProfile.getName();
-        configProperties = new Deriver(rankProfile, attributeFields).derive();
-    }
-
+    public List<Pair<String, String>> configProperties() { return decompress(compressedProperties); }
+    
     private static class Deriver {
 
         /**
@@ -258,8 +299,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
          *
          * @return map of the derived properties
          */
-        public Map<String, Object> derive() {
-            Map<String, Object> props = new LinkedHashMap<>();
+        public Map<String, String> derive() {
+            Map<String, String> properties = new LinkedHashMap<>();
             int i = 0;
             for (RankProfile.RankProperty property : rankProperties) {
                 if ("rankingExpression(firstphase).rankingScript".equals(property.getName())) {
@@ -279,81 +320,81 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     }
                     continue;
                 }
-                props.put(property.getName() + ".part" + i, property.getValue());
+                properties.put(property.getName() + ".part" + i, property.getValue());
                 i++;
             }
-            props.putAll(deriveRankingPhaseRankProperties(firstPhaseRanking, "firstphase"));
-            props.putAll(deriveRankingPhaseRankProperties(secondPhaseRanking, "secondphase"));
+            properties.putAll(deriveRankingPhaseRankProperties(firstPhaseRanking, "firstphase"));
+            properties.putAll(deriveRankingPhaseRankProperties(secondPhaseRanking, "secondphase"));
             for (FieldRankSettings settings : fieldRankSettings.values()) {
-                props.putAll(settings.deriveRankProperties(i));
+                properties.putAll(settings.deriveRankProperties(i));
             }
             i = 0;
             for (RankProfile.RankProperty property : boostAndWeightRankProperties) {
-                props.put(property.getName() + ".part" + i, property.getValue());
+                properties.put(property.getName() + ".part" + i, property.getValue());
                 i++;
             }
             i = 0;
             for (ReferenceNode feature : summaryFeatures) {
-                props.put(summaryFeatureFefPropertyPrefix + ".part" + i, feature.toString());
+                properties.put(summaryFeatureFefPropertyPrefix + ".part" + i, feature.toString());
                 i++;
             }
             i = 0;
             for (ReferenceNode feature : rankFeatures) {
-                props.put(rankFeatureFefPropertyPrefix + ".part" + i, feature.toString());
+                properties.put(rankFeatureFefPropertyPrefix + ".part" + i, feature.toString());
                 i++;
             }
             if (numThreadsPerSearch > 0) {
-                props.put("vespa.matching.numthreadspersearch", numThreadsPerSearch + "");
+                properties.put("vespa.matching.numthreadspersearch", numThreadsPerSearch + "");
             }
             if (minHitsPerThread > 0) {
-                props.put("vespa.matching.minhitsperthread", minHitsPerThread + "");
+                properties.put("vespa.matching.minhitsperthread", minHitsPerThread + "");
             }
             if (numSearchPartitions >= 0) {
-                props.put("vespa.matching.numsearchpartitions", numSearchPartitions + "");
+                properties.put("vespa.matching.numsearchpartitions", numSearchPartitions + "");
             }
             if (termwiseLimit < 1.0) {
-                props.put("vespa.matching.termwise_limit", termwiseLimit + "");
+                properties.put("vespa.matching.termwise_limit", termwiseLimit + "");
             }
             if (matchPhaseSettings != null) {
-                props.put("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute());
-                props.put("vespa.matchphase.degradation.ascendingorder", matchPhaseSettings.getAscending() + "");
-                props.put("vespa.matchphase.degradation.maxhits", matchPhaseSettings.getMaxHits() + "");
-                props.put("vespa.matchphase.degradation.maxfiltercoverage", matchPhaseSettings.getMaxFilterCoverage() + "");
-                props.put("vespa.matchphase.degradation.samplepercentage", matchPhaseSettings.getEvaluationPoint() + "");
-                props.put("vespa.matchphase.degradation.postfiltermultiplier", matchPhaseSettings.getPrePostFilterTippingPoint() + "");
+                properties.put("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute());
+                properties.put("vespa.matchphase.degradation.ascendingorder", matchPhaseSettings.getAscending() + "");
+                properties.put("vespa.matchphase.degradation.maxhits", matchPhaseSettings.getMaxHits() + "");
+                properties.put("vespa.matchphase.degradation.maxfiltercoverage", matchPhaseSettings.getMaxFilterCoverage() + "");
+                properties.put("vespa.matchphase.degradation.samplepercentage", matchPhaseSettings.getEvaluationPoint() + "");
+                properties.put("vespa.matchphase.degradation.postfiltermultiplier", matchPhaseSettings.getPrePostFilterTippingPoint() + "");
                 RankProfile.DiversitySettings diversitySettings = rankProfile.getMatchPhaseSettings().getDiversity();
                 if (diversitySettings != null) {
-                    props.put("vespa.matchphase.diversity.attribute", diversitySettings.getAttribute());
-                    props.put("vespa.matchphase.diversity.mingroups", diversitySettings.getMinGroups());
-                    props.put("vespa.matchphase.diversity.cutoff.factor", diversitySettings.getCutoffFactor());
-                    props.put("vespa.matchphase.diversity.cutoff.strategy", diversitySettings.getCutoffStrategy());
+                    properties.put("vespa.matchphase.diversity.attribute", diversitySettings.getAttribute());
+                    properties.put("vespa.matchphase.diversity.mingroups", String.valueOf(diversitySettings.getMinGroups()));
+                    properties.put("vespa.matchphase.diversity.cutoff.factor", String.valueOf(diversitySettings.getCutoffFactor()));
+                    properties.put("vespa.matchphase.diversity.cutoff.strategy", String.valueOf(diversitySettings.getCutoffStrategy()));
                 }
             }
             if (rerankCount > -1) {
-                props.put("vespa.hitcollector.heapsize", rerankCount + "");
+                properties.put("vespa.hitcollector.heapsize", rerankCount + "");
             }
             if (keepRankCount > -1) {
-                props.put("vespa.hitcollector.arraysize", keepRankCount + "");
+                properties.put("vespa.hitcollector.arraysize", keepRankCount + "");
             }
             if (rankScoreDropLimit > -Double.MAX_VALUE) {
-                props.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit + "");
+                properties.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit + "");
             }
             if (ignoreDefaultRankFeatures) {
-                props.put("vespa.dump.ignoredefaultfeatures", true);
+                properties.put("vespa.dump.ignoredefaultfeatures", String.valueOf(true));
             }
             Iterator filterFieldsIterator = filterFields.iterator();
             while (filterFieldsIterator.hasNext()) {
                 String fieldName = (String) filterFieldsIterator.next();
-                props.put("vespa.isfilterfield." + fieldName + ".part42", true);
+                properties.put("vespa.isfilterfield." + fieldName + ".part42", String.valueOf(true));
             }
             for (Map.Entry<String, String> attributeType : rankProfile.getAttributeTypes().entrySet()) {
-                props.put("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue());
+                properties.put("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue());
             }
             for (Map.Entry<String, String> queryFeatureType : rankProfile.getQueryFeatureTypes().entrySet()) {
-                props.put("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue());
+                properties.put("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue());
             }
-            if (props.size() >= 1000000) throw new RuntimeException("Too many rank properties");
-            return props;
+            if (properties.size() >= 1000000) throw new RuntimeException("Too many rank properties");
+            return properties;
         }
 
         private Map<String, String> deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {

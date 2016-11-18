@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
@@ -73,23 +74,23 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
         RankProfile parent = rankProfileRegistry.getRankProfile(s, "parent").compile();
         assertEquals("17.0", parent.getFirstPhaseRanking().getRoot().toString());
         assertEquals("0.0", parent.getSecondPhaseRanking().getRoot().toString());
-        List<Map.Entry<String, Object>> parentRankProperties = new ArrayList<>(new RawRankProfile(parent, new AttributeFields(s)).configProperties().entrySet());
-        assertEquals("rankingExpression(foo).rankingScript.part0=10.0", parentRankProperties.get(0).toString());
-        assertEquals("rankingExpression(firstphase).rankingScript=17.0", parentRankProperties.get(2).toString());
-        assertEquals("rankingExpression(secondphase).rankingScript=0.0", parentRankProperties.get(4).toString());
+        List<Pair<String, String>> parentRankProperties = new RawRankProfile(parent, new AttributeFields(s)).configProperties();
+        assertEquals("(rankingExpression(foo).rankingScript,10.0)", parentRankProperties.get(0).toString());
+        assertEquals("(rankingExpression(firstphase).rankingScript,17.0)", parentRankProperties.get(2).toString());
+        assertEquals("(rankingExpression(secondphase).rankingScript,0.0)", parentRankProperties.get(4).toString());
 
         RankProfile child = rankProfileRegistry.getRankProfile(s, "child").compile();
         assertEquals("31.0 + bar + arg(4.0)", child.getFirstPhaseRanking().getRoot().toString());
         assertEquals("24.0", child.getSecondPhaseRanking().getRoot().toString());
-        List<Map.Entry<String, Object>> childRankProperties = new ArrayList<>(new RawRankProfile(child, new AttributeFields(s)).configProperties().entrySet());
+        List<Pair<String, String>> childRankProperties = new RawRankProfile(child, new AttributeFields(s)).configProperties();
         for (Object o : childRankProperties) System.out.println(o);
-        assertEquals("rankingExpression(foo).rankingScript.part0=12.0", childRankProperties.get(0).toString());
-        assertEquals("rankingExpression(bar).rankingScript.part1=14.0", childRankProperties.get(1).toString());
-        assertEquals("rankingExpression(boz).rankingScript.part2=3.0", childRankProperties.get(2).toString());
-        assertEquals("rankingExpression(baz).rankingScript.part3=9.0 + rankingExpression(boz)", childRankProperties.get(3).toString());
-        assertEquals("rankingExpression(arg).rankingScript.part4=a1 * 2", childRankProperties.get(4).toString());
-        assertEquals("rankingExpression(firstphase).rankingScript=31.0 + rankingExpression(bar) + rankingExpression(arg@)", censorBindingHash(childRankProperties.get(7).toString()));
-        assertEquals("rankingExpression(secondphase).rankingScript=24.0", childRankProperties.get(9).toString());
+        assertEquals("(rankingExpression(foo).rankingScript,12.0)", childRankProperties.get(0).toString());
+        assertEquals("(rankingExpression(bar).rankingScript,14.0)", childRankProperties.get(1).toString());
+        assertEquals("(rankingExpression(boz).rankingScript,3.0)", childRankProperties.get(2).toString());
+        assertEquals("(rankingExpression(baz).rankingScript,9.0 + rankingExpression(boz))", childRankProperties.get(3).toString());
+        assertEquals("(rankingExpression(arg).rankingScript,a1 * 2)", childRankProperties.get(4).toString());
+        assertEquals("(rankingExpression(firstphase).rankingScript,31.0 + rankingExpression(bar) + rankingExpression(arg@))", censorBindingHash(childRankProperties.get(7).toString()));
+        assertEquals("(rankingExpression(secondphase).rankingScript,24.0)", childRankProperties.get(9).toString());
     }
 
     /**

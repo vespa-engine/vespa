@@ -19,17 +19,17 @@ public final class DoubleValue extends DoubleCompatibleValue {
     private double value;
 
     /** The double value instance for 0 */
-    public final static DoubleValue zero=DoubleValue.frozen(0);
+    public final static DoubleValue zero = DoubleValue.frozen(0);
 
     public DoubleValue(double value) {
-        this.value=value;
+        this.value = value;
     }
 
     /**
      * Create a double which is frozen at the outset.
      */
     public static DoubleValue frozen(double value) {
-        DoubleValue doubleValue=new DoubleValue(value);
+        DoubleValue doubleValue = new DoubleValue(value);
         doubleValue.freeze();
         return doubleValue;
     }

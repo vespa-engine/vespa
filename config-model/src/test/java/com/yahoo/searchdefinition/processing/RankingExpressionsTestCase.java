@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.searchdefinition.*;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
@@ -34,23 +35,23 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
         assertEquals("78 + closeness(distance)", macros.get("artistmatch").getTextualExpression().trim());
         assertEquals(0, macros.get("artistmatch").getFormalParams().size());
 
-        List<Map.Entry<String, Object>> rankProperties = new ArrayList<>(new RawRankProfile(macrosRankProfile, new AttributeFields(search)).configProperties().entrySet());
+        List<Pair<String, String>> rankProperties = new RawRankProfile(macrosRankProfile, new AttributeFields(search)).configProperties();
         assertEquals(6, rankProperties.size());
 
-        assertEquals("rankingExpression(titlematch$).rankingScript.part0", rankProperties.get(0).getKey());
-        assertEquals("var1 * var2 + 890", rankProperties.get(0).getValue());
+        assertEquals("rankingExpression(titlematch$).rankingScript", rankProperties.get(0).getFirst());
+        assertEquals("var1 * var2 + 890", rankProperties.get(0).getSecond());
 
-        assertEquals("rankingExpression(artistmatch).rankingScript.part1", rankProperties.get(1).getKey());
-        assertEquals("78 + closeness(distance)", rankProperties.get(1).getValue());
+        assertEquals("rankingExpression(artistmatch).rankingScript", rankProperties.get(1).getFirst());
+        assertEquals("78 + closeness(distance)", rankProperties.get(1).getSecond());
 
-        assertEquals("rankingExpression(firstphase).rankingScript", rankProperties.get(5).getKey());
-        assertEquals("0.8 + 0.2 * rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c) + 0.8 * rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6) * closeness(distance)", rankProperties.get(5).getValue());
+        assertEquals("rankingExpression(firstphase).rankingScript", rankProperties.get(5).getFirst());
+        assertEquals("0.8 + 0.2 * rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c) + 0.8 * rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6) * closeness(distance)", rankProperties.get(5).getSecond());
 
-        assertEquals("rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6).rankingScript.part3", rankProperties.get(3).getKey());
-        assertEquals("7 * 8 + 890", rankProperties.get(3).getValue());
+        assertEquals("rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6).rankingScript", rankProperties.get(3).getFirst());
+        assertEquals("7 * 8 + 890", rankProperties.get(3).getSecond());
 
-        assertEquals("rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c).rankingScript.part2", rankProperties.get(2).getKey());
-        assertEquals("4 * 5 + 890", rankProperties.get(2).getValue());
+        assertEquals("rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c).rankingScript", rankProperties.get(2).getFirst());
+        assertEquals("4 * 5 + 890", rankProperties.get(2).getSecond());
     }
 
     @Test(expected = IllegalArgumentException.class)

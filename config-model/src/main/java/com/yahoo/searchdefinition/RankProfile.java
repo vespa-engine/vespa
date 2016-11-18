@@ -9,6 +9,7 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.searchlib.rankingexpression.rule.SetMembershipNode;
 import com.yahoo.searchlib.rankingexpression.transform.ConstantDereferencer;
 import com.yahoo.searchlib.rankingexpression.transform.Simplifier;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -39,7 +40,7 @@ public class RankProfile implements Serializable, Cloneable {
     protected Set<RankSetting> rankSettings = new java.util.LinkedHashSet<>();
 
     /** The ranking expression to be used for first phase */
-    private RankingExpression firstPhaseRanking= null;
+    private RankingExpression firstPhaseRanking= null; 
 
     /** The ranking expression to be used for second phase */
     private RankingExpression secondPhaseRanking = null;
@@ -472,6 +473,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     /**
      * Returns the string form of the second phase ranking expression.
+     * 
      * @return string form of second phase ranking expression
      */
     public String getSecondPhaseRankingString() {
@@ -582,19 +584,20 @@ public class RankProfile implements Serializable, Cloneable {
             setSecondPhaseRanking(parseRankingExpression("secondphase", getSecondPhaseRankingString()));
     }
 
-    private RankingExpression parseRankingExpression(String expName, String exp) throws ParseException {
+    private RankingExpression parseRankingExpression(String expressionName, String exp) throws ParseException {
         if (exp.trim().length() == 0)
-            throw new ParseException("Encountered an empty ranking expression in " + getName()+ ", " + expName + ".");
+            throw new ParseException("Encountered an empty ranking expression in " + getName()+ ", " + expressionName + ".");
 
-        try {
-            RankingExpression expression = new RankingExpression(openRankingExpressionReader(expName, exp.trim()));
-            expression.setName(expName);
-            return expression;
+        try (Reader rankingExpressionReader = openRankingExpressionReader(expressionName, exp.trim())) {
+            return new RankingExpression(expressionName, rankingExpressionReader);
         }
         catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
             ParseException exception = new ParseException("Could not parse ranking expression '" + exp.trim() +
-                                                          "' in " + getName()+ ", " + expName + ".");
+                                                          "' in " + getName()+ ", " + expressionName + ".");
             throw (ParseException)exception.initCause(e);
+        }
+        catch (IOException e) {
+            throw new RuntimeException("IOException parsing ranking expression '" + expressionName + "'");
         }
     }
 
@@ -605,7 +608,7 @@ public class RankProfile implements Serializable, Cloneable {
         if ( ! fileName.endsWith(ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX))
             fileName = fileName + ApplicationPackage.RANKEXPRESSION_NAME_SUFFIX;
 
-        final File file = new File(fileName);
+        File file = new File(fileName);
         if ( ! (file.isAbsolute()) && file.getPath().contains("/")) // See ticket 4102122
             throw new IllegalArgumentException("In " + getName() +", " + expName + ", ranking references file '" + file +
                                                "' in subdirectory, which is not supported.");
@@ -658,7 +661,7 @@ public class RankProfile implements Serializable, Cloneable {
         for (Map.Entry<String, Macro> macroEntry : getMacros().entrySet()) {
             Macro compiledMacro = macroEntry.getValue().clone();
             compiledMacro.setRankingExpression(compile(macroEntry.getValue().getRankingExpression(),
-                    getConstants(), Collections.<String, Macro>emptyMap()));
+                                               getConstants(), Collections.<String, Macro>emptyMap()));
             compiledMacros.put(macroEntry.getKey(), compiledMacro);
         }
         macros = compiledMacros;

@@ -11,7 +11,7 @@ import java.util.Deque;
  * Superclass of all expression nodes. Expression nodes have their identity determined by their content.
  * All expression nodes are immutable.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public abstract class ExpressionNode implements Serializable {
 
