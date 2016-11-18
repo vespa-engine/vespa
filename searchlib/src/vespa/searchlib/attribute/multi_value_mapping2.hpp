@@ -55,5 +55,15 @@ MultiValueMapping2<EntryT,RefT>::compactWorst()
     }
 }
 
+template <typename EntryT, typename RefT>
+MemoryUsage
+MultiValueMapping2<EntryT,RefT>::getMemoryUsage() const
+{
+    MemoryUsage retval = _indices.getMemoryUsage();
+    retval.merge(_store.getMemoryUsage());
+    return retval;
+}
+
+
 } // namespace search::attribute
 } // namespace search
