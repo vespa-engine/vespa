@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "tensor_address.h"
 #include <algorithm>
+#include <ostream>
 
 namespace vespalib {
 namespace tensor {
