@@ -17,7 +17,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * <p>A template set which provides XML rendering of results and hits.</p>
+ * <p>A template set which provides a default rendering of results and hits.</p>
  *
  * <p>This can be extended to create custom programmatic templates.
  * Create a subclass which has static inner classes extending DefaultTemplate for the templates
@@ -26,10 +26,7 @@ import java.util.Map;
  * in place of DefaultTemplate to gain access to these. See TiledTemplateSet for an example.</p>
  *
  * @author bratseth
- * @deprecated use JsonRenderer instead
  */
-@SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
 public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
 
     private static final Utf8String RESULT = new Utf8String("result");

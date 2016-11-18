@@ -11,12 +11,8 @@ import java.util.logging.Logger;
 
 /**
  * Delegates to another UserTemplate, but handles any exceptions(except IOException) by logging them.
- * 
  * @author tonytv
- * @deprecated use a renderer instead
  */
-@SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
 public class LogExceptionUserTemplateDelegator<T extends Writer> extends UserTemplate<T> {
 
     private static Logger log = Logger.getLogger(LogExceptionUserTemplateDelegator.class.getName());

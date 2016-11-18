@@ -18,11 +18,7 @@ import java.io.Writer;
  * Template used to render a single field for a single Document. Fields
  * that are either of type CONTENT or RAW are written directly, while
  * all other fields are wrapped in Vespa XML and escaped.
- *
- * @deprecated use a renderer instead
  */
-@Deprecated // TODO: Remove on Vespa 7
-@SuppressWarnings("deprecation")
 public class DocumentFieldTemplate extends UserTemplate<Writer> {
 
     Field field;

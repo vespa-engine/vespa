@@ -38,10 +38,8 @@ import java.util.concurrent.Executor;
  * XML rendering of search results. This is NOT the default (but it once was).
  *
  * @author tonytv
- * @deprecated use JsonRenderer instead
  */
 @SuppressWarnings({ "rawtypes", "deprecation" })
-@Deprecated // TODO: Remove on Vespa 7
 public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result> {
 
     public static final String  DEFAULT_MIMETYPE    = "text/xml";
