@@ -11,8 +11,7 @@ using vespalib::stringref;
 
 namespace document {
 
-SpanTree::~SpanTree() {
-}
+SpanTree::~SpanTree() { }
 
 size_t SpanTree::annotate(Annotation::UP annotation_) {
     _annotations.push_back(*annotation_);
