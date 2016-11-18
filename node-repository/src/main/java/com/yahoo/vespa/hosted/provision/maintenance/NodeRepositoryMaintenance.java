@@ -93,7 +93,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 failGrace = Duration.ofMinutes(60);
                 redeployFrequency = Duration.ofMinutes(30);
                 zooKeeperAccessMaintenanceInterval = Duration.ofMinutes(1);
-                reservationExpiry = Duration.ofMinutes(15);
+                reservationExpiry = Duration.ofMinutes(20); // same as deployment timeout
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredExpiry = Duration.ofDays(4); // enough time to migrate data
                 failedExpiry = Duration.ofDays(4); // enough time to recover data even if it happens friday night
