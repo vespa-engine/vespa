@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -56,6 +57,7 @@ public class FailedExpirer extends Expirer {
     }
 
     private boolean failCountIndicatesHwFail(Zone zone) {
+        log.log(LogLevel.INFO, "system:" + zone.system()); // TODO: Debugging, remove after 2016-11-21
         if (zone.system() == SystemName.cd || zone.system() == SystemName.ci) {
             return false;
         }
