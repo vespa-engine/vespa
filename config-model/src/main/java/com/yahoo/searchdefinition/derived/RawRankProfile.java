@@ -13,6 +13,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -31,24 +32,23 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     /** A reusable compressor with default settings */
     private static final Compressor compressor = new Compressor();
     
+    private final String keyEndMarker = "\r=";
+    private final String valueEndMarker = "\r\n";
+    
     // TODO: These are to expose coupling between the strings used here and elsewhere
     public final static String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
     public final static String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
 
     private final String name;
-    private final List<Pair<String, String>> configProperties;
 
-    // TODO: Instead of storing properties as a list, sotre and send it as compressed bytes
-    // THis will save us memory in the config server and bandwith to search nodes
-    // private final Compressor.Compression compressedData;
+    private final Compressor.Compression compressedProperties;
 
     /**
      * Creates a raw rank profile from the given rank profile
      */
     public RawRankProfile(RankProfile rankProfile, AttributeFields attributeFields) {
         this.name = rankProfile.getName();
-        configProperties = removePartFromKeys(new Deriver(rankProfile, attributeFields).derive());
-        // compressedData = toCompressedValue(configProperties);
+        compressedProperties = compress(removePartFromKeys(new Deriver(rankProfile, attributeFields).derive()));
     }
     
     private List<Pair<String, String>> removePartFromKeys(Map<String, String> map) {
@@ -61,16 +61,26 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         return replaced.build();
     }
     
-    private Compressor.Compression toCompressedValue(List<Pair<String, String>> properties) {
+    private Compressor.Compression compress(List<Pair<String, String>> properties) {
         StringBuilder b = new StringBuilder();
         for (Pair<String, String> property : properties)
-            b.append(property.getFirst()).append("=").append(property.getSecond()).append("\n");
-        return compressor.compress(b.toString().getBytes());
+            b.append(property.getFirst()).append(keyEndMarker).append(property.getSecond()).append(valueEndMarker);
+        return compressor.compress(b.toString().getBytes(Charset.forName("utf8")));
     }
 
-    public String getName() {
-        return name;
+    private List<Pair<String, String>> decompress(Compressor.Compression compression) {
+        String propertiesString = new String(compressor.decompress(compression), Charset.forName("utf8"));
+        if (propertiesString.isEmpty()) return ImmutableList.of();
+
+        ImmutableList.Builder<Pair<String, String>> properties = new ImmutableList.Builder<>();
+        for (String propertyString : propertiesString.split(valueEndMarker)) {
+            String[] property = propertyString.split(keyEndMarker);
+            properties.add(new Pair<>(property[0], property[1]));
+        }
+        return properties.build();
     }
+
+    public String getName() { return name; }
 
     @Override
     public String toString() {
@@ -86,14 +96,17 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     private void getRankProperties(RankProfilesConfig.Rankprofile.Builder b) {
         RankProfilesConfig.Rankprofile.Fef.Builder fefB = new RankProfilesConfig.Rankprofile.Fef.Builder();
-        for (Pair<String, String> p : configProperties)
+        for (Pair<String, String> p : decompress(compressedProperties))
             fefB.property(new RankProfilesConfig.Rankprofile.Fef.Property.Builder().name(p.getFirst()).value(p.getSecond()));
         b.fef(fefB);
     }
 
-    /** Returns the properties of this as an unmodifiable list */
-    public List<Pair<String, String>> configProperties() { return configProperties; }
-
+    /** 
+     * Returns the properties of this as an unmodifiable list.
+     * Note: This method is expensive.
+     */
+    public List<Pair<String, String>> configProperties() { return decompress(compressedProperties); }
+    
     private static class Deriver {
 
         /**

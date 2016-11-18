@@ -75,15 +75,15 @@ public class Compressor {
         switch (requestedCompression) {
             case NONE:
                 data = uncompressedSize.isPresent() ? Arrays.copyOf(data, uncompressedSize.get()) : data;
-                return new Compression(CompressionType.NONE, data);
+                return new Compression(CompressionType.NONE, data.length, data);
             case LZ4:
                 int dataSize = uncompressedSize.isPresent() ? uncompressedSize.get() : data.length;
-                if (dataSize < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, data);
+                if (dataSize < compressMinSizeBytes) return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
                 LZ4Compressor compressor = level < 7 ? factory.fastCompressor() : factory.highCompressor();
                 byte[] compressedData = compressor.compress(data);
                 if (compressedData.length + 8 >= dataSize * compressionThresholdFactor)
-                    return new Compression(CompressionType.INCOMPRESSIBLE, data);
-                return new Compression(CompressionType.LZ4, compressedData);
+                    return new Compression(CompressionType.INCOMPRESSIBLE, dataSize, data);
+                return new Compression(CompressionType.LZ4, dataSize, compressedData);
             default:
                 throw new IllegalArgumentException(requestedCompression + " is not supported");
         }
@@ -124,19 +124,24 @@ public class Compressor {
                 throw new IllegalArgumentException(compression + " is not supported");
         }
     }
-    /** Decompress some data */
-    public byte[] decompress(byte[] compressedData, CompressionType compression, int uncompressedSize) {
-        return decompress(compression, compressedData, 0, uncompressedSize, Optional.empty());
+    /** Decompresses some data */
+    public byte[] decompress(byte[] compressedData, CompressionType compressionType, int uncompressedSize) {
+        return decompress(compressionType, compressedData, 0, uncompressedSize, Optional.empty());
+    }
+    /** Decompresses some data */
+    public byte[] decompress(Compression compression) {
+        return decompress(compression.type(), compression.data(), 0, compression.uncompressedSize(), Optional.empty());
     }
 
     public static class Compression {
 
         private final CompressionType compressionType;
-
+        private final int uncompressedSize;
         private final byte[] data;
 
-        public Compression(CompressionType compressionType, byte[] data) {
+        public Compression(CompressionType compressionType, int uncompressedSize, byte[] data) {
             this.compressionType = compressionType;
+            this.uncompressedSize = uncompressedSize;
             this.data = data;
         }
 
@@ -145,6 +150,9 @@ public class Compressor {
          * This will be either the requested compression or INCOMPRESSIBLE.
          */
         public CompressionType type() { return compressionType; }
+        
+        /** Returns the uncompressed size of this data in bytes */
+        public int uncompressedSize() { return uncompressedSize; }
 
         /** Returns the uncompressed data in a buffer which gets owned by the caller */
         public byte[] data() { return data; }
