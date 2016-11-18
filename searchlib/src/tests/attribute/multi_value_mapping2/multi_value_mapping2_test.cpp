@@ -167,15 +167,13 @@ public:
 
     void checkRefMapping() {
         uint32_t docId = 0;
-        auto itr = _refMapping.begin();
-        while (itr != _refMapping.end()) {
-            while (docId < itr->first) {
+        for (const auto &kv : _refMapping) {
+            while (docId < kv.first) {
                 TEST_DO(assertGet(docId, {}));
                 ++docId;
             }
-            TEST_DO(assertGet(docId, itr->second));
+            TEST_DO(assertGet(docId, kv.second));
             ++docId;
-            ++itr;
         }
         while (docId < size()) {
             TEST_DO(assertGet(docId, {}));
