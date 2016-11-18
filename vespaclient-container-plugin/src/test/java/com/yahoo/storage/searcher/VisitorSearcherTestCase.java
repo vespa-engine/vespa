@@ -16,20 +16,16 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.MessagePropertyProcessor;
 import com.yahoo.messagebus.StaticThrottlePolicy;
-import com.yahoo.prelude.templates.DefaultTemplateSet;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterList;
 import com.yahoo.vespaclient.config.FeederConfig;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 import static org.junit.Assert.*;
@@ -216,17 +212,18 @@ public class VisitorSearcherTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testRendererWiring() throws Exception {
         Chain<Searcher> searchChain = new Chain<>(create());
         {
             Query query = newQuery("visit?visit.selection=id.user=1234&hits=100&format=json");
             Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(query);
-            assertEquals(DefaultTemplateSet.class, result.getTemplating().getTemplates().getClass());
+            assertEquals(com.yahoo.prelude.templates.DefaultTemplateSet.class, result.getTemplating().getTemplates().getClass());
         }
         {
             Query query = newQuery("visit?visit.selection=id.user=1234&hits=100&format=JsonRenderer");
             Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(query);
-            assertEquals(DefaultTemplateSet.class, result.getTemplating().getTemplates().getClass());
+            assertEquals(com.yahoo.prelude.templates.DefaultTemplateSet.class, result.getTemplating().getTemplates().getClass());
         }
         {
             Query query = newQuery("visit?visit.selection=id.user=1234&hits=100");

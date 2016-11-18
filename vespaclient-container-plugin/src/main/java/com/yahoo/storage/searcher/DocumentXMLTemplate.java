@@ -7,7 +7,6 @@ import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.prelude.templates.Context;
-import com.yahoo.prelude.templates.UserTemplate;
 import com.yahoo.search.result.Hit;
 import com.yahoo.text.XML;
 
@@ -20,7 +19,7 @@ import java.util.logging.Logger;
  */
 @Deprecated // TODO: Remove on Vespa 7
 @SuppressWarnings("deprecation")
-public class DocumentXMLTemplate extends UserTemplate<Writer> {
+public class DocumentXMLTemplate extends com.yahoo.prelude.templates.UserTemplate<Writer> {
 
     private static final Logger log = Logger.getLogger(DocumentXMLTemplate.class.getName());
 

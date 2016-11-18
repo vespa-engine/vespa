@@ -8,7 +8,6 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.Raw;
 import com.yahoo.io.ByteWriter;
 import com.yahoo.prelude.templates.Context;
-import com.yahoo.prelude.templates.UserTemplate;
 import com.yahoo.text.XML;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ import java.io.Writer;
  */
 @Deprecated // TODO: Remove on Vespa 7
 @SuppressWarnings("deprecation")
-public class DocumentFieldTemplate extends UserTemplate<Writer> {
+public class DocumentFieldTemplate extends com.yahoo.prelude.templates.UserTemplate<Writer> {
 
     Field field;
     String contentType;
