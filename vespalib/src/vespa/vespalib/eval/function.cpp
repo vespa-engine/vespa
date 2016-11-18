@@ -508,6 +508,23 @@ std::vector<vespalib::string> get_ident_list(ParseContext &ctx, bool wrapped) {
     return list;
 }
 
+// a
+// (a,b,c)
+// cannot be empty
+std::vector<vespalib::string> get_idents(ParseContext &ctx) {
+    std::vector<vespalib::string> list;
+    ctx.skip_spaces();
+    if (ctx.get() == '(') {
+        list = get_ident_list(ctx, true);
+    } else {
+        list.push_back(get_ident(ctx, false));
+    }
+    if (list.empty()) {
+        ctx.fail("missing identifiers");        
+    }
+    return list;
+}
+
 Function parse_lambda(ParseContext &ctx, size_t num_params) {
     ctx.skip_spaces();
     ctx.eat('f');
@@ -561,6 +578,22 @@ void parse_tensor_reduce(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorReduce>(std::move(child), *maybe_aggr, std::move(dimensions)));
 }
 
+void parse_tensor_rename(ParseContext &ctx) {
+    parse_expression(ctx);
+    Node_UP child = ctx.pop_expression();
+    ctx.eat(',');
+    auto from = get_idents(ctx);
+    ctx.skip_spaces();
+    ctx.eat(',');
+    auto to = get_idents(ctx);
+    if (from.size() != to.size()) {
+        ctx.fail("dimension list size mismatch");
+    } else {
+        ctx.push_expression(std::make_unique<nodes::TensorRename>(std::move(child), std::move(from), std::move(to)));
+    }
+    ctx.skip_spaces();
+}
+
 // to be replaced with more generic 'reduce'
 void parse_tensor_sum(ParseContext &ctx) {
     parse_expression(ctx);
@@ -593,6 +626,8 @@ bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_tensor_join(ctx);
             } else if (name == "reduce") {
                 parse_tensor_reduce(ctx);
+            } else if (name == "rename") {
+                parse_tensor_rename(ctx);
             } else if (name == "sum") {
                 parse_tensor_sum(ctx);
             } else {

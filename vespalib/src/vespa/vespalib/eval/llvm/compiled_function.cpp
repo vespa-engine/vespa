@@ -60,7 +60,8 @@ CompiledFunction::detect_issues(const Function &function)
             if (nodes::check_type<nodes::TensorSum,
                                   nodes::TensorMap,
                                   nodes::TensorJoin,
-                                  nodes::TensorReduce>(node)) {
+                                  nodes::TensorReduce,
+                                  nodes::TensorRename>(node)) {
                 issues.push_back(make_string("unsupported node type: %s",
                                 getClassName(node).c_str()));
             }

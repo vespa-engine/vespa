@@ -10,8 +10,9 @@ namespace vespalib {
 namespace eval {
 namespace test {
 
-const double my_nan = std::numeric_limits<double>::quiet_NaN();
-const double my_inf = std::numeric_limits<double>::infinity();
+constexpr double my_nan = std::numeric_limits<double>::quiet_NaN();
+constexpr double my_inf = std::numeric_limits<double>::infinity();
+constexpr double my_error_value = 31212.0;
 
 vespalib::string
 EvalSpec::EvalTest::as_string(const std::vector<vespalib::string> &param_names,
@@ -130,6 +131,8 @@ EvalSpec::add_tensor_operation_cases() {
     add_rule({"a", -1.0, 1.0}, "reduce(a,sum)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,prod)", [](double a){ return a; });
     add_rule({"a", -1.0, 1.0}, "reduce(a,count)", [](double){ return 1.0; });
+    add_rule({"a", -1.0, 1.0}, "rename(a,x,y)", [](double){ return my_error_value; });
+    add_rule({"a", -1.0, 1.0}, "rename(a,(x,y),(y,x))", [](double){ return my_error_value; });
 }
 
 void

@@ -41,7 +41,8 @@ std::vector<vespalib::string> unsupported = {
     "sum(",
     "map(",
     "join(",
-    "reduce("
+    "reduce(",
+    "rename("
 };
 
 bool is_unsupported(const vespalib::string &expression) {

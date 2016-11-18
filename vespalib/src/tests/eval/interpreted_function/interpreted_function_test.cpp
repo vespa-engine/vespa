@@ -18,7 +18,8 @@ using vespalib::Stash;
 std::vector<vespalib::string> unsupported = {
     "map(",
     "join(",
-    "reduce("
+    "reduce(",
+    "rename("
 };
 
 bool is_unsupported(const vespalib::string &expression) {

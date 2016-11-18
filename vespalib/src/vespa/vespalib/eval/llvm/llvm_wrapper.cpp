@@ -359,6 +359,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     virtual void visit(const TensorReduce &node) {
         make_error(node.num_children());
     }
+    virtual void visit(const TensorRename &node) {
+        make_error(node.num_children());
+    }
 
     // operator nodes
 

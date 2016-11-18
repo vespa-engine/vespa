@@ -756,6 +756,8 @@ TEST("require that tensor operations can be nested") {
     EXPECT_EQUAL("sum(sum(sum(a)),dim)", Function::parse("sum(sum(sum(a)),dim)").dump());
 }
 
+//-----------------------------------------------------------------------------
+
 TEST("require that tensor map can be parsed") {
     EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse("map(a,f(x)(x+1))").dump());
     EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse(" map ( a , f ( x ) ( x + 1 ) ) ").dump());
@@ -782,6 +784,8 @@ TEST("require that outer let bindings are hidden within a lambda") {
     verify_error("let(b,x,map(b,f(a)(b)))", "[let(b,x,map(b,f(a)(b]...[unknown symbol: 'b']...[)))]");
 }
 
+//-----------------------------------------------------------------------------
+
 TEST("require that tensor reduce can be parsed") {
     EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, "reduce(x,sum,a,b,c)").dump());
     EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, " reduce ( x , sum , a , b , c ) ").dump());
@@ -801,6 +805,36 @@ TEST("require that tensor reduce with unknown aggregator fails") {
 
 TEST("require that tensor reduce with duplicate dimensions fails") {
     verify_error("reduce(x,sum,a,a)", "[reduce(x,sum,a,a]...[duplicate identifiers]...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that tensor rename can be parsed") {
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,a,b)").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,(a),(b))").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,a,(b))").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,(a),b)").dump());
+    EXPECT_EQUAL("rename(x,(a,b),(b,a))", Function::parse({"x"}, "rename(x,(a,b),(b,a))").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename( x , a , b )").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename( x , ( a ) , ( b ) )").dump());
+    EXPECT_EQUAL("rename(x,(a,b),(b,a))", Function::parse({"x"}, "rename( x , ( a , b ) , ( b , a ) )").dump());
+}
+
+TEST("require that tensor rename dimension lists cannot be empty") {
+    verify_error("rename(x,,b)", "[rename(x,]...[missing identifier]...[,b)]");
+    verify_error("rename(x,a,)", "[rename(x,a,]...[missing identifier]...[)]");
+    verify_error("rename(x,(),b)", "[rename(x,()]...[missing identifiers]...[,b)]");
+    verify_error("rename(x,a,())", "[rename(x,a,()]...[missing identifiers]...[)]");
+}
+
+TEST("require that tensor rename dimension lists cannot contain duplicates") {
+    verify_error("rename(x,(a,a),(b,a))", "[rename(x,(a,a)]...[duplicate identifiers]...[,(b,a))]");
+    verify_error("rename(x,(a,b),(b,b))", "[rename(x,(a,b),(b,b)]...[duplicate identifiers]...[)]");
+}
+
+TEST("require that tensor rename dimension lists must have equal size") {
+    verify_error("rename(x,(a,b),(b))", "[rename(x,(a,b),(b)]...[dimension list size mismatch]...[)]");
+    verify_error("rename(x,(a),(b,a))", "[rename(x,(a),(b,a)]...[dimension list size mismatch]...[)]");
 }
 
 //-----------------------------------------------------------------------------
