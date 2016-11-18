@@ -56,6 +56,7 @@ public:
         HistogramM _histogram;
     };
     Histogram getEmptyHistogram() const { return Histogram(); }
+    Histogram getRemaining() const { return Histogram(); }
     static size_t maxValues() { return 0; }
     uint32_t getNumKeys() const { return _indices.size(); }
     uint32_t getCapacityKeys() const { return _indices.capacity(); }
