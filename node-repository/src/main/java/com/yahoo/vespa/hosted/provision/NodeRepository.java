@@ -143,7 +143,8 @@ public class NodeRepository extends AbstractComponent {
         // TODO: Revisit this when config servers are added to the repository
         Arrays.stream(curator.connectionSpec().split(","))
                 .map(hostPort -> hostPort.split(":")[0])
-                .map(host -> createNode(host, host, Optional.empty(), flavors.getFlavorOrThrow("default"),
+                .map(host -> createNode(host, host, Optional.empty(),
+                        flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
                         NodeType.config))
                 .forEach(trustedNodes::add);
 
