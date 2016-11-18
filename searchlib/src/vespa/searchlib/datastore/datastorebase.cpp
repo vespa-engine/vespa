@@ -398,7 +398,8 @@ DataStoreBase::startCompactWorstBuffer(uint32_t typeId) {
 uint32_t
 DataStoreBase::startCompactWorstBuffer()
 {
-   return startCompactWorstBuffer(0, [](const BufferState &state){ return state.isActive(); });
+    uint32_t activeBufferId = getActiveBufferId(0);
+   return startCompactWorstBuffer(activeBufferId, [](const BufferState &state){ return state.isActive(); });
 }
 
 template <typename BufferStateActiveFilter>

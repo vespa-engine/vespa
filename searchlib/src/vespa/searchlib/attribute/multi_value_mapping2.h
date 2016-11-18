@@ -17,6 +17,7 @@ class MultiValueMapping2 : public MultiValueMapping2Base
 {
 public:
     using MultiValueType = EntryT;
+    using RefType = RefT;
 private:
     using ArrayStore = datastore::ArrayStore<EntryT, RefT>;
     using generation_t = vespalib::GenerationHandler::generation_t;
