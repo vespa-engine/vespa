@@ -58,6 +58,7 @@ import java.util.zip.GZIPInputStream;
  *   For specifiying the returned HTTP header content type for a returned
  *   document field's content. field must also be specified.
  */
+@SuppressWarnings("deprecation")
 public class GetSearcher extends Searcher {
 
     private static final Logger log = Logger.getLogger(GetSearcher.class.getName());

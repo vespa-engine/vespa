@@ -38,6 +38,7 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("deprecation")
 public class VisitorSearcherTestCase {
 
     private DocumentTypeManager docMan = null;
