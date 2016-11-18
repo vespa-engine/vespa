@@ -175,6 +175,9 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     virtual void visit(const TensorRename &node) {
         bind_type(ValueType::error_type(), node);
     }
+    virtual void visit(const TensorLambda &node) {
+        bind_type(node.type(), node);
+    }
 
     virtual void visit(const Add &node) { resolve_op2(node); }
     virtual void visit(const Sub &node) { resolve_op2(node); }

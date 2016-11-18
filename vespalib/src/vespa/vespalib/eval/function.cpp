@@ -30,6 +30,18 @@ bool has_duplicates(const std::vector<vespalib::string> &list) {
     return false;
 }
 
+bool check_tensor_lambda_type(const ValueType &type) {
+    if (!type.is_tensor() || type.dimensions().empty()) {
+        return false;
+    }
+    for (const auto &dim: type.dimensions()) {
+        if (!dim.is_indexed() || !dim.is_bound()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 //-----------------------------------------------------------------------------
 
 class Params {
@@ -594,6 +606,30 @@ void parse_tensor_rename(ParseContext &ctx) {
     ctx.skip_spaces();
 }
 
+void parse_tensor_lambda(ParseContext &ctx) {
+    vespalib::string type_spec("tensor(");
+    while(!ctx.eos() && (ctx.get() != ')')) {
+        type_spec.push_back(ctx.get());
+        ctx.next();
+    }
+    ctx.eat(')');
+    type_spec.push_back(')');
+    ValueType type = ValueType::from_spec(type_spec);
+    if (!check_tensor_lambda_type(type)) {
+        ctx.fail("invalid tensor type");
+        return;
+    }
+    auto param_names = type.dimension_names();
+    ExplicitParams params(param_names);
+    ctx.push_resolve_context(params, nullptr);
+    ctx.skip_spaces();
+    ctx.eat('(');
+    parse_expression(ctx);
+    ctx.pop_resolve_context();
+    Function lambda(ctx.pop_expression(), std::move(param_names));
+    ctx.push_expression(std::make_unique<nodes::TensorLambda>(std::move(type), std::move(lambda)));
+}
+
 // to be replaced with more generic 'reduce'
 void parse_tensor_sum(ParseContext &ctx) {
     parse_expression(ctx);
@@ -628,6 +664,8 @@ bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_tensor_reduce(ctx);
             } else if (name == "rename") {
                 parse_tensor_rename(ctx);
+            } else if (name == "tensor") {
+                parse_tensor_lambda(ctx);
             } else if (name == "sum") {
                 parse_tensor_sum(ctx);
             } else {

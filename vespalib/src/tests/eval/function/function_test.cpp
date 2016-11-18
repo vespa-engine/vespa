@@ -839,6 +839,24 @@ TEST("require that tensor rename dimension lists must have equal size") {
 
 //-----------------------------------------------------------------------------
 
+TEST("require that tensor lambda can be parsed") {
+    EXPECT_EQUAL("tensor(x[10])(x)", Function::parse({""}, "tensor(x[10])(x)").dump());
+    EXPECT_EQUAL("tensor(x[10],y[10])(x==y)", Function::parse({""}, "tensor(x[10],y[10])(x==y)").dump());
+    EXPECT_EQUAL("tensor(x[10],y[10])(x==y)", Function::parse({""}, " tensor ( x [ 10 ] , y [ 10 ] ) ( x == y ) ").dump());
+}
+
+TEST("require that tensor lambda requires appropriate tensor type") {
+    verify_error("tensor(x[10],y[])(x==y)", "[tensor(x[10],y[])]...[invalid tensor type]...[(x==y)]");
+    verify_error("tensor(x[10],y{})(x==y)", "[tensor(x[10],y{})]...[invalid tensor type]...[(x==y)]");
+    verify_error("tensor()(x==y)", "[tensor()]...[invalid tensor type]...[(x==y)]");
+}
+
+TEST("require that tensor lambda can only use dimension names") {
+    verify_error("tensor(x[10],y[10])(x==z)", "[tensor(x[10],y[10])(x==z]...[unknown symbol: 'z']...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
 struct CheckExpressions : test::EvalSpec::EvalTest {
     bool failed = false;
     size_t seen_cnt = 0;

@@ -61,7 +61,8 @@ CompiledFunction::detect_issues(const Function &function)
                                   nodes::TensorMap,
                                   nodes::TensorJoin,
                                   nodes::TensorReduce,
-                                  nodes::TensorRename>(node)) {
+                                  nodes::TensorRename,
+                                  nodes::TensorLambda>(node)) {
                 issues.push_back(make_string("unsupported node type: %s",
                                 getClassName(node).c_str()));
             }

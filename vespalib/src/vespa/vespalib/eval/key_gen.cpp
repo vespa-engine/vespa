@@ -39,6 +39,7 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     virtual void visit(const TensorJoin   &) { add_byte(12); } // lambda should be part of key
     virtual void visit(const TensorReduce &) { add_byte(13); } // aggr/dimensions should be part of key
     virtual void visit(const TensorRename &) { add_byte(14); } // dimensions should be part of key
+    virtual void visit(const TensorLambda &) { add_byte(15); } // type/lambda should be part of key
     virtual void visit(const Add          &) { add_byte(20); }
     virtual void visit(const Sub          &) { add_byte(21); }
     virtual void visit(const Mul          &) { add_byte(22); }
