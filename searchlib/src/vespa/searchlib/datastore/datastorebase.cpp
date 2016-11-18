@@ -291,9 +291,9 @@ DataStoreBase::getMemStats(void) const
             stats._deadElems += bState.getDeadElems();
             stats._holdElems += bState.getHoldElems();
             stats._allocBytes += bState.capacity() * elementSize;
-            stats._usedBytes += bState.size() * elementSize;
+            stats._usedBytes += (bState.size() * elementSize) + bState.getExtraUsedBytes();
             stats._deadBytes += bState.getDeadElems() * elementSize;
-            stats._holdBytes += bState.getHoldElems() * elementSize;
+            stats._holdBytes += (bState.getHoldElems() * elementSize) + bState.getExtraHoldBytes();
         } else if (state == BufferState::HOLD) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._holdBuffers;
@@ -302,9 +302,9 @@ DataStoreBase::getMemStats(void) const
             stats._deadElems += bState.getDeadElems();
             stats._holdElems += bState.getHoldElems();
             stats._allocBytes += bState.capacity() * elementSize;
-            stats._usedBytes += bState.size() * elementSize;
+            stats._usedBytes += (bState.size() * elementSize) + bState.getExtraUsedBytes();
             stats._deadBytes += bState.getDeadElems() * elementSize;
-            stats._holdBytes += bState.getHoldElems() * elementSize;
+            stats._holdBytes += (bState.getHoldElems() * elementSize) + bState.getExtraHoldBytes();
         } else {
             abort();
         }

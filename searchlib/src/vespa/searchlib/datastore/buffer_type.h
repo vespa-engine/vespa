@@ -22,6 +22,16 @@ protected:
     const size_t *_lastUsedElems; // used elements in last active buffer
 
 public:
+    class CleanContext {
+    private:
+        uint64_t &_extraBytes;
+    public:
+        CleanContext(uint64_t &extraBytes) : _extraBytes(extraBytes) {}
+        void extraBytesCleaned(uint64_t value) {
+            assert(_extraBytes >= value);
+            _extraBytes -= value;
+        }
+    };
     
     BufferTypeBase(const BufferTypeBase &rhs) = delete;
     BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
@@ -36,7 +46,7 @@ public:
     // Initialize reserved elements at start of buffer.
     virtual void initializeReservedElements(void *buffer, size_t reservedElements) = 0;
     virtual size_t elementSize() const = 0;
-    virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len) = 0;
+    virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) = 0;
     uint32_t getClusterSize() const { return _clusterSize; }
     void flushLastUsed();
     virtual void onActive(uint32_t bufferId, size_t *usedElems, size_t &deadElems, void *buffer);
@@ -58,7 +68,7 @@ public:
 
 
 template <typename EntryType>
-class BufferType : public  BufferTypeBase
+class BufferType : public BufferTypeBase
 {
 public:
     EntryType _emptyEntry;
@@ -73,7 +83,7 @@ public:
     void destroyElements(void *buffer, size_t numElements) override;
     void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) override;
     void initializeReservedElements(void *buffer, size_t reservedElements) override;
-    void cleanHold(void *buffer, uint64_t offset, uint64_t len) override;
+    void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCxt) override;
     size_t elementSize() const override { return sizeof(EntryType); }
 };
 
@@ -120,7 +130,7 @@ BufferType<EntryType>::initializeReservedElements(void *buffer, size_t reservedE
 
 template <typename EntryType>
 void
-BufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t len)
+BufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
     for (size_t j = len; j != 0; --j) {

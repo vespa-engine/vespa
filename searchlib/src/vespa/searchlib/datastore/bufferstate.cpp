@@ -21,6 +21,8 @@ BufferState::BufferState(void)
       _state(FREE),
       _disableElemHoldList(false),
       _holdElems(0u),
+      _extraUsedBytes(0),
+      _extraHoldBytes(0),
       _freeList(),
       _freeListList(NULL),
       _nextHasFree(NULL),
@@ -60,6 +62,8 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     assert(_usedElems == 0);
     assert(_deadElems == 0u);
     assert(_holdElems == 0);
+    assert(_extraUsedBytes == 0);
+    assert(_extraHoldBytes == 0);
     assert(_freeList.empty());
     assert(_nextHasFree == NULL);
     assert(_prevHasFree == NULL);
@@ -119,6 +123,8 @@ BufferState::onFree(void *&buffer)
     _allocElems = 0;
     _deadElems = 0u;
     _holdElems = 0u;
+    _extraUsedBytes = 0;
+    _extraHoldBytes = 0;
     _state = FREE;
     _typeHandler = NULL;
     _clusterSize = 0;

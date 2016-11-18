@@ -38,7 +38,7 @@ DenseTensorStore::BufferType::~BufferType()
 
 void
 DenseTensorStore::BufferType::cleanHold(void *buffer, uint64_t offset,
-                                        uint64_t len)
+                                        uint64_t len, CleanContext)
 {
     // Clear both tensor dimension size information and cells.
     memset(static_cast<char *>(buffer) + offset - _unboundDimSizesSize, 0, len);

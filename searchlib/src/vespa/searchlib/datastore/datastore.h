@@ -56,7 +56,7 @@ public:
      * Hold element.
      */
     void
-    holdElem(EntryRef ref, uint64_t len);
+    holdElem(EntryRef ref, uint64_t len, size_t extraBytes = 0);
 
     /**
      * Trim elem hold list, freeing elements that no longer needs to be held.

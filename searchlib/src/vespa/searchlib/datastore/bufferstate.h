@@ -46,6 +46,12 @@ private:
     State _state;
     bool  _disableElemHoldList;
     uint64_t _holdElems;
+    // Number of bytes that are heap allocated by elements that are stored in this buffer.
+    // For simple types this is 0.
+    size_t _extraUsedBytes;
+    // Number of bytes that are heap allocated by elements that are stored in this buffer and is now on hold.
+    // For simple types this is 0.
+    size_t _extraHoldBytes;
     FreeList _freeList;
     FreeListList *_freeListList;	// non-NULL if free lists are enabled
 
@@ -134,13 +140,20 @@ public:
     size_t size() const { return _usedElems; }
     size_t capacity() const { return _allocElems; }
     size_t remaining() const { return _allocElems - _usedElems; }
-    void pushed_back(uint64_t len) { _usedElems += len; }
-    void cleanHold(void *buffer, uint64_t offset, uint64_t len) { _typeHandler->cleanHold(buffer, offset, len); }
+    void pushed_back(uint64_t numElems, size_t extraBytes = 0) {
+        _usedElems += numElems;
+        _extraUsedBytes += extraBytes;
+    }
+    void cleanHold(void *buffer, uint64_t offset, uint64_t len) {
+        _typeHandler->cleanHold(buffer, offset, len, BufferTypeBase::CleanContext(_extraHoldBytes));
+    }
     void dropBuffer(void *&buffer);
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getClusterSize() const { return _clusterSize; }
     uint64_t getDeadElems() const { return _deadElems; }
     uint64_t getHoldElems() const { return _holdElems; }
+    size_t getExtraUsedBytes() const { return _extraUsedBytes; }
+    size_t getExtraHoldBytes() const { return _extraHoldBytes; }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
     void fallbackResize(uint32_t bufferId, uint64_t sizeNeeded, size_t maxClusters, void *&buffer, Alloc &holdBuffer);
@@ -160,6 +173,9 @@ public:
     void decHoldElems(uint64_t value) {
         assert(_holdElems >= value);
         _holdElems -= value;
+    }
+    void incExtraHoldBytes(size_t value) {
+        _extraHoldBytes += value;
     }
 
     bool hasDisabledElemHoldList() const { return _disableElemHoldList; }

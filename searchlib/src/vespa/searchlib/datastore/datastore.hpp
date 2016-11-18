@@ -46,7 +46,7 @@ DataStoreT<RefT>::freeElem(EntryRef ref, uint64_t len)
 
 template <typename RefT>
 void
-DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len)
+DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len, size_t extraBytes)
 {
     RefType intRef(ref);
     uint64_t alignedLen = RefType::align(len);
@@ -58,6 +58,7 @@ DataStoreT<RefT>::holdElem(EntryRef ref, uint64_t len)
     }
     _elemHold1List.push_back(ElemHold1ListElem(ref, alignedLen));
     state.incHoldElems(alignedLen);
+    state.incExtraHoldBytes(extraBytes);
 }
 
 
