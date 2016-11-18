@@ -1,0 +1,872 @@
+search newsindex {
+
+  #
+  # For any change, you should update the doc
+  #   https://docs.google.com/spreadsheets/d/1O54waD0Ci1KGoR6ntMFRPskLqB7gk6ta2pSNmPMzi-Y/edit#gid=1144220802
+  document newsindex {
+
+    #
+    # The simplified language code used for tokenizing the document
+    # during indexing.
+    #
+    # This field on top to make sure indexing is correct for rest of document.
+    #
+    field language type string {
+      indexing: index | attribute | summary | set_language
+
+      match: word
+      rank: filter
+      normalizing: none
+      stemming: none
+    }
+
+    #
+    # Data labels
+    #
+    # Multiple purpose field:
+    # 1. indicate whether content is internal or external
+    # 2. labeling the content type if it is internal (ymedia:type=story)
+    #
+    field labels type array<string> {
+      indexing: summary | index | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+
+      match: word
+      rank: filter
+
+      normalizing: none
+      stemming: none
+    }
+
+    #
+    # URL
+    #
+    field url type uri {
+      indexing: summary | index
+      normalizing: none
+      stemming: none
+      alias url.hostname: site
+    }
+
+    #
+    # UUID
+    #
+    # Internal content ID
+    #
+    field uuid type string {
+      indexing: summary | index
+      match: word
+      rank: filter
+      normalizing: none
+      stemming: none
+    }
+
+    field documenttype type string {
+      indexing: index | summary | attribute
+      match: word
+      rank: filter
+      normalizing: none
+      stemming: none
+    }
+
+    field title type string {
+      indexing: index | summary
+      weight: 30
+      stemming: none
+      bolding: on
+    }
+
+    field abstract type string {
+      indexing: index | summary
+      weight: 20
+      stemming: none
+      bolding: on
+
+      # NUWA-126: per editor, it should be controlled in API layer
+      summary: dynamic
+    }
+
+    field body type string {
+      indexing: index | summary
+      weight: 6
+      stemming: none
+      summary: dynamic
+    }
+
+    field author type string {
+      indexing: index | summary
+      stemming: none
+    }
+
+    #
+    # Provider Name
+    #
+    # Provider name for internal content
+    #
+    field providername type string {
+      indexing: summary
+    }
+
+    #
+    # Provider Id
+    #
+    # Provider id for internal content
+    #
+    field providerid type string {
+      indexing: index | summary | attribute
+      match: word
+      rank: filter
+      stemming: none
+      normalizing: none
+    }
+
+    #
+    # Publish timestamp in seconds
+    #
+    field pubdate type long {
+      indexing: summary | attribute
+      alias: date
+      attribute {
+        fast-search
+        fast-access
+      }
+    }
+
+    #
+    # Expire timestamp in seconds
+    #
+    # Internal content must not be showded after this timestamp
+    #
+    field expdate type long {
+      indexing: summary | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+    }
+
+    #
+    # Embargo timestamp in seconds
+    #
+    # Internal content should not be showed before this timestamp
+    #
+    field embargodate type long {
+      indexing: summary | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+    }
+
+    #
+    # processing timestamp in seconds
+    #
+    # mainly for internal tracking
+    #
+    field procdate type long {
+      indexing: summary | attribute
+    }
+
+    #
+    # indexing timestamp in seconds
+    #
+    # mainly for internal tracking
+    #
+    field indexdate type long {
+      indexing: summary | attribute
+    }
+
+    # crawler timestamp
+    #
+    # mainly for internal tracking
+    #
+    field crawldate type long {
+      indexing: summary | attribute
+    }
+
+    #
+    #
+    # Thumbnail
+    #
+    field thumbnails type array<string> {
+      indexing: summary
+      normalizing: none
+      stemming: none
+    }
+
+    field thumbnail_count type int {
+      indexing: summary | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+    }
+
+    #
+    # Tracking Identity
+    #
+    # Store the tracking id for media Content Asset Tracking system (CAT)
+    #
+    field trail type string {
+      indexing: summary | index
+      normalizing: none
+      stemming: none
+    }
+
+    #
+    # property + "_" + region + "_" + lang
+    #
+    # use this field to filter properties we want in results.
+    # filter internal content based on property and its language
+    #
+    # For US News, we will need results from US news and US finance, but don't
+    # want US autos and others.
+    # Ex.
+    #   filter = +(pty_lang:news_US_en-US pty_lang:finance_US_en-US)
+    #   filter = +(pty_lang:autos_TW_zh-Hant-TW pty_lang:news_TW_zh-Hant-TW)
+    #
+    field pty_lang type array<string> {
+      indexing: summary | index | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+
+      match: word
+      rank:filter
+      normalizing: none
+      stemming: none
+    }
+
+    #
+    # property + "_" + region + "_" + lang + "|" + property URL
+    #
+    # use this field to store the property URL for internal content.
+    # Ex.
+    #   news_US_en-US|http://news.yahoo.com/obama-presses-cubas-castro-human-rights-during-historic-001908918.html
+    #
+    field pty_urls type array<string> {
+      indexing: summary
+      normalizing: none
+      stemming: none
+    }
+
+    #### NSite fields
+    field nsite_sourceid type string {
+      indexing: summary | index | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+
+      normalizing: none
+      stemming: none
+      rank: filter
+      rank-type: empty
+    }
+
+    field nsite_sourcefeedid type string {
+      indexing: summary | index | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+
+      normalizing: none
+      stemming: none
+      rank: filter
+      rank-type: empty
+    }
+
+    # source + provider for internal data
+    # this feature is mainly for TW / HK markets
+    field nsite_sourceprovider type string {
+      indexing: summary | index | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+
+      normalizing: none
+      stemming: none
+      rank: filter
+      rank-type: empty
+    }
+
+    field nsite_sourcecountry type string {
+      indexing: summary | index
+      stemming: none
+    }
+
+    field nsite_sourcelocale type string {
+      indexing: summary | index
+      stemming: none
+    }
+
+    field nsite_sourcecontinent type string {
+      indexing: summary | index
+      stemming: none
+    }
+
+    field nsite_sourcerank type int {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field nsite_sourceurl type uri {
+      indexing: summary | index
+      normalizing: none
+      stemming: none
+      alias nsite_sourceurl.hostname: nsite_sourcesite
+    }
+
+    field nsite_sourcename type string {
+      indexing: summary | index
+      stemming: none
+    }
+
+    field nsite_shortsourcename type string {
+      indexing: summary | index
+      stemming: none
+    }
+
+    field nsite_othersourcename type string {
+      indexing: summary | index
+      stemming: none
+    }
+
+    field nsite_categories type array<string> {
+      indexing: summary | index
+      normalizing: none
+      stemming: none
+      rank: filter
+      alias: nsite_category
+      alias: nsite_cat
+    }
+
+    field nsite_attributes type array<string> {
+      indexing: summary | index
+      normalizing: none
+      stemming: none
+      match: word
+      rank: filter
+    }
+
+    #### Fingerprint fields
+    #
+    # Hashcode of full content
+    #
+    # use this field for dedup in the runtime.
+    #
+    field fingerprint type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    #
+    # Hashcode of title
+    #
+    # use this field for dedup in the runtime.
+    #
+    field titlefingerprint type long {
+      indexing: summary | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+    }
+
+    #### Sieve Classifier Scores
+    # https://git.corp.yahoo.com/sieve/docproc/blob/master/protobuf/src/main/resources/proto/classifierscores.proto
+    #
+    # newsyScore field
+    #
+    field sieve_newsyscore type float {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    #### User Feedback (UF) features
+    #
+    # uf_ctr_[0-9]hr: CTR
+    # uf_ctn_[0-9]hr: click count
+    # uf_vtn_[0-9]hr: view count
+    # uf_totalview_1hr: News DD total page view (under testing)
+    #
+    # uf_updatedate: user feedback update timestamp in seconds
+    #
+    field uf_updatedate type long {
+      indexing: summary | attribute
+      attribute {
+        fast-search
+        fast-access
+      }
+    }
+
+    ## 1 hour
+    field uf_ctr_1hr type float {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_ctn_1hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_vtn_1hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_totalview_1hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    ## 3 hours
+    field uf_ctr_3hr type float {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_ctn_3hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_vtn_3hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    ## 12 hours
+    field uf_ctr_12hr type float {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_ctn_12hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_vtn_12hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    ## 24 hours
+    field uf_ctr_24hr type float {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_ctn_24hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    field uf_vtn_24hr type long {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+    #
+    # Video duration in seconds
+    #
+    field video_duration type int {
+      indexing: summary | attribute
+      attribute: fast-search
+    }
+
+  }
+
+  fieldset default {
+    fields: title, abstract, body
+  }
+
+  # Fieldset for Magazines to be able to search in author name by default
+  fieldset defaultandauthor {
+    fields: title, abstract, body, author
+  }
+
+  rank-profile base inherits default {
+    first-phase {
+      expression: nativeFieldMatch(title,abstract,body)
+    }
+
+    macro globalstaticrank() {
+      expression {
+        attribute(pubdate) / 2
+      }
+    }
+
+    macro usstaticrank() {
+      expression {
+        globalstaticrank + (if (isNan(attribute(nsite_sourcerank)) == 1.0, sourcerank, attribute(nsite_sourcerank)) * 4000)
+      }
+    }
+
+    macro asiastaticrank() {
+      expression {
+        usstaticrank
+      }
+    }
+
+    macro eustaticrank() {
+      expression {
+        usstaticrank
+      }
+    }
+
+    constants {
+      sourcerank: 1
+    }
+  }
+
+  rank-profile pubdate {
+    first-phase {
+      expression: freshness(pubdate)
+    }
+
+    second-phase {
+      expression: freshness(pubdate)
+    }
+  }
+
+  # use for time sorting in vertical SRP
+  rank-profile date {
+    first-phase {
+      expression: attribute(pubdate)
+    }
+  }
+
+  rank-profile usrankmlr_tau2 inherits base {
+    summary-features {
+      age(pubdate)
+      attribute(pubdate)
+      asiastaticrank
+      eustaticrank
+      globalstaticrank
+      usstaticrank
+      fieldMatch(abstract)
+      fieldMatch(abstract).absoluteOccurrence
+      fieldMatch(abstract).completeness
+      fieldMatch(abstract).earliness
+      fieldMatch(abstract).fieldCompleteness
+      fieldMatch(abstract).importance
+      fieldMatch(abstract).occurrence
+      fieldMatch(abstract).significance
+      fieldMatch(abstract).significantOccurrence
+      fieldMatch(abstract).weight
+      fieldMatch(body)
+      fieldMatch(body).absoluteOccurrence
+      fieldMatch(body).completeness
+      fieldMatch(body).earliness
+      fieldMatch(body).fieldCompleteness
+      fieldMatch(body).importance
+      fieldMatch(body).occurrence
+      fieldMatch(body).significance
+      fieldMatch(body).significantOccurrence
+      fieldMatch(title)
+      fieldMatch(title).absoluteProximity
+      fieldMatch(title).completeness
+      fieldMatch(title).earliness
+      fieldMatch(title).fieldCompleteness
+      fieldMatch(title).importance
+      fieldMatch(title).longestSequenceRatio
+      fieldMatch(title).occurrence
+      fieldMatch(title).significance
+      fieldMatch(title).significantOccurrence
+      fieldMatch(title).weight
+      fieldMatch(url)
+      fieldMatch(url).absoluteProximity
+      fieldMatch(url).completeness
+      fieldMatch(url).earliness
+      fieldMatch(url).fieldCompleteness
+      fieldMatch(url).importance
+      fieldMatch(url).longestSequenceRatio
+      fieldMatch(url).occurrence
+      fieldMatch(url).significance
+      fieldMatch(url).significantOccurrence
+      fieldMatch(url).weight
+      fieldMatch(nsite_sourcename)
+      fieldMatch(nsite_sourcename).absoluteProximity
+      fieldMatch(nsite_sourcename).completeness
+      fieldMatch(nsite_sourcename).earliness
+      fieldMatch(nsite_sourcename).fieldCompleteness
+      fieldMatch(nsite_sourcename).importance
+      fieldMatch(nsite_sourcename).longestSequenceRatio
+      fieldMatch(nsite_sourcename).occurrence
+      fieldMatch(nsite_sourcename).significance
+      fieldMatch(nsite_sourcename).significantOccurrence
+      fieldMatch(nsite_sourcename).weight
+      attribute(nsite_sourcerank)
+      match
+      nativeFieldMatch(title,abstract,body)
+      nativeRank
+      queryTermCount
+    }
+
+    constants {
+      time_rewards: 900
+      maxAge: 604800
+      scale: 86400
+    }
+
+    first-phase {
+      expression: nativeFieldMatch(title,abstract,body)
+    }
+
+    macro textfeature() {
+      expression: file:usrankmlr_aug16.expression
+    }
+
+    macro freshness_logscale() {
+      expression: (log(maxAge + scale) - log(max(0, age(pubdate) - attribute(nsite_sourcerank) * time_rewards) + scale)) / (log(maxAge + scale) - log(scale))
+    }
+
+    second-phase {
+      expression: min(textfeature, freshness_logscale) * 5
+    }
+  }
+
+  rank-profile northstarmlr inherits usrankmlr {
+
+  }
+
+  rank-profile usrankmlr inherits base {
+    summary-features {
+      age(pubdate)
+      attribute(pubdate)
+      asiastaticrank
+      eustaticrank
+      globalstaticrank
+      usstaticrank
+      fieldMatch(abstract)
+      fieldMatch(abstract).absoluteOccurrence
+      fieldMatch(abstract).completeness
+      fieldMatch(abstract).earliness
+      fieldMatch(abstract).fieldCompleteness
+      fieldMatch(abstract).importance
+      fieldMatch(abstract).occurrence
+      fieldMatch(abstract).significance
+      fieldMatch(abstract).significantOccurrence
+      fieldMatch(abstract).weight
+      fieldMatch(body)
+      fieldMatch(body).absoluteOccurrence
+      fieldMatch(body).completeness
+      fieldMatch(body).earliness
+      fieldMatch(body).fieldCompleteness
+      fieldMatch(body).importance
+      fieldMatch(body).occurrence
+      fieldMatch(body).significance
+      fieldMatch(body).significantOccurrence
+      fieldMatch(title)
+      fieldMatch(title).absoluteProximity
+      fieldMatch(title).completeness
+      fieldMatch(title).earliness
+      fieldMatch(title).fieldCompleteness
+      fieldMatch(title).importance
+      fieldMatch(title).longestSequenceRatio
+      fieldMatch(title).occurrence
+      fieldMatch(title).significance
+      fieldMatch(title).significantOccurrence
+      fieldMatch(title).weight
+      fieldMatch(url)
+      fieldMatch(url).absoluteProximity
+      fieldMatch(url).completeness
+      fieldMatch(url).earliness
+      fieldMatch(url).fieldCompleteness
+      fieldMatch(url).importance
+      fieldMatch(url).longestSequenceRatio
+      fieldMatch(url).occurrence
+      fieldMatch(url).significance
+      fieldMatch(url).significantOccurrence
+      fieldMatch(url).weight
+      fieldMatch(nsite_sourcename)
+      fieldMatch(nsite_sourcename).absoluteProximity
+      fieldMatch(nsite_sourcename).completeness
+      fieldMatch(nsite_sourcename).earliness
+      fieldMatch(nsite_sourcename).fieldCompleteness
+      fieldMatch(nsite_sourcename).importance
+      fieldMatch(nsite_sourcename).longestSequenceRatio
+      fieldMatch(nsite_sourcename).occurrence
+      fieldMatch(nsite_sourcename).significance
+      fieldMatch(nsite_sourcename).significantOccurrence
+      fieldMatch(nsite_sourcename).weight
+      attribute(nsite_sourcerank)
+      match
+      nativeFieldMatch(title,abstract,body)
+      nativeRank
+      queryTermCount
+    }
+
+    second-phase {
+      # substitute boost6hr by trail
+      expression: file:gbrank_t174_n12_s008_WT2to1.calibrated.vespa.v3.expression
+    }
+  }
+  rank-profile nuwamlr inherits base {
+    summary-features {
+      age(pubdate)
+      attribute(pubdate)
+      asiastaticrank
+      eustaticrank
+      globalstaticrank
+      usstaticrank
+      fieldMatch(abstract)
+      fieldMatch(abstract).absoluteOccurrence
+      fieldMatch(abstract).completeness
+      fieldMatch(abstract).earliness
+      fieldMatch(abstract).fieldCompleteness
+      fieldMatch(abstract).importance
+      fieldMatch(abstract).occurrence
+      fieldMatch(abstract).significance
+      fieldMatch(abstract).significantOccurrence
+      fieldMatch(abstract).weight
+      fieldMatch(body)
+      fieldMatch(body).absoluteOccurrence
+      fieldMatch(body).completeness
+      fieldMatch(body).earliness
+      fieldMatch(body).fieldCompleteness
+      fieldMatch(body).importance
+      fieldMatch(body).occurrence
+      fieldMatch(body).significance
+      fieldMatch(body).significantOccurrence
+      fieldMatch(title)
+      fieldMatch(title).absoluteProximity
+      fieldMatch(title).completeness
+      fieldMatch(title).earliness
+      fieldMatch(title).fieldCompleteness
+      fieldMatch(title).importance
+      fieldMatch(title).longestSequenceRatio
+      fieldMatch(title).occurrence
+      fieldMatch(title).significance
+      fieldMatch(title).significantOccurrence
+      fieldMatch(title).weight
+      fieldMatch(url)
+      fieldMatch(url).absoluteProximity
+      fieldMatch(url).completeness
+      fieldMatch(url).earliness
+      fieldMatch(url).fieldCompleteness
+      fieldMatch(url).importance
+      fieldMatch(url).longestSequenceRatio
+      fieldMatch(url).occurrence
+      fieldMatch(url).significance
+      fieldMatch(url).significantOccurrence
+      fieldMatch(url).weight
+      fieldMatch(nsite_sourcename)
+      fieldMatch(nsite_sourcename).absoluteProximity
+      fieldMatch(nsite_sourcename).completeness
+      fieldMatch(nsite_sourcename).earliness
+      fieldMatch(nsite_sourcename).fieldCompleteness
+      fieldMatch(nsite_sourcename).importance
+      fieldMatch(nsite_sourcename).longestSequenceRatio
+      fieldMatch(nsite_sourcename).occurrence
+      fieldMatch(nsite_sourcename).significance
+      fieldMatch(nsite_sourcename).significantOccurrence
+      fieldMatch(nsite_sourcename).weight
+      attribute(nsite_sourcerank)
+      match
+      nativeFieldMatch(title,abstract,body)
+      nativeRank
+      queryTermCount
+      has_thumbnail
+    }
+
+    macro has_thumbnail() {
+      expression {
+        if (attribute(thumbnail_count) >= 1, 1, 0)
+      }
+    }
+
+    second-phase {
+      expression: file:nuwa_v2_sourceid.expression
+    }
+  }
+  rank-profile nuwamlr_noid inherits base {
+    summary-features {
+      age(pubdate)
+      attribute(pubdate)
+      asiastaticrank
+      eustaticrank
+      globalstaticrank
+      usstaticrank
+      fieldMatch(abstract)
+      fieldMatch(abstract).absoluteOccurrence
+      fieldMatch(abstract).completeness
+      fieldMatch(abstract).earliness
+      fieldMatch(abstract).fieldCompleteness
+      fieldMatch(abstract).importance
+      fieldMatch(abstract).occurrence
+      fieldMatch(abstract).significance
+      fieldMatch(abstract).significantOccurrence
+      fieldMatch(abstract).weight
+      fieldMatch(body)
+      fieldMatch(body).absoluteOccurrence
+      fieldMatch(body).completeness
+      fieldMatch(body).earliness
+      fieldMatch(body).fieldCompleteness
+      fieldMatch(body).importance
+      fieldMatch(body).occurrence
+      fieldMatch(body).significance
+      fieldMatch(body).significantOccurrence
+      fieldMatch(title)
+      fieldMatch(title).absoluteProximity
+      fieldMatch(title).completeness
+      fieldMatch(title).earliness
+      fieldMatch(title).fieldCompleteness
+      fieldMatch(title).importance
+      fieldMatch(title).longestSequenceRatio
+      fieldMatch(title).occurrence
+      fieldMatch(title).significance
+      fieldMatch(title).significantOccurrence
+      fieldMatch(title).weight
+      fieldMatch(url)
+      fieldMatch(url).absoluteProximity
+      fieldMatch(url).completeness
+      fieldMatch(url).earliness
+      fieldMatch(url).fieldCompleteness
+      fieldMatch(url).importance
+      fieldMatch(url).longestSequenceRatio
+      fieldMatch(url).occurrence
+      fieldMatch(url).significance
+      fieldMatch(url).significantOccurrence
+      fieldMatch(url).weight
+      fieldMatch(nsite_sourcename)
+      fieldMatch(nsite_sourcename).absoluteProximity
+      fieldMatch(nsite_sourcename).completeness
+      fieldMatch(nsite_sourcename).earliness
+      fieldMatch(nsite_sourcename).fieldCompleteness
+      fieldMatch(nsite_sourcename).importance
+      fieldMatch(nsite_sourcename).longestSequenceRatio
+      fieldMatch(nsite_sourcename).occurrence
+      fieldMatch(nsite_sourcename).significance
+      fieldMatch(nsite_sourcename).significantOccurrence
+      fieldMatch(nsite_sourcename).weight
+      attribute(nsite_sourcerank)
+      match
+      nativeFieldMatch(title,abstract,body)
+      nativeRank
+      queryTermCount
+      has_thumbnail
+    }
+
+    macro has_thumbnail() {
+      expression {
+        if (attribute(thumbnail_count) >= 1, 1, 0)
+      }
+    }
+
+    second-phase {
+      expression: file:nuwa_v2_nosourceid.expression
+    }
+  }
+}
+
+# vim:filetype=yaml:expandtab:ts=2:sw=2

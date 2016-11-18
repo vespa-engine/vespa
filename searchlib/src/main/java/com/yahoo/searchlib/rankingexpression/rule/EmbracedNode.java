@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * This class represents another expression enclosed in braces.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class EmbracedNode extends CompositeNode {
 

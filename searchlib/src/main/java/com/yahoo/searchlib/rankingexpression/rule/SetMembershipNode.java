@@ -18,7 +18,7 @@ public class SetMembershipNode extends BooleanNode {
 
     private final ExpressionNode testValue;
 
-    private final ImmutableList<ExpressionNode> setValues;
+    private final List<ExpressionNode> setValues;
 
     public SetMembershipNode(ExpressionNode testValue, List<ExpressionNode> setValues) {
         this.testValue = testValue;

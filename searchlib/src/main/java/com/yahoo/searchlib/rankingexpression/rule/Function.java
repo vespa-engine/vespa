@@ -40,11 +40,11 @@ public enum Function implements Serializable {
 
     private final int arity;
 
-    private Function() {
+    Function() {
         this(1);
     }
 
-    private Function(int arity) {
+    Function(int arity) {
         this.arity = arity;
     }
 

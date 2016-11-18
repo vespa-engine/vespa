@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
@@ -59,8 +60,7 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
 
             // Check derived model
             RawRankProfile rawParent = new RawRankProfile(parent, attributeFields);
-            List<Map.Entry<String, Object>> parentProperties = new ArrayList<>(rawParent.configProperties().entrySet());
-            assertEquals("query(a).part0=1500", parentProperties.get(0).toString());
+            assertEquals("(query(a),1500)", rawParent.configProperties().get(0).toString());
         }
 
         {
@@ -70,8 +70,7 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
 
             // Check derived model
             RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.getRankProfile(search, "child"), attributeFields);
-            List<Map.Entry<String, Object>> childProperties = new ArrayList<>(rawChild.configProperties().entrySet());
-            assertEquals("query(a).part0=2000", childProperties.get(0).toString());
+            assertEquals("(query(a),2000)", rawChild.configProperties().get(0).toString());
         }
     }
 

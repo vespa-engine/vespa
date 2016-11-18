@@ -12,7 +12,6 @@ import com.yahoo.tensor.MapTensor;
  * UnsupportedOperationException if the operation is not supported.
  *
  * @author  bratseth
- * @since   5.1.5
  */
 public abstract class Value {
 

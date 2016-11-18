@@ -1,0 +1,19 @@
+if (attribute(ranktags,yhosted).contains == 1, query(yhostedboost), 0) +
+
+if (queryTermCount ~= 1, 123879 + nativeRank * 451704, 0) +
+if (queryTermCount ~= 2, 103329 + nativeRank * 1117919, 0) +
+if (queryTermCount ~= 3,
+   if (nativeFieldMatch(title,abstract,body) > nativeRank * 10,
+      118069 + nativeRank * 15423636,
+      89269 + nativeRank * 2403380),
+   0) +
+if (queryTermCount ~= 4,
+   if (nativeFieldMatch(title,abstract,body) > nativeRank * 30,
+     67331 + nativeRank * 21479113,
+     77567 + nativeRank * 2458897),
+   0) +
+if (queryTermCount > 4,
+   if (nativeFieldMatch(title,abstract,body) > nativeRank * 10,
+     57362 + nativeRank * 29637183,
+     72934 + nativeRank * 3512633),
+   0)

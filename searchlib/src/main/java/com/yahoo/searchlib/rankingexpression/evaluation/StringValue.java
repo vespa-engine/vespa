@@ -31,7 +31,7 @@ public class StringValue extends Value {
     /** Returns the hashcode of this, to enable strings to be encoded (with reasonable safely) as doubles for optimization */
     @Override
     public double asDouble() {
-        return UnicodeUtilities.unquote(value.toString()).hashCode();
+        return UnicodeUtilities.unquote(value).hashCode();
     }
 
     @Override

@@ -9,7 +9,7 @@ import java.util.Deque;
 /**
  * A node which holds a constant (frozen) value.
  *
- * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
+ * @author Simon Thoresen
  */
 public final class ConstantNode extends ExpressionNode {
 
@@ -29,8 +29,8 @@ public final class ConstantNode extends ExpressionNode {
      */
     public ConstantNode(Value value, String sourceImage) {
         value.freeze();
-        this.value=value;
-        this.sourceImage=sourceImage;
+        this.value = value;
+        this.sourceImage = sourceImage;
     }
 
     public Value getValue() { return value; }

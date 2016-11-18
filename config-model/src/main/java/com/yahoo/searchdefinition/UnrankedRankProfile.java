@@ -8,7 +8,7 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 /**
  * A low-cost ranking profile to use for watcher queries etc.
  *
- * @author <a href="mailto:vegardh@yahoo-inc.com">Vegard Havdal</a>
+ * @author Vegard Havdal
  */
 public class UnrankedRankProfile extends RankProfile {
 
@@ -19,7 +19,7 @@ public class UnrankedRankProfile extends RankProfile {
             this.setFirstPhaseRanking(exp);
         } catch (ParseException e) {
             throw new IllegalArgumentException("Could not parse the ranking expression 'value(0)' when setting up " +
-                    "the 'unranked' rank profile");
+                                               "the 'unranked' rank profile");
         }
         this.setIgnoreDefaultRankFeatures(true);
         this.setKeepRankCount(0);

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
@@ -19,6 +20,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -83,14 +86,14 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         assertEquals(1200, rankProfile.getNumSearchPartitions());
         AttributeFields attributeFields = new AttributeFields(search);
         RawRankProfile rawRankProfile = new RawRankProfile(rankProfile, attributeFields);
-        assertTrue(rawRankProfile.configProperties().containsKey("vespa.matching.termwise_limit"));
-        assertEquals("0.78", rawRankProfile.configProperties().get("vespa.matching.termwise_limit"));
-        assertTrue(rawRankProfile.configProperties().containsKey("vespa.matching.numthreadspersearch"));
-        assertEquals("8", rawRankProfile.configProperties().get("vespa.matching.numthreadspersearch"));
-        assertTrue(rawRankProfile.configProperties().containsKey("vespa.matching.minhitsperthread"));
-        assertEquals("70", rawRankProfile.configProperties().get("vespa.matching.minhitsperthread"));
-        assertTrue(rawRankProfile.configProperties().containsKey("vespa.matching.numsearchpartitions"));
-        assertEquals("1200", rawRankProfile.configProperties().get("vespa.matching.numsearchpartitions"));
+        assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").isPresent());
+        assertEquals("0.78", findProperty(rawRankProfile.configProperties(), "vespa.matching.termwise_limit").get());
+        assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.numthreadspersearch").isPresent());
+        assertEquals("8", findProperty(rawRankProfile.configProperties(), "vespa.matching.numthreadspersearch").get());
+        assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.minhitsperthread").isPresent());
+        assertEquals("70", findProperty(rawRankProfile.configProperties(), "vespa.matching.minhitsperthread").get());
+        assertTrue(findProperty(rawRankProfile.configProperties(), "vespa.matching.numsearchpartitions").isPresent());
+        assertEquals("1200", findProperty(rawRankProfile.configProperties(), "vespa.matching.numsearchpartitions").get());
     }
 
     @Test
@@ -118,9 +121,9 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
 
     private static void assertAttributeTypeSettings(RankProfile profile, Search search) {
         RawRankProfile rawProfile = new RawRankProfile(profile, new AttributeFields(search));
-        assertEquals("tensor(x[10])", rawProfile.configProperties().get("vespa.type.attribute.a"));
-        assertEquals("tensor(y{})", rawProfile.configProperties().get("vespa.type.attribute.b"));
-        assertFalse(rawProfile.configProperties().containsKey("vespa.type.attribute.c"));
+        assertEquals("tensor(x[10])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.a").get());
+        assertEquals("tensor(y{})", findProperty(rawProfile.configProperties(), "vespa.type.attribute.b").get());
+        assertFalse(findProperty(rawProfile.configProperties(), "vespa.type.attribute.c").isPresent());
     }
 
     @Test
@@ -160,10 +163,17 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
 
     private static void assertQueryFeatureTypeSettings(RankProfile profile, Search search) {
         RawRankProfile rawProfile = new RawRankProfile(profile, new AttributeFields(search));
-        assertEquals("tensor(x[10])", rawProfile.configProperties().get("vespa.type.query.tensor1"));
-        assertEquals("tensor(y{})", rawProfile.configProperties().get("vespa.type.query.tensor2"));
-        assertFalse(rawProfile.configProperties().containsKey("vespa.type.query.tensor3"));
-        assertFalse(rawProfile.configProperties().containsKey("vespa.type.query.numeric"));
+        assertEquals("tensor(x[10])", findProperty(rawProfile.configProperties(), "vespa.type.query.tensor1").get());
+        assertEquals("tensor(y{})", findProperty(rawProfile.configProperties(), "vespa.type.query.tensor2").get());
+        assertFalse(findProperty(rawProfile.configProperties(), "vespa.type.query.tensor3").isPresent());
+        assertFalse(findProperty(rawProfile.configProperties(), "vespa.type.query.numeric").isPresent());
+    }
+    
+    private static Optional<String> findProperty(List<Pair<String, String>> properties, String key) {
+        for (Pair<String, String> property : properties)
+            if (property.getFirst().equals(key))
+                return Optional.of(property.getSecond());
+        return Optional.empty();
     }
 
 }

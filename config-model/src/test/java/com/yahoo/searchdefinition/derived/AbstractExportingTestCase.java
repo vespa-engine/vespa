@@ -180,4 +180,5 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
             file.delete();
         }
     }
+
 }
