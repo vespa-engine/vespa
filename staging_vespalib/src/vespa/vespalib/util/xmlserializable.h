@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include <iostream>
+#include <ostream>
 #include <list>
 #include <memory>
 #include <sstream>

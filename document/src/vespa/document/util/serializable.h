@@ -12,7 +12,6 @@
 
 #pragma once
 
-#include <iostream>
 #include <map>
 #include <vector>
 
@@ -41,8 +40,6 @@ public:
                        const vespalib::string& location = "");
     VESPA_DEFINE_EXCEPTION_SPINE(SerializeException)
 };
-
-class XmlElement;
 
 /**
  * Base class for classes that can be converted into a bytestream,
@@ -179,59 +176,6 @@ public:
         }
     }
 };
-
-/*
-
-class XmlElement
-{
-public:
-    typedef std::map<std::string, std::string> AttributeMap;
-    typedef std::vector<XmlElement> ElementList;
-    XmlElement()
-        : _valid(false),
-          _name(),
-          _value(),
-          _attributes(),
-          _elements()
-    {
-    }
-    XmlElement(const std::string & n, const std::string & v)
-        : _valid(true),
-          _name(n),
-          _value(v),
-          _attributes(),
-          _elements()
-    {
-    }
-    const std::string & name()  const { return _name; }
-    const std::string & value() const { return _value; }
-    const AttributeMap & attributes() const { return _attributes; }
-    const ElementList & elements()    const { return _elements; }
-    bool valid() const { return _valid; }
-    std::string attribute(const std::string & name) const;
-    const XmlElement * element(const std::string & name) const;
-private:
-    bool         _valid;
-    std::string  _name;
-    std::string  _value;
-    AttributeMap _attributes;
-    ElementList  _elements;
-    friend std::ostream & operator << (std::ostream & os, const XmlElement & tag);
-    friend std::istream & operator >> (std::istream & is,  XmlElement & tag);
-};
-
-class XmlValue : public std::string
-{
-public:
-    XmlValue() : std::string() { }
-    XmlValue(const char * s) : std::string(s) { }
-    XmlValue(const char * s, size_t sz) : std::string(s, sz) { }
-    XmlValue(const std::string & s) : std::string(s) { }
-private:
-    friend std::ostream & operator << (std::ostream & os, const XmlValue & tag);
-    friend std::istream & operator >> (std::istream & is,  XmlValue & tag);
-};
-*/
 
 }
 

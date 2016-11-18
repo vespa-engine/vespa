@@ -32,7 +32,7 @@
 
 #include <string>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <iostream>
+#include <iosfwd>
 
 namespace vespalib
 {

@@ -4,7 +4,7 @@
 #include <string>
 #include <memory>
 #include <algorithm>
-#include <iostream>
+#include <iosfwd>
 #include <iterator>
 
 #include <vespa/fastos/fastos.h>

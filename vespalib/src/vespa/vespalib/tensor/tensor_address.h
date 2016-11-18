@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <iostream>
+#include <iosfwd>
 #include <map>
 #include <vector>
 
