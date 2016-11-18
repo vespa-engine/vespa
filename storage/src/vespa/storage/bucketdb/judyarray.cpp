@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/storage/bucketdb/judyarray.h>
+#include <iostream>
+#include <sstream>
 
 namespace storage {
 
@@ -32,6 +34,22 @@ JudyArray::operator<(const JudyArray& array) const
     }
     return false;
 }
+
+JudyArray::size_type
+JudyArray::erase(key_type key)
+{
+    JError_t err;
+    size_type result = JudyLDel(&_judyArray, key, &err);
+    if (result == 0 || result == 1) {
+        return result;
+    }
+    std::ostringstream ost;
+    ost << "Judy error in erase(" << std::hex << key << "): " << err.je_Errno;
+    std::cerr << ost.str() << "\n";
+    assert(false);
+    return 0;
+}
+
 
 JudyArray::size_type
 JudyArray::size() const

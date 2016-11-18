@@ -2,11 +2,13 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/storage/bucketdb/judymultimap.h>
+#include <vespa/storage/bucketdb/judymultimap.hpp>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <boost/assign.hpp>
 #include <boost/random.hpp>
 #include <cppunit/extensions/HelperMacros.h>
 #include <map>
+#include <ostream>
 #include <vector>
 
 namespace storage {
@@ -33,8 +35,8 @@ namespace {
         int _val3;
 
         A() {}
-        A(const B& b);
-        A(const C& c);
+        A(const B &);
+        A(const C &);
         A(int val1, int val2, int val3)
             : _val1(val1), _val2(val2), _val3(val3) {}
 
@@ -42,6 +44,10 @@ namespace {
 
         bool operator==(const A& a) const {
             return (_val1 == a._val1 && _val2 == a._val2 && _val3 == a._val3);
+        }
+        bool operator != (const A & b) const { return ! (*this == b); }
+        bool operator < (const A & b) const {
+            return _val1 < b._val1;
         }
     };
 
@@ -54,6 +60,13 @@ namespace {
         B(int val1, int val2) : _val1(val1), _val2(val2) {}
 
         static bool mayContain(const A& a) { return (a._val3 == 0); }
+        bool operator==(const B& a) const {
+            return (_val1 == a._val1 && _val2 == a._val2);
+        }
+        bool operator != (const B & b) const { return ! (*this == b); }
+        bool operator < (const B & b) const {
+            return _val1 < b._val1;
+        }
     };
 
     struct C {
@@ -65,6 +78,13 @@ namespace {
 
         static bool mayContain(const A& a)
             { return (a._val2 == 0 && a._val3 == 0); }
+        bool operator==(const C& a) const {
+            return (_val1 == a._val1);
+        }
+        bool operator != (const C & b) const { return ! (*this == b); }
+        bool operator < (const C & b) const {
+            return _val1 < b._val1;
+        }
     };
 
     A::A(const B& b) : _val1(b._val1), _val2(b._val2), _val3(0) {}
@@ -81,6 +101,8 @@ namespace {
         return out << "C(" << c._val1 << ")";
     }
 }
+
+template class JudyMultiMap<C, B, A>;
 
 void
 JudyMultiMapTest::testSimpleUsage() {

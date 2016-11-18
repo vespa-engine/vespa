@@ -18,6 +18,7 @@ LOG_SETUP("docbuilder_test");
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <iostream>
 
 using namespace document;
 

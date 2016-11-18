@@ -20,7 +20,6 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/fastos/fastos.h>
 #include <Judy.h>
-#include <sstream>
 
 namespace storage {
 
@@ -169,21 +168,6 @@ JudyArray::find(key_type key, bool insertIfNonExisting, bool& preExisted)
         preExisted = true;
     }
     return iter;
-}
-
-inline JudyArray::size_type
-JudyArray::erase(key_type key)
-{
-    JError_t err;
-    size_type result = JudyLDel(&_judyArray, key, &err);
-    if (result == 0 || result == 1) {
-        return result;
-    }
-    std::ostringstream ost;
-    ost << "Judy error in erase(" << std::hex << key << "): " << err.je_Errno;
-    std::cerr << ost.str() << "\n";
-    assert(false);
-    return 0;
 }
 
 inline void

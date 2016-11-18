@@ -9,6 +9,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/storage/bucketdb/judyarray.h>
+#include <iostream>
 
 namespace storage {
 

@@ -2,6 +2,7 @@
 #include <vespa/memfilepersistence/device/ioevent.h>
 #include <vespa/memfilepersistence/device/device.h>
 #include <cerrno>
+#include <ostream>
 
 namespace storage {
 

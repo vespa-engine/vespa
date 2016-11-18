@@ -119,16 +119,8 @@ public:
     vespalib::string toString(const PrintProperties& = PrintProperties()) const;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const Printable& p) {
-    p.print(out);
-    return out;
-}
-
-inline vespalib::asciistream& operator<<(vespalib::asciistream& out, const AsciiPrintable& p)
-{
-    p.print(out);
-    return out;
-}
+std::ostream& operator<<(std::ostream& out, const Printable& p);
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const AsciiPrintable& p);
 
 template<typename T>
 void print(const std::vector<T> & v, vespalib::asciistream& out, const AsciiPrintable::PrintProperties& p) {

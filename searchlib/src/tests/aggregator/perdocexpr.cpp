@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/expression/getdocidnamespacespecificfunctionnode.h>
 #include <cmath>
+#include <iostream>
 
 using namespace search;
 using namespace search::expression;

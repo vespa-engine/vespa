@@ -44,6 +44,7 @@ public:
     const_iterator begin() const { return _annotations.begin(); }
     const_iterator end() const { return _annotations.end(); }
     int compare(const SpanTree &other) const;
+    vespalib::string toString() const;
 };
 
 }  // namespace document

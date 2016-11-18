@@ -5,6 +5,7 @@ LOG_SETUP("phrasesplitter_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <iomanip>
+#include <iostream>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>

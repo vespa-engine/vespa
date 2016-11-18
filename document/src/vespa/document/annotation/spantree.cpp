@@ -32,10 +32,21 @@ void SpanTree::accept(SpanTreeVisitor &visitor) const {
 }
 
 int SpanTree::compare(const SpanTree &other) const {
-    //TODO fixme
-    (void) other;
-    vespalib::string out_this, out_other;
-    return out_this.compare(out_other);
+    return toString().compare(other.toString());
 }
+
+vespalib::string SpanTree::toString() const {
+    vespalib::asciistream os;
+    os << "SpanTree(\"" << _name << "\"" << "\n  ";
+    os <<_root->toString();
+    for (const Annotation & a : _annotations) {
+        if (a.valid()) {
+            os << "\n  " << a.toString();
+        }
+    }
+    os << ")";
+    return os.str();
+}
+
 
 }  // namespace document

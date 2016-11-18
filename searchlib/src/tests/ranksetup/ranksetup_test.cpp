@@ -40,6 +40,7 @@ LOG_SETUP("ranksetup_test");
 #include <vespa/searchlib/fef/test/plugin/sum.h>
 #include <vespa/searchlib/fef/test/plugin/cfgvalue.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
+#include <iostream>
 
 using namespace search::fef;
 using namespace search::features;
