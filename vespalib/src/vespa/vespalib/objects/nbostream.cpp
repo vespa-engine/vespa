@@ -4,8 +4,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/optimized.h>
-#include <stdexcept>
-#include <iostream>
 
 namespace vespalib {
 

@@ -3,7 +3,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vector>
-#include <string>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.h>

@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include <iostream>
+#include <iosfwd>
 #include <map>
 #include <string>
 #include <memory>

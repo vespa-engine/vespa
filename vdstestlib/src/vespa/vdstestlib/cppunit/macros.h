@@ -139,7 +139,7 @@
         } \
     }
 
-#include <iostream>
+#include <ostream>
 #include <map>
 #include <unordered_map>
 #include <vector>

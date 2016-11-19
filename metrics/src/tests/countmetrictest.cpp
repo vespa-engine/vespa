@@ -43,12 +43,12 @@ void CountMetricTest::testLongCountMetric()
     o = m2 - n;
     CPPUNIT_ASSERT_EQUAL(uint64_t(84), o.getValue());
 
-    std::string expected(
-            "test count=84");
+    std::string expected("test count=84");
     CPPUNIT_ASSERT_EQUAL(expected, o.toString());
 
     CPPUNIT_ASSERT_EQUAL(Double(84), Double(o.getDoubleValue("value")));
     CPPUNIT_ASSERT_EQUAL(int64_t(84), o.getLongValue("value"));
+    (void) expected;
 }
 
 }

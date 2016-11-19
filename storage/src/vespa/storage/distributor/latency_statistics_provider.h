@@ -3,7 +3,7 @@
 
 #include <chrono>
 #include <unordered_map>
-#include <iostream>
+#include <iosfwd>
 #include <stdint.h>
 
 namespace storage {
