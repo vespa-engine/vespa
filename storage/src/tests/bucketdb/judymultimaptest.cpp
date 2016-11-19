@@ -45,10 +45,6 @@ namespace {
         bool operator==(const A& a) const {
             return (_val1 == a._val1 && _val2 == a._val2 && _val3 == a._val3);
         }
-        bool operator != (const A & b) const { return ! (*this == b); }
-        bool operator < (const A & b) const {
-            return _val1 < b._val1;
-        }
     };
 
     struct B {
@@ -60,13 +56,6 @@ namespace {
         B(int val1, int val2) : _val1(val1), _val2(val2) {}
 
         static bool mayContain(const A& a) { return (a._val3 == 0); }
-        bool operator==(const B& a) const {
-            return (_val1 == a._val1 && _val2 == a._val2);
-        }
-        bool operator != (const B & b) const { return ! (*this == b); }
-        bool operator < (const B & b) const {
-            return _val1 < b._val1;
-        }
     };
 
     struct C {
@@ -76,23 +65,14 @@ namespace {
         C(const A& a) : _val1(a._val1) {}
         C(int val1) : _val1(val1) {}
 
-        static bool mayContain(const A& a)
-            { return (a._val2 == 0 && a._val3 == 0); }
-        bool operator==(const C& a) const {
-            return (_val1 == a._val1);
-        }
-        bool operator != (const C & b) const { return ! (*this == b); }
-        bool operator < (const C & b) const {
-            return _val1 < b._val1;
-        }
+        static bool mayContain(const A& a) { return (a._val2 == 0 && a._val3 == 0); }
     };
 
     A::A(const B& b) : _val1(b._val1), _val2(b._val2), _val3(0) {}
     A::A(const C& c) : _val1(c._val1), _val2(0), _val3(0) {}
 
     std::ostream& operator<<(std::ostream& out, const A& a) {
-        return out << "A(" << a._val1 << ", " << a._val2 << ", "
-                   << a._val3 << ")";
+        return out << "A(" << a._val1 << ", " << a._val2 << ", " << a._val3 << ")";
     }
     std::ostream& operator<<(std::ostream& out, const B& b) {
         return out << "B(" << b._val1 << ", " << b._val2 << ")";
@@ -101,8 +81,6 @@ namespace {
         return out << "C(" << c._val1 << ")";
     }
 }
-
-template class JudyMultiMap<C, B, A>;
 
 void
 JudyMultiMapTest::testSimpleUsage() {

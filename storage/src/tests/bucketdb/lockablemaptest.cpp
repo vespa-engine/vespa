@@ -103,14 +103,11 @@ namespace {
     };
 
     std::ostream& operator<<(std::ostream& out, const A& a) {
-        return out << "A(" << a._val1 << ", " << a._val2 << ", "
-                   << a._val3 << ")";
+        return out << "A(" << a._val1 << ", " << a._val2 << ", " << a._val3 << ")";
     }
 
     typedef LockableMap<JudyMultiMap<A> > Map;
 }
-
-template class JudyMultiMap<A>;
 
 void
 LockableMapTest::testSimpleUsage() {
