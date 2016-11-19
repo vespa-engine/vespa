@@ -100,7 +100,7 @@ TensorAttribute::onUpdateStat()
     // update statistics
     MemoryUsage total = _refVector.getMemoryUsage();
     total.merge(_tensorStore.getMemoryUsage());
-    total.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
+    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     this->updateStatistics(_refVector.size(),
                            _refVector.size(),
                            total.allocatedBytes(),

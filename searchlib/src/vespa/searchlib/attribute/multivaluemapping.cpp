@@ -145,7 +145,7 @@ MultiValueMappingBase<I>::getMemoryUsage() const
         const MemoryUsage & memUsage(getVectorVectorUsage(i));
         retval.merge(memUsage);
     }
-    retval.incAllocatedBytesOnHold(_genHolder.getHeldBytes());
+    retval.mergeGenerationHeldBytes(_genHolder.getHeldBytes());
     return retval;
 }
 
@@ -269,10 +269,9 @@ class MultiValueMappingHoldElem : public GenerationHeldBase
     MultiValueMappingBase<I> &_mvmb;
     Index _idx;
 public:
-    MultiValueMappingHoldElem(size_t size,
-                              MultiValueMappingBase<I> &mvmb,
+    MultiValueMappingHoldElem(MultiValueMappingBase<I> &mvmb,
                               Index idx)
-        : GenerationHeldBase(size),
+        : GenerationHeldBase(0),
           _mvmb(mvmb),
           _idx(idx)
     {
@@ -286,10 +285,9 @@ public:
 
 template <typename I>
 void
-MultiValueMappingBase<I>::holdElem(Index idx, size_t size)
+MultiValueMappingBase<I>::holdElem(Index idx)
 {
-    GenerationHeldBase::UP hold(new MultiValueMappingHoldElem<I>(size, *this,
-                                                                 idx));
+    GenerationHeldBase::UP hold(new MultiValueMappingHoldElem<I>(*this, idx));
     _genHolder.hold(std::move(hold));
 }
 

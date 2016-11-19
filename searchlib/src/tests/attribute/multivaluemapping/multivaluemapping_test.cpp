@@ -653,9 +653,9 @@ MultiValueMappingTest::testMemoryUsage()
     mvm.performCompaction(initCapacity);
     usage = mvm.getMemoryUsage();
     EXPECT_EQUAL(mvm.getTotalValueCnt(), totalCnt);
-    EXPECT_EQUAL(usage.usedBytes(), exp.usedBytes() - exp.deadBytes() - exp.allocatedBytesOnHold());
+    EXPECT_EQUAL(usage.usedBytes(), exp.usedBytes() - exp.deadBytes() - exp.allocatedBytesOnHold() + exp.allocatedBytes() - numKeys * sizeof(Index));
     EXPECT_EQUAL(usage.deadBytes(), uint32_t(0));
-    EXPECT_EQUAL(usage.allocatedBytesOnHold(), exp.allocatedBytes() - numKeys * sizeof(Index) + exp.allocatedBytesOnHold());
+    EXPECT_EQUAL(usage.allocatedBytesOnHold(), exp.allocatedBytes() - numKeys * sizeof(Index));
     mvm.transferHoldLists(0);
     mvm.trimHoldLists(1);
     usage = mvm.getMemoryUsage();

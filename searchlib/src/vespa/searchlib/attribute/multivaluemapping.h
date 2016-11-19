@@ -212,7 +212,7 @@ public:
     void addDoc(uint32_t & docId);
     void shrink(uint32_t docIdLimit);
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc);
-    void holdElem(Index idx, size_t size);
+    void holdElem(Index idx);
     virtual void doneHoldElem(Index idx) = 0;
 
     static size_t maxValues() { return Index::maxValues(); }
@@ -833,7 +833,8 @@ MultiValueMappingT<T, I>::set(uint32_t key,
         uint32_t oldNumValues = vec[oldIdx.offset()].size();
         incDead(vec);
         this->decValueCnt(oldNumValues);
-        holdElem(oldIdx, sizeof(VectorBase) + sizeof(T) * oldNumValues);
+        holdElem(oldIdx);
+        vec.getUsage().incAllocatedBytesOnHold(sizeof(VectorBase) + oldNumValues * sizeof(T));
     }
 }
 
@@ -905,6 +906,7 @@ MultiValueMappingT<T, I>::doneHoldElem(Index idx)
     VectorBase &v = vv[idx.offset()];
     uint32_t numValues = v.size();
     VectorBase().swap(v);
+    vv.getUsage().decAllocatedBytesOnHold(sizeof(VectorBase) + numValues * sizeof(T));
     vv.getUsage().decAllocatedBytes(numValues * sizeof(T));
     vv.getUsage().incDeadBytes(sizeof(VectorBase));
 }

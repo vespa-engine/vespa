@@ -104,7 +104,7 @@ PredicateAttribute::onUpdateStat()
     combined.merge(_min_feature.getMemoryUsage());
     combined.merge(_interval_range_vector.getMemoryUsage());
     combined.merge(_index->getMemoryUsage());
-    combined.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
+    combined.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     this->updateStatistics(_min_feature.size(), _min_feature.size(),
                            combined.allocatedBytes(), combined.usedBytes(),
                            combined.deadBytes(), combined.allocatedBytesOnHold());
