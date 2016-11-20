@@ -92,6 +92,8 @@ Metric::Metric(const Metric& other, MetricSet* owner)
     registerWithOwnerIfRequired(owner);
 }
 
+Metric::~Metric() { }
+
 bool
 Metric::tagsSpecifyAtLeastOneDimension(const Tags& tags) const
 {

@@ -43,15 +43,16 @@ namespace {
             _valueSum.addMetricToSum(_value2);
         }
 
-        Metric* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+        MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
                       MetricSet* owner, bool includeUnused) const
         {
             if (copyType != CLONE) {
                 return MetricSet::clone(ownerList, copyType, owner,
                                         includeUnused);
             }
-            return (new InnerMetricSet(getName().c_str(), _loadTypes, owner))
-                        ->assignValues(*this);
+            InnerMetricSet * myset = new InnerMetricSet(getName().c_str(), _loadTypes, owner);
+            myset->assignValues(*this);
+            return myset;
         }
     };
     struct OuterMetricSet : public MetricSet {

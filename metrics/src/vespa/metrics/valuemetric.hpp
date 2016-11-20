@@ -38,6 +38,9 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
 }
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
+ValueMetric<AvgVal, TotVal, SumOnAdd>::~ValueMetric() { }
+
+template<typename AvgVal, typename TotVal, bool SumOnAdd>
 void ValueMetric<AvgVal, TotVal, SumOnAdd>::inc(AvgVal incVal)
 {
     if (!checkFinite(incVal, std::is_floating_point<AvgVal>())) {

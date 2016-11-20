@@ -66,8 +66,9 @@ public:
     CountMetric(const String& name, Tags dimensions,
                 const String& description, MetricSet* owner = 0);
 
-    CountMetric(const CountMetric<T, SumOnAdd>& other,
-                CopyType, MetricSet* owner);
+    CountMetric(const CountMetric<T, SumOnAdd>& other, CopyType, MetricSet* owner);
+
+    ~CountMetric();
 
     virtual MetricValueClass::UP getValues() const
         { return MetricValueClass::UP(new Values(_values.getValues())); }

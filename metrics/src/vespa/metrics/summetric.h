@@ -27,14 +27,14 @@ public:
     {
     private:
         std::vector<Metric::LP>     _startValueChildren;
-        std::unique_ptr<AddendMetric> _startValue;
+        Metric::UP _startValue;
 
     public:
         typedef std::shared_ptr<StartValue> SP;
         StartValue(const AddendMetric &metric)
             : _startValueChildren(),
               _startValue(metric.clone(_startValueChildren, CLONE, 0, false)) {}
-        const AddendMetric &getStartValue() const { return *_startValue; }
+        const AddendMetric &getStartValue() const { return static_cast<const AddendMetric &>(*_startValue); }
     };
 
 private:
@@ -44,6 +44,7 @@ private:
 public:
     SumMetric(const String& name, const String& tags, const String& description, MetricSet* owner = 0);
     SumMetric(const SumMetric<AddendMetric>& other, std::vector<Metric::LP>& ownerList, MetricSet* owner = 0);
+    ~SumMetric();
 
     virtual Metric* clone( std::vector<Metric::LP>&, CopyType, MetricSet* owner, bool includeUnused = false) const;
 

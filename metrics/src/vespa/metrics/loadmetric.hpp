@@ -53,7 +53,10 @@ LoadMetric<MetricType>::LoadMetric(const LoadMetric<MetricType>& other, MetricSe
 }
 
 template<typename MetricType>
-Metric*
+LoadMetric<MetricType>::~LoadMetric() { }
+
+template<typename MetricType>
+MetricSet*
 LoadMetric<MetricType>::clone(std::vector<Metric::LP>& ownerList,
                       CopyType copyType, MetricSet* owner,
                       bool includeUnused) const

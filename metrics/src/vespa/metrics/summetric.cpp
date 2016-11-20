@@ -11,6 +11,7 @@ template class SumMetric<ValueMetric<int64_t, int64_t, true>>;
 template class SumMetric<ValueMetric<double, double, false>>;
 template class SumMetric<ValueMetric<double, double, true>>;
 template class SumMetric<CountMetric<uint64_t, true>>;
+template class SumMetric<MetricSet>;
 
 } // metrics
 

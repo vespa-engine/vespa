@@ -26,9 +26,6 @@ class MetricSet : public Metric
                                // If so, the name of the metric is used as dimension value.
 
 public:
-    typedef std::unique_ptr<MetricSet> UP;
-    typedef std::shared_ptr<MetricSet> SP;
-
     MetricSet(const String& name, const String& tags,
               const String& description, MetricSet* owner = 0,
               const std::string& dimensionKey = "");
@@ -38,7 +35,7 @@ public:
 
     MetricSet(const MetricSet&, std::vector<Metric::LP>& ownerList,
               CopyType, MetricSet* owner = 0, bool includeUnused = false);
-    virtual ~MetricSet() {}
+    ~MetricSet();
 
     // If no path, this metric is not registered within another
     bool isTopSet() const { return _owner == 0; }
@@ -55,9 +52,9 @@ public:
     void registerMetric(Metric& m);
     void unregisterMetric(Metric& m);
 
-    virtual Metric* clone(std::vector<Metric::LP>& ownerList,
-                          CopyType type, MetricSet* owner,
-                          bool includeUnused = false) const
+    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList,
+                             CopyType type, MetricSet* owner,
+                             bool includeUnused = false) const
         { return new MetricSet(*this, ownerList, type, owner, includeUnused); }
 
     void reset();

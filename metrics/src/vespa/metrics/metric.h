@@ -122,7 +122,7 @@ public:
            MetricSet* owner = 0);
 
     Metric(const Metric& other, MetricSet* owner);
-    virtual ~Metric() {}
+    ~Metric();
 
     const String& getName() const { return _name; }
     /**

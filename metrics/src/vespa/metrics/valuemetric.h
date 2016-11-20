@@ -88,13 +88,15 @@ public:
     ValueMetric(const String& name, Tags dimensions,
                 const String& description, MetricSet* owner = 0);
 
+    ~ValueMetric();
+
     virtual MetricValueClass::UP getValues() const
         { return MetricValueClass::UP(new Values(_values.getValues())); }
 
     void unsetOnZeroValue() { _values.setFlag(UNSET_ON_ZERO_VALUE); }
     void logOnlyIfSet() { _values.removeFlag(LOG_IF_UNSET); }
 
-    virtual ValueMetric<AvgVal, TotVal, SumOnAdd>* clone(
+    virtual ValueMetric * clone(
             std::vector<Metric::LP>&, CopyType type, MetricSet* owner,
             bool /*includeUnused*/) const
         { return new ValueMetric<AvgVal,TotVal,SumOnAdd>(*this, type, owner); }

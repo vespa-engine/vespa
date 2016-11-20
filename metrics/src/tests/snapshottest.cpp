@@ -67,7 +67,7 @@ struct SubSubMetricSet : public MetricSet {
         averageSum.addMetricToSum(average2);
     }
 
-    virtual Metric* clone(std::vector<Metric::LP>& ownerList,
+    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList,
                           CopyType copyType, metrics::MetricSet* owner,
                           bool includeUnused) const
     {
@@ -119,7 +119,7 @@ struct SubMetricSet : public MetricSet {
         setSum.addMetricToSum(set2);
     }
 
-    virtual Metric* clone(std::vector<Metric::LP>& ownerList,
+    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList,
                           CopyType copyType, metrics::MetricSet* owner,
                           bool includeUnused) const
     {

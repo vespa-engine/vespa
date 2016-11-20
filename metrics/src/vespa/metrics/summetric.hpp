@@ -93,6 +93,9 @@ SumMetric<AddendMetric>::SumMetric(const SumMetric<AddendMetric>& other,
 }
 
 template<typename AddendMetric>
+SumMetric<AddendMetric>::~SumMetric() { }
+
+template<typename AddendMetric>
 Metric*
 SumMetric<AddendMetric>::clone(std::vector<Metric::LP>& ownerList,
                                CopyType copyType, MetricSet* owner,

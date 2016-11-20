@@ -2,6 +2,9 @@
 vespa_add_library(storage_distributor
     SOURCES
     distributor.cpp
+    distributormetricsset.cpp
+    visitormetricsset.cpp
+    idealstatemetricsset.cpp
     operationowner.cpp
     distributorcomponent.cpp
     statechecker.cpp

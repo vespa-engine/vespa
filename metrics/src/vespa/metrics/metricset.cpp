@@ -54,6 +54,8 @@ MetricSet::MetricSet(const MetricSet& other,
     }
 }
 
+MetricSet::~MetricSet() { }
+
 const Metric*
 MetricSet::getMetricInternal(const String& name) const
 {

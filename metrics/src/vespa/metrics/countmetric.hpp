@@ -34,6 +34,9 @@ CountMetric<T, SumOnAdd>::CountMetric(const CountMetric<T, SumOnAdd>& other,
 }
 
 template <typename T, bool SumOnAdd>
+CountMetric<T, SumOnAdd>::~CountMetric() { }
+
+template <typename T, bool SumOnAdd>
 CountMetric<T, SumOnAdd>&
 CountMetric<T, SumOnAdd>::operator+=(const CountMetric<T, SumOnAdd>& other)
 {

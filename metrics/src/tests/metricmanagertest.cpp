@@ -3,7 +3,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 #include <vespa/metrics/metrics.h>
-#include <vespa/metrics/summetric.hpp>
 #include <vespa/metrics/xmlwriter.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>

@@ -26,7 +26,7 @@ class MetricSnapshot
         // If set to 0, use _fromTime + _period.
     time_t _toTime;
         // Keeps the metrics set view of the snapshot
-    MetricSet::UP _snapshot;
+    std::unique_ptr<MetricSet> _snapshot;
         // Snapshots must own their own metrics
     mutable std::vector<Metric::LP> _metrics;
 

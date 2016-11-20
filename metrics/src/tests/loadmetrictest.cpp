@@ -62,7 +62,7 @@ namespace {
         {
         }
 
-        Metric* clone(std::vector<Metric::LP>& ownerList,
+        MetricSet* clone(std::vector<Metric::LP>& ownerList,
                            CopyType copyType,
                            MetricSet* owner,
                            bool includeUnused = false) const
@@ -71,7 +71,9 @@ namespace {
                 return MetricSet::clone(ownerList, copyType, owner,
                                         includeUnused);
             }
-            return (new MyMetricSet(owner))->assignValues(*this);
+            MyMetricSet * myset = new MyMetricSet(owner);
+            myset->assignValues(*this);
+            return myset;
         }
     };
 }

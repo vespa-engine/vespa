@@ -340,8 +340,9 @@ MetricManager::checkMetricsAltered(const MetricLockGuard & guard)
 // When calling this function, the metric lock is already taken. The thread
 // monitor lock might be taken.
 void
-MetricManager::handleMetricsAltered(const MetricLockGuard &)
+MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
 {
+    (void) guard;
     if (_config.get() == NULL) {
         LOG(info, "_config is NULL -> very odd indeed.");
         return;

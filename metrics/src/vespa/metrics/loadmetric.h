@@ -64,7 +64,8 @@ public:
      * the load metric alters this data in supplied metric)
      */
     LoadMetric(const LoadMetric<MetricType>& other, MetricSet* owner);
-    Metric* clone(std::vector<Metric::LP>& ownerList,
+    ~LoadMetric();
+    MetricSet* clone(std::vector<Metric::LP>& ownerList,
                   CopyType copyType, MetricSet* owner,
                   bool includeUnused = false) const override;
 
