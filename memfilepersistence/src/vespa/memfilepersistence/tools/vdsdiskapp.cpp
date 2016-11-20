@@ -4,6 +4,7 @@
 #include <vespa/defaults.h>
 #include <vespa/log/log.h>
 #include <vespa/memfilepersistence/tools/vdsdisktool.h>
+#include <iostream>
 
 LOG_SETUP(".vdsdisktool");
 

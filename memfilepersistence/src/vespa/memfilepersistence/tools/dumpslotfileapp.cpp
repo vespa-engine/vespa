@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/memfilepersistence/tools/dumpslotfile.h>
+#include <iostream>
 
 namespace {
 
