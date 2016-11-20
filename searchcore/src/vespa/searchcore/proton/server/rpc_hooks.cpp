@@ -26,7 +26,7 @@ struct Pair {
     }
 };
 
-} // namespace anon
+}
 
 namespace proton {
 
@@ -615,7 +615,6 @@ RPCHooksBase::finiSession(FRT_RPCRequest *req)
     delete sessionspp;
 }
 
-
 void
 RPCHooksBase::downSession(FRT_RPCRequest *req)
 {
@@ -626,7 +625,6 @@ RPCHooksBase::downSession(FRT_RPCRequest *req)
         req->GetConnection()->GetContext()._value.VOIDP);
     getSession(req)->setDown();
 }
-
 
 void
 RPCHooksBase::mismatch(FRT_RPCRequest *req)
@@ -642,4 +640,4 @@ RPCHooks::RPCHooks(Params &params) :
     open(params);
 }
 
-} // namespace proton
+}

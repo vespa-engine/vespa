@@ -15,6 +15,7 @@
 
 #include "valuemetricvalues.h"
 #include "metric.h"
+#include <cmath>
 
 namespace metrics {
 
