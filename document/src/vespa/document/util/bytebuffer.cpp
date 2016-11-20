@@ -9,9 +9,6 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
-#include <stdio.h>
-#include <string.h>
-#include <iostream>
 
 #define LOG_DEBUG1(a)
 // Enable this macros instead to see what bytebuffer calls come

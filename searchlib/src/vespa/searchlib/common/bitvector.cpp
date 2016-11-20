@@ -273,18 +273,14 @@ BitVector::hasTrueBitsInternal(void) const
 // Set new length. Destruction of content
 //////////////////////////////////////////////////////////////////////
 void
-BitVector::resize(Index newLength)
+BitVector::resize(Index)
 {
-    (void) newLength;
-    assert(false);
+    abort();
 }
 GenerationHeldBase::UP
-BitVector::grow(Index newSize, Index newCapacity)
+BitVector::grow(Index, Index )
 {
-    (void) newSize;
-    (void) newCapacity;
-    assert(false);
-    return GenerationHeldBase::UP();
+    abort();
 }
 
 size_t

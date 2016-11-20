@@ -77,12 +77,11 @@ const T *as(const Node &node) { return dynamic_cast<const T *>(&node); }
  * burden by not having to care about the concept of children.
  **/
 struct Leaf : public Node {
-    virtual size_t num_children() const override { return 0; }
-    virtual const Node &get_child(size_t) const override {
-        assert(false);
-        return *static_cast<const Node *>(nullptr);
+    size_t num_children() const override { return 0; }
+    const Node &get_child(size_t) const override {
+        abort();
     }
-    virtual void detach_children(NodeHandler &) override {}
+    void detach_children(NodeHandler &) override {}
 };
 
 /**

@@ -34,8 +34,7 @@ DomainPart::Crc getCrc(searchlib::TranslogserverConfig::Crcmethod crcType)
         case searchlib::TranslogserverConfig::xxh64:
             return DomainPart::xxh64;
     }
-    assert(false);
-    return DomainPart::xxh64;
+    abort();
 }
 
 }

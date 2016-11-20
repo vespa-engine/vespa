@@ -16,7 +16,7 @@
 
 #include <vespa/vespalib/util/document_runnable.h>
 #include <deque>
-#include <iostream>
+#include <sstream>
 #include <memory>
 #include <list>
 #include <limits>

@@ -24,6 +24,7 @@
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/shutdownguard.h>
 #include <vespa/config/config.h>
+#include <iostream>
 
 LOG_SETUP("vds.application");
 

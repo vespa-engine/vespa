@@ -2,11 +2,8 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/engine/docsumreply.h>
-#include <vespa/log/log.h>
-
-LOG_SETUP("matchengine_test");
+#include <vespa/vespalib/testkit/test_kit.h>
 
 using namespace proton;
 using namespace search::engine;

@@ -671,8 +671,7 @@ int32_t DomainPart::calcCrc(Crc version, const void * buf, size_t sz)
         calculator.process_bytes(buf, sz);
         return calculator.checksum();
     } else {
-        assert(false);
-        return 0;
+        abort();
     }
 }
 

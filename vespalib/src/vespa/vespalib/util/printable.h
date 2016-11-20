@@ -20,7 +20,7 @@
  *
  * Sadly, std::string may have performance issues in some contexts, as it does
  * some synchronization to allow sharing content, and requires heap allocation.
- * std::iostream also have issues causing it to require some synchronization.
+ * std::ostream also have issues causing it to require some synchronization.
  *
  * The AsciiPrintable class implements similar functionality as Printable,
  * using the vespalib classes on top of the STL functionality. Using this class

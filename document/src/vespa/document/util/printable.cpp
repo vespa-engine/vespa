@@ -2,7 +2,6 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/document/util/printable.h>
 #include <sstream>
-#include <iostream>
 
 namespace document {
 

@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/io/fileutil.h>
-#include <iostream>
+#include <sstream>
 
 namespace storage {
 
