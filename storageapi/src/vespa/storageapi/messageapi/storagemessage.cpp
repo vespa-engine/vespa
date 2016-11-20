@@ -5,6 +5,7 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
+#include <sstream>
 
 namespace storage {
 namespace api {
