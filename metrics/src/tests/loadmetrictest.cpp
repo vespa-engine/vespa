@@ -2,6 +2,8 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/metrics/loadmetric.h>
 #include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/loadmetric.hpp>
+#include <vespa/metrics/summetric.hpp>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
 namespace metrics {

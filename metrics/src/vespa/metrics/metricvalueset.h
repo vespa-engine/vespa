@@ -27,7 +27,6 @@
  */
 #pragma once
 
-#include <sstream>
 #include <vector>
 #include <atomic>
 #include <vespa/vespalib/stllike/string.h>
@@ -36,18 +35,15 @@
 namespace metrics {
 
 struct MetricValueClass {
-    typedef std::unique_ptr<MetricValueClass> UP;
+    using UP = std::unique_ptr<MetricValueClass>;
+    using stringref = vespalib::stringref;
     virtual ~MetricValueClass() {}
 
-    virtual double getDoubleValue(const vespalib::stringref & id) const = 0;
-    virtual uint64_t getLongValue(const vespalib::stringref & id) const = 0;
+    virtual double getDoubleValue(const stringref & id) const = 0;
+    virtual uint64_t getLongValue(const stringref & id) const = 0;
     virtual void output(const std::string& id, std::ostream&) const = 0;
     virtual void output(const std::string& id, vespalib::JsonStream&) const = 0;
-    std::string toString(const std::string& id) {
-        std::ostringstream ost;
-        output(id, ost);
-        return ost.str();
-    }
+    std::string toString(const std::string& id);
 };
 
 template<typename ValueClass>
@@ -63,42 +59,13 @@ class MetricValueSet {
     void validateCorrectValueSuperClass(const MetricValueClass&) {}
 
 public:
-    MetricValueSet(uint32_t copyCount = 3)
-        : _values(copyCount),
-          _activeValueIndex(0),
-          _flags(0)
-    {
-    }
+    MetricValueSet(uint32_t copyCount = 3);
+    MetricValueSet(const MetricValueSet& other, uint32_t copyCount = 3);
 
-    MetricValueSet(const MetricValueSet& other, uint32_t copyCount = 3)
-        : _values(copyCount),
-          _activeValueIndex(0),
-          _flags(other._flags.load(std::memory_order_relaxed))
-    {
-        setValues(other.getValues());
-    }
-
-    MetricValueSet& operator=(const MetricValueSet& other)
-    {
-        setValues(other.getValues());
-        return *this;
-    }
-
+    MetricValueSet& operator=(const MetricValueSet& other);
 
     /** Get the current values. */
-    ValueClass getValues() const {
-        ValueClass v{};
-        if (!isReset()) {
-            // Must load with acquire to match release store in setValues.
-            // Note that despite being atomic on _individual fields_, this
-            // does not guarantee reading a consistent snapshot _across_
-            // fields for any given metric.
-            const size_t readIndex(
-                    _activeValueIndex.load(std::memory_order_acquire));
-            v.relaxedLoadFrom(_values[readIndex]);
-        }
-        return v;
-    }
+    ValueClass getValues() const;
 
     /**
      * Get the current values from the metric. This function should not be
@@ -107,54 +74,19 @@ public:
      * In which case, redo getValues(), apply the update again, and call
      * setValues() again.
      */
-    bool setValues(const ValueClass& values) {
-        validateCorrectValueSuperClass(values);
-        // Only setter-thread can write _activeValueIndex, so relaxed
-        // load suffices.
-        uint32_t nextIndex = (_activeValueIndex.load(std::memory_order_relaxed)
-                              + 1) % _values.size();
-        // Reset flag is loaded/stored with relaxed semantics since it does not
-        // carry data dependencies. _activeValueIndex has a dependency on
-        // _values, however, so we must ensure that stores are published
-        // and loads acquired.
-        if (isReset()) {
-            removeFlag(RESET);
-            ValueClass resetValues{};
-            resetValues.relaxedStoreInto(_values[nextIndex]);
-            _activeValueIndex.store(nextIndex, std::memory_order_release);
-            return false;
-        } else {
-            values.relaxedStoreInto(_values[nextIndex]);
-            _activeValueIndex.store(nextIndex, std::memory_order_release);
-            return true;
-        }
-    }
+    bool setValues(const ValueClass& values);
 
     /**
      * Retrieve and reset in a single operation, to minimize chance of
      * alteration in the process.
      */
-    ValueClass getValuesAndReset() {
-        ValueClass result(getValues());
-        setFlag(RESET);
-        return result;
-    }
+    ValueClass getValuesAndReset();
 
     void reset() {
         setFlag(RESET);
     }
 
-    std::string toString() {
-        std::ostringstream ost;
-        ost << "MetricValueSet(reset=" << (isReset() ? "true" : "false")
-            << ", active " << _activeValueIndex;
-        ost << "\n  empty: " << ValueClass().toString();
-        for (uint32_t i=0; i<_values.size(); ++i) {
-            ost << "\n  " << _values[i].toString();
-        }
-        ost << "\n)";
-        return ost.str();
-    }
+    std::string toString();
 
     uint32_t getMemoryUsageAllocatedInternally() const {
         return _values.capacity() * sizeof(ValueClass);

@@ -1,17 +1,23 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(metrics
     SOURCES
-    metric.cpp
     countmetric.cpp
-    valuemetric.cpp
-    metrictimer.cpp
-    metricset.cpp
-    metricmanager.cpp
-    metricsnapshot.cpp
+    countmetricvalues.cpp
     jsonwriter.cpp
-    textwriter.cpp
-    xmlwriter.cpp
+    loadmetric.cpp
+    metric.cpp
+    memoryconsumption.cpp
+    metricmanager.cpp
+    metricset.cpp
+    metricsnapshot.cpp
+    metrictimer.cpp
+    metricvalueset.cpp
     state_api_adapter.cpp
+    summetric.cpp
+    textwriter.cpp
+    valuemetric.cpp
+    valuemetricvalues.cpp
+    xmlwriter.cpp
     INSTALL lib64
     DEPENDS
 )

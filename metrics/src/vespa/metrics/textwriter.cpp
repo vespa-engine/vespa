@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/metrics/textwriter.h>
-
-#include <vespa/metrics/countmetric.h>
-#include <vespa/metrics/metricset.h>
-#include <vespa/metrics/metricsnapshot.h>
-#include <vespa/metrics/valuemetric.h>
+#include "textwriter.h"
+#include "countmetric.h"
+#include "metricset.h"
+#include "metricsnapshot.h"
+#include "valuemetric.h"
+#include <sstream>
 
 namespace metrics {
 

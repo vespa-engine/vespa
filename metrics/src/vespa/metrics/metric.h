@@ -2,17 +2,9 @@
 #pragma once
 
 #include <vespa/vespalib/util/printable.h>
-#include <map>
-#include <vespa/metrics/config-metricsmanager.h>
-#include <vespa/metrics/memoryconsumption.h>
-#include <vespa/metrics/namehash.h>
-#include <string>
-#include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/linkedptr.h>
-#include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/regexp.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 
 namespace metrics {
 
@@ -22,6 +14,8 @@ class Metric;
 class MetricSet;
 class MetricSnapshot;
 class XmlWriterMetricVisitor;
+class MemoryConsumption;
+class NameHash;
 
 template<typename T>
 void trim(std::vector<T>& v) {
@@ -104,8 +98,7 @@ struct Tag
 
     Tag(vespalib::stringref k, vespalib::stringref v)
         : key(k), value(v)
-    {
-    }
+    { }
 };
 
 class Metric : public vespalib::Printable
