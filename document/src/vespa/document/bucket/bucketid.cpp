@@ -77,8 +77,7 @@ vespalib::string
 BucketId::toString() const
 {
     vespalib::asciistream stream;
-    stream << "BucketId(0x" << vespalib::hex << vespalib::setw(sizeof(Type)*2)
-           << vespalib::setfill('0') << getId() << ")" << vespalib::dec;
+    stream << *this;
     return stream.str();
 }
 
@@ -126,7 +125,14 @@ BucketId::contains(const BucketId& id) const
 
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const BucketId& id)
 {
-    return os << id.toString();
+    size_t width = os.getWidth();
+    char fill = os.getFill();
+    vespalib::Base base = os.getBase();
+    return os << "BucketId(0x"
+              << vespalib::hex << vespalib::setw(sizeof(BucketId::Type)*2) << vespalib::setfill('0')
+              << id.getId()
+              << base << vespalib::setw(width) << vespalib::setfill(fill)
+              << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, const BucketId& id)
