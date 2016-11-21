@@ -5,6 +5,7 @@
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/searchcommon/attribute/collectiontype.h>
 #include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/vespalib/eval/value_type.h>
 
 namespace search {
@@ -66,6 +67,7 @@ public:
     bool fastAccess() const { return _fastAccess; }
 
     const GrowStrategy & getGrowStrategy() const { return _growStrategy; }
+    const CompactionStrategy &getCompactionStrategy() const { return _compactionStrategy; }
     void setHuge(bool v)                         { _huge = v; }
     void setFastSearch(bool v)                   { _fastSearch = v; }
     void setMaxInternalBlobSize(size_t v)        { _maxInternalBlobSize = v; }
@@ -110,6 +112,7 @@ public:
 
     void setFastAccess(bool v) { _fastAccess = v; }
     Config & setGrowStrategy(const GrowStrategy &gs) { _growStrategy = gs; return *this; }
+    Config &setCompactionStrategy(const CompactionStrategy &compactionStrategy) { _compactionStrategy = compactionStrategy; return *this; }
     bool operator!=(const Config &b) const { return !(operator==(b)); }
 
     bool
@@ -125,6 +128,7 @@ public:
                _fastAccess == b._fastAccess &&
                _maxInternalBlobSize == b._maxInternalBlobSize &&
                _growStrategy == b._growStrategy &&
+               _compactionStrategy == b._compactionStrategy &&
                _arity == b._arity &&
                _lower_bound == b._lower_bound &&
                _upper_bound == b._upper_bound &&
@@ -144,6 +148,7 @@ private:
     bool           _fastAccess;
     size_t         _maxInternalBlobSize;
     GrowStrategy   _growStrategy;
+    CompactionStrategy _compactionStrategy;
     uint32_t       _arity;
     int64_t        _lower_bound;
     int64_t        _upper_bound;

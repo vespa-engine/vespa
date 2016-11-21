@@ -163,7 +163,12 @@ MultiValueEnumAttribute<B, M>::onCommit()
     this->setEnumMax(this->_enumStore.getLastEnum());
     std::atomic_thread_fence(std::memory_order_release);
     this->removeAllOldGenerations();
+    if (this->_mvMapping.considerCompact(this->getConfig().getCompactionStrategy())) {
+        this->incGeneration();
+        this->updateStat(true);
+    }
 }
+
 template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::onUpdateStat()
@@ -172,7 +177,7 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
     MemoryUsage total;
     total.merge(this->_enumStore.getMemoryUsage());
     total.merge(this->_enumStore.getTreeMemoryUsage());
-    total.merge(this->_mvMapping.getMemoryUsage());
+    total.merge(this->_mvMapping.updateMemoryUsage());
     mergeMemoryStats(total);
     this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.getNumUniques(), total.allocatedBytes(),
                      total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());
