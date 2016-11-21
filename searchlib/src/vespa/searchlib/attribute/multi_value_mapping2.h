@@ -45,7 +45,7 @@ public:
     virtual void compactWorst() override;
 
     AddressSpace getAddressSpaceUsage() const;
-    virtual MemoryUsage getMemoryUsage() const override;
+    virtual MemoryUsage getArrayStoreMemoryUsage() const override;
 
     // Mockups to temporarily silence code written for old multivalue mapping
     bool enoughCapacity(const Histogram &) { return true; }

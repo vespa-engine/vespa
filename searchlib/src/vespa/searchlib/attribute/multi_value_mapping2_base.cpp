@@ -11,7 +11,7 @@ MultiValueMapping2Base::MultiValueMapping2Base(const GrowStrategy &gs,
                                                vespalib::GenerationHolder &genHolder)
     : _indices(gs, genHolder),
       _totalValues(0u),
-      _cachedMemoryUsage()
+      _cachedArrayStoreMemoryUsage()
 {
 }
 
@@ -53,17 +53,27 @@ MultiValueMapping2Base::clearDocs(uint32_t lidLow, uint32_t lidLimit, std::funct
 }
 
 MemoryUsage
+MultiValueMapping2Base::getMemoryUsage() const
+{
+    MemoryUsage retval = getArrayStoreMemoryUsage();
+    retval.merge(_indices.getMemoryUsage());
+    return retval;
+}
+
+MemoryUsage
 MultiValueMapping2Base::updateMemoryUsage()
 {
-    _cachedMemoryUsage = getMemoryUsage();
-    return _cachedMemoryUsage;
+    MemoryUsage retval = getArrayStoreMemoryUsage();
+    _cachedArrayStoreMemoryUsage = retval;
+    retval.merge(_indices.getMemoryUsage());
+    return retval;
 }
 
 bool
 MultiValueMapping2Base::considerCompact(const CompactionStrategy &compactionStrategy)
 {
-    size_t used = _cachedMemoryUsage.usedBytes();
-    size_t dead = _cachedMemoryUsage.deadBytes();
+    size_t used = _cachedArrayStoreMemoryUsage.usedBytes();
+    size_t dead = _cachedArrayStoreMemoryUsage.deadBytes();
     if (used * compactionStrategy.getMaxDeadRatio() < dead) {
         compactWorst();
         return true;
