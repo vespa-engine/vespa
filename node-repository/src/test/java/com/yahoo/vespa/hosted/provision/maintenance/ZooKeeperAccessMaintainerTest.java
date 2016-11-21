@@ -32,6 +32,7 @@ public class ZooKeeperAccessMaintainerTest {
         tester.addNode("id1", "host1", "default", NodeType.tenant);
         tester.addNode("id2", "host2", "default", NodeType.tenant);
         tester.addNode("id3", "host3", "default", NodeType.tenant);
+        tester.nodeRepository().setReady(tester.getNodes(NodeType.tenant, Node.State.provisioned));
         maintainer.maintain();
 
         assertEquals(3, tester.getNodes(NodeType.tenant).size());
