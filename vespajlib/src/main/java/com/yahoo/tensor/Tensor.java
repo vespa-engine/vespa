@@ -62,12 +62,13 @@ public interface Tensor {
         return new MapFunction(new ConstantTensor(this), mapper).execute();
     }
 
+    /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
     default Tensor reduce(ReduceFunction.Aggregator aggregator, List<String> dimensions) {
         return new ReduceFunction(new ConstantTensor(this), aggregator, dimensions).execute();
     }
 
-    default Tensor join(Tensor tensor, DoubleBinaryOperator combinator) {
-        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(tensor), combinator).execute();
+    default Tensor join(Tensor argument, DoubleBinaryOperator combinator) {
+        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), combinator).execute();
     }
     
     default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
@@ -88,23 +89,19 @@ public interface Tensor {
         return new L2Normalize(new ConstantTensor(this), dimension).toPrimitive().execute();
     }
 
-    // ----------------- Composite tensor functions where we map to primitives here on the fly
+    // ----------------- Composite tensor functions mapped to primitives here on the fly
 
-    default Tensor multiply(Tensor argument) {
-        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> (a * b )).execute();
-    }
+    default Tensor multiply(Tensor argument) { return join(argument, (a, b) -> (a * b )); }
+    default Tensor add(Tensor argument) { return join(argument, (a, b) -> (a + b )); }
+    default Tensor divide(Tensor argument) { return join(argument, (a, b) -> (a / b )); }
+    default Tensor subtract(Tensor argument) { return join(argument, (a, b) -> (a - b )); }
 
-    default Tensor sum(Tensor argument) {
-        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> (a + b )).execute();
-    }
-
-    default Tensor divide(Tensor argument) {
-        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> (a / b )).execute();
-    }
-
-    default Tensor subtract(Tensor argument) {
-        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), (a, b) -> (a - b )).execute();
-    }
+    default Tensor avg(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.avg, dimensions); }
+    default Tensor count(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.count, dimensions); }
+    default Tensor max(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.max, dimensions); }
+    default Tensor min(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.min, dimensions); }
+    default Tensor prod(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.prod, dimensions); }
+    default Tensor sum(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.sum, dimensions); }
 
     // ----------------- Old stuff
     /**
@@ -171,7 +168,7 @@ public interface Tensor {
      * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
      * and have the value undefined for any non-shared dimension.
      */
-    default Tensor add(Tensor argument) {
+    default Tensor oldAdd(Tensor argument) {
         return new TensorSum(this, argument).result();
     }
 
@@ -268,7 +265,9 @@ public interface Tensor {
      * @return the tensor on the standard string format
      */
     static String toStandardString(Tensor tensor) {
-        Set<String> emptyDimensions = emptyDimensions(tensor);
+        if (tensor.dimensions().isEmpty()) // prefer short form
+            return String.valueOf(tensor.cells().get(TensorAddress.empty));
+        Set<String> emptyDimensions = emptyDimensions(tensor); // TODO: remove that stuff
         if (emptyDimensions.size() > 0) // explicitly list empty dimensions
             return "( " + unitTensorWithDimensions(emptyDimensions) + " * " + contentToString(tensor) + " )";
         else

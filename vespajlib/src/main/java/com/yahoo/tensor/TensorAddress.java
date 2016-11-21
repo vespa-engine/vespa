@@ -8,12 +8,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
  * An immutable address to a tensor cell.
- * This is sparse: Only dimensions which have a different label than "undefined" are
- * explicitly included.
  * <p>
  * Tensor addresses are ordered by increasing size primarily, and by the natural order of the elements in sorted
  * order secondarily.
@@ -93,6 +92,14 @@ public final class TensorAddress implements Comparable<TensorAddress> {
         return dimensions;
     }
 
+    /** Returns the label at the given dimension, or empty if this dimension is not present */
+    public Optional<String> labelOfDimension(String dimension) {
+        for (TensorAddress.Element element : elements)
+            if (element.dimension().equals(dimension))
+                return Optional.of(element.label());
+        return Optional.empty();
+    }
+    
     @Override
     public int compareTo(TensorAddress other) {
         int sizeComparison = Integer.compare(this.elements.size(), other.elements.size());

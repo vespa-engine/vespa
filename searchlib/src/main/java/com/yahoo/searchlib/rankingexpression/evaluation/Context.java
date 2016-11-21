@@ -41,7 +41,7 @@ public abstract class Context {
      *                  "main" (or only) value.
      */
     public Value get(String name, Arguments arguments,String output) {
-        if (arguments!=null && arguments.expressions().size()>0)
+        if (arguments!=null && arguments.expressions().size() > 0)
             throw new UnsupportedOperationException(this + " does not support structured ranking expression variables, attempted to reference '" +
                                                     name + arguments + "'");
         if (output==null)

@@ -17,22 +17,25 @@ public class NeuralNetEvaluationTestCase {
     /** "XOR" neural network, separate expression per layer */
     @Test
     public void testPerLayerExpression() {
-        String input = "{ {x:1}:0, {x:2}:1 }";
-
-        String firstLayerWeights = "{ {x:1,h:1}:1, {x:1,h:2}:1, {x:2,h:1}:1, {x:2,h:2}:1 }";
-        String firstLayerBias = "{ {h:1}:-0.5, {h:2}:-1.5 }";
-        String firstLayerInput = "sum(" + input + "*" + firstLayerWeights + ", x) + " + firstLayerBias;
+        String input = "{ {x:1}:0, {x:2}:1 }"; // tensor0
+        String firstLayerWeights = "{ {x:1,h:1}:1, {x:1,h:2}:1, {x:2,h:1}:1, {x:2,h:2}:1 }"; // tensor1
+        String firstLayerBias = "{ {h:1}:-0.5, {h:2}:-1.5 }"; // tensor2
+        String firstLayerInput = "sum(tensor0 * tensor1, x) + tensor2";
         String firstLayerOutput = "min(1.0, max(0.0, 0.5 + " + firstLayerInput + "))"; // non-linearity, "poor man's sigmoid"
-        assertEvaluates("{ {h:1}:1.0, {h:2}:0.0} }", firstLayerOutput);
-        String secondLayerWeights = "{ {h:1,y:1}:1, {h:2,y:1}:-1 }";
-        String secondLayerBias = "{ {y:1}:-0.5 }";
-        String secondLayerInput = "sum(" + firstLayerOutput + "*" + secondLayerWeights + ", h) + " + secondLayerBias;
+        assertEvaluates("{ {h:1}:1.0, {h:2}:0.0} }", firstLayerOutput, input, firstLayerWeights, firstLayerBias);
+        String secondLayerWeights = "{ {h:1,y:1}:1, {h:2,y:1}:-1 }"; // tensor3
+        String secondLayerBias = "{ {y:1}:-0.5 }"; // tensor4
+        String secondLayerInput = "sum(" + firstLayerOutput + "* tensor3, h) tensor4";
         String secondLayerOutput = "min(1.0, max(0.0, 0.5 + " + secondLayerInput + "))"; // non-linearity, "poor man's sigmoid"
-        assertEvaluates("{ {y:1}:1 }", secondLayerOutput);
+        assertEvaluates("{ {y:1}:1 }", secondLayerOutput, input, firstLayerWeights, firstLayerBias, secondLayerWeights, secondLayerBias);
     }
 
-    private RankingExpression assertEvaluates(String tensorValue, String expressionString) {
-        return assertEvaluates(new TensorValue(MapTensor.from(tensorValue)), expressionString, new MapContext());
+    private RankingExpression assertEvaluates(String expectedTensor, String expressionString, String ... tensorArguments) {
+        MapContext context = new MapContext();
+        int argumentIndex = 0;
+        for (String tensorArgument : tensorArguments)
+            context.put("tensor" + (argumentIndex++), new TensorValue(MapTensor.from(tensorArgument)));
+        return assertEvaluates(new TensorValue(MapTensor.from(expectedTensor)), expressionString, context);
     }
 
     private RankingExpression assertEvaluates(Value value, String expressionString, Context context) {

@@ -189,7 +189,6 @@ ExpressionNode value() :
 {
     ( [ LOOKAHEAD(2) <SUB>                                  { neg = true;     }   ]
       (            ret = constantPrimitive()                                      |
-                   ret = constantTensor()                                         |
                    LOOKAHEAD(2) ret = ifExpression()                              |
                    LOOKAHEAD(2) ret = function()                                  |
                    ret = feature()                                                |
@@ -279,7 +278,6 @@ ExpressionNode arg() :
 }
 {
     ( ret = constantPrimitive()                                          |
-      ret = constantTensor()                                             |
       LOOKAHEAD(2) ret = feature()                                       |
       name = identifier()            { ret = new NameNode(name);       } )
     { return ret; }
@@ -434,50 +432,3 @@ Value primitiveValue() :
     ( <INTEGER> | <FLOAT> | <STRING> )
     { return Value.parse(sign + token.image); }
 }
-
-ConstantNode constantTensor() :
-{
-    Value constantValue;
-}
-{
-    <LCURLY> constantValue = tensorContent() <RCURLY>
-    { return new ConstantNode(constantValue); }
-}
-
-TensorValue tensorContent() :
-{
-    Map<TensorAddress, Double> cells = new LinkedHashMap<TensorAddress, Double>();
-    TensorAddress address;
-    Double value;
-}
-{
-    ( address = tensorAddress() <COLON> value = number() { cells.put(address, value); } ) ?
-    ( <COMMA> address = tensorAddress() <COLON> value = number() { cells.put(address, value); } ) *
-    { return new TensorValue(new MapTensor(cells)); }
-}
-
-TensorAddress tensorAddress() :
-{
-    List<TensorAddress.Element> elements = new ArrayList<TensorAddress.Element>();
-    String dimension;
-    String label;
-}
-{
-    <LCURLY>
-    ( dimension = tag() <COLON> label = label() { elements.add(new TensorAddress.Element(dimension, label)); } ) ?
-    ( <COMMA> dimension = tag() <COLON> label = label() { elements.add(new TensorAddress.Element(dimension, label)); } ) *
-    <RCURLY>
-    { return TensorAddress.fromUnsorted(elements); }
-}
-
-String label() :
-{
-    String label;
-
-}
-{
-    ( label = tag() |
-      ( "-" { label = "-"; } ) )
-    { return label; }
-}
-

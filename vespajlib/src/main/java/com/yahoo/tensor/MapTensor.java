@@ -31,7 +31,7 @@ public class MapTensor implements Tensor {
     }
 
     /** Creates a sparse tensor */
-    MapTensor(Set<String> dimensions, Map<TensorAddress, Double> cells) {
+    public MapTensor(Set<String> dimensions, Map<TensorAddress, Double> cells) {
         ensureValidDimensions(cells, dimensions);
         this.dimensions = ImmutableSet.copyOf(dimensions);
         this.cells = ImmutableMap.copyOf(cells);
@@ -52,12 +52,17 @@ public class MapTensor implements Tensor {
      */
     public static MapTensor from(String s) {
         s = s.trim();
-        if ( s.startsWith("("))
-            return fromTensorWithEmptyDimensions(s);
-        else if ( s.startsWith("{"))
-            return fromTensor(s, Collections.emptySet());
-        else
-            throw new IllegalArgumentException("Excepted a string starting by { or (, got '" + s + "'");
+        try {
+            if (s.startsWith("("))
+                return fromTensorWithEmptyDimensions(s); // TODO: Remove this
+            else if (s.startsWith("{"))
+                return fromTensor(s, Collections.emptySet());
+            else
+                return fromNumber(Double.parseDouble(s));
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Excepted a number or a string starting by { or (, got '" + s + "'");
+        }
     }
 
     private static MapTensor fromTensorWithEmptyDimensions(String s) {
@@ -93,6 +98,12 @@ public class MapTensor implements Tensor {
         Set<String> dimensions = dimensionsOf(cellMap.keySet());
         dimensions.addAll(additionalDimensions);
         return new MapTensor(dimensions, cellMap);
+    }
+    
+    private static MapTensor fromNumber(double number) {
+        ImmutableMap.Builder<TensorAddress, Double> singleCell = new ImmutableMap.Builder<>();
+        singleCell.put(TensorAddress.empty, number);
+        return new MapTensor(ImmutableSet.of(), singleCell.build());
     }
 
     private static Double asDouble(TensorAddress address, String s) {
