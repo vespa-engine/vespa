@@ -71,7 +71,7 @@ void
 SingleValueSmallNumericAttribute::onUpdateStat()
 {
     MemoryUsage usage = _wordData.getMemoryUsage();
-    usage.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
+    usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     uint32_t numDocs = B::getNumDocs();
     updateStatistics(numDocs, numDocs,
                      usage.allocatedBytes(), usage.usedBytes(),

@@ -2,7 +2,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include "multi_value_mapping2_base.h"
-#include "attributevector.h"
 
 namespace search {
 namespace attribute {
@@ -40,14 +39,13 @@ MultiValueMapping2Base::shrink(uint32_t docIdLimit)
 }
 
 void
-MultiValueMapping2Base::clearDocs(uint32_t lidLow, uint32_t lidLimit, AttributeVector &v)
+MultiValueMapping2Base::clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc)
 {
     assert(lidLow <= lidLimit);
-    assert(lidLimit <= v.getNumDocs());
     assert(lidLimit <= _indices.size());
     for (uint32_t lid = lidLow; lid < lidLimit; ++lid) {
         if (_indices[lid].valid()) {
-            v.clearDoc(lid);
+            clearDoc(lid);
         }
     }
 }

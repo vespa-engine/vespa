@@ -196,11 +196,11 @@ Test::testMemoryUsage()
     v.push_back(1);
     EXPECT_TRUE(assertUsage(MemoryUsage(2,2,0,0), v.getMemoryUsage()));
     v.push_back(2);
-    EXPECT_TRUE(assertUsage(MemoryUsage(4,3,0,2), v.getMemoryUsage()));
+    EXPECT_TRUE(assertUsage(MemoryUsage(6,5,0,2), v.getMemoryUsage()));
     v.push_back(3);
-    EXPECT_TRUE(assertUsage(MemoryUsage(4,4,0,2), v.getMemoryUsage()));
+    EXPECT_TRUE(assertUsage(MemoryUsage(6,6,0,2), v.getMemoryUsage()));
     v.push_back(4);
-    EXPECT_TRUE(assertUsage(MemoryUsage(6,5,0,6), v.getMemoryUsage()));
+    EXPECT_TRUE(assertUsage(MemoryUsage(12,11,0,6), v.getMemoryUsage()));
     v.removeOldGenerations(1);
     EXPECT_TRUE(assertUsage(MemoryUsage(6,5,0,0), v.getMemoryUsage()));
 }

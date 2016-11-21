@@ -86,6 +86,12 @@ public:
     }
 
     void
+    decAllocatedBytesOnHold(size_t inc)
+    {
+        _allocatedBytesOnHold -= inc;
+    }
+
+    void
     setAllocatedBytes(size_t alloc)
     {
         _allocatedBytes = alloc;
@@ -107,6 +113,12 @@ public:
     setAllocatedBytesOnHold(size_t onHold)
     {
         _allocatedBytesOnHold = onHold;
+    }
+
+    void mergeGenerationHeldBytes(size_t inc) {
+        _allocatedBytes += inc;
+        _usedBytes += inc;
+        _allocatedBytesOnHold += inc;
     }
 
     void

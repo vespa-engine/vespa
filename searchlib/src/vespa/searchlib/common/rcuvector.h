@@ -308,7 +308,7 @@ public:
     getMemoryUsage() const
     {
         MemoryUsage retval(RcuVectorBase<T>::getMemoryUsage());
-        retval.incAllocatedBytesOnHold(_genHolderStore.getHeldBytes());
+        retval.mergeGenerationHeldBytes(_genHolderStore.getHeldBytes());
         return retval;
     }
 };

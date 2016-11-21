@@ -145,7 +145,7 @@ MultiValueMappingBase<I>::getMemoryUsage() const
         const MemoryUsage & memUsage(getVectorVectorUsage(i));
         retval.merge(memUsage);
     }
-    retval.incAllocatedBytesOnHold(_genHolder.getHeldBytes());
+    retval.mergeGenerationHeldBytes(_genHolder.getHeldBytes());
     return retval;
 }
 
@@ -250,15 +250,13 @@ MultiValueMappingBase<I>::shrink(uint32_t docIdLimit)
 
 template <typename I>
 void
-MultiValueMappingBase<I>::clearDocs(uint32_t lidLow, uint32_t lidLimit,
-                                    AttributeVector &v)
+MultiValueMappingBase<I>::clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc)
 {
     assert(lidLow <= lidLimit);
-    assert(lidLimit <= v.getNumDocs());
     assert(lidLimit <= _indices.size());
     for (uint32_t lid = lidLow; lid < lidLimit; ++lid) {
         if (_indices[lid].idx() != 0) {
-            v.clearDoc(lid);
+            clearDoc(lid);
         }
     }
 }
@@ -271,10 +269,9 @@ class MultiValueMappingHoldElem : public GenerationHeldBase
     MultiValueMappingBase<I> &_mvmb;
     Index _idx;
 public:
-    MultiValueMappingHoldElem(size_t size,
-                              MultiValueMappingBase<I> &mvmb,
+    MultiValueMappingHoldElem(MultiValueMappingBase<I> &mvmb,
                               Index idx)
-        : GenerationHeldBase(size),
+        : GenerationHeldBase(0),
           _mvmb(mvmb),
           _idx(idx)
     {
@@ -288,10 +285,9 @@ public:
 
 template <typename I>
 void
-MultiValueMappingBase<I>::holdElem(Index idx, size_t size)
+MultiValueMappingBase<I>::holdElem(Index idx)
 {
-    GenerationHeldBase::UP hold(new MultiValueMappingHoldElem<I>(size, *this,
-                                                                 idx));
+    GenerationHeldBase::UP hold(new MultiValueMappingHoldElem<I>(*this, idx));
     _genHolder.hold(std::move(hold));
 }
 

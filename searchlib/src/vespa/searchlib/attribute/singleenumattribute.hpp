@@ -84,7 +84,7 @@ SingleValueEnumAttribute<B>::onUpdateStat()
 {
     // update statistics
     MemoryUsage total = _enumIndices.getMemoryUsage();
-    total.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
+    total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(this->_enumStore.getMemoryUsage());
     total.merge(this->_enumStore.getTreeMemoryUsage());
     mergeMemoryStats(total);
