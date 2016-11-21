@@ -7,6 +7,13 @@
 namespace search {
 namespace attribute {
 
+namespace {
+
+// minimum dead bytes in multi value mapping before consider compaction
+constexpr size_t DEAD_SLACK = 0x10000u;
+
+}
+
 MultiValueMapping2Base::MultiValueMapping2Base(const GrowStrategy &gs,
                                                vespalib::GenerationHolder &genHolder)
     : _indices(gs, genHolder),
@@ -74,7 +81,8 @@ MultiValueMapping2Base::considerCompact(const CompactionStrategy &compactionStra
 {
     size_t used = _cachedArrayStoreMemoryUsage.usedBytes();
     size_t dead = _cachedArrayStoreMemoryUsage.deadBytes();
-    if (used * compactionStrategy.getMaxDeadRatio() < dead) {
+    if ((dead >= DEAD_SLACK) &&
+        (used * compactionStrategy.getMaxDeadRatio() < dead)) {
         compactWorst();
         return true;
     }
