@@ -44,8 +44,7 @@ public:
 
     void compactWorst();
 
-    // Following methods are not yet properly implemented.
-    AddressSpace getAddressSpaceUsage() const { return AddressSpace(0, 0); }
+    AddressSpace getAddressSpaceUsage() const { return _store.addressSpaceUsage(); }
     virtual MemoryUsage getMemoryUsage() const override;
 
     // Mockups to temporarily silence code written for old multivalue mapping

@@ -7,6 +7,7 @@
 #include "datastore.h"
 #include "entryref.h"
 #include "i_compaction_context.h"
+#include <vespa/searchlib/common/address_space.h>
 #include <vespa/vespalib/util/array.h>
 #include <unordered_map>
 
@@ -67,6 +68,12 @@ public:
     void remove(EntryRef ref);
     ICompactionContext::UP compactWorst();
     MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+
+    /**
+     * Returns the address space usage by this store as the ratio between active buffers
+     * and the total number available buffers.
+     */
+    AddressSpace addressSpaceUsage() const;
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }

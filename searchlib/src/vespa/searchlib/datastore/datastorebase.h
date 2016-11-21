@@ -256,6 +256,8 @@ public:
         return _numBuffers;
     }
 
+    uint32_t getNumActiveBuffers() const;
+
     bool
     hasElemHold1(void) const
     {
