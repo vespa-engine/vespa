@@ -209,7 +209,7 @@ template <typename EntryT, typename RefT>
 AddressSpace
 ArrayStore<EntryT, RefT>::addressSpaceUsage() const
 {
-    uint32_t numPossibleBuffers = (RefT::numBuffers() - 1); // Buffer id 0 is reserved.
+    uint32_t numPossibleBuffers = RefT::numBuffers();
     assert(_store.getNumActiveBuffers() <= numPossibleBuffers);
     return AddressSpace(_store.getNumActiveBuffers(), numPossibleBuffers);
 }

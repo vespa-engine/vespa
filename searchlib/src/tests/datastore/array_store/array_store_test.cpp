@@ -261,7 +261,7 @@ TEST_F("require that address space usage is ratio between active buffers and num
     f.add({4,4,4});
     // All buffer types occupy 1 buffer each
     EXPECT_EQUAL(4.0, f.store.addressSpaceUsage().used());
-    EXPECT_EQUAL(F1::EntryRefType::numBuffers() - 1, f.store.addressSpaceUsage().limit());
+    EXPECT_EQUAL(F1::EntryRefType::numBuffers(), f.store.addressSpaceUsage().limit());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
