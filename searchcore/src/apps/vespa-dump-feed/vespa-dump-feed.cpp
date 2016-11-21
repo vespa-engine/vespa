@@ -7,6 +7,7 @@
 #include <vespa/document/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/imessagehandler.h>
 #include <vespa/messagebus/iprotocol.h>

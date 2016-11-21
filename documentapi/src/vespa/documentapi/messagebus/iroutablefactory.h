@@ -5,7 +5,6 @@
 #include <vespa/messagebus/routable.h>
 #include <vespa/vespalib/component/version.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
-#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 namespace documentapi {
 

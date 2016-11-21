@@ -10,24 +10,11 @@ struct VisitorMetricSet : public metrics::MetricSet {
     metrics::DoubleAverageMetric latency;
     metrics::LongCountMetric failed;
 
-    VisitorMetricSet(metrics::MetricSet* owner = 0)
-        : metrics::MetricSet("visitor", "visitor", "", owner),
-          latency("latency", "", "Latency of visitor (in ms)", this),
-          failed("failed", "", "Number of visitors that failed or were aborted by the user", this)
-    {
-    }
+    VisitorMetricSet(MetricSet* owner = 0);
+    ~VisitorMetricSet();
 
-    virtual Metric* clone(std::vector<Metric::LP>& ownerList,
-                          CopyType copyType,
-                          metrics::MetricSet* owner,
-                          bool includeUnused) const
-    {
-        if (copyType == INACTIVE) {
-            return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
-        }
-        return (VisitorMetricSet*)
-                (new VisitorMetricSet(owner))->assignValues(*this);
-    }
+    MetricSet * clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                      MetricSet* owner, bool includeUnused) const override;
 
     VisitorMetricSet* operator&() { return this; }
 };

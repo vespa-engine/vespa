@@ -6,6 +6,7 @@ LOG_SETUP(".routablefactories51");
 #include "routablefactories51.h"
 #include <vespa/document/document.h>
 #include <vespa/documentapi/documentapi.h>
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using vespalib::nbostream;

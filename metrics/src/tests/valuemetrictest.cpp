@@ -2,6 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/valuemetric.h>

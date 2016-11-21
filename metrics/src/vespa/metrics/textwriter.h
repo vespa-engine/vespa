@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "metric.h"
 #include <vespa/vespalib/util/regexp.h>
-#include <vespa/metrics/metric.h>
 
 namespace metrics {
 

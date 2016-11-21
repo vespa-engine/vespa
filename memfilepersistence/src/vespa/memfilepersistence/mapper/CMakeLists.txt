@@ -3,6 +3,7 @@ vespa_add_library(memfilepersistence_mapper OBJECT
     SOURCES
     buffer.cpp
     memfilemapper.cpp
+    serializationmetrics.cpp
     memfile_v1_serializer.cpp
     memfile_v1_verifier.cpp
     locationreadplanner.cpp

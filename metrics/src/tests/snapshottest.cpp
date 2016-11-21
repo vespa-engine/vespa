@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/metrics/metrics.h>
+#include <vespa/metrics/loadmetric.hpp>
+#include <vespa/metrics/summetric.hpp>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".test.snapshot");
 
 namespace metrics {
@@ -65,7 +67,7 @@ struct SubSubMetricSet : public MetricSet {
         averageSum.addMetricToSum(average2);
     }
 
-    virtual Metric* clone(std::vector<Metric::LP>& ownerList,
+    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList,
                           CopyType copyType, metrics::MetricSet* owner,
                           bool includeUnused) const
     {
@@ -117,7 +119,7 @@ struct SubMetricSet : public MetricSet {
         setSum.addMetricToSum(set2);
     }
 
-    virtual Metric* clone(std::vector<Metric::LP>& ownerList,
+    virtual MetricSet* clone(std::vector<Metric::LP>& ownerList,
                           CopyType copyType, metrics::MetricSet* owner,
                           bool includeUnused) const
     {

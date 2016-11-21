@@ -5,6 +5,7 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
+#include <sstream>
 
 namespace storage {
 namespace api {
@@ -320,8 +321,9 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id)
       _address(),
       _loadType(other._loadType)
 {
-
 }
+
+StorageMessage::~StorageMessage() { }
 
 void StorageMessage::setNewMsgId()
 {

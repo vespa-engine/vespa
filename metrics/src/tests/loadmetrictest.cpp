@@ -2,6 +2,8 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/metrics/loadmetric.h>
 #include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/loadmetric.hpp>
+#include <vespa/metrics/summetric.hpp>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
 namespace metrics {
@@ -57,19 +59,19 @@ namespace {
         MyMetricSet(MetricSet* owner = 0)
             : MetricSet("tick", "", "", owner),
               metric("tack", "", "", this)
-        {
-        }
+        { }
 
-        Metric* clone(std::vector<Metric::LP>& ownerList,
-                           CopyType copyType,
-                           MetricSet* owner,
-                           bool includeUnused = false) const
+        MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                         MetricSet* owner, bool includeUnused = false) const override
         {
             if (copyType != CLONE) {
-                return MetricSet::clone(ownerList, copyType, owner,
-                                        includeUnused);
+                return MetricSet::clone(ownerList, copyType, owner, includeUnused);
             }
-            return (new MyMetricSet(owner))->assignValues(*this);
+            MyMetricSet * myset = new MyMetricSet(owner);
+            myset->assignValues(*this);
+            std::cerr << "org:" << this->toString(true) << std::endl;
+            std::cerr << "clone:" << myset->toString(true) << std::endl;
+            return myset;
         }
     };
 }
@@ -85,8 +87,7 @@ LoadMetricTest::testClone(Metric::CopyType copyType)
     metric[loadTypes["foo"]].metric.addValue(5);
 
     std::vector<Metric::LP> ownerList;
-    MetricSet::UP copy(dynamic_cast<MetricSet*>(
-                top.clone(ownerList, copyType, 0, true)));
+    MetricSet::UP copy(dynamic_cast<MetricSet*>(top.clone(ownerList, copyType, 0, true)));
     CPPUNIT_ASSERT(copy.get());
 
     std::string expected =
@@ -101,6 +102,7 @@ LoadMetricTest::testClone(Metric::CopyType copyType)
         "    bar:\n"
         "      tack average=0 last=0 count=0 total=0";
 
+    CPPUNIT_ASSERT_EQUAL(expected, std::string(top.toString(true)));
     CPPUNIT_ASSERT_EQUAL(expected, std::string(copy->toString(true)));
 }
 

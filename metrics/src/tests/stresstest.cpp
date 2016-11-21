@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/metrics/metrics.h>
+#include <vespa/metrics/loadmetric.hpp>
+#include <vespa/metrics/summetric.hpp>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".metrics.test.stress");
 
 namespace metrics {
@@ -41,15 +43,15 @@ namespace {
             _valueSum.addMetricToSum(_value2);
         }
 
-        Metric* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
-                      MetricSet* owner, bool includeUnused) const
+        MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                      MetricSet* owner, bool includeUnused) const override
         {
             if (copyType != CLONE) {
-                return MetricSet::clone(ownerList, copyType, owner,
-                                        includeUnused);
+                return MetricSet::clone(ownerList, copyType, owner, includeUnused);
             }
-            return (new InnerMetricSet(getName().c_str(), _loadTypes, owner))
-                        ->assignValues(*this);
+            InnerMetricSet * myset = new InnerMetricSet(getName().c_str(), _loadTypes, owner);
+            myset->assignValues(*this);
+            return myset;
         }
     };
     struct OuterMetricSet : public MetricSet {

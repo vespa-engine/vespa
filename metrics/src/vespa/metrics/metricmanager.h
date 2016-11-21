@@ -303,7 +303,7 @@ private:
     time_t updatePeriodicMetrics(const MetricLockGuard & guard, time_t updateTime, bool outOfSchedule);
     void updateSnapshotMetrics(const MetricLockGuard & guard);
 
-    void handleMetricsAltered(const MetricLockGuard &);
+    void handleMetricsAltered(const MetricLockGuard & guard);
 
     typedef std::pair<uint32_t, std::string> SnapSpec;
     static std::vector<SnapSpec> createSnapshotPeriods(

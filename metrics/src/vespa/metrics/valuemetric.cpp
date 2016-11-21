@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/metrics/valuemetric.h>
-#include <atomic>
-
+#include "valuemetric.hpp"
 #include <vespa/log/log.h>
 
 LOG_SETUP(".metrics.metric.value");
@@ -17,9 +15,11 @@ std::atomic<bool> hasWarned {false};
 }
 
 void
-AbstractValueMetric::logWarning(const char* msg) const
+AbstractValueMetric::logWarning(const char* msg, const char * op) const
 {
-    LOG(warning, "%s", msg);
+    vespalib::asciistream ost;
+    ost << msg << " in value metric " << getPath() << " op " << op << ". Resetting it.";
+    LOG(warning, "%s", ost.str().c_str());
 }
 
 void
@@ -45,5 +45,10 @@ AbstractValueMetric::logNonFiniteValueWarning() const
             getPath().c_str());
     }
 }
+
+template class ValueMetric<double, double, true>;
+template class ValueMetric<double, double, false>;
+template class ValueMetric<int64_t, int64_t, true>;
+template class ValueMetric<int64_t, int64_t, false>;
 
 } // metrics

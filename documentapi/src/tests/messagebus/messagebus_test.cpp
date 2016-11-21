@@ -4,13 +4,11 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/log/log.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/routable.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/testkit/testapp.h>
-
-LOG_SETUP("messages_test");
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;

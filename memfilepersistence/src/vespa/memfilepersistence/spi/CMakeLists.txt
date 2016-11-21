@@ -3,6 +3,7 @@ vespa_add_library(memfilepersistence_spi OBJECT
     SOURCES
     memfilepersistence.cpp
     memfilepersistenceprovider.cpp
+    memfilepersistenceprovidermetrics.cpp
     operationhandler.cpp
     iteratorhandler.cpp
     joinoperationhandler.cpp

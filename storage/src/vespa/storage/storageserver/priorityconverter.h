@@ -6,6 +6,7 @@
 #include <vespa/config/config.h>
 #include <atomic>
 #include <array>
+#include <vespa/documentapi/messagebus/priority.h>
 
 namespace storage {
 

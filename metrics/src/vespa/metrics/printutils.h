@@ -89,11 +89,8 @@ struct MetricSource {
             if (_prefixMatch
                 && static_cast<size_t>(_pathIndex + 1) == _path.size())
             {
-                for (std::vector<Metric*>::const_iterator it
-                        = set.getRegisteredMetrics().begin();
-                     it != set.getRegisteredMetrics().end(); ++it)
-                {
-                    checkForPrefixMatch(**it);
+                for (const Metric * entry : set.getRegisteredMetrics()) {
+                    checkForPrefixMatch(*entry);
                 }
                 return false;
             }

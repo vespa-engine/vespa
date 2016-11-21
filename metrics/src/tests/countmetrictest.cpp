@@ -48,7 +48,7 @@ void CountMetricTest::testLongCountMetric()
 
     CPPUNIT_ASSERT_EQUAL(Double(84), Double(o.getDoubleValue("value")));
     CPPUNIT_ASSERT_EQUAL(int64_t(84), o.getLongValue("value"));
-    (void) expected;
+//    (void) expected;
 }
 
 }

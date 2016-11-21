@@ -1,12 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/metrics/metric.h>
+#include "metric.h"
 
-#include <vespa/metrics/countmetric.h>
-#include <vespa/metrics/valuemetric.h>
+#include "countmetric.h"
+#include "valuemetric.h"
+#include "metricset.h"
+#include "namehash.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/metrics/metricset.h>
 
 #include <algorithm>
 #include <iterator>
@@ -90,6 +91,8 @@ Metric::Metric(const Metric& other, MetricSet* owner)
     assignMangledNameWithDimensions();
     registerWithOwnerIfRequired(owner);
 }
+
+Metric::~Metric() { }
 
 bool
 Metric::tagsSpecifyAtLeastOneDimension(const Tags& tags) const
@@ -231,4 +234,13 @@ Metric::printDebug(std::ostream& out, const std::string& indent) const
         << ", owner=" << ((const void*) _owner);
 }
 
+Metric*
+Metric::assignValues(const Metric& m) {
+    std::vector<Metric::LP> ownerList;
+    const_cast<Metric&>(m).addToSnapshot(*this, ownerList);
+    // As this should only be called among active metrics, all metrics
+    // should exist and owner list should thus always end up empty.
+    assert(ownerList.empty());
+    return this;
+}
 } // metrics

@@ -3,6 +3,7 @@
 
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/messagebus/routable.h>
 #include <vespa/vespalib/component/version.h>
 #include <vespa/vespalib/testkit/testapp.h>

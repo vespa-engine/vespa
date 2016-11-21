@@ -4,6 +4,7 @@
 LOG_SETUP(".routablefactories50");
 
 #include "routablefactories50.h"
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/document/document.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <memory>

@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include <limits>
 #include <vespa/storageapi/messageapi/storagecommand.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace storage {
 namespace api {

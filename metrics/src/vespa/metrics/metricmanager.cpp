@@ -28,10 +28,8 @@ MetricManager::ConsumerSpec::print(std::ostream& out, bool verbose,
     (void) verbose;
     out << "ConsumerSpec(";
     std::set<Metric::String> sortedMetrics;
-    for (vespalib::hash_set<Metric::String>::const_iterator it
-            = includedMetrics.begin(); it != includedMetrics.end(); ++it)
-    {
-        sortedMetrics.insert(*it);
+    for (const Metric::String & name : includedMetrics) {
+        sortedMetrics.insert(name);
     }
     for (auto s : sortedMetrics) {
         out << "\n" << indent << "  " << s;
@@ -43,12 +41,8 @@ void
 MetricManager::ConsumerSpec::addMemoryUsage(MemoryConsumption& mc) const
 {
     mc._consumerMetricsInTotal += includedMetrics.size();
-    for (vespalib::hash_set<Metric::String>::const_iterator it
-            = includedMetrics.begin(); it != includedMetrics.end(); ++it)
-    {
-        mc._consumerMetricIds += mc.getStringMemoryUsage(
-                                    *it, mc._consumerMetricIdsUnique)
-                               + sizeof(Metric::String);
+    for (const Metric::String & name : includedMetrics) {
+        mc._consumerMetricIds += mc.getStringMemoryUsage(name, mc._consumerMetricIdsUnique) + sizeof(Metric::String);
     }
 }
 
@@ -68,21 +62,12 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
       _forceEventLogging(false),
       _snapshotUnsetMetrics(false),
       _consumerConfigChanged(false),
-      _metricManagerMetrics("metricmanager", "",
-              "Metrics for the metric manager upkeep tasks"),
-      _periodicHookLatency("periodichooklatency", "",
-              "Time in ms used to update a single periodic hook",
-              &_metricManagerMetrics),
-      _snapshotHookLatency("snapshothooklatency", "",
-              "Time in ms used to update a single snapshot hook",
-              &_metricManagerMetrics),
-      _resetLatency("resetlatency", "",
-              "Time in ms used to reset all metrics.", &_metricManagerMetrics),
-      _snapshotLatency("snapshotlatency", "",
-              "Time in ms used to take a snapshot",
-              &_metricManagerMetrics),
-      _sleepTimes("sleeptime", "", "Time in ms worker thread is sleeping",
-              &_metricManagerMetrics)
+      _metricManagerMetrics("metricmanager", "", "Metrics for the metric manager upkeep tasks"),
+      _periodicHookLatency("periodichooklatency", "", "Time in ms used to update a single periodic hook", &_metricManagerMetrics),
+      _snapshotHookLatency("snapshothooklatency", "", "Time in ms used to update a single snapshot hook", &_metricManagerMetrics),
+      _resetLatency("resetlatency", "", "Time in ms used to reset all metrics.", &_metricManagerMetrics),
+      _snapshotLatency("snapshotlatency", "", "Time in ms used to take a snapshot", &_metricManagerMetrics),
+      _sleepTimes("sleeptime", "", "Time in ms worker thread is sleeping", &_metricManagerMetrics)
 {
     registerMetric(getMetricLock(), _metricManagerMetrics);
 }
@@ -229,11 +214,8 @@ namespace {
         };
         std::list<Result> result;
 
-        ConsumerMetricBuilder(const Config::Consumer& c)
-            : _consumer(c), _matchedMetrics()
-        {
-            LOG(spam, "Adding metrics for consumer %s", c.name.c_str());
-        }
+        ConsumerMetricBuilder(const Config::Consumer& c) __attribute__((noinline));
+        ~ConsumerMetricBuilder() __attribute__((noinline));
 
         bool tagAdded(const Metric& metric) {
             for (const auto& s : _consumer.tags) {
@@ -322,6 +304,12 @@ namespace {
         }
 
     };
+    ConsumerMetricBuilder::ConsumerMetricBuilder(const Config::Consumer& c)
+        : _consumer(c), _matchedMetrics()
+    {
+        LOG(spam, "Adding metrics for consumer %s", c.name.c_str());
+    }
+    ConsumerMetricBuilder::~ConsumerMetricBuilder() { }
 
 }
 
@@ -340,8 +328,9 @@ MetricManager::checkMetricsAltered(const MetricLockGuard & guard)
 // When calling this function, the metric lock is already taken. The thread
 // monitor lock might be taken.
 void
-MetricManager::handleMetricsAltered(const MetricLockGuard &)
+MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
 {
+    (void) guard;
     if (_config.get() == NULL) {
         LOG(info, "_config is NULL -> very odd indeed.");
         return;
@@ -351,10 +340,10 @@ MetricManager::handleMetricsAltered(const MetricLockGuard &)
     } else {
         LOG(info, "Metrics registration changes detected. Handling changes.");
     }
-    std::map<Metric::String, ConsumerSpec::SP> configMap;
     _activeMetrics.getMetrics().clearRegistrationAltered();
+    std::map<Metric::String, ConsumerSpec::SP> configMap;
     LOG(debug, "Calculating new consumer config");
-    for (auto consumer : _config->consumer) {
+    for (const auto & consumer : _config->consumer) {
         ConsumerMetricBuilder consumerMetricBuilder(consumer);
         _activeMetrics.getMetrics().visit(consumerMetricBuilder);
         configMap[consumer.name] = ConsumerSpec::SP(
