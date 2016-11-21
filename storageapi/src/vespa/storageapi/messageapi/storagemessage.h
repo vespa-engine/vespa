@@ -379,7 +379,7 @@ protected:
     StorageMessage(const StorageMessage&, Id id);
 
 public:
-    virtual ~StorageMessage() {}
+    virtual ~StorageMessage();
 
     Id getMsgId() const { return _msgId; }
 

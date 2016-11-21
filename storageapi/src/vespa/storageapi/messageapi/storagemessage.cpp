@@ -321,8 +321,9 @@ StorageMessage::StorageMessage(const StorageMessage& other, Id id)
       _address(),
       _loadType(other._loadType)
 {
-
 }
+
+StorageMessage::~StorageMessage() { }
 
 void StorageMessage::setNewMsgId()
 {
