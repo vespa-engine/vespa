@@ -16,7 +16,8 @@ public enum ValidationId {
     clusterSizeReduction("cluster-size-reduction"),
     contentClusterRemoval("content-cluster-removal"),
     configModelVersionMismatch("config-model-version-mismatch"),
-    skipOldConfigModels("skip-old-config-models");
+    skipOldConfigModels("skip-old-config-models"),
+    skipVespaStagingTests("skip-vespa-staging-tests");
 
     private final String id;
 
