@@ -38,8 +38,11 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
             hosts.add(node.hostname());
         for (Node node : nodeRepository().getNodes(NodeType.proxy))
             hosts.add(node.hostname());
-        for (String hostPort : curator.connectionSpec().split(","))
-            hosts.add(hostPort.split(":")[0]);
+
+        if ( ! hosts.isEmpty()) { // no nodes -> not a hosted instance: Pass an empty list to deactivate restriction
+            for (String hostPort : curator.connectionSpec().split(","))
+                hosts.add(hostPort.split(":")[0]);
+        }
 
         ZooKeeperServer.setAllowedClientHostnames(hosts);
     }
