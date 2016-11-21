@@ -15,6 +15,7 @@
 #include <vespa/storage/visiting/countvisitor.h>
 #include <vespa/storage/visiting/testvisitor.h>
 #include <vespa/storage/visiting/recoveryvisitor.h>
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 LOG_SETUP(".visitor.manager");
 
