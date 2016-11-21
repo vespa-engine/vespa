@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "address_space.h"
 #include "address_space_usage.h"
 #include "iattributesavetarget.h"
 #include <vespa/document/update/arithmeticvalueupdate.h>
@@ -15,6 +14,7 @@
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/changevector.h>
+#include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/range.h>
 #include <vespa/searchlib/common/rcuvector.h>

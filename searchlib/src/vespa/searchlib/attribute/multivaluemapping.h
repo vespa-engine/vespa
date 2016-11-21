@@ -6,12 +6,12 @@
 #include <vector>
 #include <set>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/attribute/multivalue.h>
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include "address_space.h"
 #include "enumstorebase.h"
 #include <functional>
 

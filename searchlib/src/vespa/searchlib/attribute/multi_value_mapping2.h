@@ -4,7 +4,7 @@
 
 #include "multi_value_mapping2_base.h"
 #include <vespa/searchlib/datastore/array_store.h>
-#include "address_space.h"
+#include <vespa/searchlib/common/address_space.h>
 
 namespace search {
 namespace attribute {

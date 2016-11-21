@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "address_space.h"
+#include <vespa/searchlib/common/address_space.h>
 
 namespace search {
 
