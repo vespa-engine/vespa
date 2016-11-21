@@ -62,14 +62,11 @@ namespace {
         {
         }
 
-        MetricSet* clone(std::vector<Metric::LP>& ownerList,
-                           CopyType copyType,
-                           MetricSet* owner,
-                           bool includeUnused = false) const
+        MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
+                         MetricSet* owner, bool includeUnused = false) const override
         {
             if (copyType != CLONE) {
-                return MetricSet::clone(ownerList, copyType, owner,
-                                        includeUnused);
+                return MetricSet::clone(ownerList, copyType, owner, includeUnused);
             }
             MyMetricSet * myset = new MyMetricSet(owner);
             myset->assignValues(*this);
@@ -89,8 +86,7 @@ LoadMetricTest::testClone(Metric::CopyType copyType)
     metric[loadTypes["foo"]].metric.addValue(5);
 
     std::vector<Metric::LP> ownerList;
-    MetricSet::UP copy(dynamic_cast<MetricSet*>(
-                top.clone(ownerList, copyType, 0, true)));
+    MetricSet::UP copy(dynamic_cast<MetricSet*>(top.clone(ownerList, copyType, 0, true)));
     CPPUNIT_ASSERT(copy.get());
 
     std::string expected =

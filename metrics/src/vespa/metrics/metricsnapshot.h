@@ -39,7 +39,7 @@ public:
     /** Create a snapshot of another metric source. */
     MetricSnapshot(const Metric::String& name, uint32_t period,
                    const MetricSet& source, bool copyUnset);
-    virtual ~MetricSnapshot() {}
+    virtual ~MetricSnapshot();
 
     void addToSnapshot(MetricSnapshot& other, bool reset_, time_t currentTime) {
         _snapshot->addToSnapshot(other.getMetrics(), other._metrics);

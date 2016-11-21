@@ -35,6 +35,8 @@ MetricSnapshot::MetricSnapshot(
     trim(_metrics);
 }
 
+MetricSnapshot::~MetricSnapshot() { }
+
 void
 MetricSnapshot::reset(time_t currentTime)
 {

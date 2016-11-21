@@ -232,8 +232,7 @@ MetricSet::addTo(Metric& other, std::vector<Metric::LP>* ownerList) const
         if (target == map2.end() || source->first < target->first) {
                 // Source missing in snapshot to add to. Lets create and add.
             if (!mustAdd && source->second->used()) {
-                Metric::LP copy(source->second->clone(
-                            *ownerList, INACTIVE, &o));
+                Metric::LP copy(source->second->clone(*ownerList, INACTIVE, &o));
                 ownerList->push_back(copy);
                 newMetrics[source->first] = copy.get();
             }

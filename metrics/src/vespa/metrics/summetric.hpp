@@ -103,6 +103,7 @@ SumMetric<AddendMetric>::clone(std::vector<Metric::LP>& ownerList,
 {
     (void) includeUnused;
     if (_metricsToSum.empty() && _startValue.get() == 0) {
+        abort();
         throw vespalib::IllegalStateException(
                 "Attempted to clone sum metric without any children or start value. "
                 "This is currently illegal, to avoid needing to be able to "

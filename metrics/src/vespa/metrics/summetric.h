@@ -46,7 +46,7 @@ public:
     SumMetric(const SumMetric<AddendMetric>& other, std::vector<Metric::LP>& ownerList, MetricSet* owner = 0);
     ~SumMetric();
 
-    virtual Metric* clone( std::vector<Metric::LP>&, CopyType, MetricSet* owner, bool includeUnused = false) const;
+    Metric* clone( std::vector<Metric::LP>&, CopyType, MetricSet* owner, bool includeUnused = false) const override;
 
     /**
      * If you want to support sums of collections of metrics that may
