@@ -73,6 +73,11 @@ public:
           _attr(_mvMapping)
     {
     }
+    Fixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters)
+        : _mvMapping(maxSmallArraySize, minClusters, maxClusters),
+          _attr(_mvMapping)
+    {
+    }
     ~Fixture() { }
 
     void set(uint32_t docId, const std::vector<EntryT> &values) { _mvMapping.set(docId, values); }
@@ -134,6 +139,15 @@ class IntFixture : public Fixture<int>
 public:
     IntFixture(uint32_t maxSmallArraySize)
         : Fixture<int>(maxSmallArraySize),
+          _rnd(),
+          _refMapping(),
+          _maxSmallArraySize(maxSmallArraySize)
+    {
+        _rnd.srand48(32);
+    }
+
+    IntFixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters)
+        : Fixture<int>(maxSmallArraySize, minClusters, maxClusters),
           _rnd(),
           _refMapping(),
           _maxSmallArraySize(maxSmallArraySize)
@@ -281,7 +295,7 @@ TEST_F("Test that replace works", Fixture<int>(3))
     EXPECT_EQUAL(4u, f.getTotalValueCnt());
 }
 
-TEST_F("Test that compaction works", IntFixture(3))
+TEST_F("Test that compaction works", IntFixture(3, 64, 512))
 {
     uint32_t addDocs = 10;
     uint32_t bufferCountBefore = 0;

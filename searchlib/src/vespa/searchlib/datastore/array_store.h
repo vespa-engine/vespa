@@ -51,7 +51,7 @@ private:
     uint32_t _largeArrayTypeId;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
-    void initArrayTypes();
+    void initArrayTypes(size_t minClusters, size_t maxClusters);
     // 1-to-1 mapping between type ids and sizes for small arrays is enforced during initialization.
     uint32_t getTypeId(size_t arraySize) const { return arraySize; }
     size_t getArraySize(uint32_t typeId) const { return typeId; }
@@ -62,6 +62,7 @@ private:
 
 public:
     ArrayStore(uint32_t maxSmallArraySize);
+    ArrayStore(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters);
     ~ArrayStore();
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const;

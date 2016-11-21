@@ -15,6 +15,13 @@ MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize, 
 }
 
 template <typename EntryT, typename RefT>
+MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, const GrowStrategy &gs)
+    : MultiValueMapping2Base(gs, _store.getGenerationHolder()),
+      _store(maxSmallArraySize, minClusters, maxClusters)
+{
+}
+
+template <typename EntryT, typename RefT>
 MultiValueMapping2<EntryT,RefT>::~MultiValueMapping2()
 {
 }
