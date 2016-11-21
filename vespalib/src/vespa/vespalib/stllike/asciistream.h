@@ -112,6 +112,9 @@ public:
     static asciistream createFromDevice(const vespalib::stringref & fileName);
     string getline(char delim='\n');
     std::vector<string> getlines(char delim='\n');
+    char getFill() const noexcept { return _fill; }
+    size_t getWidth() const noexcept { return static_cast<size_t>(_width); } // match input type of setw
+    Base getBase() const noexcept { return _base; }
 private:
     template <typename T>
     void printFixed(T v) __attribute__((noinline));
