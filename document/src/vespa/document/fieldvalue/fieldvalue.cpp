@@ -189,6 +189,8 @@ FieldValue::onIterateNested(FieldPath::const_iterator start, FieldPath::const_it
     }
 }
 
+FieldValue::IteratorHandler::~IteratorHandler() { }
+
 bool
 FieldValue::IteratorHandler::IndexValue::operator==(const FieldValue::IteratorHandler::IndexValue& other) const {
     if (key.get() != NULL) {

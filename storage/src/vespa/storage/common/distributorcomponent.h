@@ -69,12 +69,12 @@ struct DistributorComponentRegister : public virtual StorageComponentRegister
 class DistributorComponent : public StorageComponent,
                              private DistributorManagedComponent
 {
-    lib::IdealNodeCalculator* _idealNodeCalculator;
-    BucketDatabase* _bucketDatabase;
+    lib::IdealNodeCalculator*     _idealNodeCalculator;
+    BucketDatabase*               _bucketDatabase;
     mutable UniqueTimeCalculator* _timeCalculator;
-    DistributorConfig _distributorConfig;
-    VisitorConfig _visitorConfig;
-    DistributorConfiguration _totalConfig;
+    DistributorConfig             _distributorConfig;
+    VisitorConfig                 _visitorConfig;
+    DistributorConfiguration      _totalConfig;
 
         // DistributorManagedComponent implementation
     virtual void setBucketDatabase(BucketDatabase& db)
@@ -92,13 +92,8 @@ public:
     typedef std::unique_ptr<DistributorComponent> UP;
 
     DistributorComponent(DistributorComponentRegister& compReg,
-                          vespalib::stringref name)
-        : StorageComponent(compReg, name),
-          _bucketDatabase(0), _timeCalculator(0),
-          _totalConfig(*this)
-    {
-        compReg.registerDistributorComponent(*this);
-    }
+                          vespalib::stringref name);
+    ~DistributorComponent();
 
     api::Timestamp getUniqueTimestamp() const {
         assert(_timeCalculator); return _timeCalculator->getUniqueTimestamp();

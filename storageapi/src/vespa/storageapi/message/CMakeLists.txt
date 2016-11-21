@@ -14,5 +14,6 @@ vespa_add_library(storageapi_message OBJECT
     removelocation.cpp
     queryresult.cpp
     batch.cpp
+    internal.cpp
     DEPENDS
 )

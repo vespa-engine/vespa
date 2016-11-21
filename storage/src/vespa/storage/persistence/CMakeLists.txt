@@ -13,6 +13,7 @@ vespa_add_library(storage_spersistence OBJECT
     bucketownershipnotifier.cpp
     fieldvisitor.cpp
     testandsethelper.cpp
+    messages.cpp
     DEPENDS
     AFTER
     storage_storageconfig

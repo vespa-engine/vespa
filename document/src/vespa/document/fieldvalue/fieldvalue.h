@@ -80,7 +80,7 @@ public:
                   key(FieldValue::CP(key_.clone()))
             {}
 
-            std::string toString() const {
+            vespalib::string toString() const {
                 if (key.get() != NULL) {
                     return key->toString();
                 } else {
@@ -113,7 +113,7 @@ public:
         };
         IteratorHandler() : _weight(1) { }
     public:
-        virtual ~IteratorHandler() { }
+        virtual ~IteratorHandler();
 
         void handlePrimitive(const FieldValue & fv);
 

@@ -39,6 +39,8 @@ ConfigKey::ConfigKey()
       _key()
 {}
 
+ConfigKey::~ConfigKey() { }
+
 bool
 ConfigKey::operator<(const ConfigKey & rhs) const
 {

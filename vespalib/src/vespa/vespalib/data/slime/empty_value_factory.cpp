@@ -5,5 +5,15 @@
 namespace vespalib {
 namespace slime {
 
+Value *
+ArrayValueFactory::create(Stash & stash) const {
+    return & stash.create<ArrayValue>(symbolTable, stash);
+}
+
+Value *
+ObjectValueFactory::create(Stash & stash) const {
+    return & stash.create<ObjectValue>(symbolTable, stash);
+}
+
 } // namespace vespalib::slime
 } // namespace vespalib

@@ -25,10 +25,8 @@ class RequestStatusPage : public api::InternalCommand {
 public:
     static const uint32_t ID = 2100;
 
-    RequestStatusPage(const framework::HttpUrlPath& path)
-        : api::InternalCommand(ID),
-          _path(path),
-          _sortToken() {}
+    RequestStatusPage(const framework::HttpUrlPath& path);
+    ~RequestStatusPage();
 
     const std::string& getSortToken() const { return _sortToken; }
     void setSortToken(const std::string& token) { _sortToken = token; }
@@ -37,15 +35,7 @@ public:
 
     const framework::HttpUrlPath& getPath() const { return _path; }
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const
-    {
-        out << "RequestStatusPage()";
-
-        if (verbose) {
-            out << " : ";
-            InternalCommand::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 /**
@@ -58,34 +48,14 @@ class RequestStatusPageReply : public api::InternalReply {
 public:
     static const uint32_t ID = 2101;
 
-    RequestStatusPageReply(const RequestStatusPage& cmd,
-                           const std::string& status)
-        : api::InternalReply(ID, cmd),
-          _status(status),
-          _sortToken(cmd.getSortToken())
-    {
-    }
+    RequestStatusPageReply(const RequestStatusPage& cmd, const std::string& status);
+    ~RequestStatusPageReply();
 
     const std::string& getStatus() const { return _status; }
     const std::string& getSortToken() const { return _sortToken; }
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const
-    {
-        out << "RequestStatusPageReply()";
-
-        if (verbose) {
-            out << " : ";
-            InternalReply::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
-
-inline std::unique_ptr<api::StorageReply>
-RequestStatusPage::makeReply()
-{
-    return std::unique_ptr<api::StorageReply>(
-            new RequestStatusPageReply(*this, ""));
-}
 
 struct StatusReqSorter {
     bool operator()(const std::shared_ptr<RequestStatusPageReply>& a,

@@ -82,8 +82,9 @@ ProgramOptions::OptionParser::OptionParser(
       _invalidDefault(false),
       _defaultString(defString),
       _description(desc)
-{
-}
+{ }
+
+ProgramOptions::OptionParser::~OptionParser() { }
 
 void
 ProgramOptions::OptionParser::setInvalidDefault()
@@ -114,8 +115,7 @@ ProgramOptions::ProgramOptions()
       _syntaxMessage(),
       _maxLeftColumnSize(30),
       _defaultsSet(false)
-{
-}
+{ }
 
 ProgramOptions::ProgramOptions(int argc, const char* const* argv)
     : _argc(argc),
@@ -126,7 +126,17 @@ ProgramOptions::ProgramOptions(int argc, const char* const* argv)
       _syntaxMessage(),
       _maxLeftColumnSize(30),
       _defaultsSet(false)
-{
+{ }
+
+ProgramOptions::~ProgramOptions() { }
+
+void
+ProgramOptions::clear() {
+    _configurables.clear();
+    _options.clear();
+    _optionMap.clear();
+    _setOptions.clear();
+    _arguments.clear();
 }
 
 void

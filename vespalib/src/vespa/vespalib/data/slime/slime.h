@@ -88,6 +88,8 @@ public:
         _root(_stash.get())
     { }
 
+    ~Slime();
+
     Slime(Slime &&rhs) :
         _names(std::move(rhs._names)),
         _stash(std::move(rhs._stash)),

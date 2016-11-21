@@ -24,6 +24,8 @@ ConfigValue::ConfigValue(const PayloadPtr & payload, const vespalib::string & md
 {
 }
 
+ConfigValue::~ConfigValue() { }
+
 int
 ConfigValue::operator==(const ConfigValue & rhs) const
 {

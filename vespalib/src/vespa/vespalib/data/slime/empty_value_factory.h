@@ -18,13 +18,13 @@ struct NixValueFactory : public ValueFactory {
 struct ArrayValueFactory : public ValueFactory {
     SymbolTable &symbolTable;
     ArrayValueFactory(SymbolTable &table) : symbolTable(table) {}
-    Value *create(Stash & stash) const override { return & stash.create<ArrayValue>(symbolTable, stash); }
+    Value *create(Stash & stash) const override;
 };
 
 struct ObjectValueFactory : public ValueFactory {
     SymbolTable &symbolTable;
     ObjectValueFactory(SymbolTable &table) : symbolTable(table) {}
-    Value *create(Stash & stash) const override { return & stash.create<ObjectValue>(symbolTable, stash); }
+    Value *create(Stash & stash) const override;
 };
 
 } // namespace vespalib::slime

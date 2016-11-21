@@ -34,8 +34,6 @@ namespace vespalib {
 
 VESPA_DEFINE_EXCEPTION(InvalidCommandLineArgumentsException, Exception);
 
-
-
 struct ProgramOptions {
     /** Utility class used by command line configurable utility. */
     class LifetimeToken {
@@ -90,6 +88,7 @@ public:
      */
     ProgramOptions();
     ProgramOptions(int argc, const char* const* argv);
+    virtual ~ProgramOptions();
 
     void addConfigurable(Configurable& c) {
         _configurables.push_back(&c);
@@ -169,13 +168,7 @@ public:
      * Useful to clear out all options before shutdown if this class outlives
      * a class defining options.
      */
-    void clear() {
-        _configurables.clear();
-        _options.clear();
-        _optionMap.clear();
-        _setOptions.clear();
-        _arguments.clear();
-    }
+    void clear();
 
 private:
     void parseOption(const std::string& id, OptionParser&, uint32_t& argPos);
@@ -224,7 +217,7 @@ struct ProgramOptions::OptionParser {
                  const std::string& desc);
     OptionParser(const std::string& nameList, uint32_t argCount,
                  const std::string& defString, const std::string& desc);
-    virtual ~OptionParser() {}
+    virtual ~OptionParser();
 
     virtual bool isRequired() const { return !_hasDefault; }
     virtual void set(const std::vector<std::string>& arguments) = 0;

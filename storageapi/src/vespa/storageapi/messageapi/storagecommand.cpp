@@ -27,6 +27,8 @@ StorageCommand::StorageCommand(const MessageType& type, Priority p)
     setPriority(p);
 }
 
+StorageCommand::~StorageCommand() { }
+
 void
 StorageCommand::print(std::ostream& out, bool verbose,
                       const std::string& indent) const

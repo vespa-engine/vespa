@@ -214,6 +214,8 @@ StorageMessageAddress::StorageMessageAddress(
     _route.addHop(hop);
 }
 
+StorageMessageAddress::~StorageMessageAddress() { }
+
 uint16_t
 StorageMessageAddress::getIndex() const
 {

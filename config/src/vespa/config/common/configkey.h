@@ -20,6 +20,7 @@ public:
               const std::vector<vespalib::string> & defSchema);
 
     ConfigKey();
+    ~ConfigKey();
 
     bool operator<(const ConfigKey & rhs) const;
     bool operator>(const ConfigKey & rhs) const;
