@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "address_space.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/asciistream.h>

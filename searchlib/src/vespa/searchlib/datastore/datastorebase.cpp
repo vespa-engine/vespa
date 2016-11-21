@@ -140,6 +140,17 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
     return typeId;
 }
 
+uint32_t
+DataStoreBase::getNumActiveBuffers() const
+{
+    uint32_t result = 0;
+    for (const auto &state : _states) {
+        if (state.isActive()) {
+            ++result;
+        }
+    }
+    return result;
+}
 
 void
 DataStoreBase::transferElemHoldList(generation_t generation)

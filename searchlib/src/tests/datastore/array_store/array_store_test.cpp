@@ -255,4 +255,13 @@ TEST_F("require that used, onHold and dead memory usage is tracked for large arr
                                     dead(f.largeArraySize())));
 }
 
+TEST_F("require that address space usage is ratio between active buffers and number of possible buffers", NumberFixture(3))
+{
+    f.add({2,2});
+    f.add({4,4,4});
+    // All buffer types occupy 1 buffer each
+    EXPECT_EQUAL(4.0, f.store.addressSpaceUsage().used());
+    EXPECT_EQUAL(F1::EntryRefType::numBuffers(), f.store.addressSpaceUsage().limit());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

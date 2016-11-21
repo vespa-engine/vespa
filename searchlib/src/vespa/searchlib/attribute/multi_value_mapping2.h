@@ -4,7 +4,7 @@
 
 #include "multi_value_mapping2_base.h"
 #include <vespa/searchlib/datastore/array_store.h>
-#include "address_space.h"
+#include <vespa/searchlib/common/address_space.h>
 
 namespace search {
 namespace attribute {
@@ -44,8 +44,7 @@ public:
 
     virtual void compactWorst() override;
 
-    // Following methods are not yet properly implemented.
-    AddressSpace getAddressSpaceUsage() const { return AddressSpace(0, 0); }
+    AddressSpace getAddressSpaceUsage() const { return _store.addressSpaceUsage(); }
     virtual MemoryUsage getMemoryUsage() const override;
 
     // Mockups to temporarily silence code written for old multivalue mapping

@@ -206,6 +206,15 @@ ArrayStore<EntryT, RefT>::compactWorst()
 }
 
 template <typename EntryT, typename RefT>
+AddressSpace
+ArrayStore<EntryT, RefT>::addressSpaceUsage() const
+{
+    uint32_t numPossibleBuffers = RefT::numBuffers();
+    assert(_store.getNumActiveBuffers() <= numPossibleBuffers);
+    return AddressSpace(_store.getNumActiveBuffers(), numPossibleBuffers);
+}
+
+template <typename EntryT, typename RefT>
 const BufferState &
 ArrayStore<EntryT, RefT>::bufferState(EntryRef ref) const
 {
