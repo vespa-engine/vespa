@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/address_space.h>
+#include <vespa/searchlib/common/address_space.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace proton {
