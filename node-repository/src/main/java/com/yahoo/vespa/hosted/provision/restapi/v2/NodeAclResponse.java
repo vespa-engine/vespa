@@ -40,7 +40,7 @@ public class NodeAclResponse extends HttpResponse {
         Node node = nodeRepository.getNode(hostname)
                 .orElseThrow(() -> new IllegalArgumentException("No node with hostname '" + hostname + "'"));
 
-        if (node.state() == Node.State.provisioned) return; // empty response; don't have ip address yet
+        if ( ! node.ipAddress().isPresent()) return; // empty response
         toSlime(node, nodeRepository.getTrustedNodes(node), object);
     }
 
