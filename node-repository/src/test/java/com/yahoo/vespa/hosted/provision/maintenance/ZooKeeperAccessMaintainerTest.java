@@ -27,7 +27,7 @@ public class ZooKeeperAccessMaintainerTest {
                                                                              tester.curator(), Duration.ofHours(1));
         assertTrue(ZooKeeperServer.getAllowedClientHostnames().isEmpty());
         maintainer.maintain();
-        assertEquals(asSet("server1,server2"), ZooKeeperServer.getAllowedClientHostnames());
+        assertTrue("We don't restrict to only config servers", ZooKeeperServer.getAllowedClientHostnames().isEmpty());
 
         tester.addNode("id1", "host1", "default", NodeType.tenant);
         tester.addNode("id2", "host2", "default", NodeType.tenant);
