@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "multi_value_mapping2_base.h"
+#include <vespa/searchcommon/common/compaction_strategy.h>
 
 namespace search {
 namespace attribute {
@@ -9,7 +10,8 @@ namespace attribute {
 MultiValueMapping2Base::MultiValueMapping2Base(const GrowStrategy &gs,
                                                vespalib::GenerationHolder &genHolder)
     : _indices(gs, genHolder),
-      _totalValues(0u)
+      _totalValues(0u),
+      _cachedMemoryUsage()
 {
 }
 
@@ -48,6 +50,25 @@ MultiValueMapping2Base::clearDocs(uint32_t lidLow, uint32_t lidLimit, std::funct
             clearDoc(lid);
         }
     }
+}
+
+MemoryUsage
+MultiValueMapping2Base::updateMemoryUsage()
+{
+    _cachedMemoryUsage = getMemoryUsage();
+    return _cachedMemoryUsage;
+}
+
+bool
+MultiValueMapping2Base::considerCompact(const CompactionStrategy &compactionStrategy)
+{
+    size_t used = _cachedMemoryUsage.usedBytes();
+    size_t dead = _cachedMemoryUsage.deadBytes();
+    if (used * compactionStrategy.getMaxDeadRatio() < dead) {
+        compactWorst();
+        return true;
+    }
+    return false;
 }
 
 } // namespace search::attribute

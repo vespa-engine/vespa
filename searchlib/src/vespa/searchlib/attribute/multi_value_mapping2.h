@@ -42,7 +42,7 @@ public:
     template <class Reader>
     void prepareLoadFromMultiValue(Reader &) { }
 
-    void compactWorst();
+    virtual void compactWorst() override;
 
     // Following methods are not yet properly implemented.
     AddressSpace getAddressSpaceUsage() const { return AddressSpace(0, 0); }

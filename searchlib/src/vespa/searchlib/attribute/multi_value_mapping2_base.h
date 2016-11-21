@@ -8,6 +8,9 @@
 #include <functional>
 
 namespace search {
+
+class CompactionStrategy;
+
 namespace attribute {
 
 /**
@@ -22,6 +25,7 @@ public:
 protected:
     RefVector _indices;
     size_t    _totalValues;
+    MemoryUsage _cachedMemoryUsage;
 
     MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMapping2Base();
@@ -33,6 +37,7 @@ public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
     virtual MemoryUsage getMemoryUsage() const = 0;
+    MemoryUsage updateMemoryUsage();
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 
@@ -61,6 +66,8 @@ public:
     static size_t maxValues() { return 0; }
     uint32_t getNumKeys() const { return _indices.size(); }
     uint32_t getCapacityKeys() const { return _indices.capacity(); }
+    virtual void compactWorst() = 0;
+    bool considerCompact(const CompactionStrategy &compactionStrategy);
 };
 
 } // namespace search::attribute

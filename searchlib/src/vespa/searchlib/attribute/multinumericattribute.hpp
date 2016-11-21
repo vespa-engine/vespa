@@ -61,12 +61,16 @@ MultiValueNumericAttribute<B, M>::onCommit()
     this->removeAllOldGenerations();
 
     this->_changes.clear();
+    if (this->_mvMapping.considerCompact(this->getConfig().getCompactionStrategy())) {
+        this->incGeneration();
+        this->updateStat(true);
+    }
 }
 
 template <typename B, typename M>
 void MultiValueNumericAttribute<B, M>::onUpdateStat()
 {
-    MemoryUsage usage = this->_mvMapping.getMemoryUsage();
+    MemoryUsage usage = this->_mvMapping.updateMemoryUsage();
     this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_mvMapping.getTotalValueCnt(), usage.allocatedBytes(),
                            usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());
 }

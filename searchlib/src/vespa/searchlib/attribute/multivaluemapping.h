@@ -145,6 +145,7 @@ private:
 public:
     virtual Histogram getEmptyHistogram() const = 0;
     virtual MemoryUsage getMemoryUsage() const = 0;
+    MemoryUsage updateMemoryUsage() { return getMemoryUsage(); }
     size_t getTotalValueCnt() const { return _totalValueCnt; }
     static void failNewSize(uint64_t minNewSize, uint64_t maxSize);
     void clearPendingCompact();
@@ -158,6 +159,8 @@ public:
     void trimHoldLists(generation_t firstUsed) {
         _genHolder.trimHoldLists(firstUsed);
     }
+
+    bool considerCompact(const CompactionStrategy &) { return false; }
 };
 
 
