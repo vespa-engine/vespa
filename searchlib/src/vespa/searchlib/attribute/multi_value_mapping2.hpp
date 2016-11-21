@@ -64,6 +64,11 @@ MultiValueMapping2<EntryT,RefT>::getMemoryUsage() const
     return retval;
 }
 
+template <typename EntryT, typename RefT>
+AddressSpace
+MultiValueMapping2<EntryT, RefT>::getAddressSpaceUsage() const {
+    return _store.addressSpaceUsage();
+}
 
 } // namespace search::attribute
 } // namespace search

@@ -44,7 +44,7 @@ public:
 
     virtual void compactWorst() override;
 
-    AddressSpace getAddressSpaceUsage() const { return _store.addressSpaceUsage(); }
+    AddressSpace getAddressSpaceUsage() const;
     virtual MemoryUsage getMemoryUsage() const override;
 
     // Mockups to temporarily silence code written for old multivalue mapping
