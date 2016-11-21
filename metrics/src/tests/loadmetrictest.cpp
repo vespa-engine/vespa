@@ -59,8 +59,7 @@ namespace {
         MyMetricSet(MetricSet* owner = 0)
             : MetricSet("tick", "", "", owner),
               metric("tack", "", "", this)
-        {
-        }
+        { }
 
         MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
                          MetricSet* owner, bool includeUnused = false) const override
@@ -70,6 +69,8 @@ namespace {
             }
             MyMetricSet * myset = new MyMetricSet(owner);
             myset->assignValues(*this);
+            std::cerr << "org:" << this->toString(true) << std::endl;
+            std::cerr << "clone:" << myset->toString(true) << std::endl;
             return myset;
         }
     };
@@ -101,6 +102,7 @@ LoadMetricTest::testClone(Metric::CopyType copyType)
         "    bar:\n"
         "      tack average=0 last=0 count=0 total=0";
 
+    CPPUNIT_ASSERT_EQUAL(expected, std::string(top.toString(true)));
     CPPUNIT_ASSERT_EQUAL(expected, std::string(copy->toString(true)));
 }
 

@@ -28,10 +28,8 @@ MetricManager::ConsumerSpec::print(std::ostream& out, bool verbose,
     (void) verbose;
     out << "ConsumerSpec(";
     std::set<Metric::String> sortedMetrics;
-    for (vespalib::hash_set<Metric::String>::const_iterator it
-            = includedMetrics.begin(); it != includedMetrics.end(); ++it)
-    {
-        sortedMetrics.insert(*it);
+    for (const Metric::String & name : includedMetrics) {
+        sortedMetrics.insert(name);
     }
     for (auto s : sortedMetrics) {
         out << "\n" << indent << "  " << s;
@@ -43,12 +41,8 @@ void
 MetricManager::ConsumerSpec::addMemoryUsage(MemoryConsumption& mc) const
 {
     mc._consumerMetricsInTotal += includedMetrics.size();
-    for (vespalib::hash_set<Metric::String>::const_iterator it
-            = includedMetrics.begin(); it != includedMetrics.end(); ++it)
-    {
-        mc._consumerMetricIds += mc.getStringMemoryUsage(
-                                    *it, mc._consumerMetricIdsUnique)
-                               + sizeof(Metric::String);
+    for (const Metric::String & name : includedMetrics) {
+        mc._consumerMetricIds += mc.getStringMemoryUsage(name, mc._consumerMetricIdsUnique) + sizeof(Metric::String);
     }
 }
 
@@ -68,21 +62,12 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
       _forceEventLogging(false),
       _snapshotUnsetMetrics(false),
       _consumerConfigChanged(false),
-      _metricManagerMetrics("metricmanager", "",
-              "Metrics for the metric manager upkeep tasks"),
-      _periodicHookLatency("periodichooklatency", "",
-              "Time in ms used to update a single periodic hook",
-              &_metricManagerMetrics),
-      _snapshotHookLatency("snapshothooklatency", "",
-              "Time in ms used to update a single snapshot hook",
-              &_metricManagerMetrics),
-      _resetLatency("resetlatency", "",
-              "Time in ms used to reset all metrics.", &_metricManagerMetrics),
-      _snapshotLatency("snapshotlatency", "",
-              "Time in ms used to take a snapshot",
-              &_metricManagerMetrics),
-      _sleepTimes("sleeptime", "", "Time in ms worker thread is sleeping",
-              &_metricManagerMetrics)
+      _metricManagerMetrics("metricmanager", "", "Metrics for the metric manager upkeep tasks"),
+      _periodicHookLatency("periodichooklatency", "", "Time in ms used to update a single periodic hook", &_metricManagerMetrics),
+      _snapshotHookLatency("snapshothooklatency", "", "Time in ms used to update a single snapshot hook", &_metricManagerMetrics),
+      _resetLatency("resetlatency", "", "Time in ms used to reset all metrics.", &_metricManagerMetrics),
+      _snapshotLatency("snapshotlatency", "", "Time in ms used to take a snapshot", &_metricManagerMetrics),
+      _sleepTimes("sleeptime", "", "Time in ms worker thread is sleeping", &_metricManagerMetrics)
 {
     registerMetric(getMetricLock(), _metricManagerMetrics);
 }

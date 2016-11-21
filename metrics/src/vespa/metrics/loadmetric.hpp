@@ -40,7 +40,7 @@ LoadMetric<MetricType>::LoadMetric(const LoadMetric<MetricType>& other, MetricSe
     _metrics.resize(2 * other._metrics.size());
     setTags(other.getTags());
     Tags noTags;
-    for (const auto & metric : _metrics) {
+    for (const auto & metric : other._metrics) {
         MetricTypeLP copy(dynamic_cast<MetricType*>(metric.second->clone(_ownerList, CLONE, 0, false)));
         assert(copy.get());
         copy->setName(metric.second->getName());
@@ -58,8 +58,8 @@ LoadMetric<MetricType>::~LoadMetric() { }
 template<typename MetricType>
 MetricSet*
 LoadMetric<MetricType>::clone(std::vector<Metric::LP>& ownerList,
-                      CopyType copyType, MetricSet* owner,
-                      bool includeUnused) const
+                              CopyType copyType, MetricSet* owner,
+                              bool includeUnused) const
 {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);

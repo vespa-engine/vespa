@@ -56,6 +56,14 @@ MetricSet::MetricSet(const MetricSet& other,
 
 MetricSet::~MetricSet() { }
 
+MetricSet*
+MetricSet::clone(std::vector<Metric::LP>& ownerList, CopyType type,
+                 MetricSet* owner, bool includeUnused) const
+{
+    return new MetricSet(*this, ownerList, type, owner, includeUnused);
+}
+
+
 const Metric*
 MetricSet::getMetricInternal(const String& name) const
 {

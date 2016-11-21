@@ -51,11 +51,8 @@ SumMetric<AddendMetric>::SumMetric(const SumMetric<AddendMetric>& other,
     }
     std::vector<String> parentPath(other._owner->getPathVector());
     _metricsToSum.reserve(other._metricsToSum.size());
-    for (typename std::vector<const AddendMetric*>::const_iterator it
-             = other._metricsToSum.begin();
-         it != other._metricsToSum.end(); ++it)
-    {
-        std::vector<String> addendPath((**it).getPathVector());
+    for(const AddendMetric* m : _metricsToSum) {
+        std::vector<String> addendPath(m->getPathVector());
         MetricSet* newAddendParent = owner;
         for (uint32_t i=parentPath.size(), n=addendPath.size() - 1; i<n; ++i) {
             Metric* child = newAddendParent->getMetric(addendPath[i]);
@@ -73,8 +70,7 @@ SumMetric<AddendMetric>::SumMetric(const SumMetric<AddendMetric>& other,
             }
             newAddendParent = static_cast<MetricSet*>(child);
         }
-        Metric* child = newAddendParent->getMetric(
-                addendPath[addendPath.size() - 1]);
+        Metric* child = newAddendParent->getMetric(addendPath[addendPath.size() - 1]);
         if (child == 0) {
             throw vespalib::IllegalStateException(
                     "Metric " + addendPath[addendPath.size() - 1] + " in "
@@ -275,10 +271,8 @@ template<typename AddendMetric>
 bool
 SumMetric<AddendMetric>::used() const
 {
-    for(typename std::vector<const AddendMetric*>::const_iterator it(
-            _metricsToSum.begin()); it != _metricsToSum.end(); ++it)
-    {
-        if ((**it).used()) return true;
+    for(const AddendMetric* m : _metricsToSum) {
+        if (m->used()) return true;
     }
     return false;
 }
@@ -301,11 +295,9 @@ SumMetric<AddendMetric>::printDebug(std::ostream& out,
     out << "sum ";
     Metric::printDebug(out, indent);
     out << " {";
-    for(typename std::vector<const AddendMetric*>::const_iterator it(
-            _metricsToSum.begin()); it != _metricsToSum.end(); ++it)
-    {
+    for(const AddendMetric* m : _metricsToSum) {
         out << "\n" << indent << "  ";
-        (**it).printDebug(out, indent + "  ");
+        m->printDebug(out, indent + "  ");
     }
     out << "}";
 }

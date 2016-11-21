@@ -53,8 +53,7 @@ public:
     void unregisterMetric(Metric& m);
 
     MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType type,
-                     MetricSet* owner, bool includeUnused = false) const override
-        { return new MetricSet(*this, ownerList, type, owner, includeUnused); }
+                     MetricSet* owner, bool includeUnused = false) const override;
 
     void reset();
 

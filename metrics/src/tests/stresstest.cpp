@@ -44,11 +44,10 @@ namespace {
         }
 
         MetricSet* clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
-                      MetricSet* owner, bool includeUnused) const
+                      MetricSet* owner, bool includeUnused) const override
         {
             if (copyType != CLONE) {
-                return MetricSet::clone(ownerList, copyType, owner,
-                                        includeUnused);
+                return MetricSet::clone(ownerList, copyType, owner, includeUnused);
             }
             InnerMetricSet * myset = new InnerMetricSet(getName().c_str(), _loadTypes, owner);
             myset->assignValues(*this);

@@ -55,11 +55,8 @@ public:
         mc._nameHash += sizeof(NameHash)
                      + _hash.getMemoryConsumption()
                      - sizeof(vespalib::hash_set<std::string>);
-        for (vespalib::hash_set<std::string>::const_iterator it(_hash.begin());
-             it != _hash.end(); ++it)
-        {
-            mc._nameHashStrings
-                    += mc.getStringMemoryUsage(*it, mc._nameHashUnique);
+        for (const std::string & name : _hash) {
+            mc._nameHashStrings += mc.getStringMemoryUsage(name, mc._nameHashUnique);
         }
     }
 };
