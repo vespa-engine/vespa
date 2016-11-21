@@ -54,10 +54,10 @@ MemFilePersistenceMetrics::addThreadMetrics() {
     }
 
     std::string name = vespalib::make_string("thread_%zu", _threadMetrics.size());
-    auto metrics = std::make_unique<MemFilePersistenceThreadMetrics>(name, *this);
-    _threadMetrics.emplace_back(std::move(metrics));
+    MemFilePersistenceThreadMetrics * metrics = new MemFilePersistenceThreadMetrics(name, *this);
+    _threadMetrics.emplace_back(metrics);
     _sumMetric->addMetricToSum(*metrics);
-    return metrics.get();
+    return metrics;
 }
 
 }

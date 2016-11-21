@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("routablefactory_test");
-
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/routablefactories51.h>
@@ -10,6 +7,7 @@ LOG_SETUP("routablefactory_test");
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/documentapi/loadtypes/loadtypeset.h>
 
 using document::DocumentTypeRepo;
 using namespace documentapi;
