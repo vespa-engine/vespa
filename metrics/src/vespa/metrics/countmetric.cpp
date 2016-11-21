@@ -10,14 +10,15 @@ LOG_SETUP(".metrics.metric.count");
 namespace metrics {
 
 void
-AbstractCountMetric::logWarning(const char* msg) const
+AbstractCountMetric::logWarning(const char* msg, const char * op) const
 {
-    LOG(warning, "%s", msg);
+    vespalib::asciistream ost;
+    ost << msg << " in count metric " << getPath() << " op " << op << ". Resetting it.";
+    LOG(warning, "%s", ost.str().c_str());
 }
 
 void
-AbstractCountMetric::sendLogCountEvent(
-        Metric::String name, uint64_t value) const
+AbstractCountMetric::sendLogCountEvent(Metric::String name, uint64_t value) const
 {
     EV_COUNT(name.c_str(), value);
 }

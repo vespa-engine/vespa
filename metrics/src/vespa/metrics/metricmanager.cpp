@@ -229,11 +229,8 @@ namespace {
         };
         std::list<Result> result;
 
-        ConsumerMetricBuilder(const Config::Consumer& c)
-            : _consumer(c), _matchedMetrics()
-        {
-            LOG(spam, "Adding metrics for consumer %s", c.name.c_str());
-        }
+        ConsumerMetricBuilder(const Config::Consumer& c) __attribute__((noinline));
+        ~ConsumerMetricBuilder() __attribute__((noinline));
 
         bool tagAdded(const Metric& metric) {
             for (const auto& s : _consumer.tags) {
@@ -322,6 +319,12 @@ namespace {
         }
 
     };
+    ConsumerMetricBuilder::ConsumerMetricBuilder(const Config::Consumer& c)
+        : _consumer(c), _matchedMetrics()
+    {
+        LOG(spam, "Adding metrics for consumer %s", c.name.c_str());
+    }
+    ConsumerMetricBuilder::~ConsumerMetricBuilder() { }
 
 }
 
@@ -352,10 +355,10 @@ MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
     } else {
         LOG(info, "Metrics registration changes detected. Handling changes.");
     }
-    std::map<Metric::String, ConsumerSpec::SP> configMap;
     _activeMetrics.getMetrics().clearRegistrationAltered();
+    std::map<Metric::String, ConsumerSpec::SP> configMap;
     LOG(debug, "Calculating new consumer config");
-    for (auto consumer : _config->consumer) {
+    for (const auto & consumer : _config->consumer) {
         ConsumerMetricBuilder consumerMetricBuilder(consumer);
         _activeMetrics.getMetrics().visit(consumerMetricBuilder);
         configMap[consumer.name] = ConsumerSpec::SP(

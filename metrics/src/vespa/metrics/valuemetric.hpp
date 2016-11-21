@@ -130,11 +130,8 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::add(const Values& values2, bool sumOnAdd)
         if (values._max < values2._max) values._max = values2._max;
     } while (!_values.setValues(values));
     if (overflow) {
-        std::ostringstream ost;
-        ost << "ValueMetric " << getPath() << " overflowed. Resetting it. Old value = (";
-        ost << values << "), Incoming = (" << values2 << ")";
-        logWarning(ost.str().c_str());
         _values.reset();
+        logWarning("Overflow", "add");
     }
 }
 
@@ -153,9 +150,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::dec(const Values& values2)
     } while (!_values.setValues(values));
     if (underflow) {
         _values.reset();
-        std::ostringstream ost;
-        ost << "ValueMetric " << getPath() << " underflowed. Resetting it.";
-        logWarning(ost.str().c_str());
+        logWarning("Underflow", "dec");
     }
 }
 

@@ -50,9 +50,7 @@ CountMetric<T, SumOnAdd>::operator+=(const CountMetric<T, SumOnAdd>& other)
     } while (!_values.setValues(values));
     if (overflow) {
         _values.reset();
-        std::ostringstream ost;
-        ost << "Overflow in metric " << getPath() << " op +=. Resetting it.";
-        logWarning(ost.str().c_str());
+        logWarning("Overflow", "+=");
     }
     return *this;
 }
@@ -71,11 +69,25 @@ CountMetric<T, SumOnAdd>::operator-=(const CountMetric<T, SumOnAdd>& other)
     } while (!_values.setValues(values));
     if (underflow) {
         _values.reset();
-        std::ostringstream ost;
-        ost << "Underflow in metric " << getPath() << " op -=. Resetting it.";
-        logWarning(ost.str().c_str());
+        logWarning("Underflow", "-=");
     }
     return *this;
+}
+
+template <typename T, bool SumOnAdd>
+CountMetric<T, SumOnAdd>
+CountMetric<T, SumOnAdd>:: operator++(int) {
+    CountMetric tmp(*this);
+    inc();
+    return tmp;
+}
+
+template <typename T, bool SumOnAdd>
+CountMetric<T, SumOnAdd>
+CountMetric<T, SumOnAdd>::operator--(int) {
+    CountMetric tmp(*this);
+    inc();
+    return tmp;
 }
 
 template <typename T, bool SumOnAdd>
@@ -100,9 +112,7 @@ CountMetric<T, SumOnAdd>::inc(T value)
     } while (!_values.setValues(values));
     if (overflow) {
         _values.reset();
-        std::ostringstream ost;
-        ost << "Overflow in metric " << getPath() << ". Resetting it.";
-        logWarning(ost.str().c_str());
+        logWarning("Overflow", "inc");
     }
 }
 
@@ -119,9 +129,7 @@ CountMetric<T, SumOnAdd>::dec(T value)
     } while (!_values.setValues(values));
     if (underflow) {
         _values.reset();
-        std::ostringstream ost;
-        ost << "Underflow in metric " << getPath() << ". Resetting it.";
-        logWarning(ost.str().c_str());
+        logWarning("Underflow", "dec");
     }
 }
 

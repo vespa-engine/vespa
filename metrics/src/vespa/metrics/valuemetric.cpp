@@ -15,9 +15,11 @@ std::atomic<bool> hasWarned {false};
 }
 
 void
-AbstractValueMetric::logWarning(const char* msg) const
+AbstractValueMetric::logWarning(const char* msg, const char * op) const
 {
-    LOG(warning, "%s", msg);
+    vespalib::asciistream ost;
+    ost << msg << " in value metric " << getPath() << " op " << op << ". Resetting it.";
+    LOG(warning, "%s", ost.str().c_str());
 }
 
 void

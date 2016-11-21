@@ -41,7 +41,7 @@ protected:
     AbstractValueMetric(const AbstractValueMetric& other, MetricSet* owner)
         : Metric(other, owner) {}
 
-    void logWarning(const char* msg) const;
+    void logWarning(const char* msg, const char *op) const;
     void logNonFiniteValueWarning() const;
     void sendLogEvent(Metric::String name, double value) const;
 };

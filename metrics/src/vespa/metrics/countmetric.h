@@ -45,7 +45,7 @@ protected:
     {
     }
 
-    void logWarning(const char* msg) const;
+    void logWarning(const char* msg, const char * op) const;
     void sendLogCountEvent(Metric::String name, uint64_t value) const;
 };
 
@@ -80,8 +80,8 @@ public:
     CountMetric & operator++() { inc(); return *this; }
     CountMetric & operator--() { dec(); return *this; }
 
-    CountMetric operator++(int) { CountMetric tmp(*this); inc(); return tmp; }
-    CountMetric operator--(int) { CountMetric tmp(*this); inc(); return tmp; }
+    CountMetric operator++(int);
+    CountMetric operator--(int);
 
     CountMetric & operator+=(const CountMetric &);
     CountMetric & operator-=(const CountMetric &);
