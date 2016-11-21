@@ -1329,4 +1329,11 @@ TEST("require that children of onear are not optimized") {
     EXPECT_EQUAL(expect_up->asString(), top_up->asString());
 }
 
+TEST("require that ANDNOT without children is optimized to empty search") {
+    Blueprint::UP top_up(new AndNotBlueprint());
+    Blueprint::UP expect_up(new EmptyBlueprint());
+    top_up = Blueprint::optimize(std::move(top_up));
+    EXPECT_EQUAL(expect_up->asString(), top_up->asString());
+}
+
 TEST_MAIN() { TEST_DEBUG("lhs.out", "rhs.out"); TEST_RUN_ALL(); }

@@ -94,6 +94,9 @@ AndNotBlueprint::exposeFields() const
 void
 AndNotBlueprint::optimize_self()
 {
+    if (childCnt() == 0) {
+        return;
+    }
     AndNotBlueprint *child = dynamic_cast<AndNotBlueprint *>(&getChild(0));
     if (child != nullptr) {
         while (child->childCnt() > 1) {
