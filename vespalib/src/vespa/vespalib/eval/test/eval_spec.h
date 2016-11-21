@@ -120,20 +120,22 @@ public:
         virtual ~EvalTest() {}
     };
     //-------------------------------------------------------------------------
-    void add_terminal_cases();       // a, 1.0
-    void add_arithmetic_cases();     // a + b, a ^ b
-    void add_function_call_cases();  // cos(a), max(a, b)
-    void add_comparison_cases();     // a < b, c != d
-    void add_set_membership_cases(); // a in [x, y, z]
-    void add_boolean_cases();        // 1.0 && 0.0
-    void add_if_cases();             // if (a < b, a, b)
-    void add_let_cases();            // let (a, b + 1, a * a)
-    void add_complex_cases();        // ...
+    void add_terminal_cases();         // a, 1.0
+    void add_arithmetic_cases();       // a + b, a ^ b
+    void add_function_call_cases();    // cos(a), max(a, b)
+    void add_tensor_operation_cases(); // map(a,f(x)(sin(x)))
+    void add_comparison_cases();       // a < b, c != d
+    void add_set_membership_cases();   // a in [x, y, z]
+    void add_boolean_cases();          // 1.0 && 0.0
+    void add_if_cases();               // if (a < b, a, b)
+    void add_let_cases();              // let (a, b + 1, a * a)
+    void add_complex_cases();          // ...
     //-------------------------------------------------------------------------
     void add_all_cases() {
         add_terminal_cases();
         add_arithmetic_cases();
         add_function_call_cases();
+        add_tensor_operation_cases();
         add_comparison_cases();
         add_set_membership_cases();
         add_boolean_cases();

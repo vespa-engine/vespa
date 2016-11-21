@@ -69,11 +69,14 @@ struct CheckKeys : test::EvalSpec::EvalTest {
     virtual void next_expression(const std::vector<vespalib::string> &param_names,
                                  const vespalib::string &expression) override
     {
-        if (check_key(gen_key(Function::parse(param_names, expression), PassParams::ARRAY)) ||
-            check_key(gen_key(Function::parse(param_names, expression), PassParams::SEPARATE)))
-        {
-            failed = true;
-            fprintf(stderr, "key collision for: %s\n", expression.c_str());
+        Function function = Function::parse(param_names, expression);
+        if (!CompiledFunction::detect_issues(function)) {
+            if (check_key(gen_key(function, PassParams::ARRAY)) ||
+                check_key(gen_key(function, PassParams::SEPARATE)))
+            {
+                failed = true;
+                fprintf(stderr, "key collision for: %s\n", expression.c_str());
+            }
         }
     }
     virtual void handle_case(const std::vector<vespalib::string> &,

@@ -7,10 +7,25 @@
 
 using namespace vespalib::eval;
 
+/**
+ * Hack to avoid parse-conflict between tensor type expressions and
+ * lambda-generated tensors. This will patch leading identifier 'T' to
+ * 't' directly in the input stream after we have concluded that this
+ * is not a lambda-generated tensor in order to parse it out as a
+ * valid tensor type. This may be reverted later if we add support for
+ * parser rollback when we fail to parse a lambda-generated tensor.
+ **/
+void tensor_type_hack(const char *pos_in, const char *end_in) {
+    if ((pos_in < end_in) && (*pos_in == 'T')) {
+        const_cast<char *>(pos_in)[0] = 't';
+    }
+}
+
 struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
     void extract_symbol(const char *pos_in, const char *end_in,
                         const char *&pos_out, vespalib::string &symbol_out) const override
     {
+        tensor_type_hack(pos_in, end_in);
         ValueType type = value_type::parse_spec(pos_in, end_in, pos_out);
         if (pos_out != nullptr) {
             symbol_out = type.to_spec();
@@ -18,7 +33,15 @@ struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
     }
 };
 
-void verify(const vespalib::string &type_expr, const vespalib::string &type_spec) {
+void verify(const vespalib::string &type_expr_in, const vespalib::string &type_spec) {
+    // replace 'tensor' with 'Tensor' in type expression, see hack above
+    vespalib::string type_expr = type_expr_in;
+    for (size_t idx = type_expr.find("tensor");
+         idx != type_expr.npos;
+         idx = type_expr.find("tensor"))
+    {
+        type_expr[idx] = 'T';
+    }
     Function function = Function::parse(type_expr, TypeSpecExtractor());
     if (!EXPECT_TRUE(!function.has_error())) {
         fprintf(stderr, "parse error: %s\n", function.get_error().c_str());

@@ -19,6 +19,29 @@ using nodes::Call_UP;
 
 namespace {
 
+bool has_duplicates(const std::vector<vespalib::string> &list) {
+    for (size_t i = 0; i < list.size(); ++i) {
+        for (size_t j = (i + 1); j < list.size(); ++j) {
+            if (list[i] == list[j]) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool check_tensor_lambda_type(const ValueType &type) {
+    if (!type.is_tensor() || type.dimensions().empty()) {
+        return false;
+    }
+    for (const auto &dim: type.dimensions()) {
+        if (!dim.is_indexed() || !dim.is_bound()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 //-----------------------------------------------------------------------------
 
 class Params {
@@ -400,7 +423,6 @@ void parse_number(ParseContext &ctx) {
     } else {
         ctx.fail(make_string("invalid number: '%s'", str.c_str()));
     }
-    return;
 }
 
 // NOTE: using non-standard definition of identifiers
@@ -413,7 +435,7 @@ bool is_ident(char c, bool first) {
             (c == '$' && !first));
 }
 
-vespalib::string get_ident(ParseContext &ctx) {
+vespalib::string get_ident(ParseContext &ctx, bool allow_empty) {
     ctx.skip_spaces();
     vespalib::string ident;
     if (is_ident(ctx.get(), true)) {
@@ -421,6 +443,9 @@ vespalib::string get_ident(ParseContext &ctx) {
         for (ctx.next(); is_ident(ctx.get(), false); ctx.next()) {
             ident.push_back(ctx.get());
         }
+    }
+    if (!allow_empty && ident.empty()) {
+        ctx.fail("missing identifier");
     }
     return ident;
 }
@@ -448,7 +473,7 @@ void parse_if(ParseContext &ctx) {
 }
 
 void parse_let(ParseContext &ctx) {
-    vespalib::string name = get_ident(ctx);
+    vespalib::string name = get_ident(ctx, false);
     ctx.skip_spaces();
     ctx.eat(',');
     parse_expression(ctx);
@@ -472,25 +497,50 @@ void parse_call(ParseContext &ctx, Call_UP call) {
     ctx.push_expression(std::move(call));
 }
 
-// (a,b,c)
-std::vector<vespalib::string> get_ident_list(ParseContext &ctx) {
+// (a,b,c)     wrapped
+// ,a,b,c -> ) not wrapped
+std::vector<vespalib::string> get_ident_list(ParseContext &ctx, bool wrapped) {
     std::vector<vespalib::string> list;
-    ctx.skip_spaces();
-    ctx.eat('(');
+    if (wrapped) {
+        ctx.skip_spaces();
+        ctx.eat('(');
+    }
     for (ctx.skip_spaces(); !ctx.eos() && (ctx.get() != ')'); ctx.skip_spaces()) {
-        if (!list.empty()) {
+        if (!list.empty() || !wrapped) {
             ctx.eat(',');
         }
-        list.push_back(get_ident(ctx));
+        list.push_back(get_ident(ctx, false));
     }
-    ctx.eat(')');
+    if (wrapped) {
+        ctx.eat(')');
+    }
+    if (has_duplicates(list)) {
+        ctx.fail("duplicate identifiers");
+    }
     return list;
 }
 
-Function parse_lambda(ParseContext &ctx) {
+// a
+// (a,b,c)
+// cannot be empty
+std::vector<vespalib::string> get_idents(ParseContext &ctx) {
+    std::vector<vespalib::string> list;
+    ctx.skip_spaces();
+    if (ctx.get() == '(') {
+        list = get_ident_list(ctx, true);
+    } else {
+        list.push_back(get_ident(ctx, false));
+    }
+    if (list.empty()) {
+        ctx.fail("missing identifiers");        
+    }
+    return list;
+}
+
+Function parse_lambda(ParseContext &ctx, size_t num_params) {
     ctx.skip_spaces();
     ctx.eat('f');
-    auto param_names = get_ident_list(ctx);
+    auto param_names = get_ident_list(ctx, true);
     ExplicitParams params(param_names);
     ctx.push_resolve_context(params, nullptr);
     ctx.skip_spaces();
@@ -500,6 +550,10 @@ Function parse_lambda(ParseContext &ctx) {
     ctx.skip_spaces();
     ctx.pop_resolve_context();
     Node_UP lambda_root = ctx.pop_expression();
+    if (param_names.size() != num_params) {
+        ctx.fail(make_string("expected lambda with %zu parameter(s), was %zu",
+                             num_params, param_names.size()));
+    }
     return Function(std::move(lambda_root), std::move(param_names));
 }
 
@@ -507,13 +561,8 @@ void parse_tensor_map(ParseContext &ctx) {
     parse_expression(ctx);
     Node_UP child = ctx.pop_expression();
     ctx.eat(',');
-    Function lambda = parse_lambda(ctx);
-    if (lambda.num_params() == 1) {
-        ctx.push_expression(std::make_unique<nodes::TensorMap>(std::move(child), std::move(lambda)));
-    } else {
-        ctx.fail(make_string("map requires a lambda with 1 parameter, was %zu",
-                             lambda.num_params()));
-    }
+    Function lambda = parse_lambda(ctx, 1);
+    ctx.push_expression(std::make_unique<nodes::TensorMap>(std::move(child), std::move(lambda)));
 }
 
 void parse_tensor_join(ParseContext &ctx) {
@@ -523,13 +572,62 @@ void parse_tensor_join(ParseContext &ctx) {
     parse_expression(ctx);
     Node_UP rhs = ctx.pop_expression();
     ctx.eat(',');
-    Function lambda = parse_lambda(ctx);
-    if (lambda.num_params() == 2) {
-        ctx.push_expression(std::make_unique<nodes::TensorJoin>(std::move(lhs), std::move(rhs), std::move(lambda)));
-    } else {
-        ctx.fail(make_string("join requires a lambda with 2 parameters, was %zu",
-                             lambda.num_params()));
+    Function lambda = parse_lambda(ctx, 2);
+    ctx.push_expression(std::make_unique<nodes::TensorJoin>(std::move(lhs), std::move(rhs), std::move(lambda)));
+}
+
+void parse_tensor_reduce(ParseContext &ctx) {
+    parse_expression(ctx);
+    Node_UP child = ctx.pop_expression();
+    ctx.eat(',');
+    auto aggr_name = get_ident(ctx, false);
+    auto maybe_aggr = nodes::AggrNames::from_name(aggr_name);
+    if (!maybe_aggr) {
+        ctx.fail(make_string("unknown aggregator: '%s'", aggr_name.c_str()));
+        return;
     }
+    auto dimensions = get_ident_list(ctx, false);
+    ctx.push_expression(std::make_unique<nodes::TensorReduce>(std::move(child), *maybe_aggr, std::move(dimensions)));
+}
+
+void parse_tensor_rename(ParseContext &ctx) {
+    parse_expression(ctx);
+    Node_UP child = ctx.pop_expression();
+    ctx.eat(',');
+    auto from = get_idents(ctx);
+    ctx.skip_spaces();
+    ctx.eat(',');
+    auto to = get_idents(ctx);
+    if (from.size() != to.size()) {
+        ctx.fail("dimension list size mismatch");
+    } else {
+        ctx.push_expression(std::make_unique<nodes::TensorRename>(std::move(child), std::move(from), std::move(to)));
+    }
+    ctx.skip_spaces();
+}
+
+void parse_tensor_lambda(ParseContext &ctx) {
+    vespalib::string type_spec("tensor(");
+    while(!ctx.eos() && (ctx.get() != ')')) {
+        type_spec.push_back(ctx.get());
+        ctx.next();
+    }
+    ctx.eat(')');
+    type_spec.push_back(')');
+    ValueType type = ValueType::from_spec(type_spec);
+    if (!check_tensor_lambda_type(type)) {
+        ctx.fail("invalid tensor type");
+        return;
+    }
+    auto param_names = type.dimension_names();
+    ExplicitParams params(param_names);
+    ctx.push_resolve_context(params, nullptr);
+    ctx.skip_spaces();
+    ctx.eat('(');
+    parse_expression(ctx);
+    ctx.pop_resolve_context();
+    Function lambda(ctx.pop_expression(), std::move(param_names));
+    ctx.push_expression(std::make_unique<nodes::TensorLambda>(std::move(type), std::move(lambda)));
 }
 
 // to be replaced with more generic 'reduce'
@@ -538,7 +636,7 @@ void parse_tensor_sum(ParseContext &ctx) {
     Node_UP child = ctx.pop_expression();
     if (ctx.get() == ',') {
         ctx.next();
-        vespalib::string dimension = get_ident(ctx);
+        vespalib::string dimension = get_ident(ctx, false);
         ctx.skip_spaces();
         ctx.push_expression(Node_UP(new nodes::TensorSum(std::move(child), dimension)));
     } else {
@@ -562,6 +660,12 @@ bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_tensor_map(ctx);
             } else if (name == "join") {
                 parse_tensor_join(ctx);
+            } else if (name == "reduce") {
+                parse_tensor_reduce(ctx);
+            } else if (name == "rename") {
+                parse_tensor_rename(ctx);
+            } else if (name == "tensor") {
+                parse_tensor_lambda(ctx);
             } else if (name == "sum") {
                 parse_tensor_sum(ctx);
             } else {
@@ -586,7 +690,7 @@ int parse_symbol(ParseContext &ctx, vespalib::string &name, ParseContext::InputM
 
 void parse_symbol_or_call(ParseContext &ctx) {
     ParseContext::InputMark before_name = ctx.get_input_mark();
-    vespalib::string name = get_ident(ctx);
+    vespalib::string name = get_ident(ctx, true);
     if (!try_parse_call(ctx, name)) {
         int id = parse_symbol(ctx, name, before_name);
         if (name.empty()) {

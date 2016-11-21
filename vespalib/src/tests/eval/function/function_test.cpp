@@ -756,6 +756,8 @@ TEST("require that tensor operations can be nested") {
     EXPECT_EQUAL("sum(sum(sum(a)),dim)", Function::parse("sum(sum(sum(a)),dim)").dump());
 }
 
+//-----------------------------------------------------------------------------
+
 TEST("require that tensor map can be parsed") {
     EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse("map(a,f(x)(x+1))").dump());
     EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse(" map ( a , f ( x ) ( x + 1 ) ) ").dump());
@@ -780,6 +782,107 @@ TEST("require that outer parameters are hidden within a lambda") {
 
 TEST("require that outer let bindings are hidden within a lambda") {
     verify_error("let(b,x,map(b,f(a)(b)))", "[let(b,x,map(b,f(a)(b]...[unknown symbol: 'b']...[)))]");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that tensor reduce can be parsed") {
+    EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, "reduce(x,sum,a,b,c)").dump());
+    EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, " reduce ( x , sum , a , b , c ) ").dump());
+    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce(x,sum)").dump());
+    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce( x , sum )").dump());
+    EXPECT_EQUAL("reduce(x,avg)", Function::parse({"x"}, "reduce(x,avg)").dump());
+    EXPECT_EQUAL("reduce(x,count)", Function::parse({"x"}, "reduce(x,count)").dump());
+    EXPECT_EQUAL("reduce(x,prod)", Function::parse({"x"}, "reduce(x,prod)").dump());
+    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce(x,sum)").dump());
+    EXPECT_EQUAL("reduce(x,min)", Function::parse({"x"}, "reduce(x,min)").dump());
+    EXPECT_EQUAL("reduce(x,max)", Function::parse({"x"}, "reduce(x,max)").dump());
+}
+
+TEST("require that tensor reduce with unknown aggregator fails") {
+    verify_error("reduce(x,bogus)", "[reduce(x,bogus]...[unknown aggregator: 'bogus']...[)]");
+}
+
+TEST("require that tensor reduce with duplicate dimensions fails") {
+    verify_error("reduce(x,sum,a,a)", "[reduce(x,sum,a,a]...[duplicate identifiers]...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that tensor rename can be parsed") {
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,a,b)").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,(a),(b))").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,a,(b))").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,(a),b)").dump());
+    EXPECT_EQUAL("rename(x,(a,b),(b,a))", Function::parse({"x"}, "rename(x,(a,b),(b,a))").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename( x , a , b )").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename( x , ( a ) , ( b ) )").dump());
+    EXPECT_EQUAL("rename(x,(a,b),(b,a))", Function::parse({"x"}, "rename( x , ( a , b ) , ( b , a ) )").dump());
+}
+
+TEST("require that tensor rename dimension lists cannot be empty") {
+    verify_error("rename(x,,b)", "[rename(x,]...[missing identifier]...[,b)]");
+    verify_error("rename(x,a,)", "[rename(x,a,]...[missing identifier]...[)]");
+    verify_error("rename(x,(),b)", "[rename(x,()]...[missing identifiers]...[,b)]");
+    verify_error("rename(x,a,())", "[rename(x,a,()]...[missing identifiers]...[)]");
+}
+
+TEST("require that tensor rename dimension lists cannot contain duplicates") {
+    verify_error("rename(x,(a,a),(b,a))", "[rename(x,(a,a)]...[duplicate identifiers]...[,(b,a))]");
+    verify_error("rename(x,(a,b),(b,b))", "[rename(x,(a,b),(b,b)]...[duplicate identifiers]...[)]");
+}
+
+TEST("require that tensor rename dimension lists must have equal size") {
+    verify_error("rename(x,(a,b),(b))", "[rename(x,(a,b),(b)]...[dimension list size mismatch]...[)]");
+    verify_error("rename(x,(a),(b,a))", "[rename(x,(a),(b,a)]...[dimension list size mismatch]...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that tensor lambda can be parsed") {
+    EXPECT_EQUAL("tensor(x[10])(x)", Function::parse({""}, "tensor(x[10])(x)").dump());
+    EXPECT_EQUAL("tensor(x[10],y[10])(x==y)", Function::parse({""}, "tensor(x[10],y[10])(x==y)").dump());
+    EXPECT_EQUAL("tensor(x[10],y[10])(x==y)", Function::parse({""}, " tensor ( x [ 10 ] , y [ 10 ] ) ( x == y ) ").dump());
+}
+
+TEST("require that tensor lambda requires appropriate tensor type") {
+    verify_error("tensor(x[10],y[])(x==y)", "[tensor(x[10],y[])]...[invalid tensor type]...[(x==y)]");
+    verify_error("tensor(x[10],y{})(x==y)", "[tensor(x[10],y{})]...[invalid tensor type]...[(x==y)]");
+    verify_error("tensor()(x==y)", "[tensor()]...[invalid tensor type]...[(x==y)]");
+}
+
+TEST("require that tensor lambda can only use dimension names") {
+    verify_error("tensor(x[10],y[10])(x==z)", "[tensor(x[10],y[10])(x==z]...[unknown symbol: 'z']...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
+struct CheckExpressions : test::EvalSpec::EvalTest {
+    bool failed = false;
+    size_t seen_cnt = 0;
+    virtual void next_expression(const std::vector<vespalib::string> &param_names,
+                                 const vespalib::string &expression) override
+    {
+        Function function = Function::parse(param_names, expression);
+        if (function.has_error()) {
+            failed = true;
+            fprintf(stderr, "parse error: %s\n", function.get_error().c_str());
+        }
+        ++seen_cnt;
+    }
+    virtual void handle_case(const std::vector<vespalib::string> &,
+                             const std::vector<double> &,
+                             const vespalib::string &,
+                             double) override {}
+};
+
+TEST_FF("require that all conformance test expressions can be parsed",
+        CheckExpressions(), test::EvalSpec())
+{
+    f2.add_all_cases();
+    f2.each_case(f1);
+    EXPECT_TRUE(!f1.failed);
+    EXPECT_GREATER(f1.seen_cnt, 42u);
 }
 
 //-----------------------------------------------------------------------------
