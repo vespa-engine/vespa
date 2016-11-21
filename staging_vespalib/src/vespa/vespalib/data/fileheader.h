@@ -39,10 +39,10 @@ public:
         };
 
     private:
-        Type        _type;
+        Type             _type;
         vespalib::string _name;
-        double      _fVal;
-        int64_t     _iVal;
+        double           _fVal;
+        int64_t          _iVal;
         vespalib::string _sVal;
 
     public:
@@ -128,8 +128,7 @@ public:
     public:
         MMapReader(const char *buf, size_t sz);
 
-        size_t
-        getData(char *buf, size_t len);
+        size_t getData(char *buf, size_t len);
     };
 
 private:
@@ -147,7 +146,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~GenericHeader() { /* empty */ }
+    virtual ~GenericHeader();
 
     /**
      * Returns the number of tags contained in this header.

@@ -332,5 +332,10 @@ void StorageMessage::setNewMsgId()
     _lastMsgId &= ((Id(-1) << 8) >> 8);
 }
 
+vespalib::string
+StorageMessage::getSummary() const {
+    return toString();
+}
+
 } // api
 } // storage

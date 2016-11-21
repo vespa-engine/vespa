@@ -447,7 +447,7 @@ public:
     /**
      * Cheap version of tostring().
      */
-    virtual vespalib::string getSummary() const { return toString(); };
+    virtual vespalib::string getSummary() const;
 
     virtual document::BucketId getBucketId() const { return document::BucketId(); }
     virtual bool hasSingleBucketId() const { return false; }

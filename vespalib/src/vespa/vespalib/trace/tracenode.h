@@ -48,6 +48,8 @@ public:
      */
     explicit TraceNode(int64_t timestamp);
 
+    ~TraceNode();
+
     /**
      * Create a trace tree which is a copy of another.
      *

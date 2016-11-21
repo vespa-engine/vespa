@@ -257,6 +257,8 @@ GenericHeader::GenericHeader() :
     // empty
 }
 
+GenericHeader::~GenericHeader() { }
+
 const GenericHeader::Tag &
 GenericHeader::getTag(size_t idx) const
 {
