@@ -106,18 +106,6 @@ public interface Tensor {
     default Tensor prod(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.prod, dimensions); }
     default Tensor sum(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.sum, dimensions); }
 
-    // ----------------- Old stuff
-
-    /**
-     * Returns a tensor with the same cells as this and the given function is applied to all its cell values.
-     *
-     * @param function the function to apply to all cells
-     * @return the tensor with the function applied to all the cells of this
-     */
-    default Tensor apply(UnaryOperator<Double> function) {
-        return new TensorFunction(this, function).result();
-    }
-
     /**
      * Returns true if the given tensor is mathematically equal to this:
      * Both are of type Tensor and have the same content.

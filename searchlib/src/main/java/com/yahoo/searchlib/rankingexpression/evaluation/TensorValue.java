@@ -54,7 +54,7 @@ public class TensorValue extends Value {
 
     @Override
     public Value negate() {
-        return new TensorValue(value.apply((Double value) -> -value));
+        return new TensorValue(value.map((value) -> -value));
     }
 
     @Override
@@ -62,7 +62,7 @@ public class TensorValue extends Value {
         if (argument instanceof TensorValue)
             return new TensorValue(value.add(((TensorValue)argument).value));
         else
-            return new TensorValue(value.apply((Double value) -> value + argument.asDouble()));
+            return new TensorValue(value.map((value) -> value + argument.asDouble()));
     }
 
     @Override
@@ -70,7 +70,7 @@ public class TensorValue extends Value {
         if (argument instanceof TensorValue)
             return new TensorValue(value.subtract(((TensorValue) argument).value));
         else
-            return new TensorValue(value.apply((Double value) -> value - argument.asDouble()));
+            return new TensorValue(value.map((value) -> value - argument.asDouble()));
     }
 
     @Override
@@ -78,7 +78,7 @@ public class TensorValue extends Value {
         if (argument instanceof TensorValue)
             return new TensorValue(value.multiply(((TensorValue) argument).value));
         else
-            return new TensorValue(value.apply((Double value) -> value * argument.asDouble()));
+            return new TensorValue(value.map((value) -> value * argument.asDouble()));
     }
 
     @Override
@@ -86,7 +86,7 @@ public class TensorValue extends Value {
         if (argument instanceof TensorValue)
             return new TensorValue(value.divide(((TensorValue) argument).value));
         else
-            return new TensorValue(value.apply((Double value) -> value / argument.asDouble()));
+            return new TensorValue(value.map((value) -> value / argument.asDouble()));
     }
 
     public Value min(Value argument) {
@@ -130,7 +130,7 @@ public class TensorValue extends Value {
         else if (function.equals(Function.max) && argument instanceof TensorValue)
             return max(argument);
         else
-            return new TensorValue(value.apply((Double value) -> function.evaluate(value, argument.asDouble())));
+            return new TensorValue(value.map((value) -> function.evaluate(value, argument.asDouble())));
     }
 
     @Override
