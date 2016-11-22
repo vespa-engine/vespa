@@ -181,28 +181,28 @@ public:
     typedef std::shared_ptr<TransportServer> SP;
 
     /** no debug logging flags set **/
-    const static uint32_t DEBUG_NONE       = 0x00000000;
+    static constexpr uint32_t DEBUG_NONE       = 0x00000000;
 
     /** log connect disconnect from clients **/
-    const static uint32_t DEBUG_CONNECTION = 0x00000001;
+    static constexpr uint32_t DEBUG_CONNECTION = 0x00000001;
 
     /** log channel open events **/
-    const static uint32_t DEBUG_CHANNEL    = 0x00000002;
+    static constexpr uint32_t DEBUG_CHANNEL    = 0x00000002;
 
     /** log search related packets **/
-    const static uint32_t DEBUG_SEARCH     = 0x00000004;
+    static constexpr uint32_t DEBUG_SEARCH     = 0x00000004;
 
     /** log docsum related packets **/
-    const static uint32_t DEBUG_DOCSUM     = 0x00000008;
+    static constexpr uint32_t DEBUG_DOCSUM     = 0x00000008;
 
     /** log monitor related packets **/
-    const static uint32_t DEBUG_MONITOR    = 0x00000010;
+    static constexpr uint32_t DEBUG_MONITOR    = 0x00000010;
 
     /** log unhandled packets **/
-    const static uint32_t DEBUG_UNHANDLED  = 0x00000020;
+    static constexpr uint32_t DEBUG_UNHANDLED  = 0x00000020;
 
     /** all debug logging flags set **/
-    const static uint32_t DEBUG_ALL        = 0x0000003f;
+    static constexpr uint32_t DEBUG_ALL        = 0x0000003f;
 
     /**
      * Check if we should log a debug message

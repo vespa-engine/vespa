@@ -17,6 +17,15 @@ typedef search::fs4transport::FS4PersistentPacketStreamer PacketStreamer;
 
 //-----------------------------------------------------------------------------
 
+constexpr uint32_t TransportServer::DEBUG_NONE;
+constexpr uint32_t TransportServer::DEBUG_CONNECTION;
+constexpr uint32_t TransportServer::DEBUG_CHANNEL;
+constexpr uint32_t TransportServer::DEBUG_SEARCH;
+constexpr uint32_t TransportServer::DEBUG_DOCSUM;
+constexpr uint32_t TransportServer::DEBUG_MONITOR;
+constexpr uint32_t TransportServer::DEBUG_UNHANDLED;
+constexpr uint32_t TransportServer::DEBUG_ALL;
+
 void
 TransportServer::SearchHandler::start()
 {
