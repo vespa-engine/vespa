@@ -24,7 +24,7 @@ abort_outdated_mutating_ideal_state_ops bool default=true
 ## belong to. As with the abort_outdated_mutating_ideal_state_ops option,
 ## this is a check that happens whenever a message arrives, not when the state
 ## changes.
-abort_outdated_mutating_external_load_ops bool default=false
+abort_outdated_mutating_external_load_ops bool default=true
 
 ## Whether or not to disable partitions when they report I/O errors
 fail_partition_on_error bool default=true
