@@ -12,8 +12,12 @@
 namespace search {
 namespace datastore {
 
+template <typename, typename> class Allocator;
 template <typename> class BufferType;
-template <typename> class DataStoreT;
+
+namespace allocator {
+template <typename, typename ...> class Assigner;
+}
 
 }
 
@@ -490,8 +494,10 @@ public:
     friend class BTreeNodeDataWrap;
     template <typename>
     friend class datastore::BufferType;
-    template <typename>
-    friend class datastore::DataStoreT;
+    template <typename, typename>
+    friend class datastore::Allocator;
+    template <typename, typename...>
+    friend class datastore::allocator::Assigner;
     typedef BTreeNode::Ref Ref;
     typedef std::pair<Ref, InternalNodeType *> RefPair;
     using ParentType::_keys;
@@ -531,6 +537,7 @@ private:
         _validLeaves = rhs._validLeaves;
         return *this;
     }
+
 public:
     BTreeNode::Ref
     getChild(uint32_t idx) const
@@ -646,8 +653,10 @@ public:
     friend class BTreeNodeStore;
     template <typename>
     friend class datastore::BufferType;
-    template <typename>
-    friend class datastore::DataStoreT;
+    template <typename, typename>
+    friend class datastore::Allocator;
+    template <typename, typename...>
+    friend class datastore::allocator::Assigner;
     typedef BTreeNode::Ref Ref;
     typedef std::pair<Ref, LeafNodeType *> RefPair;
     using ParentType::validSlots;
@@ -681,6 +690,7 @@ protected:
         ParentType::operator=(rhs);
         return *this;
     }
+
 public:
     template <typename NodeAllocatorType>
     void

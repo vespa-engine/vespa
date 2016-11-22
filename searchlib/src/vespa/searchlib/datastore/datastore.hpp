@@ -3,6 +3,8 @@
 #pragma once
 
 #include "datastore.h"
+#include "allocator.hpp"
+#include "free_list_allocator.hpp"
 
 namespace search {
 namespace datastore {
@@ -109,15 +111,9 @@ template <typename EntryType>
 std::pair<RefT, EntryType *>
 DataStoreT<RefT>::allocNewEntry(uint32_t typeId)
 {
-    ensureBufferCapacity(typeId, 1);
-    uint32_t activeBufferId = getActiveBufferId(typeId);
-    BufferState &state = getBufferState(activeBufferId);
-    assert(state.isActive());
-    size_t oldSize = state.size();
-    EntryType *entry = getBufferEntry<EntryType>(activeBufferId, oldSize);
-    new (static_cast<void *>(entry)) EntryType();
-    state.pushed_back(1);
-    return std::make_pair(RefType(oldSize, activeBufferId), entry);
+    Allocator<EntryType, RefT> allocator(*this, typeId);
+    auto handle = allocator.alloc();
+    return std::make_pair(handle.ref, handle.data);
 }
 
 
@@ -126,17 +122,9 @@ template <typename EntryType, typename Reclaimer>
 std::pair<RefT, EntryType *>
 DataStoreT<RefT>::allocEntry(uint32_t typeId)
 {
-    BufferState::FreeListList &freeListList = getFreeList(typeId);
-    if (freeListList._head == NULL) {
-        return allocNewEntry<EntryType>(typeId);
-    }
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    RefType ref(state.popFreeList());
-    EntryType *entry =
-        getBufferEntry<EntryType>(ref.bufferId(), ref.offset());
-    Reclaimer::reclaim(entry);
-    return std::make_pair(ref, entry);
+    FreeListAllocator<EntryType, RefT, Reclaimer> allocator(*this, typeId);
+    auto handle = allocator.alloc();
+    return std::make_pair(handle.ref, handle.data);
 }
 
 
@@ -145,15 +133,9 @@ template <typename EntryType>
 std::pair<RefT, EntryType *>
 DataStoreT<RefT>::allocNewEntryCopy(uint32_t typeId, const EntryType &rhs)
 {
-    ensureBufferCapacity(typeId, 1);
-    uint32_t activeBufferId = getActiveBufferId(typeId);
-    BufferState &state = getBufferState(activeBufferId);
-    assert(state.isActive());
-    size_t oldSize = state.size();
-    EntryType *entry = getBufferEntry<EntryType>(activeBufferId, oldSize);
-    new (static_cast<void *>(entry)) EntryType(rhs);
-    state.pushed_back(1);
-    return std::make_pair(RefType(oldSize, activeBufferId), entry);
+    Allocator<EntryType, RefT> allocator(*this, typeId);
+    auto handle = allocator.alloc(rhs);
+    return std::make_pair(handle.ref, handle.data);
 }
 
 
@@ -162,18 +144,9 @@ template <typename EntryType, typename Reclaimer>
 std::pair<RefT, EntryType *>
 DataStoreT<RefT>::allocEntryCopy(uint32_t typeId, const EntryType &rhs)
 {
-    BufferState::FreeListList &freeListList = getFreeList(typeId);
-    if (freeListList._head == NULL) {
-        return allocNewEntryCopy<EntryType>(typeId, rhs);
-    }
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    RefType ref(state.popFreeList());
-    EntryType *entry =
-        getBufferEntry<EntryType>(ref.bufferId(), ref.offset());
-    Reclaimer::reclaim(entry);
-    *entry = rhs;
-    return std::make_pair(ref, entry);
+    FreeListAllocator<EntryType, RefT, Reclaimer> allocator(*this, typeId);
+    auto handle = allocator.alloc(rhs);
+    return std::make_pair(handle.ref, handle.data);
 }
 
 
