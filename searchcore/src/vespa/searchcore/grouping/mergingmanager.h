@@ -13,12 +13,7 @@ namespace grouping {
  **/
 class MergingManager
 {
-private:
-    MergingManager(const MergingManager &);
-    MergingManager &operator=(const MergingManager &);
-    void fullMerge();
-    bool needMerge() const;
-
+public:
     /**
      * Simple wrapper for all the grouping results from a single
      * search/fdispatch node.
@@ -33,6 +28,12 @@ private:
         Entry(uint32_t part, uint32_t row, bool m, const char *pt, size_t len)
             : partId(part), rowId(row), mld(m), data(pt), length(len) {}
     };
+
+private:
+    MergingManager(const MergingManager &);
+    MergingManager &operator=(const MergingManager &);
+    void fullMerge();
+    bool needMerge() const;
 
     uint32_t           _partBits;
     uint32_t           _rowBits;
