@@ -88,10 +88,6 @@ public class TensorValue extends Value {
             return new TensorValue(value.apply((Double value) -> value / argument.asDouble()));
     }
 
-    public Value match(Value argument) {
-        return new TensorValue(value.match(asTensor(argument, "match")));
-    }
-
     public Value min(Value argument) {
         return new TensorValue(value.min(asTensor(argument, "min")));
     }

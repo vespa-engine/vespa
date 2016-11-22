@@ -105,40 +105,6 @@ public interface Tensor {
     default Tensor sum(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.sum, dimensions); }
 
     // ----------------- Old stuff
-    /**
-     * Returns the <i>sparse tensor product</i> of this tensor and the argument tensor.
-     * This is the all-to-all combinations of cells in the argument tenors, except the combinations
-     * which have conflicting labels for the same dimension. The value of each combination is the product
-     * of the values of the two input cells. The dimensions of the tensor product is the set union of the
-     * dimensions of the argument tensors.
-     * <p>
-     * If there are no overlapping dimensions this is the regular tensor product.
-     * If the two tensors have exactly the same dimensions this is the Hadamard product.
-     * <p>
-     * The sparse tensor product is associative and commutative.
-     *
-     * @param argument the tensor to multiply by this
-     * @return the resulting tensor.
-     */
-    default Tensor oldMultiply(Tensor argument) {
-        return new TensorProduct(this, argument).result();
-    }
-
-    /**
-     * Returns the <i>match product</i> of two tensors.
-     * This returns a tensor which contains the <i>matching</i> cells in the two tensors, with their
-     * values multiplied.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     * <p>
-     * The dimensions of the resulting tensor is the set intersection of the two argument tensors.
-     * <p>
-     * If the two tensors have exactly the same dimensions, this is the Hadamard product.
-     */
-    default Tensor match(Tensor argument) {
-        return new MatchProduct(this, argument).result();
-    }
 
     /**
      * Returns a tensor which contains the cells of both argument tensors, where the value for
@@ -160,28 +126,6 @@ public interface Tensor {
      */
     default Tensor max(Tensor argument) {
         return new TensorMax(this, argument).result();
-    }
-
-    /**
-     * Returns a tensor which contains the cells of both argument tensors, where the value for
-     * any <i>matching</i> cell is the sum of the two possible values.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     */
-    default Tensor oldAdd(Tensor argument) {
-        return new TensorSum(this, argument).result();
-    }
-
-    /**
-     * Returns a tensor which contains the cells of both argument tensors, where the value for
-     * any <i>matching</i> cell is the difference of the two possible values.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     */
-    default Tensor oldSubtract(Tensor argument) {
-        return new TensorDifference(this, argument).result();
     }
 
     /**
@@ -306,10 +250,6 @@ public interface Tensor {
         for (TensorAddress address : tensor.cells().keySet())
             emptyDimensions.removeAll(address.dimensions());
         return emptyDimensions;
-    }
-
-    static String unitTensorWithDimensions(Set<String> dimensions) {
-        return new MapTensor(dimensions, ImmutableMap.of()).toString();
     }
 
 }
