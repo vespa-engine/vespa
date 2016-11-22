@@ -67,8 +67,6 @@ class TensorProduct {
 
         List<TensorAddress.Element> dense = new ArrayList<>(sparse.elements());
         for (String dimension : dimensions) {
-            if ( ! sparse.hasDimension(dimension))
-                dense.add(new TensorAddress.Element(dimension, TensorAddress.Element.undefinedLabel));
         }
         return dense;
     }
@@ -79,8 +77,6 @@ class TensorProduct {
     private List<TensorAddress.Element> sparse(List<TensorAddress.Element> dense) {
         List<TensorAddress.Element> sparse = new ArrayList<>();
         for (TensorAddress.Element element : dense) {
-            if ( ! element.label().equals(TensorAddress.Element.undefinedLabel))
-                sparse.add(element);
         }
         return sparse;
     }

@@ -54,7 +54,7 @@ public class MapTensor implements Tensor {
         s = s.trim();
         try {
             if (s.startsWith("("))
-                return fromTensorWithEmptyDimensions(s); // TODO: Remove this
+                return fromTensorWithEmptyDimensions(s);
             else if (s.startsWith("{"))
                 return fromTensor(s, Collections.emptySet());
             else

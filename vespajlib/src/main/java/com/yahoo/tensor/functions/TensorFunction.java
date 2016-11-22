@@ -1,5 +1,7 @@
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.Tensor;
+
 /**
  * A representation of a tensor function which is able to be translated to a set of primitive
  * tensor functions if necessary.
@@ -16,5 +18,7 @@ public abstract class TensorFunction {
      * @return a tree of primitive functions implementing this
      */
     public abstract PrimitiveTensorFunction toPrimitive();
+
+    public abstract Tensor execute();
 
 }

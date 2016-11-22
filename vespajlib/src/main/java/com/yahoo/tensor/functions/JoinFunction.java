@@ -53,11 +53,13 @@ public class JoinFunction extends PrimitiveTensorFunction {
 
     @Override
     public Tensor execute() {
-        Tensor a = argumentA.toPrimitive().execute();
-        Tensor b = argumentB.toPrimitive().execute();
+        Tensor a = argumentA.execute();
+        Tensor b = argumentB.execute();
+        System.out.println("Joining " + a + " and " + b);
         
         // Dimension product
         Set<String> dimensions = combineDimensions(a, b);
+        System.out.println("Combined dimensions: " + dimensions);
 
         // Cell product (slow baseline implementation)
         ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();

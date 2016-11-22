@@ -5,11 +5,11 @@ import com.google.common.annotations.Beta;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.functions.ReduceFunction;
 
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * A node which sums over all cells in the argument tensor
@@ -17,17 +17,20 @@ import java.util.Optional;
  * @author bratseth
  */
  @Beta
-public class TensorSumNode extends CompositeNode {
+public class TensorReduceNode extends CompositeNode {
 
-    /** The tensor to sum */
+    /** The tensor to aggregate over */
     private final ExpressionNode argument;
 
-    /** The dimension to sum over, or empty to sum all cells to a scalar */
-    private final Optional<String> dimension;
+    private final ReduceFunction.Aggregator aggregator;
 
-    public TensorSumNode(ExpressionNode argument, Optional<String> dimension) {
+    /** The dimensions to sum over, or empty to sum all cells */
+    private final List<String> dimensions;
+
+    public TensorReduceNode(ExpressionNode argument, ReduceFunction.Aggregator aggregator, List<String> dimensions) {
         this.argument = argument;
-        this.dimension = dimension;
+        this.aggregator = aggregator;
+        this.dimensions = dimensions;
     }
 
     @Override
@@ -38,15 +41,19 @@ public class TensorSumNode extends CompositeNode {
     @Override
     public CompositeNode setChildren(List<ExpressionNode> children) {
         if (children.size() != 1) throw new IllegalArgumentException("A tensor sum node must have one tensor argument");
-        return new TensorSumNode(children.get(0), dimension);
+        return new TensorReduceNode(children.get(0), aggregator, dimensions);
     }
 
     @Override
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return "sum(" +
-                    argument.toString(context, path, parent) +
-                    ( dimension.isPresent() ? ", " + dimension.get() : "" ) +
-                    ")";
+        return "reduce(" + argument.toString(context, path, parent) + ", \"" + aggregator + "\"" + commaSeparated(dimensions) + ")";
+    }
+    
+    private String commaSeparated(List<String> list) {
+        StringBuilder b = new StringBuilder();
+        for (String element : list)
+            b.append(", ").append(element);
+        return b.toString();
     }
 
     @Override
@@ -56,10 +63,7 @@ public class TensorSumNode extends CompositeNode {
             throw new IllegalArgumentException("Attempted to take the tensor sum of argument '" + argument + "', " +
                                                "but this returns " + argumentValue + ", not a tensor");
         TensorValue tensorArgument = (TensorValue)argumentValue;
-        if (dimension.isPresent())
-            return tensorArgument.sum(dimension.get());
-        else
-            return tensorArgument.sum();
+        return new TensorValue(tensorArgument.asTensor().reduce(aggregator, dimensions));
     }
 
 }

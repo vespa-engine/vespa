@@ -23,6 +23,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.functions.*;
 import java.util.Collections;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -97,12 +98,15 @@ TOKEN :
     <FABS: "fabs"> |
     <FLOOR: "floor"> |
     <FMOD: "fmod"> |
-    <MIN: "min"> |
-    <MAX: "max"> |
     <ISNAN: "isNan"> |
     <IN: "in"> |
+    <REDUCE: "reduce"> |
+    <AVG: "avg" > |
+    <COUNT: "count"> |
+    <PROD: "prod"> |
     <SUM: "sum"> |
-    <MATCH: "match"> |
+    <MAX: "max"> |
+    <MIN: "min"> |
     <RELU: "relu"> |
     <SIGMOID: "sigmoid"> |
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
@@ -310,28 +314,53 @@ FunctionNode scalarFunction() :
 
 ExpressionNode tensorFunction() :
 {
-    ExpressionNode tensor1, tensor2;
-    String dimension = null;
-    TensorAddress address = null;
+    ExpressionNode tensorExpression;
 }
 {
-    (
-        <SUM> <LBRACE> tensor1 = expression() ( <COMMA> dimension = identifier() )? <RBRACE>
-        { return new TensorSumNode(tensor1, Optional.ofNullable(dimension)); }
-    ) |
-    (
-        <MATCH> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <RBRACE>
-        { return new TensorMatchNode(tensor1, tensor2); }
-    )
+    ( tensorExpression = tensorPrimitiveReduce() | tensorExpression = tensorReduce() )
+    { return tensorExpression; }
+}
+
+ExpressionNode tensorPrimitiveReduce() :
+{
+    ExpressionNode tensor1;
+    ReduceFunction.Aggregator aggregator;
+    List<String> dimensions = null;
+}
+{
+    <REDUCE> <LBRACE> tensor1 = expression() <COMMA> aggregator = tensorReduceAggregator() dimensions = tagCommaLeadingList() <RBRACE>
+    { return new TensorReduceNode(tensor1, aggregator, dimensions); }
+}
+
+ExpressionNode tensorReduce() :
+{
+    ExpressionNode tensor1;
+    ReduceFunction.Aggregator aggregator;
+    List<String> dimensions = null;
+}
+{
+    aggregator = tensorReduceAggregator()
+    <LBRACE> tensor1 = expression() dimensions = tagCommaLeadingList() <RBRACE>
+    { return new TensorReduceNode(tensor1, aggregator, dimensions); }
+}
+
+ReduceFunction.Aggregator tensorReduceAggregator() :
+{
+}
+{
+    ( <AVG> | <COUNT> | <PROD> | <SUM> | <MAX> | <MIN> )
+    { return ReduceFunction.Aggregator.valueOf(token.image); }
 }
 
 // This is needed not to parse tensor functions but for the "reserved names as literals" workaround cludge
 String tensorFunctionName() :
 {
+    ReduceFunction.Aggregator aggregator;
 }
 {
-    ( <SUM> | <MATCH> )
-    { return token.image; }
+    ( <REDUCE> { return token.image; } ) 
+    |
+    ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
 Function unaryFunctionName() : { }
@@ -411,6 +440,16 @@ String tag() :
 {
     name = identifier() { return name; } |
     <INTEGER> { return token.image; }
+}
+
+List<String> tagCommaLeadingList() :
+{
+    List<String> list = new ArrayList<String>();
+    String element;
+}
+{
+    ( <COMMA> element = tag() { list.add(element); } ) *
+    { return list; }
 }
 
 ConstantNode constantPrimitive() :

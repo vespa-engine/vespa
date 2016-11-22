@@ -2,6 +2,7 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.GeneratedTensor;
 import com.yahoo.tensor.functions.JoinFunction;
@@ -82,11 +83,11 @@ public interface Tensor {
     // ----------------- Composite tensor functions which have a defined primitive mapping
     
     default Tensor l1Normalize(String dimension) {
-        return new L1Normalize(new ConstantTensor(this), dimension).toPrimitive().execute();
+        return new L1Normalize(new ConstantTensor(this), dimension).execute();
     }
 
     default Tensor l2Normalize(String dimension) {
-        return new L2Normalize(new ConstantTensor(this), dimension).toPrimitive().execute();
+        return new L2Normalize(new ConstantTensor(this), dimension).execute();
     }
 
     // ----------------- Composite tensor functions mapped to primitives here on the fly
@@ -265,15 +266,20 @@ public interface Tensor {
      * @return the tensor on the standard string format
      */
     static String toStandardString(Tensor tensor) {
-        if (tensor.dimensions().isEmpty()) // prefer short form
-            return String.valueOf(tensor.cells().get(TensorAddress.empty));
-        Set<String> emptyDimensions = emptyDimensions(tensor); // TODO: remove that stuff
-        if (emptyDimensions.size() > 0) // explicitly list empty dimensions
-            return "( " + unitTensorWithDimensions(emptyDimensions) + " * " + contentToString(tensor) + " )";
+        Set<String> emptyDimensions = emptyDimensions(tensor);
+        if ( emptyDimensions(tensor).size() > 0) // explicitly output type TODO: Always do that
+            return typeToString() + contentToString(tensor);
         else
             return contentToString(tensor);
     }
 
+    static String typeToString(Tensor tensor) {
+        StringBuilder b = new StringBuilder();
+        for (String dimension : tensor.dimensions()) {
+            b.append(dimension + "{},");
+        }
+    }
+    
     static String contentToString(Tensor tensor) {
         List<Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
         Collections.sort(cellEntries, Map.Entry.<TensorAddress, Double>comparingByKey());
@@ -301,7 +307,7 @@ public interface Tensor {
     }
 
     static String unitTensorWithDimensions(Set<String> dimensions) {
-        return new MapTensor(Collections.singletonMap(TensorAddress.emptyWithDimensions(dimensions), 1.0)).toString();
+        return new MapTensor(dimensions, ImmutableMap.of()).toString();
     }
 
 }

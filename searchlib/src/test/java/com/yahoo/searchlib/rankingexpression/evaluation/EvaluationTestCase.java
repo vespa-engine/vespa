@@ -101,13 +101,12 @@ public class EvaluationTestCase extends junit.framework.TestCase {
     @Test
     public void testTensorEvaluation() {
         assertEvaluates("{}", "tensor0", "{}"); // empty
-        assertEvaluates("( {{x:-}:1} * {} )", "( tensor0 * tensor1 )", "{{x:-}:1}", "{}"); // empty with dimensions
 
         // sum(tensor)
-        assertEvaluates("5.0",  "sum(tensor0)", "5.0");
-        assertEvaluates("-5.0", "sum(tensor0)", "-5.0");
-        assertEvaluates("12.5", "sum(tensor0)", "{ {d1:l1}:5.5, {d2:l2}:7.0 }");
-        assertEvaluates("0.0",  "sum(tensor0)", "{ {d1:l1}:5.0, {d2:l2}:7.0, {}:-12.0}");
+        assertEvaluates("{ {}:5.0 }",  "sum(tensor0)", "5.0");
+        assertEvaluates("{ {}:-5.0 }", "sum(tensor0)", "-5.0");
+        assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:l1}:5.5, {d2:l2}:7.0 }");
+        assertEvaluates("{ {}:0.0 }",  "sum(tensor0)", "{ {d1:l1}:5.0, {d2:l2}:7.0, {}:-12.0}");
 
         // scalar functions on tensors
         assertEvaluates("{ {}:1, {d1:l1}:2, {d1:l1,d2:l1 }:3 }", 

@@ -11,6 +11,4 @@ import com.yahoo.tensor.Tensor;
  */
 public abstract class PrimitiveTensorFunction extends TensorFunction {
     
-    public abstract Tensor execute();
-    
 }
