@@ -114,6 +114,39 @@ DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t sizeNeeded)
 
 
 void
+DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
+{
+    auto typeHandler = _typeHandlers[typeId];
+    uint32_t clusterSize = typeHandler->getClusterSize();
+    size_t maxClusters = typeHandler->getMaxClusters();
+    size_t maxSize = maxClusters * clusterSize;
+    uint32_t bufferId = _activeBufferIds[typeId];
+    if (sizeNeeded + _states[bufferId].size() > maxSize) {
+        // Existing buffer cannot be extended due to maxClusters limit
+        switchActiveBuffer(typeId, sizeNeeded);
+    } else {
+        uint32_t oldBufferId = bufferId;
+        do {
+            bufferId = nextBufferId(bufferId);
+        } while (!_states[bufferId].isFree());
+        size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, false);
+        if (allocClusters < typeHandler->getMinClustersNewBuf()) {
+            // Resize existing buffer
+            BufferState &state = _states[oldBufferId];
+            fallbackResize(oldBufferId,
+                           std::max(std::min(state.capacity(),
+                                             maxSize - state.size()),
+                                    sizeNeeded));
+        } else {
+            // start using next buffer
+            onActive(bufferId, typeId, sizeNeeded);
+            _activeBufferIds[typeId] = bufferId;
+        }
+    }
+}
+
+
+void
 DataStoreBase::initActiveBuffers(void)
 {
     uint32_t numTypes = _activeBufferIds.size();

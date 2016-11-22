@@ -8,15 +8,25 @@ namespace datastore {
 
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
-                               uint32_t maxClusters)
+                               uint32_t maxClusters,
+                               uint32_t minClustersNewBuf)
     : _clusterSize(clusterSize),
       _minClusters(std::min(minClusters, maxClusters)),
       _maxClusters(maxClusters),
+      _minClustersNewBuf(std::min(minClustersNewBuf, maxClusters)),
       _activeBuffers(0),
       _holdBuffers(0),
       _activeUsedElems(0),
       _holdUsedElems(0),
       _lastUsedElems(NULL)
+{
+}
+
+
+BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
+                               uint32_t minClusters,
+                               uint32_t maxClusters)
+    : BufferTypeBase(clusterSize, minClusters, maxClusters, 0u)
 {
 }
 
@@ -87,6 +97,7 @@ BufferTypeBase::clampMaxClusters(uint32_t maxClusters)
 {
     _maxClusters = std::min(_maxClusters, maxClusters);
     _minClusters = std::min(_minClusters, _maxClusters);
+    _minClustersNewBuf = std::min(_minClustersNewBuf, _maxClusters);
 };
 
 size_t
@@ -100,7 +111,8 @@ BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool r
     assert((usedElems % _clusterSize) == 0);
     size_t usedClusters = usedElems / _clusterSize;
     size_t needClusters = (sizeNeeded + (resizing ? usedElems : reservedElements) + _clusterSize - 1) / _clusterSize;
-    uint64_t wantClusters = usedClusters + _minClusters;
+    size_t minClusters = _minClusters;
+    uint64_t wantClusters = usedClusters + std::max(minClusters, (resizing ? usedClusters : 0u));
     if (wantClusters < needClusters) {
         wantClusters = needClusters;
     }

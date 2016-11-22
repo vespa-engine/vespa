@@ -31,12 +31,12 @@ ArrayStore<EntryT, RefT>::LargeArrayType::cleanHold(void *buffer, uint64_t offse
 
 template <typename EntryT, typename RefT>
 void
-ArrayStore<EntryT, RefT>::initArrayTypes(size_t minClusters, size_t maxClusters)
+ArrayStore<EntryT, RefT>::initArrayTypes(size_t minClusters, size_t maxClusters, size_t minClustersNewBuf)
 {
     _largeArrayTypeId = _store.addType(&_largeArrayType);
     assert(_largeArrayTypeId == 0);
     for (uint32_t arraySize = 1; arraySize <= _maxSmallArraySize; ++arraySize) {
-        _smallArrayTypes.push_back(std::make_unique<SmallArrayType>(arraySize, minClusters, maxClusters));
+        _smallArrayTypes.push_back(std::make_unique<SmallArrayType>(arraySize, minClusters, maxClusters, minClustersNewBuf));
         uint32_t typeId = _store.addType(_smallArrayTypes.back().get());
         assert(typeId == arraySize); // Enforce 1-to-1 mapping between type ids and sizes for small arrays
     }
@@ -44,21 +44,19 @@ ArrayStore<EntryT, RefT>::initArrayTypes(size_t minClusters, size_t maxClusters)
 
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::ArrayStore(uint32_t maxSmallArraySize)
-    : ArrayStore<EntryT,RefT>(maxSmallArraySize, MIN_BUFFER_CLUSTERS, RefT::offsetSize())
+    : ArrayStore<EntryT,RefT>(maxSmallArraySize, MIN_BUFFER_CLUSTERS, RefT::offsetSize(), 0u)
 {
 }
 
 template <typename EntryT, typename RefT>
-ArrayStore<EntryT, RefT>::ArrayStore(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters)
+ArrayStore<EntryT, RefT>::ArrayStore(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t minClustersNewBuf)
     : _store(),
       _maxSmallArraySize(maxSmallArraySize),
       _smallArrayTypes(),
       _largeArrayType(),
       _largeArrayTypeId()
 {
-    maxClusters = std::min(maxClusters, RefT::offsetSize());
-    minClusters = std::min(minClusters, maxClusters);
-    initArrayTypes(minClusters, maxClusters);
+    initArrayTypes(minClusters, maxClusters, minClustersNewBuf);
     _store.initActiveBuffers();
 }
 

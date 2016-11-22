@@ -205,7 +205,7 @@ public:
         if (__builtin_expect(sizeNeeded >
                              _states[_activeBufferIds[typeId]].remaining(),
                              false)) {
-            switchActiveBuffer(typeId, sizeNeeded);
+            switchOrGrowActiveBuffer(typeId, sizeNeeded);
         }
     }
 
@@ -226,6 +226,8 @@ public:
      */
     void
     switchActiveBuffer(uint32_t typeId, size_t sizeNeeded);
+
+    void switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded);
 
     MemoryUsage getMemoryUsage() const;
 
