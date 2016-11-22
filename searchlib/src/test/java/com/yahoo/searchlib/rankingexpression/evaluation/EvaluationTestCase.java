@@ -131,56 +131,11 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("{ {x:1}:6.0, {x:2}:10.0 }",
                         "sum(tensor0, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
 
-        // tensor sum
-        assertEvaluates("{ }", "tensor0 + tensor0", "{}");
-        assertEvaluates("{ {x:1}:3, {x:2}:5 }",
-                        "tensor0 + tensor1", "{ {x:1}:3 }","{ {x:2}:5 }");
-        assertEvaluates("{ {x:1}:8 }",
-                        "tensor0 + tensor1", "{ {x:1}:3 }", "{ {x:1}:5 }");
-        assertEvaluates("{ {x:1}:3, {y:1}:5 }",
-                        "tensor0 + tensor1", "{ {x:1}:3 }", "{ {y:1}:5 }");
-        assertEvaluates("{ {x:1}:3, {x:2}:7, {y:1}:5 }",
-                        "tensor0 + tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }",
-                        "tensor0 + tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "tensor0 + tensor1", "{ {x:1}:5, {x:1,y:1}:1 }", "{ {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {z:1}:11, {y:1,z:1}:7 }",
-                        "tensor0 + tensor1", "{ {x:1}:5, {x:1,y:1}:1 }", "{ {z:1}:11, {y:1,z:1}:7 }");
-        assertEvaluates("{ {}:5, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "tensor0 + tensor1", "{ {}:5, {x:1,y:1}:1 }", "{ {y:1,z:1}:7 }");
-        assertEvaluates("{ {}:16, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "tensor0 + tensor1", "{ {}:5, {x:1,y:1}:1 }", "{ {}:11, {y:1,z:1}:7 }");
-
-        // tensor difference
-        assertEvaluates("{ }", "tensor0 - tensor0", "{}");
-        assertEvaluates("{ {x:1}:3, {x:2}:-5 }",
-                        "tensor0 - tensor1", "{ {x:1}:3 }", "{ {x:2}:5 }");
-        assertEvaluates("{ {x:1}:-2 }",
-                        "tensor0 - tensor1", "{ {x:1}:3 }", "{ {x:1}:5 }");
-        assertEvaluates("{ {x:1}:3, {y:1}:-5 }",
-                        "tensor0 - tensor1", "{ {x:1}:3 }", "{ {y:1}:5 }");
-        assertEvaluates("{ {x:1}:3, {x:2}:7, {y:1}:-5 }",
-                        "tensor0 - tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {y:1,z:1}:-7, {y:2,z:1}:-11, {y:1,z:2}:-13 }",
-                        "tensor0 - tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {y:1,z:1}:-7 }",
-                        "tensor0 - tensor1", "{ {x:1}:5, {x:1,y:1}:1 }", "{ {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {z:1}:-11, {y:1,z:1}:-7 }",
-                        "tensor0 - tensor1", "{ {x:1}:5, {x:1,y:1}:1 }", "{ {z:1}:11, {y:1,z:1}:7 }");
-        assertEvaluates("{ {}:5, {x:1,y:1}:1, {y:1,z:1}:-7 }",
-                        "tensor0 - tensor1", "{ {}:5, {x:1,y:1}:1 }", "{ {y:1,z:1}:7 }");
-        assertEvaluates("{ {}:-6, {x:1,y:1}:1, {y:1,z:1}:-7 }",
-                        "tensor0 - tensor1", "{ {}:5, {x:1,y:1}:1 }", "{ {}:11, {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1}:0 }",
-                        "tensor0 - tensor1", "{ {x:1}:3 }", "{ {x:1}:3 }");
-        assertEvaluates("{  {x:1}:0, {x:2}:1 }",
-                        "tensor0 - tensor1", "{ {x:1}:3, {x:2}:1 }", "{ {x:1}:3 }");
-
-        // tensor product
+        // tensor join
         assertEvaluates("{ }", "tensor0 * tensor0", "{}");
-        assertEvaluates("( {{x:-,y:-,z:-}:1}*{} )", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", "{{x:-}:1}", "{}", "{{y:-,z:-}:1}"); // empty dimensions are preserved
-        assertEvaluates("( {{x:-}:1} * {} )",
+        assertEvaluates("tensor(x{},y{},z{}):{}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", 
+                        "{{x:-}:1}", "{}", "{{y:-,z:-}:1}"); // empty dimensions are preserved
+        assertEvaluates("tensor(x{}):{}",
                         "tensor0 * tensor1", "{ {x:1}:3 }", "{ {x:2}:5 }");
         assertEvaluates("{ {x:1}:15 }",
                         "tensor0 * tensor1", "{ {x:1}:3 }", "{ {x:1}:5 }");
@@ -188,39 +143,15 @@ public class EvaluationTestCase extends junit.framework.TestCase {
                         "tensor0 * tensor1", "{ {x:1}:3 }", "{ {y:1}:5 }");
         assertEvaluates("{ {x:1,y:1}:15, {x:2,y:1}:35 }",
                         "tensor0 * tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:8, {x:2,y:1}:12 }",
+                        "tensor0 + tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:-2, {x:2,y:1}:2 }",
+                        "tensor0 - tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:5, {x:2,y:1}:4 }",
+                        "tensor0 / tensor1", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }");
         assertEvaluates("{ {x:1,y:1,z:1}:7, {x:1,y:1,z:2}:13, {x:2,y:1,z:1}:21, {x:2,y:1,z:2}:39, {x:1,y:2,z:1}:55 }",
                         "tensor0 * tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
-        assertEvaluates("{ {x:1,y:1,z:1}:7 }",
-                        "tensor0 * tensor1", "{ {x:1}:5, {x:1,y:1}:1 }", "{ {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1,y:1,z:1}:7, {x:1,z:1}:55 }",
-                        "tensor0 * tensor1", "{ {x:1}:5, {x:1,y:1}:1 }", "{ {z:1}:11, {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1,y:1,z:1}:7 }",
-                        "tensor0 * tensor1", "{ {}:5, {x:1,y:1}:1 }", "{ {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1,y:1,z:1}:7, {}:55 }",
-                        "tensor0 * tensor1", "{ {}:5, {x:1,y:1}:1 }", "{ {}:11, {y:1,z:1}:7 }");
-
-        // match product
-        assertEvaluates("{ }", "match(tensor0, tensor0)", "{}");
-        assertEvaluates("( {{x:-}:1} * {} )",
-                        "match(tensor0, tensor1)", "{ {x:1}:3 }", "{ {x:2}:5 }");
-        assertEvaluates("{ {x:1}:15 }",
-                        "match(tensor0, tensor1)", "{ {x:1}:3 }", "{ {x:1}:5 }");
-        assertEvaluates("( {{x:-,y:-}:1} * {} )",
-                        "match(tensor0, tensor1)", "{ {x:1}:3 }", "{ {y:1}:5 }");
-        assertEvaluates("( {{x:-,y:-}:1} * {} )",
-                        "match(tensor0, tensor1)", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * {} )",
-                        "match(tensor0, tensor1)", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * {} )",
-                        "match(tensor0, tensor1)", "{ {x:1}:5, {x:1,y:1}:1 }", "{ {y:1,z:1}:7 }");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * {} )",
-                        "match(tensor0, tensor1)", "{ {x:1}:5, {x:1,y:1}:1 }", "{ {z:1}:11, {y:1,z:1}:7 }");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * {} )",
-                        "match(tensor0, tensor1)", "{ {}:5, {x:1,y:1}:1 }", "{ {y:1,z:1}:7 }");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * { {}:55 } )",
-                        "match(tensor0, tensor1)", "{ {}:5, {x:1,y:1}:1 }", "{ {}:11, {y:1,z:1}:7 }");
-        assertEvaluates("( {{z:-}:1} * { {x:1}:15, {x:1,y:1}:7 } )",
-                        "match(tensor0, tensor1)", "{ {}:5, {x:1}:3, {x:2}:4, {x:1,y:1}:1, {x:1,y:2}:6 }", "{ {x:1}:5, {y:1,x:1}:7, {z:1,y:1,x:1}:10 }");
+        assertEvaluates("{{x:1,y:1}:0.0}","tensor1 * tensor2 * tensor3", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1,y:1}:1 }", "{ {x:1,y:1}:1 }");
 
         // min
         assertEvaluates("{ {x:1}:3, {x:2}:5 }",
@@ -268,12 +199,11 @@ public class EvaluationTestCase extends junit.framework.TestCase {
 
         // Combined
         assertEvaluates(String.valueOf(7.5 + 45 + 1.7),
-                        "sum( " +                                                                    // model computation
-                        "    match( " +                                                              // model weight application
-                        "             tensor0, " + // feature combinations
-                        "             tensor1" + // model weights
-                        "))+1.7",
-                        "{ {x:1}:1, {x:2}:2 } * { {y:1}:3, {y:2}:4 } * { {z:1}:5 }",
+                        "sum( " +                              // model computation:
+                        "      tensor0 * tensor1 * tensor2 " + // - feature combinations
+                        "      * tensor3" +                    // - model weights application
+                        ") + 1.7",
+                        "{ {x:1}:1, {x:2}:2 }", "{ {y:1}:3, {y:2}:4 }", "{ {z:1}:5 }",
                         "{ {x:1,y:1,z:1}:0.5, {x:2,y:1,z:1}:1.5, {x:1,y:1,z:2}:4.5 }");
 
         // undefined is not the same as 0
@@ -281,21 +211,8 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                   "{ {x:1}:1, {x:2}:1 }");
 
         // tensor result dimensions are given from argument dimensions, not the resulting values
-        //assertEvaluates("x", "( {{x:-}:1.0} * {} )", "{ {x:1}:1 } * { {x:2}:1 }");
-        //assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", "{ {x:1}:1 } * { {x:2,y:1}:1, {x:1}:1 }");
-
-        // demonstration of where this produces different results: { {x:1}:1 } with 2 dimensions ...
-        //assertEvaluates("x, y", "( {{x:-,y:-}:1.0} * {} )","{ {x:1}:1 } * { {x:2,y:1}:1, {x:1}:1 } * { {x:1,y:1}:1 }");
-        // ... vs { {x:1}:1 } with only one dimension
-        //assertEvaluates("x, y", "{{x:1,y:1}:1.0}",   "{ {x:1}:1 }                            * { {x:1,y:1}:1 }");
-
-        // check that dimensions are preserved through other operations
-        //String d2 = "{ {x:1}:1 } * { {x:2,y:1}:1, {x:1}:1 }"; // creates a 2d tensor with only an 1d value
-        //assertEvaluates("x, y", "( {{x:-,y:-}:1.0} * {} )",          "match(" + d2 + ", {})");
-        //assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", d2 + " - {}");
-        //assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", d2 + " + {}");
-        //assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", "min(1.5, " + d2 +")");
-        //assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", "max({{x:1}:0}, " + d2 +")");
+        assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2}:1 }");
+        assertEvaluates("tensor(x{},y{}):{{x:1}:1.0}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1}:1 }");
     }
 
     public void testProgrammaticBuildingAndPrecedence() {

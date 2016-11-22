@@ -83,7 +83,7 @@ public class TensorValue extends Value {
     @Override
     public Value divide(Value argument) {
         if (argument instanceof TensorValue)
-            throw new UnsupportedOperationException("Two tensors cannot be divided");
+            return new TensorValue(value.divide(((TensorValue) argument).value));
         else
             return new TensorValue(value.apply((Double value) -> value / argument.asDouble()));
     }

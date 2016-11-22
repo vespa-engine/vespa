@@ -266,18 +266,20 @@ public interface Tensor {
      * @return the tensor on the standard string format
      */
     static String toStandardString(Tensor tensor) {
-        Set<String> emptyDimensions = emptyDimensions(tensor);
         if ( emptyDimensions(tensor).size() > 0) // explicitly output type TODO: Always do that
-            return typeToString() + contentToString(tensor);
+            return typeToString(tensor) + ":" + contentToString(tensor);
         else
             return contentToString(tensor);
     }
 
     static String typeToString(Tensor tensor) {
-        StringBuilder b = new StringBuilder();
-        for (String dimension : tensor.dimensions()) {
-            b.append(dimension + "{},");
-        }
+        if (tensor.dimensions().isEmpty()) return "tensor()";
+        StringBuilder b = new StringBuilder("tensor(");
+        for (String dimension : tensor.dimensions())
+            b.append(dimension).append("{},");
+        b.setLength(b.length() -1);
+        b.append(")");
+        return b.toString();
     }
     
     static String contentToString(Tensor tensor) {

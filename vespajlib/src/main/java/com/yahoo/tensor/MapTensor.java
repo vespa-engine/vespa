@@ -21,6 +21,8 @@ import java.util.function.UnaryOperator;
 @Beta
 public class MapTensor implements Tensor {
 
+    // TODO: Enforce that all addresses are dense (and then avoid stroing keys in TensorAddress)
+    
     private final ImmutableSet<String> dimensions;
 
     private final ImmutableMap<TensorAddress, Double> cells;
@@ -53,28 +55,40 @@ public class MapTensor implements Tensor {
     public static MapTensor from(String s) {
         s = s.trim();
         try {
-            if (s.startsWith("("))
-                return fromTensorWithEmptyDimensions(s);
+            if (s.startsWith("tensor("))
+                return fromTypedTensor(s);
             else if (s.startsWith("{"))
-                return fromTensor(s, Collections.emptySet());
+                return fromUntypedTensor(s, Collections.emptySet());
             else
                 return fromNumber(Double.parseDouble(s));
         }
         catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by { or (, got '" + s + "'");
+            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" + s + "'");
         }
     }
 
-    private static MapTensor fromTensorWithEmptyDimensions(String s) {
+    private static MapTensor fromTypedTensor(String s) {
+        if ( ! s.startsWith("tensor(")) throw tensorFormatException(s);
+        s = s.substring("tensor(".length());
+        int typeSpecEnd = s.indexOf(")");
+        if (typeSpecEnd < 0 ) throw tensorFormatException(s);
+        String typeSpec = s.substring(0, typeSpecEnd);
+    
+        Set<String> dimensions = new HashSet<>();
+        for (String dimensionSpec : typeSpec.split(",")) {
+            dimensionSpec = dimensionSpec.trim();
+            if ( ! dimensionSpec.endsWith("{}"))
+                throw new IllegalArgumentException("Only mapped dimensions ({}) are supported, got '" + dimensionSpec + "'");
+            dimensions.add(dimensionSpec.substring(0, dimensionSpec.length() - 2));
+        }
+        
+        s = s.substring(typeSpec.length() + 1);
+        if ( ! s.startsWith(":")) throw tensorFormatException(s);
         s = s.substring(1).trim();
-        int multiplier = s.indexOf("*");
-        if (multiplier < 0 || ! s.endsWith(")"))
-            throw new IllegalArgumentException("Expected a tensor on the form ({dimension:-,...}*{{cells}}), got '" + s + "'");
-        MapTensor dimensionTensor = fromTensor(s.substring(0, multiplier).trim(), Collections.emptySet());
-        return fromTensor(s.substring(multiplier + 1, s.length() - 1), dimensionTensor.dimensions());
+        return fromUntypedTensor(s, dimensions);
     }
 
-    private static MapTensor fromTensor(String s, Set<String> additionalDimensions) {
+    private static MapTensor fromUntypedTensor(String s, Set<String> additionalDimensions) {
         s = s.trim().substring(1).trim();
         ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
         while (s.length() > 1) {
@@ -104,6 +118,10 @@ public class MapTensor implements Tensor {
         ImmutableMap.Builder<TensorAddress, Double> singleCell = new ImmutableMap.Builder<>();
         singleCell.put(TensorAddress.empty, number);
         return new MapTensor(ImmutableSet.of(), singleCell.build());
+    }
+    
+    private static IllegalArgumentException tensorFormatException(String s) {
+        return new IllegalArgumentException("Expected a tensor on the form tensor(dimensionspec):content, but got '" + s + "'");
     }
 
     private static Double asDouble(TensorAddress address, String s) {
