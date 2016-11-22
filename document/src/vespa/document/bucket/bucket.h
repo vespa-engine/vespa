@@ -32,6 +32,15 @@ public:
     BucketId getBucketId() const noexcept { return _bucketId; }
     void print(std::ostream& os) const;
     vespalib::string toString() const;
+
+    struct hash {
+        size_t operator () (const Bucket& b) const {
+            size_t hash1 = BucketId::hash()(b.getBucketId());
+            size_t hash2 = BucketSpace::hash()(b.getBucketSpace());
+            // Formula taken from std::hash_combine proposal
+            return hash1 ^ (hash2 + 0x9e3779b9 + (hash1<<6) + (hash1>>2));
+        }
+    };
 private:
     BucketSpace _bucketSpace;
     BucketId _bucketId;

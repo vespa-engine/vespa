@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 
 namespace document {
@@ -24,6 +25,12 @@ public:
     Type getId() const noexcept { return _id; }
     void print(std::ostream& out) const;
     vespalib::string toString() const;
+
+    struct hash {
+        size_t operator () (const BucketSpace& bs) const {
+            return std::hash<Type>()(bs.getId());
+        }
+    };
 private:
     Type _id;
 };
