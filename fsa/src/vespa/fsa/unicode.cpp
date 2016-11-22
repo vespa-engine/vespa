@@ -57,14 +57,10 @@ char* Unicode::utf8copy(char *dst, const ucs4_t *src)
 char* Unicode::utf8ncopy(char *dst, const ucs4_t *src,
     int maxdst, int maxsrc)
 {
-  ucs4_t i;
-  char *p;
-  char *edst;
-  const ucs4_t *esrc;
-
-  p = dst;
-  edst = dst + maxdst;
-  esrc = src + maxsrc;
+  ucs4_t i = 0;
+  char * p = dst;
+  char * edst = dst + maxdst;
+  const ucs4_t * esrc = src + maxsrc;
 
   while (src < esrc && (i = *src++) != 0 && p < edst) {
     if (i < 128)
