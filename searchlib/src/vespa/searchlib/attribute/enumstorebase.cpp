@@ -28,7 +28,7 @@ EnumStoreBase::EnumBufferType::EnumBufferType()
 }
 
 size_t
-EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize, bool resizing) const
+EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const
 {
     (void) resizing;
     size_t reservedElements = getReservedElements(bufferId);
@@ -39,7 +39,7 @@ EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t siz
     }
     assert((usedElems % _clusterSize) == 0);
     double growRatio = 1.5f;
-    uint64_t maxSize = clusterRefSize * _clusterSize;
+    uint64_t maxSize = static_cast<uint64_t>(_maxClusters) * _clusterSize;
     uint64_t newSize = usedElems - _deadElems + sizeNeeded;
     if (usedElems != 0) {
         newSize *= growRatio;
@@ -54,9 +54,9 @@ EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t siz
     newSize = alignBufferSize(newSize);
     assert((newSize % _clusterSize) == 0);
     if (newSize <= maxSize) {
-        return clusterRefSize;
+        return _maxClusters;
     }
-    failNewSize(newSize, clusterRefSize * _clusterSize);
+    failNewSize(newSize, maxSize);
     return 0;
 }
 

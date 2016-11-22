@@ -61,7 +61,9 @@ public:
      *
      * @return number of clusters to allocate for new buffer
      */
-    virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize, bool resizing) const;
+    virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const;
+
+    void clampMaxClusters(uint32_t maxClusters);
 
     uint32_t getActiveBuffers() const { return _activeBuffers; }
 };

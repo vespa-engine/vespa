@@ -51,7 +51,6 @@ void
 BufferState::onActive(uint32_t bufferId, uint32_t typeId,
                       BufferTypeBase *typeHandler,
                       size_t sizeNeeded,
-                      size_t maxClusters,
                       void *&buffer)
 {
     assert(buffer == NULL);
@@ -71,7 +70,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
 
     size_t reservedElements = typeHandler->getReservedElements(bufferId);
     (void) reservedElements;
-    size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, maxClusters, false);
+    size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, false);
     size_t allocSize = allocClusters * typeHandler->getClusterSize();
     assert(allocSize >= reservedElements + sizeNeeded);
     _buffer.create(allocSize * typeHandler->elementSize()).swap(_buffer);
@@ -230,7 +229,6 @@ BufferState::disableElemHoldList(void)
 void
 BufferState::fallbackResize(uint32_t bufferId,
                             uint64_t sizeNeeded,
-                            size_t maxClusters,
                             void *&buffer,
                             Alloc &holdBuffer)
 {
@@ -239,7 +237,6 @@ BufferState::fallbackResize(uint32_t bufferId,
     assert(holdBuffer.get() == NULL);
     size_t allocClusters = _typeHandler->calcClustersToAlloc(bufferId,
                                                              sizeNeeded,
-                                                             maxClusters,
                                                              true);
     size_t allocSize = allocClusters * _typeHandler->getClusterSize();
     assert(allocSize >= _usedElems + sizeNeeded);

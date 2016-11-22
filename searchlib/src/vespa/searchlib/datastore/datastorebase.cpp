@@ -108,7 +108,7 @@ DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t sizeNeeded)
         // start using next buffer
         activeBufferId = nextBufferId(activeBufferId);
     } while (!_states[activeBufferId].isFree());
-    onActive(activeBufferId, typeId, sizeNeeded, _maxClusters);
+    onActive(activeBufferId, typeId, sizeNeeded);
     _activeBufferIds[typeId] = activeBufferId;
 }
 
@@ -123,7 +123,7 @@ DataStoreBase::initActiveBuffers(void)
             // start using next buffer
             activeBufferId = nextBufferId(activeBufferId);
         }
-        onActive(activeBufferId, typeId, 0u, _maxClusters);
+        onActive(activeBufferId, typeId, 0u);
         _activeBufferIds[typeId] = activeBufferId;
     }
 }
@@ -134,6 +134,7 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
 {
     uint32_t typeId = _activeBufferIds.size();
     assert(typeId == _typeHandlers.size());
+    typeHandler->clampMaxClusters(_maxClusters);
     _activeBufferIds.push_back(0);
     _typeHandlers.push_back(typeHandler);
     _freeListLists.push_back(BufferState::FreeListList());
@@ -330,8 +331,7 @@ DataStoreBase::getMemStats(void) const
 
 void
 DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId,
-                        size_t sizeNeeded,
-                        size_t maxClusters)
+                        size_t sizeNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
@@ -339,7 +339,6 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId,
     state.onActive(bufferId, typeId,
                    _typeHandlers[typeId],
                    sizeNeeded,
-                   maxClusters,
                    _buffers[bufferId]);
     enableFreeList(bufferId);
 }
@@ -382,7 +381,6 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
     size_t elementSize = state.getTypeHandler()->elementSize();
     state.fallbackResize(bufferId,
                          sizeNeeded,
-                         _maxClusters,
                          _buffers[bufferId],
                          toHoldBuffer);
     GenerationHeldBase::UP
