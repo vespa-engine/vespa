@@ -21,6 +21,8 @@ ConfigSetSource::ConfigSetSource(const IConfigHolder::SP & holder, const ConfigK
         throw ConfigRuntimeException("Invalid subscribe for key " + key.toString() + ", not builder found");
 }
 
+ConfigSetSource::~ConfigSetSource() { }
+
 void
 ConfigSetSource::getConfig()
 {

@@ -19,6 +19,7 @@ public:
     typedef std::map<ConfigKey, ConfigInstance *> BuilderMap;
     typedef std::shared_ptr<BuilderMap> BuilderMapSP;
     ConfigSetSource(const IConfigHolder::SP & holder, const ConfigKey & key, const BuilderMapSP & builderMap);
+    ~ConfigSetSource();
 
     void getConfig();
     void reload(int64_t generation);
