@@ -220,6 +220,9 @@ class ApacheGatewayConnection implements GatewayConnection {
                 httpPost.setHeader(Headers.DENY_IF_BUSY, "true");
             }
         }
+        if (feedParams.getSilentUpgrade()) {
+            httpPost.setHeader(Headers.SILENTUPGRADE, "true");
+        }
         httpPost.setHeader(Headers.TIMEOUT, "" + feedParams.getServerTimeout(TimeUnit.SECONDS));
 
         for (Map.Entry<String, String> extraHeader : connectionParams.getHeaders()) {
@@ -257,7 +260,9 @@ class ApacheGatewayConnection implements GatewayConnection {
     }
 
     private void verifyServerResponseCode(StatusLine statusLine) throws ServerResponseException {
-        if (statusLine.getStatusCode() > 199 && statusLine.getStatusCode() < 300) {
+        // We use code 261-299 to report errors related to internal transitive errors that the tenants should not care
+        // about to avoid masking more serious errors.
+        if (statusLine.getStatusCode() > 199 && statusLine.getStatusCode() < 260) {
             return;
         }
         throw new ServerResponseException(statusLine.getStatusCode(), statusLine.getReasonPhrase());

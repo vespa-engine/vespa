@@ -32,4 +32,6 @@ public final class Headers {
     public static final String CLIENT_ID = "X-Yahoo-Client-Id";
     public static final String OUTSTANDING_REQUESTS = "X-Yahoo-Outstanding-Requests";
     public static final String HOSTNAME = "X-Yahoo-Hostname";
+    public static final String SILENTUPGRADE = "X-Yahoo-Silent-Upgrade";
+
 }
