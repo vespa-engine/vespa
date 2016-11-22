@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Collections;
 import java.util.Optional;
 
 /**
@@ -17,7 +18,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
- @Beta
+@Beta
 public class TensorValue extends Value {
 
     /** The tensor value of this */
@@ -97,11 +98,11 @@ public class TensorValue extends Value {
     }
 
     public Value sum(String dimension) {
-        return new TensorValue(value.sum(dimension));
+        return new TensorValue(value.sum(Collections.singletonList(dimension)));
     }
 
     public Value sum() {
-        return new DoubleValue(value.sum());
+        return new TensorValue(value.sum(Collections.emptyList()));
     }
 
     private Tensor asTensor(Value value, String operationName) {

@@ -96,6 +96,8 @@ public interface Tensor {
     default Tensor add(Tensor argument) { return join(argument, (a, b) -> (a + b )); }
     default Tensor divide(Tensor argument) { return join(argument, (a, b) -> (a / b )); }
     default Tensor subtract(Tensor argument) { return join(argument, (a, b) -> (a - b )); }
+    default Tensor max(Tensor argument) { return join(argument, (a, b) -> (a > b ? a : b )); }
+    default Tensor min(Tensor argument) { return join(argument, (a, b) -> (a < b ? a : b )); }
 
     default Tensor avg(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.avg, dimensions); }
     default Tensor count(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.count, dimensions); }
@@ -107,28 +109,6 @@ public interface Tensor {
     // ----------------- Old stuff
 
     /**
-     * Returns a tensor which contains the cells of both argument tensors, where the value for
-     * any <i>matching</i> cell is the min of the two possible values.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     */
-    default Tensor min(Tensor argument) {
-        return new TensorMin(this, argument).result();
-    }
-
-    /**
-     * Returns a tensor which contains the cells of both argument tensors, where the value for
-     * any <i>matching</i> cell is the max of the two possible values.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     */
-    default Tensor max(Tensor argument) {
-        return new TensorMax(this, argument).result();
-    }
-
-    /**
      * Returns a tensor with the same cells as this and the given function is applied to all its cell values.
      *
      * @param function the function to apply to all cells
@@ -136,24 +116,6 @@ public interface Tensor {
      */
     default Tensor apply(UnaryOperator<Double> function) {
         return new TensorFunction(this, function).result();
-    }
-
-    /**
-     * Returns a tensor with the given dimension removed and cells which contains the sum of the values
-     * in the removed dimension.
-     */
-    default Tensor sum(String dimension) {
-        return new TensorDimensionSum(dimension, this).result();
-    }
-
-    /**
-     * Returns the sum of all the cells of this tensor.
-     */
-    default double sum() {
-        double sum = 0;
-        for (Map.Entry<TensorAddress, Double> cell : cells().entrySet())
-            sum += cell.getValue();
-        return sum;
     }
 
     /**
