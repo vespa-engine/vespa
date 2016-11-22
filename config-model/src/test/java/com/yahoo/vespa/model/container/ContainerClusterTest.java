@@ -9,6 +9,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
@@ -21,13 +22,11 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
@@ -72,7 +71,7 @@ public class ContainerClusterTest {
     @Test
     public void requreThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(true).build())
-                                                     .zone(new Zone(Environment.test, RegionName.from("some-region"))).build();
+                                                     .zone(new Zone(SystemName.ci, Environment.test, RegionName.from("some-region"))).build();
         MockRoot root = new MockRoot("foo", state);
         ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
@@ -80,6 +79,7 @@ public class ContainerClusterTest {
         ConfigserverConfig config = new ConfigserverConfig(builder);
         assertEquals(Environment.test.value(), config.environment());
         assertEquals("some-region", config.region());
+        assertEquals("ci", config.system());
     }
 
     private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster) {

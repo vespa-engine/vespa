@@ -745,6 +745,7 @@ public final class ContainerCluster
      */
     @Override
     public void getConfig(ConfigserverConfig.Builder builder) {
+        builder.system(zone.system().name());
         builder.environment(zone.environment().value());
         builder.region(zone.region().value());
     }
