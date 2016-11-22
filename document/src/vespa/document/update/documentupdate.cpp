@@ -71,6 +71,8 @@ DocumentUpdate::DocumentUpdate(const DocumentTypeRepo& repo,
     }
 }
 
+DocumentUpdate::~DocumentUpdate() { }
+
 
 bool
 DocumentUpdate::operator==(const DocumentUpdate& other) const

@@ -3,10 +3,10 @@
 #include "context.h"
 #include "value.h"
 
-namespace document
-{
-namespace select
-{
+namespace document {
+namespace select {
+
+Context::~Context() { }
 
 } // select
 } // document

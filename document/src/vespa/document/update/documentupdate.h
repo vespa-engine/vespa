@@ -97,6 +97,8 @@ public:
     DocumentUpdate(const DocumentTypeRepo &repo, ByteBuffer &buffer,
                    SerializeVersion serializeVersion);
 
+    ~DocumentUpdate();
+
     bool operator==(const DocumentUpdate&) const;
     bool operator!=(const DocumentUpdate & rhs) const { return ! (*this == rhs); }
 	

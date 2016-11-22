@@ -24,7 +24,7 @@ ConfigUri::ConfigUri(const vespalib::string &configId, const IConfigContext::SP 
 {
 }
 
-ConfigUri::~ConfigUri(} { }
+ConfigUri::~ConfigUri() { }
 
 ConfigUri
 ConfigUri::createWithNewId(const vespalib::string & configId) const
