@@ -132,11 +132,7 @@ DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
         size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, false);
         if (allocClusters < typeHandler->getMinClustersNewBuf()) {
             // Resize existing buffer
-            BufferState &state = _states[oldBufferId];
-            fallbackResize(oldBufferId,
-                           std::max(std::min(state.capacity(),
-                                             maxSize - state.size()),
-                                    sizeNeeded));
+            fallbackResize(oldBufferId, sizeNeeded);
         } else {
             // start using next buffer
             onActive(bufferId, typeId, sizeNeeded);
