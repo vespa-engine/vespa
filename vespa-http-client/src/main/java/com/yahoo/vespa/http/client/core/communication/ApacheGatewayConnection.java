@@ -220,6 +220,9 @@ class ApacheGatewayConnection implements GatewayConnection {
                 httpPost.setHeader(Headers.DENY_IF_BUSY, "true");
             }
         }
+        if (feedParams.getSilentUpgrade()) {
+            httpPost.setHeader(Headers.SILENTUPGRADE, "true");
+        }
         httpPost.setHeader(Headers.TIMEOUT, "" + feedParams.getServerTimeout(TimeUnit.SECONDS));
 
         for (Map.Entry<String, String> extraHeader : connectionParams.getHeaders()) {
@@ -257,7 +260,7 @@ class ApacheGatewayConnection implements GatewayConnection {
     }
 
     private void verifyServerResponseCode(StatusLine statusLine) throws ServerResponseException {
-        if (statusLine.getStatusCode() > 199 && statusLine.getStatusCode() < 300) {
+        if (statusLine.getStatusCode() > 199 && statusLine.getStatusCode() < 260) {
             return;
         }
         throw new ServerResponseException(statusLine.getStatusCode(), statusLine.getReasonPhrase());

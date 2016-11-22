@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.config;
 
+import com.google.common.annotations.Beta;
 import net.jcip.annotations.Immutable;
 
 import java.util.concurrent.TimeUnit;
@@ -23,6 +24,8 @@ public final class FeedParams {
     public long getMaxSleepTimeMs() {
         return maxSleepTimeMs;
     }
+
+    public boolean getSilentUpgrade() { return silentUpgrade; }
 
     /**
      * Enumeration of data formats that are acceptable by the OutputStream
@@ -49,7 +52,21 @@ public final class FeedParams {
         private String priority = null;
         private boolean denyIfBusyV3 = true;
         private long maxSleepTimeMs = 3000;
+        private boolean silentUpgrade = false;
 
+        /**
+         * Make server not throw 4xx/5xx for situations that are normal during upgrade as this can esily mask
+         * other problems. This feature need to be supported on server side to work, but it is still safe
+         * to enable it, even if server does not yet support it. As of Nov 22 2016 it is not yet implemented on
+         * the server side.
+         * @param silentUpgrade true for reducing "false" 4xx/5xx.
+         * @return this, for chaining
+         */
+        @Beta
+        public Builder withSilentUpgrade(boolean silentUpgrade) {
+            this.silentUpgrade = silentUpgrade;
+            return this;
+        }
 
         /**
          * When throttling the load due to transient errors on gateway, what is the most time to wait between
@@ -215,7 +232,7 @@ public final class FeedParams {
             return new FeedParams(
                     dataFormat, serverTimeout, clientTimeout, route,
                     maxChunkSizeBytes, maxInFlightRequests, localQueueTimeOut, priority,
-                    denyIfBusyV3, maxSleepTimeMs);
+                    denyIfBusyV3, maxSleepTimeMs, silentUpgrade);
         }
 
         public long getClientTimeout(TimeUnit unit) {
@@ -253,10 +270,13 @@ public final class FeedParams {
     private final String priority;
     private final boolean denyIfBusyV3;
     private final long maxSleepTimeMs;
+    private final boolean silentUpgrade;
+
 
     private FeedParams(DataFormat dataFormat, long serverTimeout, long clientTimeout, String route,
                        int maxChunkSizeBytes, final int maxInFlightRequests,
-                       long localQueueTimeOut, String priority, boolean denyIfBusyV3, long maxSleepTimeMs) {
+                       long localQueueTimeOut, String priority, boolean denyIfBusyV3, long maxSleepTimeMs,
+                       boolean silentUpgrade) {
         this.dataFormat = dataFormat;
         this.serverTimeoutMillis = serverTimeout;
         this.clientTimeoutMillis = clientTimeout;
@@ -267,6 +287,7 @@ public final class FeedParams {
         this.priority = priority;
         this.denyIfBusyV3 = denyIfBusyV3;
         this.maxSleepTimeMs = maxSleepTimeMs;
+        this.silentUpgrade = silentUpgrade;
     }
 
     public DataFormat getDataFormat() {
