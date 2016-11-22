@@ -419,6 +419,7 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             case active:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
+                storageMaintainer.handleCoreDumpsForContainer(nodeSpec, environment);
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
@@ -497,8 +498,8 @@ public class NodeAgentImpl implements NodeAgent {
         if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
 
         Dimensions dimensions = dimensionsBuilder.build();
-        long currentCpuContainerTotalTime = (long) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage");
-        long currentCpuSystemTotalTime = (long) stats.getCpuStats().get("system_cpu_usage");
+        long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
+        long currentCpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
 
         double cpuPercentage = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
         metricReceiver.declareGauge(dimensions, "node.cpu.busy.pct").sample(cpuPercentage);

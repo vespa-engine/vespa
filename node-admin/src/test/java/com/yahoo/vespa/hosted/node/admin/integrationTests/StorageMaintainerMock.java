@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.io.IOException;
@@ -10,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrderVerifier;
@@ -27,6 +29,10 @@ public class StorageMaintainerMock extends StorageMaintainer {
     @Override
     public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
         return new HashMap<>();
+    }
+
+    @Override
+    public void handleCoreDumpsForContainer(ContainerNodeSpec nodeSpec, Environment environment) {
     }
 
     @Override

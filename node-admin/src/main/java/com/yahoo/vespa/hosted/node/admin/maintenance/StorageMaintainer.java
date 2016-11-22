@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.maintenance.DeleteOldAppData;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
@@ -110,6 +112,12 @@ public class StorageMaintainer {
         }
 
         Maintainer.cleanCoreDumps(logger);
+    }
+
+    public void handleCoreDumpsForContainer(ContainerNodeSpec nodeSpec, Environment environment) {
+        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, nodeSpec.containerName);
+
+        Maintainer.handleCoreDumpsForContainer(logger, nodeSpec, environment);
     }
 
     public void cleanNodeAdmin() {
