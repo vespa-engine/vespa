@@ -58,4 +58,10 @@ operator + (const vespalib::stringref & a, const vespalib::stringref & b)
 
 template class small_string<48>;
 
+template string operator + (const string & a, const string & b);
+template string operator + (const string & a, const stringref & b);
+template string operator + (const stringref & a, const string & b);
+template string operator + (const string & a, const char * b);
+template string operator + (const  char * a, const string & b);
+
 }

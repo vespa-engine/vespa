@@ -660,48 +660,23 @@ typedef small_string<48> string;
 
 template<uint32_t StackSize>
 vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const vespalib::small_string<StackSize> & b)
-{
-    vespalib::small_string<StackSize> t(a);
-    t += b;
-    return t;
-}
+operator + (const vespalib::small_string<StackSize> & a, const vespalib::small_string<StackSize> & b);
 
 template<uint32_t StackSize>
 vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const vespalib::stringref & b)
-{
-    vespalib::small_string<StackSize> t(a);
-    t += b;
-    return t;
-}
+operator + (const vespalib::small_string<StackSize> & a, const vespalib::stringref & b);
 
 template<uint32_t StackSize>
 vespalib::small_string<StackSize>
-operator + (const vespalib::stringref & a, const vespalib::small_string<StackSize> & b)
-{
-    vespalib::small_string<StackSize> t(a);
-    t += b;
-    return t;
-}
+operator + (const vespalib::stringref & a, const vespalib::small_string<StackSize> & b);
 
 template<uint32_t StackSize>
 vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const char * b)
-{
-    vespalib::small_string<StackSize> t(a);
-    t += b;
-    return t;
-}
+operator + (const vespalib::small_string<StackSize> & a, const char * b);
 
 template<uint32_t StackSize>
 vespalib::small_string<StackSize>
-operator + (const char * a, const vespalib::small_string<StackSize> & b)
-{
-    vespalib::small_string<StackSize> t(a);
-    t += b;
-    return t;
-}
+operator + (const char * a, const vespalib::small_string<StackSize> & b);
 
 template<typename T, uint32_t StackSize>
 bool
