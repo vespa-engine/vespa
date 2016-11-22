@@ -164,7 +164,7 @@ public class RestApiTest {
     @Test
     public void post_with_invalid_method_override_in_header_gives_sane_error_message() throws Exception  {
         Request req = new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                Utf8.toBytes("{\"currentRestartGeneration\": 1}"), Request.Method.POST);
+                                  Utf8.toBytes("{\"currentRestartGeneration\": 1}"), Request.Method.POST);
         req.getHeaders().add("X-HTTP-Method-Override", "GET");
         assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Illegal X-HTTP-Method-Override header for POST request. Accepts 'PATCH' but got 'GET'\"}");
     }
@@ -212,19 +212,22 @@ public class RestApiTest {
 
     @Test
     public void acl_request() throws Exception {
-        String hostName = "foo.yahoo.com";
+        String hostname = "foo.yahoo.com";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson(hostName, "default") + "]").
+                        ("[" + asNodeJson(hostname, "default") + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved foo.yahoo.com to ready\"}");
         Pattern responsePattern = Pattern.compile("\\{\"hostname\":\"foo.yahoo.com\",\"ipAddress\":\".+?\"," +
                 "\"trustedNodes\":\\[" +
                 "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
                 "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
                 "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
                 "]}");
-        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/" + hostName), responsePattern);
+        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/" + hostname), responsePattern);
     }
 
     @Test
@@ -361,8 +364,9 @@ public class RestApiTest {
     }
 
     private void assertResponseMatches(Request request, Pattern pattern) throws IOException {
+        // System.out.println(container.handleRequest(request).getBodyAsString());
         assertTrue("Response matches " + pattern.toString(),
-                pattern.matcher(container.handleRequest(request).getBodyAsString()).matches());
+                   pattern.matcher(container.handleRequest(request).getBodyAsString()).matches());
     }
 
     private void assertFile(Request request, String responseFile) throws IOException {

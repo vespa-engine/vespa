@@ -2,11 +2,15 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Before;
@@ -17,6 +21,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.createConfig;
@@ -45,13 +50,15 @@ public class AclProvisioningTest {
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
+
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
+        tester.activateProxies();
 
         ApplicationId applicationId = tester.makeApplicationId();
 
         // Allocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
-                Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
+                                                  Optional.empty());
         List<HostSpec> prepared = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
         tester.activate(applicationId, new HashSet<>(prepared));
         List<Node> activeNodes = tester.getNodes(applicationId, Node.State.active).asList();
@@ -76,6 +83,7 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> readyNodes = tester.makeReadyNodes(10, "default");
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
+        tester.activateProxies();
 
         // Get trusted nodes for the first ready node
         Node node = readyNodes.get(0);

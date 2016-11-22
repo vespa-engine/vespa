@@ -255,27 +255,29 @@ public class SerializationTest {
 
     @Test
     public void serialize_parentHostname() {
-        final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", "myIp", "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        String parentHostname = "parent.yahoo.com";
+        Node node = Node.create("myId", "myHostname", Optional.of(parentHostname), 
+                                nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
+        assertFalse(node.ipAddress().isPresent());
     }
 
-
+    // TODO: This can be removed after 6.48 is live everywhere
     @Test
     public void resolves_hostname_when_deserializing() throws Exception {
         nameResolver.addRecord("node1.yahoo.tld", "127.0.0.1");
         byte[] nodeWithoutIp = createNodeJson("node1.yahoo.tld");
-        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithoutIp);
-        assertEquals("127.0.0.1", deserializedNode.ipAddress());
+        Node deserializedNode = nodeSerializer.fromJson(State.ready, nodeWithoutIp);
+        assertEquals("127.0.0.1", deserializedNode.ipAddress().get());
     }
 
     @Test
     public void throws_when_hostname_cannot_be_resolved() throws Exception {
         byte[] nodeWithoutIp = createNodeJson("node2.yahoo.tld");
         try {
-            nodeSerializer.fromJson(State.provisioned, nodeWithoutIp);
+            nodeSerializer.fromJson(State.ready, nodeWithoutIp);
             assertTrue("Expected exception to be thrown", false);
         } catch (RuntimeException ignored) {
         }
@@ -285,8 +287,16 @@ public class SerializationTest {
     public void resolver_is_not_invoked_when_ip_address_is_present() throws Exception {
         nameResolver.failIfInvoked();
         byte[] nodeWithIp = createNodeJson("node3.yahoo.tld", "127.0.0.3");
-        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithIp);
-        assertEquals("127.0.0.3", deserializedNode.ipAddress());
+        Node deserializedNode = nodeSerializer.fromJson(State.ready, nodeWithIp);
+        assertEquals("127.0.0.3", deserializedNode.ipAddress().get());
+    }
+
+    @Test
+    public void resolver_is_not_invoked_for_provisioned_node() throws Exception {
+        nameResolver.failIfInvoked();
+        byte[] nodeWithoutIp = createNodeJson("node2.yahoo.tld");
+        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithoutIp);
+        assertFalse(deserializedNode.ipAddress().isPresent());
     }
 
     private byte[] createNodeJson(String hostname, String ipAddress) {
@@ -303,7 +313,7 @@ public class SerializationTest {
     }
 
     private Node createNode() {
-        return Node.create("myId", "myIp", "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        return Node.create("myId", "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
     }
 
 }

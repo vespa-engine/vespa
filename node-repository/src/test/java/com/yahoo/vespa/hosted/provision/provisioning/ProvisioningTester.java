@@ -145,6 +145,14 @@ public class ProvisioningTester implements AutoCloseable {
         deactivateTransaction.commit();
     }
 
+    public void activateProxies() {
+        ApplicationId proxyApplicationId = new ApplicationId.Builder().applicationName("hosted").build();
+        List<HostSpec> hosts = prepare(proxyApplicationId,
+                                       ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("default"), Optional.empty()),
+                                       Capacity.fromRequiredNodeType(NodeType.proxy), 0);
+        activate(proxyApplicationId, new HashSet<>(hosts));
+    }
+
     public Set<String> toHostNames(Set<HostSpec> hosts) {
         return hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
     }

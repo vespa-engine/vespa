@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import com.yahoo.log.LogLevel;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
@@ -22,8 +20,7 @@ public interface NameResolver {
         try {
             return InetAddress.getByName(hostname).getHostAddress();
         } catch (UnknownHostException e) {
-            log.log(LogLevel.ERROR, String.format("Failed to resolve hostname %s: %s", hostname, e.getMessage()));
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to resolve the ip of " + hostname, e);
         }
     }
 
