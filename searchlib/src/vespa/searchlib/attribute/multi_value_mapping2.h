@@ -27,6 +27,8 @@ private:
 public:
     MultiValueMapping2(uint32_t maxSmallArraySize,
                        const GrowStrategy &gs = GrowStrategy());
+    MultiValueMapping2(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters,
+                       const GrowStrategy &gs = GrowStrategy());
     virtual ~MultiValueMapping2();
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
@@ -44,8 +46,8 @@ public:
 
     virtual void compactWorst() override;
 
-    AddressSpace getAddressSpaceUsage() const { return _store.addressSpaceUsage(); }
-    virtual MemoryUsage getMemoryUsage() const override;
+    AddressSpace getAddressSpaceUsage() const;
+    virtual MemoryUsage getArrayStoreMemoryUsage() const override;
 
     // Mockups to temporarily silence code written for old multivalue mapping
     bool enoughCapacity(const Histogram &) { return true; }

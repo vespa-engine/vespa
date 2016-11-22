@@ -86,7 +86,8 @@ BufferTypeBase::onFree(size_t usedElems)
 size_t
 BufferTypeBase::calcClustersToAlloc(uint32_t bufferId,
                                     size_t sizeNeeded,
-                                    uint64_t clusterRefSize) const
+                                    uint64_t clusterRefSize,
+                                    bool resizing) const
 {
     size_t reservedElements = getReservedElements(bufferId);
     size_t usedElems = _activeUsedElems;
@@ -107,7 +108,7 @@ BufferTypeBase::calcClustersToAlloc(uint32_t bufferId,
         minClusters = maxClusters;
     }
     size_t usedClusters = usedElems / _clusterSize;
-    size_t needClusters = (sizeNeeded + reservedElements + _clusterSize - 1) / _clusterSize;
+    size_t needClusters = (sizeNeeded + (resizing ? usedElems : reservedElements) + _clusterSize - 1) / _clusterSize;
     uint64_t wantClusters = usedClusters + minClusters;
     if (wantClusters < needClusters) {
         wantClusters = needClusters;

@@ -28,8 +28,9 @@ EnumStoreBase::EnumBufferType::EnumBufferType()
 }
 
 size_t
-EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize) const
+EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize, bool resizing) const
 {
+    (void) resizing;
     size_t reservedElements = getReservedElements(bufferId);
     sizeNeeded = std::max(sizeNeeded, _minSizeNeeded);
     size_t usedElems = _activeUsedElems;

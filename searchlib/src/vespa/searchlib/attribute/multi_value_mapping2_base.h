@@ -25,7 +25,7 @@ public:
 protected:
     RefVector _indices;
     size_t    _totalValues;
-    MemoryUsage _cachedMemoryUsage;
+    MemoryUsage _cachedArrayStoreMemoryUsage;
 
     MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMapping2Base();
@@ -36,7 +36,8 @@ protected:
 public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
-    virtual MemoryUsage getMemoryUsage() const = 0;
+    virtual MemoryUsage getArrayStoreMemoryUsage() const = 0;
+    MemoryUsage getMemoryUsage() const;
     MemoryUsage updateMemoryUsage();
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;

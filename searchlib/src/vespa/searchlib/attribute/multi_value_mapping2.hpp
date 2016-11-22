@@ -15,6 +15,13 @@ MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize, 
 }
 
 template <typename EntryT, typename RefT>
+MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, const GrowStrategy &gs)
+    : MultiValueMapping2Base(gs, _store.getGenerationHolder()),
+      _store(maxSmallArraySize, minClusters, maxClusters)
+{
+}
+
+template <typename EntryT, typename RefT>
 MultiValueMapping2<EntryT,RefT>::~MultiValueMapping2()
 {
 }
@@ -57,13 +64,16 @@ MultiValueMapping2<EntryT,RefT>::compactWorst()
 
 template <typename EntryT, typename RefT>
 MemoryUsage
-MultiValueMapping2<EntryT,RefT>::getMemoryUsage() const
+MultiValueMapping2<EntryT,RefT>::getArrayStoreMemoryUsage() const
 {
-    MemoryUsage retval = _indices.getMemoryUsage();
-    retval.merge(_store.getMemoryUsage());
-    return retval;
+    return _store.getMemoryUsage();
 }
 
+template <typename EntryT, typename RefT>
+AddressSpace
+MultiValueMapping2<EntryT, RefT>::getAddressSpaceUsage() const {
+    return _store.addressSpaceUsage();
+}
 
 } // namespace search::attribute
 } // namespace search
