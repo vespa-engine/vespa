@@ -10,7 +10,7 @@ namespace attribute {
 namespace {
 
 // minimum dead bytes in multi value mapping before consider compaction
-constexpr size_t DEAD_SLACK = 0x10000u;
+constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
 
 }
 
@@ -81,7 +81,7 @@ MultiValueMapping2Base::considerCompact(const CompactionStrategy &compactionStra
 {
     size_t used = _cachedArrayStoreMemoryUsage.usedBytes();
     size_t dead = _cachedArrayStoreMemoryUsage.deadBytes();
-    if ((dead >= DEAD_SLACK) &&
+    if ((dead >= DEAD_BYTES_SLACK) &&
         (used * compactionStrategy.getMaxDeadRatio() < dead)) {
         compactWorst();
         return true;
