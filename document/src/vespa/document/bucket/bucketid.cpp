@@ -125,13 +125,10 @@ BucketId::contains(const BucketId& id) const
 
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const BucketId& id)
 {
-    size_t width = os.getWidth();
-    char fill = os.getFill();
-    vespalib::Base base = os.getBase();
+    vespalib::asciistream::StateSaver stateSaver(os);
     return os << "BucketId(0x"
               << vespalib::hex << vespalib::setw(sizeof(BucketId::Type)*2) << vespalib::setfill('0')
               << id.getId()
-              << base << vespalib::setw(width) << vespalib::setfill(fill)
               << ")";
 }
 

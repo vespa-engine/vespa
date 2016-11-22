@@ -19,13 +19,10 @@ void BucketSpace::print(std::ostream& os) const
 
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const BucketSpace& id)
 {
-    size_t width = os.getWidth();
-    char fill = os.getFill();
-    vespalib::Base base = os.getBase();
+    vespalib::asciistream::StateSaver stateSaver(os);
     return os << "BucketSpace(0x"
               << vespalib::hex << vespalib::setw(sizeof(BucketSpace::Type)*2) << vespalib::setfill('0')
               << id.getId()
-              << base << vespalib::setw(width) << vespalib::setfill(fill)
               << ")";
 }
 
