@@ -17,7 +17,6 @@
 namespace search {
 namespace engine {
 
-
 /**
  * Common transport server implementation interacting with the
  * underlying search engine using the common search api. This
@@ -39,7 +38,7 @@ private:
     {
         TransportServer &parent;
         ListenTask(TransportServer &p) : FNET_Task(p._transport.GetScheduler()), parent(p) {}
-        virtual void PerformTask() { parent.updateListen(); }
+        void PerformTask() override { parent.updateListen(); }
     };
 
     /**
@@ -50,7 +49,7 @@ private:
     {
         TransportServer &parent;
         DispatchTask(TransportServer &p) : FNET_Task(p._transport.GetScheduler()), parent(p) {}
-        virtual void PerformTask() {
+        void PerformTask() override {
             parent.dispatchRequests();
             ScheduleNow(); // run each tick
         }
@@ -109,9 +108,9 @@ private:
 
         SearchHandler(TransportServer &p, SearchRequest::Source req, FNET_Channel *ch, uint32_t cnt)
             : Handler(p), request(std::move(req)), channel(ch), clientCnt(cnt) {}
-        virtual void start();
-        virtual void searchDone(SearchReply::UP reply);
-        virtual ~SearchHandler();
+        void start() override;
+        void searchDone(SearchReply::UP reply) override;
+        ~SearchHandler();
     };
 
     /**
@@ -125,9 +124,9 @@ private:
 
         DocsumHandler(TransportServer &p, DocsumRequest::Source req, FNET_Channel *ch)
             : Handler(p), request(std::move(req)), channel(ch) {}
-        virtual void start();
-        virtual void getDocsumsDone(DocsumReply::UP reply);
-        virtual ~DocsumHandler();
+        void start() override;
+        void getDocsumsDone(DocsumReply::UP reply) override;
+        ~DocsumHandler();
     };
 
     /**
@@ -141,22 +140,22 @@ private:
 
         MonitorHandler(TransportServer &p, MonitorRequest::UP req, FNET_Connection *conn)
             : Handler(p), request(std::move(req)), connection(conn) {}
-        virtual void start();
-        virtual void pingDone(MonitorReply::UP reply);
-        virtual ~MonitorHandler();
+        void start() override;
+        void pingDone(MonitorReply::UP reply) override;
+        ~MonitorHandler();
     };
 
     // handle incoming network packets
-    virtual HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context);
+    HP_RetCode HandlePacket(FNET_Packet *packet, FNET_Context context) override;
 
     // set up admin channel for new clients
-    virtual bool InitAdminChannel(FNET_Channel *channel);
+    bool InitAdminChannel(FNET_Channel *channel) override;
 
     // set up channel for individual request
-    virtual bool InitChannel(FNET_Channel *channel, uint32_t pcode);
+    bool InitChannel(FNET_Channel *channel, uint32_t pcode) override;
 
     // entry point for thread running transport thread
-    virtual void Run(FastOS_ThreadInterface *thisThread, void *arg);
+    void Run(FastOS_ThreadInterface *thisThread, void *arg) override;
 
     // update listen status
     bool updateListen();
@@ -326,7 +325,7 @@ public:
     /**
      * Destructor will perform shutdown if needed.
      **/
-    virtual ~TransportServer();
+    ~TransportServer();
 };
 
 } // namespace engine
