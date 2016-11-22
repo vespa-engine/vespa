@@ -4,6 +4,8 @@
 
 namespace vespalib {
 
+Slime::~Slime() { }
+
 bool operator == (const Slime & a, const Slime & b)
 {
     return a.get() == b.get();

@@ -46,6 +46,8 @@ public:
      */
     ConfigUri(const vespalib::string &configId, const IConfigContext::SP & context);
 
+    ~ConfigUri();
+
     /**
      * Create a new config Uri with a different config id, but with the same
      * context as this URI.

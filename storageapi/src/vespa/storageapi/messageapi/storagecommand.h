@@ -31,7 +31,7 @@ protected:
 public:
     DECLARE_POINTER_TYPEDEFS(StorageCommand);
 
-    virtual ~StorageCommand() {}
+    virtual ~StorageCommand();
 
     bool sourceIndexSet() const { return (_sourceIndex != 0xffff); }
     void setSourceIndex(uint16_t sourceIndex) { _sourceIndex = sourceIndex; }

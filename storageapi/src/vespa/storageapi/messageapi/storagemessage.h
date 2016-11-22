@@ -312,6 +312,7 @@ public:
     StorageMessageAddress(const vespalib::stringref & clusterName,
                           const lib::NodeType& type, uint16_t index,
                           Protocol protocol = STORAGE);
+    ~StorageMessageAddress();
 
     void setProtocol(Protocol p) { _protocol = p; }
     void enableRetry(bool enable = true) { _retryEnabled = enable; }
@@ -447,7 +448,7 @@ public:
     /**
      * Cheap version of tostring().
      */
-    virtual vespalib::string getSummary() const { return toString(); };
+    virtual vespalib::string getSummary() const;
 
     virtual document::BucketId getBucketId() const { return document::BucketId(); }
     virtual bool hasSingleBucketId() const { return false; }

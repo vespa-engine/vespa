@@ -28,7 +28,8 @@ private:
 
 public:
     typedef std::unique_ptr<SymbolTable> UP;
-    SymbolTable(size_t expectedNumSymbols=16) : _symbols(3*expectedNumSymbols), _names() {}
+    SymbolTable(size_t expectedNumSymbols=16);
+    ~SymbolTable();
     size_t symbols() const { return _names.size(); }
     Memory inspect(const Symbol &symbol) const {
         if (symbol.getValue() > _names.size()) {
@@ -54,10 +55,7 @@ public:
         }
         return pos->second;
     }
-    void clear() {
-        _names.clear();
-        _symbols.clear();
-    }
+    void clear();
 };
 
 } // namespace vespalib::slime

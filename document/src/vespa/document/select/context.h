@@ -53,10 +53,7 @@ public:
     {
     }
 
-    virtual
-    ~Context(void)
-    {
-    }
+    virtual ~Context();
 
     const Document* _doc;
     const DocumentId* _docId;

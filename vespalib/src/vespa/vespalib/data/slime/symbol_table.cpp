@@ -5,5 +5,18 @@
 namespace vespalib {
 namespace slime {
 
+SymbolTable::SymbolTable(size_t expectedNumSymbols) :
+    _symbols(3*expectedNumSymbols),
+    _names()
+{ }
+
+SymbolTable::~SymbolTable() { }
+
+void
+SymbolTable::clear() {
+    _names.clear();
+    _symbols.clear();
+}
+
 } // namespace vespalib::slime
 } // namespace vespalib

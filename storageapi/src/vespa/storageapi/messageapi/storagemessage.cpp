@@ -214,6 +214,8 @@ StorageMessageAddress::StorageMessageAddress(
     _route.addHop(hop);
 }
 
+StorageMessageAddress::~StorageMessageAddress() { }
+
 uint16_t
 StorageMessageAddress::getIndex() const
 {
@@ -330,6 +332,11 @@ void StorageMessage::setNewMsgId()
     vespalib::LockGuard sync(_msgIdLock);
     _msgId = _lastMsgId++;
     _lastMsgId &= ((Id(-1) << 8) >> 8);
+}
+
+vespalib::string
+StorageMessage::getSummary() const {
+    return toString();
 }
 
 } // api

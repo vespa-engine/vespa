@@ -20,6 +20,8 @@ StorageReply::StorageReply(const StorageCommand& cmd, ReturnCode code)
     setTransportContext(cmd.getTransportContext());
 }
 
+StorageReply::~StorageReply() { }
+
 void
 StorageReply::print(std::ostream& out, bool verbose,
                     const std::string& indent) const

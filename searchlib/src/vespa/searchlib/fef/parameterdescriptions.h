@@ -69,10 +69,9 @@ public:
          * Creates a new object with the given tag.
          */
         Description(size_t tag);
-        Description & addParameter(const ParamDescItem &param) {
-            _params.push_back(param);
-            return *this;
-        }
+        ~Description();
+
+        Description & addParameter(const ParamDescItem &param);
 
         /**
          * Sets the repeat number.
@@ -117,19 +116,13 @@ public:
      * Creates a new object with no descriptions.
      */
     ParameterDescriptions();
+    ~ParameterDescriptions();
     const DescriptionVector & getDescriptions() const { return _descriptions; }
-    ParameterDescriptions & desc() {
-        _descriptions.push_back(Description(_nextTag++));
-        return *this;
-    }
+    ParameterDescriptions & desc();
     /**
      * Starts a new description with the given tag.
      */
-    ParameterDescriptions & desc(size_t tag) {
-        _descriptions.push_back(Description(tag));
-        _nextTag = tag + 1;
-        return *this;
-    }
+    ParameterDescriptions & desc(size_t tag);
     /**
      * Adds a field parameter to the current description.
      */

@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <iostream>
+#include <vespa/vespalib/stllike/string.hpp>
+#include <ostream>
+#include <istream>
 
 namespace vespalib {
 
@@ -54,5 +55,13 @@ operator + (const vespalib::stringref & a, const vespalib::stringref & b)
     t += b;
     return t;
 }
+
+template class small_string<48>;
+
+template string operator + (const string & a, const string & b);
+template string operator + (const string & a, const stringref & b);
+template string operator + (const stringref & a, const string & b);
+template string operator + (const string & a, const char * b);
+template string operator + (const  char * a, const string & b);
 
 }

@@ -28,6 +28,7 @@ protected:
                           ReturnCode code = ReturnCode(ReturnCode::OK));
 
 public:
+    ~StorageReply();
     DECLARE_POINTER_TYPEDEFS(StorageReply);
 
     void setResult(const ReturnCode& r) { _result = r; }

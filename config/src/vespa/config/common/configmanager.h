@@ -22,6 +22,7 @@ class ConfigManager : public IConfigManager
 {
 public:
     ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGeneration);
+    ~ConfigManager();
 
     // Implements IConfigManager
     ConfigSubscription::SP subscribe(const ConfigKey & key, uint64_t timeoutInMillis);

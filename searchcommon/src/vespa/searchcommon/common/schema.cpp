@@ -164,6 +164,8 @@ Schema::Field::Field(const std::vector<vespalib::string> & lines)
 {
 }
 
+Schema::Field::~Field() { }
+
 void
 Schema::Field::write(vespalib::asciistream & os, const vespalib::stringref & prefix) const
 {
@@ -268,6 +270,7 @@ Schema::FieldSet::FieldSet(const std::vector<vespalib::string> & lines) :
     }
 }
 
+Schema::FieldSet::~FieldSet() { }
 
 bool
 Schema::FieldSet::operator==(const FieldSet &rhs) const
@@ -303,6 +306,8 @@ Schema::Schema()
       _fieldSetIds()
 {
 }
+
+Schema::~Schema() { }
 
 bool
 Schema::loadFromFile(const vespalib::stringref & fileName)

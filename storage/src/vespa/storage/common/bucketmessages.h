@@ -23,25 +23,13 @@ public:
     typedef std::unique_ptr<ReadBucketList> UP;
     static const uint32_t ID = 2003;
 
-    ReadBucketList(spi::PartitionId partition)
-        : api::InternalCommand(ID), _partition(partition)
-    {
-    }
-
+    ReadBucketList(spi::PartitionId partition);
+    ~ReadBucketList();
     spi::PartitionId getPartition() const { return _partition; }
 
     std::unique_ptr<api::StorageReply> makeReply();
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
-    {
-        out << "ReadBucketList(" << _partition << ")";
-
-        if (verbose) {
-            out << " : ";
-            InternalCommand::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 
@@ -58,11 +46,8 @@ public:
     typedef std::shared_ptr<ReadBucketListReply> SP;
     static const uint32_t ID = 2004;
 
-    ReadBucketListReply(const ReadBucketList& cmd)
-        : api::InternalReply(ID, cmd),
-          _partition(cmd.getPartition())
-    {
-    }
+    ReadBucketListReply(const ReadBucketList& cmd);
+    ~ReadBucketListReply();
 
     spi::PartitionId getPartition() const { return _partition; }
 
@@ -71,21 +56,8 @@ public:
         return _buckets;
     }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
-    {
-        out << "ReadBucketListReply(" << _buckets.size() << " buckets)";
-        if (verbose) {
-            out << " : ";
-            InternalReply::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
-
-inline std::unique_ptr<api::StorageReply> ReadBucketList::makeReply() {
-    return std::unique_ptr<api::StorageReply>(
-            new ReadBucketListReply(*this));
-}
 
 /**
  * @class ReadBucketInfo
@@ -103,33 +75,17 @@ class ReadBucketInfo : public api::InternalCommand {
 public:
     static const uint32_t ID = 2005;
 
-    ReadBucketInfo(const document::BucketId& bucketId)
-        : api::InternalCommand(ID), _bucketId(bucketId)
-    {
-    }
+    ReadBucketInfo(const document::BucketId& bucketId);
+    ~ReadBucketInfo();
 
     document::BucketId getBucketId() const { return _bucketId; }
-    virtual bool hasSingleBucketId() const { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
     std::unique_ptr<api::StorageReply> makeReply();
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const
-    {
-        out << "ReadBucketInfo(" << _bucketId << ")";
-
-        if (verbose) {
-            out << " : ";
-            InternalCommand::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 private:
-    virtual vespalib::string getSummary() const {
-        vespalib::string s("ReadBucketInfo(");
-        s.append(_bucketId.toString());
-        s.append(')');
-        return s;
-    }
-
+    vespalib::string getSummary() const override;
 };
 
 
@@ -143,30 +99,14 @@ class ReadBucketInfoReply : public api::InternalReply {
 public:
     static const uint32_t ID = 2006;
 
-    ReadBucketInfoReply(const ReadBucketInfo& cmd)
-        : api::InternalReply(ID, cmd),
-         _bucketId(cmd.getBucketId())
-    {
-    }
+    ReadBucketInfoReply(const ReadBucketInfo& cmd);
+    ~ReadBucketInfoReply();
 
     document::BucketId getBucketId() const { return _bucketId; }
-    virtual bool hasSingleBucketId() const { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
-    {
-        out << "ReadBucketInfoReply()";
-        if (verbose) {
-            out << " : ";
-            InternalReply::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
-
-inline std::unique_ptr<api::StorageReply> ReadBucketInfo::makeReply() {
-    return std::unique_ptr<api::StorageReply>(
-            new ReadBucketInfoReply(*this));
-}
 
 
 /**
@@ -189,17 +129,10 @@ public:
 
     static const uint32_t ID = 2007;
 
-    RepairBucketCommand(const document::BucketId& bucket, uint16_t disk)
-        : api::InternalCommand(ID),
-          _bucket(bucket),
-          _disk(disk),
-          _verifyBody(false),
-          _moveToIdealDisk(false)
-    {
-        setPriority(LOW);
-    }
+    RepairBucketCommand(const document::BucketId& bucket, uint16_t disk);
+    ~RepairBucketCommand();
 
-    virtual bool hasSingleBucketId() const { return true; }
+    bool hasSingleBucketId() const override { return true; }
     document::BucketId getBucketId() const { return _bucket; }
 
     uint16_t getDisk() const { return _disk; }
@@ -212,24 +145,9 @@ public:
 
     std::unique_ptr<api::StorageReply> makeReply();
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
-    {
-        out << getSummary();
-        if (verbose) {
-            out << " : ";
-            InternalCommand::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 private:
-    virtual vespalib::string getSummary() const {
-        vespalib::asciistream s;
-        s << "ReadBucketInfo(" << _bucket.toString() << ", disk " << _disk
-          << (_verifyBody ? ", verifying body" : "")
-          << (_moveToIdealDisk ? ", moving to ideal disk" : "")
-          << ")";
-        return s.str();
-    }
+    vespalib::string getSummary() const override;
 };
 
 /**
@@ -246,18 +164,10 @@ public:
     typedef std::unique_ptr<RepairBucketReply> UP;
     static const uint32_t ID = 2008;
 
-    RepairBucketReply(const RepairBucketCommand& cmd,
-                      const api::BucketInfo& bucketInfo = api::BucketInfo())
-        : api::InternalReply(ID, cmd),
-          _bucket(cmd.getBucketId()),
-          _bucketInfo(bucketInfo),
-          _disk(cmd.getDisk()),
-          _altered(false)
-    {
-    }
-
+    RepairBucketReply(const RepairBucketCommand& cmd, const api::BucketInfo& bucketInfo = api::BucketInfo());
+    ~RepairBucketReply();
     document::BucketId getBucketId() const { return _bucket; }
-    virtual bool hasSingleBucketId() const { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }
     uint16_t getDisk() const { return _disk; }
@@ -265,21 +175,8 @@ public:
     bool bucketAltered() const { return _altered; }
     void setAltered(bool altered) { _altered = altered; }
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const
-    {
-        out << "RepairBucketReply()";
-
-        if (verbose) {
-            out << " : ";
-            InternalReply::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
-
-inline std::unique_ptr<api::StorageReply> RepairBucketCommand::makeReply() {
-    return std::unique_ptr<api::StorageReply>(
-            new RepairBucketReply(*this));
-}
 
 /**
  * @class BucketDiskMoveCommand
@@ -299,18 +196,11 @@ public:
     typedef std::shared_ptr<BucketDiskMoveCommand> SP;
     static const uint32_t ID = 2012;
 
-    BucketDiskMoveCommand(const document::BucketId& bucket,
-                          uint16_t srcDisk, uint16_t dstDisk)
-        : api::InternalCommand(ID),
-          _bucket(bucket),
-          _srcDisk(srcDisk),
-          _dstDisk(dstDisk)
-    {
-        setPriority(LOW);
-    }
+    BucketDiskMoveCommand(const document::BucketId& bucket, uint16_t srcDisk, uint16_t dstDisk);
+    ~BucketDiskMoveCommand();
 
     document::BucketId getBucketId() const { return _bucket; }
-    virtual bool hasSingleBucketId() const { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
     uint16_t getSrcDisk() const { return _srcDisk; }
     uint16_t getDstDisk() const { return _dstDisk; }
@@ -319,12 +209,7 @@ public:
 
     std::unique_ptr<api::StorageReply> makeReply();
 
-    virtual void print(std::ostream& out, bool, const std::string&) const
-    {
-        out << "BucketDiskMoveCommand(" << _bucket << ", source " << _srcDisk
-            << ", target " << _dstDisk << ")";
-    }
-
+    void print(std::ostream& out, bool, const std::string&) const override;
 };
 
 /**
@@ -346,19 +231,11 @@ public:
     BucketDiskMoveReply(const BucketDiskMoveCommand& cmd,
                         const api::BucketInfo& bucketInfo = api::BucketInfo(),
                         uint32_t sourceFileSize = 0,
-                        uint32_t destinationFileSize = 0)
-        : api::InternalReply(ID, cmd),
-          _bucket(cmd.getBucketId()),
-          _bucketInfo(bucketInfo),
-          _fileSizeOnSrc(sourceFileSize),
-          _fileSizeOnDst(destinationFileSize),
-          _srcDisk(cmd.getSrcDisk()),
-          _dstDisk(cmd.getDstDisk())
-    {
-    }
+                        uint32_t destinationFileSize = 0);
+    ~BucketDiskMoveReply();
 
     document::BucketId getBucketId() const { return _bucket; }
-    virtual bool hasSingleBucketId() const { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }
     void setFileSizeOnSrc(uint64_t fileSize) { _fileSizeOnSrc = fileSize; }
@@ -368,19 +245,8 @@ public:
     uint16_t getSrcDisk() const { return _srcDisk; }
     uint16_t getDstDisk() const { return _dstDisk; }
 
-    void print(std::ostream& out, bool, const std::string&) const
-    {
-        out << "BucketDiskMoveReply(" << _bucket << ", source " << _srcDisk
-            << ", target " << _dstDisk << ", " << _bucketInfo << ", "
-            << getResult() << ")";
-    }
+    void print(std::ostream& out, bool, const std::string&) const override;
 };
-
-inline std::unique_ptr<api::StorageReply> BucketDiskMoveCommand::makeReply()
-{
-    return std::unique_ptr<api::StorageReply>(
-            new BucketDiskMoveReply(*this));
-}
 
 /**
  * @class InternalBucketJoinCommand
@@ -401,34 +267,18 @@ class InternalBucketJoinCommand : public api::InternalCommand {
 public:
     static const uint32_t ID = 2015;
 
-    InternalBucketJoinCommand(const document::BucketId& bucket,
-            uint16_t keepOnDisk, uint16_t joinFromDisk)
-        : api::InternalCommand(ID),
-          _bucket(bucket),
-          _keepOnDisk(keepOnDisk),
-          _joinFromDisk(joinFromDisk)
-    {
-        setPriority(HIGH); // To not get too many pending of these, prioritize
-                           // them higher than getting more bucket info lists.
-    }
+    InternalBucketJoinCommand(const document::BucketId& bucket, uint16_t keepOnDisk, uint16_t joinFromDisk);
+    ~InternalBucketJoinCommand();
 
     document::BucketId getBucketId() const { return _bucket; }
-    virtual bool hasSingleBucketId() const { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
     uint16_t getDiskOfInstanceToKeep() const { return _keepOnDisk; }
     uint16_t getDiskOfInstanceToJoin() const { return _joinFromDisk; }
 
     std::unique_ptr<api::StorageReply> makeReply();
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const
-    {
-        out << "InternalBucketJoinCommand()";
-
-        if (verbose) {
-            out << " : ";
-            InternalCommand::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 /**
@@ -443,35 +293,15 @@ public:
     static const uint32_t ID = 2016;
 
     InternalBucketJoinReply(const InternalBucketJoinCommand& cmd,
-                            const api::BucketInfo& info = api::BucketInfo())
-        : api::InternalReply(ID, cmd),
-          _bucket(cmd.getBucketId()),
-          _bucketInfo(info)
-    {
-    }
+                            const api::BucketInfo& info = api::BucketInfo());
+    ~InternalBucketJoinReply();
 
     document::BucketId getBucketId() const { return _bucket; }
-    virtual bool hasSingleBucketId() const { return true; }
+    bool hasSingleBucketId() const override { return true; }
 
     const api::BucketInfo& getBucketInfo() const { return _bucketInfo; }
 
-    virtual void print(std::ostream& out, bool verbose, const std::string& indent) const
-    {
-        out << "InternalBucketJoinReply()";
-
-        if (verbose) {
-            out << " : ";
-            InternalReply::print(out, true, indent);
-        }
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-inline std::unique_ptr<api::StorageReply>
-InternalBucketJoinCommand::makeReply()
-{
-    return std::unique_ptr<api::StorageReply>(
-            new InternalBucketJoinReply(*this));
-}
-
 } // storage
-

@@ -6,9 +6,12 @@ vespa_add_library(storage_common OBJECT
     storagelinkqueued.cpp
     bucketoperationlogger.cpp
     messagebucketid.cpp
+    bucketmessages.cpp
+    statusmessages.cpp
     messagesender.cpp
     storagecomponent.cpp
     servicelayercomponent.cpp
+    distributorcomponent.cpp
     DEPENDS
     AFTER
     storage_storageconfig

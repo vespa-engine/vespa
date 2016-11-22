@@ -19,8 +19,9 @@ ConfigManager::ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGen
       _lock(),
       _firstLock(),
       _first(true)
-{
-}
+{ }
+
+ConfigManager::~ConfigManager() { }
 
 ConfigSubscription::SP
 ConfigManager::subscribe(const ConfigKey & key, uint64_t timeoutInMillis)

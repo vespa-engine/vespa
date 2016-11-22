@@ -72,7 +72,7 @@ public:
          **/
         Field(const std::vector<vespalib::string> & lines);
 
-        virtual ~Field() {}
+        virtual ~Field();
 
         void setTimestamp(fastos::TimeStamp ts) { _timestamp = ts; }
 
@@ -85,8 +85,7 @@ public:
         CollectionType getCollectionType() const { return _collectionType; }
         fastos::TimeStamp getTimestamp() const { return _timestamp; }
 
-        bool matchingTypes(const Field &rhs) const
-        {
+        bool matchingTypes(const Field &rhs) const {
             return getDataType() == rhs.getDataType() &&
              getCollectionType() == rhs.getCollectionType();
         }
@@ -155,6 +154,8 @@ public:
          **/
         FieldSet(const std::vector<vespalib::string> & lines);
 
+        ~FieldSet();
+
         FieldSet &addField(const vespalib::stringref &fieldName) {
             _fields.push_back(fieldName);
             return *this;
@@ -188,6 +189,7 @@ public:
      * Create an initially empty schema
      **/
     Schema();
+    ~Schema();
 
     /**
      * Load this schema from the file with the given name.

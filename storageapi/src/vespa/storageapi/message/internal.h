@@ -32,23 +32,16 @@ class InternalCommand : public StorageCommand {
     uint32_t _type;
 
 public:
-    InternalCommand(uint32_t type)
-        : StorageCommand(MessageType::INTERNAL), _type(type) {}
+    InternalCommand(uint32_t type);
+    ~InternalCommand();
 
     uint32_t getType() const { return _type; }
 
-    virtual bool callHandler(MessageHandler& h,
-                             const std::shared_ptr<StorageMessage> & m) const
-    {
+    bool callHandler(MessageHandler& h, const std::shared_ptr<StorageMessage> & m) const override {
         return h.onInternal(std::static_pointer_cast<InternalCommand>(m));
     }
 
-    /**
-     * Enforcing that subclasses implement print such that we can see what kind
-     * of message it is when debugging.
-     */
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const = 0;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 /**
@@ -61,49 +54,17 @@ class InternalReply : public StorageReply {
     uint32_t _type;
 
 public:
-    InternalReply(uint32_t type, const InternalCommand& cmd)
-        : StorageReply(cmd),
-          _type(type)
-    {
-    }
+    InternalReply(uint32_t type, const InternalCommand& cmd);
+    ~InternalReply();
 
     uint32_t getType() const { return _type; }
 
-    virtual bool callHandler(MessageHandler& h,
-                             const std::shared_ptr<StorageMessage> & m) const
-    {
+    bool callHandler(MessageHandler& h, const std::shared_ptr<StorageMessage> & m) const override {
         return h.onInternalReply(std::static_pointer_cast<InternalReply>(m));
     }
 
-    /**
-     * Enforcing that subclasses implement print such that we can see what kind
-     * of message it is when debugging.
-     */
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const = 0;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
-
-inline void
-InternalCommand::print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
-{
-    out << "InternalCommand(" << _type << ")";
-    if (verbose) {
-        out << " : ";
-        StorageCommand::print(out, verbose, indent);
-    }
-}
-
-inline void
-InternalReply::print(std::ostream& out, bool verbose,
-                     const std::string& indent) const
-{
-    out << "InternalReply(" << _type << ")";
-    if (verbose) {
-        out << " : ";
-        StorageReply::print(out, verbose, indent);
-    }
-}
 
 } // api
 } // storage
