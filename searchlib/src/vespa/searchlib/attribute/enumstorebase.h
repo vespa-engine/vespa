@@ -324,7 +324,7 @@ protected:
     public:
         EnumBufferType();
 
-        virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize) const override;
+        virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize, bool resizing) const override;
 
         void setSizeNeededAndDead(uint64_t sizeNeeded, uint64_t deadElems) {
             _minSizeNeeded = sizeNeeded;
