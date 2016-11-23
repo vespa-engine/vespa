@@ -587,7 +587,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
             std::unique_ptr<Value> result(
                 new IntegerValue(bucket.getId(), true));
             out << "Found id.bucket specification. Resolved to "
-                << bucket << ".\n";
+                << bucket.toString() << ".\n";
             return result;
         }
     case NS:

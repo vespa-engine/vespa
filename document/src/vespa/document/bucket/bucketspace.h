@@ -6,7 +6,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cstdint>
 #include <functional>
-#include <iostream>
 
 namespace document {
 
@@ -18,12 +17,11 @@ public:
     BucketSpace& operator=(const BucketSpace&) noexcept = default;
     explicit BucketSpace(Type id) noexcept : _id(id) {}
 
-    bool operator<(const BucketSpace& bucket) const noexcept { return _id < bucket._id; }
+    bool operator <(const BucketSpace& bucket) const noexcept { return _id < bucket._id; }
     bool operator==(const BucketSpace& bucket) const noexcept { return _id == bucket._id; }
     bool operator!=(const BucketSpace& bucket) const noexcept { return _id != bucket._id; }
 
     Type getId() const noexcept { return _id; }
-    void print(std::ostream& out) const;
     vespalib::string toString() const;
 
     struct hash {
@@ -35,7 +33,6 @@ private:
     Type _id;
 };
 
-std::ostream& operator<<(std::ostream&, const BucketSpace&);
 vespalib::asciistream& operator<<(vespalib::asciistream&, const BucketSpace&);
 
 }

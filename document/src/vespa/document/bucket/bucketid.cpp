@@ -67,12 +67,6 @@ BucketId::getStripMasks()
 std::vector<BucketId::Type> BucketId::_usedMasks = getUsedMasks();
 std::vector<BucketId::Type> BucketId::_stripMasks = getStripMasks();
 
-void
-BucketId::print(std::ostream& out) const
-{
-    out << toString();
-}
-
 vespalib::string
 BucketId::toString() const
 {
@@ -134,10 +128,8 @@ vespalib::asciistream& operator<<(vespalib::asciistream& os, const BucketId& id)
 
 std::ostream& operator<<(std::ostream& os, const BucketId& id)
 {
-    id.print(os);
-    return os;
+    return os << id.toString();
 }
-
 
 nbostream &
 operator<<(nbostream &os, const BucketId &bucketId)
@@ -146,13 +138,11 @@ operator<<(nbostream &os, const BucketId &bucketId)
     return os;
 }
 
-
 nbostream &
 operator>>(nbostream &is, BucketId &bucketId)
 {
     is >> bucketId._id;
     return is;
 }
-
 
 } // document

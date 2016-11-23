@@ -102,9 +102,9 @@ namespace {
                     resultList = !resultList;
                 }
 
-                out << "Checked if " << b << " is ";
+                out << "Checked if " << b.toString() << " is ";
                 if (op == FunctionOperator::NE) { out << "not "; }
-                out << "contained in " << s
+                out << "contained in " << s.toString()
                     << ". Result was " << resultList << ".\n";
                 return resultList;
             } else {

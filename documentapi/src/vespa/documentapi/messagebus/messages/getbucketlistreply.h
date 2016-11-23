@@ -45,12 +45,7 @@ public:
     string toString() const { return "getbucketlistreply"; }
 };
 
-inline std::ostream &
-operator<<(std::ostream &out, const GetBucketListReply::BucketInfo &info)
-{
-    out << "BucketInfo(" << info._bucket << ": " << info._bucketInformation << ")";
-    return out;
-}
+std::ostream & operator<<(std::ostream &out, const GetBucketListReply::BucketInfo &info);
 
 } // documentapi
 
