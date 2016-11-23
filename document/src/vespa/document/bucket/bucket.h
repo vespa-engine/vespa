@@ -29,7 +29,6 @@ public:
 
     BucketSpace getBucketSpace() const noexcept { return _bucketSpace; }
     BucketId getBucketId() const noexcept { return _bucketId; }
-    //void print(std::ostream& os) const;
     vespalib::string toString() const;
 
     struct hash {
