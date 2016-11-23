@@ -1750,7 +1750,7 @@ AttributeTest::testStatus()
         expUsed += numUniq * 32; // enum store (16 unique values, 32 bytes per entry)
         // multi value mapping (numdocs * sizeof(MappingIndex) + numvalues * sizeof(EnumIndex) +
         // numdocs * sizeof(Array<EnumIndex>) (due to vector vector))
-        expUsed += numDocs * sizeof(search::multivalue::Index32) + numDocs * numValuesPerDoc * sizeof(EnumStoreBase::Index) + ((numValuesPerDoc > search::multivalue::Index32::maxValues()) ? numDocs * NestedVectorSize : 0);
+        expUsed += numDocs * sizeof(search::multivalue::Index32) + numDocs * numValuesPerDoc * sizeof(EnumStoreBase::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getUsed(), expUsed);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getAllocated(), expUsed);
     }
@@ -2149,7 +2149,7 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
     }
     if (attrPtr->hasMultiValue()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has multi-value", attrName.c_str());
-        EXPECT_EQUAL(before.multiValueUsage().used(), 15u);
+        EXPECT_EQUAL(before.multiValueUsage().used(), 1024u);
         EXPECT_GREATER_EQUAL(after.multiValueUsage().used(), before.multiValueUsage().used());
         EXPECT_EQUAL(after.multiValueUsage().limit(), before.multiValueUsage().limit());
         EXPECT_EQUAL(8192u, after.multiValueUsage().limit());
