@@ -102,13 +102,19 @@ public class EvaluationTestCase extends junit.framework.TestCase {
     public void testTensorEvaluation() {
         assertEvaluates("{}", "tensor0", "{}"); // empty
 
-        // sum(tensor)
-        assertEvaluates("{ {}:5.0 }",  "sum(tensor0)", "5.0");
-        assertEvaluates("{ {}:-5.0 }", "sum(tensor0)", "-5.0");
+        // tensor reduce
+        assertEvaluates("{ {}: 5   }", "sum(tensor0)", "5.0");
+        assertEvaluates("{ {}:-5   }", "sum(tensor0)", "-5.0");
         assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:l1}:5.5, {d2:l2}:7.0 }");
-        assertEvaluates("{ {}:0.0 }",  "sum(tensor0)", "{ {d1:l1}:5.0, {d2:l2}:7.0, {}:-12.0}");
+        assertEvaluates("{ {}: 0   }", "sum(tensor0)", "{ {d1:l1}:5.0, {d2:l2}:7.0, {}:-12.0}");
+        assertEvaluates("{ {y:1}:4, {y:2}:12.0 }",
+                        "sum(tensor0, x)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {x:1}:6, {x:2}:10.0 }",
+                        "sum(tensor0, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:16 }",
+                        "sum(tensor0, x, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
 
-        // scalar functions on tensors
+        // tensor map
         assertEvaluates("{ {}:1, {d1:l1}:2, {d1:l1,d2:l1 }:3 }", 
                         "log10(tensor0)", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
         assertEvaluates("{ {}:50, {d1:l1}:500, {d1:l1,d2:l1}:5000 }",
@@ -124,12 +130,6 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("{ {}:0, {d1:l1}:0, {d1:l1,d2:l1 }:10 }",
                         "max(tensor0, 0)", "{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }");
         assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
-
-        // sum(tensor, dimension)
-        assertEvaluates("{ {y:1}:4.0, {y:2}:12.0 }",
-                        "sum(tensor0, x)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
-        assertEvaluates("{ {x:1}:6.0, {x:2}:10.0 }",
-                        "sum(tensor0, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
 
         // tensor join
         assertEvaluates("{ }", "tensor0 * tensor0", "{}");

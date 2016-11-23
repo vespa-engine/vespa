@@ -68,9 +68,9 @@ public class RestApiTest {
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default") + "," +
-                                           asNodeJson("host9.yahoo.com", "large-variant") + "," +
-                                           asHostJson("parent2.yahoo.com", "large-variant") + "," +
-                                           asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com") + "]").
+                                          asNodeJson("host9.yahoo.com", "large-variant") + "," +
+                                          asHostJson("parent2.yahoo.com", "large-variant") + "," +
+                                          asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
                         "{\"message\":\"Added 4 nodes to the provisioned state\"}");
