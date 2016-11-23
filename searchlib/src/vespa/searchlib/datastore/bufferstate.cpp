@@ -75,7 +75,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     assert(allocSize >= reservedElements + sizeNeeded);
     _buffer.create(allocSize * typeHandler->elementSize()).swap(_buffer);
     buffer = _buffer.get();
-    assert(buffer != NULL);
+    assert(buffer != NULL || allocSize == 0u);
     _allocElems = allocSize;
     _state = ACTIVE;
     _typeHandler = typeHandler;
@@ -144,7 +144,7 @@ BufferState::dropBuffer(void *&buffer)
         assert(buffer == NULL);
         return;
     }
-    assert(buffer != NULL);
+    assert(buffer != NULL || _allocElems == 0);
     if (_state == ACTIVE) {
         onHold();
     }
