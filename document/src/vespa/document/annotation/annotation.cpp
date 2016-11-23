@@ -30,4 +30,12 @@ Annotation::toString() const {
     return os.str();
 }
 
+bool
+Annotation::operator==(const Annotation &a2) const {
+    return (getType() == a2.getType() &&
+            !(!!getFieldValue() ^ !!a2.getFieldValue()) &&
+            (!getFieldValue() || (*getFieldValue() == *a2.getFieldValue()))
+           );
+}
+
 }  // namespace document

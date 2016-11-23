@@ -240,11 +240,7 @@ private:
     document::DocumentTypeRepo::SP _repo;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const DocumentList::MetaEntry& e)
-{
-    e.print(out);
-    return out;
-}
+std::ostream& operator<<(std::ostream& out, const DocumentList::MetaEntry& e);
 
 }
 

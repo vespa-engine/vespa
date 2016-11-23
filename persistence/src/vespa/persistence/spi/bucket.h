@@ -38,15 +38,11 @@ public:
         return (_bucket == o._bucket && _partition == o._partition);
     }
 
-    void print(std::ostream& out) const;
-
-    std::string toString() const;
+    vespalib::string toString() const;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const Bucket& bucket) {
-    bucket.print(out);
-    return out;
-}
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const Bucket& bucket);
+std::ostream& operator<<(std::ostream& out, const Bucket& bucket);
 
 } // spi
 } // storage

@@ -39,11 +39,5 @@ public:
     static std::vector<const AnnotationType *> getDefaultAnnotationTypes();
 };
 
-#if 0
-inline std::ostream &operator<<(std::ostream &out, const AnnotationType &a) {
-    return out << "AnnotationType(" << a.getId() << ", " << a.getName() << ")";
-}
-#endif
-
 }  // namespace document
 

@@ -186,10 +186,7 @@ private:
     friend class StorageLinkTest;
 };
 
-inline std::ostream& operator<<(std::ostream& out, StorageLink& link) {
-    link.printChain(out);
-    return out;
-}
+std::ostream& operator<<(std::ostream& out, StorageLink& link);
 
 }
 

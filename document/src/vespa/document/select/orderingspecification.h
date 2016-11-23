@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/fastos/types.h>
-#include <string>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace document {
 
@@ -28,7 +28,7 @@ public:
 
     bool operator==(const OrderingSpecification& other) const;
 
-    std::string toString() const;
+    vespalib::string toString() const;
 
 private:
     Order _order;
@@ -37,11 +37,7 @@ private:
     uint16_t _divisionBits;
 };
 
-inline std::ostream&
-operator<<(std::ostream& out, const OrderingSpecification& o)
-{
-    out << o.toString();
-    return out;
-}
-}
+std::ostream&
+operator<<(std::ostream& out, const OrderingSpecification& o);
 
+}

@@ -26,6 +26,12 @@ bool StorageBucketInfo::operator < (const StorageBucketInfo & b) const {
     return disk < b.disk;
 }
 
+std::ostream&
+operator<<(std::ostream& out, const StorageBucketInfo& info) {
+    info.print(out, false, "");
+    return out;
+}
+
 } // bucketdb
 
 void

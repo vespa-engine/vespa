@@ -304,3 +304,9 @@ StorageLink::stateToString(State state)
         return 0;
     }
 }
+
+std::ostream& operator<<(std::ostream& out, StorageLink& link) {
+    link.printChain(out);
+    return out;
+}
+

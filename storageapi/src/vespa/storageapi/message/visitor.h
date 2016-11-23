@@ -113,8 +113,7 @@ public:
     uint32_t getMaxBucketsPerVisitor() const
         { return _maxBucketsPerVisitor; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     virtual StorageCommand::UP createCopyToForward(
             const document::BucketId&, uint64_t timestamp) const;
@@ -136,8 +135,7 @@ private:
 public:
     explicit CreateVisitorReply(const CreateVisitorCommand& cmd);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     void setLastBucket(const document::BucketId& lastBucket) { _lastBucket = lastBucket; }
 
@@ -165,8 +163,7 @@ public:
 
     const vespalib::string & getInstanceId() const { return _instanceId; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(DestroyVisitorCommand, onDestroyVisitor)
 };
@@ -181,8 +178,7 @@ class DestroyVisitorReply : public StorageReply {
 public:
     explicit DestroyVisitorReply(const DestroyVisitorCommand& cmd);
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(DestroyVisitorReply, onDestroyVisitorReply)
 };
@@ -237,29 +233,20 @@ public:
         { return _bucketsCompleted; }
     bool visitorCompleted() const { return _completed; }
 
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGECOMMAND(VisitorInfoCommand, onVisitorInfo)
 };
 
-inline std::ostream&
-operator<<(std::ostream& out,
-           const VisitorInfoCommand::BucketTimestampPair& pair)
-{
-    return out << pair.bucketId << " - " << pair.timestamp;
-}
+std::ostream& operator<<(std::ostream& out, const VisitorInfoCommand::BucketTimestampPair& pair);
 
 class VisitorInfoReply : public StorageReply {
     bool _completed;
 
 public:
     VisitorInfoReply(const VisitorInfoCommand& cmd);
-
     bool visitorCompleted() const { return _completed; }
-
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     DECLARE_STORAGEREPLY(VisitorInfoReply, onVisitorInfoReply)
 };
