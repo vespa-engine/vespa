@@ -44,7 +44,7 @@ ArrayStore<EntryT, RefT>::initArrayTypes(size_t minClusters, size_t maxClusters,
 
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::ArrayStore(uint32_t maxSmallArraySize)
-    : ArrayStore<EntryT,RefT>(maxSmallArraySize, MIN_BUFFER_CLUSTERS, RefT::offsetSize(), 0u)
+    : ArrayStore<EntryT,RefT>(maxSmallArraySize, 0, RefT::offsetSize(), MIN_BUFFER_CLUSTERS)
 {
 }
 

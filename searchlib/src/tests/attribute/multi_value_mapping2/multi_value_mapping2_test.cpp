@@ -217,7 +217,7 @@ TEST_F("Test that set and get works", Fixture<int>(3))
     TEST_DO(f.assertGet(5, {3}));
 }
 
-TEST_F("Test that old value is not overwritten while held", Fixture<int>(3))
+TEST_F("Test that old value is not overwritten while held", Fixture<int>(3, 32, 64, 0))
 {
     f.set(3, {5});
     typename F1::ConstArrayRef old3 = f.get(3);
