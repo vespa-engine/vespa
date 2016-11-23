@@ -21,6 +21,12 @@
 #include <vespa/memfilepersistence/common/environment.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 
+namespace document {
+    namespace select {
+        class Node;
+    }
+}
+
 namespace storage {
 namespace memfile {
 

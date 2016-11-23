@@ -46,11 +46,11 @@ checkResult(const spi::Result& result,
             const char* op)
 {
     if (result.hasError()) {
-        std::ostringstream ss;
+        vespalib::asciistream ss;
         ss << "Failed " << op
-           << " for " << docId
+           << " for " << docId.toString()
            << " in " << bucket
-           << ": " << result;
+           << ": " << result.toString();
         throw std::runtime_error(ss.str());
     }
 }
@@ -61,8 +61,8 @@ checkResult(const spi::Result& result,
             const char* op)
 {
     if (result.hasError()) {
-        std::ostringstream ss;
-        ss << "Failed " << op << " in " << bucket << ": " << result;
+        vespalib::asciistream ss;
+        ss << "Failed " << op << " in " << bucket << ": " << result.toString();
         throw std::runtime_error(ss.str());
     }
 }

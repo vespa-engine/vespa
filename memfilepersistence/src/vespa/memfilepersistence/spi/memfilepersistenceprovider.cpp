@@ -4,6 +4,8 @@
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
 #include <vespa/memfilepersistence/common/exceptions.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".memfilepersistenceprovider");

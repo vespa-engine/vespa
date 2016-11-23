@@ -29,7 +29,7 @@ struct SplitBitDetector
         ERROR
     };
 
-    class Result : public document::Printable {
+    class Result : public vespalib::Printable {
         ResultType _result;
         document::BucketId _target1;
         document::BucketId _target2;
@@ -52,13 +52,11 @@ struct SplitBitDetector
         const document::BucketId& getTarget2() const { return _target2; }
 
             // Printable implementation
-        virtual void print(std::ostream& out, bool verbose,
-                           const std::string& indent) const;
+        void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     };
 
     static Result detectSplit(spi::PersistenceProvider&, const spi::Bucket&,
-                              uint32_t maxSplitBits,
-                              spi::Context&,
+                              uint32_t maxSplitBits, spi::Context&,
                               uint32_t minCount = 0, uint32_t minSize = 0);
 };
 
