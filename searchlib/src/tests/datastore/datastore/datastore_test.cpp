@@ -5,6 +5,7 @@ LOG_SETUP("datastore_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 namespace search {
 namespace datastore {
@@ -59,6 +60,47 @@ public:
     size_t activeBufferId() const { return _activeBufferIds[0]; }
 };
 
+
+using GrowthStats = std::vector<int>;
+
+class GrowStore
+{
+    using Store = DataStoreT<EntryRefT<22>>;
+    using RefType = Store::RefType;
+    Store _store;
+    BufferType<int> _type;
+    uint32_t _typeId;
+public:
+    GrowStore(size_t minSwitch)
+        : _store(),
+          _type(1, 4, 64, minSwitch),
+          _typeId(0)
+    {
+        _typeId = _store.addType(&_type);
+        _store.initActiveBuffers();
+    }
+    GrowStore() : GrowStore(0) { }
+    ~GrowStore() { _store.dropBuffers(); }
+
+    GrowthStats getGrowthStats(size_t bufs) {
+        GrowthStats sizes;
+        int i = 0;
+        int prevBuffer = -1;
+        while (sizes.size() < bufs) {
+            RefType iRef = _store.allocNewEntry<int>(_typeId).first;
+            int buffer = iRef.bufferId();
+            if (buffer != prevBuffer) {
+                if (prevBuffer >= 0) {
+                    sizes.push_back(i);
+                }
+                prevBuffer = buffer;
+            }
+            ++i;
+        }
+        return sizes;
+    }
+};
+
 typedef MyStore::RefType MyRef;
 
 class Test : public vespalib::TestApp {
@@ -74,9 +116,8 @@ private:
     void requireThatWeCanUseFreeLists();
     void requireThatMemoryStatsAreCalculated();
     void requireThatMemoryUsageIsCalculated();
-
-    void
-    requireThatWecanDisableElemHoldList(void);
+    void requireThatWecanDisableElemHoldList(void);
+    void requireThatBufferGrowthWorks();
 public:
     int Main();
 };
@@ -406,6 +447,19 @@ Test::requireThatWecanDisableElemHoldList(void)
     s.trimHoldLists(101);
 }
 
+void
+Test::requireThatBufferGrowthWorks()
+{
+    // Always switch to new buffer
+    // Buffer sizes: 4, 8, 16, 32, 64, 64, 64, 64
+    // First element in first buffer reserved
+    EXPECT_EQUAL(GrowthStats({ 3, 11, 27, 59, 123, 187,251, 315}), GrowStore().getGrowthStats(8));
+    // Resize current buffer if new buffer size would be less than 32
+    // Buffer sizes: 32, 36, 64, 64, 64, 64, 64, 64
+    // First element in first buffer reserved
+    EXPECT_EQUAL(GrowthStats({ 31, 67, 131, 195, 259,323,387,451}), GrowStore(32).getGrowthStats(8));
+}
+
 int
 Test::Main()
 {
@@ -421,6 +475,7 @@ Test::Main()
     requireThatMemoryStatsAreCalculated();
     requireThatMemoryUsageIsCalculated();
     requireThatWecanDisableElemHoldList();
+    requireThatBufferGrowthWorks();
 
     TEST_DONE();
 }

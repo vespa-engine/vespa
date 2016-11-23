@@ -108,8 +108,37 @@ DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t sizeNeeded)
         // start using next buffer
         activeBufferId = nextBufferId(activeBufferId);
     } while (!_states[activeBufferId].isFree());
-    onActive(activeBufferId, typeId, sizeNeeded, _maxClusters);
+    onActive(activeBufferId, typeId, sizeNeeded);
     _activeBufferIds[typeId] = activeBufferId;
+}
+
+
+void
+DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
+{
+    auto typeHandler = _typeHandlers[typeId];
+    uint32_t clusterSize = typeHandler->getClusterSize();
+    size_t numClustersForNewBuffer = typeHandler->getNumClustersForNewBuffer();
+    size_t numEntriesForNewBuffer = numClustersForNewBuffer * clusterSize;
+    uint32_t bufferId = _activeBufferIds[typeId];
+    if (sizeNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
+        // Don't try to resize existing buffer, new buffer will be large enough
+        switchActiveBuffer(typeId, sizeNeeded);
+    } else {
+        uint32_t oldBufferId = bufferId;
+        do {
+            bufferId = nextBufferId(bufferId);
+        } while (!_states[bufferId].isFree());
+        size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, false);
+        if (allocClusters < numClustersForNewBuffer) {
+            // Resize existing buffer
+            fallbackResize(oldBufferId, sizeNeeded);
+        } else {
+            // start using next buffer
+            onActive(bufferId, typeId, sizeNeeded);
+            _activeBufferIds[typeId] = bufferId;
+        }
+    }
 }
 
 
@@ -123,7 +152,7 @@ DataStoreBase::initActiveBuffers(void)
             // start using next buffer
             activeBufferId = nextBufferId(activeBufferId);
         }
-        onActive(activeBufferId, typeId, 0u, _maxClusters);
+        onActive(activeBufferId, typeId, 0u);
         _activeBufferIds[typeId] = activeBufferId;
     }
 }
@@ -134,6 +163,7 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
 {
     uint32_t typeId = _activeBufferIds.size();
     assert(typeId == _typeHandlers.size());
+    typeHandler->clampMaxClusters(_maxClusters);
     _activeBufferIds.push_back(0);
     _typeHandlers.push_back(typeHandler);
     _freeListLists.push_back(BufferState::FreeListList());
@@ -330,8 +360,7 @@ DataStoreBase::getMemStats(void) const
 
 void
 DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId,
-                        size_t sizeNeeded,
-                        size_t maxClusters)
+                        size_t sizeNeeded)
 {
     assert(typeId < _typeHandlers.size());
     assert(bufferId < _numBuffers);
@@ -339,7 +368,6 @@ DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId,
     state.onActive(bufferId, typeId,
                    _typeHandlers[typeId],
                    sizeNeeded,
-                   maxClusters,
                    _buffers[bufferId]);
     enableFreeList(bufferId);
 }
@@ -382,7 +410,6 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
     size_t elementSize = state.getTypeHandler()->elementSize();
     state.fallbackResize(bufferId,
                          sizeNeeded,
-                         _maxClusters,
                          _buffers[bufferId],
                          toHoldBuffer);
     GenerationHeldBase::UP

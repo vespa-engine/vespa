@@ -15,6 +15,9 @@ protected:
     uint32_t _clusterSize;	// Number of elements in an allocation unit
     uint32_t _minClusters;	// Minimum number of clusters to allocate
     uint32_t _maxClusters;	// Maximum number of clusters to allocate
+    // Number of clusters needed before allocating a new buffer
+    // instead of just resizing the first one
+    uint32_t _numClustersForNewBuffer;
     uint32_t _activeBuffers;
     uint32_t _holdBuffers;
     size_t _activeUsedElems;	// used elements in all but last active buffer
@@ -36,6 +39,7 @@ public:
     BufferTypeBase(const BufferTypeBase &rhs) = delete;
     BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
     BufferTypeBase(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters);
+    BufferTypeBase(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters, uint32_t numClustersForNewBuffer);
     virtual ~BufferTypeBase();
     virtual void destroyElements(void *buffer, size_t numElements) = 0;
     virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) = 0;
@@ -61,9 +65,13 @@ public:
      *
      * @return number of clusters to allocate for new buffer
      */
-    virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, uint64_t clusterRefSize, bool resizing) const;
+    virtual size_t calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool resizing) const;
+
+    void clampMaxClusters(uint32_t maxClusters);
 
     uint32_t getActiveBuffers() const { return _activeBuffers; }
+    uint32_t getMaxClusters() const { return _maxClusters; }
+    uint32_t getNumClustersForNewBuffer() const { return _numClustersForNewBuffer; }
 };
 
 
@@ -79,7 +87,10 @@ public:
         : BufferTypeBase(clusterSize, minClusters, maxClusters),
           _emptyEntry()
     { }
-
+    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters, uint32_t numClustersForNewBuffer)
+        : BufferTypeBase(clusterSize, minClusters, maxClusters, numClustersForNewBuffer),
+          _emptyEntry()
+    { }
     void destroyElements(void *buffer, size_t numElements) override;
     void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) override;
     void initializeReservedElements(void *buffer, size_t reservedElements) override;

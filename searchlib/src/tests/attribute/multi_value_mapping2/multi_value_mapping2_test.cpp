@@ -73,8 +73,8 @@ public:
           _attr(_mvMapping)
     {
     }
-    Fixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters)
-        : _mvMapping(maxSmallArraySize, minClusters, maxClusters),
+    Fixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
+        : _mvMapping(maxSmallArraySize, minClusters, maxClusters, numClustersForNewBuffer),
           _attr(_mvMapping)
     {
     }
@@ -146,8 +146,8 @@ public:
         _rnd.srand48(32);
     }
 
-    IntFixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters)
-        : Fixture<int>(maxSmallArraySize, minClusters, maxClusters),
+    IntFixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
+        : Fixture<int>(maxSmallArraySize, minClusters, maxClusters, numClustersForNewBuffer),
           _rnd(),
           _refMapping(),
           _maxSmallArraySize(maxSmallArraySize)
@@ -295,7 +295,7 @@ TEST_F("Test that replace works", Fixture<int>(3))
     EXPECT_EQUAL(4u, f.getTotalValueCnt());
 }
 
-TEST_F("Test that compaction works", IntFixture(3, 64, 512))
+TEST_F("Test that compaction works", IntFixture(3, 64, 512, 129))
 {
     uint32_t addDocs = 10;
     uint32_t bufferCountBefore = 0;

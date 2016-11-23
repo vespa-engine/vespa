@@ -205,7 +205,7 @@ public:
         if (__builtin_expect(sizeNeeded >
                              _states[_activeBufferIds[typeId]].remaining(),
                              false)) {
-            switchActiveBuffer(typeId, sizeNeeded);
+            switchOrGrowActiveBuffer(typeId, sizeNeeded);
         }
     }
 
@@ -226,6 +226,8 @@ public:
      */
     void
     switchActiveBuffer(uint32_t typeId, size_t sizeNeeded);
+
+    void switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded);
 
     MemoryUsage getMemoryUsage() const;
 
@@ -365,13 +367,9 @@ public:
      * @param bufferId		Id of buffer to be active.
      * @param typeId		registered data type for buffer.
      * @param sizeNeeded	Number of elements needed to be free
-     * @param maxSize		number of clusters expressable via reference
-     * 				type
      */
     void
-    onActive(uint32_t bufferId, uint32_t typeId,
-             size_t sizeNeeded,
-             size_t maxSize);
+    onActive(uint32_t bufferId, uint32_t typeId, size_t sizeNeeded);
 
     uint32_t
     getTypeId(uint32_t bufferId) const
