@@ -31,6 +31,11 @@ public:
     ManagedBucketSpace();
     ~ManagedBucketSpace();
 
+    ManagedBucketSpace(const ManagedBucketSpace&) = delete;
+    ManagedBucketSpace& operator=(const ManagedBucketSpace&) = delete;
+    ManagedBucketSpace(ManagedBucketSpace&&) = delete;
+    ManagedBucketSpace& operator=(ManagedBucketSpace&&) = delete;
+
     MapBucketDatabase& getBucketDatabase() noexcept {
         return _bucketDatabase;
     }

@@ -423,8 +423,8 @@ public:
     }
 
     void setDistribution(const std::string& distConfig) {
-        auto distribution = std::make_shared<lib::Distribution>(distConfig);
-        triggerDistributionChange(std::move(distribution));
+        triggerDistributionChange(
+                std::make_shared<lib::Distribution>(distConfig));
     }
 
     std::string getDistConfig6Nodes3Groups() const {
@@ -2255,8 +2255,8 @@ BucketDBUpdaterTest::clusterConfigDownsizeOnlySendsToAvailableNodes()
     // Intentionally trigger a racing config change which arrives before the
     // new cluster state representing it.
     std::string distConfig(getDistConfig3Nodes1Group());
-    _node->getComponentRegister().setDistribution(
-            std::make_shared<lib::Distribution>(distConfig));
+    triggerDistributionChange(
+        std::make_shared<lib::Distribution>(distConfig));
     sortSentMessagesByIndex(_sender);
 
     CPPUNIT_ASSERT_EQUAL((nodeVec{0, 1, 2}), getSendSet());
@@ -2305,8 +2305,7 @@ BucketDBUpdaterTest::nodeMissingFromConfigIsTreatedAsNeedingOwnershipTransfer()
         "group[1].nodes[0].index 0\n"
         "group[1].nodes[1].index 1\n";
 
-    _node->getComponentRegister().setDistribution(
-            std::make_shared<lib::Distribution>(downsizeCfg));
+    triggerDistributionChange(std::make_shared<lib::Distribution>(downsizeCfg));
     sortSentMessagesByIndex(_sender);
     _sender.clear();
 

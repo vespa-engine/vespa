@@ -135,6 +135,7 @@ public:
         return _config;
     }
 
+    // TODO explicit notion of bucket spaces for tests
     BucketDatabase& getBucketDatabase() {
         return _distributor->getDefaultBucketSpace().getBucketDatabase();
     }

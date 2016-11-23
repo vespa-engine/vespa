@@ -15,6 +15,11 @@ public:
     ManagedBucketSpaceRepo();
     ~ManagedBucketSpaceRepo();
 
+    ManagedBucketSpaceRepo(const ManagedBucketSpaceRepo&&) = delete;
+    ManagedBucketSpaceRepo& operator=(const ManagedBucketSpaceRepo&) = delete;
+    ManagedBucketSpaceRepo(ManagedBucketSpaceRepo&&) = delete;
+    ManagedBucketSpaceRepo& operator=(ManagedBucketSpaceRepo&&) = delete;
+
     ManagedBucketSpace& getDefaultSpace() noexcept { return _defaultSpace; }
     const ManagedBucketSpace& getDefaultSpace() const noexcept {
         return _defaultSpace;
