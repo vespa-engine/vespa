@@ -68,30 +68,34 @@ class GrowStore
     using Store = DataStoreT<EntryRefT<22>>;
     using RefType = Store::RefType;
     Store _store;
+    BufferType<int> _firstType;
     BufferType<int> _type;
     uint32_t _typeId;
 public:
-    GrowStore(size_t minSwitch)
+    GrowStore(size_t minSize, size_t minSwitch)
         : _store(),
-          _type(1, 4, 64, minSwitch),
+          _firstType(1, 1, 64, 0),
+          _type(1, minSize, 64, minSwitch),
           _typeId(0)
     {
+        (void) _store.addType(&_firstType);
         _typeId = _store.addType(&_type);
         _store.initActiveBuffers();
     }
-    GrowStore() : GrowStore(0) { }
     ~GrowStore() { _store.dropBuffers(); }
 
     GrowthStats getGrowthStats(size_t bufs) {
         GrowthStats sizes;
         int i = 0;
+        int previ = 0;
         int prevBuffer = -1;
         while (sizes.size() < bufs) {
             RefType iRef = _store.allocNewEntry<int>(_typeId).first;
             int buffer = iRef.bufferId();
             if (buffer != prevBuffer) {
                 if (prevBuffer >= 0) {
-                    sizes.push_back(i);
+                    sizes.push_back(i - previ);
+                    previ = i;
                 }
                 prevBuffer = buffer;
             }
@@ -99,6 +103,29 @@ public:
         }
         return sizes;
     }
+    GrowthStats getFirstBufGrowStats() {
+        GrowthStats sizes;
+        int i = 0;
+        int prevBuffer = -1;
+        size_t prevAllocated = _store.getMemoryUsage().allocatedBytes();
+        for (;;) {
+            RefType iRef = _store.allocNewEntry<int>(_typeId).first;
+            size_t allocated = _store.getMemoryUsage().allocatedBytes();
+            if (allocated != prevAllocated) {
+                sizes.push_back(i);
+                prevAllocated = allocated;
+            }
+            int buffer = iRef.bufferId();
+            if (buffer != prevBuffer) {
+                if (prevBuffer >= 0) {
+                    return sizes;
+                }
+                prevBuffer = buffer;
+            }
+            ++i;
+        }
+    }
+    MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 };
 
 typedef MyStore::RefType MyRef;
@@ -447,17 +474,41 @@ Test::requireThatWecanDisableElemHoldList(void)
     s.trimHoldLists(101);
 }
 
+namespace
+{
+
+void assertGrowStats(GrowthStats expSizes,
+                     GrowthStats expFirstBufSizes,
+                     size_t expInitMemUsage,
+                     size_t minSize, size_t minSwitch)
+{
+    EXPECT_EQUAL(expSizes, GrowStore(minSize, minSwitch).getGrowthStats(9));
+    EXPECT_EQUAL(expFirstBufSizes, GrowStore(minSize, minSwitch).getFirstBufGrowStats());
+    EXPECT_EQUAL(expInitMemUsage, GrowStore(minSize, minSwitch).getMemoryUsage().allocatedBytes());
+}
+
+}
 void
 Test::requireThatBufferGrowthWorks()
 {
-    // Always switch to new buffer
-    // Buffer sizes: 4, 8, 16, 32, 64, 64, 64, 64
-    // First element in first buffer reserved
-    EXPECT_EQUAL(GrowthStats({ 3, 11, 27, 59, 123, 187,251, 315}), GrowStore().getGrowthStats(8));
-    // Resize current buffer if new buffer size would be less than 32
-    // Buffer sizes: 32, 36, 64, 64, 64, 64, 64, 64
-    // First element in first buffer reserved
-    EXPECT_EQUAL(GrowthStats({ 31, 67, 131, 195, 259,323,387,451}), GrowStore(32).getGrowthStats(8));
+    // Always switch to new buffer, min size 4
+    TEST_DO(assertGrowStats({ 4, 8, 16, 32, 64, 64, 64, 64, 64 },
+                            { 4 }, 20, 4, 0));
+    // Resize if buffer size is less than 4, min size 0
+    TEST_DO(assertGrowStats({ 4, 8, 16, 32, 64, 64, 64, 64, 64 },
+                            { 0, 1, 2, 4 }, 4, 0, 4));
+    // Alwais switch to new buffer, min size 16
+    TEST_DO(assertGrowStats({ 16, 32, 64, 64, 64, 64, 64, 64, 64 },
+                            { 16 }, 68, 16, 0));
+    // Resize if buffer size is less than 16, min size 0
+    TEST_DO(assertGrowStats({ 16, 32, 64, 64, 64, 64, 64, 64, 64 },
+                            { 0, 1, 2, 4, 8, 16 }, 4, 0, 16));
+    // Resize if buffer size is less than 16, min size 4
+    TEST_DO(assertGrowStats({ 16, 32, 64, 64, 64, 64, 64, 64, 64 },
+                            { 4, 8, 16 }, 20, 4, 16));
+    // Always switch to new buffer, min size 0
+    TEST_DO(assertGrowStats({ 1, 1, 2, 4, 8, 16, 32, 64, 64},
+                            { 0, 1 }, 4, 0, 0));
 }
 
 int

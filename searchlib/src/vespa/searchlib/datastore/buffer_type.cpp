@@ -112,7 +112,9 @@ BufferTypeBase::calcClustersToAlloc(uint32_t bufferId, size_t sizeNeeded, bool r
     size_t usedClusters = usedElems / _clusterSize;
     size_t needClusters = (sizeNeeded + (resizing ? usedElems : reservedElements) + _clusterSize - 1) / _clusterSize;
     size_t minClusters = _minClusters;
-    uint64_t wantClusters = usedClusters + std::max(minClusters, (resizing ? usedClusters : 0u));
+    size_t numClustersForNewBuffer = _numClustersForNewBuffer;
+    size_t extraGrowClusters = (usedElems != 0) ? numClustersForNewBuffer : 0;
+    uint64_t wantClusters = usedClusters + std::max(minClusters, (resizing ? usedClusters : extraGrowClusters));
     if (wantClusters < needClusters) {
         wantClusters = needClusters;
     }
