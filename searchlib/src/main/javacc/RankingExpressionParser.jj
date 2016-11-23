@@ -323,7 +323,8 @@ ExpressionNode tensorFunction() :
     ( 
         tensorExpression = tensorMap() |
         tensorExpression = tensorReduce() | 
-        tensorExpression = tensorReduceComposites()
+        tensorExpression = tensorReduceComposites() |
+        tensorExpression = tensorJoin()
     )
     { return tensorExpression; }
 }
@@ -336,16 +337,6 @@ ExpressionNode tensorMap() :
 {
     <MAP> <LBRACE> tensor = expression() <COMMA> doubleMapper = lambdaFunction() <RBRACE>
     { return new TensorMapNode(tensor, doubleMapper); }
-}
-
-LambdaFunctionNode lambdaFunction() :
-{
-    List<String> variables;
-    ExpressionNode functionExpression;
-}
-{
-     ( <F> <LBRACE> variables = identifierList() <RBRACE> <LBRACE> functionExpression = expression() <RBRACE> )
-     { return new LambdaFunctionNode(variables, functionExpression); } 
 }
 
 ExpressionNode tensorReduce() :
@@ -369,6 +360,26 @@ ExpressionNode tensorReduceComposites() :
     aggregator = tensorReduceAggregator()
     <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
     { return new TensorReduceNode(tensor, aggregator, dimensions); }
+}
+
+ExpressionNode tensorJoin() :
+{
+    ExpressionNode tensor1, tensor2;
+    LambdaFunctionNode doubleJoiner;
+}
+{
+    <JOIN> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> doubleJoiner = lambdaFunction() <RBRACE>
+    { return new TensorJoinNode(tensor1, tensor2, doubleJoiner); }
+}
+
+LambdaFunctionNode lambdaFunction() :
+{
+    List<String> variables;
+    ExpressionNode functionExpression;
+}
+{
+     ( <F> <LBRACE> variables = identifierList() <RBRACE> <LBRACE> functionExpression = expression() <RBRACE> )
+     { return new LambdaFunctionNode(variables, functionExpression); } 
 }
 
 ReduceFunction.Aggregator tensorReduceAggregator() :

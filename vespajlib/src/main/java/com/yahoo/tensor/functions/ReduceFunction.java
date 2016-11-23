@@ -142,8 +142,8 @@ public class ReduceFunction extends PrimitiveTensorFunction {
     
     private static class AvgAggregator extends ValueAggregator {
 
-        private int valueCount;
-        private double valueSum;
+        private int valueCount = 0;
+        private double valueSum = 0.0;
         
         @Override
         public void aggregate(double value) {
@@ -160,7 +160,7 @@ public class ReduceFunction extends PrimitiveTensorFunction {
 
     private static class CountAggregator extends ValueAggregator {
 
-        private int valueCount;
+        private int valueCount = 0;
 
         @Override
         public void aggregate(double value) {
@@ -176,7 +176,7 @@ public class ReduceFunction extends PrimitiveTensorFunction {
 
     private static class ProdAggregator extends ValueAggregator {
 
-        private double valueProd;
+        private double valueProd = 1.0;
 
         @Override
         public void aggregate(double value) {
@@ -192,7 +192,7 @@ public class ReduceFunction extends PrimitiveTensorFunction {
 
     private static class SumAggregator extends ValueAggregator {
 
-        private double valueSum;
+        private double valueSum = 0.0;
 
         @Override
         public void aggregate(double value) {
@@ -229,7 +229,7 @@ public class ReduceFunction extends PrimitiveTensorFunction {
 
         @Override
         public void aggregate(double value) {
-            if (value > minValue)
+            if (value < minValue)
                 minValue = value;
         }
 

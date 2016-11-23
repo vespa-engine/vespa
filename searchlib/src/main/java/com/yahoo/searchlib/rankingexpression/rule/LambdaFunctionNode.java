@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 
 /**
@@ -46,7 +47,9 @@ public class LambdaFunctionNode extends CompositeNode {
     private String commaSeparated(List<String> list) {
         StringBuilder b = new StringBuilder();
         for (String element : list)
-            b.append(", ").append(element);
+            b.append(element).append(", ");
+        if (b.length() > 0)
+            b.setLength(b.length() -1);
         return b.toString();
     }
 
@@ -59,21 +62,48 @@ public class LambdaFunctionNode extends CompositeNode {
     /** 
      * Returns this as a double unary operator
      * 
-     * @throws IllegalStateException if this does not have exactly one argument 
+     * @throws IllegalStateException if this has more than one argument 
      */
     public DoubleUnaryOperator asDoubleUnaryOperator() {
-        if (arguments.size() != 1) 
+        if (arguments.size() > 1) 
             throw new IllegalStateException("Cannot apply " + this + " as a DoubleUnaryOperator: " +
-                                            "Must have one argument " + " but has " + arguments);
+                                            "Must have at most one argument " + " but has " + arguments);
         return new DoubleUnaryLambda();
     }
-    
+
+    /**
+     * Returns this as a double binary operator
+     *
+     * @throws IllegalStateException if this has more than two arguments
+     */
+    public DoubleBinaryOperator asDoubleBinaryOperator() {
+        if (arguments.size() > 2)
+            throw new IllegalStateException("Cannot apply " + this + " as a DoubleBinaryOperator: " +
+                                            "Must have at most two argument " + " but has " + arguments);
+        return new DoubleBinaryLambda();
+    }
+
     private class DoubleUnaryLambda implements DoubleUnaryOperator {
 
         @Override
         public double applyAsDouble(double operand) {
             MapContext context = new MapContext();
-            context.put(arguments.get(0), operand);
+            if (arguments.size() > 0)
+                context.put(arguments.get(0), operand);
+            return evaluate(context).asDouble();
+        }
+
+    }
+
+    private class DoubleBinaryLambda implements DoubleBinaryOperator {
+
+        @Override
+        public double applyAsDouble(double left, double right) {
+            MapContext context = new MapContext();
+            if (arguments.size() > 0)
+                context.put(arguments.get(0), left);
+            if (arguments.size() > 1)
+                context.put(arguments.get(1), right);
             return evaluate(context).asDouble();
         }
 

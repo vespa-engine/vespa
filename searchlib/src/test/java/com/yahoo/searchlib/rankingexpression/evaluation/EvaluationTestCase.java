@@ -105,7 +105,9 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         // tensor map
         assertEvaluates("{ {}:1, {d1:l1}:2, {d1:l1,d2:l1 }:3 }",
                         "map(tensor0, f(x) (log10(x)))", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
-        // tensor map derivatives
+        assertEvaluates("{ {}:4, {d1:l1}:9, {d1:l1,d2:l1 }:16 }",
+                        "map(tensor0, f(x) (x * x))", "{ {}:2, {d1:l1}:3, {d1:l1,d2:l1}:4 }");
+        // -- tensor map composites
         assertEvaluates("{ {}:1, {d1:l1}:2, {d1:l1,d2:l1 }:3 }", 
                         "log10(tensor0)", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
         assertEvaluates("{ {}:-10, {d1:l1}:-100, {d1:l1,d2:l1 }:-1000 }",
@@ -117,9 +119,36 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
 
         // tensor reduce
+        // -- reduce 2 dimensions
+        assertEvaluates("{ {}:4 }",
+                        "reduce(tensor0, avg, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:4 }",
+                        "reduce(tensor0, count, x, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:105 }",
+                        "reduce(tensor0, prod, x, y)",  "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
         assertEvaluates("{ {}:16 }",
-                        "reduce(tensor0, sum, x, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
-        // reduce composites
+                        "reduce(tensor0, sum, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:7 }",
+                        "reduce(tensor0, max, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:1 }",
+                        "reduce(tensor0, min, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        // -- reduce 2 by specifying no arguments
+        assertEvaluates("{ {}:4 }",
+                        "reduce(tensor0, avg)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        // -- reduce 1 dimension
+        assertEvaluates("{ {y:1}:2, {y:2}:6 }",
+                        "reduce(tensor0, avg, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:2, {y:2}:2 }",
+                        "reduce(tensor0, count, x)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:3, {y:2}:35 }",
+                        "reduce(tensor0, prod, x)",  "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:4, {y:2}:12 }",
+                        "reduce(tensor0, sum, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:3, {y:2}:7 }",
+                        "reduce(tensor0, max, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:1, {y:2}:5 }",
+                        "reduce(tensor0, min, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        // -- reduce composites
         assertEvaluates("{ {}: 5   }", "sum(tensor0)", "5.0");
         assertEvaluates("{ {}:-5   }", "sum(tensor0)", "-5.0");
         assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:l1}:5.5, {d2:l2}:7.0 }");
@@ -132,6 +161,8 @@ public class EvaluationTestCase extends junit.framework.TestCase {
                         "sum(tensor0, x, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
 
         // tensor join
+        assertEvaluates("{ {x:1,y:1}:15, {x:2,y:1}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        // -- join composites
         assertEvaluates("{ }", "tensor0 * tensor0", "{}");
         assertEvaluates("tensor(x{},y{},z{}):{}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", 
                         "{{x:-}:1}", "{}", "{{y:-,z:-}:1}"); // empty dimensions are preserved
