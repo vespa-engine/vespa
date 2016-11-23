@@ -1,10 +1,18 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The <i>rename</i> tensor function returns a tensor where some dimensions are assigned new names.
@@ -21,6 +29,11 @@ public class RenameFunction extends PrimitiveTensorFunction {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(fromDimensions, "The 'from' dimensions cannot be null");
         Objects.requireNonNull(toDimensions, "The 'to' dimensions cannot be null");
+        if (fromDimensions.size() < 1)
+            throw new IllegalArgumentException("from dimensions is empty, must rename at least one dimension");
+        if (fromDimensions.size() != toDimensions.size())
+            throw new IllegalArgumentException("Rename from and to dimensions must be equal, was " +
+                                               fromDimensions.size() + " and " + toDimensions.size());
         this.argument = argument;
         this.fromDimensions = ImmutableList.copyOf(fromDimensions);
         this.toDimensions = ImmutableList.copyOf(toDimensions);
@@ -31,13 +44,43 @@ public class RenameFunction extends PrimitiveTensorFunction {
 
     @Override
     public Tensor execute() {
-        throw new UnsupportedOperationException("Not implemented"); // TODO
+        Tensor tensor = argument.execute();
+        Map<String, String> fromToMap = fromToMap();
+        Set<String> renamedDimensions = tensor.dimensions().stream()
+                                                           .map((d) -> fromToMap.getOrDefault(d, d))
+                                                           .collect(Collectors.toSet());
+        
+        ImmutableMap.Builder<TensorAddress, Double> renamedCells = new ImmutableMap.Builder<>();
+        for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
+            TensorAddress renamedAddress = rename(cell.getKey(), fromToMap);
+            renamedCells.put(renamedAddress, cell.getValue());
+        }
+        return new MapTensor(renamedDimensions, renamedCells.build());
+    }
+    
+    private TensorAddress rename(TensorAddress address, Map<String, String> fromToMap) {
+        List<TensorAddress.Element> renamedElements = new ArrayList<>();
+        for (TensorAddress.Element element : address.elements()) {
+            String toDimension = fromToMap.get(element.dimension());
+            if (toDimension == null)
+                renamedElements.add(element);
+            else
+                renamedElements.add(new TensorAddress.Element(toDimension, element.label()));
+        }
+        return TensorAddress.fromUnsorted(renamedElements);
     }
 
     @Override
     public String toString() { 
         return "rename(" + argument + ", " + 
                        toVectorString(fromDimensions) + ", " + toVectorString(toDimensions) + ")";
+    }
+    
+    private Map<String, String> fromToMap() {
+        Map<String, String> map = new HashMap<>();
+        for (int i = 0; i < fromDimensions.size(); i++)
+            map.put(fromDimensions.get(i), toDimensions.get(i));
+        return map;
     }
     
     private String toVectorString(List<String> elements) {

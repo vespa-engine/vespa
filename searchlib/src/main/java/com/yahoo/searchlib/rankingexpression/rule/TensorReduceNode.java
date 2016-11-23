@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.annotations.Beta;
+import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -25,12 +26,12 @@ public class TensorReduceNode extends CompositeNode {
     private final ReduceFunction.Aggregator aggregator;
 
     /** The dimensions to sum over, or empty to sum all cells */
-    private final List<String> dimensions;
+    private final ImmutableList<String> dimensions;
 
     public TensorReduceNode(ExpressionNode argument, ReduceFunction.Aggregator aggregator, List<String> dimensions) {
         this.argument = argument;
         this.aggregator = aggregator;
-        this.dimensions = dimensions;
+        this.dimensions = ImmutableList.copyOf(dimensions);
     }
 
     @Override
@@ -40,16 +41,17 @@ public class TensorReduceNode extends CompositeNode {
 
     @Override
     public CompositeNode setChildren(List<ExpressionNode> children) {
-        if (children.size() != 1) throw new IllegalArgumentException("A tensor sum node must have one tensor argument");
+        if (children.size() != 1) throw new IllegalArgumentException("A tensor reduce node must have one tensor argument");
         return new TensorReduceNode(children.get(0), aggregator, dimensions);
     }
 
     @Override
     public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return "reduce(" + argument.toString(context, path, parent) + ", \"" + aggregator + "\"" + commaSeparated(dimensions) + ")";
+        return "reduce(" + argument.toString(context, path, parent) + ", " + 
+                       aggregator + leadingCommaSeparated(dimensions) + ")";
     }
     
-    private String commaSeparated(List<String> list) {
+    private String leadingCommaSeparated(List<String> list) {
         StringBuilder b = new StringBuilder();
         for (String element : list)
             b.append(", ").append(element);
@@ -60,7 +62,7 @@ public class TensorReduceNode extends CompositeNode {
     public Value evaluate(Context context) {
         Value argumentValue = argument.evaluate(context);
         if ( ! ( argumentValue instanceof TensorValue))
-            throw new IllegalArgumentException("Attempted to take the tensor sum of argument '" + argument + "', " +
+            throw new IllegalArgumentException("Attempted to reduce '" + argument + "', " +
                                                "but this returns " + argumentValue + ", not a tensor");
         TensorValue tensorArgument = (TensorValue)argumentValue;
         return new TensorValue(tensorArgument.asTensor().reduce(aggregator, dimensions));

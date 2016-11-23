@@ -21,8 +21,7 @@ import com.yahoo.searchlib.rankingexpression.rule.*;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.tensor.MapTensor;
-import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.*;
 import com.yahoo.tensor.functions.*;
 import java.util.Collections;
 import java.util.Map;
@@ -104,6 +103,8 @@ TOKEN :
     <MAP: "map"> |
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
+    <RENAME: "rename"> |
+    <TENSOR: "tensor"> |
     <AVG: "avg" > |
     <COUNT: "count"> |
     <PROD: "prod"> |
@@ -324,7 +325,9 @@ ExpressionNode tensorFunction() :
         tensorExpression = tensorMap() |
         tensorExpression = tensorReduce() | 
         tensorExpression = tensorReduceComposites() |
-        tensorExpression = tensorJoin()
+        tensorExpression = tensorJoin() |
+        tensorExpression = tensorRename() |
+        tensorExpression = tensorGenerate()
     )
     { return tensorExpression; }
 }
@@ -372,6 +375,30 @@ ExpressionNode tensorJoin() :
     { return new TensorJoinNode(tensor1, tensor2, doubleJoiner); }
 }
 
+ExpressionNode tensorRename() :
+{
+    ExpressionNode tensor;
+    List<String> fromDimensions, toDimensions;
+}
+{
+    <RENAME> <LBRACE> tensor = expression() <COMMA> 
+                      fromDimensions = identifierVector() <COMMA> 
+                      toDimensions = identifierVector() 
+             <RBRACE>
+    { return new TensorRenameNode(tensor, fromDimensions, toDimensions); }
+}
+
+// TODO
+ExpressionNode tensorGenerate() :
+{
+    TensorType type;
+    LambdaFunctionNode generator;
+}
+{
+    <TENSOR> <LBRACE> <RBRACE> <LBRACE>
+    { return null; }
+}
+
 LambdaFunctionNode lambdaFunction() :
 {
     List<String> variables;
@@ -400,6 +427,8 @@ String tensorFunctionName() :
     ( <MAP>    { return token.image; } ) |
     ( <REDUCE> { return token.image; } ) |
     ( <JOIN>   { return token.image; } ) |
+    ( <RENAME> { return token.image; } ) |
+    ( <TENSOR> { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
@@ -483,6 +512,16 @@ List<String> identifierList() :
     { return list; }
 }
 
+List<String> identifierVector() :
+{
+    List<String> list = new ArrayList<String>();
+    String element;
+}
+{
+    ( element = identifier() { return Collections.singletonList(element); } )
+    |
+    ( <LSQUARE> list = identifierList() <RSQUARE> { return list; } )
+}
 
 // An identifier or integer
 String tag() :
