@@ -30,7 +30,6 @@ public:
     template <typename T>
     void setFieldValue(std::unique_ptr<T> value) { _value.reset(value.release()); }
     bool operator==(const Annotation &a2) const;
-    
 
     const SpanNode *getSpanNode() const { return _node; }
     const AnnotationType &getType() const { return *_type; }

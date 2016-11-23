@@ -16,11 +16,11 @@ Annotation::~Annotation() { }
 
 vespalib::string
 Annotation::toString() const {
-    std::ostringstream os;
+    vespalib::asciistream os;
     os << "Annotation(" << *_type;
     if (_value.get()) {
         os << "\n";
-        _value->print(os, false, "");
+        os << _value->toString();
     }
     if (_node) {
         os << "\n";

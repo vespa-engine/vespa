@@ -92,6 +92,8 @@ TEST("requireThatSpanTreeCanHaveAnnotations") {
     EXPECT_EQUAL(2u, tree.numAnnotations());
     SpanTree::const_iterator it = tree.begin();
 
+    Annotation tmp(markup_type);
+    EXPECT_EQUAL(tmp, *it);
     EXPECT_EQUAL(Annotation(markup_type), *it++);
     EXPECT_EQUAL(Annotation(text_type), *it++);
     EXPECT_TRUE(it == tree.end());

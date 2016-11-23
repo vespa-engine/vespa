@@ -26,11 +26,12 @@ public:
     int getId() const { return _id; }
     const DataType *getDataType() const { return _type; }
     bool operator==(const AnnotationType &a2) const {
-        return getId() != a2.getId() && getName() == a2.getName();
+        return (getId() == a2.getId()) && (getName() == a2.getName());
     }
     bool operator!=(const AnnotationType &a2) const {
         return ! (*this == a2);
     }
+    vespalib::string toString() const;
 
     static const AnnotationType *const TERM;
     static const AnnotationType *const TOKEN_TYPE;
@@ -38,6 +39,8 @@ public:
     /** Used by type manager to fetch default types to register. */
     static std::vector<const AnnotationType *> getDefaultAnnotationTypes();
 };
+
+vespalib::asciistream & operator << (vespalib::asciistream & os, const AnnotationType & type);
 
 }  // namespace document
 
