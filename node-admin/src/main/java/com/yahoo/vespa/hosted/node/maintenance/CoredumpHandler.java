@@ -67,7 +67,7 @@ public class CoredumpHandler {
         processingDir.toFile().mkdirs();
 
         Files.list(path)
-                .filter(path -> path.toFile().isFile())
+                .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
                 .forEach(coredumpPath -> {
                     try {
                         coredumpPath = startProcessing(coredumpPath);

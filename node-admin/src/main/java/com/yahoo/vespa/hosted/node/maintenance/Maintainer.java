@@ -50,8 +50,9 @@ public class Maintainer {
     private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = ROOT.resolve(RELATIVE_APPLICATION_STORAGE_PATH);
     private static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
+    private static final Maintainer maintainer = new Maintainer();
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
-    private static final CoreCollector CORE_COLLECTOR = new CoreCollector();
+    private static final CoreCollector CORE_COLLECTOR = new CoreCollector(maintainer);
     private static final Gson gson = new Gson();
 
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
@@ -140,7 +141,7 @@ public class Maintainer {
         env.put("VESPA_SERVICE_NAME", "maintainer");
 
         try {
-            ProcessResult result = exec(args);
+            ProcessResult result = maintainer.exec(args);
 
             if (! result.getOutput().isEmpty()) logger.info(result.getOutput());
             if (! result.getErrors().isEmpty()) logger.error(result.getErrors());
@@ -149,7 +150,7 @@ public class Maintainer {
         }
     }
 
-    public static ProcessResult exec(String... args) throws IOException, InterruptedException {
+    public ProcessResult exec(String... args) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder(args);
         Process process = processBuilder.start();
         String output = IOUtils.readAll(new InputStreamReader(process.getInputStream()));
@@ -323,7 +324,7 @@ public class Maintainer {
 
     public static String getKernelVersion() throws IOException, InterruptedException {
         if (! kernelVersion.isPresent()) {
-            ProcessResult result = exec("uname", "-r");
+            ProcessResult result = maintainer.exec("uname", "-r");
             if (result.isSuccess()) {
                 kernelVersion = Optional.of(result.getOutput().trim());
             } else {
