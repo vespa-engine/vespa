@@ -2,7 +2,7 @@
 #pragma once
 
 #include "distributorcomponent.h"
-#include "bucket_space.h"
+#include "managed_bucket_space.h"
 
 namespace storage {
 namespace distributor {
@@ -11,13 +11,13 @@ namespace distributor {
  * Component bound to a specific bucket space, with utility operations to
  * operate on buckets in this space.
  */
-class BucketSpaceComponent : public DistributorComponent {
-    BucketSpace& _bucketSpace;
+class ManagedBucketSpaceComponent : public DistributorComponent {
+    ManagedBucketSpace& _bucketSpace;
 public:
-    BucketSpaceComponent(DistributorInterface& distributor,
-                         BucketSpace& bucketSpace,
-                         DistributorComponentRegister& compReg,
-                         const std::string& name);
+    ManagedBucketSpaceComponent(DistributorInterface& distributor,
+                                ManagedBucketSpace& bucketSpace,
+                                DistributorComponentRegister& compReg,
+                                const std::string& name);
 
     BucketDatabase& getBucketDatabase() override {
         return _bucketSpace.getBucketDatabase();

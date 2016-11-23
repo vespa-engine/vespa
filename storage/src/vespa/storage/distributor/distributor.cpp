@@ -9,7 +9,7 @@
 #include <vespa/storage/distributor/throttlingoperationstarter.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/ownership_transfer_safe_time_point_calculator.h>
-#include <vespa/storage/distributor/bucket_space_repo.h>
+#include <vespa/storage/distributor/managed_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 
@@ -64,7 +64,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _compReg(compReg),
       _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<BucketSpaceRepo>()),
+      _bucketSpaceRepo(std::make_unique<ManagedBucketSpaceRepo>()),
       _metrics(new DistributorMetricSet(
    	       _component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
@@ -141,11 +141,11 @@ Distributor::getPendingMessageTracker() const
     return _pendingMessageTracker;
 }
 
-BucketSpace& Distributor::getDefaultBucketSpace() noexcept {
+ManagedBucketSpace& Distributor::getDefaultBucketSpace() noexcept {
     return _bucketSpaceRepo->getDefaultSpace();
 }
 
-const BucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
+const ManagedBucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
     return _bucketSpaceRepo->getDefaultSpace();
 }
 

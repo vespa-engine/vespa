@@ -31,7 +31,7 @@ class HostInfo;
 
 namespace distributor {
 
-class BucketSpaceRepo;
+class ManagedBucketSpaceRepo;
 class SimpleMaintenanceScanner;
 class BlockingOperationStarter;
 class ThrottlingOperationStarter;
@@ -169,8 +169,8 @@ public:
         return *_bucketIdHasher;
     }
 
-    BucketSpace& getDefaultBucketSpace() noexcept;
-    const BucketSpace& getDefaultBucketSpace() const noexcept;
+    ManagedBucketSpace& getDefaultBucketSpace() noexcept;
+    const ManagedBucketSpace& getDefaultBucketSpace() const noexcept;
 
 private:
     friend class Distributor_Test;
@@ -247,7 +247,7 @@ private:
 
     DistributorComponentRegister& _compReg;
     storage::DistributorComponent _component;
-    std::unique_ptr<BucketSpaceRepo> _bucketSpaceRepo;
+    std::unique_ptr<ManagedBucketSpaceRepo> _bucketSpaceRepo;
     std::shared_ptr<DistributorMetricSet> _metrics;
 
     OperationOwner _operationOwner;

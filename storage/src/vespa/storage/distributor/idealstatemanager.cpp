@@ -30,7 +30,7 @@ namespace distributor {
 
 IdealStateManager::IdealStateManager(
         Distributor& owner,
-        BucketSpace& bucketSpace,
+        ManagedBucketSpace& bucketSpace,
         DistributorComponentRegister& compReg,
         bool manageActiveBucketCopies)
     : HtmlStatusReporter("idealstateman", "Ideal state manager"),

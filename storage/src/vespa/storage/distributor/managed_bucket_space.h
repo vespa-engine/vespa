@@ -6,21 +6,30 @@
 #include <memory>
 
 namespace storage {
+
+namespace lib {
+class Distribution;
+}
+
 namespace distributor {
 
 /**
- * A managed bucket space holds specific state and information required for a
- * keeping track of and computing operations for a single bucket space:
- *  - Bucket database instance
- *  - Distribution config
- *  - Cluster state
+ * A managed bucket space holds specific state and information required for
+ * keeping track of, and computing operations for, a single bucket space:
+ *
+ * Bucket database instance
+ *   Each bucket space has its own entirely separate bucket database.
+ * Distribution config
+ *   Each bucket space _may_ operate with its own distribution config, in
+ *   particular so that redundancy, ready copies etc can differ across
+ *   bucket spaces.
  */
-class BucketSpace {
+class ManagedBucketSpace {
     MapBucketDatabase _bucketDatabase;
-    lib::Distribution::SP _distribution;
+    std::shared_ptr<lib::Distribution> _distribution;
 public:
-    BucketSpace();
-    ~BucketSpace();
+    ManagedBucketSpace();
+    ~ManagedBucketSpace();
 
     MapBucketDatabase& getBucketDatabase() noexcept {
         return _bucketDatabase;

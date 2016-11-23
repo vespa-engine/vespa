@@ -1,26 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "bucket_space.h"
+#include "managed_bucket_space.h"
 #include <memory>
 
 namespace storage {
 
-namespace lib {
-class Distribution;
-}
-
 namespace distributor {
 
-class BucketSpaceRepo {
+class ManagedBucketSpaceRepo {
     // TODO: multiple spaces. This is just to start re-wiring things.
-    BucketSpace _defaultSpace;
+    ManagedBucketSpace _defaultSpace;
 public:
-    BucketSpaceRepo();
-    ~BucketSpaceRepo();
+    ManagedBucketSpaceRepo();
+    ~ManagedBucketSpaceRepo();
 
-    BucketSpace& getDefaultSpace() noexcept { return _defaultSpace; }
-    const BucketSpace& getDefaultSpace() const noexcept {
+    ManagedBucketSpace& getDefaultSpace() noexcept { return _defaultSpace; }
+    const ManagedBucketSpace& getDefaultSpace() const noexcept {
         return _defaultSpace;
     }
 

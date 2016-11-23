@@ -30,9 +30,9 @@ vespa_add_library(storage_distributor
     distributor_host_info_reporter.cpp
     latency_statistics_provider.cpp
     ownership_transfer_safe_time_point_calculator.cpp
-    bucket_space.cpp
-    bucket_space_component.cpp
-    bucket_space_repo.cpp
+    managed_bucket_space.cpp
+    managed_bucket_space_component.cpp
+    managed_bucket_space_repo.cpp
     $<TARGET_OBJECTS:storage_distributoroperation>
     $<TARGET_OBJECTS:storage_distributoroperationexternal>
     $<TARGET_OBJECTS:storage_distributoroperationidealstate>
