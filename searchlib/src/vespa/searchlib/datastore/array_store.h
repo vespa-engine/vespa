@@ -80,6 +80,7 @@ public:
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
     vespalib::GenerationHolder &getGenerationHolder(void) { return _store.getGenerationHolder(); }
+    void setInitializing(bool initializing) { _store.setInitializing(initializing); }
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;

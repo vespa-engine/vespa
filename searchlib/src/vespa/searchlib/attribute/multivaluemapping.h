@@ -396,6 +396,7 @@ public:
 
     virtual void doneHoldElem(Index idx) override;
     void prepareLoadFromMultiValue(AttributeVector::ReaderBase &attrReader);
+    void doneLoadFromMultiValue() { }
 };
 
 //-----------------------------------------------------------------------------

@@ -40,6 +40,7 @@ loadFromEnumeratedMultiValue(MvMapping &mapping,
         mapping.set(doc, indices);
     }
     assert(totalValueCount == numValues);
+    mapping.doneLoadFromMultiValue();
     (void) numValues;
     return maxValueCount;
 }

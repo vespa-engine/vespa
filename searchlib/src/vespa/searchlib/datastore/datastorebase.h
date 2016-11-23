@@ -131,6 +131,7 @@ protected:
 
     std::vector<BufferState::FreeListList> _freeListLists;
     bool _freeListsEnabled;
+    bool _initializing;
 
     ElemHold1List _elemHold1List;
     ElemHold2List _elemHold2List;
@@ -360,6 +361,12 @@ public:
 
     MemStats
     getMemStats(void) const;
+
+    /*
+     * Assume that no readers are present while data structure is being
+     * intialized.
+     */
+    void setInitializing(bool initializing) { _initializing = initializing; }
 
     /**
      * Switch buffer state to active.

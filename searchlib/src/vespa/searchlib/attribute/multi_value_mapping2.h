@@ -42,7 +42,9 @@ public:
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
     template <class Reader>
-    void prepareLoadFromMultiValue(Reader &) { }
+    void prepareLoadFromMultiValue(Reader &) { _store.setInitializing(true); }
+
+    void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
     virtual void compactWorst() override;
 
