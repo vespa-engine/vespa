@@ -12,7 +12,7 @@ namespace attribute {
 /**
  * Class for mapping from from document id to an array of values.
  */
-template <typename EntryT, typename RefT = datastore::EntryRefT<17> >
+template <typename EntryT, typename RefT = datastore::EntryRefT<19> >
 class MultiValueMapping2 : public MultiValueMapping2Base
 {
 public:
@@ -42,7 +42,9 @@ public:
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
     template <class Reader>
-    void prepareLoadFromMultiValue(Reader &) { }
+    void prepareLoadFromMultiValue(Reader &) { _store.setInitializing(true); }
+
+    void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
     virtual void compactWorst() override;
 

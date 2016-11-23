@@ -82,6 +82,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers,
       _typeHandlers(),
       _freeListLists(),
       _freeListsEnabled(false),
+      _initializing(false),
       _elemHold1List(),
       _elemHold2List(),
       _numBuffers(numBuffers),
@@ -406,7 +407,9 @@ DataStoreBase::fallbackResize(uint32_t bufferId, uint64_t sizeNeeded)
                               oldUsedElems,
                               state.getTypeHandler(),
                               state.getTypeId()));
-    _genHolder.hold(std::move(hold));
+    if (!_initializing) {
+        _genHolder.hold(std::move(hold));
+    }
 }
 
 
