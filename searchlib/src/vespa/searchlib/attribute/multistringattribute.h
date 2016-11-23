@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/enumstore.h>
 #include <vespa/searchlib/attribute/multienumattribute.h>
 #include <vespa/searchlib/attribute/multivaluemapping.h>
+#include <vespa/searchlib/attribute/multi_value_mapping2.h>
 #include "enumhintsearchcontext.h"
 
 namespace search {
@@ -52,7 +53,7 @@ private:
     friend class StringAttributeTest;
 
 public:
-    typedef typename MultiValueMappingBaseBase::Histogram Histogram;
+    typedef attribute::MultiValueMapping2Base::Histogram Histogram;
 
     MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                               AttributeVector::Config(AttributeVector::BasicType::STRING,
