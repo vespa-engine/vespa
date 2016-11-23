@@ -156,24 +156,22 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         bind_type(ValueType::error_type(), node);
     }
     virtual void visit(const TensorSum &node) {
-        const ValueType &child = state.peek(0);
+        const ValueType &child = state.peek(0);        
         if (node.dimension().empty()) {
-            if (child.is_any()) {
-                bind_type(ValueType::any_type(), node);
-            } else {
-                bind_type(ValueType::double_type(), node);
-            }
+            bind_type(child.reduce({}), node);
         } else {
-            bind_type(child.remove_dimensions({node.dimension()}), node);
+            bind_type(child.reduce({node.dimension()}), node);
         }
     }
     virtual void visit(const TensorMap &node) { resolve_op1(node); }
     virtual void visit(const TensorJoin &node) { resolve_op2(node); }
     virtual void visit(const TensorReduce &node) {
-        bind_type(ValueType::error_type(), node);
+        const ValueType &child = state.peek(0);
+        bind_type(child.reduce(node.dimensions()), node);
     }
     virtual void visit(const TensorRename &node) {
-        bind_type(ValueType::error_type(), node);
+        const ValueType &child = state.peek(0);
+        bind_type(child.rename(node.from(), node.to()), node);
     }
     virtual void visit(const TensorLambda &node) {
         bind_type(node.type(), node);

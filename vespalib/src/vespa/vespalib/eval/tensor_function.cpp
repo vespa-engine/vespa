@@ -56,9 +56,7 @@ Node_UP inject(const ValueType &type, size_t tensor_id) {
 }
 
 Node_UP reduce(Node_UP tensor, const BinaryOperation &op, const std::vector<vespalib::string> &dimensions) {
-    ValueType result_type = dimensions.empty()
-                            ? tensor->result_type.remove_dimensions(tensor->result_type.dimension_names())
-                            : tensor->result_type.remove_dimensions(dimensions);
+    ValueType result_type = tensor->result_type.reduce(dimensions);
     return std::make_unique<Reduce>(result_type, std::move(tensor), op.clone(), dimensions);
 }
 

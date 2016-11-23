@@ -69,9 +69,9 @@ public:
     }
     bool operator!=(const ValueType &rhs) const { return !(*this == rhs); }
 
-    ValueType remove_dimensions(const std::vector<vespalib::string> &dimensions_in) const;
-    ValueType add_dimensions_from(const ValueType &rhs) const;
-    ValueType keep_dimensions_in(const ValueType &rhs) const;
+    ValueType reduce(const std::vector<vespalib::string> &dimensions_in) const;
+    ValueType rename(const std::vector<vespalib::string> &from,
+                     const std::vector<vespalib::string> &to) const;
 
     static ValueType any_type() { return ValueType(Type::ANY); }
     static ValueType error_type() { return ValueType(Type::ERROR); };

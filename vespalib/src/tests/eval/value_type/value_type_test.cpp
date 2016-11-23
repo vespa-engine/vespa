@@ -143,36 +143,36 @@ TEST("require that duplicate dimension names result in error types") {
 }
 
 TEST("require that removing dimensions from non-abstract non-tensor types gives error type") {
-    EXPECT_TRUE(ValueType::error_type().remove_dimensions({"x"}).is_error());
-    EXPECT_TRUE(ValueType::double_type().remove_dimensions({"x"}).is_error());
+    EXPECT_TRUE(ValueType::error_type().reduce({"x"}).is_error());
+    EXPECT_TRUE(ValueType::double_type().reduce({"x"}).is_error());
 }
 
 TEST("require that removing dimensions from abstract maybe-tensor types gives any type") {
-    EXPECT_TRUE(ValueType::any_type().remove_dimensions({"x"}).is_any());
-    EXPECT_TRUE(ValueType::tensor_type({}).remove_dimensions({"x"}).is_any());
+    EXPECT_TRUE(ValueType::any_type().reduce({"x"}).is_any());
+    EXPECT_TRUE(ValueType::tensor_type({}).reduce({"x"}).is_any());
 }
 
 TEST("require that dimensions can be removed from tensor value types") {
     ValueType type = ValueType::tensor_type({{"x", 10}, {"y", 20}, {"z", 30}});
-    EXPECT_EQUAL(ValueType::tensor_type({{"y", 20}, {"z", 30}}), type.remove_dimensions({"x"}));
-    EXPECT_EQUAL(ValueType::tensor_type({{"x", 10}, {"z", 30}}), type.remove_dimensions({"y"}));
-    EXPECT_EQUAL(ValueType::tensor_type({{"x", 10}, {"y", 20}}), type.remove_dimensions({"z"}));
-    EXPECT_EQUAL(ValueType::tensor_type({{"y", 20}}),            type.remove_dimensions({"x", "z"}));
-    EXPECT_EQUAL(ValueType::tensor_type({{"y", 20}}),            type.remove_dimensions({"z", "x"}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 20}, {"z", 30}}), type.reduce({"x"}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"x", 10}, {"z", 30}}), type.reduce({"y"}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"x", 10}, {"y", 20}}), type.reduce({"z"}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 20}}),            type.reduce({"x", "z"}));
+    EXPECT_EQUAL(ValueType::tensor_type({{"y", 20}}),            type.reduce({"z", "x"}));
 }
 
-TEST("require that removing an empty set of dimensions is not allowed") {
-    EXPECT_TRUE(ValueType::tensor_type({{"x", 10}, {"y", 20}, {"z", 30}}).remove_dimensions({}).is_error());
+TEST("require that removing an empty set of dimensions means removing them all") {
+    EXPECT_EQUAL(ValueType::tensor_type({{"x", 10}, {"y", 20}, {"z", 30}}).reduce({}), ValueType::double_type());
 }
 
 TEST("require that removing non-existing dimensions gives error type") {
-    EXPECT_TRUE(ValueType::tensor_type({{"y"}}).remove_dimensions({"x"}).is_error());
-    EXPECT_TRUE(ValueType::tensor_type({{"y", 10}}).remove_dimensions({"x"}).is_error());
+    EXPECT_TRUE(ValueType::tensor_type({{"y"}}).reduce({"x"}).is_error());
+    EXPECT_TRUE(ValueType::tensor_type({{"y", 10}}).reduce({"x"}).is_error());
 }
 
 TEST("require that removing all dimensions gives double type") {
     ValueType type = ValueType::tensor_type({{"x", 10}, {"y", 20}, {"z", 30}});
-    EXPECT_EQUAL(ValueType::double_type(), type.remove_dimensions({"x", "y", "z"}));
+    EXPECT_EQUAL(ValueType::double_type(), type.reduce({"x", "y", "z"}));
 }
 
 TEST("require that dimensions can be combined for tensor value types") {
@@ -180,45 +180,35 @@ TEST("require that dimensions can be combined for tensor value types") {
     ValueType tensor_type_yz  = ValueType::tensor_type({{"y"}, {"z"}});
     ValueType tensor_type_xyz = ValueType::tensor_type({{"x"}, {"y"}, {"z"}});
     ValueType tensor_type_y   = ValueType::tensor_type({{"y"}});
-    EXPECT_EQUAL(tensor_type_xy.add_dimensions_from(tensor_type_yz), tensor_type_xyz);
-    EXPECT_EQUAL(tensor_type_yz.add_dimensions_from(tensor_type_xy), tensor_type_xyz);
-    EXPECT_EQUAL(tensor_type_xy.keep_dimensions_in(tensor_type_yz), tensor_type_y);
-    EXPECT_EQUAL(tensor_type_yz.keep_dimensions_in(tensor_type_xy), tensor_type_y);
-    EXPECT_EQUAL(tensor_type_y.add_dimensions_from(tensor_type_y), tensor_type_y);
-    EXPECT_EQUAL(tensor_type_y.keep_dimensions_in(tensor_type_y), tensor_type_y);
+    EXPECT_EQUAL(ValueType::join(tensor_type_xy, tensor_type_yz), tensor_type_xyz);
+    EXPECT_EQUAL(ValueType::join(tensor_type_yz, tensor_type_xy), tensor_type_xyz);
+    EXPECT_EQUAL(ValueType::join(tensor_type_y, tensor_type_y), tensor_type_y);
 }
 
 TEST("require that indexed dimensions combine to the minimal dimension size") {
     ValueType tensor_0 = ValueType::tensor_type({{"x", 0}});
     ValueType tensor_10 = ValueType::tensor_type({{"x", 10}});
     ValueType tensor_20 = ValueType::tensor_type({{"x", 20}});
-    EXPECT_EQUAL(tensor_10.add_dimensions_from(tensor_0), tensor_0);
-    EXPECT_EQUAL(tensor_10.add_dimensions_from(tensor_10), tensor_10);
-    EXPECT_EQUAL(tensor_10.add_dimensions_from(tensor_20), tensor_10);
-    EXPECT_EQUAL(tensor_10.keep_dimensions_in(tensor_0), tensor_0);
-    EXPECT_EQUAL(tensor_10.keep_dimensions_in(tensor_10), tensor_10);
-    EXPECT_EQUAL(tensor_10.keep_dimensions_in(tensor_20), tensor_10);
+    EXPECT_EQUAL(ValueType::join(tensor_10, tensor_0), tensor_0);
+    EXPECT_EQUAL(ValueType::join(tensor_10, tensor_10), tensor_10);
+    EXPECT_EQUAL(ValueType::join(tensor_10, tensor_20), tensor_10);
 }
 
 void verify_combinable(const ValueType &a, const ValueType &b) {
-    EXPECT_TRUE(!a.add_dimensions_from(b).is_error());
-    EXPECT_TRUE(!b.add_dimensions_from(a).is_error());
-    EXPECT_TRUE(!a.keep_dimensions_in(b).is_error());
-    EXPECT_TRUE(!b.keep_dimensions_in(a).is_error());
+    EXPECT_TRUE(!ValueType::join(a, b).is_error());
+    EXPECT_TRUE(!ValueType::join(b, a).is_error());
+    EXPECT_TRUE(!ValueType::join(a, b).is_any());
+    EXPECT_TRUE(!ValueType::join(b, a).is_any());
 }
 
 void verify_not_combinable(const ValueType &a, const ValueType &b) {
-    EXPECT_TRUE(a.add_dimensions_from(b).is_error());
-    EXPECT_TRUE(b.add_dimensions_from(a).is_error());
-    EXPECT_TRUE(a.keep_dimensions_in(b).is_error());
-    EXPECT_TRUE(b.keep_dimensions_in(a).is_error());
+    EXPECT_TRUE(ValueType::join(a, b).is_error());
+    EXPECT_TRUE(ValueType::join(b, a).is_error());
 }
 
 void verify_maybe_combinable(const ValueType &a, const ValueType &b) {
-    EXPECT_TRUE(a.add_dimensions_from(b).is_any());
-    EXPECT_TRUE(b.add_dimensions_from(a).is_any());
-    EXPECT_TRUE(a.keep_dimensions_in(b).is_any());
-    EXPECT_TRUE(b.keep_dimensions_in(a).is_any());
+    EXPECT_TRUE(ValueType::join(a, b).is_any());
+    EXPECT_TRUE(ValueType::join(b, a).is_any());
 }
 
 TEST("require that mapped and indexed dimensions are not combinable") {
@@ -231,12 +221,16 @@ TEST("require that dimension combining is only allowed (yes/no/maybe) for approp
     for (size_t a = 0; a < types.size(); ++a) {
         for (size_t b = a; b < types.size(); ++b) {
             TEST_STATE(vespalib::make_string("a='%s', b='%s'", types[a].to_spec().c_str(), types[b].to_spec().c_str()).c_str());
-            if (types[a].is_tensor() && types[b].is_tensor()) {
+            if (types[a].is_error() || types[b].is_error()) {
+                verify_not_combinable(types[a], types[b]);
+            } else if (types[a].is_any() || types[b].is_any()) {
+                verify_maybe_combinable(types[a], types[b]);
+            } else if (types[a].is_double() || types[b].is_double()) {
                 verify_combinable(types[a], types[b]);
-            } else if (types[a].maybe_tensor() && types[b].maybe_tensor()) {
+            } else if (types[a].unknown_dimensions() || types[b].unknown_dimensions()) {
                 verify_maybe_combinable(types[a], types[b]);
             } else {
-                verify_not_combinable(types[a], types[b]);
+                verify_combinable(types[a], types[b]);
             }
         }
     }
@@ -354,6 +348,23 @@ TEST("require that a dense type must be a tensor with dimensions that all are in
     EXPECT_FALSE(ValueType::from_spec("double").is_dense());
     EXPECT_FALSE(ValueType::from_spec("any").is_dense());
     EXPECT_FALSE(ValueType::from_spec("error").is_dense());
+}
+
+TEST("require that tensor dimensions can be renamed") {
+    EXPECT_EQUAL(ValueType::from_spec("tensor(x{})").rename({"x"}, {"y"}),
+                 ValueType::from_spec("tensor(y{})"));
+    EXPECT_EQUAL(ValueType::from_spec("tensor(x{},y[])").rename({"x","y"}, {"y","x"}),
+                 ValueType::from_spec("tensor(y{},x[])"));
+    EXPECT_EQUAL(ValueType::from_spec("tensor(x{})").rename({"x"}, {"x"}),
+                 ValueType::from_spec("tensor(x{})"));
+    EXPECT_EQUAL(ValueType::from_spec("tensor(x{})").rename({}, {}), ValueType::error_type());
+    EXPECT_EQUAL(ValueType::double_type().rename({}, {}), ValueType::error_type());
+    EXPECT_EQUAL(ValueType::from_spec("tensor(x{},y{})").rename({"x"}, {"y","z"}), ValueType::error_type());
+    EXPECT_EQUAL(ValueType::from_spec("tensor(x{},y{})").rename({"x","y"}, {"z"}), ValueType::error_type());
+    EXPECT_EQUAL(ValueType::tensor_type({}).rename({"x"}, {"y"}), ValueType::any_type());
+    EXPECT_EQUAL(ValueType::any_type().rename({"x"}, {"y"}), ValueType::any_type());
+    EXPECT_EQUAL(ValueType::double_type().rename({"a"}, {"b"}), ValueType::error_type());
+    EXPECT_EQUAL(ValueType::error_type().rename({"a"}, {"b"}), ValueType::error_type());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
