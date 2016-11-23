@@ -12,7 +12,7 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * A node which sums over all cells in the argument tensor
+ * A node which performs a dimension reduction over a tensor
  *
  * @author bratseth
  */

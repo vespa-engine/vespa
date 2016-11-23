@@ -100,7 +100,10 @@ TOKEN :
     <FMOD: "fmod"> |
     <ISNAN: "isNan"> |
     <IN: "in"> |
+    <F: "f"> |
+    <MAP: "map"> |
     <REDUCE: "reduce"> |
+    <JOIN: "join"> |
     <AVG: "avg" > |
     <COUNT: "count"> |
     <PROD: "prod"> |
@@ -317,31 +320,55 @@ ExpressionNode tensorFunction() :
     ExpressionNode tensorExpression;
 }
 {
-    ( tensorExpression = tensorPrimitiveReduce() | tensorExpression = tensorReduce() )
+    ( 
+        tensorExpression = tensorMap() |
+        tensorExpression = tensorReduce() | 
+        tensorExpression = tensorReduceComposites()
+    )
     { return tensorExpression; }
 }
 
-ExpressionNode tensorPrimitiveReduce() :
+ExpressionNode tensorMap() :
 {
-    ExpressionNode tensor1;
-    ReduceFunction.Aggregator aggregator;
-    List<String> dimensions = null;
+    ExpressionNode tensor;
+    LambdaFunctionNode doubleMapper;
 }
 {
-    <REDUCE> <LBRACE> tensor1 = expression() <COMMA> aggregator = tensorReduceAggregator() dimensions = tagCommaLeadingList() <RBRACE>
-    { return new TensorReduceNode(tensor1, aggregator, dimensions); }
+    <MAP> <LBRACE> tensor = expression() <COMMA> doubleMapper = lambdaFunction() <RBRACE>
+    { return new TensorMapNode(tensor, doubleMapper); }
+}
+
+LambdaFunctionNode lambdaFunction() :
+{
+    List<String> variables;
+    ExpressionNode functionExpression;
+}
+{
+     ( <F> <LBRACE> variables = identifierList() <RBRACE> <LBRACE> functionExpression = expression() <RBRACE> )
+     { return new LambdaFunctionNode(variables, functionExpression); } 
 }
 
 ExpressionNode tensorReduce() :
 {
-    ExpressionNode tensor1;
+    ExpressionNode tensor;
+    ReduceFunction.Aggregator aggregator;
+    List<String> dimensions = null;
+}
+{
+    <REDUCE> <LBRACE> tensor = expression() <COMMA> aggregator = tensorReduceAggregator() dimensions = tagCommaLeadingList() <RBRACE>
+    { return new TensorReduceNode(tensor, aggregator, dimensions); }
+}
+
+ExpressionNode tensorReduceComposites() :
+{
+    ExpressionNode tensor;
     ReduceFunction.Aggregator aggregator;
     List<String> dimensions = null;
 }
 {
     aggregator = tensorReduceAggregator()
-    <LBRACE> tensor1 = expression() dimensions = tagCommaLeadingList() <RBRACE>
-    { return new TensorReduceNode(tensor1, aggregator, dimensions); }
+    <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
+    { return new TensorReduceNode(tensor, aggregator, dimensions); }
 }
 
 ReduceFunction.Aggregator tensorReduceAggregator() :
@@ -358,8 +385,10 @@ String tensorFunctionName() :
     ReduceFunction.Aggregator aggregator;
 }
 {
-    ( <REDUCE> { return token.image; } ) 
-    |
+    ( <F>      { return token.image; } ) |
+    ( <MAP>    { return token.image; } ) |
+    ( <REDUCE> { return token.image; } ) |
+    ( <JOIN>   { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
@@ -431,6 +460,18 @@ String identifier() :
     <IN>                        { return token.image; }     |
     <IDENTIFIER>                { return token.image; }
 }
+
+List<String> identifierList() :
+{
+    List<String> list = new ArrayList<String>();
+    String element;
+}
+{
+    ( element = identifier() { list.add(element); } )?
+    ( <COMMA> element = identifier() { list.add(element); } ) *
+    { return list; }
+}
+
 
 // An identifier or integer
 String tag() :
