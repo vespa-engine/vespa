@@ -39,13 +39,13 @@ insert(BTreeNode::Ref &root,
     AggrT ca;
     if (lnode->isFull()) {
         LeafNodeTypeRefPair splitNode = allocator.allocLeafNode();
-        lnode->splitInsert(splitNode.second, idx, key, data);
+        lnode->splitInsert(splitNode.data, idx, key, data);
         if (AggrCalcT::hasAggregated()) {
-            ca = Aggregator::recalc(*lnode, *splitNode.second, aggrCalc);
+            ca = Aggregator::recalc(*lnode, *splitNode.data, aggrCalc);
         }
-        splitNodeRef = splitNode.first; // to signal that a split occured
-        splitLastKey = &splitNode.second->getLastKey();
-        inRightSplit = itr.setLeafNodeIdx(idx, splitNode.second);
+        splitNodeRef = splitNode.ref; // to signal that a split occured
+        splitLastKey = &splitNode.data->getLastKey();
+        inRightSplit = itr.setLeafNodeIdx(idx, splitNode.data);
     } else {
         lnode->insert(idx, key, data);
         itr.setLeafNodeIdx(idx);
@@ -71,15 +71,15 @@ insert(BTreeNode::Ref &root,
             if (node->isFull()) {
                 InternalNodeTypeRefPair splitNode =
                     allocator.allocInternalNode(level + 1);
-                node->splitInsert(splitNode.second, idx,
+                node->splitInsert(splitNode.data, idx,
                                   *splitLastKey, splitNodeRef, allocator);
-                inRightSplit = pe.adjustSplit(inRightSplit, splitNode.second);
+                inRightSplit = pe.adjustSplit(inRightSplit, splitNode.data);
                 if (AggrCalcT::hasAggregated()) {
-                    ca = Aggregator::recalc(*node, *splitNode.second,
+                    ca = Aggregator::recalc(*node, *splitNode.data,
                                             allocator, aggrCalc);
                 }
-                splitNodeRef = splitNode.first;
-                splitLastKey = &splitNode.second->getLastKey();
+                splitNodeRef = splitNode.ref;
+                splitLastKey = &splitNode.data->getLastKey();
             } else {
                 node->insert(idx, *splitLastKey, splitNodeRef);
                 pe.adjustSplit(inRightSplit);

@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <utility>
 #include <vespa/searchlib/datastore/entryref.h>
+#include <vespa/searchlib/datastore/handle.h>
 
 namespace search {
 namespace datastore {
@@ -499,7 +500,7 @@ public:
     template <typename, typename...>
     friend class datastore::allocator::Assigner;
     typedef BTreeNode::Ref Ref;
-    typedef std::pair<Ref, InternalNodeType *> RefPair;
+    typedef datastore::Handle<InternalNodeType> RefPair;
     using ParentType::_keys;
     using ParentType::validSlots;
     using ParentType::_validSlots;
@@ -658,7 +659,7 @@ public:
     template <typename, typename...>
     friend class datastore::allocator::Assigner;
     typedef BTreeNode::Ref Ref;
-    typedef std::pair<Ref, LeafNodeType *> RefPair;
+    typedef datastore::Handle<LeafNodeType> RefPair;
     using ParentType::validSlots;
     using ParentType::_validSlots;
     using ParentType::_keys;

@@ -83,11 +83,11 @@ allocNewKeyData(uint32_t clusterSize)
     size_t oldSize = state.size();
     KeyDataType *node =
         _store.getBufferEntry<KeyDataType>(activeBufferId, oldSize);
-    for (uint32_t i = 0; i < clusterSize; ++i)
-        new (static_cast<void *>(node + i)) KeyDataType();
+    for (uint32_t i = 0; i < clusterSize; ++i) {
+        new(static_cast<void *>(node + i)) KeyDataType();
+    }
     state.pushed_back(clusterSize);
-    return std::make_pair(RefType(oldSize / clusterSize, activeBufferId),
-                          node);
+    return KeyDataTypeRefPair(RefType(oldSize / clusterSize, activeBufferId), node);
 }
 
 
@@ -101,15 +101,16 @@ allocKeyData(uint32_t clusterSize)
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
     BufferState::FreeListList &freeListList = _store.getFreeList(typeId);
-    if (freeListList._head == NULL)
+    if (freeListList._head == NULL) {
         return allocNewKeyData(clusterSize);
+    }
     BufferState &state = *freeListList._head;
     assert(state.isActive());
     RefType ref(state.popFreeList());
     KeyDataType *node =
         _store.getBufferEntry<KeyDataType>(ref.bufferId(),
                                            ref.offset() * clusterSize);
-    return std::make_pair(ref, node);
+    return KeyDataTypeRefPair(ref, node);
 }
 
 
@@ -129,11 +130,11 @@ allocNewKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
     size_t oldSize = state.size();
     KeyDataType *node =
         _store.getBufferEntry<KeyDataType>(activeBufferId, oldSize);
-    for (uint32_t i = 0; i < clusterSize; ++i)
-        new (static_cast<void *>(node + i)) KeyDataType(*(rhs + i));
+    for (uint32_t i = 0; i < clusterSize; ++i) {
+        new(static_cast<void *>(node + i)) KeyDataType(*(rhs + i));
+    }
     state.pushed_back(clusterSize);
-    return std::make_pair(RefType(oldSize / clusterSize, activeBufferId),
-                          node);
+    return KeyDataTypeRefPair(RefType(oldSize / clusterSize, activeBufferId), node);
 }
 
 
@@ -147,17 +148,19 @@ allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
     BufferState::FreeListList &freeListList = _store.getFreeList(typeId);
-    if (freeListList._head == NULL)
+    if (freeListList._head == NULL) {
         return allocNewKeyDataCopy(rhs, clusterSize);
+    }
     BufferState &state = *freeListList._head;
     assert(state.isActive());
     RefType ref(state.popFreeList());
     KeyDataType *node =
         _store.getBufferEntry<KeyDataType>(ref.bufferId(),
                                            ref.offset() * clusterSize);
-    for (uint32_t i = 0; i < clusterSize; ++i)
+    for (uint32_t i = 0; i < clusterSize; ++i) {
         *(node + i) = *(rhs + i);
-    return std::make_pair(ref, node);
+    }
+    return KeyDataTypeRefPair(ref, node);
 }
 
 
@@ -213,7 +216,7 @@ makeTree(EntryRef &ref,
          const KeyDataType *array, uint32_t clusterSize)
 {
     LeafNodeTypeRefPair lPair(_allocator.allocLeafNode());
-    LeafNodeType *lNode = lPair.second;
+    LeafNodeType *lNode = lPair.data;
     lNode->setValidSlots(clusterSize);
     const KeyDataType *o = array;
     for (uint32_t idx = 0; idx < clusterSize; ++idx, ++o) {
@@ -226,9 +229,9 @@ makeTree(EntryRef &ref,
     }
     lNode->freeze();
     BTreeTypeRefPair tPair(allocBTree());
-    tPair.second->setRoots(lPair.first);
+    tPair.data->setRoots(lPair.ref);
     _store.holdElem(ref, clusterSize);
-    ref = tPair.first;
+    ref = tPair.ref;
 }
 
 
@@ -240,19 +243,19 @@ makeArray(EntryRef &ref, EntryRef root, LeafNodeType *leafNode)
 {
     uint32_t clusterSize = leafNode->validSlots();
     KeyDataTypeRefPair kPair(allocKeyData(clusterSize));
-    KeyDataType *kd = kPair.second;
+    KeyDataType *kd = kPair.data;
     // Copy whole leaf node
     for (uint32_t idx = 0; idx < clusterSize; ++idx, ++kd) {
         kd->_key = leafNode->getKey(idx);
         kd->setData(leafNode->getData(idx));
     }
-    assert(kd == kPair.second + clusterSize);
+    assert(kd == kPair.data + clusterSize);
     _store.holdElem(ref, 1);
     if (!leafNode->getFrozen()) {
         leafNode->freeze();
     }
     _allocator.holdNode(root, leafNode);
-    ref = kPair.first;
+    ref = kPair.ref;
 }
 
 
@@ -290,10 +293,10 @@ insert(EntryRef &ref,
 #else
     if (!ref.valid()) {
         KeyDataTypeRefPair kPair(allocKeyData(1));
-        KeyDataType *kd = kPair.second;
+        KeyDataType *kd = kPair.data;
         kd->_key = key;
         kd->setData(data);
-        ref = kPair.first;
+        ref = kPair.ref;
         return true;
     }
     RefType iRef(ref);
@@ -310,7 +313,7 @@ insert(EntryRef &ref,
     if (clusterSize < clusterLimit) {
         // Grow array
         KeyDataTypeRefPair kPair(allocKeyData(clusterSize + 1));
-        KeyDataType *kd = kPair.second;
+        KeyDataType *kd = kPair.data;
         // Copy data before key
         for (const KeyDataType *i = old; i != oldi; ++i, ++kd) {
             kd->_key = i->_key;
@@ -325,14 +328,14 @@ insert(EntryRef &ref,
             kd->_key = i->_key;
             kd->setData(i->getData());
         }
-        assert(kd == kPair.second + clusterSize + 1);
+        assert(kd == kPair.data + clusterSize + 1);
         _store.holdElem(ref, clusterSize);
-        ref = kPair.first;
+        ref = kPair.ref;
         return true;
     }
     // Convert from short array to tree
     LeafNodeTypeRefPair lPair(_allocator.allocLeafNode());
-    LeafNodeType *lNode = lPair.second;
+    LeafNodeType *lNode = lPair.data;
     uint32_t idx = 0;
     lNode->setValidSlots(clusterSize + 1);
     // Copy data before key
@@ -354,9 +357,9 @@ insert(EntryRef &ref,
     }
     lNode->freeze();
     BTreeTypeRefPair tPair(allocBTree());
-    tPair.second->setRoots(lPair.first); // allow immediate access to readers
+    tPair.data->setRoots(lPair.ref); // allow immediate access to readers
     _store.holdElem(ref, clusterSize);
-    ref = tPair.first;
+    ref = tPair.ref;
     return true;
 #endif
 }
@@ -416,7 +419,7 @@ remove(EntryRef &ref,
         }
         // Copy to smaller array
         KeyDataTypeRefPair kPair(allocKeyData(clusterSize - 1));
-        KeyDataType *kd = kPair.second;
+        KeyDataType *kd = kPair.data;
         // Copy data before key
         for (const KeyDataType *i = old; i != oldi; ++i, ++kd) {
             kd->_key = i->_key;
@@ -427,9 +430,9 @@ remove(EntryRef &ref,
             kd->_key = i->_key;
             kd->setData(i->getData());
         }
-        assert(kd == kPair.second + clusterSize - 1);
+        assert(kd == kPair.data + clusterSize - 1);
         _store.holdElem(ref, clusterSize);
-        ref = kPair.first;
+        ref = kPair.ref;
         return true;
     }
     BTreeType *tree = getWTreeEntry(iRef);
@@ -664,15 +667,15 @@ applyNewArray(EntryRef &ref,
     uint32_t clusterSize = additionSize;
     assert(clusterSize <= clusterLimit);
     KeyDataTypeRefPair kPair(allocKeyData(clusterSize));
-    KeyDataType *kd = kPair.second;
+    KeyDataType *kd = kPair.data;
     AddIter a = aOrg;
     for (;a != ae; ++a, ++kd) {
         kd->_key = a->_key;
         kd->setData(a->getData());
     }
-    assert(kd == kPair.second + clusterSize);
+    assert(kd == kPair.data + clusterSize);
     assert(a == ae);
-    ref = kPair.first;
+    ref = kPair.ref;
  }
     
 
@@ -688,11 +691,11 @@ applyNewTree(EntryRef &ref,
     assert(!ref.valid());
     size_t additionSize(ae - a);
     BTreeTypeRefPair tPair(allocBTree());
-    BTreeType *tree = tPair.second;
+    BTreeType *tree = tPair.data;
     applyBuildTree(tree, a, ae, nullptr, nullptr, comp);
     assert(tree->size(_allocator) == additionSize);
     (void) additionSize;
-    ref = tPair.first;
+    ref = tPair.ref;
 }
  
    
@@ -747,10 +750,10 @@ applyCluster(EntryRef &ref,
         }
         if (newSize <= clusterLimit) {
             KeyDataTypeRefPair kPair(allocKeyData(newSize));
-            applyCluster(ob, oe, kPair.second, kPair.second + newSize,
+            applyCluster(ob, oe, kPair.data, kPair.data + newSize,
                          a, ae, r, re, comp);
             _store.holdElem(ref, clusterSize);
-            ref = kPair.first;
+            ref = kPair.ref;
             return true;
         }
     }

@@ -232,7 +232,7 @@ Test::requireThatNodeInsertWorks()
     GenerationHandler g;
     MyNodeAllocator m;
     MyLeafNode::RefPair nPair = m.allocLeafNode();
-    MyLeafNode *n = nPair.second;
+    MyLeafNode *n = nPair.data;
     EXPECT_TRUE(n->isLeaf());
     EXPECT_EQUAL(0u, n->validSlots());
     n->insert(0, 20, "b");
@@ -251,14 +251,14 @@ Test::requireThatNodeInsertWorks()
     EXPECT_TRUE(n->isFull());
     EXPECT_TRUE(n->isAtLeastHalfFull());
     EXPECT_TRUE(assertLeafNode("[10:a,20:b,30:c,40:d]", *n));
-    cleanup(g, m, nPair.first, n);
+    cleanup(g, m, nPair.ref, n);
 }
 
 MyLeafNode::RefPair
 getLeafNode(MyNodeAllocator &allocator)
 {
     MyLeafNode::RefPair nPair = allocator.allocLeafNode();
-    MyLeafNode *n = nPair.second;
+    MyLeafNode *n = nPair.data;
     n->insert(0, 1, "a");
     n->insert(1, 3, "c");
     n->insert(2, 5, "e");
@@ -273,37 +273,37 @@ Test::requireThatNodeSplitInsertWorks()
         GenerationHandler g;
         MyNodeAllocator m;
         MyLeafNode::RefPair nPair = getLeafNode(m);
-        MyLeafNode *n = nPair.second;
+        MyLeafNode *n = nPair.data;
         MyLeafNode::RefPair sPair = m.allocLeafNode();
-        MyLeafNode *s = sPair.second;
+        MyLeafNode *s = sPair.data;
         n->splitInsert(s, 2, 4, "d");
         EXPECT_TRUE(assertLeafNode("[1:a,3:c,4:d]", *n));
         EXPECT_TRUE(assertLeafNode("[5:e,7:g]", *s));
-        cleanup(g, m, nPair.first, n, sPair.first, s);
+        cleanup(g, m, nPair.ref, n, sPair.ref, s);
     }
     { // new entry in split node
         GenerationHandler g;
         MyNodeAllocator m;
         MyLeafNode::RefPair nPair = getLeafNode(m);
-        MyLeafNode *n = nPair.second;
+        MyLeafNode *n = nPair.data;
         MyLeafNode::RefPair sPair = m.allocLeafNode();
-        MyLeafNode *s = sPair.second;
+        MyLeafNode *s = sPair.data;
         n->splitInsert(s, 3, 6, "f");
         EXPECT_TRUE(assertLeafNode("[1:a,3:c,5:e]", *n));
         EXPECT_TRUE(assertLeafNode("[6:f,7:g]", *s));
-        cleanup(g, m, nPair.first, n, sPair.first, s);
+        cleanup(g, m, nPair.ref, n, sPair.ref, s);
     }
     { // new entry at end
         GenerationHandler g;
         MyNodeAllocator m;
         MyLeafNode::RefPair nPair = getLeafNode(m);
-        MyLeafNode *n = nPair.second;
+        MyLeafNode *n = nPair.data;
         MyLeafNode::RefPair sPair = m.allocLeafNode();
-        MyLeafNode *s = sPair.second;
+        MyLeafNode *s = sPair.data;
         n->splitInsert(s, 4, 8, "h");
         EXPECT_TRUE(assertLeafNode("[1:a,3:c,5:e]", *n));
         EXPECT_TRUE(assertLeafNode("[7:g,8:h]", *s));
-        cleanup(g, m, nPair.first, n, sPair.first, s);
+        cleanup(g, m, nPair.ref, n, sPair.ref, s);
     }
 }
 
@@ -326,48 +326,48 @@ Test::requireThatNodeStealWorks()
         GenerationHandler g;
         MyStealManager m;
         MyStealNode::RefPair nPair = m.allocLeafNode();
-        MyStealNode *n = nPair.second;
+        MyStealNode *n = nPair.data;
         n->insert(0, 4, "d");
         n->insert(1, 5, "e");
         EXPECT_TRUE(!n->isAtLeastHalfFull());
         MyStealNode::RefPair vPair = m.allocLeafNode();
-        MyStealNode *v = vPair.second;
+        MyStealNode *v = vPair.data;
         v->insert(0, 1, "a");
         v->insert(1, 2, "b");
         v->insert(2, 3, "c");
         n->stealAllFromLeftNode(v);
         EXPECT_TRUE(n->isAtLeastHalfFull());
         EXPECT_TRUE(assertLeafNode("[1:a,2:b,3:c,4:d,5:e]", *n));
-        cleanup(g, m, nPair.first, n, vPair.first, v);
+        cleanup(g, m, nPair.ref, n, vPair.ref, v);
     }
     { // steal all from right
         GenerationHandler g;
         MyStealManager m;
         MyStealNode::RefPair nPair = m.allocLeafNode();
-        MyStealNode *n = nPair.second;
+        MyStealNode *n = nPair.data;
         n->insert(0, 1, "a");
         n->insert(1, 2, "b");
         EXPECT_TRUE(!n->isAtLeastHalfFull());
         MyStealNode::RefPair vPair = m.allocLeafNode();
-        MyStealNode *v = vPair.second;
+        MyStealNode *v = vPair.data;
         v->insert(0, 3, "c");
         v->insert(1, 4, "d");
         v->insert(2, 5, "e");
         n->stealAllFromRightNode(v);
         EXPECT_TRUE(n->isAtLeastHalfFull());
         EXPECT_TRUE(assertLeafNode("[1:a,2:b,3:c,4:d,5:e]", *n));
-        cleanup(g, m, nPair.first, n, vPair.first, v);
+        cleanup(g, m, nPair.ref, n, vPair.ref, v);
     }
     { // steal some from left
         GenerationHandler g;
         MyStealManager m;
         MyStealNode::RefPair nPair = m.allocLeafNode();
-        MyStealNode *n = nPair.second;
+        MyStealNode *n = nPair.data;
         n->insert(0, 5, "e");
         n->insert(1, 6, "f");
         EXPECT_TRUE(!n->isAtLeastHalfFull());
         MyStealNode::RefPair vPair = m.allocLeafNode();
-        MyStealNode *v = vPair.second;
+        MyStealNode *v = vPair.data;
         v->insert(0, 1, "a");
         v->insert(1, 2, "b");
         v->insert(2, 3, "c");
@@ -377,18 +377,18 @@ Test::requireThatNodeStealWorks()
         EXPECT_TRUE(v->isAtLeastHalfFull());
         EXPECT_TRUE(assertLeafNode("[4:d,5:e,6:f]", *n));
         EXPECT_TRUE(assertLeafNode("[1:a,2:b,3:c]", *v));
-        cleanup(g, m, nPair.first, n, vPair.first, v);
+        cleanup(g, m, nPair.ref, n, vPair.ref, v);
     }
     { // steal some from right
         GenerationHandler g;
         MyStealManager m;
         MyStealNode::RefPair nPair = m.allocLeafNode();
-        MyStealNode *n = nPair.second;
+        MyStealNode *n = nPair.data;
         n->insert(0, 1, "a");
         n->insert(1, 2, "b");
         EXPECT_TRUE(!n->isAtLeastHalfFull());
         MyStealNode::RefPair vPair = m.allocLeafNode();
-        MyStealNode *v = vPair.second;
+        MyStealNode *v = vPair.data;
         v->insert(0, 3, "c");
         v->insert(1, 4, "d");
         v->insert(2, 5, "e");
@@ -398,7 +398,7 @@ Test::requireThatNodeStealWorks()
         EXPECT_TRUE(v->isAtLeastHalfFull());
         EXPECT_TRUE(assertLeafNode("[1:a,2:b,3:c]", *n));
         EXPECT_TRUE(assertLeafNode("[4:d,5:e,6:f]", *v));
-        cleanup(g, m, nPair.first, n, vPair.first, v);
+        cleanup(g, m, nPair.ref, n, vPair.ref, v);
     }
 }
 
@@ -408,10 +408,10 @@ Test::requireThatNodeRemoveWorks()
     GenerationHandler g;
     MyNodeAllocator m;
     MyLeafNode::RefPair nPair = getLeafNode(m);
-    MyLeafNode *n = nPair.second;
+    MyLeafNode *n = nPair.data;
     n->remove(1);
     EXPECT_TRUE(assertLeafNode("[1:a,5:e,7:g]", *n));
-    cleanup(g, m, nPair.first, n);
+    cleanup(g, m, nPair.ref, n);
 }
 
 void
@@ -420,7 +420,7 @@ Test::requireThatNodeLowerBoundWorks()
     GenerationHandler g;
     MyNodeAllocator m;
     MyLeafNode::RefPair nPair = getLeafNode(m);
-    MyLeafNode *n = nPair.second;
+    MyLeafNode *n = nPair.data;
     EXPECT_EQUAL(1u, n->lower_bound(3, MyComp()));
     EXPECT_FALSE(MyComp()(3, n->getKey(1u)));
     EXPECT_EQUAL(0u, n->lower_bound(0, MyComp()));
@@ -430,7 +430,7 @@ Test::requireThatNodeLowerBoundWorks()
     EXPECT_EQUAL(3u, n->lower_bound(6, MyComp()));
     EXPECT_TRUE(MyComp()(6, n->getKey(3u)));
     EXPECT_EQUAL(4u, n->lower_bound(8, MyComp()));
-    cleanup(g, m, nPair.first, n);
+    cleanup(g, m, nPair.ref, n);
 }
 
 void
@@ -823,10 +823,10 @@ Test::requireThatMemoryUsageIsCalculated()
 
     // move nodes to hold list
     tm.freeze(); // mark allocated nodes as frozen so we can hold them later on
-    tm.holdNode(ir.first, ir.second);
+    tm.holdNode(ir.ref, ir.data);
     mu.incAllocatedBytesOnHold(sizeof(INode));
     EXPECT_TRUE(assertMemoryUsage(mu, tm.getMemoryUsage()));
-    tm.holdNode(lr.first, lr.second);
+    tm.holdNode(lr.ref, lr.data);
     mu.incAllocatedBytesOnHold(sizeof(LNode));
     EXPECT_TRUE(assertMemoryUsage(mu, tm.getMemoryUsage()));
 

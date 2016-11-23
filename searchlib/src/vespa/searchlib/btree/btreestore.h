@@ -8,6 +8,7 @@
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
 #include <vespa/searchlib/datastore/datastore.h>
+#include <vespa/searchlib/datastore/handle.h>
 
 namespace search
 {
@@ -37,8 +38,8 @@ public:
                               TraitsT::INTERNAL_SLOTS> InternalNodeType;
     typedef BTreeLeafNode<KeyT, DataT, AggrT, TraitsT::LEAF_SLOTS>
     LeafNodeType;
-    typedef std::pair<datastore::EntryRef, BTreeType *> BTreeTypeRefPair;
-    typedef std::pair<datastore::EntryRef, KeyDataType *> KeyDataTypeRefPair;
+    typedef datastore::Handle<BTreeType> BTreeTypeRefPair;
+    typedef datastore::Handle<KeyDataType> KeyDataTypeRefPair;
     typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
     typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
     typedef vespalib::GenerationHandler::generation_t generation_t;
@@ -120,24 +121,23 @@ public:
     }
 
     BTreeTypeRefPair
-    allocNewBTree(void) {
-        return _store.allocNewEntry<BTreeType>(BUFFERTYPE_BTREE);
+    allocNewBTree() {
+        return _store.allocator<BTreeType>(BUFFERTYPE_BTREE).alloc();
     }
 
     BTreeTypeRefPair
-    allocBTree(void) {
-        return _store.allocEntry<BTreeType, TreeReclaimer>(BUFFERTYPE_BTREE);
+    allocBTree() {
+        return _store.freeListAllocator<BTreeType, TreeReclaimer>(BUFFERTYPE_BTREE).alloc();
     }
 
     BTreeTypeRefPair
     allocNewBTreeCopy(const BTreeType &rhs) {
-        return _store.allocNewEntryCopy<BTreeType>(BUFFERTYPE_BTREE, rhs);
+        return _store.allocator<BTreeType>(BUFFERTYPE_BTREE).alloc(rhs);
     }
 
     BTreeTypeRefPair
     allocBTreeCopy(const BTreeType &rhs) {
-        return _store.allocEntryCopy<BTreeType, DefaultReclaimer<BTreeType> >(
-                BUFFERTYPE_BTREE, rhs);
+        return _store.freeListAllocator<BTreeType, DefaultReclaimer<BTreeType> >(BUFFERTYPE_BTREE).alloc(rhs);
     }
 
     KeyDataTypeRefPair

@@ -993,10 +993,10 @@ moveFirstLeafNode(BTreeNode::Ref rootRef)
         assert(_leaf.getNode() == allocator.mapLeafRef(rootRef));
         if (allocator.getCompacting(rootRef)) {
             LeafNodeTypeRefPair lPair(allocator.moveLeafNode(_leaf.getNode()));
-            _leaf.setNode(lPair.second);
+            _leaf.setNode(lPair.data);
             // Before updating root
             std::atomic_thread_fence(std::memory_order_release);
-            newRootRef = lPair.first;
+            newRootRef = lPair.ref;
         }
         _leaf.setIdx(_leaf.getNode()->validSlots() - 1);
         return newRootRef;
@@ -1011,8 +1011,8 @@ moveFirstLeafNode(BTreeNode::Ref rootRef)
     bool moved = allocator.getCompacting(rootRef);
     if (moved) {
         InternalNodeTypeRefPair iPair(allocator.moveInternalNode(node));
-        newRootRef = iPair.first;
-        node = iPair.second;
+        newRootRef = iPair.ref;
+        node = iPair.data;
     }
     _path[level].setNodeAndIdx(node, 0u);
     while (level > 0) {
@@ -1022,8 +1022,8 @@ moveFirstLeafNode(BTreeNode::Ref rootRef)
         node = allocator.mapInternalRef(nodeRef);
         if (allocator.getCompacting(nodeRef)) {
             InternalNodeTypeRefPair iPair = allocator.moveInternalNode(node);
-            nodeRef = iPair.first;
-            node = iPair.second;
+            nodeRef = iPair.ref;
+            node = iPair.data;
             pnode->setChild(0, nodeRef);
             moved = true;
         }
@@ -1034,8 +1034,8 @@ moveFirstLeafNode(BTreeNode::Ref rootRef)
     if (allocator.getCompacting(nodeRef)) {
         LeafNodeTypeRefPair
             lPair(allocator.moveLeafNode(_leaf.getNode()));
-        _leaf.setNode(lPair.second);
-        node->setChild(0, lPair.first);
+        _leaf.setNode(lPair.data);
+        node->setChild(0, lPair.ref);
         moved = true;
     }
     if (moved) {
@@ -1074,8 +1074,8 @@ moveNextLeafNode()
             node = allocator.mapInternalRef(nodeRef);
             if (allocator.getCompacting(nodeRef)) {
                 InternalNodeTypeRefPair iPair(allocator.moveInternalNode(node));
-                nodeRef = iPair.first;
-                node = iPair.second;
+                nodeRef = iPair.ref;
+                node = iPair.data;
                 std::atomic_thread_fence(std::memory_order_release);
                 pnode->setChild(idx, nodeRef);
             }
@@ -1086,9 +1086,9 @@ moveNextLeafNode()
         _leaf.setNode(allocator.mapLeafRef(nodeRef));
         if (allocator.getCompacting(nodeRef)) {
             LeafNodeTypeRefPair lPair(allocator.moveLeafNode(_leaf.getNode()));
-            _leaf.setNode(lPair.second);
+            _leaf.setNode(lPair.data);
             std::atomic_thread_fence(std::memory_order_release);
-            node->setChild(idx, lPair.first);
+            node->setChild(idx, lPair.ref);
         }
         _leaf.setIdx(_leaf.getNode()->validSlots() - 1);
     }
@@ -1177,9 +1177,9 @@ thaw(BTreeNode::Ref rootRef)
         assert(leafNode == _leafRoot);
         LeafNodeTypeRefPair thawedLeaf = allocator.thawNode(rootRef,
                                                              leafNode);
-        _leaf.setNode(thawedLeaf.second);
-        _leafRoot = thawedLeaf.second;
-        return thawedLeaf.first;
+        _leaf.setNode(thawedLeaf.data);
+        _leafRoot = thawedLeaf.data;
+        return thawedLeaf.ref;
     }
     assert(_leafRoot == NULL);
     assert(_path[_pathSize - 1].getNode() ==
@@ -1189,8 +1189,8 @@ thaw(BTreeNode::Ref rootRef)
     assert(leafNode == _leaf.getNode());
     LeafNodeTypeRefPair thawedLeaf = allocator.thawNode(childRef,
                                                          leafNode);
-    _leaf.setNode(thawedLeaf.second);
-    childRef = thawedLeaf.first;
+    _leaf.setNode(thawedLeaf.data);
+    childRef = thawedLeaf.ref;
     uint32_t level = 0;
     uint32_t levels = _pathSize;
     while (level < levels) {
@@ -1206,10 +1206,10 @@ thaw(BTreeNode::Ref rootRef)
             return rootRef;
         }
         InternalNodeTypeRefPair thawed = allocator.thawNode(nodeRef, node);
-        node = thawed.second;
+        node = thawed.data;
         pe.setNode(node);
         node->setChild(pe.getIdx(), childRef);
-        childRef = thawed.first;
+        childRef = thawed.ref;
         ++level;
     }
     return childRef; // Root node was thawed
@@ -1228,15 +1228,15 @@ insertFirst(const KeyType &key, const DataType &data,
     assert(_leafRoot == NULL);
     NodeAllocatorType &allocator = getAllocator();
     LeafNodeTypeRefPair lnode = allocator.allocLeafNode();
-    lnode.second->insert(0, key, data);
+    lnode.data->insert(0, key, data);
     if (AggrCalcT::hasAggregated()) {
         AggrT a;
         aggrCalc.add(a, aggrCalc.getVal(data));
-        lnode.second->getAggregated() = a;
+        lnode.data->getAggregated() = a;
     }
-    _leafRoot = lnode.second;
-    _leaf.setNodeAndIdx(lnode.second, 0u);
-    return lnode.first;
+    _leafRoot = lnode.data;
+    _leaf.setNodeAndIdx(lnode.data, 0u);
+    return lnode.ref;
 }
 
 
@@ -1277,7 +1277,7 @@ addLevel(BTreeNode::Ref rootRef, BTreeNode::Ref splitNodeRef,
     NodeAllocatorType &allocator(getAllocator());
     
     InternalNodeTypeRefPair inodePair(allocator.allocInternalNode(_pathSize + 1));
-    InternalNodeType *inode = inodePair.second;
+    InternalNodeType *inode = inodePair.data;
     inode->setValidLeaves(allocator.validLeaves(rootRef) +
                           allocator.validLeaves(splitNodeRef));
     inode->insert(0, allocator.getLastKey(rootRef), rootRef);
@@ -1290,7 +1290,7 @@ addLevel(BTreeNode::Ref rootRef, BTreeNode::Ref splitNodeRef,
         _leafRoot = NULL;
     }
     ++_pathSize;
-    return inodePair.first;
+    return inodePair.ref;
 }
 
 

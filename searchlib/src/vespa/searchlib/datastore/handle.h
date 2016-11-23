@@ -16,6 +16,7 @@ struct Handle
     EntryRef ref;
     EntryT *data;
     Handle(EntryRef ref_, EntryT *data_) : ref(ref_), data(data_) {}
+    Handle() : ref(), data() {}
 };
 
 }

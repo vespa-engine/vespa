@@ -105,48 +105,20 @@ DataStoreT<RefT>::clearElemHoldList(void)
     elemHold2List.clear();
 }
 
-
 template <typename RefT>
-template <typename EntryType>
-std::pair<RefT, EntryType *>
-DataStoreT<RefT>::allocNewEntry(uint32_t typeId)
+template <typename EntryT>
+Allocator<EntryT, RefT>
+DataStoreT<RefT>::allocator(uint32_t typeId)
 {
-    Allocator<EntryType, RefT> allocator(*this, typeId);
-    auto handle = allocator.alloc();
-    return std::make_pair(handle.ref, handle.data);
+    return Allocator<EntryT, RefT>(*this, typeId);
 }
 
-
 template <typename RefT>
-template <typename EntryType, typename Reclaimer>
-std::pair<RefT, EntryType *>
-DataStoreT<RefT>::allocEntry(uint32_t typeId)
+template <typename EntryT, typename ReclaimerT>
+FreeListAllocator<EntryT, RefT, ReclaimerT>
+DataStoreT<RefT>::freeListAllocator(uint32_t typeId)
 {
-    FreeListAllocator<EntryType, RefT, Reclaimer> allocator(*this, typeId);
-    auto handle = allocator.alloc();
-    return std::make_pair(handle.ref, handle.data);
-}
-
-
-template <typename RefT>
-template <typename EntryType>
-std::pair<RefT, EntryType *>
-DataStoreT<RefT>::allocNewEntryCopy(uint32_t typeId, const EntryType &rhs)
-{
-    Allocator<EntryType, RefT> allocator(*this, typeId);
-    auto handle = allocator.alloc(rhs);
-    return std::make_pair(handle.ref, handle.data);
-}
-
-
-template <typename RefT>
-template <typename EntryType, typename Reclaimer>
-std::pair<RefT, EntryType *>
-DataStoreT<RefT>::allocEntryCopy(uint32_t typeId, const EntryType &rhs)
-{
-    FreeListAllocator<EntryType, RefT, Reclaimer> allocator(*this, typeId);
-    auto handle = allocator.alloc(rhs);
-    return std::make_pair(handle.ref, handle.data);
+    return FreeListAllocator<EntryT, RefT, ReclaimerT>(*this, typeId);
 }
 
 
