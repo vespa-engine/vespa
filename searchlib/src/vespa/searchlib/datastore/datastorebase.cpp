@@ -118,11 +118,11 @@ DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
 {
     auto typeHandler = _typeHandlers[typeId];
     uint32_t clusterSize = typeHandler->getClusterSize();
-    size_t maxClusters = typeHandler->getMaxClusters();
-    size_t maxSize = maxClusters * clusterSize;
+    size_t numClustersForNewBuffer = typeHandler->getNumClustersForNewBuffer();
+    size_t numEntriesForNewBuffer = numClustersForNewBuffer * clusterSize;
     uint32_t bufferId = _activeBufferIds[typeId];
-    if (sizeNeeded + _states[bufferId].size() > maxSize) {
-        // Existing buffer cannot be extended due to maxClusters limit
+    if (sizeNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
+        // Don't try to resize existing buffer, new buffer will be large enough
         switchActiveBuffer(typeId, sizeNeeded);
     } else {
         uint32_t oldBufferId = bufferId;
@@ -130,7 +130,7 @@ DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
             bufferId = nextBufferId(bufferId);
         } while (!_states[bufferId].isFree());
         size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, false);
-        if (allocClusters < typeHandler->getMinClustersNewBuf()) {
+        if (allocClusters < numClustersForNewBuffer) {
             // Resize existing buffer
             fallbackResize(oldBufferId, sizeNeeded);
         } else {

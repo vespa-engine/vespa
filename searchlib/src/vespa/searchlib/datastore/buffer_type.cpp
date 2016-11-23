@@ -9,11 +9,11 @@ namespace datastore {
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
                                uint32_t maxClusters,
-                               uint32_t minClustersNewBuf)
+                               uint32_t numClustersForNewBuffer)
     : _clusterSize(clusterSize),
       _minClusters(std::min(minClusters, maxClusters)),
       _maxClusters(maxClusters),
-      _minClustersNewBuf(std::min(minClustersNewBuf, maxClusters)),
+      _numClustersForNewBuffer(std::min(numClustersForNewBuffer, maxClusters)),
       _activeBuffers(0),
       _holdBuffers(0),
       _activeUsedElems(0),
@@ -97,7 +97,7 @@ BufferTypeBase::clampMaxClusters(uint32_t maxClusters)
 {
     _maxClusters = std::min(_maxClusters, maxClusters);
     _minClusters = std::min(_minClusters, _maxClusters);
-    _minClustersNewBuf = std::min(_minClustersNewBuf, _maxClusters);
+    _numClustersForNewBuffer = std::min(_numClustersForNewBuffer, _maxClusters);
 };
 
 size_t

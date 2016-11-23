@@ -27,7 +27,7 @@ private:
 public:
     MultiValueMapping2(uint32_t maxSmallArraySize,
                        const GrowStrategy &gs = GrowStrategy());
-    MultiValueMapping2(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t minClustersNewBuf,
+    MultiValueMapping2(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer,
                        const GrowStrategy &gs = GrowStrategy());
     virtual ~MultiValueMapping2();
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }

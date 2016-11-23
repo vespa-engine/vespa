@@ -73,8 +73,8 @@ public:
           _attr(_mvMapping)
     {
     }
-    Fixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t minClustersNewBuf)
-        : _mvMapping(maxSmallArraySize, minClusters, maxClusters, minClustersNewBuf),
+    Fixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
+        : _mvMapping(maxSmallArraySize, minClusters, maxClusters, numClustersForNewBuffer),
           _attr(_mvMapping)
     {
     }
@@ -146,8 +146,8 @@ public:
         _rnd.srand48(32);
     }
 
-    IntFixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t minClustersNewBuf)
-        : Fixture<int>(maxSmallArraySize, minClusters, maxClusters, minClustersNewBuf),
+    IntFixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
+        : Fixture<int>(maxSmallArraySize, minClusters, maxClusters, numClustersForNewBuffer),
           _rnd(),
           _refMapping(),
           _maxSmallArraySize(maxSmallArraySize)
