@@ -11,6 +11,7 @@ namespace search {
 namespace transactionlog {
 
 class Domain;
+class DomainPart;
 typedef std::shared_ptr<Domain> DomainSP;
 
 class Session : public FRT_IRequestWait
@@ -38,8 +39,7 @@ private:
         QPacket(SerialNum s, const Packet & p)
             : _serial(s),
               _packet(new Packet(p))
-        {
-        }
+        { }
         SerialNum _serial;
         std::unique_ptr<Packet>    _packet;
     };
@@ -75,6 +75,7 @@ private:
     void visitOnly();
     void subscribe();
     void finalize();
+    bool visit(FastOS_FileInterface & file, DomainPart & dp) __attribute__((noinline));
     int32_t rpc(FRT_RPCRequest * req);
     int32_t rpcAsync(FRT_RPCRequest * req);
     FRT_Supervisor          & _supervisor;

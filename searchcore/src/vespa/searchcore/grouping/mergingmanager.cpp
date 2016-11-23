@@ -28,13 +28,8 @@ public:
     typedef search::aggregation::FS4Hit FS4Hit;
     PathMangler(uint32_t partBits, uint32_t rowBits, uint32_t partId, uint32_t rowId, bool mld)
         : _partBits(partBits), _rowBits(rowBits), _partId(partId), _rowId(rowId), _mld(mld) {}
-    virtual bool check(const vespalib::Identifiable &obj) const {
-        return (obj.getClass().id() == FS4Hit::classId);
-    }
-    virtual void execute(vespalib::Identifiable &obj) {
-        FS4Hit &hit = static_cast<search::aggregation::FS4Hit&>(obj);
-        hit.setPath(computeNewPath(hit.getPath()));
-    }
+    bool check(const vespalib::Identifiable &obj) const override;
+    void execute(vespalib::Identifiable &obj) override __attribute__((noinline));
     uint32_t computeNewPath(uint32_t path) const {
         if (_mld) {
             path = (path + 1) << _partBits;
@@ -46,6 +41,15 @@ public:
         return path;
     }
 };
+
+bool PathMangler::check(const vespalib::Identifiable &obj) const {
+    return (obj.getClass().id() == FS4Hit::classId);
+}
+
+void PathMangler::execute(vespalib::Identifiable &obj) {
+    FS4Hit &hit = static_cast<search::aggregation::FS4Hit&>(obj);
+    hit.setPath(computeNewPath(hit.getPath()));
+}
 
 } // namespace search::grouping::<unnamed>
 
@@ -99,44 +103,51 @@ MergingManager::merge()
     }
 }
 
+typedef std::unique_ptr<Grouping>    UP;
+typedef std::map<uint32_t, UP> MAP;
+typedef MAP::iterator ITR;
+
+namespace {
+
+void mergeOne(MAP & map, const MergingManager::Entry & input, uint32_t partBits, uint32_t rowBits) __attribute__((noinline));
+
+void mergeOne(MAP & map, const MergingManager::Entry & input, uint32_t partBits, uint32_t rowBits) {
+    PathMangler pathMangler(partBits, rowBits, input.partId, input.rowId, input.mld);
+    vespalib::nbostream is(input.data, input.length);
+    vespalib::NBOSerializer nis(is);
+    uint32_t cnt = 0;
+    nis >> cnt;
+    for (uint32_t j = 0; j < cnt; ++j) {
+        UP g(new Grouping());
+        g->deserialize(nis);
+        g->select(pathMangler, pathMangler);
+        ITR pos = map.find(g->getId());
+        if (pos == map.end()) {
+            map[g->getId()] = std::move(g);
+        } else {
+            pos->second->merge(*g);
+        }
+    }
+}
+
+}
+
 void
 MergingManager::fullMerge()
 {
-    typedef std::unique_ptr<Grouping>    UP;
-    typedef std::map<uint32_t, UP> MAP;
-    typedef MAP::iterator          ITR;
-
     MAP map;
     for (size_t i = 0; i < _input.size(); ++i) {
-        PathMangler pathMangler(_partBits, _rowBits,
-                                _input[i].partId, _input[i].rowId,
-                                _input[i].mld);
         if ((_input[i].data != NULL) && (_input[i].length > 0)) {
-            vespalib::nbostream is(_input[i].data, _input[i].length);
-            vespalib::NBOSerializer nis(is);
-            uint32_t cnt = 0;
-            nis >> cnt;
-            for (uint32_t j = 0; j < cnt; ++j) {
-                UP g(new Grouping());
-                g->deserialize(nis);
-                g->select(pathMangler, pathMangler);
-                ITR pos = map.find(g->getId());
-                if (pos == map.end()) {
-                    map[g->getId()] = std::move(g);
-                } else {
-                    pos->second->merge(*g);
-                }
-            }
+            mergeOne(map, _input[i], _partBits, _rowBits);
         }
     }
     vespalib::nbostream os;
     vespalib::NBOSerializer nos(os);
     nos << (uint32_t)map.size();
-    ITR end = map.end();
-    for (ITR itr = map.begin(); itr != end; ++itr) {
-        itr->second->postMerge();
-        itr->second->sortById();
-        itr->second->serialize(nos);
+    for (auto & entry : map) {
+        entry.second->postMerge();
+        entry.second->sortById();
+        entry.second->serialize(nos);
     }
     _resultLen = os.size();
     _result = (char *) malloc(os.size());

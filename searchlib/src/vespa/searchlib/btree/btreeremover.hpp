@@ -132,7 +132,7 @@ remove(BTreeNode::Ref &root,
     }
     uint32_t level = 0;
     uint32_t levels = itr.getPathSize();
-    InternalNodeType *node;
+    InternalNodeType *node = nullptr;
     for (; level < levels; ++level) {
         typename Iterator::PathElement &pe = itr.getPath(level);
         node = pe.getWNode();
