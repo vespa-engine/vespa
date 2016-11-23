@@ -12,7 +12,7 @@ namespace attribute {
 /**
  * Class for mapping from from document id to an array of values.
  */
-template <typename EntryT, typename RefT = datastore::EntryRefT<17> >
+template <typename EntryT, typename RefT = datastore::EntryRefT<19> >
 class MultiValueMapping2 : public MultiValueMapping2Base
 {
 public:

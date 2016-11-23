@@ -38,7 +38,7 @@ struct MemStats
     }
 };
 
-template <typename EntryT, typename RefT = EntryRefT<17> >
+template <typename EntryT, typename RefT = EntryRefT<19> >
 struct Fixture
 {
     using EntryRefType = RefT;

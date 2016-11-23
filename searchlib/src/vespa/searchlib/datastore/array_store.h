@@ -17,13 +17,13 @@ namespace datastore {
 /**
  * Datastore for storing arrays of type EntryT that is accessed via a 32-bit EntryRef.
  *
- * The default EntryRef type uses 17 bits for offset (131072 values) and 15 bits for buffer id (32768 buffers).
+ * The default EntryRef type uses 19 bits for offset (524288 values) and 13 bits for buffer id (8192 buffers).
  * Arrays of size [1,maxSmallArraySize] are stored in buffers with arrays of equal size.
  * Arrays of size >maxSmallArraySize are stored in buffers with vespalib::Array instances that are heap allocated.
  *
  * The max value of maxSmallArraySize is (2^bufferBits - 1).
  */
-template <typename EntryT, typename RefT = EntryRefT<17> >
+template <typename EntryT, typename RefT = EntryRefT<19> >
 class ArrayStore
 {
 public:
