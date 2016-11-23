@@ -60,59 +60,77 @@ TOKEN :
     <RSQUARE: "]"> |
     <LCURLY: "{"> |
     <RCURLY: "}"> |
+
     <ADD: "+"> |
     <SUB: "-"> |
     <DIV: "/"> |
     <MUL: "*"> |
     <DOT: "."> |
+
     <DOLLAR: "$"> |
     <COMMA: ","> |
     <COLON: ":"> |
+
     <LE: "<="> |
     <LT: "<"> |
     <EQ: "=="> |
     <AQ: "~="> |
     <GE: ">="> |
     <GT: ">"> |
+
     <STRING: ("\"" (~["\""] | "\\\"")* "\"") |
              ("'" (~["'"] | "\\'")* "'")> |
+
     <IF: "if"> |
-    <COSH: "cosh"> |
-    <SINH: "sinh"> |
-    <TANH: "tanh"> |
-    <COS: "cos"> |
-    <SIN: "sin"> |
-    <TAN: "tan"> |
-    <ACOS: "acos"> |
-    <ASIN: "asin"> |
-    <ATAN2: "atan2"> |
-    <ATAN: "atan"> |
-    <EXP: "exp"> |
-    <LDEXP: "ldexp"> |
-    <LOG10: "log10"> |
-    <LOG: "log"> |
-    <POW: "pow"> |
-    <SQRT: "sqrt"> |
-    <CEIL: "ceil"> |
-    <FABS: "fabs"> |
-    <FLOOR: "floor"> |
-    <FMOD: "fmod"> |
-    <ISNAN: "isNan"> |
     <IN: "in"> |
     <F: "f"> |
+
+    <ABS: "abs"> |
+    <ACOS: "acos"> |
+    <ASIN: "asin"> |
+    <ATAN: "atan"> |
+    <CEIL: "ceil"> |
+    <COS: "cos"> |
+    <COSH: "cosh"> |
+    <ELU: "elu"> |
+    <EXP: "exp"> |
+    <FABS: "fabs"> |
+    <FLOOR: "floor"> |
+    <ISNAN: "isNan"> |
+    <LOG: "log"> |
+    <LOG10: "log10"> |
+    <RELU: "relu"> |
+    <ROUND: "round"> |
+    <SIGMOID: "sigmoid"> |
+    <SIGN: "sign"> |
+    <SIN: "sin"> |
+    <SINH: "sinh"> |
+    <SQUARE: "square"> |
+    <SQRT: "sqrt"> |
+    <TAN: "tan"> |
+    <TANH: "tanh"> |
+
+    <ATAN2: "atan2"> |
+    <FMOD: "fmod"> |
+    <LDEXP: "ldexp"> |
+    // MAX
+    // MIN
+    <MOD: "mod"> |
+    <POW: "pow"> |
+
     <MAP: "map"> |
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
     <RENAME: "rename"> |
     <TENSOR: "tensor"> |
+
     <AVG: "avg" > |
     <COUNT: "count"> |
     <PROD: "prod"> |
     <SUM: "sum"> |
     <MAX: "max"> |
     <MIN: "min"> |
-    <RELU: "relu"> |
-    <SIGMOID: "sigmoid"> |
+
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
 }
 
@@ -296,11 +314,11 @@ ExpressionNode function() :
     ExpressionNode function;
 }
 {
-    ( function = scalarFunction() | function = tensorFunction() )
+    ( function = scalarOrTensorFunction() | function = tensorFunction() )
     { return function; }
 }
 
-FunctionNode scalarFunction() :
+FunctionNode scalarOrTensorFunction() :
 {
     Function function;
     ExpressionNode arg1, arg2;
@@ -434,35 +452,41 @@ String tensorFunctionName() :
 
 Function unaryFunctionName() : { }
 {
-    <COS>     { return Function.cos;     } |
-    <SIN>     { return Function.sin;     } |
-    <TAN>     { return Function.tan;     } |
-    <COSH>    { return Function.cosh;    } |
-    <SINH>    { return Function.sinh;    } |
-    <TANH>    { return Function.tanh;    } |
+    <ABS>     { return Function.abs;     } |
     <ACOS>    { return Function.acos;    } |
     <ASIN>    { return Function.asin;    } |
     <ATAN>    { return Function.atan;    } |
-    <EXP>     { return Function.exp;     } |
-    <LOG10>   { return Function.log10;   } |
-    <LOG>     { return Function.log;     } |
-    <SQRT>    { return Function.sqrt;    } |
     <CEIL>    { return Function.ceil;    } |
+    <COS>     { return Function.cos;     } |
+    <COSH>    { return Function.cosh;    } |
+    <ELU>     { return Function.elu;     } |
+    <EXP>     { return Function.exp;     } |
     <FABS>    { return Function.fabs;    } |
     <FLOOR>   { return Function.floor;   } |
     <ISNAN>   { return Function.isNan;   } |
+    <LOG>     { return Function.log;     } |
+    <LOG10>   { return Function.log10;   } |
     <RELU>    { return Function.relu;    } |
-    <SIGMOID> { return Function.sigmoid; }
+    <ROUND>   { return Function.round;   } |
+    <SIGMOID> { return Function.sigmoid; } |
+    <SIGN>    { return Function.sign;    } |
+    <SIN>     { return Function.sin;     } |
+    <SINH>    { return Function.sinh;    } |
+    <SQUARE>  { return Function.square;  } |
+    <SQRT>    { return Function.sqrt;    } |
+    <TAN>     { return Function.tan;     } |
+    <TANH>    { return Function.tanh;    }
 }
 
 Function binaryFunctionName() : { }
 {
     <ATAN2> { return Function.atan2; } |
-    <LDEXP> { return Function.ldexp; } |
-    <POW>   { return Function.pow;   } |
     <FMOD>  { return Function.fmod;  } |
+    <LDEXP> { return Function.ldexp; } |
+    <MAX>   { return Function.max;   } |
     <MIN>   { return Function.min;   } |
-    <MAX>   { return Function.max;   }
+    <MOD>   { return Function.mod;   } |
+    <POW>   { return Function.pow;   } 
 }
 
 List<ExpressionNode> expressionList() :

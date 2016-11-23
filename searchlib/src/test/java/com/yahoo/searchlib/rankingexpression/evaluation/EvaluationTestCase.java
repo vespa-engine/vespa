@@ -116,7 +116,33 @@ public class EvaluationTestCase extends junit.framework.TestCase {
                         "min(tensor0, 0)", "{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }");
         assertEvaluates("{ {}:0, {d1:l1}:0, {d1:l1,d2:l1 }:10 }",
                         "max(tensor0, 0)", "{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }");
-        assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
+        // -- explicitly implemented functions (not foolproof tests as we don't bother testing float value equivalence)
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "abs(tensor0)",    "{ {x:1}:1, {x:2}:-2 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "acos(tensor0)",   "{ {x:1}:1, {x:2}:1 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "asin(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "atan(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "ceil(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "cos(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "cosh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "elu(tensor0)",    "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "exp(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "fabs(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "floor(tensor0)",  "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "isNan(tensor0)",  "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "log(tensor0)",    "{ {x:1}:1, {x:2}:1 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:1 }",     "log10(tensor0)",  "{ {x:1}:1, {x:2}:10 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:2 }",     "mod(tensor0, 3)", "{ {x:1}:3, {x:2}:8 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:8 }",     "pow(tensor0, 3)", "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "relu(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "round(tensor0)",  "{ {x:1}:1, {x:2}:1.8 }");
+        assertEvaluates("{ {x:1}:0.5, {x:2}:0.5 }", "sigmoid(tensor0)","{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:-1 }",    "sign(tensor0)",   "{ {x:1}:3, {x:2}:-5 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "sin(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "sinh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:4 }",     "square(tensor0)", "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:3 }",     "sqrt(tensor0)",   "{ {x:1}:1, {x:2}:9 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "tan(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "tanh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
 
         // tensor reduce
         // -- reduce 2 dimensions
@@ -193,12 +219,18 @@ public class EvaluationTestCase extends junit.framework.TestCase {
                         "tensor0 + 3","{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
         assertEvaluates("{ {}:1, {d1:l1}:10, {d1:l1,d2:l1 }:100 }",
                         "tensor0 / 10", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
+        assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
         
         // tensor rename
         assertEvaluates("{ {newX:1,y:2}:3 }", "rename(tensor0, x, newX)", "{ {x:1,y:2}:3.0 }");
         assertEvaluates("{ {x:2,y:1}:3 }", "rename(tensor0, [x, y], [y, x])", "{ {x:1,y:2}:3.0 }");
+        
+        // tensor generate - TODO
+        // assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0, {x:2,y:2}:1, {x:1,y:2}:0 }", "tensor(x[2],y[2])(x==y)");
+        
+        
 
-        // Combined
+        // combining functions
         assertEvaluates(String.valueOf(7.5 + 45 + 1.7),
                         "sum( " +                              // model computation:
                         "      tensor0 * tensor1 * tensor2 " + // - feature combinations
@@ -206,8 +238,6 @@ public class EvaluationTestCase extends junit.framework.TestCase {
                         ") + 1.7",
                         "{ {x:1}:1, {x:2}:2 }", "{ {y:1}:3, {y:2}:4 }", "{ {z:1}:5 }",
                         "{ {x:1,y:1,z:1}:0.5, {x:2,y:1,z:1}:1.5, {x:1,y:1,z:2}:4.5 }");
-
-        // undefined is not the same as 0
         assertEvaluates("1.0", "sum(tensor0 * tensor1 + 0.5)", "{ {x:1}:0, {x:2}:0 }", "{ {x:1}:1, {x:2}:1 }");
         assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                   "{ {x:1}:1, {x:2}:1 }");
 
