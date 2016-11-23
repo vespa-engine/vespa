@@ -29,7 +29,7 @@ public:
         return getId() != a2.getId() && getName() == a2.getName();
     }
     bool operator!=(const AnnotationType &a2) const {
-        return ! (*this != a2);
+        return ! (*this == a2);
     }
 
     static const AnnotationType *const TERM;
