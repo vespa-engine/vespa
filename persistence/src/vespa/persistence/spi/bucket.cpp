@@ -17,10 +17,10 @@ Bucket::toString() const {
 vespalib::asciistream&
 operator<<(vespalib::asciistream& os, const Bucket& bucket)
 {
-    return os << "BucketId(0x"
+    return os << "Bucket(0x"
               << vespalib::hex << vespalib::setw(sizeof(document::BucketId::Type)*2) << vespalib::setfill('0')
-              << bucket.getBucketId()
-              << std::dec
+              << bucket.getBucketId().getId()
+              << vespalib::dec
               << ", partition " << bucket.getPartition()
               << ")";
 }
