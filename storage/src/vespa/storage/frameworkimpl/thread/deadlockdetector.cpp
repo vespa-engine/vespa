@@ -80,9 +80,9 @@ namespace {
         {
         }
 
-        virtual void visitThread(const vespalib::string& id,
-                                 const framework::ThreadProperties& p,
-                                 const framework::ThreadTickData& td)
+        void visitThread(const vespalib::string& id,
+                         const framework::ThreadProperties& p,
+                         const framework::ThreadTickData& td) override
         {
             if (_states.find(id) == _states.end()) {
                 _states[id] = DeadLockDetector::OK;
