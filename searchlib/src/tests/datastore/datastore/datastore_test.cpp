@@ -99,6 +99,7 @@ public:
         }
         return sizes;
     }
+    MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 };
 
 typedef MyStore::RefType MyRef;
@@ -454,10 +455,12 @@ Test::requireThatBufferGrowthWorks()
     // Buffer sizes: 4, 8, 16, 32, 64, 64, 64, 64
     // First element in first buffer reserved
     EXPECT_EQUAL(GrowthStats({ 3, 11, 27, 59, 123, 187,251, 315}), GrowStore().getGrowthStats(8));
-    // Resize current buffer if new buffer size would be less than 32
-    // Buffer sizes: 32, 36, 64, 64, 64, 64, 64, 64
+    EXPECT_EQUAL(16u, GrowStore().getMemoryUsage().allocatedBytes());
+    // Resize current buffer if buffer size is less than 16
+    // Buffer sizes: 16, 32, 64, 64, 64, 64, 64, 64
     // First element in first buffer reserved
-    EXPECT_EQUAL(GrowthStats({ 31, 67, 131, 195, 259,323,387,451}), GrowStore(32).getGrowthStats(8));
+    EXPECT_EQUAL(GrowthStats({ 15, 47, 111, 175, 239, 303, 367, 431}), GrowStore(16).getGrowthStats(8));
+    EXPECT_EQUAL(16u, GrowStore(16).getMemoryUsage().allocatedBytes());
 }
 
 int
