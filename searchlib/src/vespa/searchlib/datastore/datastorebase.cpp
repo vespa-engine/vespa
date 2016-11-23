@@ -125,19 +125,7 @@ DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded)
         // Don't try to resize existing buffer, new buffer will be large enough
         switchActiveBuffer(typeId, sizeNeeded);
     } else {
-        uint32_t oldBufferId = bufferId;
-        do {
-            bufferId = nextBufferId(bufferId);
-        } while (!_states[bufferId].isFree());
-        size_t allocClusters = typeHandler->calcClustersToAlloc(bufferId, sizeNeeded, false);
-        if (allocClusters < numClustersForNewBuffer) {
-            // Resize existing buffer
-            fallbackResize(oldBufferId, sizeNeeded);
-        } else {
-            // start using next buffer
-            onActive(bufferId, typeId, sizeNeeded);
-            _activeBufferIds[typeId] = bufferId;
-        }
+        fallbackResize(bufferId, sizeNeeded);
     }
 }
 
