@@ -9,7 +9,7 @@
 namespace search {
 namespace datastore {
 
-constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
+constexpr size_t MIN_BUFFER_CLUSTERS = 8192;
 
 template <typename EntryT, typename RefT>
 ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType()
