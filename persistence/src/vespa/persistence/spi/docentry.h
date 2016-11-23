@@ -14,6 +14,7 @@
 #pragma once
 
 #include <persistence/spi/types.h>
+#include <vespa/vespalib/util/linkedptr.h>
 
 namespace storage {
 namespace spi {
@@ -23,7 +24,7 @@ enum DocumentMetaFlags {
     REMOVE_ENTRY     = 0x1
 };
 
-class DocEntry : public document::Printable {
+class DocEntry {
 public:
     typedef uint32_t SizeType;
 private:
@@ -31,85 +32,30 @@ private:
     int _metaFlags;
     SizeType _persistedDocumentSize;
     SizeType _size;
-    DocumentId::UP _documentId;
-    Document::UP _document;
+    DocumentIdUP _documentId;
+    DocumentUP _document;
 public:
     typedef vespalib::LinkedPtr<DocEntry> LP;
     typedef std::unique_ptr<DocEntry> UP;
 
-    DocEntry(Timestamp t, int metaFlags, Document::UP doc)
-        : _timestamp(t),
-          _metaFlags(metaFlags),
-          _persistedDocumentSize(doc->getSerializedSize()),
-          _size(_persistedDocumentSize + sizeof(DocEntry)),
-          _documentId(),
-          _document(std::move(doc))
-    {
-    }
+    DocEntry(Timestamp t, int metaFlags, DocumentUP doc);
 
     /**
      * Constructor that can be used by providers that already know
      * the serialized size of the document, so the potentially expensive
      * call to getSerializedSize can be avoided.
      */
-    DocEntry(Timestamp t,
-             int metaFlags,
-             Document::UP doc,
-             size_t serializedDocumentSize)
-        : _timestamp(t),
-          _metaFlags(metaFlags),
-          _persistedDocumentSize(serializedDocumentSize),
-          _size(_persistedDocumentSize + sizeof(DocEntry)),
-          _documentId(),
-          _document(std::move(doc))
-    {
-    }
+    DocEntry(Timestamp t, int metaFlags, DocumentUP doc, size_t serializedDocumentSize);
+    DocEntry(Timestamp t, int metaFlags, const DocumentId& docId);
 
-    DocEntry(Timestamp t, int metaFlags, const DocumentId& docId)
-        : _timestamp(t),
-          _metaFlags(metaFlags),
-          _persistedDocumentSize(docId.getSerializedSize()),
-          _size(_persistedDocumentSize + sizeof(DocEntry)),
-          _documentId(new DocumentId(docId)),
-          _document()
-    {
-    }
-
-    DocEntry(Timestamp t, int metaFlags)
-        : _timestamp(t),
-          _metaFlags(metaFlags),
-          _persistedDocumentSize(0),
-          _size(sizeof(DocEntry)),
-          _documentId(),
-          _document()
-    {
-    }
-
-    DocEntry* clone() const {
-        DocEntry* ret;
-        if (_documentId.get() != 0) {
-            ret = new DocEntry(_timestamp, _metaFlags, *_documentId);
-            ret->setPersistedDocumentSize(_persistedDocumentSize);
-        } else if (_document.get()) {
-            ret = new DocEntry(_timestamp, _metaFlags,
-                               Document::UP(new Document(*_document)),
-                               _persistedDocumentSize);
-        } else {
-            ret = new DocEntry(_timestamp, _metaFlags);
-            ret->setPersistedDocumentSize(_persistedDocumentSize);
-        }
-        return ret;
-    }
-
+    DocEntry(Timestamp t, int metaFlags);
+    ~DocEntry();
+    DocEntry* clone() const;
     const Document* getDocument() const { return _document.get(); }
-    const DocumentId* getDocumentId() const {
-        return (_document.get() != 0 ? &_document->getId()
-                                     : _documentId.get());
-    }
-    Document::UP releaseDocument() { return std::move(_document); }
+    const DocumentId* getDocumentId() const;
+    DocumentUP releaseDocument();
     bool isRemove() const { return (_metaFlags & REMOVE_ENTRY); }
     Timestamp getTimestamp() const { return _timestamp; }
-
     int getFlags() const { return _metaFlags; }
     void setFlags(int flags) { _metaFlags = flags; }
     /**
@@ -123,11 +69,7 @@ public:
      * the id alone.
      * Otherwise (i.e. metadata only), returns zero.
      */
-    SizeType getDocumentSize() const
-    {
-        assert(_size >= sizeof(DocEntry));
-        return _size - sizeof(DocEntry);
-    }
+    SizeType getDocumentSize() const;
     /**
      * Return size of document as it exists in persisted form. By default
      * this will return the serialized size of the entry's document instance,
@@ -146,81 +88,9 @@ public:
         _persistedDocumentSize = persistedDocumentSize;
     }
 
-    void print(std::ostream& out, bool, const std::string&) const
-    {
-        out << "DocEntry(" << _timestamp << ", "
-            << _metaFlags << ", ";
-        if (_documentId.get() != 0) {
-            out << *_documentId;
-        } else if (_document.get()) {
-            out << "Doc(" << _document->getId() << ")";
-        } else {
-            out << "metadata only";
-        }
-        out << ")";
-    }
-
-    void prettyPrint(std::ostream& out) const
-    {
-        std::string flags;
-        if (_metaFlags == REMOVE_ENTRY) {
-            flags = " (remove)";
-        }
-
-        out << "DocEntry(Timestamp: " << _timestamp
-            << ", size " << getPersistedDocumentSize() << ", ";
-        if (_documentId.get() != 0) {
-            out << *_documentId;
-        } else if (_document.get()) {
-            out << "Doc(" << _document->getId() << ")";
-        } else {
-            out << "metadata only";
-        }
-        out << flags << ")";
-    }
-
-    bool operator==(const DocEntry& entry) const {
-        if (_timestamp != entry._timestamp) {
-            return false;
-        }
-
-        if (_metaFlags != entry._metaFlags) {
-            return false;
-        }
-
-        if (_documentId.get()) {
-            if (!entry._documentId.get()) {
-                return false;
-            }
-
-            if (*_documentId != *entry._documentId) {
-                return false;
-            }
-        } else {
-            if (entry._documentId.get()) {
-                return false;
-            }
-        }
-
-        if (_document.get()) {
-            if (!entry._document.get()) {
-                return false;
-            }
-
-            if (*_document != *entry._document) {
-                return false;
-            }
-        } else {
-            if (entry._document.get()) {
-                return false;
-            }
-        }
-        if (_persistedDocumentSize != entry._persistedDocumentSize) {
-            return false;
-        }
-
-        return true;
-    }
+    vespalib::string toString() const;
+    void prettyPrint(std::ostream& out) const;
+    bool operator==(const DocEntry& entry) const;
 };
 
 } // spi

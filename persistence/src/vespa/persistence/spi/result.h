@@ -2,15 +2,15 @@
 #pragma once
 
 #include "partitionstate.h"
-#include <vespa/persistence/spi/bucketinfo.h>
-#include <vespa/persistence/spi/docentry.h>
-#include <persistence/spi/types.h>
+#include "bucketinfo.h"
+#include "bucket.h"
+#include "docentry.h"
 
 namespace storage {
 
 namespace spi {
 
-class Result : public document::Printable {
+class Result {
 public:
     typedef std::unique_ptr<Result> UP;
 
@@ -36,6 +36,8 @@ public:
         : _errorCode(error),
           _errorMessage(errorMessage) {}
 
+    virtual ~Result() { }
+
     bool operator==(const Result& o) const {
         return _errorCode == o._errorCode
                && _errorMessage == o._errorMessage;
@@ -53,10 +55,7 @@ public:
         return _errorMessage;
     }
 
-    void print(std::ostream& out, bool, const std::string&) const
-    {
-        out << "Result(" << _errorCode << ", " << _errorMessage << ")";
-    }
+    vespalib::string toString() const;
 
 private:
     ErrorType _errorCode;
@@ -97,13 +96,13 @@ public:
      */
     UpdateResult(ErrorType error, const vespalib::string& errorMessage)
         : Result(error, errorMessage),
-          _existingTimestamp(0) {}
+          _existingTimestamp(0) { }
 
     /**
      * Constructor to use when no document to update was found.
      */
     UpdateResult()
-        : _existingTimestamp(0) {}
+        : _existingTimestamp(0) { }
 
     /**
      * Constructor to use when the update was successful.
@@ -129,17 +128,15 @@ public:
     RemoveResult(ErrorType error, const vespalib::string& errorMessage)
         : Result(error, errorMessage),
           _wasFound(false)
-    {}
+    { }
 
     /**
      * Constructor to use when the remove was successful.
      */
     RemoveResult(bool foundDocument)
-        : _wasFound(foundDocument) {};
+        : _wasFound(foundDocument) { }
 
-    bool wasFound() const {
-        return _wasFound;
-    }
+    bool wasFound() const { return _wasFound; }
 
 private:
     bool _wasFound;
@@ -153,13 +150,13 @@ public:
      */
     GetResult(ErrorType error, const vespalib::string& errorMessage)
         : Result(error, errorMessage),
-          _timestamp(0) {};
+          _timestamp(0) { }
 
     /**
      * Constructor to use when we didn't find the document in question.
      */
     GetResult()
-        : _timestamp(0) {};
+        : _timestamp(0) { }
 
     /**
      * Constructor to use when we found the document asked for.
@@ -167,11 +164,9 @@ public:
      * @param doc The document we found
      * @param timestamp The timestamp with which the document was stored.
      */
-    GetResult(Document::UP doc, Timestamp timestamp)
-        : Result(),
-          _timestamp(timestamp),
-          _doc(std::move(doc))
-    {}
+    GetResult(DocumentUP doc, Timestamp timestamp);
+
+    ~GetResult();
 
     Timestamp getTimestamp() const { return _timestamp; }
 
@@ -187,13 +182,13 @@ public:
         return *_doc;
     }
 
-    const Document::SP & getDocumentPtr() {
+    const DocumentSP & getDocumentPtr() {
         return _doc;
     }
 
 private:
-    Timestamp _timestamp;
-    Document::SP _doc;
+    Timestamp  _timestamp;
+    DocumentSP _doc;
 };
 
 class BucketIdListResult : public Result {
@@ -204,7 +199,7 @@ public:
      * Constructor used when there was an error listing the buckets.
      */
     BucketIdListResult(ErrorType error, const vespalib::string& errorMessage)
-        : Result(error, errorMessage) {};
+        : Result(error, errorMessage) {}
 
     /**
      * Constructor used when the bucket listing was successful.
@@ -216,7 +211,9 @@ public:
         : Result()
     {
         _info.swap(list);
-    };
+    }
+
+    ~BucketIdListResult();
 
     const List& getList() const { return _info; }
     List& getList() { return _info; }
@@ -232,14 +229,14 @@ public:
      */
     CreateIteratorResult(ErrorType error, const vespalib::string& errorMessage)
         : Result(error, errorMessage),
-          _iterator(0) {};
+          _iterator(0) { }
 
     /**
      * Constructor used when the iterator state was successfully created.
      */
     CreateIteratorResult(const IteratorId& id)
         : _iterator(id)
-    {}
+    { }
 
     const IteratorId& getIteratorId() const { return _iterator; }
 
@@ -257,7 +254,7 @@ public:
     IterateResult(ErrorType error, const vespalib::string& errorMessage)
         : Result(error, errorMessage),
           _completed(false)
-    {}
+    { }
 
     /**
      * Constructor used when the iteration was successful.
@@ -270,6 +267,8 @@ public:
         : _completed(completed),
           _entries(std::move(entries))
     { }
+
+    ~IterateResult();
 
     const List& getEntries() const { return _entries; }
 
@@ -289,14 +288,14 @@ public:
     PartitionStateListResult(ErrorType error, const vespalib::string& msg)
         : Result(error, msg),
           _list(0)
-    {}
+    { }
 
     /**
      * Constructor to use when the operation was successful.
      */
-    PartitionStateListResult(PartitionStateList list) : _list(list) {};
+    PartitionStateListResult(PartitionStateList list) : _list(list) { }
 
-    PartitionStateList getList() const { return _list; }
+    const PartitionStateList & getList() const { return _list; }
 
 private:
     PartitionStateList _list;

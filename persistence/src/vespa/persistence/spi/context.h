@@ -32,15 +32,16 @@
 #include <vespa/metrics/loadmetric.h>
 #include <persistence/spi/types.h>
 #include <vespa/persistence/spi/read_consistency.h>
-#include <vector>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/trace/trace.h>
-#include <vespa/vespalib/util/linkedptr.h>
+
+namespace metrics {
+    class LoadType;
+}
 
 namespace storage {
 namespace spi {
 
-typedef metrics::LoadType LoadType;
+using LoadType = metrics::LoadType;
 
 typedef uint16_t Priority; // 0 - max pri, 255 - min pri
 
@@ -61,13 +62,14 @@ public:
           _priority(pri),
           _trace(maxTraceLevel),
           _readConsistency(ReadConsistency::STRONG)
-    {}
+    { }
 
     const LoadType& getLoadType() const { return *_loadType; }
     Priority getPriority() const { return _priority; }
     int getMaxTraceLevel() const { return _trace.getLevel(); }
-    void addTrace(const vespalib::TraceNode& traceNode)
-        { _trace.getRoot().addChild(traceNode); }
+    void addTrace(const vespalib::TraceNode& traceNode) {
+        _trace.getRoot().addChild(traceNode);
+    }
 
     /**
      * A read operation might choose to relax its consistency requirements,

@@ -8,22 +8,21 @@
 
 #pragma once
 
-#include <string>
-#include <vespa/document/fieldvalue/document.h>
+#include <persistence/spi/types.h>
 
 namespace storage {
 namespace spi {
 
 class DocumentSelection
 {
-    std::string _documentSelection;
+    vespalib::string _documentSelection;
  public:
-    explicit DocumentSelection(const std::string& docSel)
+    explicit DocumentSelection(const vespalib::string& docSel)
         : _documentSelection(docSel) {}
 
     bool match(const document::Document&) const { return true; }
 
-    const std::string& getDocumentSelection() const {
+    const vespalib::string& getDocumentSelection() const {
         return _documentSelection;
     }
 };

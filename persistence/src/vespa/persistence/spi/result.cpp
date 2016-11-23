@@ -1,0 +1,30 @@
+// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include "result.h"
+#include <vespa/document/fieldvalue/document.h>
+
+namespace storage {
+
+namespace spi {
+
+vespalib::string
+Result::toString() const {
+    vespalib::asciistream os;
+    os << "Result(" << _errorCode << ", " << _errorMessage << ")";
+    return os.str();
+}
+
+GetResult::GetResult(Document::UP doc, Timestamp timestamp)
+    : Result(),
+      _timestamp(timestamp),
+      _doc(std::move(doc))
+{ }
+
+GetResult::~GetResult() { }
+BucketIdListResult::~BucketIdListResult() { }
+
+IterateResult::~IterateResult() { }
+
+}  // namespace spi
+}  // namespace storage
+

@@ -2,6 +2,8 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/persistence/spi/partitionstate.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace spi {
@@ -9,26 +11,24 @@ namespace spi {
 PartitionState::PartitionState()
     : _state(UP),
       _reason()
-{
-}
+{ }
 
 PartitionState::PartitionState(State s, vespalib::stringref reason)
     : _state(s),
       _reason(reason)
-{
-}
-
+{ }
 
 PartitionStateList::PartitionStateList(PartitionId::Type partitionCount)
     : _states(partitionCount)
-{
-}
+{ }
+
+PartitionStateList::~PartitionStateList() { }
 
 PartitionState&
 PartitionStateList::operator[](PartitionId::Type index)
 {
     if (index >= _states.size()) {
-        std::ostringstream ost;
+        vespalib::asciistream ost;
         ost << "Cannot return disk " << index << " of " << _states.size();
         throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }

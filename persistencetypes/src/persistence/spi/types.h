@@ -2,14 +2,18 @@
 
 #pragma once
 
-#include <vespa/document/document.h>
-#include <vespa/document/base/globalid.h>
+#include <vector>
+#include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib
-{
+namespace vespalib {
+    class nbostream;
+}
 
-class nbostream;
-
+namespace document {
+    class GlobalId;
+    class Document;
+    class DocumentId;
+    class DocumentUpdate;
 }
 
 /**
@@ -85,12 +89,16 @@ DEFINE_PRIMITIVE_WRAPPER(uint32_t, BucketChecksum);
 
 // Import critical dependencies into SPI namespace. This makes interface look
 // cleaner, and makes it easy to exchange actual implementation.
-typedef document::Document Document;
-typedef document::DocumentUpdate DocumentUpdate;
-typedef document::DocumentId DocumentId;
-typedef document::GlobalId GlobalId;
-typedef std::vector<Timestamp> TimestampList;
-typedef vespalib::string string;
+using Document = document::Document;
+using DocumentUpdate = document::DocumentUpdate;
+using DocumentId = document::DocumentId;
+using GlobalId = document::GlobalId;
+using TimestampList = std::vector<Timestamp>;
+using string = vespalib::string;
+using DocumentUP = std::unique_ptr<Document>;
+using DocumentIdUP = std::unique_ptr<DocumentId>;
+using DocumentSP = std::shared_ptr<Document>;
+using DocumentUpdateSP = std::shared_ptr<DocumentUpdate>;
 
 enum IncludedVersions {
     NEWEST_DOCUMENT_ONLY,
