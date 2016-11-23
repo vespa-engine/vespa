@@ -223,5 +223,10 @@ VisitorInfoReply::print(std::ostream& out, bool verbose,
     }
 }
 
+std::ostream&
+operator<<(std::ostream& out, const VisitorInfoCommand::BucketTimestampPair& pair) {
+    return out << pair.bucketId << " - " << pair.timestamp;
+}
+
 } // api
 } // storage

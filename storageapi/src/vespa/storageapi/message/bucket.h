@@ -152,10 +152,8 @@ public:
     DECLARE_STORAGECOMMAND(MergeBucketCommand, onMergeBucket)
 };
 
-inline std::ostream&
-operator<<(std::ostream& out, const MergeBucketCommand::Node& n) {
-    return out << n.index << (n.sourceOnly ? " (source only)" : "");
-}
+std::ostream&
+operator<<(std::ostream& out, const MergeBucketCommand::Node& n);
 
 /**
  * @class MergeBucketReply

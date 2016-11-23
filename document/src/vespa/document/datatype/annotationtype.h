@@ -25,6 +25,13 @@ public:
     const vespalib::string & getName() const { return _name; }
     int getId() const { return _id; }
     const DataType *getDataType() const { return _type; }
+    bool operator==(const AnnotationType &a2) const {
+        return (getId() == a2.getId()) && (getName() == a2.getName());
+    }
+    bool operator!=(const AnnotationType &a2) const {
+        return ! (*this == a2);
+    }
+    vespalib::string toString() const;
 
     static const AnnotationType *const TERM;
     static const AnnotationType *const TOKEN_TYPE;
@@ -33,17 +40,7 @@ public:
     static std::vector<const AnnotationType *> getDefaultAnnotationTypes();
 };
 
-inline bool operator==(const AnnotationType &a1, const AnnotationType &a2) {
-    return a1.getId() == a2.getId() && a1.getName() == a2.getName();
-}
-
-inline bool operator!=(const AnnotationType &a1, const AnnotationType &a2) {
-    return !(a1 == a2);
-}
-
-inline std::ostream &operator<<(std::ostream &out, const AnnotationType &a) {
-    return out << "AnnotationType(" << a.getId() << ", " << a.getName() << ")";
-}
+vespalib::asciistream & operator << (vespalib::asciistream & os, const AnnotationType & type);
 
 }  // namespace document
 

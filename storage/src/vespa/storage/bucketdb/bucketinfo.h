@@ -169,8 +169,7 @@ private:
     void addNodeManual(const BucketCopy& newCopy) { _nodes.push_back(newCopy); }
 };
 
-inline std::ostream& operator<<(std::ostream& out, const BucketInfo& info)
-    { info.print(out, false, ""); return out; }
+std::ostream& operator<<(std::ostream& out, const BucketInfo& info);
 
 }
 

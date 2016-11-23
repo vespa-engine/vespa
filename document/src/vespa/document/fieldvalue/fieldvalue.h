@@ -318,19 +318,12 @@ private:
             IteratorHandler & handler) const;
 };
 
-inline bool operator != (const FieldValue::LP & a, const FieldValue::LP & b) { return *a != *b; }
-inline bool operator  < (const FieldValue::LP & a, const FieldValue::LP & b) { return *a < *b; }
+bool operator != (const FieldValue::LP & a, const FieldValue::LP & b);
+bool operator  < (const FieldValue::LP & a, const FieldValue::LP & b);
 
-inline std::ostream& operator<<(std::ostream& out, const FieldValue & p) {
-    p.print(out);
-    return out;
-}
+std::ostream& operator<<(std::ostream& out, const FieldValue & p);
 
-inline XmlOutputStream & operator<<(XmlOutputStream & out, const FieldValue & p) {
-    p.printXml(out);
-    return out;
-}
-
+XmlOutputStream & operator<<(XmlOutputStream & out, const FieldValue & p);
 
 } // document
 

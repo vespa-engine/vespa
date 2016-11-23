@@ -152,14 +152,7 @@ public:
 
 };
 
-inline std::ostream& operator<<(std::ostream& out,
-                                const DocumentListCommand::Entry& e)
-{
-    out << e._doc->getId();
-    if (e._removeEntry) out << " - removed";
-    out << ", last modified at " << e._lastModified;
-    return out;
-}
+std::ostream& operator<<(std::ostream& out, const DocumentListCommand::Entry& e);
 
 /**
  * @class DocumentListReply

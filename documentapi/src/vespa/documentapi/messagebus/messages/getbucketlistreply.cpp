@@ -33,4 +33,10 @@ GetBucketListReply::GetBucketListReply() :
     // empty
 }
 
+std::ostream &
+operator<<(std::ostream &out, const GetBucketListReply::BucketInfo &info)
+{
+    return out << "BucketInfo(" << info._bucket << ": " << info._bucketInformation << ")";
+}
+
 }

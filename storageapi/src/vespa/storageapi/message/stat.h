@@ -105,13 +105,7 @@ public:
 
 };
 
-inline std::ostream& operator<<(std::ostream& out,
-                                const GetBucketListReply::BucketInfo& instance)
-{
-    out << "BucketInfo(" << instance._bucket << ": "
-        << instance._bucketInformation << ")";
-    return out;
-}
+std::ostream& operator<<(std::ostream& out, const GetBucketListReply::BucketInfo& instance);
 
 } // api
 } // storage

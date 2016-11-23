@@ -98,5 +98,13 @@ GetBucketListReply::print(std::ostream& out, bool verbose,
     }
 }
 
+std::ostream&
+operator<<(std::ostream& out, const GetBucketListReply::BucketInfo& instance)
+{
+    out << "BucketInfo(" << instance._bucket << ": "
+        << instance._bucketInformation << ")";
+    return out;
+}
+
 } // api
 } // storage

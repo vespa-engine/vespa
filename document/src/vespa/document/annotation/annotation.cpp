@@ -16,11 +16,11 @@ Annotation::~Annotation() { }
 
 vespalib::string
 Annotation::toString() const {
-    std::ostringstream os;
+    vespalib::asciistream os;
     os << "Annotation(" << *_type;
     if (_value.get()) {
         os << "\n";
-        _value->print(os, false, "");
+        os << _value->toString();
     }
     if (_node) {
         os << "\n";
@@ -28,6 +28,14 @@ Annotation::toString() const {
     }
     os << ")";
     return os.str();
+}
+
+bool
+Annotation::operator==(const Annotation &a2) const {
+    return (getType() == a2.getType() &&
+            !(!!getFieldValue() ^ !!a2.getFieldValue()) &&
+            (!getFieldValue() || (*getFieldValue() == *a2.getFieldValue()))
+           );
 }
 
 }  // namespace document

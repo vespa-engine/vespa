@@ -64,7 +64,6 @@ public:
     bool operator==(const BucketId& id) const { return getId() == id.getId(); }
     bool operator!=(const BucketId& id) const { return getId() != id.getId(); }
 
-    void print(std::ostream& out) const;
     vespalib::string toString() const;
 
     bool valid() const {
@@ -194,7 +193,7 @@ private:
     friend vespalib::nbostream& operator>>(vespalib::nbostream&, BucketId&);
 };
 
-std::ostream& operator<<(std::ostream&, const BucketId&);
 vespalib::asciistream& operator<<(vespalib::asciistream&, const BucketId&);
+std::ostream& operator<<(std::ostream&, const BucketId&);
 
 } // document

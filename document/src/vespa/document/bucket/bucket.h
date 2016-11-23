@@ -7,7 +7,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cstdint>
-#include <iostream>
 
 namespace document {
 
@@ -30,7 +29,6 @@ public:
 
     BucketSpace getBucketSpace() const noexcept { return _bucketSpace; }
     BucketId getBucketId() const noexcept { return _bucketId; }
-    void print(std::ostream& os) const;
     vespalib::string toString() const;
 
     struct hash {
@@ -46,7 +44,6 @@ private:
     BucketId _bucketId;
 };
 
-std::ostream& operator<<(std::ostream&, const Bucket&);
 vespalib::asciistream& operator<<(vespalib::asciistream&, const Bucket&);
 
 }

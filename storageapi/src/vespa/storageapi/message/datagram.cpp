@@ -185,5 +185,13 @@ EmptyBucketsReply::print(std::ostream& out, bool verbose,
     }
 }
 
+std::ostream& operator<<(std::ostream& out, const DocumentListCommand::Entry& e)
+{
+    out << e._doc->getId();
+    if (e._removeEntry) out << " - removed";
+    out << ", last modified at " << e._lastModified;
+    return out;
+}
+
 } // api
 } // storage
