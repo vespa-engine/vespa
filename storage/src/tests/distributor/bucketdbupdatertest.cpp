@@ -1986,7 +1986,7 @@ BucketDBUpdaterTest::testClusterStateAlwaysSendsFullFetchWhenDistributionChangeP
     }
     _sender.clear();
     std::string distConfig(getDistConfig6Nodes3Groups());
-    triggerDistributionChange(std::make_shared<lib::Distribution>(distConfig));
+    setDistribution(distConfig);
     sortSentMessagesByIndex(_sender);
     CPPUNIT_ASSERT_EQUAL(size_t(6), _sender.commands.size());
     // Suddenly, a wild cluster state change appears! Even though this state
@@ -2032,7 +2032,7 @@ BucketDBUpdaterTest::testChangedDistributionConfigTriggersRecoveryMode()
     CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
 
     std::string distConfig(getDistConfig6Nodes4Groups());
-    triggerDistributionChange(std::make_shared<lib::Distribution>(distConfig));
+    setDistribution(distConfig);
     sortSentMessagesByIndex(_sender);
     // No replies received yet, still no recovery mode.
     CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
@@ -2255,8 +2255,7 @@ BucketDBUpdaterTest::clusterConfigDownsizeOnlySendsToAvailableNodes()
     // Intentionally trigger a racing config change which arrives before the
     // new cluster state representing it.
     std::string distConfig(getDistConfig3Nodes1Group());
-    triggerDistributionChange(
-        std::make_shared<lib::Distribution>(distConfig));
+    setDistribution(distConfig);
     sortSentMessagesByIndex(_sender);
 
     CPPUNIT_ASSERT_EQUAL((nodeVec{0, 1, 2}), getSendSet());
@@ -2305,7 +2304,7 @@ BucketDBUpdaterTest::nodeMissingFromConfigIsTreatedAsNeedingOwnershipTransfer()
         "group[1].nodes[0].index 0\n"
         "group[1].nodes[1].index 1\n";
 
-    triggerDistributionChange(std::make_shared<lib::Distribution>(downsizeCfg));
+    setDistribution(downsizeCfg);
     sortSentMessagesByIndex(_sender);
     _sender.clear();
 
