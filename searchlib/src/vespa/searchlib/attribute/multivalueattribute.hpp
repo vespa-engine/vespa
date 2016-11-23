@@ -11,7 +11,7 @@ MultiValueAttribute<B, M>::
 MultiValueAttribute(const vespalib::string &baseFileName,
                     const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
-      _mvMapping(14, cfg.getGrowStrategy())
+      _mvMapping(1023, cfg.getGrowStrategy())
 {
 }
 
