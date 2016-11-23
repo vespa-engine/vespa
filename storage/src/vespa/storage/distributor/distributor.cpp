@@ -149,14 +149,6 @@ const ManagedBucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
     return _bucketSpaceRepo->getDefaultSpace();
 }
 
-BucketDatabase& Distributor::getBucketDatabase() {
-    return getDefaultBucketSpace().getBucketDatabase();
-}
-
-const BucketDatabase& Distributor::getBucketDatabase() const {
-    return getDefaultBucketSpace().getBucketDatabase();
-}
-
 BucketOwnership
 Distributor::checkOwnershipInPendingState(const document::BucketId& b) const
 {

@@ -143,9 +143,6 @@ public:
     bool initializing() const {
         return !_doneInitializing;
     }
-
-    BucketDatabase& getBucketDatabase();
-    const BucketDatabase& getBucketDatabase() const;
     
     const DistributorConfiguration& getConfig() const {
         return _component.getTotalDistributorConfig();
