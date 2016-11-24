@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 #include <tests/persistence/common/persistenceproviderwrapper.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 
 #define LOG_SPI(ops) \
     { \
