@@ -129,7 +129,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(deactivateCurrentActivateNew(localSessionRepo.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
 
-            // TODO: (October 2016) Remove the second part of this if statement as soon as all zone applications stop using hosts.xml for routing nodes
             if (hostProvisioner.isPresent()) {
                 hostProvisioner.get().activate(transaction, session.getApplicationId(), session.getProvisionInfo().getHosts());
             }
