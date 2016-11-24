@@ -55,5 +55,15 @@ MatchingStats::add(const MatchingStats &rhs)
     return *this;
 }
 
+MatchingStats &
+MatchingStats::updatesoftDoomFactor(double softLimit, double duration) {
+    if (duration < softLimit) {
+        _softDoomFactor += 0.01*(softLimit - duration)/softLimit;
+    } else {
+        _softDoomFactor += 0.02*(softLimit - duration)/softLimit;
+    }
+    return *this;
+}
+
 }
 } // namespace searchcore
