@@ -1356,7 +1356,7 @@ StateCheckersTest::testBucketStatePerGroup()
     config.group[3].nodes[1].index = 10;
     config.group[3].nodes[2].index = 11;
     lib::Distribution::SP distr(new lib::Distribution(config));
-    _node->getComponentRegister().setDistribution(distr);
+    triggerDistributionChange(std::move(distr));
 
     {
         DistributorConfiguration::MaintenancePriorities mp;

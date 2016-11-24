@@ -31,6 +31,7 @@ class HostInfo;
 
 namespace distributor {
 
+class ManagedBucketSpaceRepo;
 class SimpleMaintenanceScanner;
 class BlockingOperationStarter;
 class ThrottlingOperationStarter;
@@ -142,13 +143,6 @@ public:
     bool initializing() const {
         return !_doneInitializing;
     }
-
-    BucketDatabase& getBucketDatabase() {
-        return _component.getBucketDatabase();
-    }
-    const BucketDatabase& getBucketDatabase() const {
-        return const_cast<Distributor&>(*this).getBucketDatabase();
-    }
     
     const DistributorConfiguration& getConfig() const {
         return _component.getTotalDistributorConfig();
@@ -171,6 +165,9 @@ public:
     getBucketIdHasher() const override {
         return *_bucketIdHasher;
     }
+
+    ManagedBucketSpace& getDefaultBucketSpace() noexcept;
+    const ManagedBucketSpace& getDefaultBucketSpace() const noexcept;
 
 private:
     friend class Distributor_Test;
@@ -241,11 +238,13 @@ private:
                            Operation::SP& operation);
 
     void enableNextDistribution();
+    void propagateDefaultDistribution(std::shared_ptr<lib::Distribution>);
 
     lib::ClusterState _clusterState;
 
     DistributorComponentRegister& _compReg;
     storage::DistributorComponent _component;
+    std::unique_ptr<ManagedBucketSpaceRepo> _bucketSpaceRepo;
     std::shared_ptr<DistributorMetricSet> _metrics;
 
     OperationOwner _operationOwner;

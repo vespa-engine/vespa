@@ -60,10 +60,6 @@ public:
 
     virtual void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>&) = 0;
 
-    virtual BucketDatabase& getBucketDatabase() = 0;
-
-    virtual const BucketDatabase& getBucketDatabase() const = 0;
-
     virtual const char* getStorageNodeUpStates() const = 0;
     
     virtual const DistributorConfiguration& getConfig() const = 0;

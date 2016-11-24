@@ -148,10 +148,9 @@ public:
     TestDistributorApp(vespalib::stringref configId = "");
     TestDistributorApp(NodeIndex index, vespalib::stringref configId = "");
 
-    DistributorComponentRegisterImpl& getComponentRegister()
-        { return _compReg; }
-    virtual BucketDatabase& getBucketDatabase()
-        { return _compReg.getBucketDatabase(); }
+    DistributorComponentRegisterImpl& getComponentRegister() {
+        return _compReg;
+    }
 
     virtual api::Timestamp getUniqueTimestamp();
 };

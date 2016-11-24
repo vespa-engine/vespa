@@ -53,9 +53,7 @@ struct DistributorManagedComponent
 {
     virtual ~DistributorManagedComponent() {}
 
-    virtual void setIdealNodeCalculator(lib::IdealNodeCalculator&) = 0;
     virtual void setTimeCalculator(UniqueTimeCalculator&) = 0;
-    virtual void setBucketDatabase(BucketDatabase&) = 0;
     virtual void setDistributorConfig(const DistributorConfig&)= 0;
     virtual void setVisitorConfig(const VisitorConfig&) = 0;
 };
@@ -69,18 +67,12 @@ struct DistributorComponentRegister : public virtual StorageComponentRegister
 class DistributorComponent : public StorageComponent,
                              private DistributorManagedComponent
 {
-    lib::IdealNodeCalculator*     _idealNodeCalculator;
-    BucketDatabase*               _bucketDatabase;
     mutable UniqueTimeCalculator* _timeCalculator;
     DistributorConfig             _distributorConfig;
     VisitorConfig                 _visitorConfig;
     DistributorConfiguration      _totalConfig;
 
         // DistributorManagedComponent implementation
-    virtual void setBucketDatabase(BucketDatabase& db)
-        { _bucketDatabase = &db; }
-    virtual void setIdealNodeCalculator(lib::IdealNodeCalculator& c)
-        { _idealNodeCalculator = &c; }
     virtual void setTimeCalculator(UniqueTimeCalculator& utc)
         { _timeCalculator = &utc; }
     virtual void setDistributorConfig(const DistributorConfig& c)
@@ -92,7 +84,7 @@ public:
     typedef std::unique_ptr<DistributorComponent> UP;
 
     DistributorComponent(DistributorComponentRegister& compReg,
-                          vespalib::stringref name);
+                         vespalib::stringref name);
     ~DistributorComponent();
 
     api::Timestamp getUniqueTimestamp() const {
@@ -107,12 +99,6 @@ public:
     const DistributorConfiguration&
     getTotalDistributorConfig() const {
         return _totalConfig;
-    }
-    BucketDatabase& getBucketDatabase() {
-        assert(_bucketDatabase); return *_bucketDatabase;
-    }
-    lib::IdealNodeCalculator& getIdealNodeCalculator() const {
-        assert(_idealNodeCalculator); return *_idealNodeCalculator;
     }
 };
 

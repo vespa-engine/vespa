@@ -423,9 +423,8 @@ public:
     }
 
     void setDistribution(const std::string& distConfig) {
-        lib::Distribution* distribution = new lib::Distribution(distConfig);
-        _node->getComponentRegister().setDistribution(
-                lib::Distribution::SP(distribution));
+        triggerDistributionChange(
+                std::make_shared<lib::Distribution>(distConfig));
     }
 
     std::string getDistConfig6Nodes3Groups() const {
@@ -626,7 +625,6 @@ BucketDBUpdaterTest::testDistributorChangeWithGrouping()
 {
     std::string distConfig(getDistConfig6Nodes3Groups());
     setDistribution(distConfig);
-    _distributor->enableNextDistribution();
     int numBuckets = 100;
 
     setSystemState(lib::ClusterState("distributor:6 storage:6"));
@@ -651,14 +649,10 @@ BucketDBUpdaterTest::testDistributorChangeWithGrouping()
 
     // Unchanged grouping cause no change.
     setDistribution(distConfig);
-    _distributor->storageDistributionChanged();
-    _distributor->enableNextDistribution();
     CPPUNIT_ASSERT_EQUAL(size_t(0), _sender.commands.size());
 
     // Changed grouping cause change
     setDistribution(getDistConfig6Nodes4Groups());
-    _distributor->storageDistributionChanged();
-    _distributor->enableNextDistribution();
 
     CPPUNIT_ASSERT_EQUAL(size_t(6), _sender.commands.size());
 }
@@ -1992,12 +1986,7 @@ BucketDBUpdaterTest::testClusterStateAlwaysSendsFullFetchWhenDistributionChangeP
     }
     _sender.clear();
     std::string distConfig(getDistConfig6Nodes3Groups());
-    {
-        _node->getComponentRegister().setDistribution(
-                std::make_shared<lib::Distribution>(distConfig));
-        _distributor->storageDistributionChanged();
-        _distributor->enableNextDistribution();
-    }
+    setDistribution(distConfig);
     sortSentMessagesByIndex(_sender);
     CPPUNIT_ASSERT_EQUAL(size_t(6), _sender.commands.size());
     // Suddenly, a wild cluster state change appears! Even though this state
@@ -2043,10 +2032,7 @@ BucketDBUpdaterTest::testChangedDistributionConfigTriggersRecoveryMode()
     CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
 
     std::string distConfig(getDistConfig6Nodes4Groups());
-    _node->getComponentRegister().setDistribution(
-            std::make_shared<lib::Distribution>(distConfig));
-    _distributor->storageDistributionChanged();
-    _distributor->enableNextDistribution();
+    setDistribution(distConfig);
     sortSentMessagesByIndex(_sender);
     // No replies received yet, still no recovery mode.
     CPPUNIT_ASSERT(!_distributor->isInRecoveryMode());
@@ -2269,10 +2255,7 @@ BucketDBUpdaterTest::clusterConfigDownsizeOnlySendsToAvailableNodes()
     // Intentionally trigger a racing config change which arrives before the
     // new cluster state representing it.
     std::string distConfig(getDistConfig3Nodes1Group());
-    _node->getComponentRegister().setDistribution(
-            std::make_shared<lib::Distribution>(distConfig));
-    _distributor->storageDistributionChanged();
-    _distributor->enableNextDistribution();
+    setDistribution(distConfig);
     sortSentMessagesByIndex(_sender);
 
     CPPUNIT_ASSERT_EQUAL((nodeVec{0, 1, 2}), getSendSet());
@@ -2321,10 +2304,7 @@ BucketDBUpdaterTest::nodeMissingFromConfigIsTreatedAsNeedingOwnershipTransfer()
         "group[1].nodes[0].index 0\n"
         "group[1].nodes[1].index 1\n";
 
-    _node->getComponentRegister().setDistribution(
-            std::make_shared<lib::Distribution>(downsizeCfg));
-    _distributor->storageDistributionChanged();
-    _distributor->enableNextDistribution();
+    setDistribution(downsizeCfg);
     sortSentMessagesByIndex(_sender);
     _sender.clear();
 

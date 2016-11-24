@@ -39,9 +39,11 @@ namespace distributor {
 
 ExternalOperationHandler::ExternalOperationHandler(
         Distributor& owner,
+        ManagedBucketSpace& bucketSpace,
         const MaintenanceOperationGenerator& gen,
         DistributorComponentRegister& compReg)
-    : DistributorComponent(owner, compReg, "Distributor manager"),
+    : ManagedBucketSpaceComponent(owner, bucketSpace, compReg,
+                                  "External operation handler"),
       _visitorMetrics(getLoadTypes()->getMetricLoadTypes(),
                       *&VisitorMetricSet(NULL)),
       _operationGenerator(gen),

@@ -129,11 +129,8 @@ vespalib::string
 DeadLockDetector::getBucketLockInfo() const
 {
     vespalib::asciistream ost;
-    if (_dComponent.get()) {
-        if (_dComponent->getBucketDatabase().size() > 0) {
-            //_dComponent->getBucketDatabase().showLockClients(ost);
-            ost << "No bucket lock information available for distributor\n";
-        }
+    if (_dComponent.get() != nullptr) {
+        ost << "No bucket lock information available for distributor\n";
     } else {
         if (_slComponent->getBucketDatabase().size() > 0) {
             _slComponent->getBucketDatabase().showLockClients(ost);

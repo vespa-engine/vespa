@@ -38,20 +38,40 @@ DistributorTestUtil::setupDistributor(int redundancy,
     config.redundancy = redundancy;
     config.initialRedundancy = earlyReturn;
     config.ensurePrimaryPersisted = requirePrimaryToBeWritten;
-    lib::Distribution* distribution = new lib::Distribution(config);
-    _node->getComponentRegister().setDistribution(
-            lib::Distribution::SP(distribution));
+    auto distribution = std::make_shared<lib::Distribution>(config);
+    _node->getComponentRegister().setDistribution(distribution);
     _distributor->enableClusterState(lib::ClusterState(systemState));
+    // This is for all intents and purposes a hack to avoid having the
+    // distributor treat setting the distribution explicitly as a signal that
+    // it should send RequestBucketInfo to all configured nodes.
+    // If we called storageDistributionChanged followed by enableDistribution
+    // explicitly (which is what happens in "real life"), that is what would
+    // take place.
+    // The inverse case of this can be explicitly accomplished by calling
+    // triggerDistributionChange().
+    // This isn't pretty, folks, but it avoids breaking the world for now,
+    // as many tests have implicit assumptions about this being the behavior.
+    _distributor->propagateDefaultDistribution(distribution);
 }
 
 void
 DistributorTestUtil::setRedundancy(uint32_t redundancy)
 {
-    _node->getComponentRegister().setDistribution(lib::Distribution::SP(
-            new lib::Distribution(
-                lib::Distribution::getDefaultDistributionConfig(
-                    redundancy, 100))));
+    auto distribution = std::make_shared<lib::Distribution>(
+            lib::Distribution::getDefaultDistributionConfig(
+                redundancy, 100));
+    // Same rationale for not triggering a full distribution change as
+    // in setupDistributor()
+    _node->getComponentRegister().setDistribution(distribution);
+    _distributor->propagateDefaultDistribution(std::move(distribution));
+}
+
+void
+DistributorTestUtil::triggerDistributionChange(lib::Distribution::SP distr)
+{
+    _node->getComponentRegister().setDistribution(std::move(distr));
     _distributor->storageDistributionChanged();
+    _distributor->enableNextDistribution();
 }
 
 void
@@ -110,10 +130,8 @@ DistributorTestUtil::getIdealStr(document::BucketId id, const lib::ClusterState&
     }
 
     std::vector<uint16_t> nodes;
-    _component->getDistribution()->getIdealNodes(lib::NodeType::STORAGE,
-                                                state,
-                                                id,
-                                                nodes);
+    getDistribution().getIdealNodes(
+            lib::NodeType::STORAGE, state, id, nodes);
     std::sort(nodes.begin(), nodes.end());
     std::ostringstream ost;
     ost << id << ": " << dumpVector(nodes);
@@ -132,10 +150,8 @@ DistributorTestUtil::addIdealNodes(const lib::ClusterState& state,
 
     std::vector<uint16_t> res;
     assert(_component.get());
-    _component->getDistribution()->getIdealNodes(lib::NodeType::STORAGE,
-                                                state,
-                                                id,
-                                                res);
+    getDistribution().getIdealNodes(
+            lib::NodeType::STORAGE, state, id, res);
 
     for (uint32_t i = 0; i < res.size(); ++i) {
         if (state.getNodeState(lib::Node(lib::NodeType::STORAGE, res[i])).getState() !=
@@ -280,7 +296,7 @@ DistributorTestUtil::sendReply(Operation& op,
 BucketDatabase::Entry
 DistributorTestUtil::getBucket(const document::BucketId& bId) const
 {
-    return _distributor->getBucketDatabase().get(bId);
+    return getBucketDatabase().get(bId);
 }
 
 void
