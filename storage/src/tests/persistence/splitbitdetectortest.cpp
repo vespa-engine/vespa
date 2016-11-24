@@ -7,6 +7,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/bucket/bucketidfactory.h>
 
 
 namespace storage {
