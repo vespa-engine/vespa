@@ -25,9 +25,7 @@ private:
 
     ArrayStore _store;
 public:
-    MultiValueMapping2(uint32_t maxSmallArraySize,
-                       const GrowStrategy &gs = GrowStrategy());
-    MultiValueMapping2(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer,
+    MultiValueMapping2(const datastore::ArrayStoreConfig &storeCfg,
                        const GrowStrategy &gs = GrowStrategy());
     virtual ~MultiValueMapping2();
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
@@ -55,6 +53,11 @@ public:
     bool enoughCapacity(const Histogram &) { return true; }
     void performCompaction(Histogram &) { }
     void reset(uint32_t, const Histogram &) { }
+
+    static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
+                                                                  size_t hugePageSize,
+                                                                  size_t smallPageSize,
+                                                                  size_t minNumArraysForNewBuffer);
 };
 
 } // namespace search::attribute

@@ -11,6 +11,8 @@ LOG_SETUP("multivaluemapping2_test");
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 
+using search::datastore::ArrayStoreConfig;
+
 template <typename EntryT>
 void
 assertArray(const std::vector<EntryT> &exp, vespalib::ConstArrayRef<EntryT> values)
@@ -64,17 +66,18 @@ protected:
     using MvMapping = search::attribute::MultiValueMapping2<EntryT>;
     MvMapping _mvMapping;
     MyAttribute<MvMapping> _attr;
+    using RefType = typename MvMapping::RefType;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
     using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
     Fixture(uint32_t maxSmallArraySize)
-        : _mvMapping(maxSmallArraySize),
+        : _mvMapping(ArrayStoreConfig(maxSmallArraySize, ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8 * 1024))),
           _attr(_mvMapping)
     {
     }
     Fixture(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
-        : _mvMapping(maxSmallArraySize, minClusters, maxClusters, numClustersForNewBuffer),
+        : _mvMapping(ArrayStoreConfig(maxSmallArraySize, ArrayStoreConfig::AllocSpec(minClusters, maxClusters, numClustersForNewBuffer))),
           _attr(_mvMapping)
     {
     }

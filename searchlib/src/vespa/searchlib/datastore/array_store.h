@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "array_store_config.h"
 #include "buffer_type.h"
 #include "bufferstate.h"
 #include "datastore.h"
@@ -31,6 +32,7 @@ public:
     using DataStoreType  = DataStoreT<RefT>;
     using SmallArrayType = BufferType<EntryT>;
     using LargeArray = vespalib::Array<EntryT>;
+    using AllocSpec = ArrayStoreConfig::AllocSpec;
 
 private:
     class LargeArrayType : public BufferType<LargeArray> {
@@ -39,7 +41,7 @@ private:
         using ParentType::_emptyEntry;
         using CleanContext = typename ParentType::CleanContext;
     public:
-        LargeArrayType();
+        LargeArrayType(const AllocSpec &spec);
         virtual void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
     };
 
@@ -51,7 +53,7 @@ private:
     uint32_t _largeArrayTypeId;
     using generation_t = vespalib::GenerationHandler::generation_t;
 
-    void initArrayTypes(size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer);
+    void initArrayTypes(const ArrayStoreConfig &cfg);
     // 1-to-1 mapping between type ids and sizes for small arrays is enforced during initialization.
     uint32_t getTypeId(size_t arraySize) const { return arraySize; }
     size_t getArraySize(uint32_t typeId) const { return typeId; }
@@ -61,8 +63,7 @@ private:
     ConstArrayRef getLargeArray(RefT ref) const;
 
 public:
-    ArrayStore(uint32_t maxSmallArraySize);
-    ArrayStore(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer);
+    ArrayStore(const ArrayStoreConfig &cfg);
     ~ArrayStore();
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const;
@@ -84,6 +85,11 @@ public:
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
+
+    static ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
+                                                       size_t hugePageSize,
+                                                       size_t smallPageSize,
+                                                       size_t minNumArraysForNewBuffer);
 };
 
 }
