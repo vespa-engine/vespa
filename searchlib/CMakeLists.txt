@@ -75,6 +75,7 @@ vespa_define_module(
     src/tests/attribute/benchmark
     src/tests/attribute/bitvector
     src/tests/attribute/changevector
+    src/tests/attribute/compaction
     src/tests/attribute/comparator
     src/tests/attribute/document_weight_iterator
     src/tests/attribute/enumeratedsave
