@@ -27,7 +27,7 @@ import java.io.IOException;
  * @author hmusum
  * @since 5.1.27
  */
-// TODO RenameFunction class
+// TODO Rename class
 public class SessionCreate {
     public final static String APPLICATION_X_GZIP = "application/x-gzip";
     public final static String APPLICATION_ZIP = "application/zip";

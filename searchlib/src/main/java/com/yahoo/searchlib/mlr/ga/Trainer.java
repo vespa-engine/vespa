@@ -22,7 +22,7 @@ import java.util.Set;
 public class Trainer {
 
     // TODO: Simplify this to constructor only ... or maybe remove ... or combine with TrainingEnvironment
-    // TODO: Also: RenameFunction to Training?
+    // TODO: Also: Rename to Training?
 
     private final TrainingSet trainingSet;
     private final Set<String> argumentNames;

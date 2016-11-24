@@ -99,7 +99,7 @@ ModeRealTime = attribute indexingmode { string "realtime" | string "REALTIME" }
 ClusterCommon = attribute name { xsd:NCName }? &
    GenericConfig* &
    ( ModeRealTime | ModeStreaming )? &
-   # TODO: RenameFunction?
+   # TODO: Rename?
    element visibilitydelay { xsd:double { minInclusive = "0.0" } }? &
    element querytimeout { xsd:double { minInclusive = "0.0" } }? &
    SearchDefinitions
