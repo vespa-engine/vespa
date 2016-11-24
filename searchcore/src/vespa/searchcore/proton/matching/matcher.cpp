@@ -268,6 +268,9 @@ Matcher::match(const SearchRequest &request,
         if (mtf->match_limiter().was_limited()) {
             reply->coverage.degradeMatchPhase();
         }
+        if (my_stats.softDoomed()) {
+            reply->coverage.degradeTimeout();
+        }
         reply->coverage.setActive(metaStore.getNumActiveLids());
         reply->coverage.setSoonActive(metaStore.getNumActiveLids()); //TODO this should be calculated with ClusterState calculator.
         reply->coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
