@@ -67,7 +67,7 @@ public:
     virtual void print(std::ostream& out, bool verbose,
                        const std::string& indent) const;
 
-    DistributorComponent& getDistributorComponent() { return _distributorComponent; }
+    DistributorComponent& getDistributorComponent() { return _bucketSpaceComponent; }
 
     /**
      * Returns whether the current PendingClusterState indicates that there has
@@ -81,7 +81,7 @@ public:
     }
 
 private:
-    ManagedBucketSpaceComponent _distributorComponent;
+    ManagedBucketSpaceComponent _bucketSpaceComponent;
     class MergeReplyGuard {
     public:
         MergeReplyGuard(BucketDBUpdater& updater,
