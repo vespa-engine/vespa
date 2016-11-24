@@ -3,8 +3,7 @@ package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.tensor.functions.ConstantTensor;
-import com.yahoo.tensor.functions.EvaluationContext;
-import com.yahoo.tensor.functions.GeneratedTensor;
+import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.L1Normalize;
 import com.yahoo.tensor.functions.L2Normalize;
@@ -77,7 +76,7 @@ public interface Tensor {
     }
     
     static Tensor from(TensorType type, Function<List<Integer>, Double> valueSupplier) {
-        return new GeneratedTensor(type, valueSupplier).evaluate();
+        return new Generate(type, valueSupplier).evaluate();
     }
     
     // ----------------- Composite tensor functions which have a defined primitive mapping

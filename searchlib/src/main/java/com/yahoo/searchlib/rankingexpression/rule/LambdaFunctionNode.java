@@ -92,6 +92,11 @@ public class LambdaFunctionNode extends CompositeNode {
                 context.put(arguments.get(0), operand);
             return evaluate(context).asDouble();
         }
+        
+        @Override
+        public String toString() {
+            return LambdaFunctionNode.this.toString();
+        }
 
     }
 
@@ -105,6 +110,11 @@ public class LambdaFunctionNode extends CompositeNode {
             if (arguments.size() > 1)
                 context.put(arguments.get(1), right);
             return evaluate(context).asDouble();
+        }
+
+        @Override
+        public String toString() {
+            return LambdaFunctionNode.this.toString();
         }
 
     }

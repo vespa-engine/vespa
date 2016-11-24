@@ -13,7 +13,7 @@ import java.util.function.Function;
  * 
  * @author bratseth
  */
-public class GeneratedTensor extends PrimitiveTensorFunction {
+public class Generate extends PrimitiveTensorFunction {
 
     private final TensorType type;
     private final Function<List<Integer>, Double> generator;
@@ -26,7 +26,7 @@ public class GeneratedTensor extends PrimitiveTensorFunction {
      *                  tensor cell which will receive the value
      * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
      */
-    public GeneratedTensor(TensorType type, Function<List<Integer>, Double> generator) {
+    public Generate(TensorType type, Function<List<Integer>, Double> generator) {
         Objects.requireNonNull(type, "The argument tensor type cannot be null");
         Objects.requireNonNull(generator, "The argument function cannot be null");
         validateType(type);

@@ -367,7 +367,8 @@ ExpressionNode tensorMap() :
 }
 {
     <MAP> <LBRACE> tensor = expression() <COMMA> doubleMapper = lambdaFunction() <RBRACE>
-    { return new TensorMapNode(tensor, doubleMapper); }
+    { return new TensorFunctionNode(new Map(TensorFunctionNode.wrapArgument(tensor), 
+                                            doubleMapper.asDoubleUnaryOperator())); }
 }
 
 ExpressionNode tensorReduce() :
@@ -378,7 +379,7 @@ ExpressionNode tensorReduce() :
 }
 {
     <REDUCE> <LBRACE> tensor = expression() <COMMA> aggregator = tensorReduceAggregator() dimensions = tagCommaLeadingList() <RBRACE>
-    { return new TensorReduceNode(tensor, aggregator, dimensions); }
+    { return new TensorFunctionNode(new Reduce(TensorFunctionNode.wrapArgument(tensor), aggregator, dimensions)); }
 }
 
 ExpressionNode tensorReduceComposites() :
@@ -390,7 +391,7 @@ ExpressionNode tensorReduceComposites() :
 {
     aggregator = tensorReduceAggregator()
     <LBRACE> tensor = expression() dimensions = tagCommaLeadingList() <RBRACE>
-    { return new TensorReduceNode(tensor, aggregator, dimensions); }
+    { return new TensorFunctionNode(new Reduce(TensorFunctionNode.wrapArgument(tensor), aggregator, dimensions)); }
 }
 
 ExpressionNode tensorJoin() :
@@ -400,7 +401,9 @@ ExpressionNode tensorJoin() :
 }
 {
     <JOIN> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> doubleJoiner = lambdaFunction() <RBRACE>
-    { return new TensorJoinNode(tensor1, tensor2, doubleJoiner); }
+    { return new TensorFunctionNode(new Join(TensorFunctionNode.wrapArgument(tensor1), 
+                                             TensorFunctionNode.wrapArgument(tensor2), 
+                                             doubleJoiner.asDoubleBinaryOperator())); }
 }
 
 ExpressionNode tensorRename() :
@@ -413,10 +416,10 @@ ExpressionNode tensorRename() :
                       fromDimensions = bracedIdentifierList() <COMMA> 
                       toDimensions = bracedIdentifierList() 
              <RBRACE>
-    { return new TensorRenameNode(tensor, fromDimensions, toDimensions); }
+    { return new TensorFunctionNode(new Rename(TensorFunctionNode.wrapArgument(tensor), fromDimensions, toDimensions)); }
 }
 
-// TODO
+// TODO: Notice that null is parsed below
 ExpressionNode tensorGenerate() :
 {
     TensorType type;
@@ -424,7 +427,7 @@ ExpressionNode tensorGenerate() :
 }
 {
     <TENSOR> <LBRACE> <RBRACE> <LBRACE>
-    { return null; }
+    { return new TensorFunctionNode(new Generate(null, null)); }
 }
 
 ExpressionNode tensorL1Normalize() :
