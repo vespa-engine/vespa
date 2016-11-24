@@ -13,6 +13,7 @@ struct ResourceUsageMetrics : metrics::MetricSet
 {
     metrics::DoubleValueMetric disk;
     metrics::DoubleValueMetric memory;
+    metrics::LongValueMetric memoryMappings;
     metrics::LongValueMetric feedingBlocked;
 
     ResourceUsageMetrics(metrics::MetricSet *parent);
