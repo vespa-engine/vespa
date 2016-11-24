@@ -18,7 +18,7 @@ ManagedBucketSpaceRepo::~ManagedBucketSpaceRepo() {
 void ManagedBucketSpaceRepo::setDefaultDistribution(
         std::shared_ptr<lib::Distribution> distr)
 {
-    LOG(spam, "Got new distribution '%s'", distr->toString().c_str());
+    LOG(debug, "Got new default distribution '%s'", distr->toString().c_str());
     // TODO all spaces, per-space config transforms
     _defaultSpace.setDistribution(std::move(distr));
 }
