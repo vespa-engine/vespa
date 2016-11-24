@@ -170,7 +170,7 @@ MatchThread::try_share(DocidRange &docid_range, uint32_t next_docid) {
 }
 
 template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
-void
+bool
 MatchThread::inner_match_loop(Context & context, IteratorT & search, DocidRange docid_range)
 {
     search->initRange(docid_range.begin, docid_range.end);
@@ -193,6 +193,7 @@ MatchThread::inner_match_loop(Context & context, IteratorT & search, DocidRange 
             docId = search->seekNext(docId + 1);
         }
     }
+    return (docId < docid_range.end);
 }
 
 template <typename IteratorT, bool do_rank, bool do_limit, bool do_share_work>
@@ -200,12 +201,13 @@ void
 MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
                         RankProgram &ranking, HitCollector &hits)
 {
+    bool softDoomed = false;
     Context context(matchParams.rankDropLimit, matchTools, ranking, hits, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
-         !docid_range.empty();
+         !docid_range.empty() && ! softDoomed;
          docid_range = scheduler.next_range(thread_id))
     {
-        inner_match_loop<IteratorT, do_rank, do_limit, do_share_work>(context, search, docid_range);
+        softDoomed = inner_match_loop<IteratorT, do_rank, do_limit, do_share_work>(context, search, docid_range);
     }
     uint32_t matches = context.matches;
     if (do_limit && context.isBelowLimit()) {
@@ -216,6 +218,7 @@ MatchThread::match_loop(MatchTools &matchTools, IteratorT search,
         context.limiter().updateDocIdSpaceEstimate(searchedSoFar, 0);
     }
     thread_stats.docsMatched(matches);
+    thread_stats.softDoomed(softDoomed);
     if (do_rank) {
         thread_stats.docsRanked(matches);
     }

@@ -265,7 +265,11 @@ Matcher::match(const SearchRequest &request,
             sessionMgr.insert(std::move(session));
         }
         reply = std::move(result->_reply);
+        if (mtf->match_limiter().was_limited()) {
+            reply->coverage.degradeMatchPhase();
+        }
         reply->coverage.setActive(metaStore.getNumActiveLids());
+        reply->coverage.setSoonActive(metaStore.getNumActiveLids()); //TODO this should be calculated with ClusterState calculator.
         reply->coverage.setCovered(std::min(static_cast<size_t>(metaStore.getNumActiveLids()),
                                             (estimate * metaStore.getNumActiveLids())/metaStore.getCommittedDocIdLimit()));
         LOG(debug, "numThreadsPerSearch = %d. Configured = %d, estimated hits=%d, totalHits=%ld",
