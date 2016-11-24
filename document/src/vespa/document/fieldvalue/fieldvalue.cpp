@@ -203,6 +203,22 @@ FieldValue::IteratorHandler::IndexValue::operator==(const FieldValue::IteratorHa
     return index == other.index;
 }
 
+FieldValue::IteratorHandler::IndexValue::IndexValue(const FieldValue& key_)
+    : index(-1),
+      key(FieldValue::CP(key_.clone()))
+{ }
+
+FieldValue::IteratorHandler::IndexValue::~IndexValue() { }
+
+vespalib::string
+FieldValue::IteratorHandler::IndexValue::toString() const {
+    if (key.get() != NULL) {
+        return key->toString();
+    } else {
+        return vespalib::make_string("%d", index);
+    }
+}
+
 void FieldValue::IteratorHandler::handlePrimitive(const FieldValue & fv) { onPrimitive(Content(fv, getWeight())); }
 bool FieldValue::IteratorHandler::handleComplex(const FieldValue & fv) { return onComplex(Content(fv, getWeight())); }
 void FieldValue::IteratorHandler::handleCollectionStart(const FieldValue & fv) { onCollectionStart(Content(fv, getWeight())); }

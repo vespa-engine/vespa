@@ -12,14 +12,11 @@
 
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/fastos/fastos.h> // Get uint16_t type on linux
-#include <set>
-#include <vespa/vespalib/util/exception.h>
 
 namespace document {
 
 class StructuredDataType : public DataType {
-    virtual std::unique_ptr<FieldPath> onBuildFieldPath(const vespalib::stringref & remainFieldName) const;
+    FieldPath::UP onBuildFieldPath(const vespalib::stringref & remainFieldName) const override;
 
 protected:
     StructuredDataType();

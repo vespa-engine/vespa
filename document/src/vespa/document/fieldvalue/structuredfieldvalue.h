@@ -142,11 +142,11 @@ public:
     virtual void clear() = 0;
 
         // Utility functions for easy but less efficient access
-    inline bool hasValue(const vespalib::stringref & fieldName) const
+    bool hasValue(const vespalib::stringref & fieldName) const
         { return hasFieldValue(getField(fieldName)); }
-    inline void remove(const vespalib::stringref & fieldName)
+    void remove(const vespalib::stringref & fieldName)
         { removeFieldValue(getField(fieldName)); }
-    inline void setValue(const vespalib::stringref & fieldName, const FieldValue& value)
+    void setValue(const vespalib::stringref & fieldName, const FieldValue& value)
         { setFieldValue(getField(fieldName), value); }
     template<typename PrimitiveType>
     void set(const Field& field, const PrimitiveType& value);

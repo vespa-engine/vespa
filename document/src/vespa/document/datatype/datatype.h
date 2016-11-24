@@ -7,8 +7,6 @@
  */
 #pragma once
 
-#include <memory>
-
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/objects/identifiable.h>
 
@@ -136,8 +134,7 @@ public:
 
     DECLARE_IDENTIFIABLE_ABSTRACT(DataType);
 private:
-    virtual FieldPath::UP onBuildFieldPath(
-            const vespalib::stringref & remainFieldName) const = 0;
+    virtual FieldPath::UP onBuildFieldPath( const vespalib::stringref & remainFieldName) const = 0;
 };
 
 } // document

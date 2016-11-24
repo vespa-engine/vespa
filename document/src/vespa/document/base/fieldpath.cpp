@@ -17,6 +17,8 @@ namespace document {
 
 IMPLEMENT_IDENTIFIABLE_NS(document, FieldPathEntry, vespalib::Identifiable)
 
+FieldPathEntry::~FieldPathEntry() { }
+
 FieldPathEntry::FieldPathEntry() :
     _type(NONE),
     _name(""),
@@ -26,8 +28,7 @@ FieldPathEntry::FieldPathEntry() :
     _lookupKey(),
     _variableName(),
     _fillInVal()
-{
-}
+{ }
 
 FieldPathEntry::FieldPathEntry(const DataType & dataType, uint32_t arrayIndex) :
     _type(ARRAY_INDEX),
@@ -51,8 +52,7 @@ FieldPathEntry::FieldPathEntry(const Field &fieldRef) :
     _lookupKey(),
     _variableName(),
     _fillInVal(fieldRef.createValue().release())
-{
-}
+{ }
 
 FieldPathEntry::FieldPathEntry(const DataType & dataType, const DataType& fillType,
                                const FieldValueCP & lookupKey) :
@@ -169,13 +169,13 @@ vespalib::string FieldPathEntry::parseKey(vespalib::string & key)
 
 FieldPath::FieldPath()
     : Cloneable(), _path()
-{
-}
+{ }
 
 FieldPath::FieldPath(const FieldPath& other)
     : Cloneable(), _path(other._path)
-{
-}
+{ }
+
+FieldPath::~FieldPath() { }
 
 FieldPath&
 FieldPath::operator=(const FieldPath& rhs)
