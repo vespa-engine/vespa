@@ -36,10 +36,10 @@ public:
     ManagedBucketSpace(ManagedBucketSpace&&) = delete;
     ManagedBucketSpace& operator=(ManagedBucketSpace&&) = delete;
 
-    MapBucketDatabase& getBucketDatabase() noexcept {
+    BucketDatabase& getBucketDatabase() noexcept {
         return _bucketDatabase;
     }
-    const MapBucketDatabase& getBucketDatabase() const noexcept {
+    const BucketDatabase& getBucketDatabase() const noexcept {
         return _bucketDatabase;
     }
 
