@@ -106,7 +106,12 @@ public interface Tensor {
     default Tensor max(Tensor argument) { return join(argument, (a, b) -> (a > b ? a : b )); }
     default Tensor min(Tensor argument) { return join(argument, (a, b) -> (a < b ? a : b )); }
     default Tensor atan2(Tensor argument) { return join(argument, Math::atan2); }
+    default Tensor larger(Tensor argument) { return join(argument, (a, b) -> ( a > b ? 1.0 : 0.0)); }
+    default Tensor largerOrEqual(Tensor argument) { return join(argument, (a, b) -> ( a >= b ? 1.0 : 0.0)); }
+    default Tensor smaller(Tensor argument) { return join(argument, (a, b) -> ( a < b ? 1.0 : 0.0)); }
+    default Tensor smallerOrEqual(Tensor argument) { return join(argument, (a, b) -> ( a <= b ? 1.0 : 0.0)); }
     default Tensor equal(Tensor argument) { return join(argument, (a, b) -> ( a == b ? 1.0 : 0.0)); }
+    default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
 
     default Tensor avg(List<String> dimensions) { return reduce(Reduce.Aggregator.avg, dimensions); }
     default Tensor count(List<String> dimensions) { return reduce(Reduce.Aggregator.count, dimensions); }

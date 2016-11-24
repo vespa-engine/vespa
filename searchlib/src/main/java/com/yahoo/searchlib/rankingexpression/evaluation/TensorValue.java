@@ -89,30 +89,6 @@ public class TensorValue extends Value {
             return new TensorValue(value.map((value) -> value / argument.asDouble()));
     }
 
-    public Value min(Value argument) {
-        return new TensorValue(value.min(asTensor(argument, "min")));
-    }
-
-    public Value max(Value argument) {
-        return new TensorValue(value.max(asTensor(argument, "max")));
-    }
-
-    public Value atan2(Value argument) {
-        return new TensorValue(value.atan2(asTensor(argument, "atan2")));
-    }
-
-    public Value equal(Value argument) {
-        return new TensorValue(value.equal(asTensor(argument, "equal")));
-    }
-
-    public Value sum(String dimension) {
-        return new TensorValue(value.sum(Collections.singletonList(dimension)));
-    }
-
-    public Value sum() {
-        return new TensorValue(value.sum(Collections.emptyList()));
-    }
-
     private Tensor asTensor(Value value, String operationName) {
         if ( ! (value instanceof TensorValue))
             throw new UnsupportedOperationException("Could not perform " + operationName +
@@ -127,22 +103,37 @@ public class TensorValue extends Value {
     }
 
     @Override
-    public boolean compare(TruthOperator operator, Value value) {
-        throw new UnsupportedOperationException("A tensor cannot be compared with any value");
+    public Value compare(TruthOperator operator, Value argument) {
+        return new TensorValue(compareTensor(operator, asTensor(argument, operator.toString())));
+    }
+    
+    private Tensor compareTensor(TruthOperator operator, Tensor argument) {
+        switch (operator) {
+            case LARGER: return value.larger(argument);
+            case LARGEREQUAL: return value.largerOrEqual(argument);
+            case SMALLER: return value.smaller(argument);
+            case SMALLEREQUAL: return value.smallerOrEqual(argument);
+            case EQUAL: return value.equal(argument);
+            case NOTEQUAL: return value.notEqual(argument);
+            default: throw new UnsupportedOperationException("Tensors cannot be compared with " + operator);
+        }
     }
 
     @Override
-    public Value function(Function function, Value argument) {
-        if (function.equals(Function.min) && argument instanceof TensorValue)
-            return min(argument);
-        else if (function.equals(Function.max) && argument instanceof TensorValue)
-            return max(argument);
-        else if (function.equals(Function.atan2) && argument instanceof TensorValue)
-            return atan2(argument);
-        else if (function.equals(Function.equal) && argument instanceof TensorValue)
-            return equal(argument);
+    public Value function(Function function, Value arg) {
+        if (arg instanceof TensorValue)
+            return new TensorValue(functionOnTensor(function, asTensor(arg, function.toString())));
         else
-            return new TensorValue(value.map((value) -> function.evaluate(value, argument.asDouble())));
+            return new TensorValue(value.map((value) -> function.evaluate(value, arg.asDouble())));
+    }
+        
+    private Tensor functionOnTensor(Function function, Tensor argument) {
+        switch (function) {
+            case min: return value.min(argument);
+            case max: return value.max(argument);
+            case atan2: return value.atan2(argument);
+            default: throw new UnsupportedOperationException("Cannot combine two tensors using " + function);
+        }
     }
 
     @Override

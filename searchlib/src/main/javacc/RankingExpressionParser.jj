@@ -73,6 +73,7 @@ TOKEN :
     <LE: "<="> |
     <LT: "<"> |
     <EQ: "=="> |
+    <NQ: "!="> |
     <AQ: "~="> |
     <GE: ">="> |
     <GT: ">"> |
@@ -110,7 +111,6 @@ TOKEN :
     <TANH: "tanh"> |
 
     <ATAN2: "atan2"> |
-    <EQUAL: "equal"> |
     <FMOD: "fmod"> |
     <LDEXP: "ldexp"> |
     // MAX
@@ -206,6 +206,7 @@ TruthOperator comparator() : { }
      ( <LE> { return TruthOperator.SMALLEREQUAL; } |
        <LT> { return TruthOperator.SMALLER;      } |
        <EQ> { return TruthOperator.EQUAL;        } |
+       <NQ> { return TruthOperator.NOTEQUAL;     } |
        <AQ> { return TruthOperator.APPROX_EQUAL; } |
        <GE> { return TruthOperator.LARGEREQUAL;  } |
        <GT> { return TruthOperator.LARGER;       } )
@@ -552,7 +553,6 @@ Function unaryFunctionName() : { }
 Function binaryFunctionName() : { }
 {
     <ATAN2> { return Function.atan2; } |
-    <EQUAL> { return Function.equal; } |
     <FMOD>  { return Function.fmod;  } |
     <LDEXP> { return Function.ldexp; } |
     <MAX>   { return Function.max;   } |

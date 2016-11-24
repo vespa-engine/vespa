@@ -230,6 +230,18 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         // not_equal (!=)
         // argmax
         // argmin        
+        assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
+                        "tensor0 > tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
+                        "tensor0 < tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
+                        "tensor0 >= tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
+                        "tensor0 <= tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
+                        "tensor0 == tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
+        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
+                        "tensor0 != tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
         
         // tensor rename
         assertEvaluates("{ {newX:1,y:2}:3 }", "rename(tensor0, x, newX)", "{ {x:1,y:2}:3.0 }");
