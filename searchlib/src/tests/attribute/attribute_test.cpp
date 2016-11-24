@@ -2,6 +2,8 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefile.h>
 #include <vespa/searchlib/attribute/attributeguard.h>

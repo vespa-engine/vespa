@@ -2,11 +2,12 @@
 // Unit tests for dummypersistence.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("dummypersistence_test");
-
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/document/base/documentid.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
+
 
 using namespace storage::spi;
 using namespace storage;
