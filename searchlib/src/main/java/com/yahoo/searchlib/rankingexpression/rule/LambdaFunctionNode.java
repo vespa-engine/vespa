@@ -47,9 +47,9 @@ public class LambdaFunctionNode extends CompositeNode {
     private String commaSeparated(List<String> list) {
         StringBuilder b = new StringBuilder();
         for (String element : list)
-            b.append(element).append(", ");
+            b.append(element).append(",");
         if (b.length() > 0)
-            b.setLength(b.length() -1);
+            b.setLength(b.length()-1);
         return b.toString();
     }
 

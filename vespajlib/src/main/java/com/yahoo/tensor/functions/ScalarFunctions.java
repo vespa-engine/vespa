@@ -24,7 +24,7 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left + right; }
 
         @Override
-        public String toString() { return "f(a,b)(a+b)"; }
+        public String toString() { return "f(a,b)(a + b)"; }
 
     }
 
@@ -34,7 +34,7 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left * right; }
         
         @Override
-        public String toString() { return "f(a,b)(a*b)"; }
+        public String toString() { return "f(a,b)(a * b)"; }
 
     }
 
@@ -44,7 +44,7 @@ public class ScalarFunctions {
         public double applyAsDouble(double left, double right) { return left / right; }
 
         @Override
-        public String toString() { return "f(a,b)(a/b)"; }
+        public String toString() { return "f(a,b)(a / b)"; }
     }
 
     public static class Square implements DoubleUnaryOperator {
@@ -53,7 +53,7 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return operand * operand; }
 
         @Override
-        public String toString() { return "f(a)(a*a)"; }
+        public String toString() { return "f(a)(a * a)"; }
 
     }
 

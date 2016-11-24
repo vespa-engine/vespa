@@ -17,12 +17,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
 /**
  * @author Simon Thoresen
+ * @author bratseth
  */
 public class RankingExpressionTestCase {
 
@@ -101,33 +103,34 @@ public class RankingExpressionTestCase {
         macros.add(new ExpressionFunction("baz", Arrays.asList("arg1", "arg2"), new RankingExpression("foo(1, 2) / bar(arg1, arg2)")));
         macros.add(new ExpressionFunction("cox", null, new RankingExpression("10 + 08 * 1977")));
 
-        assertSerialization("foo(1,2) + foo(3,4) * foo(5, foo(foo(6, 7), 8))", macros,
-                            Arrays.asList(
-                             "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(foo@af74e3fd9070bd18.a368ed0a5ba3a5d0) * rankingExpression(foo@dbab346efdad5362.e5c39e42ebd91c30)",
-                             "min(5,pow(rankingExpression(foo@d1d1417259cdc651.573bbcd4be18f379),2))",
-                             "min(6,pow(7,2))",
-                             "min(1,pow(2,2))",
-                             "min(3,pow(4,2))",
-                             "min(rankingExpression(foo@84951be88255b0ec.d0303e061b36fab8),pow(8,2))"
-                     ));
-        assertSerialization("foo(1, 2) + bar(3, 4)", macros,
-                            Arrays.asList(
-                             "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(bar@af74e3fd9070bd18.a368ed0a5ba3a5d0)",
-                             "min(1,pow(2,2))",
-                             "3 * 3 + 2 * 3 * 4 + 4 * 4"
-                     ));
-        assertSerialization("baz(1, 2)", macros,
-                            Arrays.asList(
-                             "rankingExpression(baz@e2dc17a89864aed0.12232eb692c6c502)",
-                             "min(1,pow(2,2))",
-                             "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) / rankingExpression(bar@e2dc17a89864aed0.12232eb692c6c502)",
-                             "1 * 1 + 2 * 1 * 2 + 2 * 2"
-                     ));
-        assertSerialization("cox", macros,
-                            Arrays.asList(
-                             "rankingExpression(cox)",
-                             "10 + 08 * 1977"
-                     ));
+        assertSerialization(Arrays.asList(
+         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(foo@af74e3fd9070bd18.a368ed0a5ba3a5d0) * rankingExpression(foo@dbab346efdad5362.e5c39e42ebd91c30)",
+         "min(5,pow(rankingExpression(foo@d1d1417259cdc651.573bbcd4be18f379),2))",
+         "min(6,pow(7,2))",
+         "min(1,pow(2,2))",
+         "min(3,pow(4,2))",
+         "min(rankingExpression(foo@84951be88255b0ec.d0303e061b36fab8),pow(8,2))"), "foo(1,2) + foo(3,4) * foo(5, foo(foo(6, 7), 8))", macros);
+        assertSerialization(Arrays.asList(
+         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(bar@af74e3fd9070bd18.a368ed0a5ba3a5d0)",
+         "min(1,pow(2,2))",
+         "3 * 3 + 2 * 3 * 4 + 4 * 4"), "foo(1, 2) + bar(3, 4)", macros);
+        assertSerialization(Arrays.asList(
+         "rankingExpression(baz@e2dc17a89864aed0.12232eb692c6c502)",
+         "min(1,pow(2,2))",
+         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) / rankingExpression(bar@e2dc17a89864aed0.12232eb692c6c502)",
+         "1 * 1 + 2 * 1 * 2 + 2 * 2"), "baz(1, 2)", macros);
+        assertSerialization(Arrays.asList(
+         "rankingExpression(cox)",
+         "10 + 08 * 1977"), "cox", macros
+        );
+    }
+    
+    @Test
+    public void testTensorSerialization() {
+        assertSerialization("map(constant(tensor0), f(a)(cos(a)))", "map(constant(tensor0), f(a)(cos(a)))");
+        assertSerialization("join(reduce(join(reduce(join(constant(tensor0), attribute(tensor1), f(a,b)(a * b)), sum, x), attribute(tensor1), f(a,b)(a * b)), sum, y), query(tensor2), f(a,b)(a + b))", 
+                            "xw_plus_b(matmul(constant(tensor0), attribute(tensor1), x), attribute(tensor1), query(tensor2), y)");
+        
     }
 
     @Test
@@ -145,16 +148,8 @@ public class RankingExpressionTestCase {
         String expRhs = "(rankingExpression(log10tweetage) * rankingExpression(log10tweetage) * " +
                         "rankingExpression(log10tweetage)) + 5.0 * attribute(ythl)";
 
-        assertSerialization(lhs + " + " + rhs, macros,
-                            Arrays.asList(
-                             expLhs + " + " + expRhs,
-                             "69"
-                     ));
-        assertSerialization(lhs + " - " + rhs, macros,
-                            Arrays.asList(
-                             expLhs + " - " + expRhs,
-                             "69"
-                     ));
+        assertSerialization(Arrays.asList(expLhs + " + " + expRhs, "69"), lhs + " + " + rhs, macros);
+        assertSerialization(Arrays.asList(expLhs + " - " + expRhs, "69"), lhs + " - " + rhs, macros);
     }
 
     @Test
@@ -276,12 +271,39 @@ public class RankingExpressionTestCase {
         assertEquals(expected, new RankingExpression(expression).toString());
     }
 
-    private void assertSerialization(String expressionString, List<ExpressionFunction> macros,
-                                     List<String> expectedSerialization) {
-        assertSerialization(expressionString, macros, expectedSerialization, false);
+    /** Test serialization with no macros */
+    private void assertSerialization(String expectedSerialization, String expressionString) {
+        String serializedExpression;
+        try {
+            RankingExpression expression = new RankingExpression(expressionString);
+            // No macros -> expect one rank property 
+            serializedExpression = expression.getRankProperties(Collections.emptyList()).values().iterator().next();
+            assertEquals(expectedSerialization, serializedExpression);
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException(e);
+        }
+
+        try {
+            // No macros -> output should be parseable to a ranking expression 
+            // (but not the same one due to primitivization)
+            RankingExpression reparsedExpression = new RankingExpression(serializedExpression);
+            // Serializing the primitivized expression should yield the same expression again
+            String reserializedExpression = 
+                    reparsedExpression.getRankProperties(Collections.emptyList()).values().iterator().next();
+            assertEquals(expectedSerialization, reserializedExpression);
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Could not parse the serialized expression", e);
+        }
     }
-    private void assertSerialization(String expressionString, List<ExpressionFunction> macros, 
-                                     List<String> expectedSerialization, boolean print) {
+
+    private void assertSerialization(List<String> expectedSerialization, String expressionString, 
+                                     List<ExpressionFunction> macros) {
+        assertSerialization(expectedSerialization, expressionString, macros, false);
+    }
+    private void assertSerialization(List<String> expectedSerialization, String expressionString, 
+                                     List<ExpressionFunction> macros, boolean print) {
         try {
             if (print)
                 System.out.println("Parsing expression '" + expressionString + "'.");
@@ -292,9 +314,6 @@ public class RankingExpressionTestCase {
                 for (String key : rankProperties.keySet())
                     System.out.println("Property '" + key + "': " + rankProperties.get(key));
             }
-
-            for (Map.Entry<String, String> m : rankProperties.entrySet())
-                System.out.println(m);
             for (int i = 0; i < expectedSerialization.size();) {
                 String val = expectedSerialization.get(i++);
                 assertTrue("Properties contains " + val, rankProperties.containsValue(val));
@@ -305,7 +324,6 @@ public class RankingExpressionTestCase {
         catch (ParseException e) {
             throw new IllegalArgumentException(e);
         }
-
     }
 
 }
