@@ -34,12 +34,12 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
         final ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.SAFE);
 
         try {
-            return clusterControllerApi.apply(api ->
-                    api.setNodeState(clusterName, storageNodeIndex, stateRequest));
+            return clusterControllerApi.apply(api -> api.setNodeState(clusterName, storageNodeIndex, stateRequest));
         } catch (IOException e) {
             final String message = String.format(
-                    "Giving up setting %s for cluster %s",
+                    "Giving up setting %s for storage node with index %d in cluster %s",
                     stateRequest,
+                    storageNodeIndex,
                     clusterName);
 
             throw new IOException(message, e);
@@ -47,7 +47,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
     }
 
     /**
-     * Requests that a cluster controller sets the requested node to the requested state.
+     * Requests that a cluster controller sets all nodes in the cluster to the requested state.
      *
      * @throws IOException if there was a problem communicating with the cluster controller
      */
@@ -57,7 +57,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
         final ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.FORCE);
 
         try {
-            return clusterControllerApi.apply(api -> api.setClusterState(clusterName,stateRequest));
+            return clusterControllerApi.apply(api -> api.setClusterState(clusterName, stateRequest));
         } catch (IOException e) {
             final String message = String.format(
                     "Giving up setting %s for cluster %s",

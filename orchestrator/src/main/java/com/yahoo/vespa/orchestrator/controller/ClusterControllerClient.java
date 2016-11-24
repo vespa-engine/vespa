@@ -16,7 +16,7 @@ public interface ClusterControllerClient {
     ClusterControllerStateResponse setNodeState(final int storageNodeIndex, final ClusterControllerState wantedState) throws IOException;
 
     /**
-     * Requests that a cluster controller sets the requested node to the requested state.
+     * Requests that a cluster controller sets all nodes in the cluster to the requested state.
      *
      * @throws IOException if there was a problem communicating with the cluster controller
      */
