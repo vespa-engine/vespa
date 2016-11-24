@@ -13,7 +13,7 @@ namespace search {
  * to store unique values and a multi value mapping to store enum indices for each document.
  *
  * B: EnumAttribute<BaseClass>
- * M: MultiValueType (MultiValueMapping template argument)
+ * M: MultiValueType
  */
 template <typename B, typename M>
 class MultiValueEnumAttribute : public MultiValueAttribute<B, M>

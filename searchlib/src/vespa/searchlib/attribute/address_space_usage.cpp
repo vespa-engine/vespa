@@ -2,7 +2,6 @@
 
 #include "address_space_usage.h"
 #include "enumstorebase.h"
-#include "multivaluemapping.h"
 
 namespace search {
 
@@ -26,7 +25,7 @@ AddressSpaceUsage::defaultEnumStoreUsage()
 AddressSpace
 AddressSpaceUsage::defaultMultiValueUsage()
 {
-    return AddressSpace(0, multivalue::Index32::offsetSize());
+    return AddressSpace(0, 8192);
 }
 
 } // namespace search

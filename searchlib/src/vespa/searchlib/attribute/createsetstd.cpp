@@ -16,10 +16,10 @@ namespace search {
 
 using attribute::BasicType;
 
-#define INTSET(T, I)   MultiValueNumericAttribute< IntegerAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T, I) >
-#define FLOATSET(T, I) MultiValueNumericAttribute< FloatingPointAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T, I) >
-#define CREATEINTSET(T, H, fname, info) H ? static_cast<AttributeVector *>(new INTSET(T, multivalue::Index64)(fname, info)) : static_cast<AttributeVector *>(new INTSET(T, multivalue::Index32)(fname, info))
-#define CREATEFLOATSET(T, H, fname, info) H ? static_cast<AttributeVector *>(new FLOATSET(T, multivalue::Index64)(fname, info)) : static_cast<AttributeVector *>(new FLOATSET(T, multivalue::Index32)(fname, info))
+#define INTSET(T)   MultiValueNumericAttribute< IntegerAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T) >
+#define FLOATSET(T) MultiValueNumericAttribute< FloatingPointAttributeTemplate<T>, WEIGHTED_MULTIVALUE_ARG(T) >
+#define CREATEINTSET(T, fname, info) static_cast<AttributeVector *>(new INTSET(T)(fname, info))
+#define CREATEFLOATSET(T, fname, info) static_cast<AttributeVector *>(new FLOATSET(T)(fname, info))
 
 
 AttributeVector::SP
@@ -33,25 +33,25 @@ AttributeFactory::createSetStd(const vespalib::string & baseFileName, const Conf
     case BasicType::UINT4:
         break;
     case BasicType::INT8:
-        ret.reset(CREATEINTSET(int8_t, info.huge(), baseFileName, info));
+        ret.reset(CREATEINTSET(int8_t, baseFileName, info));
         break;
     case BasicType::INT16:
-        ret.reset(CREATEINTSET(int16_t, info.huge(), baseFileName, info));
+        ret.reset(CREATEINTSET(int16_t, baseFileName, info));
         break;
     case BasicType::INT32:
-        ret.reset(CREATEINTSET(int32_t, info.huge(), baseFileName, info));
+        ret.reset(CREATEINTSET(int32_t, baseFileName, info));
         break;
     case BasicType::INT64:
-        ret.reset(CREATEINTSET(int64_t, info.huge(), baseFileName, info));
+        ret.reset(CREATEINTSET(int64_t, baseFileName, info));
         break;
     case BasicType::FLOAT:
-        ret.reset(CREATEFLOATSET(float, info.huge(), baseFileName, info));
+        ret.reset(CREATEFLOATSET(float, baseFileName, info));
         break;
     case BasicType::DOUBLE:
-        ret.reset(CREATEFLOATSET(double, info.huge(), baseFileName, info));
+        ret.reset(CREATEFLOATSET(double, baseFileName, info));
         break;
     case BasicType::STRING:
-        ret.reset(info.huge() ? static_cast<AttributeVector *>(new HugeWeightedSetStringAttribute(baseFileName, info)) : static_cast<AttributeVector *>(new WeightedSetStringAttribute(baseFileName, info)));
+        ret.reset(static_cast<AttributeVector *>(new WeightedSetStringAttribute(baseFileName, info)));
         break;
     default:
         break;

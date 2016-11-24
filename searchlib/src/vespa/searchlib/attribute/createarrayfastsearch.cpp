@@ -23,10 +23,10 @@ namespace search {
 
 using attribute::BasicType;
 
-#define INTARRAY(T, I)   MultiValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>), MULTIVALUE_ENUM_ARG(I) >
-#define FLOATARRAY(T, I) MultiValueNumericPostingAttribute< ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>), MULTIVALUE_ENUM_ARG(I) >
-#define CREATEINTARRAY(T, H, fname, info) H ? static_cast<AttributeVector *>(new INTARRAY(T, multivalue::Index64)(fname, info)) : static_cast<AttributeVector *>(new INTARRAY(T, multivalue::Index32)(fname, info))
-#define CREATEFLOATARRAY(T, H, fname, info) H ? static_cast<AttributeVector *>(new FLOATARRAY(T, multivalue::Index64)(fname, info)) : static_cast<AttributeVector *>(new FLOATARRAY(T, multivalue::Index32)(fname, info))
+#define INTARRAY(T)   MultiValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>), MULTIVALUE_ENUM_ARG >
+#define FLOATARRAY(T) MultiValueNumericPostingAttribute< ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>), MULTIVALUE_ENUM_ARG >
+#define CREATEINTARRAY(T, fname, info) static_cast<AttributeVector *>(new INTARRAY(T)(fname, info))
+#define CREATEFLOATARRAY(T, fname, info) static_cast<AttributeVector *>(new FLOATARRAY(T)(fname, info))
 
 AttributeVector::SP
 AttributeFactory::createArrayFastSearch(const vespalib::string & baseFileName, const Config & info)
@@ -40,25 +40,25 @@ AttributeFactory::createArrayFastSearch(const vespalib::string & baseFileName, c
     case BasicType::UINT4:
         break;
     case BasicType::INT8:
-        ret.reset(info.huge() ? static_cast<AttributeVector *>(new HugeFlagAttribute(baseFileName, info)) : static_cast<AttributeVector *>(new FlagAttribute(baseFileName, info)));
+        ret.reset(static_cast<AttributeVector *>(new FlagAttribute(baseFileName, info)));
         break;
     case BasicType::INT16:
-        ret.reset(CREATEINTARRAY(int16_t, info.huge(), baseFileName, info));
+        ret.reset(CREATEINTARRAY(int16_t, baseFileName, info));
         break;
     case BasicType::INT32:
-        ret.reset(CREATEINTARRAY(int32_t, info.huge(), baseFileName, info));
+        ret.reset(CREATEINTARRAY(int32_t, baseFileName, info));
         break;
     case BasicType::INT64:
-        ret.reset(CREATEINTARRAY(int64_t, info.huge(), baseFileName, info));
+        ret.reset(CREATEINTARRAY(int64_t, baseFileName, info));
         break;
     case BasicType::FLOAT:
-        ret.reset(CREATEFLOATARRAY(float, info.huge(), baseFileName, info));
+        ret.reset(CREATEFLOATARRAY(float, baseFileName, info));
         break;
     case BasicType::DOUBLE:
-        ret.reset(CREATEFLOATARRAY(double, info.huge(), baseFileName, info));
+        ret.reset(CREATEFLOATARRAY(double, baseFileName, info));
         break;
     case BasicType::STRING:
-        ret.reset(info.huge() ? static_cast<AttributeVector *>(new HugeArrayStringPostingAttribute(baseFileName, info)) : static_cast<AttributeVector *>(new ArrayStringPostingAttribute(baseFileName, info)));
+        ret.reset(static_cast<AttributeVector *>(new ArrayStringPostingAttribute(baseFileName, info)));
         break;
     default:
         break;
