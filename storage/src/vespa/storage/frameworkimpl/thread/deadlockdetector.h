@@ -82,6 +82,7 @@ private:
     bool _enableShutdown;
     std::atomic<uint64_t> _processSlackMs;
     std::atomic<uint64_t> _waitSlackMs;
+    State _reportedBucketDBLocksAtState;
     DistributorComponent::UP _dComponent;
     ServiceLayerComponent::UP _slComponent;
     StorageComponent* _component;
@@ -92,6 +93,7 @@ private:
         // Status implementation
     virtual void reportHtmlStatus(std::ostream& out,
                                   const framework::HttpUrlPath&) const;
+    vespalib::string getBucketLockInfo() const;
 };
 
 }
