@@ -221,8 +221,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved foo.yahoo.com to ready\"}");
-        Pattern responsePattern = Pattern.compile("\\{\"hostname\":\"foo.yahoo.com\",\"ipAddress\":\".+?\"," +
-                "\"trustedNodes\":\\[" +
+        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
                 "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
                 "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
                 "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
@@ -359,14 +358,15 @@ public class RestApiTest {
     }
 
     private void assertResponseContains(Request request, String responseSnippet) throws IOException {
-        assertTrue("Response contains " + responseSnippet,
-                   container.handleRequest(request).getBodyAsString().contains(responseSnippet));
+        String response = container.handleRequest(request).getBodyAsString();
+        assertTrue(String.format("Expected response to contain: %s\nResponse: %s", responseSnippet, response),
+                response.contains(responseSnippet));
     }
 
     private void assertResponseMatches(Request request, Pattern pattern) throws IOException {
-        // System.out.println(container.handleRequest(request).getBodyAsString());
-        assertTrue("Response matches " + pattern.toString(),
-                   pattern.matcher(container.handleRequest(request).getBodyAsString()).matches());
+        String response = container.handleRequest(request).getBodyAsString();
+        assertTrue(String.format("Expected response to match pattern: %s\nResponse: %s", pattern.toString(), response),
+                   pattern.matcher(response).matches());
     }
 
     private void assertFile(Request request, String responseFile) throws IOException {
