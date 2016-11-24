@@ -45,6 +45,7 @@ private:
         : _type(type_in), _dimensions(std::move(dimensions_in)) {}
 
 public:
+    ~ValueType();
     Type type() const { return _type; }
     bool is_any() const { return (_type == Type::ANY); }
     bool is_error() const { return (_type == Type::ERROR); }

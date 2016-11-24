@@ -81,6 +81,7 @@ DimensionResult my_intersect(const DimensionList &lhs, const DimensionList &rhs)
 
 constexpr size_t ValueType::Dimension::npos;
 
+ValueType::~ValueType() { }
 bool
 ValueType::is_sparse() const
 {

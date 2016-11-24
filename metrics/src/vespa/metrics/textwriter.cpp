@@ -12,8 +12,9 @@ namespace metrics {
 TextWriter::TextWriter(std::ostream& out, uint32_t period,
                        const std::string& regex, bool verbose)
     : _period(period), _out(out), _regex(regex), _verbose(verbose)
-{
-}
+{ }
+
+TextWriter::~TextWriter() { }
 
 bool
 TextWriter::visitSnapshot(const MetricSnapshot& snapshot)

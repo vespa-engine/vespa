@@ -9,6 +9,8 @@ MemoryConsumption::MemoryConsumption() {
     _seenStrings.resize(1000);
 }
 
+MemoryConsumption::~MemoryConsumption() { }
+
 uint32_t
 MemoryConsumption::getStringMemoryUsage(const std::string& s, uint32_t& uniqueCount) {
     ++_totalStringCount;
