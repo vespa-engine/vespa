@@ -10,7 +10,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.*;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.internal.stubbing.answers.ThrowsExceptionClass;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,9 +22,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author lulf
@@ -70,94 +66,6 @@ public class VespaModelFactoryTest {
         assertNotNull(createResult.getModel());
         assertNotNull(createResult.getConfigChangeActions());
         assertTrue(createResult.getConfigChangeActions().isEmpty());
-    }
-
-    // TODO: This test seems to do exactly the same as hostedVespaZoneApplicationAllocatesNodesWithHostsXml()
-    @Test
-    public void hostedVespaRoutingApplicationAllocatesNodesWithHostsXml() {
-        String hostName = "test-host-name";
-        String routingClusterName = "routing-cluster";
-
-        String hosts =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<hosts>\n" +
-                        "  <host name='" + hostName + "'>\n" +
-                        "    <alias>proxy1</alias>\n" +
-                        "  </host>\n" +
-                        "</hosts>";
-
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<services version='1.0' xmlns:deploy='vespa'>\n" +
-                        "    <admin version='2.0'>\n" +
-                        "        <adminserver hostalias='proxy1' />\n" +
-                        "    </admin>" +
-                        "    <jdisc id='" + routingClusterName + "' version='1.0'>\n" +
-                        "        <nodes>\n" +
-                        "            <node hostalias='proxy1' />\n" +
-                        "        </nodes>\n" +
-                        "    </jdisc>\n" +
-                        "</services>";
-
-        HostProvisioner provisionerToOverride =
-                mock(HostProvisioner.class, new ThrowsExceptionClass(UnsupportedOperationException.class));
-        ModelContext modelContext = createMockModelContext(hosts, services, provisionerToOverride);
-        Model model = new VespaModelFactory(new NullConfigModelRegistry()).createModel(modelContext);
-
-        List<HostInfo> allocatedHosts = new ArrayList<>(model.getHosts());
-        assertThat(allocatedHosts.size(), is(1));
-        HostInfo hostInfo = allocatedHosts.get(0);
-
-        assertThat(hostInfo.getHostname(), is(hostName));
-
-        assertTrue("Routing service should run on host " + hostName,
-                hostInfo.getServices().stream()
-                        .map(ServiceInfo::getConfigId)
-                        .anyMatch(configId -> configId.contains(routingClusterName)));
-    }
-
-    @Test
-    public void hostedVespaZoneApplicationAllocatesNodesWithHostsXml() {
-        String hostName = "test-host-name";
-        String routingClusterName = "routing-cluster";
-
-        String hosts =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<hosts>\n" +
-                        "  <host name='" + hostName + "'>\n" +
-                        "    <alias>proxy1</alias>\n" +
-                        "  </host>\n" +
-                        "</hosts>";
-
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<services version='1.0' xmlns:deploy='vespa'>\n" +
-                        "    <admin version='2.0'>\n" +
-                        "        <adminserver hostalias='proxy1' />\n" +
-                        "    </admin>" +
-                        "    <jdisc id='" + routingClusterName + "' version='1.0'>\n" +
-                        "        <nodes>\n" +
-                        "            <node hostalias='proxy1' />\n" +
-                        "        </nodes>\n" +
-                        "    </jdisc>\n" +
-                        "</services>";
-
-        HostProvisioner provisionerToOverride =
-                mock(HostProvisioner.class, new ThrowsExceptionClass(UnsupportedOperationException.class));
-
-        ModelContext modelContext = createMockModelContext(hosts, services, provisionerToOverride);
-        Model model = new VespaModelFactory(new NullConfigModelRegistry()).createModel(modelContext);
-
-        List<HostInfo> allocatedHosts = new ArrayList<>(model.getHosts());
-        assertThat(allocatedHosts.size(), is(1));
-        HostInfo hostInfo = allocatedHosts.get(0);
-
-        assertThat(hostInfo.getHostname(), is(hostName));
-
-        assertTrue("Routing service should run on host " + hostName,
-                hostInfo.getServices().stream()
-                        .map(ServiceInfo::getConfigId)
-                        .anyMatch(configId -> configId.contains(routingClusterName)));
     }
 
     @Test
@@ -257,7 +165,9 @@ public class VespaModelFactoryTest {
 
                     @Override
                     public ApplicationId applicationId() {
-                        return ApplicationId.HOSTED_ZONE_APPLICATION_ID;
+                        return ApplicationId.from(TenantName.from("hosted-vespa"),
+                                                  ApplicationName.from("routing"),
+                                                  InstanceName.defaultName());
                     }
 
                     @Override

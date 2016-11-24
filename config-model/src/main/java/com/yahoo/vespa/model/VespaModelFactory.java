@@ -16,23 +16,16 @@ import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
-import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.provision.HostsXmlProvisioner;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.text.XML;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -147,45 +140,8 @@ public class VespaModelFactory implements ModelFactory {
     }
 
     private static HostProvisioner createHostProvisioner(ModelContext modelContext) {
-        // TODO: Remove this (use only else part of if statement) when zone applications uses nodes in node repo in all zones
-        if (isHostedVespaRoutingApplication(modelContext) && ! useRoutingNodesInNodeRepo(modelContext.applicationPackage().getServices())) {
-            //TODO: This belongs in HostedVespaProvisioner.
-            //Added here for now since com.yahoo.config.model.api.HostProvisioner is not created per application,
-            //and allocation is independent of ApplicationPackage.
-            return new HostsXmlProvisioner(hostsXml(modelContext));
-        } else {
-            return modelContext.hostProvisioner().orElse(
-                    DeployState.getDefaultModelHostProvisioner(modelContext.applicationPackage()));
-        }
-    }
-
-    // Returns true if nodes element has an attribute 'type', false otherwise
-    public static boolean useRoutingNodesInNodeRepo(Reader servicesReader) {
-        Document services = XmlHelper.getDocument(servicesReader);
-
-        Element jdisc = XML.getChild(services.getDocumentElement(), "jdisc");
-        if (jdisc == null) return false;
-
-        Element nodes = XML.getChild(jdisc, "nodes");
-        if (nodes == null) return false;
-
-        return nodes.hasAttribute("type");
-    }
-
-    private static Reader hostsXml(ModelContext modelContext) {
-        Reader hosts = modelContext.applicationPackage().getHosts();
-        if (hosts == null) {
-            //TODO: throw InvalidApplicationException directly. Not possible now, as it resides in the configserver module.
-            //SessionPreparer maps IllegalArgumentException -> InvalidApplicationException
-            throw new IllegalArgumentException("Hosted vespa routing application must use " + ApplicationPackage.HOSTS
-                                               + " to allocate hosts.");
-        }
-        return hosts;
-    }
-
-    private static boolean isHostedVespaRoutingApplication(ModelContext modelContext) {
-        ApplicationId id = modelContext.properties().applicationId();
-        return modelContext.properties().hostedVespa() && id.isHostedVespaRoutingApplication();
+        return modelContext.hostProvisioner().orElse(
+                DeployState.getDefaultModelHostProvisioner(modelContext.applicationPackage()));
     }
 
     private void validateXML(ApplicationPackage applicationPackage, boolean ignoreValidationErrors) {

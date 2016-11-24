@@ -62,6 +62,8 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         this.serializedForm = toSerializedForm();
     }
 
+    // TODO: Remove code between lines with ----------- when oldest config model used is 6.49.
+    /* ------------------- */
     public static final TenantName HOSTED_VESPA_TENANT = TenantName.from("hosted-vespa");
     // TODO: Remove references to routing application, or rename them to zone
     // application, once everything (like Chef recipes) refers to the zone
@@ -81,6 +83,7 @@ public final class ApplicationId implements Comparable<ApplicationId> {
 	    (ROUTING_APPLICATION.equals(application) ||
 	     ZONE_APPLICATION.equals(application));
     }
+    /* ------------------- */
 
     public static ApplicationId from(TenantName tenant, ApplicationName application, InstanceName instanceName) {
         return new ApplicationId(tenant, application, instanceName);
