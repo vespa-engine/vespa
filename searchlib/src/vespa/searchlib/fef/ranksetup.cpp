@@ -97,6 +97,7 @@ RankSetup::configure()
     setRankScoreDropLimit(indexproperties::hitcollector::RankScoreDropLimit::lookup(_indexEnv.getProperties()));
     setSoftTimeoutEnabled(indexproperties::softtimeout::Enabled::lookup(_indexEnv.getProperties()));
     setSoftTimeoutTailCost(indexproperties::softtimeout::TailCost::lookup(_indexEnv.getProperties()));
+    setSoftTimeoutFactor(indexproperties::softtimeout::Factor::lookup(_indexEnv.getProperties()));
 }
 
 void

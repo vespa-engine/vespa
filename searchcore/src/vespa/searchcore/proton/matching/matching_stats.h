@@ -85,6 +85,7 @@ private:
     size_t                 _docsRanked;
     size_t                 _docsReRanked;
     size_t                 _softDoomed;
+    double                 _softDoomFactor;
     Avg                    _queryCollateralTime;
     Avg                    _queryLatency;
     Avg                    _matchTime;
@@ -100,6 +101,7 @@ public:
           _docsRanked(0),
           _docsReRanked(0),
           _softDoomed(0),
+          _softDoomFactor(0.5),
           _queryCollateralTime(),
           _queryLatency(),
           _matchTime(),
@@ -124,6 +126,9 @@ public:
 
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }
+    MatchingStats &softDoomFactor(double value) { _softDoomFactor = value; return *this; }
+    double softDoomFactor() const { return _softDoomFactor; }
+    MatchingStats &updatesoftDoomFactor(double softLimit, double duration);
 
     MatchingStats &queryCollateralTime(double time_s) { _queryCollateralTime.set(time_s); return *this; }
     double queryCollateralTimeAvg() const { return _queryCollateralTime.avg(); }

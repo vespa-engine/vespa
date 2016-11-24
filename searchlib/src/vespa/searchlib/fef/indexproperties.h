@@ -130,6 +130,7 @@ namespace softtimeout {
         static const vespalib::string NAME;
         static const bool DEFAULT_VALUE;
         static bool lookup(const Properties &props);
+        static bool lookup(const Properties &props, bool defaultValue);
     };
     /**
      * Specifies how large factor [0-1] of the given timeout that is
@@ -140,6 +141,17 @@ namespace softtimeout {
         static const vespalib::string NAME;
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
+    };
+
+    /**
+     * This can be controlled in the query to override the factor that the backend maintains.
+     * The backend starts off with a value of 0.5.
+     */
+    struct Factor {
+        static const vespalib::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+        static double lookup(const Properties &props, double defaultValue);
     };
 }
 

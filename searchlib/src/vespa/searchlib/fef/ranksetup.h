@@ -57,6 +57,7 @@ private:
     vespalib::string         _diversityCutoffStrategy;
     bool                     _softTimeoutEnabled;
     double                   _softTimeoutTailCost;
+    double                   _softTimeoutFactor;
 
 
 public:
@@ -351,12 +352,11 @@ public:
     bool getIgnoreDefaultRankFeatures() { return _ignoreDefaultRankFeatures; }
 
     void setSoftTimeoutEnabled(bool v) { _softTimeoutEnabled = v; }
-
     bool getSoftTimeoutEnabled() const { return _softTimeoutEnabled; }
-
     void setSoftTimeoutTailCost(double v) { _softTimeoutTailCost = v; }
-
     double getSoftTimeoutTailCost() const { return _softTimeoutTailCost; }
+    void setSoftTimeoutFactor(double v) { _softTimeoutFactor = v; }
+    double getSoftTimeoutFactor() const { return _softTimeoutFactor; }
 
     /**
      * This method may be used to indicate that certain features
