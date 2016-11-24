@@ -70,7 +70,12 @@ public interface Tensor {
     default Tensor join(Tensor argument, DoubleBinaryOperator combinator) {
         return new Join(new ConstantTensor(this), new ConstantTensor(argument), combinator).evaluate();
     }
-    
+
+    default Tensor rename(String fromDimension, String toDimension) {
+        return new Rename(new ConstantTensor(this), Collections.singletonList(fromDimension), 
+                                                    Collections.singletonList(toDimension)).evaluate();
+    }
+
     default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
         return new Rename(new ConstantTensor(this), fromDimensions, toDimensions).evaluate();
     }
