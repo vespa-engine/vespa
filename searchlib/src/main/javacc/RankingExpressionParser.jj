@@ -410,8 +410,8 @@ ExpressionNode tensorRename() :
 }
 {
     <RENAME> <LBRACE> tensor = expression() <COMMA> 
-                      fromDimensions = identifierVector() <COMMA> 
-                      toDimensions = identifierVector() 
+                      fromDimensions = bracedIdentifierList() <COMMA> 
+                      toDimensions = bracedIdentifierList() 
              <RBRACE>
     { return new TensorRenameNode(tensor, fromDimensions, toDimensions); }
 }
@@ -605,7 +605,7 @@ List<String> identifierList() :
     { return list; }
 }
 
-List<String> identifierVector() :
+List<String> bracedIdentifierList() :
 {
     List<String> list = new ArrayList<String>();
     String element;
@@ -613,7 +613,7 @@ List<String> identifierVector() :
 {
     ( element = identifier() { return Collections.singletonList(element); } )
     |
-    ( <LSQUARE> list = identifierList() <RSQUARE> { return list; } )
+    ( <LBRACE> list = identifierList() <RBRACE> { return list; } )
 }
 
 // An identifier or integer

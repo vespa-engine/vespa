@@ -233,7 +233,7 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         
         // tensor rename
         assertEvaluates("{ {newX:1,y:2}:3 }", "rename(tensor0, x, newX)", "{ {x:1,y:2}:3.0 }");
-        assertEvaluates("{ {x:2,y:1}:3 }", "rename(tensor0, [x, y], [y, x])", "{ {x:1,y:2}:3.0 }");
+        assertEvaluates("{ {x:2,y:1}:3 }", "rename(tensor0, (x, y), (y, x))", "{ {x:1,y:2}:3.0 }");
         
         // tensor generate - TODO
         // assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0, {x:2,y:2}:1, {x:1,y:2}:0 }", "tensor(x[2],y[2])(x==y)");
