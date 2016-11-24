@@ -484,7 +484,7 @@ FileStorManagerTest::testDiskMove()
         CPPUNIT_ASSERT_EQUAL(0, (int)entry->disk);
         CPPUNIT_ASSERT_EQUAL(
                 vespalib::string(
-                        "BucketInfo(crc 0x28cc441f, docCount 1, totDocSize 122, "
+                        "BucketInfo(crc 0x28cc441f, docCount 1, totDocSize 114, "
                         "ready true, active false)"),
                 entry->getBucketInfo().toString());
     }
@@ -511,7 +511,7 @@ FileStorManagerTest::testDiskMove()
         CPPUNIT_ASSERT_EQUAL(1, (int)entry->disk);
         CPPUNIT_ASSERT_EQUAL(
                 vespalib::string(
-                        "BucketInfo(crc 0x28cc441f, docCount 1, totDocSize 122, "
+                        "BucketInfo(crc 0x28cc441f, docCount 1, totDocSize 114, "
                         "ready true, active false)"),
                 entry->getBucketInfo().toString());
     }
@@ -579,7 +579,7 @@ FileStorManagerTest::testRepairNotifiesDistributorOnChange()
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("NotifyBucketChangeCommand(BucketId(0x4000000000000001), "
-                        "BucketInfo(crc 0x2625a314, docCount 2, totDocSize 170, "
+                        "BucketInfo(crc 0x2625a314, docCount 2, totDocSize 154, "
                         "ready true, active false))"), top.getReply(0)->toString());
 
     top.close();
