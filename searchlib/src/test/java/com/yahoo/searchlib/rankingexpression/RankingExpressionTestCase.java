@@ -127,7 +127,10 @@ public class RankingExpressionTestCase {
     
     @Test
     public void testTensorSerialization() {
-        assertSerialization("map(constant(tensor0), f(a)(cos(a)))", "map(constant(tensor0), f(a)(cos(a)))");
+        assertSerialization("map(constant(tensor0), f(a)(cos(a)))", 
+                            "map(constant(tensor0), f(a)(cos(a)))");
+        assertSerialization("map(constant(tensor0), f(a)(cos(a))) + join(attribute(tensor1), map(reduce(map(attribute(tensor1), f(a)(a * a)), sum, x), f(a)(a * a)), f(a,b)(a / b))", 
+                            "map(constant(tensor0), f(a)(cos(a))) + l2_normalize(attribute(tensor1), x)");
         assertSerialization("join(reduce(join(reduce(join(constant(tensor0), attribute(tensor1), f(a,b)(a * b)), sum, x), attribute(tensor1), f(a,b)(a * b)), sum, y), query(tensor2), f(a,b)(a + b))", 
                             "xw_plus_b(matmul(constant(tensor0), attribute(tensor1), x), attribute(tensor1), query(tensor2), y)");
         
