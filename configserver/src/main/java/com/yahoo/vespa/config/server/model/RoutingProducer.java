@@ -19,7 +19,6 @@ import java.util.Map;
 public class RoutingProducer implements RoutingConfig.Producer {
     private static final TenantName HOSTED_VESPA_TENANT = TenantName.from("hosted-vespa");
     private static final ApplicationName ROUTING_APPLICATION = ApplicationName.from("routing");
-    private static final ApplicationName ZONE_APPLICATION = ApplicationName.from("zone");
 
     private final Map<TenantName, Map<ApplicationId, Application>> models;
 
@@ -40,8 +39,7 @@ public class RoutingProducer implements RoutingConfig.Producer {
 
     private boolean isHostedVespaRoutingApplication(ApplicationId applicationId) {
         return HOSTED_VESPA_TENANT.equals(applicationId.tenant()) &&
-                (ROUTING_APPLICATION.equals(applicationId.application()) ||
-                        ZONE_APPLICATION.equals(applicationId.application()));
+                (ROUTING_APPLICATION.equals(applicationId.application()));
     }
 
 }
