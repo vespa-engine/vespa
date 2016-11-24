@@ -180,8 +180,7 @@ MultiValueNumericAttribute<B, M>::onInitSave()
 {
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
                                              takeGuard());
-    return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType,
-        typename M::Index>>
+    return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType>>
         (std::move(guard), this->createSaveTargetConfig(), this->_mvMapping);
 }
 
