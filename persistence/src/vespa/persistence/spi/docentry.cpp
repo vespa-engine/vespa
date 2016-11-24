@@ -120,6 +120,11 @@ DocEntry::prettyPrint(std::ostream& out) const
     out << flags << ")";
 }
 
+std::ostream &
+operator << (std::ostream & os, const DocEntry & r) {
+    return os << r.toString();
+}
+
 bool
 DocEntry::operator==(const DocEntry& entry) const {
     if (_timestamp != entry._timestamp) {

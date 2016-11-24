@@ -93,6 +93,8 @@ public:
     bool operator==(const DocEntry& entry) const;
 };
 
+std::ostream & operator << (std::ostream & os, const DocEntry & r);
+
 } // spi
 } // storage
 

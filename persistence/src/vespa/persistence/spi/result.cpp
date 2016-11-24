@@ -14,6 +14,11 @@ Result::toString() const {
     return os.str();
 }
 
+std::ostream &
+operator << (std::ostream & os, const Result & r) {
+    return os << r.toString();
+}
+
 GetResult::GetResult(Document::UP doc, Timestamp timestamp)
     : Result(),
       _timestamp(timestamp),

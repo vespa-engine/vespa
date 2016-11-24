@@ -7,6 +7,7 @@
 #include <tests/spi/simulatedfailurefile.h>
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
 #include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <sys/time.h>
 
 using document::DocumentType;

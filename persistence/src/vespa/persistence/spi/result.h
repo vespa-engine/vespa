@@ -62,6 +62,8 @@ private:
     vespalib::string _errorMessage;
 };
 
+std::ostream & operator << (std::ostream & os, const Result & r);
+
 class BucketInfoResult : public Result {
 public:
     /**
