@@ -121,6 +121,28 @@ namespace matching {
     };
 }
 
+namespace softtimeout {
+    /**
+     * Enables or disables the soft timeout.
+     * Default is off, but will change in Q1 2017
+     */
+    struct Enabled {
+        static const vespalib::string NAME;
+        static const bool DEFAULT_VALUE;
+        static bool lookup(const Properties &props);
+    };
+    /**
+     * Specifies how large factor [0-1] of the given timeout that is
+     * allocated to stuff after searchphase has completed.
+     * Be it summary fetching or what not. default is 0.10 or 10%.
+     */
+    struct TailCost {
+        static const vespalib::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties &props);
+    };
+}
+
 namespace matchphase {
 
     /**

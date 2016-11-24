@@ -24,8 +24,7 @@ public:
 namespace search {
 namespace fef {
 
-RankSetup::RankSetup(const BlueprintFactory &factory,
-                     const IIndexEnvironment &indexEnv)
+RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &indexEnv)
     : _factory(factory),
       _indexEnv(indexEnv),
       _first_phase_resolver(new BlueprintResolver(factory, indexEnv)),
@@ -56,9 +55,12 @@ RankSetup::RankSetup(const BlueprintFactory &factory,
       _diversityAttribute(),
       _diversityMinGroups(1),
       _diversityCutoffFactor(10.0),
-      _diversityCutoffStrategy("loose")
-{
-}
+      _diversityCutoffStrategy("loose"),
+      _softTimeoutEnabled(false),
+      _softTimeoutTailCost(0.1)
+{ }
+
+RankSetup::~RankSetup() { }
 
 void
 RankSetup::configure()
@@ -93,6 +95,8 @@ RankSetup::configure()
     setEstimatePoint(indexproperties::hitcollector::EstimatePoint::lookup(_indexEnv.getProperties()));
     setEstimateLimit(indexproperties::hitcollector::EstimateLimit::lookup(_indexEnv.getProperties()));
     setRankScoreDropLimit(indexproperties::hitcollector::RankScoreDropLimit::lookup(_indexEnv.getProperties()));
+    setSoftTimeoutEnabled(indexproperties::softtimeout::Enabled::lookup(_indexEnv.getProperties()));
+    setSoftTimeoutTailCost(indexproperties::softtimeout::TailCost::lookup(_indexEnv.getProperties()));
 }
 
 void

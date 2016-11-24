@@ -55,6 +55,8 @@ private:
     uint32_t                 _diversityMinGroups;
     double                   _diversityCutoffFactor;
     vespalib::string         _diversityCutoffStrategy;
+    bool                     _softTimeoutEnabled;
+    double                   _softTimeoutTailCost;
 
 
 public:
@@ -72,8 +74,9 @@ public:
      * @param factory blueprint factory
      * @param indexEnv index environment
      **/
-    RankSetup(const BlueprintFactory &factory,
-              const IIndexEnvironment &indexEnv);
+    RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &indexEnv);
+
+    ~RankSetup();
 
     /**
      * Configures this rank setup according to the fef properties
@@ -346,6 +349,14 @@ public:
      * @return true means ignore default rank features
      **/
     bool getIgnoreDefaultRankFeatures() { return _ignoreDefaultRankFeatures; }
+
+    void setSoftTimeoutEnabled(bool v) { _softTimeoutEnabled = v; }
+
+    bool getSoftTimeoutEnabled() const { return _softTimeoutEnabled; }
+
+    void setSoftTimeoutTailCost(double v) { _softTimeoutTailCost = v; }
+
+    double getSoftTimeoutTailCost() const { return _softTimeoutTailCost; }
 
     /**
      * This method may be used to indicate that certain features
