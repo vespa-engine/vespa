@@ -44,6 +44,7 @@ public:
         Coverage & setSoonActive(uint64_t v) { _soonActive = v; return *this; }
         Coverage & degradeMatchPhase() { _degradeReason |= MATCH_PHASE; return *this; }
         Coverage & degradeTimeout() { _degradeReason |= TIMEOUT; return *this; }
+        Coverage & degradeAdaptiveTimeout() { _degradeReason |= ADAPTIVE_TIMEOUT; return *this; }
     private:
         enum DegradeReason {MATCH_PHASE=1, TIMEOUT=2, ADAPTIVE_TIMEOUT=4};
         uint64_t _covered;

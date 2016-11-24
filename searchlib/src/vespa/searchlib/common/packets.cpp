@@ -1012,7 +1012,7 @@ FS4Packet_QUERYRESULTX::GetLength()
         plen += 2 * sizeof(uint64_t);
 
     if ((_features & QRF_EXTENDED_COVERAGE) != 0)
-        plen += sizeof(uint64_t) + (uint32_t);
+        plen += sizeof(uint64_t) + sizeof(uint32_t);
 
     if ((_features & QRF_PROPERTIES) != 0) {
         plen += sizeof(uint32_t);
@@ -1142,7 +1142,7 @@ FS4Packet_QUERYRESULTX::Decode(FNET_DataBuffer *src, uint32_t len)
         len -= 2 * sizeof(uint64_t);
     }
     if ((_features & QRF_EXTENDED_COVERAGE) != 0) {
-        if (len < sizeof(uint64_t) + sizeof(uint32_t) goto error;
+        if (len < sizeof(uint64_t) + sizeof(uint32_t)) goto error;
         _soonActiveDocs  = src->ReadInt64();
         _coverageDegradeReason = src->ReadInt32();
 
