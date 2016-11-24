@@ -36,7 +36,6 @@ protected:
     typedef typename MultiValueAttribute<B, M>::MultiValueType WeightedIndex;
     typedef typename MultiValueAttribute<B, M>::ValueVector    WeightedIndexVector;
     using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
-    typedef typename MultiValueAttribute<B, M>::Histogram      Histogram;
     typedef typename MultiValueAttribute<B, M>::DocumentValues DocIndices;
     typedef AttributeVector::ReaderBase     ReaderBase;
     typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;

@@ -25,7 +25,6 @@ protected:
 
     using MultiValueType = M;
     using MultiValueMapping = attribute::MultiValueMapping2<MultiValueType>;
-    using Histogram = attribute::MultiValueMapping2Base::Histogram;
     typedef typename MultiValueType::ValueType            ValueType;
     typedef std::vector<MultiValueType>                   ValueVector;
     using MultiValueArrayRef = vespalib::ConstArrayRef<MultiValueType>;

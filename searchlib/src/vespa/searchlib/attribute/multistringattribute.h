@@ -52,8 +52,6 @@ private:
     friend class StringAttributeTest;
 
 public:
-    typedef attribute::MultiValueMapping2Base::Histogram Histogram;
-
     MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                               AttributeVector::Config(AttributeVector::BasicType::STRING,
                                                       attribute::CollectionType::ARRAY));

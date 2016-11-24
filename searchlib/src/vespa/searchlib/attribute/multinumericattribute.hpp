@@ -138,7 +138,7 @@ MultiValueNumericAttribute<B, M>::onLoad()
     bool hasWeight(attrReader.hasWeight());
     size_t numDocs = attrReader.getNumIdx() - 1;
 
-    this->_mvMapping.prepareLoadFromMultiValue(attrReader);
+    this->_mvMapping.prepareLoadFromMultiValue();
     // set values
     std::vector<MultiValueType> values;
     B::setNumDocs(numDocs);
