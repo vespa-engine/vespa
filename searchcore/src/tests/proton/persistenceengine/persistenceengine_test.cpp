@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("persistenceengine_test");
-
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/persistence/spi/documentselection.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
@@ -10,6 +7,8 @@ LOG_SETUP("persistenceengine_test");
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <set>
 
 using document::BucketId;
