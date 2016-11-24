@@ -39,6 +39,7 @@ public:
      * Create a Route that contains no hops
      */
     Route();
+    ~Route();
 
     /**
      * Constructs a route that contains the given hops.
