@@ -6,7 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.tensor.functions.ReduceFunction;
+import com.yahoo.tensor.functions.Reduce;
 
 import java.util.Collections;
 import java.util.Deque;
@@ -23,12 +23,12 @@ public class TensorReduceNode extends CompositeNode {
     /** The tensor to aggregate over */
     private final ExpressionNode argument;
 
-    private final ReduceFunction.Aggregator aggregator;
+    private final Reduce.Aggregator aggregator;
 
     /** The dimensions to sum over, or empty to sum all cells */
     private final ImmutableList<String> dimensions;
 
-    public TensorReduceNode(ExpressionNode argument, ReduceFunction.Aggregator aggregator, List<String> dimensions) {
+    public TensorReduceNode(ExpressionNode argument, Reduce.Aggregator aggregator, List<String> dimensions) {
         this.argument = argument;
         this.aggregator = aggregator;
         this.dimensions = ImmutableList.copyOf(dimensions);

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class ReduceFunction extends PrimitiveTensorFunction {
+public class Reduce extends PrimitiveTensorFunction {
 
     public enum Aggregator { avg, count, prod, sum, max, min; }
 
@@ -30,12 +30,12 @@ public class ReduceFunction extends PrimitiveTensorFunction {
     private final Aggregator aggregator;
 
     /** Creates a reduce function reducing aLL dimensions */
-    public ReduceFunction(TensorFunction argument, Aggregator aggregator) {
+    public Reduce(TensorFunction argument, Aggregator aggregator) {
         this(argument, aggregator, Collections.emptyList());
     }
 
     /** Creates a reduce function reducing a single dimension */
-    public ReduceFunction(TensorFunction argument, Aggregator aggregator, String dimension) {
+    public Reduce(TensorFunction argument, Aggregator aggregator, String dimension) {
         this(argument, aggregator, Collections.singletonList(dimension));
     }
 
@@ -48,7 +48,7 @@ public class ReduceFunction extends PrimitiveTensorFunction {
      *                   producing a dimensionless tensor (a scalar).
      * @throws IllegalArgumentException if any of the tensor dimensions are not present in the input tensor
      */
-    public ReduceFunction(TensorFunction argument, Aggregator aggregator, List<String> dimensions) {
+    public Reduce(TensorFunction argument, Aggregator aggregator, List<String> dimensions) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(aggregator, "The aggregator cannot be null");
         Objects.requireNonNull(dimensions, "The dimensions cannot be null");
@@ -60,13 +60,16 @@ public class ReduceFunction extends PrimitiveTensorFunction {
     public TensorFunction argument() { return argument; }
 
     @Override
+    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() {
-        return new ReduceFunction(argument.toPrimitive(), aggregator, dimensions);
+        return new Reduce(argument.toPrimitive(), aggregator, dimensions);
     }
 
     @Override
-    public String toString() {
-        return "reduce(" + argument.toString() + ", " + aggregator + commaSeparated(dimensions) + ")";
+    public String toString(ToStringContext context) {
+        return "reduce(" + argument.toString(context) + ", " + aggregator + commaSeparated(dimensions) + ")";
     }
     
     private String commaSeparated(List<String> list) {
@@ -77,8 +80,8 @@ public class ReduceFunction extends PrimitiveTensorFunction {
     }
 
     @Override
-    public Tensor execute() {
-        Tensor argument = this.argument.execute();
+    public Tensor evaluate(EvaluationContext context) {
+        Tensor argument = this.argument.evaluate(context);
 
         if ( ! dimensions.isEmpty() && ! argument.dimensions().containsAll(dimensions))
             throw new IllegalArgumentException("Cannot reduce " + argument + " over dimensions " + 

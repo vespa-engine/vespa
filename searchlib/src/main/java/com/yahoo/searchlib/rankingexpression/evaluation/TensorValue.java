@@ -97,6 +97,14 @@ public class TensorValue extends Value {
         return new TensorValue(value.max(asTensor(argument, "max")));
     }
 
+    public Value atan2(Value argument) {
+        return new TensorValue(value.atan2(asTensor(argument, "atan2")));
+    }
+
+    public Value equal(Value argument) {
+        return new TensorValue(value.equal(asTensor(argument, "equal")));
+    }
+
     public Value sum(String dimension) {
         return new TensorValue(value.sum(Collections.singletonList(dimension)));
     }
@@ -129,6 +137,10 @@ public class TensorValue extends Value {
             return min(argument);
         else if (function.equals(Function.max) && argument instanceof TensorValue)
             return max(argument);
+        else if (function.equals(Function.atan2) && argument instanceof TensorValue)
+            return atan2(argument);
+        else if (function.equals(Function.equal) && argument instanceof TensorValue)
+            return equal(argument);
         else
             return new TensorValue(value.map((value) -> function.evaluate(value, argument.asDouble())));
     }

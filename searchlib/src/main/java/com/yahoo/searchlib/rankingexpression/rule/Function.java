@@ -43,7 +43,8 @@ public enum Function implements Serializable {
     max(2)    { public double evaluate(double x, double y) { return max(x,y); } },
     min(2)    { public double evaluate(double x, double y) { return min(x,y); } },
     mod(2)    { public double evaluate(double x, double y) { return x % y; } },
-    pow(2)    { public double evaluate(double x, double y) { return pow(x,y); } };
+    pow(2)    { public double evaluate(double x, double y) { return pow(x,y); } },
+    equal(2)  { public double evaluate(double x, double y) { return x==y ? 1.0 : 0.0; } };
 
     private final int arity;
 

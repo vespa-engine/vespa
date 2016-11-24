@@ -3,6 +3,9 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * A function which returns a constant tensor.
  * 
@@ -19,14 +22,17 @@ public class ConstantTensor extends PrimitiveTensorFunction {
     public ConstantTensor(Tensor tensor) {
         this.constant = tensor;
     }
-    
+
+    @Override
+    public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
+
     @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
-    public Tensor execute() { return constant; }
+    public Tensor evaluate(EvaluationContext context) { return constant; }
 
     @Override
-    public String toString() { return constant.toString(); }
+    public String toString(ToStringContext context) { return constant.toString(); }
 
 }

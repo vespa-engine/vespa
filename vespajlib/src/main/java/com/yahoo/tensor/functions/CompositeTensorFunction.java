@@ -10,8 +10,8 @@ import com.yahoo.tensor.Tensor;
  */
 public abstract class CompositeTensorFunction extends TensorFunction {
 
-    /** Executes this by first converting it to a primitive function */
+    /** Evaluates this by first converting it to a primitive function */
     @Override
-    public final Tensor execute() { return toPrimitive().execute(); }
+    public final Tensor evaluate(EvaluationContext context) { return toPrimitive().evaluate(context); }
 
 }

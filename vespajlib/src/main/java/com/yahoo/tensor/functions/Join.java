@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.tensor.MapTensor;
@@ -21,12 +22,12 @@ import java.util.function.DoubleBinaryOperator;
  * 
  * @author bratseth
  */
-public class JoinFunction extends PrimitiveTensorFunction {
+public class Join extends PrimitiveTensorFunction {
     
     private final TensorFunction argumentA, argumentB;
     private final DoubleBinaryOperator combinator;
 
-    public JoinFunction(TensorFunction argumentA, TensorFunction argumentB, DoubleBinaryOperator combinator) {
+    public Join(TensorFunction argumentA, TensorFunction argumentB, DoubleBinaryOperator combinator) {
         Objects.requireNonNull(argumentA, "The first argument tensor cannot be null");
         Objects.requireNonNull(argumentB, "The second argument tensor cannot be null");
         Objects.requireNonNull(combinator, "The combinator function cannot be null");
@@ -38,23 +39,26 @@ public class JoinFunction extends PrimitiveTensorFunction {
     public TensorFunction argumentA() { return argumentA; }
     public TensorFunction argumentB() { return argumentB; }
     public DoubleBinaryOperator combinator() { return combinator; }
-    
+
+    @Override
+    public List<TensorFunction> functionArguments() { return ImmutableList.of(argumentA, argumentB); }
+
     @Override
     public PrimitiveTensorFunction toPrimitive() {
-        return new JoinFunction(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
+        return new Join(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
     }
 
     @Override
-    public String toString() {
-        return "join(" + argumentA.toString() + ", " + argumentB.toString() + ", f(a, b) (" + combinator + "))";
+    public String toString(ToStringContext context) {
+        return "join(" + argumentA.toString(context) + ", " + argumentB.toString(context) + ", " + combinator + ")";
     }
 
     private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
 
     @Override
-    public Tensor execute() {
-        Tensor a = argumentA.execute();
-        Tensor b = argumentB.execute();
+    public Tensor evaluate(EvaluationContext context) {
+        Tensor a = argumentA.evaluate(context);
+        Tensor b = argumentB.evaluate(context);
         
         // Dimension product
         Set<String> dimensions = combineDimensions(a, b);

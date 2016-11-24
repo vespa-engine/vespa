@@ -7,6 +7,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,13 +20,13 @@ import java.util.stream.Collectors;
  * 
  * @author bratseth
  */
-public class RenameFunction extends PrimitiveTensorFunction {
+public class Rename extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;
     private final List<String> fromDimensions;
     private final List<String> toDimensions;
 
-    public RenameFunction(TensorFunction argument, List<String> fromDimensions, List<String> toDimensions) {
+    public Rename(TensorFunction argument, List<String> fromDimensions, List<String> toDimensions) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(fromDimensions, "The 'from' dimensions cannot be null");
         Objects.requireNonNull(toDimensions, "The 'to' dimensions cannot be null");
@@ -38,13 +39,16 @@ public class RenameFunction extends PrimitiveTensorFunction {
         this.fromDimensions = ImmutableList.copyOf(fromDimensions);
         this.toDimensions = ImmutableList.copyOf(toDimensions);
     }
+    
+    @Override
+    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
 
     @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override
-    public Tensor execute() {
-        Tensor tensor = argument.execute();
+    public Tensor evaluate(EvaluationContext context) {
+        Tensor tensor = argument.evaluate(context);
         Map<String, String> fromToMap = fromToMap();
         Set<String> renamedDimensions = tensor.dimensions().stream()
                                                            .map((d) -> fromToMap.getOrDefault(d, d))
@@ -71,8 +75,8 @@ public class RenameFunction extends PrimitiveTensorFunction {
     }
 
     @Override
-    public String toString() { 
-        return "rename(" + argument + ", " + 
+    public String toString(ToStringContext context) { 
+        return "rename(" + argument.toString(context) + ", " + 
                        toVectorString(fromDimensions) + ", " + toVectorString(toDimensions) + ")";
     }
     

@@ -220,6 +220,16 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("{ {}:1, {d1:l1}:10, {d1:l1,d2:l1 }:100 }",
                         "tensor0 / 10", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
         assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
+        assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:0 }",
+                        "atan2(tensor0, tensor1)", "{ {x:1}:0, {x:2}:0 }", "{ {y:1}:1 }");
+        // TODO
+        // greater (>)
+        // greater_equal (>=)
+        // less (<)
+        // less_equal (<=)
+        // not_equal (!=)
+        // argmax
+        // argmin        
         
         // tensor rename
         assertEvaluates("{ {newX:1,y:2}:3 }", "rename(tensor0, x, newX)", "{ {x:1,y:2}:3.0 }");
@@ -227,10 +237,19 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         
         // tensor generate - TODO
         // assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0, {x:2,y:2}:1, {x:1,y:2}:0 }", "tensor(x[2],y[2])(x==y)");
+        // range
+        // diag
+        // fill
+        // random
         
-        
+        // composite functions
+        assertEvaluates("{ {x:1}:1.5, {x:2}:3.0 }", "l1_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:0.04, {x:2}:0.08 }", "l2_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {y:1}:81.0 }", "matmul(tensor0, tensor1, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }");
+        assertEvaluates("{ {x:1}:0.5, {x:2}:0.5 }", "softmax(tensor0, x)", "{ {x:1}:1, {x:2}:1 }", "{ {y:1}:1 }");
+        assertEvaluates("{ {x:1,y:1}:88.0 }", "xw_plus_b(tensor0, tensor1, tensor2, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }", "{ {x:1}:7 }");
 
-        // combining functions
+        // expressions combining functions
         assertEvaluates(String.valueOf(7.5 + 45 + 1.7),
                         "sum( " +                              // model computation:
                         "      tensor0 * tensor1 * tensor2 " + // - feature combinations

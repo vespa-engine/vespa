@@ -1,5 +1,8 @@
 package com.yahoo.tensor.functions;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * @author bratseth
  */
@@ -12,18 +15,21 @@ public class L1Normalize extends CompositeTensorFunction {
         this.argument = argument;
         this.dimension = dimension;
     }
-    
+
+    @Override
+    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
+
     @Override
     public PrimitiveTensorFunction toPrimitive() {
         TensorFunction primitiveArgument = argument.toPrimitive();
-        return new JoinFunction(primitiveArgument,
-                                new ReduceFunction(primitiveArgument, ReduceFunction.Aggregator.avg, dimension),
-                                ScalarFunctions.multiply());
+        return new Join(primitiveArgument,
+                        new Reduce(primitiveArgument, Reduce.Aggregator.avg, dimension),
+                        ScalarFunctions.multiply());
     }
     
     @Override
-    public String toString() {
-        return "l1_normalize(" + argument + ")";
+    public String toString(ToStringContext context) {
+        return "l1_normalize(" + argument.toString(context) + ", " + dimension + ")";
     }
 
 }

@@ -12,7 +12,7 @@ public class TensorFunctionTestCase {
 
     @Test
     public void testTranslation() {
-        assertTranslated("join({{x:1}:1.0}, reduce({{x:1}:1.0}, avg, x), f(a, b) (a * b))",
+        assertTranslated("join({{x:1}:1.0}, reduce({{x:1}:1.0}, avg, x), f(a,b)(a*b))",
                          new L1Normalize(new ConstantTensor("{{x:1}:1.0}"), "x"));
     }
     

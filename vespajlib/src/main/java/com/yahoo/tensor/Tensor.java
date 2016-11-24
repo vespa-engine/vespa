@@ -2,15 +2,16 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.functions.ConstantTensor;
+import com.yahoo.tensor.functions.EvaluationContext;
 import com.yahoo.tensor.functions.GeneratedTensor;
-import com.yahoo.tensor.functions.JoinFunction;
+import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.L1Normalize;
 import com.yahoo.tensor.functions.L2Normalize;
-import com.yahoo.tensor.functions.MapFunction;
-import com.yahoo.tensor.functions.ReduceFunction;
-import com.yahoo.tensor.functions.RenameFunction;
+import com.yahoo.tensor.functions.Matmul;
+import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.tensor.functions.Rename;
+import com.yahoo.tensor.functions.Softmax;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,7 +22,6 @@ import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 
 /**
  * A multidimensional array which can be used in computations.
@@ -60,34 +60,42 @@ public interface Tensor {
     // ----------------- Primitive tensor functions
     
     default Tensor map(DoubleUnaryOperator mapper) {
-        return new MapFunction(new ConstantTensor(this), mapper).execute();
+        return new com.yahoo.tensor.functions.Map(new ConstantTensor(this), mapper).evaluate();
     }
 
     /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
-    default Tensor reduce(ReduceFunction.Aggregator aggregator, List<String> dimensions) {
-        return new ReduceFunction(new ConstantTensor(this), aggregator, dimensions).execute();
+    default Tensor reduce(Reduce.Aggregator aggregator, List<String> dimensions) {
+        return new Reduce(new ConstantTensor(this), aggregator, dimensions).evaluate();
     }
 
     default Tensor join(Tensor argument, DoubleBinaryOperator combinator) {
-        return new JoinFunction(new ConstantTensor(this), new ConstantTensor(argument), combinator).execute();
+        return new Join(new ConstantTensor(this), new ConstantTensor(argument), combinator).evaluate();
     }
     
     default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
-        return new RenameFunction(new ConstantTensor(this), fromDimensions, toDimensions).execute();
+        return new Rename(new ConstantTensor(this), fromDimensions, toDimensions).evaluate();
     }
     
     static Tensor from(TensorType type, Function<List<Integer>, Double> valueSupplier) {
-        return new GeneratedTensor(type, valueSupplier).execute();
+        return new GeneratedTensor(type, valueSupplier).evaluate();
     }
     
     // ----------------- Composite tensor functions which have a defined primitive mapping
     
     default Tensor l1Normalize(String dimension) {
-        return new L1Normalize(new ConstantTensor(this), dimension).execute();
+        return new L1Normalize(new ConstantTensor(this), dimension).evaluate();
     }
 
     default Tensor l2Normalize(String dimension) {
-        return new L2Normalize(new ConstantTensor(this), dimension).execute();
+        return new L2Normalize(new ConstantTensor(this), dimension).evaluate();
+    }
+
+    default Tensor matmul(Tensor argument, String dimension) {
+        return new Matmul(new ConstantTensor(this), new ConstantTensor(argument), dimension).evaluate();
+    }
+
+    default Tensor softmax(String dimension) {
+        return new Softmax(new ConstantTensor(this), dimension).evaluate();
     }
 
     // ----------------- Composite tensor functions mapped to primitives here on the fly
@@ -98,13 +106,15 @@ public interface Tensor {
     default Tensor subtract(Tensor argument) { return join(argument, (a, b) -> (a - b )); }
     default Tensor max(Tensor argument) { return join(argument, (a, b) -> (a > b ? a : b )); }
     default Tensor min(Tensor argument) { return join(argument, (a, b) -> (a < b ? a : b )); }
+    default Tensor atan2(Tensor argument) { return join(argument, Math::atan2); }
+    default Tensor equal(Tensor argument) { return join(argument, (a, b) -> ( a == b ? 1.0 : 0.0)); }
 
-    default Tensor avg(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.avg, dimensions); }
-    default Tensor count(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.count, dimensions); }
-    default Tensor max(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.max, dimensions); }
-    default Tensor min(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.min, dimensions); }
-    default Tensor prod(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.prod, dimensions); }
-    default Tensor sum(List<String> dimensions) { return reduce(ReduceFunction.Aggregator.sum, dimensions); }
+    default Tensor avg(List<String> dimensions) { return reduce(Reduce.Aggregator.avg, dimensions); }
+    default Tensor count(List<String> dimensions) { return reduce(Reduce.Aggregator.count, dimensions); }
+    default Tensor max(List<String> dimensions) { return reduce(Reduce.Aggregator.max, dimensions); }
+    default Tensor min(List<String> dimensions) { return reduce(Reduce.Aggregator.min, dimensions); }
+    default Tensor prod(List<String> dimensions) { return reduce(Reduce.Aggregator.prod, dimensions); }
+    default Tensor sum(List<String> dimensions) { return reduce(Reduce.Aggregator.sum, dimensions); }
 
     /**
      * Returns true if the given tensor is mathematically equal to this:
@@ -177,11 +187,11 @@ public interface Tensor {
     }
     
     static String contentToString(Tensor tensor) {
-        List<Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
-        Collections.sort(cellEntries, Map.Entry.<TensorAddress, Double>comparingByKey());
+        List<java.util.Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
+        Collections.sort(cellEntries, java.util.Map.Entry.<TensorAddress, Double>comparingByKey());
 
         StringBuilder b = new StringBuilder("{");
-        for (Map.Entry<TensorAddress, Double> cell : cellEntries) {
+        for (java.util.Map.Entry<TensorAddress, Double> cell : cellEntries) {
             b.append(cell.getKey()).append(":").append(cell.getValue());
             b.append(",");
         }

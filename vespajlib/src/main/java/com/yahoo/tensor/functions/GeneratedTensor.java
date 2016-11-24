@@ -3,6 +3,7 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -38,16 +39,19 @@ public class GeneratedTensor extends PrimitiveTensorFunction {
             if (dimension.type() != TensorType.Dimension.Type.indexedBound)
                 throw new IllegalArgumentException("A generated tensor can only have indexed bound dimensions");
     }
-    
+
+    @Override
+    public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
+
     @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
     
     @Override
-    public Tensor execute() {
+    public Tensor evaluate(EvaluationContext context) {
         throw new UnsupportedOperationException("Not implemented"); // TODO
     }
 
     @Override
-    public String toString() { return type + "(" + generator + ")"; }
+    public String toString(ToStringContext context) { return type + "(" + generator + ")"; }
 
 }

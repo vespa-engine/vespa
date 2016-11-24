@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
+import com.yahoo.tensor.functions.EvaluationContext;
 
 import java.util.Set;
 
@@ -10,7 +11,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public abstract class Context {
+public abstract class Context implements EvaluationContext {
 
     /**
      * <p>Returns the value of a simple variable name.</p>

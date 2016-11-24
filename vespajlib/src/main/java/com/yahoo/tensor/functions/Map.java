@@ -5,7 +5,8 @@ import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.DoubleUnaryOperator;
 
@@ -14,12 +15,12 @@ import java.util.function.DoubleUnaryOperator;
  *
  * @author bratseth
  */
-public class MapFunction extends PrimitiveTensorFunction {
+public class Map extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;
     private final DoubleUnaryOperator mapper;
 
-    public MapFunction(TensorFunction argument, DoubleUnaryOperator mapper) {
+    public Map(TensorFunction argument, DoubleUnaryOperator mapper) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(mapper, "The argument function cannot be null");
         this.argument = argument;
@@ -30,22 +31,25 @@ public class MapFunction extends PrimitiveTensorFunction {
     public DoubleUnaryOperator mapper() { return mapper; }
 
     @Override
+    public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() {
-        return new MapFunction(argument.toPrimitive(), mapper);
+        return new Map(argument.toPrimitive(), mapper);
     }
 
     @Override
-    public Tensor execute() {
-        Tensor argument = argument().execute();
+    public Tensor evaluate(EvaluationContext context) {
+        Tensor argument = argument().evaluate(context);
         ImmutableMap.Builder<TensorAddress, Double> mappedCells = new ImmutableMap.Builder<>();
-        for (Map.Entry<TensorAddress, Double> cell : argument.cells().entrySet())
+        for (java.util.Map.Entry<TensorAddress, Double> cell : argument.cells().entrySet())
             mappedCells.put(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
         return new MapTensor(argument.dimensions(), mappedCells.build());
     }
 
     @Override
-    public String toString() {
-        return "map(" + argument.toString() + ", f(a) (" + mapper + "))";
+    public String toString(ToStringContext context) {
+        return "map(" + argument.toString(context) + ", " + mapper + ")";
     }
 
 }
