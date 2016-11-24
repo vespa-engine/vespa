@@ -222,14 +222,6 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
         assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:0 }",
                         "atan2(tensor0, tensor1)", "{ {x:1}:0, {x:2}:0 }", "{ {y:1}:1 }");
-        // TODO
-        // greater (>)
-        // greater_equal (>=)
-        // less (<)
-        // less_equal (<=)
-        // not_equal (!=)
-        // argmax
-        // argmin        
         assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
                         "tensor0 > tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
         assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
@@ -240,6 +232,11 @@ public class EvaluationTestCase extends junit.framework.TestCase {
                         "tensor0 <= tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
         assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
                         "tensor0 == tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
+        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
+                        "tensor0 != tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
+        // TODO
+        // argmax
+        // argmin        
         assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
                         "tensor0 != tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
         
