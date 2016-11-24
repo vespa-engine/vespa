@@ -25,23 +25,21 @@ namespace {
     typedef MetricPersistenceProvider Impl;
 }
 
+using metrics::LongAverageMetric;
+using std::make_unique;
+
+Impl::ResultMetrics::~ResultMetrics() { }
+
 Impl::ResultMetrics::ResultMetrics(const char* opName)
     : metrics::MetricSet(opName, "", ""),
       _metric(Result::ERROR_COUNT)
 {
-    typedef vespalib::LinkedPtr<metrics::LongAverageMetric> ptr;
-    _metric[Result::NONE] = ptr(
-            new metrics::LongAverageMetric("success", "", "", this));
-    _metric[Result::TRANSIENT_ERROR] = ptr(
-            new metrics::LongAverageMetric("transient_error", "", "", this));
-    _metric[Result::PERMANENT_ERROR] = ptr(
-            new metrics::LongAverageMetric("permanent_error", "", "", this));
-    _metric[Result::TIMESTAMP_EXISTS] = ptr(
-            new metrics::LongAverageMetric("timestamp_exists", "", "", this));
-    _metric[Result::FATAL_ERROR] = ptr(
-            new metrics::LongAverageMetric("fatal_error", "", "", this));
-    _metric[Result::RESOURCE_EXHAUSTED] = ptr(
-            new metrics::LongAverageMetric("resource_exhausted", "", "", this));
+    _metric[Result::NONE] = make_unique<LongAverageMetric>("success", "", "", this);
+    _metric[Result::TRANSIENT_ERROR] = make_unique<LongAverageMetric>("transient_error", "", "", this);
+    _metric[Result::PERMANENT_ERROR] = make_unique<LongAverageMetric>("permanent_error", "", "", this);
+    _metric[Result::TIMESTAMP_EXISTS] = make_unique<LongAverageMetric>("timestamp_exists", "", "", this);
+    _metric[Result::FATAL_ERROR] = make_unique<LongAverageMetric>("fatal_error", "", "", this);
+    _metric[Result::RESOURCE_EXHAUSTED] = make_unique<LongAverageMetric>("resource_exhausted", "", "", this);
     // Assert that the above initialized all entries in vector
     for (size_t i=0; i<_metric.size(); ++i) assert(_metric[i].get());
 }
@@ -76,10 +74,12 @@ Impl::MetricPersistenceProvider(PersistenceProvider& next)
     defineResultMetrics(22, "move");
 }
 
+Impl::~MetricPersistenceProvider() { }
+
 void
 Impl::defineResultMetrics(int index, const char* name)
 {
-    _functionMetrics[index] = ResultMetrics::LP(new ResultMetrics(name));
+    _functionMetrics[index] = make_unique<ResultMetrics>(name);
     registerMetric(*_functionMetrics[index]);
 }
 
@@ -140,7 +140,7 @@ Impl::getBucketInfo(const Bucket& v1) const
 }
 
 Result
-Impl::put(const Bucket& v1, Timestamp v2, const Document::SP& v3, Context& v4)
+Impl::put(const Bucket& v1, Timestamp v2, const DocumentSP& v3, Context& v4)
 {
     PRE_PROCESS(6);
     Result r(_next->put(v1, v2, v3, v4));
@@ -177,8 +177,7 @@ Impl::removeEntry(const Bucket& v1, Timestamp v2, Context& v3)
 }
 
 UpdateResult
-Impl::update(const Bucket& v1, Timestamp v2, const DocumentUpdate::SP& v3,
-             Context& v4)
+Impl::update(const Bucket& v1, Timestamp v2, const DocumentUpdateSP& v3, Context& v4)
 {
     PRE_PROCESS(10);
     UpdateResult r(_next->update(v1, v2, v3, v4));
@@ -196,8 +195,7 @@ Impl::flush(const Bucket& v1, Context& v2)
 }
 
 GetResult
-Impl::get(const Bucket& v1, const document::FieldSet& v2, const DocumentId& v3,
-          Context& v4) const
+Impl::get(const Bucket& v1, const document::FieldSet& v2, const DocumentId& v3, Context& v4) const
 {
     PRE_PROCESS(12);
     GetResult r(_next->get(v1, v2, v3, v4));

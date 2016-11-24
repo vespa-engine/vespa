@@ -9,9 +9,11 @@
 #include <vespa/persistence/spi/partitionstate.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/selection.h>
-#include <persistence/spi/types.h>
 #include <vespa/persistence/spi/clusterstate.h>
-#include <vespa/document/fieldset/fieldset.h>
+
+namespace document {
+    class FieldSet;
+}
 
 namespace storage {
 namespace spi {
@@ -110,7 +112,7 @@ struct PersistenceProvider
     /**
      * Store the given document at the given microsecond time.
      */
-    virtual Result put(const Bucket&, Timestamp, const Document::SP&, Context&) = 0;
+    virtual Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) = 0;
 
     /**
      * This remove function assumes that there exist something to be removed.
@@ -208,7 +210,7 @@ struct PersistenceProvider
      */
     virtual UpdateResult update(const Bucket&,
                                 Timestamp timestamp,
-                                const DocumentUpdate::SP& update,
+                                const DocumentUpdateSP& update,
                                 Context&) = 0;
 
     /**

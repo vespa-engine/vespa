@@ -1,18 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".providerproxy");
-
-#include "buildid.h"
 #include "providerproxy.h"
+#include "buildid.h"
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/noncopyable.hpp>
+#include <vespa/fnet/frt/frt.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".providerproxy");
 
 using document::BucketId;
 using document::ByteBuffer;
@@ -224,13 +226,13 @@ bool shouldFailFast(uint32_t error_code) {
 
 ProviderProxy::ProviderProxy(const vespalib::string &connect_spec,
                              const DocumentTypeRepo &repo)
-    : _supervisor(),
+    : _supervisor(new FRT_Supervisor()),
       _target(0),
       _repo(&repo)
 {
-    _supervisor.Start();
+    _supervisor->Start();
     bool connected = false;
-    _target = _supervisor.GetTarget(connect_spec.c_str());
+    _target = _supervisor->GetTarget(connect_spec.c_str());
     for (size_t i = 0; !connected && (i < (100 + 300)); ++i) {
         FRT_RPCRequest *req = new FRT_RPCRequest();
         req->SetMethodName("vespa.persistence.connect");
@@ -250,7 +252,7 @@ ProviderProxy::ProviderProxy(const vespalib::string &connect_spec,
             } else {
                 FastOS_Thread::Sleep(1000); // retry each 1s for 5m
             }
-            _target = _supervisor.GetTarget(connect_spec.c_str());
+            _target = _supervisor->GetTarget(connect_spec.c_str());
         }
     }
     if (!connected) {
@@ -260,23 +262,23 @@ ProviderProxy::ProviderProxy(const vespalib::string &connect_spec,
 
 ProviderProxy::~ProviderProxy() {
     _target->SubRef();
-    _supervisor.ShutDown(true);
+    _supervisor->ShutDown(true);
 }
 
 Result ProviderProxy::initialize() {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.initialize");
     return invokeRpc_Return<Result>(*req, "bs");
 }
 
 PartitionStateListResult ProviderProxy::getPartitionStates() const {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.getPartitionStates");
     return invokeRpc_Return<PartitionStateListResult>(*req, "bsIS");
 }
 
 BucketIdListResult ProviderProxy::listBuckets(PartitionId partition) const {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.listBuckets");
     req->GetParams()->AddInt64(partition);
 
@@ -284,7 +286,7 @@ BucketIdListResult ProviderProxy::listBuckets(PartitionId partition) const {
 }
 
 Result ProviderProxy::setClusterState(const ClusterState& clusterState) {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.setClusterState");
 
     vespalib::nbostream o;
@@ -295,7 +297,7 @@ Result ProviderProxy::setClusterState(const ClusterState& clusterState) {
 
 Result ProviderProxy::setActiveState(const Bucket &bucket,
                                      BucketInfo::ActiveState newState) {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.setActiveState");
     addBucket(*req->GetParams(), bucket);
     req->GetParams()->AddInt8(newState);
@@ -303,7 +305,7 @@ Result ProviderProxy::setActiveState(const Bucket &bucket,
 }
 
 BucketInfoResult ProviderProxy::getBucketInfo(const Bucket &bucket) const {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.getBucketInfo");
     addBucket(*req->GetParams(), bucket);
     return invokeRpc_Return<BucketInfoResult>(*req, "bsiiiiibb");
@@ -312,7 +314,7 @@ BucketInfoResult ProviderProxy::getBucketInfo(const Bucket &bucket) const {
 Result ProviderProxy::put(const Bucket &bucket, Timestamp timestamp,
                           const Document::SP& doc, Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.put");
     addBucket(*req->GetParams(), bucket);
     req->GetParams()->AddInt64(timestamp);
@@ -325,7 +327,7 @@ RemoveResult ProviderProxy::remove(const Bucket &bucket,
                                    const DocumentId &id,
                                    Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.removeById");
     addBucket(*req->GetParams(), bucket);
     req->GetParams()->AddInt64(timestamp);
@@ -338,7 +340,7 @@ RemoveResult ProviderProxy::removeIfFound(const Bucket &bucket,
                                           const DocumentId &id,
                                           Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.removeIfFound");
     addBucket(*req->GetParams(), bucket);
     req->GetParams()->AddInt64(timestamp);
@@ -350,7 +352,7 @@ UpdateResult ProviderProxy::update(const Bucket &bucket, Timestamp timestamp,
                                    const DocumentUpdate::SP& doc_update,
                                    Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.update");
     addBucket(*req->GetParams(), bucket);
     req->GetParams()->AddInt64(timestamp);
@@ -359,7 +361,7 @@ UpdateResult ProviderProxy::update(const Bucket &bucket, Timestamp timestamp,
 }
 
 Result ProviderProxy::flush(const Bucket &bucket, Context&) {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.flush");
     addBucket(*req->GetParams(), bucket);
     return invokeRpc_Return<Result>(*req, "bs");
@@ -370,7 +372,7 @@ GetResult ProviderProxy::get(const Bucket &bucket,
                              const DocumentId &doc_id,
                              Context&) const
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.get");
     document::FieldSetRepo repo;
     addBucket(*req->GetParams(), bucket);
@@ -385,7 +387,7 @@ CreateIteratorResult ProviderProxy::createIterator(const Bucket &bucket,
                                                    IncludedVersions versions,
                                                    Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.createIterator");
     addBucket(*req->GetParams(), bucket);
 
@@ -400,7 +402,7 @@ IterateResult ProviderProxy::iterate(IteratorId id,
                                      uint64_t max_byte_size,
                                      Context&) const
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.iterate");
     req->GetParams()->AddInt64(id);
     req->GetParams()->AddInt64(max_byte_size);
@@ -408,28 +410,28 @@ IterateResult ProviderProxy::iterate(IteratorId id,
 }
 
 Result ProviderProxy::destroyIterator(IteratorId id, Context&) {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.destroyIterator");
     req->GetParams()->AddInt64(id);
     return invokeRpc_Return<Result>(*req, "bs");
 }
 
 Result ProviderProxy::createBucket(const Bucket &bucket, Context&) {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.createBucket");
     addBucket(*req->GetParams(), bucket);
     return invokeRpc_Return<Result>(*req, "bs");
 }
 
 Result ProviderProxy::deleteBucket(const Bucket &bucket, Context&) {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.deleteBucket");
     addBucket(*req->GetParams(), bucket);
     return invokeRpc_Return<Result>(*req, "bs");
 }
 
 BucketIdListResult ProviderProxy::getModifiedBuckets() const {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.getModifiedBuckets");
     return invokeRpc_Return<BucketIdListResult>(*req, "bsL");
 }
@@ -439,7 +441,7 @@ Result ProviderProxy::split(const Bucket &source,
                             const Bucket &target2,
                             Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.split");
     addBucket(*req->GetParams(), source);
     addBucket(*req->GetParams(), target1);
@@ -452,7 +454,7 @@ Result ProviderProxy::join(const Bucket &source1,
                            const Bucket &target,
                            Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.join");
     addBucket(*req->GetParams(), source1);
     addBucket(*req->GetParams(), source2);
@@ -464,7 +466,7 @@ Result ProviderProxy::move(const Bucket &source,
                            PartitionId target,
                            Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.move");
     addBucket(*req->GetParams(), source);
     req->GetParams()->AddInt64(target);
@@ -472,7 +474,7 @@ Result ProviderProxy::move(const Bucket &source,
 }
 
 Result ProviderProxy::maintain(const Bucket &bucket, MaintenanceLevel level) {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.maintain");
     addBucket(*req->GetParams(), bucket);
     req->GetParams()->AddInt8(level);
@@ -482,7 +484,7 @@ Result ProviderProxy::maintain(const Bucket &bucket, MaintenanceLevel level) {
 Result ProviderProxy::removeEntry(const Bucket &bucket, Timestamp timestamp,
                                   Context&)
 {
-    RequestScopedPtr req(_supervisor.AllocRPCRequest());
+    RequestScopedPtr req(_supervisor->AllocRPCRequest());
     req->SetMethodName("vespa.persistence.removeEntry");
     addBucket(*req->GetParams(), bucket);
     req->GetParams()->AddInt64(timestamp);

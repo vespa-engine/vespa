@@ -50,7 +50,7 @@ vespalib::string
 BucketInfo::toString() const {
     vespalib::asciistream out;
     out << "BucketInfo(";
-    out << "crc 0x" << std::hex << _checksum << std::dec
+    out << "crc 0x" << vespalib::hex << _checksum << vespalib::dec
         << ", documentCount " << _documentCount;
     if (_documentSize != 0) {
         out << ", documentSize " << _documentSize;

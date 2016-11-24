@@ -2,6 +2,7 @@
 #pragma once
 
 #include "documentoperation.h"
+#include <vespa/document/base/documentid.h>
 
 namespace proton {
 

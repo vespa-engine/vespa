@@ -2,6 +2,11 @@
 #pragma once
 
 #include <vespa/memfilepersistence/common/slotmatcher.h>
+namespace document {
+    namespace select {
+        class Node;
+    }
+}
 
 namespace storage {
 namespace memfile {

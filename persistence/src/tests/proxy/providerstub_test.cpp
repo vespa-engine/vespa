@@ -9,11 +9,15 @@ LOG_SETUP("providerstub_test");
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/persistence/proxy/buildid.h>
 #include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 using document::BucketId;
 using document::ByteBuffer;

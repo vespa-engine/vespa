@@ -5,6 +5,8 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 LOG_SETUP(".test.dummyimpl");
 

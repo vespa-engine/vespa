@@ -7,6 +7,7 @@
 #pragma once
 
 #include <persistence/spi/types.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace spi {
@@ -35,7 +36,6 @@ public:
                ActiveState active = NOT_ACTIVE);
 
     bool operator==(const BucketInfo& o) const;
-    void print(std::ostream& out) const;
 
     vespalib::string toString() const;
 

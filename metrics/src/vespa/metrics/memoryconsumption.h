@@ -84,6 +84,7 @@ struct MemoryConsumption : public vespalib::Printable {
     std::vector<std::pair<std::string, uint32_t> > _snapShotUsage;
 
     MemoryConsumption();
+    ~MemoryConsumption();
 
     /** Get memory usage of a string that is not included when doing sizeof */
     uint32_t getStringMemoryUsage(const std::string& s, uint32_t& uniqueCount);

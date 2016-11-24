@@ -2,6 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/memfilepersistence/spi/visitorslotmatcher.h>
 #include <vespa/document/select/bodyfielddetector.h>
+#include <vespa/document/select/node.h>
 
 namespace storage {
 namespace memfile {

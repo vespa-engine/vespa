@@ -7,8 +7,11 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/document/select/resultset.h>
 
-namespace proton
-{
+namespace document {
+    class DocumentTypeRepo;
+}
+
+namespace proton {
 
 class AttributeManager;
 

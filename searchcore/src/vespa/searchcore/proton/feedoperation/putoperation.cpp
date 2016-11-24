@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.feedoperation.putoperation");
-
 #include "putoperation.h"
+#include <vespa/document/fieldvalue/document.h>
 
 using document::BucketId;
 using document::Document;
@@ -16,8 +14,7 @@ namespace proton {
 PutOperation::PutOperation()
     : DocumentOperation(FeedOperation::PUT),
       _doc()
-{
-}
+{ }
 
 
 PutOperation::PutOperation(const BucketId &bucketId,
@@ -27,8 +24,7 @@ PutOperation::PutOperation(const BucketId &bucketId,
                         bucketId,
                         timestamp),
       _doc(doc)
-{
-}
+{ }
 
 
 PutOperation::PutOperation(const document::BucketId &bucketId,
@@ -44,9 +40,9 @@ PutOperation::PutOperation(const document::BucketId &bucketId,
                         dbdId,
                         prevDbdId),
       _doc(doc)
-{
-}
+{ }
 
+PutOperation::~PutOperation() { }
 
 void
 PutOperation::serialize(vespalib::nbostream &os) const

@@ -21,6 +21,7 @@
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/memfilepersistence/device/mountpointlist.h>
+#include <vespa/document/bucket/bucketidfactory.h>
 
 namespace storage {
 namespace memfile {

@@ -22,6 +22,7 @@ using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::PositionDataType;
 using document::StructFieldValue;
+using document::FieldValue;
 using search::AttributeGuard;
 using search::DocumentIdT;
 using search::IAttributeManager;

@@ -43,6 +43,8 @@ public:
      */
     Hop(const std::vector<IHopDirective::SP> &selector, bool ignoreResult);
 
+    ~Hop();
+
     /**
      * Adds a new directive to this hop.
      *

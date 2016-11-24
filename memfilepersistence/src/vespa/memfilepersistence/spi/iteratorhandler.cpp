@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <iterator>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/select/bodyfielddetector.h>
+#include <vespa/document/select/node.h>
 #include <vespa/memfilepersistence/spi/iteratorhandler.h>
 #include <vespa/memfilepersistence/spi/visitorslotmatcher.h>
 #include <vespa/memfilepersistence/spi/cacheevictionguard.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.handler.iterator");
 
 namespace storage {

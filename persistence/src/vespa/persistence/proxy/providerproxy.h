@@ -2,20 +2,27 @@
 
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+
+class FRT_Target;
+class FRT_Supervisor;
+class FRT_RPCRequest;
+class FRT_Values;
+
+namespace document {
+    class DocumentTypeRepo;
+}
 
 namespace storage {
 namespace spi {
 
 class ProviderProxy : public PersistenceProvider {
-    mutable FRT_Supervisor _supervisor;
+    std::unique_ptr<FRT_Supervisor> _supervisor;
     FRT_Target *_target;
     const document::DocumentTypeRepo *_repo;
 
     template <typename ResultType>
-    ResultType invokeRpc_Return(FRT_RPCRequest &req,
-                                const char *res_spec) const;
+    ResultType invokeRpc_Return(FRT_RPCRequest &req, const char *res_spec) const;
     template <typename ResultType>
     ResultType readResult(const FRT_Values &values) const;
     template <typename ResultType>
@@ -24,65 +31,44 @@ class ProviderProxy : public PersistenceProvider {
 public:
     typedef std::unique_ptr<ProviderProxy> UP;
 
-    ProviderProxy(const vespalib::string &connect_spec,
-                  const document::DocumentTypeRepo &repo);
+    ProviderProxy(const vespalib::string &connect_spec, const document::DocumentTypeRepo &repo);
     ~ProviderProxy();
 
     void setRepo(const document::DocumentTypeRepo &repo) {
         _repo = &repo;
     }
 
-    virtual Result initialize();
-    virtual PartitionStateListResult getPartitionStates() const;
-    virtual BucketIdListResult listBuckets(PartitionId) const;
-    virtual Result setClusterState(const ClusterState&);
-    virtual Result setActiveState(const Bucket&, BucketInfo::ActiveState);
-    virtual BucketInfoResult getBucketInfo(const Bucket &) const;
+    Result initialize() override;
+    PartitionStateListResult getPartitionStates() const override;
+    BucketIdListResult listBuckets(PartitionId) const override;
+    Result setClusterState(const ClusterState&) override;
+    Result setActiveState(const Bucket&, BucketInfo::ActiveState) override;
+    BucketInfoResult getBucketInfo(const Bucket &) const override;
 
-    virtual Result put(const Bucket &, Timestamp, const Document::SP&, Context&);
-    virtual RemoveResult remove(const Bucket &, Timestamp, const DocumentId &,
-                                Context&);
-    virtual RemoveResult removeIfFound(const Bucket &, Timestamp,
-                                       const DocumentId &, Context&);
-    virtual UpdateResult update(const Bucket &, Timestamp,
-                                const DocumentUpdate::SP&, Context&);
+    Result put(const Bucket &, Timestamp, const DocumentSP&, Context&) override;
+    RemoveResult remove(const Bucket &, Timestamp, const DocumentId &, Context&) override;
+    RemoveResult removeIfFound(const Bucket &, Timestamp, const DocumentId &, Context&) override;
+    UpdateResult update(const Bucket &, Timestamp, const DocumentUpdateSP&, Context&) override;
 
-    virtual Result flush(const Bucket &, Context&);
+    Result flush(const Bucket &, Context&) override;
 
-    virtual GetResult get(const Bucket &,
-                          const document::FieldSet&,
-                          const DocumentId &,
-                          Context&) const;
+    GetResult get(const Bucket &, const document::FieldSet&, const DocumentId &, Context&) const override;
 
-    virtual CreateIteratorResult createIterator(const Bucket &,
-                                                const document::FieldSet&,
-                                                const Selection&,
-                                                IncludedVersions versions,
-                                                Context&);
+    CreateIteratorResult createIterator(const Bucket &, const document::FieldSet&, const Selection&,
+                                                IncludedVersions versions, Context&) override;
 
-    virtual IterateResult iterate(IteratorId, uint64_t max_byte_size,
-                                  Context&) const;
-    virtual Result destroyIterator(IteratorId, Context&);
+    IterateResult iterate(IteratorId, uint64_t max_byte_size, Context&) const override;
+    Result destroyIterator(IteratorId, Context&) override;
 
-    virtual Result createBucket(const Bucket &, Context&);
-    virtual Result deleteBucket(const Bucket &, Context&);
-    virtual BucketIdListResult getModifiedBuckets() const;
-    virtual Result split(const Bucket &source,
-                         const Bucket &target1,
-                         const Bucket &target2,
-                         Context&);
+    Result createBucket(const Bucket &, Context&) override;
+    Result deleteBucket(const Bucket &, Context&) override;
+    BucketIdListResult getModifiedBuckets() const override;
+    Result split(const Bucket &source, const Bucket &target1, const Bucket &target2, Context&) override;
+    Result join(const Bucket &source1, const Bucket &source2, const Bucket &target, Context&) override;
+    Result move(const Bucket &source, PartitionId partition, Context&) override;
 
-    virtual Result join(const Bucket &source1,
-                        const Bucket &source2,
-                        const Bucket &target,
-                        Context&);
-
-    virtual Result move(const Bucket &source,
-                        PartitionId partition,
-                        Context&);
-
-    virtual Result maintain(const Bucket &, MaintenanceLevel);
-    virtual Result removeEntry(const Bucket &, Timestamp, Context&);
+    Result maintain(const Bucket &, MaintenanceLevel) override;
+    Result removeEntry(const Bucket &, Timestamp, Context&) override;
 };
 
 }  // namespace spi

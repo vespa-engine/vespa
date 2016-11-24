@@ -10,6 +10,8 @@ LOG_SETUP("providerproxy_test");
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/persistence/proxy/providerproxy.h>
 #include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
@@ -19,6 +21,8 @@ LOG_SETUP("providerproxy_test");
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vdslib/distribution/distribution.h>
 
 using document::BucketId;
 using document::DataType;

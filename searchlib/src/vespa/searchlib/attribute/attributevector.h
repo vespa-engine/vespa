@@ -4,8 +4,6 @@
 
 #include "address_space_usage.h"
 #include "iattributesavetarget.h"
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/fastos/fastos.h>
@@ -30,47 +28,46 @@
 #include <shared_mutex>
 #include <string>
 
-using document::ArithmeticValueUpdate;
-using document::MapValueUpdate;
-using document::FieldValue;
+namespace document {
+    class ArithmeticValueUpdate;
+    class MapValueUpdate;
+    class FieldValue;
+}
 
-namespace vespalib
-{
-
-class GenericHeader;
-
+namespace vespalib {
+    class GenericHeader;
 }
 
  
 namespace search {
 
-template <typename T> class ComponentGuard;
-class AttributeReadGuard;
-class AttributeWriteGuard;
-class AttributeSaver;
-class EnumStoreBase;
+    template <typename T> class ComponentGuard;
+    class AttributeReadGuard;
+    class AttributeWriteGuard;
+    class AttributeSaver;
+    class EnumStoreBase;
+    class IDocumentWeightAttribute;
 
-class IDocumentWeightAttribute;
+    namespace fef {
+        class TermFieldMatchData;
+    }
 
-namespace fef {
-class TermFieldMatchData;
+    namespace attribute {
+        class IPostingListSearchContext;
+        class IPostingListAttributeBase;
+        class Interlock;
+        class InterlockGuard;
+        class MultiValueMapping2Base;
+    }
 }
 
-namespace attribute
-{
-
-class IPostingListSearchContext;
-
-class IPostingListAttributeBase;
-
-class Interlock;
-class InterlockGuard;
-class MultiValueMapping2Base;
-
-}
+namespace search {
 
 using search::attribute::WeightedType;
 using search::attribute::Status;
+using document::ArithmeticValueUpdate;
+using document::MapValueUpdate;
+using document::FieldValue;
 
 template <typename T>
 class UnWeightedType

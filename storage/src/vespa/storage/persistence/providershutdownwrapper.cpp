@@ -73,7 +73,7 @@ ProviderShutdownWrapper::getBucketInfo(const spi::Bucket& bucket) const
 spi::Result
 ProviderShutdownWrapper::put(const spi::Bucket& bucket,
                              spi::Timestamp ts,
-                             const document::Document::SP& doc,
+                             const spi::DocumentSP& doc,
                              spi::Context& context)
 {
     return checkResult(_impl.put(bucket, ts, doc, context));
@@ -100,7 +100,7 @@ ProviderShutdownWrapper::removeIfFound(const spi::Bucket& bucket,
 spi::UpdateResult
 ProviderShutdownWrapper::update(const spi::Bucket& bucket,
                                 spi::Timestamp ts,
-                                const document::DocumentUpdate::SP& docUpdate,
+                                const spi::DocumentUpdateSP& docUpdate,
                                 spi::Context& context)
 {
     return checkResult(_impl.update(bucket, ts, docUpdate, context));

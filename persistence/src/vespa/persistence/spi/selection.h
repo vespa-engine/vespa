@@ -8,9 +8,6 @@
 
 #pragma once
 
-#include <map>
-#include <vector>
-#include <persistence/spi/types.h>
 #include <vespa/persistence/spi/documentselection.h>
 
 namespace storage {
@@ -25,9 +22,9 @@ public:
     typedef std::vector<Timestamp> TimestampSubset;
 private:
     DocumentSelection _documentSelection;
-    Timestamp _fromTimestamp;
-    Timestamp _toTimestamp;
-    TimestampSubset _timestampSubset;
+    Timestamp         _fromTimestamp;
+    Timestamp         _toTimestamp;
+    TimestampSubset   _timestampSubset;
 
 public:
     Selection(const DocumentSelection& docSel)
@@ -35,7 +32,7 @@ public:
           _fromTimestamp(0),
           _toTimestamp(INT64_MAX),
           _timestampSubset()
-        {}
+    { }
 
     const DocumentSelection& getDocumentSelection() const {
         return _documentSelection;
@@ -75,17 +72,10 @@ public:
     Timestamp getFromTimestamp() const { return _fromTimestamp; }
     Timestamp getToTimestamp() const { return _toTimestamp; }
 
-    std::string requiredFields();
-
     /**
      * Regular usage.
      */
     bool match(const Document& doc, const MetaData& metaData) const;
-
-    /**
-     * Can be used if requiredFields is empty.
-     */
-    bool match(const MetaData& metaData) const;
 };
 
 } // spi

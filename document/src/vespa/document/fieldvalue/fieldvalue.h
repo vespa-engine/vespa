@@ -75,18 +75,10 @@ public:
         public:
             IndexValue() : index(-1), key() {}
             IndexValue(int index_) : index(index_), key() {}
-            IndexValue(const FieldValue& key_)
-                : index(-1),
-                  key(FieldValue::CP(key_.clone()))
-            {}
+            IndexValue(const FieldValue& key_);
+            ~IndexValue();
 
-            vespalib::string toString() const {
-                if (key.get() != NULL) {
-                    return key->toString();
-                } else {
-                    return vespalib::make_string("%d", index);
-                }
-            }
+            vespalib::string toString() const;
 
             bool operator==(const IndexValue& other) const;
 

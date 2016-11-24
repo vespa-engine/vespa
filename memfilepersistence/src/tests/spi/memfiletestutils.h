@@ -17,9 +17,11 @@
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
+
 
 namespace storage {
 namespace memfile {

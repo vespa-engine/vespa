@@ -9,6 +9,7 @@
 #include <tests/spi/simulatedfailurefile.h>
 #include <tests/spi/options_builder.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/select/parser.h>
 
 namespace storage {
 namespace memfile {

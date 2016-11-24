@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/document/base/documentid.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/vstringfmt.h>
@@ -879,10 +881,10 @@ DummyPersistence::dumpBucket(const Bucket& b) const
     if (it == _content[b.getPartition()].end()) {
         return "DOESN'T EXIST";
     } else {
-        std::ostringstream ost;
+        vespalib::asciistream ost;
         for (uint32_t i=0; i<it->second->_entries.size(); ++i) {
             const DocEntry& entry(*it->second->_entries[i].entry);
-            ost << entry << "\n";
+            ost << entry.toString() << "\n";
         }
 
         return ost.str();
