@@ -46,11 +46,11 @@ public class MockNameResolver implements NameResolver {
         if (!allowInvocation) {
             throw new IllegalStateException("Expected getByName to not be invoked for hostname: " + hostname);
         }
-        if (mockAnyLookup) {
-            return UUID.randomUUID().toString();
-        }
         if (records.containsKey(hostname)) {
             return records.get(hostname);
+        }
+        if (mockAnyLookup) {
+            return UUID.randomUUID().toString();
         }
         throw new RuntimeException(new UnknownHostException("Could not resolve: " + hostname));
     }

@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
+import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 
@@ -64,16 +65,15 @@ public class ProvisioningTester implements AutoCloseable {
     }
 
     public ProvisioningTester(Zone zone, NodeRepositoryConfig config) {
-        this(zone, config, new MockCurator());
+        this(zone, config, new MockCurator(), new MockNameResolver().mockAnyLookup());
     }
 
-    public ProvisioningTester(Zone zone, NodeRepositoryConfig config, Curator curator) {
+    public ProvisioningTester(Zone zone, NodeRepositoryConfig config, Curator curator, NameResolver nameResolver) {
         try {
             this.nodeFlavors = new NodeFlavors(config);
             this.clock = new ManualClock();
             this.curator = curator;
-            this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone,
-                    new MockNameResolver().mockAnyLookup());
+            this.nodeRepository = new NodeRepository(nodeFlavors, curator, clock, zone, nameResolver);
             this.provisioner = new NodeRepositoryProvisioner(nodeRepository, nodeFlavors, zone, clock);
             this.capacityPolicies = new CapacityPolicies(zone, nodeFlavors);
             this.provisionLogger = new NullProvisionLogger();

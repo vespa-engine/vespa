@@ -2,17 +2,14 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +18,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.createConfig;
@@ -35,11 +31,13 @@ public class AclProvisioningTest {
 
     private MockCurator curator;
     private ProvisioningTester tester;
+    private MockNameResolver nameResolver;
 
     @Before
     public void before() {
         this.curator = new MockCurator();
-        this.tester = new ProvisioningTester(Zone.defaultZone(), createConfig(), curator);
+        this.nameResolver = new MockNameResolver().mockAnyLookup();
+        this.tester = new ProvisioningTester(Zone.defaultZone(), createConfig(), curator, nameResolver);
     }
 
     @Test
@@ -92,6 +90,24 @@ public class AclProvisioningTest {
 
         // Trusted nodes contains only proxy nodes and config servers
         assertContainsOnly(toHostNames(trustedNodes), flatten(Arrays.asList(toHostNames(proxyNodes), configServers)));
+    }
+
+    @Test
+    public void resolves_hostnames_from_connection_spec() {
+        String connectionSpec = "cfg1:1234,cfg2:1234,cfg3:1234";
+        curator.setConnectionSpec(connectionSpec);
+        nameResolver.addRecord("cfg1", "127.0.0.1");
+        nameResolver.addRecord("cfg2", "127.0.0.2");
+        nameResolver.addRecord("cfg3", "127.0.0.3");
+
+        List<Node> readyNodes = tester.makeReadyNodes(1, "default", NodeType.tenant);
+        List<Node> trustedNodes = tester.nodeRepository().getTrustedNodes(readyNodes.get(0));
+
+        assertTrue(trustedNodes.stream().allMatch(n -> n.ipAddress().isPresent()));
+        assertEquals(3, trustedNodes.size());
+        assertEquals("127.0.0.1", trustedNodes.get(0).ipAddress().get());
+        assertEquals("127.0.0.2", trustedNodes.get(1).ipAddress().get());
+        assertEquals("127.0.0.3", trustedNodes.get(2).ipAddress().get());
     }
 
     private static <T> void assertContainsOnly(Collection<T> a, Collection<T> b) {

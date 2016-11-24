@@ -140,14 +140,7 @@ public class NodeRepository extends AbstractComponent {
         trustedNodes.addAll(getNodes(NodeType.proxy, Node.State.active));
 
         // Add config servers
-        // TODO: Revisit this when config servers are added to the repository
-        Arrays.stream(curator.connectionSpec().split(","))
-                .map(hostPort -> hostPort.split(":")[0])
-                .map(host -> createNode(host, host, Optional.empty(),
-                        flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
-                        NodeType.config))
-                .map(n -> n.withIpAddress(nameResolver.getByNameOrThrow(node.hostname())))
-                .forEach(trustedNodes::add);
+        trustedNodes.addAll(getConfigNodes());
 
         return Collections.unmodifiableList(trustedNodes);
     }
@@ -388,6 +381,17 @@ public class NodeRepository extends AbstractComponent {
                 resolvedNodes.add(node.withIpAddress(nameResolver.getByNameOrThrow(node.hostname())));
         }
         return resolvedNodes;
+    }
+
+    private List<Node> getConfigNodes() {
+        // TODO: Revisit this when config servers are added to the repository
+        return Arrays.stream(curator.connectionSpec().split(","))
+                .map(hostPort -> hostPort.split(":")[0])
+                .map(host -> createNode(host, host, Optional.empty(),
+                        flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
+                        NodeType.config))
+                .map(n -> n.withIpAddress(nameResolver.getByNameOrThrow(n.hostname())))
+                .collect(Collectors.toList());
     }
     
     /** Create a lock which provides exclusive rights to making changes to the given application */
