@@ -2,11 +2,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include "matching_stats.h"
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/exceptions.h>
-
-using vespalib::make_string;
-using vespalib::IllegalStateException;
 
 namespace proton {
 namespace matching {
@@ -30,6 +25,9 @@ MatchingStats::merge_partition(const Partition &partition, size_t id)
     _docsMatched += partition.docsMatched();
     _docsRanked += partition.docsRanked();
     _docsReRanked += partition.docsReRanked();
+    if (partition.softDoomed()) {
+        _softDoomed = 1;
+    }
 
     return *this;
 }
@@ -44,6 +42,7 @@ MatchingStats::add(const MatchingStats &rhs)
     _docsMatched += rhs._docsMatched;
     _docsRanked += rhs._docsRanked;
     _docsReRanked += rhs._docsReRanked;
+    _softDoomed += rhs.softDoomed();
 
     _queryCollateralTime.add(rhs._queryCollateralTime);
     _queryLatency.add(rhs._queryLatency);

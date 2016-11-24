@@ -25,6 +25,7 @@ using vespalib::string;
 enum fnet_feature_masks {
     FNET_QRF_SUPPORTED_MASK = (QRF_MLD |
                                QRF_SORTDATA |
+                               QRF_EXTENDED_COVERAGE |
                                QRF_COVERAGE |
                                QRF_GROUPDATA |
                                QRF_PROPERTIES),
@@ -386,8 +387,10 @@ public:
     char     *_sortData;     // if QRF_SORTDATA
     uint32_t _groupDataLen;  // if QRF_GROUPDATA
     char    *_groupData;     // if QRF_GROUPDATA
-    uint64_t _coverageDocs;  // if QRF_COVERAGE
-    uint64_t _activeDocs;    // if QRF_COVERAGE
+    uint64_t _coverageDocs;
+    uint64_t _activeDocs;
+    uint64_t _soonActiveDocs;
+    uint32_t _coverageDegradeReason;
     class FS4_hit {
     public:
         FS4_hit() : _gid(), _metric(0), _partid(0), _distributionKey(0) { }
