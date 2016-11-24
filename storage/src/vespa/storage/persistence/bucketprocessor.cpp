@@ -52,7 +52,7 @@ BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
                                                        context));
 
     if (createIterResult.getErrorCode() != spi::Result::NONE) {
-        std::ostringstream ss;
+        vespalib::asciistream ss;
         ss << "Failed to create iterator: "
            << createIterResult.getErrorMessage();
         throw std::runtime_error(ss.str());
@@ -65,7 +65,7 @@ BucketProcessor::iterateAll(spi::PersistenceProvider& provider,
         spi::IterateResult result(
                 provider.iterate(iteratorId, UINT64_MAX, context));
         if (result.getErrorCode() != spi::Result::NONE) {
-            std::ostringstream ss;
+            vespalib::asciistream ss;
             ss << "Failed: " << result.getErrorMessage();
             throw std::runtime_error(ss.str());
         }

@@ -14,6 +14,7 @@
 #include <vespa/document/datatype/structdatatype.h>
 
 #include <vector>
+#include <map>
 
 namespace document {
 
@@ -76,7 +77,7 @@ public:
         { return _inheritedTypes; };
 
         // Implementation of StructuredDataType
-    virtual FieldValue::UP createFieldValue() const;
+    virtual std::unique_ptr<FieldValue> createFieldValue() const;
     virtual void print(
             std::ostream&, bool verbose, const std::string& indent) const;
     virtual bool operator==(const DataType& type) const;

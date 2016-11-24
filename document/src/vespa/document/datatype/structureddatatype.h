@@ -19,7 +19,7 @@
 namespace document {
 
 class StructuredDataType : public DataType {
-    virtual FieldPath::UP onBuildFieldPath(const vespalib::stringref & remainFieldName) const;
+    virtual std::unique_ptr<FieldPath> onBuildFieldPath(const vespalib::stringref & remainFieldName) const;
 
 protected:
     StructuredDataType();

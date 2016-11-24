@@ -7,6 +7,8 @@
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/datatype/primitivedatatype.h>
 #include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/document/fieldvalue/fieldvalue.h>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;

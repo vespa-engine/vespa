@@ -2,18 +2,17 @@
 
 #include <vespa/fastos/fastos.h>
 #include "stringbase.h"
-#include <vespa/log/log.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/common/sort.h>
+#include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/document/fieldvalue/fieldvalue.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.stringbase");
 
-#include <vespa/searchlib/attribute/attributevector.hpp>
-
-namespace search
-{
+namespace search {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(StringAttribute, AttributeVector);
 

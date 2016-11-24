@@ -3,9 +3,12 @@
 #pragma once
 
 #include <vespa/vespalib/util/doom.h>
-#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace search {
+
+class AttributeVector;
+
 namespace queryeval {
 
 /**

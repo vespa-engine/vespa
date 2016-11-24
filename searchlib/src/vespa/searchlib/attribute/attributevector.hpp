@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
 #include <cmath>
 
 namespace search {
