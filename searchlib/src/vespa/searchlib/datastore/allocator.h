@@ -16,7 +16,7 @@ template <typename EntryT, typename RefT>
 class Allocator
 {
 public:
-    using ArrayRef = vespalib::ConstArrayRef<EntryT>;
+    using ConstArrayRef = vespalib::ConstArrayRef<EntryT>;
     using HandleType = Handle<EntryT>;
 
 protected:
@@ -29,6 +29,8 @@ public:
     template <typename ... Args>
     HandleType alloc(Args && ... args);
 
+    HandleType allocArray(ConstArrayRef array);
+    HandleType allocArray(size_t size);
 };
 
 }

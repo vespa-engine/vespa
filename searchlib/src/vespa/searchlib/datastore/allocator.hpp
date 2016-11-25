@@ -24,11 +24,49 @@ Allocator<EntryT, RefT>::alloc(Args && ... args)
     uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
     BufferState &state = _store.getBufferState(activeBufferId);
     assert(state.isActive());
-    size_t oldSize = state.size();
-    EntryT *entry = _store.getBufferEntry<EntryT>(activeBufferId, oldSize);
+    size_t oldBufferSize = state.size();
+    EntryT *entry = _store.getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
     new (static_cast<void *>(entry)) EntryT(std::forward<Args>(args)...);
     state.pushed_back(1);
-    return HandleType(RefT(oldSize, activeBufferId), entry);
+    return HandleType(RefT(oldBufferSize, activeBufferId), entry);
+}
+
+template <typename EntryT, typename RefT>
+typename Allocator<EntryT, RefT>::HandleType
+Allocator<EntryT, RefT>::allocArray(ConstArrayRef array)
+{
+    _store.ensureBufferCapacity(_typeId, array.size());
+    uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
+    BufferState &state = _store.getBufferState(activeBufferId);
+    assert(state.isActive());
+    assert(state.getClusterSize() == array.size());
+    size_t oldBufferSize = state.size();
+    EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
+    for (size_t i = 0; i < array.size(); ++i) {
+        new (static_cast<void *>(buf + i)) EntryT(array[i]);
+    }
+    state.pushed_back(array.size());
+    assert((oldBufferSize % array.size()) == 0);
+    return HandleType(RefT((oldBufferSize / array.size()), activeBufferId), buf);
+}
+
+template <typename EntryT, typename RefT>
+typename Allocator<EntryT, RefT>::HandleType
+Allocator<EntryT, RefT>::allocArray(size_t size)
+{
+    _store.ensureBufferCapacity(_typeId, size);
+    uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
+    BufferState &state = _store.getBufferState(activeBufferId);
+    assert(state.isActive());
+    assert(state.getClusterSize() == size);
+    size_t oldBufferSize = state.size();
+    EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
+    for (size_t i = 0; i < size; ++i) {
+        new (static_cast<void *>(buf + i)) EntryT();
+    }
+    state.pushed_back(size);
+    assert((oldBufferSize % size) == 0);
+    return HandleType(RefT((oldBufferSize / size), activeBufferId), buf);
 }
 
 }

@@ -17,6 +17,7 @@ class FreeListAllocator : public Allocator<EntryT, RefT>
 public:
     using ParentType = Allocator<EntryT, RefT>;
     using HandleType = typename ParentType::HandleType;
+    using ConstArrayRef = typename ParentType::ConstArrayRef;
 
 private:
     using ParentType::_store;
@@ -28,6 +29,8 @@ public:
     template <typename ... Args>
     HandleType alloc(Args && ... args);
 
+    HandleType allocArray(ConstArrayRef array);
+    HandleType allocArray(size_t size);
 };
 
 }

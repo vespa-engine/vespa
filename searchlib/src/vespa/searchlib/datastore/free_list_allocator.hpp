@@ -66,5 +66,40 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>::alloc(Args && ... args)
     return HandleType(ref, entry);
 }
 
+template <typename EntryT, typename RefT, typename ReclaimerT>
+typename Allocator<EntryT, RefT>::HandleType
+FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(ConstArrayRef array)
+{
+    BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
+    if (freeListList._head == NULL) {
+        return ParentType::allocArray(array);
+    }
+    BufferState &state = *freeListList._head;
+    assert(state.isActive());
+    assert(state.getClusterSize() == array.size());
+    RefT ref(state.popFreeList());
+    EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), ref.offset() * array.size());
+    for (size_t i = 0; i < array.size(); ++i) {
+        *(buf + i) = array[i];
+    }
+    return HandleType(ref, buf);
+}
+
+template <typename EntryT, typename RefT, typename ReclaimerT>
+typename Allocator<EntryT, RefT>::HandleType
+FreeListAllocator<EntryT, RefT, ReclaimerT>::allocArray(size_t size)
+{
+    BufferState::FreeListList &freeListList = _store.getFreeList(_typeId);
+    if (freeListList._head == NULL) {
+        return ParentType::allocArray(size);
+    }
+    BufferState &state = *freeListList._head;
+    assert(state.isActive());
+    assert(state.getClusterSize() == size);
+    RefT ref(state.popFreeList());
+    EntryT *buf = _store.template getBufferEntry<EntryT>(ref.bufferId(), ref.offset() * size);
+    return HandleType(ref, buf);
+}
+
 }
 }

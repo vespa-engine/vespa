@@ -76,18 +76,7 @@ allocNewKeyData(uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    _store.ensureBufferCapacity(typeId, clusterSize);
-    uint32_t activeBufferId = _store.getActiveBufferId(typeId);
-    BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state.isActive());
-    size_t oldSize = state.size();
-    KeyDataType *node =
-        _store.getBufferEntry<KeyDataType>(activeBufferId, oldSize);
-    for (uint32_t i = 0; i < clusterSize; ++i) {
-        new(static_cast<void *>(node + i)) KeyDataType();
-    }
-    state.pushed_back(clusterSize);
-    return KeyDataTypeRefPair(RefType(oldSize / clusterSize, activeBufferId), node);
+    return _store.allocator<KeyDataType>(typeId).allocArray(clusterSize);
 }
 
 
@@ -100,17 +89,7 @@ allocKeyData(uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    BufferState::FreeListList &freeListList = _store.getFreeList(typeId);
-    if (freeListList._head == NULL) {
-        return allocNewKeyData(clusterSize);
-    }
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    RefType ref(state.popFreeList());
-    KeyDataType *node =
-        _store.getBufferEntry<KeyDataType>(ref.bufferId(),
-                                           ref.offset() * clusterSize);
-    return KeyDataTypeRefPair(ref, node);
+    return _store.freeListAllocator<KeyDataType, DefaultReclaimer<KeyDataType>>(typeId).allocArray(clusterSize);
 }
 
 
@@ -123,18 +102,7 @@ allocNewKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    _store.ensureBufferCapacity(typeId, clusterSize);
-    uint32_t activeBufferId = _store.getActiveBufferId(typeId);
-    BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state.isActive());
-    size_t oldSize = state.size();
-    KeyDataType *node =
-        _store.getBufferEntry<KeyDataType>(activeBufferId, oldSize);
-    for (uint32_t i = 0; i < clusterSize; ++i) {
-        new(static_cast<void *>(node + i)) KeyDataType(*(rhs + i));
-    }
-    state.pushed_back(clusterSize);
-    return KeyDataTypeRefPair(RefType(oldSize / clusterSize, activeBufferId), node);
+    return _store.allocator<KeyDataType>(typeId).allocArray(vespalib::ConstArrayRef<KeyDataType>(rhs, clusterSize));
 }
 
 
@@ -147,20 +115,8 @@ allocKeyDataCopy(const KeyDataType *rhs, uint32_t clusterSize)
 {
     assert(clusterSize >= 1 && clusterSize <= clusterLimit);
     uint32_t typeId = clusterSize - 1;
-    BufferState::FreeListList &freeListList = _store.getFreeList(typeId);
-    if (freeListList._head == NULL) {
-        return allocNewKeyDataCopy(rhs, clusterSize);
-    }
-    BufferState &state = *freeListList._head;
-    assert(state.isActive());
-    RefType ref(state.popFreeList());
-    KeyDataType *node =
-        _store.getBufferEntry<KeyDataType>(ref.bufferId(),
-                                           ref.offset() * clusterSize);
-    for (uint32_t i = 0; i < clusterSize; ++i) {
-        *(node + i) = *(rhs + i);
-    }
-    return KeyDataTypeRefPair(ref, node);
+    return _store.freeListAllocator<KeyDataType, DefaultReclaimer<KeyDataType>>(typeId).
+            allocArray(vespalib::ConstArrayRef<KeyDataType>(rhs, clusterSize));
 }
 
 
