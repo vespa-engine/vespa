@@ -137,7 +137,7 @@ public class NodeRepository extends AbstractComponent {
         node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
 
         // Add proxy nodes
-        trustedNodes.addAll(getNodes(NodeType.proxy, Node.State.active));
+        trustedNodes.addAll(getNodes(NodeType.proxy));
 
         // Add config servers
         trustedNodes.addAll(getConfigNodes());
@@ -150,7 +150,7 @@ public class NodeRepository extends AbstractComponent {
     /** Creates a new node object, without adding it to the node repo */
     public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
                            Flavor flavor, NodeType type) {
-        return Node.create(openStackId, hostname, parentHostname, flavor, type);
+        return Node.create(openStackId, nameResolver.getByNameOrThrow(hostname), hostname, parentHostname, flavor, type);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
@@ -165,23 +165,16 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    /**
-     * Sets a list of nodes ready and returns the nodes in the ready state.
-     * Ready nodes must have an ip address; If the node is newly provisioned and its ip address has not yet
-     * propagated this call will fail and must be retried later.
-     */
+    /** Sets a list of nodes ready and returns the nodes in the ready state */
     public List<Node> setReady(List<Node> nodes) {
         for (Node node : nodes)
             if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
                 throw new IllegalArgumentException("Can not set " + node + " ready. It is not provisioned or dirty.");
-        
-        nodes = resolveIp(nodes);
-        
         try (Mutex lock = lockUnallocated()) {
             return zkClient.writeTo(Node.State.ready, nodes);
         }
     }
-    
+
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
     public List<Node> reserve(List<Node> nodes) { return zkClient.writeTo(Node.State.reserved, nodes); }
 
@@ -371,17 +364,6 @@ public class NodeRepository extends AbstractComponent {
         }
         return resultingNodes;
     }
-    
-    private List<Node> resolveIp(List<Node> nodes) {
-        List<Node> resolvedNodes = new ArrayList<>();
-        for (Node node : nodes) {
-            if (node.ipAddress().isPresent())
-                resolvedNodes.add(node);
-            else
-                resolvedNodes.add(node.withIpAddress(nameResolver.getByNameOrThrow(node.hostname())));
-        }
-        return resolvedNodes;
-    }
 
     private List<Node> getConfigNodes() {
         // TODO: Revisit this when config servers are added to the repository
@@ -390,10 +372,9 @@ public class NodeRepository extends AbstractComponent {
                 .map(host -> createNode(host, host, Optional.empty(),
                         flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
                         NodeType.config))
-                .map(n -> n.withIpAddress(nameResolver.getByNameOrThrow(n.hostname())))
                 .collect(Collectors.toList());
     }
-    
+
     /** Create a lock which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application) { return zkClient.lock(application); }
 

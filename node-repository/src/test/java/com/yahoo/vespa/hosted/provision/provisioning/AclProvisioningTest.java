@@ -48,15 +48,13 @@ public class AclProvisioningTest {
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
-
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
-        tester.activateProxies();
 
         ApplicationId applicationId = tester.makeApplicationId();
 
         // Allocate 2 nodes
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"), 
-                                                  Optional.empty());
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
+                Optional.empty());
         List<HostSpec> prepared = tester.prepare(applicationId, cluster, Capacity.fromNodeCount(2), 1);
         tester.activate(applicationId, new HashSet<>(prepared));
         List<Node> activeNodes = tester.getNodes(applicationId, Node.State.active).asList();
@@ -81,7 +79,6 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> readyNodes = tester.makeReadyNodes(10, "default");
         List<Node> proxyNodes = tester.makeReadyNodes(3, "default", NodeType.proxy);
-        tester.activateProxies();
 
         // Get trusted nodes for the first ready node
         Node node = readyNodes.get(0);
