@@ -39,8 +39,8 @@ public abstract class DoubleCompatibleValue extends Value {
     }
 
     @Override
-    public Value compare(TruthOperator operator, Value value) {
-        return new BooleanValue(operator.evaluate(asDouble(), value.asDouble()));
+    public boolean compare(TruthOperator operator, Value value) {
+        return operator.evaluate(asDouble(), value.asDouble());
     }
 
     @Override

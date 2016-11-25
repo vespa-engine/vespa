@@ -98,6 +98,16 @@ public final class DoubleValue extends DoubleCompatibleValue {
     }
 
     @Override
+    public boolean compare(TruthOperator operator, Value value) {
+        try {
+            return operator.evaluate(this.value, value.asDouble());
+        }
+        catch (UnsupportedOperationException e) {
+            throw unsupported("comparison",value);
+        }
+    }
+
+    @Override
     public Value function(Function function, Value value) {
         // use the tensor implementation of max and min if the argument is a tensor
         if ( (function.equals(Function.min) || function.equals(Function.max)) && value instanceof TensorValue)
