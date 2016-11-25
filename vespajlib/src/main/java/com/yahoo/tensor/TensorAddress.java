@@ -8,12 +8,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
  * An immutable address to a tensor cell.
- * This is sparse: Only dimensions which have a different label than "undefined" are
- * explicitly included.
  * <p>
  * Tensor addresses are ordered by increasing size primarily, and by the natural order of the elements in sorted
  * order secondarily.
@@ -66,14 +65,6 @@ public final class TensorAddress implements Comparable<TensorAddress> {
         return TensorAddress.fromSorted(elements);
     }
 
-    /** Creates an empty address with a set of dimensions */
-    public static TensorAddress emptyWithDimensions(Set<String> dimensions) {
-        List<Element> elements = new ArrayList<>(dimensions.size());
-        for (String dimension : dimensions)
-            elements.add(new Element(dimension, Element.undefinedLabel));
-        return TensorAddress.fromUnsorted(elements);
-    }
-
     /** Returns an immutable list of the elements of this address in sorted order */
     public List<Element> elements() { return elements; }
 
@@ -93,6 +84,14 @@ public final class TensorAddress implements Comparable<TensorAddress> {
         return dimensions;
     }
 
+    /** Returns the label at the given dimension, or empty if this dimension is not present */
+    public Optional<String> labelOfDimension(String dimension) {
+        for (TensorAddress.Element element : elements)
+            if (element.dimension().equals(dimension))
+                return Optional.of(element.label());
+        return Optional.empty();
+    }
+    
     @Override
     public int compareTo(TensorAddress other) {
         int sizeComparison = Integer.compare(this.elements.size(), other.elements.size());
@@ -123,7 +122,6 @@ public final class TensorAddress implements Comparable<TensorAddress> {
     public String toString() {
         StringBuilder b = new StringBuilder("{");
         for (TensorAddress.Element element : elements) {
-            //if (element.label() == Element.undefinedLabel) continue;
             b.append(element.toString());
             b.append(",");
         }
@@ -136,18 +134,13 @@ public final class TensorAddress implements Comparable<TensorAddress> {
     /** A tensor address element. Elements have the lexical order of the dimensions as natural order. */
     public static class Element implements Comparable<Element> {
 
-        static final String undefinedLabel = "-";
-
         private final String dimension;
         private final String label;
         private final int hashCode;
 
         public Element(String dimension, String label) {
             this.dimension = dimension;
-            if (label.equals(undefinedLabel))
-                this.label = undefinedLabel;
-            else
-                this.label = label;
+            this.label = label;
             this.hashCode = dimension.hashCode() + label.hashCode();
         }
 
@@ -175,9 +168,7 @@ public final class TensorAddress implements Comparable<TensorAddress> {
 
         @Override
         public String toString() {
-            StringBuilder b = new StringBuilder();
-            b.append(dimension).append(":").append(label);
-            return b.toString();
+            return dimension + ":" + label;
         }
 
     }

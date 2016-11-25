@@ -20,7 +20,7 @@ import java.util.Set;
  */
 public class EvaluationTestCase extends junit.framework.TestCase {
 
-    private Context defaultContext;
+    private MapContext defaultContext;
 
     @Override
     protected void setUp() {
@@ -100,201 +100,180 @@ public class EvaluationTestCase extends junit.framework.TestCase {
 
     @Test
     public void testTensorEvaluation() {
-        assertEvaluates("{}", "{}"); // empty
-        assertEvaluates("( {{x:-}:1} * {} )", "( {{x:-}:1} * {} )"); // empty with dimensions
+        assertEvaluates("{}", "tensor0", "{}");
 
-        // sum(tensor)
-        assertEvaluates(5.0,  "sum({{}:5.0})");
-        assertEvaluates(-5.0, "sum({{}:-5.0})");
-        assertEvaluates(12.5, "sum({ {d1:l1}:5.5, {d2:l2}:7.0 })");
-        assertEvaluates(0.0,  "sum({ {d1:l1}:5.0, {d2:l2}:7.0, {}:-12.0})");
-
-        // scalar functions on tensors
+        // tensor map
         assertEvaluates("{ {}:1, {d1:l1}:2, {d1:l1,d2:l1 }:3 }",
-                        "log10({ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 })");
-        assertEvaluates("{ {}:50, {d1:l1}:500, {d1:l1,d2:l1}:5000 }",
-                        "5 * { {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
-        assertEvaluates("{ {}:13, {d1:l1}:103, {d1:l1,d2:l1}:1003 }",
-                        "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 } + 3");
-        assertEvaluates("{ {}:1, {d1:l1}:10, {d1:l1,d2:l1 }:100 }",
-                        "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 } / 10");
+                        "map(tensor0, f(x) (log10(x)))", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
+        assertEvaluates("{ {}:4, {d1:l1}:9, {d1:l1,d2:l1 }:16 }",
+                        "map(tensor0, f(x) (x * x))", "{ {}:2, {d1:l1}:3, {d1:l1,d2:l1}:4 }");
+        // -- tensor map composites
+        assertEvaluates("{ {}:1, {d1:l1}:2, {d1:l1,d2:l1 }:3 }", 
+                        "log10(tensor0)", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
         assertEvaluates("{ {}:-10, {d1:l1}:-100, {d1:l1,d2:l1 }:-1000 }",
-                        "- { {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
+                        "- tensor0", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
         assertEvaluates("{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1 }:0 }",
-                        "min({ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }, 0)");
+                        "min(tensor0, 0)", "{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }");
         assertEvaluates("{ {}:0, {d1:l1}:0, {d1:l1,d2:l1 }:10 }",
-                        "max({ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }, 0)");
-        assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + {{h:1}:1.0,{h:2}:1.0}");
+                        "max(tensor0, 0)", "{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }");
+        // -- explicitly implemented functions (not foolproof tests as we don't bother testing float value equivalence)
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "abs(tensor0)",    "{ {x:1}:1, {x:2}:-2 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "acos(tensor0)",   "{ {x:1}:1, {x:2}:1 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "asin(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "atan(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "ceil(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "cos(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "cosh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "elu(tensor0)",    "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "exp(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "fabs(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "floor(tensor0)",  "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "isNan(tensor0)",  "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "log(tensor0)",    "{ {x:1}:1, {x:2}:1 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:1 }",     "log10(tensor0)",  "{ {x:1}:1, {x:2}:10 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:2 }",     "mod(tensor0, 3)", "{ {x:1}:3, {x:2}:8 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:8 }",     "pow(tensor0, 3)", "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "relu(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "round(tensor0)",  "{ {x:1}:1, {x:2}:1.8 }");
+        assertEvaluates("{ {x:1}:0.5, {x:2}:0.5 }", "sigmoid(tensor0)","{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:-1 }",    "sign(tensor0)",   "{ {x:1}:3, {x:2}:-5 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "sin(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "sinh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:4 }",     "square(tensor0)", "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:1, {x:2}:3 }",     "sqrt(tensor0)",   "{ {x:1}:1, {x:2}:9 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "tan(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "tanh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
 
-        // sum(tensor, dimension)
-        assertEvaluates("{ {y:1}:4.0, {y:2}:12.0 }",
-                        "sum({ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }, x)");
-        assertEvaluates("{ {x:1}:6.0, {x:2}:10.0 }",
-                        "sum({ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }, y)");
+        // tensor reduce
+        // -- reduce 2 dimensions
+        assertEvaluates("{ {}:4 }",
+                        "reduce(tensor0, avg, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:4 }",
+                        "reduce(tensor0, count, x, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:105 }",
+                        "reduce(tensor0, prod, x, y)",  "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:16 }",
+                        "reduce(tensor0, sum, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:7 }",
+                        "reduce(tensor0, max, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:1 }",
+                        "reduce(tensor0, min, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        // -- reduce 2 by specifying no arguments
+        assertEvaluates("{ {}:4 }",
+                        "reduce(tensor0, avg)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        // -- reduce 1 dimension
+        assertEvaluates("{ {y:1}:2, {y:2}:6 }",
+                        "reduce(tensor0, avg, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:2, {y:2}:2 }",
+                        "reduce(tensor0, count, x)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:3, {y:2}:35 }",
+                        "reduce(tensor0, prod, x)",  "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:4, {y:2}:12 }",
+                        "reduce(tensor0, sum, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:3, {y:2}:7 }",
+                        "reduce(tensor0, max, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {y:1}:1, {y:2}:5 }",
+                        "reduce(tensor0, min, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        // -- reduce composites
+        assertEvaluates("{ {}: 5   }", "sum(tensor0)", "5.0");
+        assertEvaluates("{ {}:-5   }", "sum(tensor0)", "-5.0");
+        assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:l1}:5.5, {d2:l2}:7.0 }");
+        assertEvaluates("{ {}: 0   }", "sum(tensor0)", "{ {d1:l1}:5.0, {d2:l2}:7.0, {}:-12.0}");
+        assertEvaluates("{ {y:1}:4, {y:2}:12.0 }",
+                        "sum(tensor0, x)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {x:1}:6, {x:2}:10.0 }",
+                        "sum(tensor0, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        assertEvaluates("{ {}:16 }",
+                        "sum(tensor0, x, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
 
-        // tensor sum
-        assertEvaluates("{ }", "{} + {}");
-        assertEvaluates("{ {x:1}:3, {x:2}:5 }",
-                        "{ {x:1}:3 } + { {x:2}:5 }");
-        assertEvaluates("{ {x:1}:8 }",
-                        "{ {x:1}:3 } + { {x:1}:5 }");
-        assertEvaluates("{ {x:1}:3, {y:1}:5 }",
-                        "{ {x:1}:3 } + { {y:1}:5 }");
-        assertEvaluates("{ {x:1}:3, {x:2}:7, {y:1}:5 }",
-                        "{ {x:1}:3, {x:2}:7 } + { {y:1}:5 }");
-        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }",
-                        "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 } + { {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "{ {x:1}:5, {x:1,y:1}:1 } + { {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {z:1}:11, {y:1,z:1}:7 }",
-                        "{ {x:1}:5, {x:1,y:1}:1 } + { {z:1}:11, {y:1,z:1}:7 }");
-        assertEvaluates("{ {}:5, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "{ {}:5, {x:1,y:1}:1 } + { {y:1,z:1}:7 }");
-        assertEvaluates("{ {}:16, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "{ {}:5, {x:1,y:1}:1 } + { {}:11, {y:1,z:1}:7 }");
-
-        // tensor difference
-        assertEvaluates("{ }", "{} - {}");
-        assertEvaluates("{ {x:1}:3, {x:2}:-5 }",
-                        "{ {x:1}:3 } - { {x:2}:5 }");
-        assertEvaluates("{ {x:1}:-2 }",
-                        "{ {x:1}:3 } - { {x:1}:5 }");
-        assertEvaluates("{ {x:1}:3, {y:1}:-5 }",
-                        "{ {x:1}:3 } - { {y:1}:5 }");
-        assertEvaluates("{ {x:1}:3, {x:2}:7, {y:1}:-5 }",
-                        "{ {x:1}:3, {x:2}:7 } - { {y:1}:5 }");
-        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {y:1,z:1}:-7, {y:2,z:1}:-11, {y:1,z:2}:-13 }",
-                        "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 } - { {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {y:1,z:1}:-7 }",
-                        "{ {x:1}:5, {x:1,y:1}:1 } - { {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {z:1}:-11, {y:1,z:1}:-7 }",
-                        "{ {x:1}:5, {x:1,y:1}:1 } - { {z:1}:11, {y:1,z:1}:7 }");
-        assertEvaluates("{ {}:5, {x:1,y:1}:1, {y:1,z:1}:-7 }",
-                        "{ {}:5, {x:1,y:1}:1 } - { {y:1,z:1}:7 }");
-        assertEvaluates("{ {}:-6, {x:1,y:1}:1, {y:1,z:1}:-7 }",
-                        "{ {}:5, {x:1,y:1}:1 } - { {}:11, {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1}:0 }",
-                        "{ {x:1}:3 } - { {x:1}:3 }");
-        assertEvaluates("{  {x:1}:0, {x:2}:1 }",
-                        "{ {x:1}:3, {x:2}:1 } - { {x:1}:3 }");
-
-        // tensor product
-        assertEvaluates("{ }", "{} * {}");
-        assertEvaluates("( {{x:-,y:-,z:-}:1}*{} )", "( {{x:-}:1} * {} ) * ( {{y:-,z:-}:1} * {} )"); // empty dimensions are preserved
-        assertEvaluates("( {{x:-}:1} * {} )",
-                        "{ {x:1}:3 } * { {x:2}:5 }");
+        // tensor join
+        assertEvaluates("{ {x:1,y:1}:15, {x:2,y:1}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        // -- join composites
+        assertEvaluates("{ }", "tensor0 * tensor0", "{}");
+        assertEvaluates("tensor(x{},y{},z{}):{}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", 
+                        "{{x:-}:1}", "{}", "{{y:-,z:-}:1}"); // empty dimensions are preserved
+        assertEvaluates("tensor(x{}):{}",
+                        "tensor0 * tensor1", "{ {x:1}:3 }", "{ {x:2}:5 }");
         assertEvaluates("{ {x:1}:15 }",
-                        "{ {x:1}:3 } * { {x:1}:5 }");
+                        "tensor0 * tensor1", "{ {x:1}:3 }", "{ {x:1}:5 }");
         assertEvaluates("{ {x:1,y:1}:15 }",
-                        "{ {x:1}:3 } * { {y:1}:5 }");
+                        "tensor0 * tensor1", "{ {x:1}:3 }", "{ {y:1}:5 }");
         assertEvaluates("{ {x:1,y:1}:15, {x:2,y:1}:35 }",
-                        "{ {x:1}:3, {x:2}:7 } * { {y:1}:5 }");
+                        "tensor0 * tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:8, {x:2,y:1}:12 }",
+                        "tensor0 + tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:-2, {x:2,y:1}:2 }",
+                        "tensor0 - tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:5, {x:2,y:1}:4 }",
+                        "tensor0 / tensor1", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }");
+        assertEvaluates("{ {x:1,y:1}:5, {x:2,y:1}:7 }",
+                        "max(tensor0, tensor1)", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:3, {x:2,y:1}:5 }",
+                        "min(tensor0, tensor1)", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
         assertEvaluates("{ {x:1,y:1,z:1}:7, {x:1,y:1,z:2}:13, {x:2,y:1,z:1}:21, {x:2,y:1,z:2}:39, {x:1,y:2,z:1}:55 }",
-                        "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 } * { {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
-        assertEvaluates("{ {x:1,y:1,z:1}:7 }",
-                        "{ {x:1}:5, {x:1,y:1}:1 } * { {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1,y:1,z:1}:7, {x:1,z:1}:55 }",
-                        "{ {x:1}:5, {x:1,y:1}:1 } * { {z:1}:11, {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1,y:1,z:1}:7 }",
-                        "{ {}:5, {x:1,y:1}:1 } * { {y:1,z:1}:7 }");
-        assertEvaluates("{ {x:1,y:1,z:1}:7, {}:55 }",
-                        "{ {}:5, {x:1,y:1}:1 } * { {}:11, {y:1,z:1}:7 }");
+                        "tensor0 * tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
+        assertEvaluates("{ {x:1,y:2,z:1}:35, {x:1,y:2,z:2}:65 }",
+                        "tensor0 * tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:2,z:1}:7, {y:3,z:1}:11, {y:2,z:2}:13 }");
+        assertEvaluates("{{x:1,y:1}:0.0}","tensor1 * tensor2 * tensor3", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1,y:1}:1 }", "{ {x:1,y:1}:1 }");
+        assertEvaluates("{ {}:50, {d1:l1}:500, {d1:l1,d2:l1}:5000 }",
+                        "5 * tensor0", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
+        assertEvaluates("{ {}:13, {d1:l1}:103, {d1:l1,d2:l1}:1003 }",
+                        "tensor0 + 3","{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
+        assertEvaluates("{ {}:1, {d1:l1}:10, {d1:l1,d2:l1 }:100 }",
+                        "tensor0 / 10", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
+        assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
+        assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:0 }",
+                        "atan2(tensor0, tensor1)", "{ {x:1}:0, {x:2}:0 }", "{ {y:1}:1 }");
+        assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
+                        "tensor0 > tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
+                        "tensor0 < tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
+                        "tensor0 >= tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
+                        "tensor0 <= tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
+                        "tensor0 == tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
+        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
+                        "tensor0 != tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
+        // TODO
+        // argmax
+        // argmin        
+        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
+                        "tensor0 != tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
+        
+        // tensor rename
+        assertEvaluates("{ {newX:1,y:2}:3 }", "rename(tensor0, x, newX)", "{ {x:1,y:2}:3.0 }");
+        assertEvaluates("{ {x:2,y:1}:3 }", "rename(tensor0, (x, y), (y, x))", "{ {x:1,y:2}:3.0 }");
+        
+        // tensor generate - TODO
+        // assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0, {x:2,y:2}:1, {x:1,y:2}:0 }", "tensor(x[2],y[2])(x==y)");
+        // range
+        // diag
+        // fill
+        // random
+        
+        // composite functions
+        assertEvaluates("{ {x:1}:0.25, {x:2}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:3 }");
+        assertEvaluates("{ {x:1}:0.31622776601683794, {x:2}:0.9486832980505138 }", "l2_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:3 }");
+        assertEvaluates("{ {y:1}:81.0 }", "matmul(tensor0, tensor1, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }");
+        assertEvaluates("{ {x:1}:0.5, {x:2}:0.5 }", "softmax(tensor0, x)", "{ {x:1}:1, {x:2}:1 }", "{ {y:1}:1 }");
+        assertEvaluates("{ {x:1,y:1}:88.0 }", "xw_plus_b(tensor0, tensor1, tensor2, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }", "{ {x:1}:7 }");
 
-        // match product
-        assertEvaluates("{ }", "match({}, {})");
-        assertEvaluates("( {{x:-}:1} * {} )",
-                        "match({ {x:1}:3 }, { {x:2}:5 })");
-        assertEvaluates("{ {x:1}:15 }",
-                        "match({ {x:1}:3 }, { {x:1}:5 })");
-        assertEvaluates("( {{x:-,y:-}:1} * {} )",
-                        "match({ {x:1}:3 }, { {y:1}:5 })");
-        assertEvaluates("( {{x:-,y:-}:1} * {} )",
-                        "match({ {x:1}:3, {x:2}:7 }, { {y:1}:5 })");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * {} )",
-                        "match({ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }, { {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 })");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * {} )",
-                        "match({ {x:1}:5, {x:1,y:1}:1 }, { {y:1,z:1}:7 })");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * {} )",
-                        "match({ {x:1}:5, {x:1,y:1}:1 }, { {z:1}:11, {y:1,z:1}:7 })");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * {} )",
-                        "match({ {}:5, {x:1,y:1}:1 }, { {y:1,z:1}:7 })");
-        assertEvaluates("( {{x:-,y:-,z:-}:1} * { {}:55 } )",
-                        "match({ {}:5, {x:1,y:1}:1 }, { {}:11, {y:1,z:1}:7 })");
-        assertEvaluates("( {{z:-}:1} * { {x:1}:15, {x:1,y:1}:7 } )",
-                        "match({ {}:5, {x:1}:3, {x:2}:4, {x:1,y:1}:1, {x:1,y:2}:6 }, { {x:1}:5, {y:1,x:1}:7, {z:1,y:1,x:1}:10 })");
-
-        // min
-        assertEvaluates("{ {x:1}:3, {x:2}:5 }",
-                        "min({ {x:1}:3 }, { {x:2}:5 })");
-        assertEvaluates("{ {x:1}:3 }",
-                        "min({ {x:1}:3 }, { {x:1}:5 })");
-        assertEvaluates("{ {x:1}:3, {y:1}:5 }",
-                        "min({ {x:1}:3 }, { {y:1}:5 })");
-        assertEvaluates("{ {x:1}:3, {x:2}:7, {y:1}:5 }",
-                        "min({ {x:1}:3, {x:2}:7 }, { {y:1}:5 })");
-        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }",
-                        "min({ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }, { {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 })");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "min({ {x:1}:5, {x:1,y:1}:1 }, { {y:1,z:1}:7 })");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {z:1}:11, {y:1,z:1}:7 }",
-                        "min({ {x:1}:5, {x:1,y:1}:1 }, { {z:1}:11, {y:1,z:1}:7 })");
-        assertEvaluates("{ {}:5, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "min({ {}:5, {x:1,y:1}:1 }, { {y:1,z:1}:7 })");
-        assertEvaluates("{ {}:5, {x:1,y:1}:1,  {y:1,z:1}:7 }",
-                        "min({ {}:5, {x:1,y:1}:1 }, { {}:11, {y:1,z:1}:7 })");
-        assertEvaluates("{ {}:5, {x:1}:3, {x:2}:4, {x:1,y:1}:1, {x:1,y:2}:6, {z:1,y:1,x:1}:10 }",
-                        "min({ {}:5, {x:1}:3, {x:2}:4, {x:1,y:1}:1, {x:1,y:2}:6 }, { {x:1}:5, {y:1,x:1}:7, {z:1,y:1,x:1}:10 })");
-
-        // max
-        assertEvaluates("{ {x:1}:3, {x:2}:5 }",
-                        "max({ {x:1}:3 }, { {x:2}:5 })");
-        assertEvaluates("{ {x:1}:5 }",
-                        "max({ {x:1}:3 }, { {x:1}:5 })");
-        assertEvaluates("{ {x:1}:3, {y:1}:5 }",
-                        "max({ {x:1}:3 }, { {y:1}:5 })");
-        assertEvaluates("{ {x:1}:3, {x:2}:7, {y:1}:5 }",
-                        "max({ {x:1}:3, {x:2}:7 }, { {y:1}:5 })");
-        assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5, {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }",
-                        "max({ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }, { {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 })");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "max({ {x:1}:5, {x:1,y:1}:1 }, { {y:1,z:1}:7 })");
-        assertEvaluates("{ {x:1}:5, {x:1,y:1}:1, {z:1}:11, {y:1,z:1}:7 }",
-                        "max({ {x:1}:5, {x:1,y:1}:1 }, { {z:1}:11, {y:1,z:1}:7 })");
-        assertEvaluates("{ {}:5, {x:1,y:1}:1, {y:1,z:1}:7 }",
-                        "max({ {}:5, {x:1,y:1}:1 }, { {y:1,z:1}:7 })");
-        assertEvaluates("{ {}:11, {x:1,y:1}:1,  {y:1,z:1}:7 }",
-                        "max({ {}:5, {x:1,y:1}:1 }, { {}:11, {y:1,z:1}:7 })");
-        assertEvaluates("{ {}:5, {x:1}:5, {x:2}:4, {x:1,y:1}:7, {x:1,y:2}:6, {z:1,y:1,x:1}:10 }",
-                        "max({ {}:5, {x:1}:3, {x:2}:4, {x:1,y:1}:1, {x:1,y:2}:6 }, { {x:1}:5, {y:1,x:1}:7, {z:1,y:1,x:1}:10 })");
-
-        // Combined
-        assertEvaluates(7.5 + 45 + 1.7,
-                        "sum( " +                                                                    // model computation
-                        "    match( " +                                                              // model weight application
-                        "             { {x:1}:1, {x:2}:2 } * { {y:1}:3, {y:2}:4 } * { {z:1}:5 }, " + // feature combinations
-                        "             { {x:1,y:1,z:1}:0.5, {x:2,y:1,z:1}:1.5, {x:1,y:1,z:2}:4.5 }" + // model weights
-                        "))+1.7");
-
-        // undefined is not the same as 0
-        assertEvaluates(1.0, "sum({ {x:1}:0, {x:2}:0 } * { {x:1}:1, {x:2}:1 } + 0.5)");
-        assertEvaluates(0.0, "sum({                  } * { {x:1}:1, {x:2}:1 } + 0.5)");
+        // expressions combining functions
+        assertEvaluates(String.valueOf(7.5 + 45 + 1.7),
+                        "sum( " +                              // model computation:
+                        "      tensor0 * tensor1 * tensor2 " + // - feature combinations
+                        "      * tensor3" +                    // - model weights application
+                        ") + 1.7",
+                        "{ {x:1}:1, {x:2}:2 }", "{ {y:1}:3, {y:2}:4 }", "{ {z:1}:5 }",
+                        "{ {x:1,y:1,z:1}:0.5, {x:2,y:1,z:1}:1.5, {x:1,y:1,z:2}:4.5 }");
+        assertEvaluates("1.0", "sum(tensor0 * tensor1 + 0.5)", "{ {x:1}:0, {x:2}:0 }", "{ {x:1}:1, {x:2}:1 }");
+        assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                   "{ {x:1}:1, {x:2}:1 }");
 
         // tensor result dimensions are given from argument dimensions, not the resulting values
-        assertEvaluates("x", "( {{x:-}:1.0} * {} )", "{ {x:1}:1 } * { {x:2}:1 }");
-        assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", "{ {x:1}:1 } * { {x:2,y:1}:1, {x:1}:1 }");
-
-        // demonstration of where this produces different results: { {x:1}:1 } with 2 dimensions ...
-        assertEvaluates("x, y", "( {{x:-,y:-}:1.0} * {} )","{ {x:1}:1 } * { {x:2,y:1}:1, {x:1}:1 } * { {x:1,y:1}:1 }");
-        // ... vs { {x:1}:1 } with only one dimension
-        assertEvaluates("x, y", "{{x:1,y:1}:1.0}",   "{ {x:1}:1 }                            * { {x:1,y:1}:1 }");
-
-        // check that dimensions are preserved through other operations
-        String d2 = "{ {x:1}:1 } * { {x:2,y:1}:1, {x:1}:1 }"; // creates a 2d tensor with only an 1d value
-        assertEvaluates("x, y", "( {{x:-,y:-}:1.0} * {} )",          "match(" + d2 + ", {})");
-        assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", d2 + " - {}");
-        assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", d2 + " + {}");
-        assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", "min(1.5, " + d2 +")");
-        assertEvaluates("x, y", "( {{y:-}:1.0} * {{x:1}:1.0} )", "max({{x:1}:0}, " + d2 +")");
+        assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2}:1 }");
+        assertEvaluates("tensor(x{},y{}):{{x:1}:1.0}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1}:1 }");
     }
 
     public void testProgrammaticBuildingAndPrecedence() {
@@ -316,12 +295,16 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates(77, "average(\"2*3\",\"pow(2,3)\")+average(\"2*3\",\"pow(2,3)\").timesten", context);
     }
 
-    private RankingExpression assertEvaluates(String tensorValue, String expressionString) {
-        return assertEvaluates(new TensorValue(MapTensor.from(tensorValue)), expressionString, defaultContext);
+    private RankingExpression assertEvaluates(String expectedTensor, String expressionString, String ... tensorArguments) {
+        MapContext context = defaultContext.thawedCopy();
+        int argumentIndex = 0;
+        for (String tensorArgument : tensorArguments)
+            context.put("tensor" + (argumentIndex++), new TensorValue(MapTensor.from(tensorArgument)));
+        return assertEvaluates(new TensorValue(MapTensor.from(expectedTensor)), expressionString, context);
     }
 
     /** Validate also that the dimension of the resulting tensors are as expected */
-    private RankingExpression assertEvaluates(String tensorDimensions, String resultTensor, String expressionString) {
+    private RankingExpression assertEvaluates_old(String tensorDimensions, String resultTensor, String expressionString) {
         RankingExpression expression = assertEvaluates(new TensorValue(MapTensor.from(resultTensor)), expressionString, defaultContext);
         TensorValue value = (TensorValue)expression.evaluate(defaultContext);
         assertEquals(toSet(tensorDimensions), value.asTensor().dimensions());
