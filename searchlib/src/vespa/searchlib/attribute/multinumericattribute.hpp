@@ -155,6 +155,7 @@ MultiValueNumericAttribute<B, M>::onLoad()
         setNewValues(doc, values);
         values.clear();
     }
+    this->_mvMapping.doneLoadFromMultiValue();
     return true;
 }
 
