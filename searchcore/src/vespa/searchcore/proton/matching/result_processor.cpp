@@ -19,10 +19,11 @@ ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> rep
 
 ResultProcessor::Result::~Result() { }
 
-ResultProcessor::Sort::Sort(const vespalib::Doom & doom, search::attribute::IAttributeContext &ac, const vespalib::string &ss)
+ResultProcessor::Sort::Sort(const search::IDocumentMetaStore & metaStore, const vespalib::Doom & doom,
+                            search::attribute::IAttributeContext &ac, const vespalib::string &ss)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
-      sortSpec(doom, *_ucaFactory)
+      sortSpec(&metaStore, doom, *_ucaFactory)
 {
     if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
         sorter = &sortSpec;
@@ -67,7 +68,7 @@ ResultProcessor::prepareThreadContextCreation(size_t num_threads)
 ResultProcessor::Context::UP
 ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id)
 {
-    Sort::UP sort(new Sort(hardDoom, _attrContext, _sortSpec));
+    Sort::UP sort(new Sort(_metaStore, hardDoom, _attrContext, _sortSpec));
     PartialResult::LP result(new PartialResult((_offset + _hits), sort->hasSortData()));
     if (thread_id == 0) {
         _result = result;
@@ -113,8 +114,7 @@ ResultProcessor::makeReply()
             dst.gid = gid;
         }
         dst.metric = src._rankValue;
-        LOG(debug, "convertLidToGid: hit[%zu]: lid(%u) -> gid(%s)",
-            i, docId, dst.gid.toString().c_str());
+        LOG(debug, "convertLidToGid: hit[%zu]: lid(%u) -> gid(%s)", i, docId, dst.gid.toString().c_str());
     }
     if (result.hasSortData() && hitcnt > 0) {
         size_t sortDataSize = result.sortDataSize();

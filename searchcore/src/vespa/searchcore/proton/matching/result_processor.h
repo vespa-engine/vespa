@@ -36,7 +36,8 @@ public:
         FastS_IResultSorter *sorter;
         std::unique_ptr<search::common::ConverterFactory> _ucaFactory;
         FastS_SortSpec       sortSpec;
-        Sort(const vespalib::Doom & doom, search::attribute::IAttributeContext &ac, const vespalib::string &ss);
+        Sort(const search::IDocumentMetaStore & metaStore, const vespalib::Doom & doom,
+             search::attribute::IAttributeContext &ac, const vespalib::string &ss);
         bool hasSortData() const {
             return (sorter == (const FastS_IResultSorter *) &sortSpec);
         }
@@ -72,7 +73,8 @@ public:
         Context(Sort::UP s, PartialResult::LP r,
                 search::grouping::GroupingContext::UP g)
             : sort(std::move(s)), result(r), grouping(std::move(g)),
-              groupingSource(grouping.get()) {}
+              groupingSource(grouping.get())
+        { }
     };
 
     struct Result {

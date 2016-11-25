@@ -15,6 +15,7 @@
 #define PREFETCH 64
 #define INSERT_SORT_LEVEL 80
 
+namespace search { class IDocumentMetaStore; }
 /**
  * Sort the given array of results.
  *
@@ -122,6 +123,7 @@ private:
     typedef vespalib::Array<uint8_t> BinarySortData;
     typedef vespalib::Array<SortData> SortDataArray;
     using ConverterFactory = search::common::ConverterFactory;
+    const search::IDocumentMetaStore * _metaStore;
     vespalib::Doom           _doom;
     const ConverterFactory & _ucaFactory;
     int                      _method;
@@ -137,7 +139,7 @@ private:
 public:
     FastS_SortSpec(const FastS_SortSpec &) = delete;
     FastS_SortSpec & operator = (const FastS_SortSpec &) = delete;
-    FastS_SortSpec(const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method=2);
+    FastS_SortSpec(const search::IDocumentMetaStore * metaStore, const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method=2);
     virtual ~FastS_SortSpec();
 
     std::pair<const char *, size_t> getSortRef(size_t i) const {
@@ -145,8 +147,8 @@ public:
                                                _sortDataArray[i]._len);
     }
     bool Init(const vespalib::string & sortSpec, search::attribute::IAttributeContext & vecMan);
-    virtual bool completeSort() const { return true; }
-    virtual void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn);
+    bool completeSort() const override { return true; }
+    void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;
     uint32_t getSortDataSize(uint32_t offset, uint32_t n);
     void copySortData(uint32_t offset, uint32_t n, uint32_t *idx, char *buf);
     void freeSortData();
