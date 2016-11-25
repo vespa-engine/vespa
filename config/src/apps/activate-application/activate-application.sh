@@ -62,6 +62,8 @@ findroot
 
 ROOT=$VESPA_HOME
 
+echo "WARNING: activate-application is deprecated, use 'deploy activate' instead"
+
 if [ "-f" == "$1" ] ; then
     $ROOT/bin/deploy activate
 else
