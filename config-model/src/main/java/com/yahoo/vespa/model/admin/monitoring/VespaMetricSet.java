@@ -163,7 +163,6 @@ public class VespaMetricSet extends MetricSet {
         metrics.add(new Metric("proton.docsinmemory.last", "documents_inmemory"));
         metrics.add(new Metric("proton.diskusage.last", "diskusage"));
         metrics.add(new Metric("proton.memoryusage.max", "content.proton.memoryusage.max"));
-        metrics.add(new Metric("proton.memory_mappings_count.map", "content.proton.memory_mappings_count.max"));
         metrics.add(new Metric("proton.transport.query.count.rate", "query_requests"));
         metrics.add(new Metric("proton.transport.docsum.docs.rate", "document_requests"));
         metrics.add(new Metric("proton.transport.docsum.latency.average", "content.proton.transport.docsum.latency.average"));
@@ -191,6 +190,7 @@ public class VespaMetricSet extends MetricSet {
         // resource usage
         metrics.add(new Metric("content.proton.resource_usage.disk.average"));
         metrics.add(new Metric("content.proton.resource_usage.memory.average"));
+        metrics.add(new Metric("content.proton.resource_usage.memory_mappings_count.max"));
         metrics.add(new Metric("content.proton.resource_usage.feeding_blocked.last"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.enum_store.average"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.multi_value.average"));
