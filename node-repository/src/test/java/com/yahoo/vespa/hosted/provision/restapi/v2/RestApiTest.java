@@ -170,6 +170,15 @@ public class RestApiTest {
     }
 
     @Test
+    public void post_node_with_ip_address() throws Exception {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson("host-with-ip.yahoo.com", "127.0.0.1", "default") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+    }
+
+    @Test
     public void fails_to_deallocate_node_with_hardware_failure() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                         ("[" + asNodeJson("host12.yahoo.com", "default") + "]").
@@ -335,8 +344,13 @@ public class RestApiTest {
                 "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"docker\"}";
     }
 
+    private String asNodeJson(String hostname, String ipAddress, String flavor) {
+        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"" + flavor + "\"" +
+                (ipAddress.isEmpty() ? "" : ", \"ipAddress\":\"" + ipAddress + "\"") + "}";
+    }
+
     private String asNodeJson(String hostname, String flavor) {
-        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"" + flavor + "\"}";
+        return asNodeJson(hostname, "", flavor);
     }
 
     private String asHostJson(String hostname, String flavor) {

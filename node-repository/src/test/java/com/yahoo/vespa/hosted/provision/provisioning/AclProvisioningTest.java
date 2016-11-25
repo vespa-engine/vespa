@@ -100,11 +100,10 @@ public class AclProvisioningTest {
         List<Node> readyNodes = tester.makeReadyNodes(1, "default", NodeType.tenant);
         List<Node> trustedNodes = tester.nodeRepository().getTrustedNodes(readyNodes.get(0));
 
-        assertTrue(trustedNodes.stream().allMatch(n -> n.ipAddress().isPresent()));
         assertEquals(3, trustedNodes.size());
-        assertEquals("127.0.0.1", trustedNodes.get(0).ipAddress().get());
-        assertEquals("127.0.0.2", trustedNodes.get(1).ipAddress().get());
-        assertEquals("127.0.0.3", trustedNodes.get(2).ipAddress().get());
+        assertEquals("127.0.0.1", trustedNodes.get(0).ipAddress());
+        assertEquals("127.0.0.2", trustedNodes.get(1).ipAddress());
+        assertEquals("127.0.0.3", trustedNodes.get(2).ipAddress());
     }
 
     private static <T> void assertContainsOnly(Collection<T> a, Collection<T> b) {

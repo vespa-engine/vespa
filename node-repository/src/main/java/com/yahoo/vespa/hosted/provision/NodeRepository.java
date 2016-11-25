@@ -147,10 +147,16 @@ public class NodeRepository extends AbstractComponent {
 
     // ----------------- Node lifecycle -----------------------------------------------------------
 
-    /** Creates a new node object, without adding it to the node repo */
+    /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
+    public Node createNode(String openStackId, String hostname, Optional<String> ipAddress, Optional<String> parentHostname,
+                           Flavor flavor, NodeType type) {
+        return Node.create(openStackId, ipAddress.orElseGet(() -> nameResolver.getByNameOrThrow(hostname)), hostname,
+                parentHostname, flavor, type);
+    }
+
     public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
                            Flavor flavor, NodeType type) {
-        return Node.create(openStackId, nameResolver.getByNameOrThrow(hostname), hostname, parentHostname, flavor, type);
+        return createNode(openStackId, hostname, Optional.empty(), parentHostname, flavor, type);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
