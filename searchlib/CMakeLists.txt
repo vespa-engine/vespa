@@ -104,6 +104,7 @@ vespa_define_module(
     src/tests/common/sequencedtaskexecutor
     src/tests/common/summaryfeatures
     src/tests/datastore/array_store
+    src/tests/datastore/array_store_config
     src/tests/datastore/datastore
     src/tests/diskindex/bitvector
     src/tests/diskindex/diskindex

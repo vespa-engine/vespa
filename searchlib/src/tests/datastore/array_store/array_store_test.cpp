@@ -53,7 +53,7 @@ struct Fixture
     ReferenceStore refStore;
     generation_t generation;
     Fixture(uint32_t maxSmallArraySize)
-        : store(maxSmallArraySize),
+        : store(ArrayStoreConfig(maxSmallArraySize, ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8 * 1024))),
           refStore(),
           generation(1)
     {}

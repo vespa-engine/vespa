@@ -12,8 +12,8 @@ namespace datastore {
 constexpr size_t MIN_BUFFER_CLUSTERS = 8192;
 
 template <typename EntryT, typename RefT>
-ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType()
-    : BufferType<LargeArray>(1, MIN_BUFFER_CLUSTERS, RefT::offsetSize())
+ArrayStore<EntryT, RefT>::LargeArrayType::LargeArrayType(const AllocSpec &spec)
+    : BufferType<LargeArray>(1, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer)
 {
 }
 
@@ -31,32 +31,28 @@ ArrayStore<EntryT, RefT>::LargeArrayType::cleanHold(void *buffer, uint64_t offse
 
 template <typename EntryT, typename RefT>
 void
-ArrayStore<EntryT, RefT>::initArrayTypes(size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
+ArrayStore<EntryT, RefT>::initArrayTypes(const ArrayStoreConfig &cfg)
 {
     _largeArrayTypeId = _store.addType(&_largeArrayType);
     assert(_largeArrayTypeId == 0);
     for (uint32_t arraySize = 1; arraySize <= _maxSmallArraySize; ++arraySize) {
-        _smallArrayTypes.push_back(std::make_unique<SmallArrayType>(arraySize, minClusters, maxClusters, numClustersForNewBuffer));
+        const AllocSpec &spec = cfg.specForSize(arraySize);
+        _smallArrayTypes.push_back(std::make_unique<SmallArrayType>
+                                           (arraySize, spec.minArraysInBuffer, spec.maxArraysInBuffer, spec.numArraysForNewBuffer));
         uint32_t typeId = _store.addType(_smallArrayTypes.back().get());
         assert(typeId == arraySize); // Enforce 1-to-1 mapping between type ids and sizes for small arrays
     }
 }
 
 template <typename EntryT, typename RefT>
-ArrayStore<EntryT, RefT>::ArrayStore(uint32_t maxSmallArraySize)
-    : ArrayStore<EntryT,RefT>(maxSmallArraySize, 0, RefT::offsetSize(), MIN_BUFFER_CLUSTERS)
-{
-}
-
-template <typename EntryT, typename RefT>
-ArrayStore<EntryT, RefT>::ArrayStore(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, size_t numClustersForNewBuffer)
+ArrayStore<EntryT, RefT>::ArrayStore(const ArrayStoreConfig &cfg)
     : _store(),
-      _maxSmallArraySize(maxSmallArraySize),
+      _maxSmallArraySize(cfg.maxSmallArraySize()),
       _smallArrayTypes(),
-      _largeArrayType(),
+      _largeArrayType(cfg.specForSize(0)),
       _largeArrayTypeId()
 {
-    initArrayTypes(minClusters, maxClusters, numClustersForNewBuffer);
+    initArrayTypes(cfg);
     _store.initActiveBuffers();
 }
 
@@ -226,6 +222,21 @@ ArrayStore<EntryT, RefT>::bufferState(EntryRef ref) const
 {
     RefT internalRef(ref);
     return _store.getBufferState(internalRef.bufferId());
+}
+
+template <typename EntryT, typename RefT>
+ArrayStoreConfig
+ArrayStore<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
+                                                     size_t hugePageSize,
+                                                     size_t smallPageSize,
+                                                     size_t minNumArraysForNewBuffer)
+{
+    return ArrayStoreConfig::optimizeForHugePage(maxSmallArraySize,
+                                                 hugePageSize,
+                                                 smallPageSize,
+                                                 sizeof(EntryT),
+                                                 RefT::offsetSize(),
+                                                 minNumArraysForNewBuffer);
 }
 
 }
