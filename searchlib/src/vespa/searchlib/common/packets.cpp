@@ -974,10 +974,11 @@ FS4Packet_QUERYRESULTX::FS4Packet_QUERYRESULTX()
       _groupData(NULL),
       _coverageDocs(0),
       _activeDocs(0),
+      _soonActiveDocs(0),
+      _coverageDegradeReason(0),
       _hits(NULL),
       _propsVector()
-{
-}
+{ }
 
 
 FS4Packet_QUERYRESULTX::~FS4Packet_QUERYRESULTX()
@@ -1060,7 +1061,7 @@ FS4Packet_QUERYRESULTX::Encode(FNET_DataBuffer *dst)
     }
     if ((_features & QRF_EXTENDED_COVERAGE) != 0) {
         dst->WriteInt64Fast(_soonActiveDocs);
-        dst->WriteInt64Fast(_coverageDegradeReason);
+        dst->WriteInt32Fast(_coverageDegradeReason);
     }
 
     for (uint32_t i = 0; i < _numDocs; i++) {
