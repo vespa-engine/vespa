@@ -21,7 +21,7 @@ import java.util.function.UnaryOperator;
 @Beta
 public class MapTensor implements Tensor {
 
-    // TODO: Enforce that all addresses are dense (and then avoid stroing keys in TensorAddress)
+    // TODO: Enforce that all addresses are dense (and then avoid storing keys in TensorAddress)
     
     private final ImmutableSet<String> dimensions;
 
