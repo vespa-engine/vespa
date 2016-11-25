@@ -106,8 +106,7 @@ MatchThread::Context::Context(double rankDropLimit, MatchTools & matchTools, Ran
     _hits(hits),
     _softDoom(matchTools.getSoftDoom()),
     _limiter(matchTools.match_limiter())
-{
-}
+{ }
 
 void
 MatchThread::Context::rankHit(uint32_t docId) {
