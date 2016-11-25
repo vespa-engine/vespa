@@ -50,6 +50,8 @@ if ($dryrun) {
   $flags .= "-n ";
 }
 
+print "WARNING: deploy-application is deprecated, use 'deploy prepare' instead\n\n";
+
 my $DEPLOY="deploy $flags prepare $app";
 
 system($DEPLOY);
