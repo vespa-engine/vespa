@@ -173,10 +173,11 @@ Matcher::create_match_tools_factory(const search::engine::Request &request,
                                     const IDocumentMetaStore &metaStore,
                                     const Properties &feature_overrides) const
 {
-    bool softTimeoutEnabled = Enabled::lookup(feature_overrides, _rankSetup->getSoftTimeoutEnabled());
+    const Properties & rankProperties = request.propertiesMap.rankProperties();
+    bool softTimeoutEnabled = Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
     double factor = 0.95;
     if (softTimeoutEnabled) {
-        factor = Factor::lookup(feature_overrides, _stats.softDoomFactor());
+        factor = Factor::lookup(rankProperties, _stats.softDoomFactor());
         LOG(info, "Enabling soft-timeout computed factor=%1.3f, used factor=%1.3f", _stats.softDoomFactor(), factor);
     }
     uint64_t safeLeft = request.getTimeLeft() * factor;
