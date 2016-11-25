@@ -8,6 +8,8 @@
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/document/base/globalid.h>
+#include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".search.attribute.sortresults");
 
@@ -17,6 +19,8 @@ using search::common::SortInfo;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using vespalib::alloc::Alloc;
+using namespace vespalib;
+
 namespace {
 
 constexpr size_t MMAP_LIMIT = 0x2000000;
@@ -25,7 +29,7 @@ template<typename T>
 class RadixHelper
 {
 public:
-    typedef vespalib::convertForSort<T, true> C;
+    typedef convertForSort<T, true> C;
     inline typename C::UIntType
     operator()(typename C::InputType v) const {
         return C::convert(v);
@@ -225,7 +229,7 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     size_t variableWidth = 0;
     for (auto iter = _vectors.begin(); iter != _vectors.end(); ++iter) {
         if (iter->_type >= ASC_DOCID) { // doc id
-            fixedWidth += 4;
+            fixedWidth += (_metaStore != nullptr) ? 8 : 4;
         }else if (iter->_type >= ASC_RANK) { // rank value
             fixedWidth += sizeof(search::HitRank);
         } else {
@@ -244,6 +248,7 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
 
     _sortDataArray.resize(n);
 
+    document::GlobalId gid;
     for (uint32_t i(0), idx(0); (i < n) && !_doom.doom(); ++i) {
         uint32_t len = 0;
         for (auto iter = _vectors.begin(); iter != _vectors.end(); ++iter) {
@@ -254,19 +259,31 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
             do {
                 switch (iter->_type) {
                 case ASC_DOCID:
-                    vespalib::serializeForSort<vespalib::convertForSort<uint32_t, true> >(hits[i].getDocId(), mySortData);
-                    written = sizeof(hits->_docId);
+                    if (_metaStore) {
+                        _metaStore->getGidEvenIfMoved(hits[i].getDocId(), gid);
+                        serializeForSort<convertForSort<uint64_t, true> >(*reinterpret_cast<const uint64_t *>(gid.get()), mySortData);
+                        written = sizeof(uint64_t);
+                    } else {
+                        serializeForSort<convertForSort<uint32_t, true> >(hits[i].getDocId(), mySortData);
+                        written = sizeof(hits->_docId);
+                    }
                     break;
                 case DESC_DOCID:
-                    vespalib::serializeForSort<vespalib::convertForSort<uint32_t, false> >(hits[i].getDocId(), mySortData);
-                    written = sizeof(hits->_docId);
+                    if (_metaStore) {
+                        _metaStore->getGidEvenIfMoved(hits[i].getDocId(), gid);
+                        serializeForSort<convertForSort<uint64_t, false> >(*reinterpret_cast<const uint64_t *>(gid.get()), mySortData);
+                        written = sizeof(uint64_t);
+                    } else {
+                        serializeForSort<convertForSort<uint32_t, false> >(hits[i].getDocId(), mySortData);
+                        written = sizeof(hits->_docId);
+                    }
                     break;
                 case ASC_RANK:
-                    vespalib::serializeForSort<vespalib::convertForSort<search::HitRank, true> >(hits[i]._rankValue, mySortData);
+                    serializeForSort<convertForSort<search::HitRank, true> >(hits[i]._rankValue, mySortData);
                     written = sizeof(hits->_rankValue);
                     break;
                 case DESC_RANK:
-                    vespalib::serializeForSort<vespalib::convertForSort<search::HitRank, false> >(hits[i]._rankValue, mySortData);
+                    serializeForSort<convertForSort<search::HitRank, false> >(hits[i]._rankValue, mySortData);
                     written = sizeof(hits->_rankValue);
                     break;
                 case ASC_VECTOR:
@@ -295,14 +312,14 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
 }
 
 
-FastS_SortSpec::FastS_SortSpec(const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method) :
+FastS_SortSpec::FastS_SortSpec(const search::IDocumentMetaStore * metaStore, const Doom & doom, const ConverterFactory & ucaFactory, int method) :
+    _metaStore(metaStore),
     _doom(doom),
     _ucaFactory(ucaFactory),
     _method(method),
     _sortSpec(),
     _vectors()
-{
-}
+{ }
 
 
 FastS_SortSpec::~FastS_SortSpec()
@@ -312,7 +329,7 @@ FastS_SortSpec::~FastS_SortSpec()
 
 
 bool
-FastS_SortSpec::Init(const vespalib::string & sortStr, IAttributeContext & vecMan)
+FastS_SortSpec::Init(const string & sortStr, IAttributeContext & vecMan)
 {
     LOG(spam, "sortStr = %s", sortStr.c_str());
     bool retval(true);
@@ -489,7 +506,7 @@ FastS_SortSpec::sortResults(RankedHit a[], uint32_t n, uint32_t topn)
     } else if (_method == 1) {
         std::sort(sortData, sortData + n, StdSortDataCompare(&_binarySortData[0]));
     } else {
-        vespalib::Array<uint32_t> radixScratchPad(n, Alloc::alloc(0, MMAP_LIMIT));
+        Array<uint32_t> radixScratchPad(n, Alloc::alloc(0, MMAP_LIMIT));
         search::radix_sort(SortDataRadix(&_binarySortData[0]), StdSortDataCompare(&_binarySortData[0]), SortDataEof(), 1, sortData, n, &radixScratchPad[0], 0, 96, topn);
     }
     for (uint32_t i(0), m(_sortDataArray.size()); i < m; ++i) {

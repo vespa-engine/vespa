@@ -28,8 +28,7 @@ struct DocumentMetaData {
           bucketId(),
           gid(),
           removed(false)
-    {
-    }
+    { }
 
     DocumentMetaData(DocId lid_,
                      storage::spi::Timestamp timestamp_,
@@ -40,8 +39,7 @@ struct DocumentMetaData {
           bucketId(bucketId_),
           gid(gid_),
           removed(false)
-    {
-    }
+    { }
 
     DocumentMetaData(DocId lid_,
                      storage::spi::Timestamp timestamp_,
@@ -53,8 +51,7 @@ struct DocumentMetaData {
           bucketId(bucketId_),
           gid(gid_),
           removed(removed_)
-    {
-    }
+    { }
 
     bool valid() const {
         return lid != 0 && timestamp != 0 && bucketId.isSet();

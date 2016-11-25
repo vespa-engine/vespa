@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("multilevelsort_test");
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -14,6 +12,8 @@ LOG_SETUP("multilevelsort_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <map>
 #include <sstream>
+#include <vespa/log/log.h>
+LOG_SETUP("multilevelsort_test");
 
 using namespace search;
 
@@ -253,7 +253,7 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
     vespalib::Clock clock;
     vespalib::Doom doom(clock, std::numeric_limits<long>::max());
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec sorter(doom, ucaFactory, _sortMethod);
+    FastS_SortSpec sorter(nullptr, doom, ucaFactory, _sortMethod);
     // init sorter with sort data
     for(uint32_t i = 0; i < spec.size(); ++i) {
         AttributeGuard ag;
