@@ -37,6 +37,7 @@ public class Ranking implements Cloneable {
     public static final String QUERYCACHE = "queryCache";
     public static final String MATCH_PHASE = "matchPhase";
     public static final String DIVERSITY = "diversity";
+    public static final String SOFTTIMEOUT = "softtimeout";
     public static final String FEATURES = "features";
     public static final String PROPERTIES = "properties";
 
@@ -81,6 +82,8 @@ public class Ranking implements Cloneable {
     private RankFeatures rankFeatures = new RankFeatures();
 
     private MatchPhase matchPhase = new MatchPhase();
+
+    private SoftTimeout softTimeout = new SoftTimeout();
 
     public Ranking(Query parent) {
         this.parent = parent;
@@ -169,6 +172,9 @@ public class Ranking implements Cloneable {
     /** Returns the match phase rank settings of this. This is never null. */
     public MatchPhase getMatchPhase() { return matchPhase; }
 
+    /** Returns the soft timeout settings of this. This is never null. */
+    public SoftTimeout getSoftTimeout() { return softTimeout; }
+
     @Override
     public Object clone() {
         try {
@@ -179,6 +185,7 @@ public class Ranking implements Cloneable {
             clone.rankProperties = this.rankProperties.clone();
             clone.rankFeatures = this.rankFeatures.clone();
             clone.matchPhase = this.matchPhase.clone();
+            clone.softTimeout = this.softTimeout.clone();
             return clone;
         }
         catch (CloneNotSupportedException e) {
@@ -208,6 +215,7 @@ public class Ranking implements Cloneable {
         hash += 11 * rankFeatures.hashCode();
         hash += 13 * rankProperties.hashCode();
         hash += 17 * matchPhase.hashCode();
+        hash += 19 * softTimeout.hashCode();
         return Ranking.class.hashCode() + QueryHelper.combineHash(sorting,location,profile,hash);
     }
 
@@ -232,6 +240,7 @@ public class Ranking implements Cloneable {
     public void prepare() {
         rankFeatures.prepare(rankProperties);
         matchPhase.prepare(rankProperties);
+        softTimeout.prepare(rankProperties);
         prepareNow(freshness);
     }
 
