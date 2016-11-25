@@ -42,8 +42,6 @@ template <typename B, typename M>
 void
 MultiValueAttribute<B, M>::applyAttributeChanges(DocumentValues & docValues)
 {
-    Histogram capacityNeeded = _mvMapping.getEmptyHistogram();
-
     // compute new values for each document with changes
     for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
         DocId doc = current->_doc;
@@ -125,24 +123,10 @@ MultiValueAttribute<B, M>::applyAttributeChanges(DocumentValues & docValues)
                 }
             }
         }
-
-        // update histogram
-        uint32_t maxValues = MultiValueMapping::maxValues();
-        if (newValues.size() < maxValues) {
-            capacityNeeded[newValues.size()] += 1;
-        } else {
-            capacityNeeded[maxValues] += 1;
-        }
-
         this->checkSetMaxValueCount(newValues.size());
 
         docValues.push_back(std::make_pair(doc, ValueVector()));
         docValues.back().second.swap(newValues);
-    }
-
-    if (!_mvMapping.enoughCapacity(capacityNeeded)) {
-        this->removeAllOldGenerations();
-        _mvMapping.performCompaction(capacityNeeded);
     }
 }
 

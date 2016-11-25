@@ -78,28 +78,24 @@ StringAttributeTest::checkCount(Attribute & vec, uint32_t doc, uint32_t valueCou
 void
 StringAttributeTest::testMultiValue()
 {
-    uint32_t numDocs = ArrayStr::MultiValueMapping::maxValues() + 1;
+    uint32_t numDocs = 16;
  
     { // Array String Attribute
-        ASSERT_TRUE(ArrayStr::MultiValueMapping::maxValues() == numDocs - 1);
         ArrayStr attr("a-string");
         testMultiValue(attr, numDocs);
     }
     { // Weighted Set String Attribute
-        ASSERT_TRUE(WeightedSetStr::MultiValueMapping::maxValues() == numDocs - 1);
         WeightedSetStr attr("ws-string",
                             Config(BasicType::STRING, CollectionType::WSET));
         testMultiValue(attr, numDocs);
     }
     { // Array String Posting Attribute
-        ASSERT_TRUE(ArrayStrPosting::MultiValueMapping::maxValues() == numDocs - 1);
         Config cfg(BasicType::STRING, CollectionType::ARRAY);
         cfg.setFastSearch(true);
         ArrayStrPosting attr("a-fs-string", cfg);
         testMultiValue(attr, numDocs);
     }
     { // Weighted Set String Posting Attribute
-        ASSERT_TRUE(WeightedSetStrPosting::MultiValueMapping::maxValues() == numDocs - 1);
         Config cfg(BasicType::STRING, CollectionType::WSET);
         cfg.setFastSearch(true);
         WeightedSetStrPosting attr("ws-fs-string", cfg);
@@ -183,11 +179,6 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
         EXPECT_TRUE(attr.getEnumStore().findIndex(uniqueStrings[i].c_str(), idx));
         uint32_t expectedUsers = numDocs - 1 - i;
         EXPECT_EQUAL(expectedUsers, attr.getEnumStore().getRefCount(idx));
-    }
-
-    typename Attribute::Histogram remaining = attr.getMultiValueMapping().getRemaining();
-    for (typename Attribute::Histogram::const_iterator it(remaining.begin()), mt(remaining.end()); it != mt; ++it) {
-        EXPECT_TRUE(it->second == 0);
     }
 
     // clear and insert new unique strings

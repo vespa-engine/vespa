@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/multivaluemapping.h>
 #include <vespa/searchlib/attribute/multivalueattribute.h>
 #include <vespa/searchlib/attribute/attributeiterators.h>
 #include <vespa/searchlib/query/query.h>
@@ -19,7 +18,7 @@ namespace search {
  * multi value mapping from MultiValueAttribute.
  *
  * B: Base class
- * M: MultiValueType (MultiValueMapping template argument)
+ * M: MultiValueType
  */
 template <typename B, typename M>
 class MultiValueNumericAttribute : public MultiValueAttribute<B, M>

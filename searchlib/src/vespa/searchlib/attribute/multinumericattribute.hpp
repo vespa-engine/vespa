@@ -138,7 +138,7 @@ MultiValueNumericAttribute<B, M>::onLoad()
     bool hasWeight(attrReader.hasWeight());
     size_t numDocs = attrReader.getNumIdx() - 1;
 
-    this->_mvMapping.prepareLoadFromMultiValue(attrReader);
+    this->_mvMapping.prepareLoadFromMultiValue();
     // set values
     std::vector<MultiValueType> values;
     B::setNumDocs(numDocs);
@@ -155,6 +155,7 @@ MultiValueNumericAttribute<B, M>::onLoad()
         setNewValues(doc, values);
         values.clear();
     }
+    this->_mvMapping.doneLoadFromMultiValue();
     return true;
 }
 
@@ -180,8 +181,7 @@ MultiValueNumericAttribute<B, M>::onInitSave()
 {
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
                                              takeGuard());
-    return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType,
-        typename M::Index>>
+    return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType>>
         (std::move(guard), this->createSaveTargetConfig(), this->_mvMapping);
 }
 

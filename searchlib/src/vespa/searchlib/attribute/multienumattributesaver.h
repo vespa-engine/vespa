@@ -12,13 +12,11 @@ namespace search {
  *
  * Template argument MultiValueT is either  multivalue::Value<ValueType> or
  * multivalue::WeightedValue<ValueType>
- * Template argument IndexT is either multivalue::Index32 or multivalue::Index64
  */
-template <typename MultiValueT, typename IndexT>
-class MultiValueEnumAttributeSaver : public MultiValueAttributeSaver<IndexT>
+template <typename MultiValueT>
+class MultiValueEnumAttributeSaver : public MultiValueAttributeSaver
 {
-    using Parent = MultiValueAttributeSaver<IndexT>;
-    using Index = IndexT;
+    using Parent = MultiValueAttributeSaver;
     using MultiValueType = MultiValueT;
     using ValueType = typename MultiValueType::ValueType;
     using GenerationHandler = vespalib::GenerationHandler;

@@ -77,7 +77,7 @@ MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
                                                    const AttributeVector::SearchContext::Params & params) const
 {
     std::unique_ptr<search::AttributeVector::SearchContext> sc;
-    sc.reset(new typename std::conditional<M::Value::_hasWeight,
+    sc.reset(new typename std::conditional<M::_hasWeight,
                                            SetPostingSearchContext,
                                            ArrayPostingSearchContext>::
              type(std::move(qTerm), params, *this));

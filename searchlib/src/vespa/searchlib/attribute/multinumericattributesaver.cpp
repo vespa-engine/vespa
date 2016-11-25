@@ -4,6 +4,7 @@
 #include "multinumericattributesaver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include "multivalueattributesaverutils.h"
+#include "multivalue.h"
 
 using vespalib::GenerationHandler;
 using search::multivalueattributesaver::CountWriter;
@@ -40,8 +41,8 @@ public:
 
 }
 
-template <typename MultiValueT, typename IndexT>
-MultiValueNumericAttributeSaver<MultiValueT, IndexT>::
+template <typename MultiValueT>
+MultiValueNumericAttributeSaver<MultiValueT>::
 MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
                                const IAttributeSaveTarget::Config &cfg,
                                const MultiValueMapping &mvMapping)
@@ -52,15 +53,15 @@ MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
 
 
 
-template <typename MultiValueT, typename IndexT>
-MultiValueNumericAttributeSaver<MultiValueT, IndexT>::
+template <typename MultiValueT>
+MultiValueNumericAttributeSaver<MultiValueT>::
 ~MultiValueNumericAttributeSaver()
 {
 }
 
-template <typename MultiValueT, typename IndexT>
+template <typename MultiValueT>
 bool
-MultiValueNumericAttributeSaver<MultiValueT, IndexT>::
+MultiValueNumericAttributeSaver<MultiValueT>::
 onSave(IAttributeSaveTarget &saveTarget)
 {
     CountWriter countWriter(saveTarget);
@@ -77,53 +78,17 @@ onSave(IAttributeSaveTarget &saveTarget)
     return true;
 }
 
-template class MultiValueNumericAttributeSaver<multivalue::Value<int8_t>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int16_t>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int32_t>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int64_t>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<float>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<double>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int8_t>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int16_t>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int32_t>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int64_t>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<float>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<double>,
-                                        multivalue::Index32>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int8_t>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int16_t>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int32_t>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int64_t>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<float>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<double>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int8_t>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int16_t>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int32_t>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int64_t>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<float>,
-                                        multivalue::Index64>;
-template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<double>,
-                                        multivalue::Index64>;
+template class MultiValueNumericAttributeSaver<multivalue::Value<int8_t>>;
+template class MultiValueNumericAttributeSaver<multivalue::Value<int16_t>>;
+template class MultiValueNumericAttributeSaver<multivalue::Value<int32_t>>;
+template class MultiValueNumericAttributeSaver<multivalue::Value<int64_t>>;
+template class MultiValueNumericAttributeSaver<multivalue::Value<float>>;
+template class MultiValueNumericAttributeSaver<multivalue::Value<double>>;
+template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int8_t>>;
+template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int16_t>>;
+template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int32_t>>;
+template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int64_t>>;
+template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<float>>;
+template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<double>>;
 
 }  // namespace search

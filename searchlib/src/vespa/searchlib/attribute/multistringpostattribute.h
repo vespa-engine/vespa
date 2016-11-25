@@ -16,7 +16,6 @@ namespace search {
  * B: EnumAttribute<StringAttribute>
  * T: multivalue::Value<EnumStoreBase::Index> (array) or
  *    multivalue::WeightedValue<EnumStoreBase::Index> (weighted set)
- * T specifies the type stored in the MultiValueMapping
  */
 template <typename B, typename T>
 class MultiValueStringPostingAttributeT
@@ -82,8 +81,6 @@ private:
     virtual void applyValueChanges(const DocIndices & docIndices, EnumStoreBase::IndexVector & unused);
 
 public:
-    typedef attribute::MultiValueMapping2Base::Histogram Histogram;
-
     MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                                       AttributeVector::Config(AttributeVector::BasicType::STRING,
                                                               attribute::CollectionType::ARRAY));
@@ -114,10 +111,8 @@ public:
     }
 };
 
-typedef MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::Value<EnumStoreBase::Index>,  multivalue::Index32> > ArrayStringPostingAttribute;
-typedef MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::WeightedValue<EnumStoreBase::Index>,  multivalue::Index32> > WeightedSetStringPostingAttribute;
-typedef MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::Value<EnumStoreBase::Index>,  multivalue::Index64> > HugeArrayStringPostingAttribute;
-typedef MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::WeightedValue<EnumStoreBase::Index>,  multivalue::Index64> > HugeWeightedSetStringPostingAttribute;
+typedef MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> > ArrayStringPostingAttribute;
+typedef MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> > WeightedSetStringPostingAttribute;
 
 } // namespace search
 

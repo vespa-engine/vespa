@@ -48,23 +48,6 @@ public:
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc);
     uint32_t size() const { return _indices.size(); }
 
-    // Mockups to temporarily silence code written for old multivalue mapping
-    class Histogram
-    {
-    private:
-        using HistogramM = vespalib::hash_map<uint32_t, size_t>;
-    public:
-        using const_iterator = HistogramM::const_iterator;
-        Histogram() : _histogram() { _histogram.insert({0, 0}); }
-        size_t & operator [] (uint32_t) { return _histogram[0u]; }
-        const_iterator begin() const { return _histogram.begin(); }
-        const_iterator   end() const { return _histogram.end(); }
-    private:
-        HistogramM _histogram;
-    };
-    Histogram getEmptyHistogram() const { return Histogram(); }
-    Histogram getRemaining() const { return Histogram(); }
-    static size_t maxValues() { return 0; }
     uint32_t getNumKeys() const { return _indices.size(); }
     uint32_t getCapacityKeys() const { return _indices.capacity(); }
     virtual void compactWorst() = 0;
