@@ -37,9 +37,8 @@ public class NodeAclResponse extends HttpResponse {
     }
 
     private void toSlime(String hostname, Cursor object) {
-        Node node = nodeRepository.getNode(hostname)
+        final Node node = nodeRepository.getNode(hostname)
                 .orElseThrow(() -> new IllegalArgumentException("No node with hostname '" + hostname + "'"));
-
         toSlime(nodeRepository.getTrustedNodes(node), object.setArray("trustedNodes"));
     }
 
@@ -47,7 +46,7 @@ public class NodeAclResponse extends HttpResponse {
         trustedNodes.forEach(node -> {
             Cursor object = array.addObject();
             object.setString("hostname", node.hostname());
-            object.setString("ipAddress", node.ipAddress().get());
+            object.setString("ipAddress", node.ipAddress());
         });
     }
 

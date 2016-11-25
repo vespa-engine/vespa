@@ -24,10 +24,7 @@ import java.util.Optional;
 public final class Node {
 
     private final String id;
-
-    /** Ip address is not present in provisioned nodes but always present in other states */
-    private final Optional<String> ipAddress;
-
+    private final String ipAddress;
     private final String hostname;
     private final String openStackId;
     private final Optional<String> parentHostname;
@@ -40,21 +37,21 @@ public final class Node {
     private final History history;
 
     /** The current allocation of this node, if any */
-    private final Optional<Allocation> allocation;
+    private Optional<Allocation> allocation;
 
     /** Creates a node in the initial state (provisioned) */
-    public static Node create(String openStackId, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Node(openStackId, Optional.empty(), hostname, parentHostname, flavor, Status.initial(), State.provisioned,
+    public static Node create(String openStackId, String ipAddress, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return new Node(openStackId, ipAddress, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
                         Optional.empty(), History.empty(), type);
     }
 
     /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
-    private Node(String openStackId, Optional<String> ipAddress, String hostname, Optional<String> parentHostname,
+    private Node(String openStackId, String ipAddress, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Allocation allocation, History history, NodeType type) {
         this(openStackId, ipAddress, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
     }
 
-    public Node(String openStackId, Optional<String> ipAddress, String hostname, Optional<String> parentHostname,
+    public Node(String openStackId, String ipAddress, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation,
                 History history, NodeType type) {
         Objects.requireNonNull(openStackId, "A node must have an openstack id");
@@ -67,6 +64,7 @@ public final class Node {
         Objects.requireNonNull(allocation, "A null node allocation is not permitted");
         Objects.requireNonNull(history, "A null node history is not permitted");
         Objects.requireNonNull(type, "A null node type is not permitted");
+
         this.id = hostname;
         this.ipAddress = ipAddress;
         this.hostname = hostname;
@@ -86,8 +84,8 @@ public final class Node {
      */
     public String id() { return id; }
 
-    /** Returns the IP address of this node, or empty if this node has never been ready */
-    public Optional<String> ipAddress() { return ipAddress; }
+    /** Returns the IP address of this node */
+    public String ipAddress() { return ipAddress; }
 
     /** Returns the host name of this node */
     public String hostname() { return hostname; }
@@ -116,11 +114,6 @@ public final class Node {
 
     /** Returns a history of the last events happening to this node */
     public History history() { return history; }
-    
-    public Node withIpAddress(String ipAddress) {
-        return new Node(openStackId, Optional.of(ipAddress), hostname, parentHostname, flavor, status, state, 
-                        allocation, history, type);
-    }
 
     /**
      * Returns a copy of this node which is retired by the application owning it.
@@ -146,7 +139,7 @@ public final class Node {
 
     /** Returns a copy of this with the current restart generation set to generation */
     public Node withRestart(Generation generation) {
-        Optional<Allocation> allocation = this.allocation;
+        final Optional<Allocation> allocation = this.allocation;
         if ( ! allocation.isPresent())
             throw new IllegalArgumentException("Cannot set restart generation for  " + hostname() + ": The node is unallocated");
 

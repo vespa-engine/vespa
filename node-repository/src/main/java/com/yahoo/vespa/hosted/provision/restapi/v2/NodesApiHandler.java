@@ -192,10 +192,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private Node createNode(Inspector inspector) {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
+        Optional<String> ipAddress = optionalString(inspector.field("ipAddress"));
 
         return nodeRepository.createNode(
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
+                ipAddress,
                 parentHostname,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
                 nodeTypeFromSlime(inspector.field(nodeTypeKey)));
