@@ -21,4 +21,7 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
         super(docs, nodes, full, resultSets);
     }
 
+    public Coverage setSoonActive(long soonActive) { this.soonActive = soonActive; return this; }
+    public Coverage setDegradedReason(int degradedReason) { this.degradedReason = degradedReason; return this; }
+
 }
