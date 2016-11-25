@@ -22,9 +22,10 @@ public class L1Normalize extends CompositeTensorFunction {
     @Override
     public PrimitiveTensorFunction toPrimitive() {
         TensorFunction primitiveArgument = argument.toPrimitive();
+        // join(x, reduce(x, "avg", "dimension"), f(x,y) (x / y))
         return new Join(primitiveArgument,
                         new Reduce(primitiveArgument, Reduce.Aggregator.avg, dimension),
-                        ScalarFunctions.multiply());
+                        ScalarFunctions.divide());
     }
     
     @Override

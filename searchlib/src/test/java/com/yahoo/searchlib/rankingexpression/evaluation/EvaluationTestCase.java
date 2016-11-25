@@ -212,6 +212,8 @@ public class EvaluationTestCase extends junit.framework.TestCase {
                         "min(tensor0, tensor1)", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
         assertEvaluates("{ {x:1,y:1,z:1}:7, {x:1,y:1,z:2}:13, {x:2,y:1,z:1}:21, {x:2,y:1,z:2}:39, {x:1,y:2,z:1}:55 }",
                         "tensor0 * tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
+        assertEvaluates("{ {x:1,y:2,z:1}:35, {x:1,y:2,z:2}:65 }",
+                        "tensor0 * tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:2,z:1}:7, {y:3,z:1}:11, {y:2,z:2}:13 }");
         assertEvaluates("{{x:1,y:1}:0.0}","tensor1 * tensor2 * tensor3", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1,y:1}:1 }", "{ {x:1,y:1}:1 }");
         assertEvaluates("{ {}:50, {d1:l1}:500, {d1:l1,d2:l1}:5000 }",
                         "5 * tensor0", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
@@ -252,7 +254,7 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         // random
         
         // composite functions
-        assertEvaluates("{ {x:1}:1.5, {x:2}:3.0 }", "l1_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:2 }", "l1_normalize(tensor0, x)", "{ {x:1}:0, {x:2}:1 }");
         assertEvaluates("{ {x:1}:0.04, {x:2}:0.08 }", "l2_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:2 }");
         assertEvaluates("{ {y:1}:81.0 }", "matmul(tensor0, tensor1, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }");
         assertEvaluates("{ {x:1}:0.5, {x:2}:0.5 }", "softmax(tensor0, x)", "{ {x:1}:1, {x:2}:1 }", "{ {y:1}:1 }");

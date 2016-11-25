@@ -23,7 +23,7 @@ public class L2Normalize extends CompositeTensorFunction {
     public PrimitiveTensorFunction toPrimitive() {
         TensorFunction primitiveArgument = argument.toPrimitive();
         return new Join(primitiveArgument,
-                        new Map(new Reduce(new Map(primitiveArgument, ScalarFunctions.square()),
+                        new Map(new Reduce(new Map(primitiveArgument, ScalarFunctions.sqrt()),
                                            Reduce.Aggregator.sum,
                                            dimension),
                                 ScalarFunctions.square()),

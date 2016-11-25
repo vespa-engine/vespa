@@ -16,6 +16,7 @@ public class ScalarFunctions {
     public static DoubleBinaryOperator multiply() { return new Multiplication(); }
     public static DoubleBinaryOperator divide() { return new Division(); }
     public static DoubleUnaryOperator square() { return new Square(); }
+    public static DoubleUnaryOperator sqrt() { return new Square(); }
     public static DoubleUnaryOperator exp() { return new Exponent(); }
 
     public static class Addition implements DoubleBinaryOperator {
@@ -54,6 +55,16 @@ public class ScalarFunctions {
 
         @Override
         public String toString() { return "f(a)(a * a)"; }
+
+    }
+
+    public static class Sqrt implements DoubleUnaryOperator {
+
+        @Override
+        public double applyAsDouble(double operand) { return operand * operand; }
+
+        @Override
+        public String toString() { return "f(a)(sqrt(a))"; }
 
     }
 
