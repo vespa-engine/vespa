@@ -255,7 +255,7 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         
         // composite functions
         assertEvaluates("{ {x:1}:0, {x:2}:2 }", "l1_normalize(tensor0, x)", "{ {x:1}:0, {x:2}:1 }");
-        assertEvaluates("{ {x:1}:0.04, {x:2}:0.08 }", "l2_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:2 }");
+        assertEvaluates("{ {x:1}:0, {x:2}:1 }", "l2_normalize(tensor0, x)", "{ {x:1}:0, {x:2}:1 }");
         assertEvaluates("{ {y:1}:81.0 }", "matmul(tensor0, tensor1, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }");
         assertEvaluates("{ {x:1}:0.5, {x:2}:0.5 }", "softmax(tensor0, x)", "{ {x:1}:1, {x:2}:1 }", "{ {y:1}:1 }");
         assertEvaluates("{ {x:1,y:1}:88.0 }", "xw_plus_b(tensor0, tensor1, tensor2, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }", "{ {x:1}:7 }");

@@ -22,7 +22,6 @@ public class Softmax extends CompositeTensorFunction {
     @Override
     public PrimitiveTensorFunction toPrimitive() {
         TensorFunction primitiveArgument = argument.toPrimitive();
-        // join(map(t, f(x)(exp(x))), reduce(map(t, f(x)(exp(x))), "sum", "dimension"), f(x,y)(x / y))
         return new Join(new Map(primitiveArgument, ScalarFunctions.exp()),
                         new Reduce(new Map(primitiveArgument, ScalarFunctions.exp()),
                                    Reduce.Aggregator.sum,
