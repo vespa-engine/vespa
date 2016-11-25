@@ -25,7 +25,8 @@ struct Fixture
         _filter.setMemoryStats(vespalib::ProcessMemoryStats(10000000,
                                                             10000001,
                                                             10000002,
-                                                            10000003));
+                                                            10000003,
+                                                            42));
     }
 
     void testWrite(const vespalib::string &exp) {
@@ -51,7 +52,8 @@ struct Fixture
         _filter.setMemoryStats(vespalib::ProcessMemoryStats(58720259,
                                                             58720258,
                                                             58720257,
-                                                            58720256));
+                                                            58720256,
+                                                            43));
     }
 };
 
@@ -62,6 +64,12 @@ TEST_F("Check that default filter allows write", Fixture)
     f.testWrite("");
 }
 
+TEST_F("Check that stats are wired through", Fixture)
+{
+    EXPECT_EQUAL(42, f._filter.getMemoryStats().getMappingsCount());
+    f.triggerMemoryLimit();
+    EXPECT_EQUAL(43, f._filter.getMemoryStats().getMappingsCount());
+}
 
 TEST_F("Check that disk limit can be reached", Fixture)
 {

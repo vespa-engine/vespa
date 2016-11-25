@@ -90,38 +90,37 @@ ProcessMemoryStats::ProcessMemoryStats()
     : _mapped_virt(0),
       _mapped_rss(0),
       _anonymous_virt(0),
-      _anonymous_rss(0)
+      _anonymous_rss(0),
+      _mappings_count(0)
 {
 }
-
 
 ProcessMemoryStats::ProcessMemoryStats(uint64_t mapped_virt,
                                        uint64_t mapped_rss,
                                        uint64_t anonymous_virt,
-                                       uint64_t anonymous_rss)
+                                       uint64_t anonymous_rss,
+                                       uint64_t mappings_cnt)
     : _mapped_virt(mapped_virt),
       _mapped_rss(mapped_rss),
       _anonymous_virt(anonymous_virt),
-      _anonymous_rss(anonymous_rss)
+      _anonymous_rss(anonymous_rss),
+      _mappings_count(mappings_cnt)
 {
 }
-
 
 ProcessMemoryStats
 ProcessMemoryStats::create()
 {
+    ProcessMemoryStats ret;
     std::ifstream smaps("/proc/self/smaps");
     std::string line;
     std::string lineHeader;
     bool anonymous = true;
-    uint64_t mapped_virt = 0;
-    uint64_t mapped_rss = 0;
-    uint64_t anonymous_virt = 0;
-    uint64_t anonymous_rss = 0;
     uint64_t lineVal = 0;
     while (smaps.good()) {
         std::getline(smaps, line);
         if (isRange(line)) {
+            ret._mappings_count += 1;
             anonymous = isAnonymous(line);
         } else if (!line.empty()) {
             lineHeader = getLineHeader(line);
@@ -129,21 +128,20 @@ ProcessMemoryStats::create()
             is >> lineVal;
             if (lineHeader == "Size") {
                 if (anonymous) {
-                    anonymous_virt += lineVal * 1024;
+                    ret._anonymous_virt += lineVal * 1024;
                 } else {
-                    mapped_virt += lineVal * 1024;
+                    ret._mapped_virt += lineVal * 1024;
                 }
             } else if (lineHeader == "Rss") {
                 if (anonymous) {
-                    anonymous_rss += lineVal * 1024;
+                    ret._anonymous_rss += lineVal * 1024;
                 } else {
-                    mapped_rss += lineVal * 1024;
+                    ret._mapped_rss += lineVal * 1024;
                 }
             }
         }
     }
-    return ProcessMemoryStats(mapped_virt, mapped_rss,
-                              anonymous_virt, anonymous_rss);
+    return ret;
 }
 
 } // namespace vespalib

@@ -942,6 +942,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         const DiskMemUsageFilter &usageFilter = _diskMemUsageSampler->writeFilter();
         metrics.resourceUsage.disk.set(usageFilter.getDiskUsedRatio());
         metrics.resourceUsage.memory.set(usageFilter.getMemoryUsedRatio());
+        metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
     }
     {

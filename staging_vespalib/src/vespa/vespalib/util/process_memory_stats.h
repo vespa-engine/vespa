@@ -14,16 +14,20 @@ class ProcessMemoryStats
     uint64_t _mapped_rss;  // resident size
     uint64_t _anonymous_virt; // virtual size
     uint64_t _anonymous_rss;  // resident size
+    uint64_t _mappings_count; // number of mappings
+                              // (limited by sysctl vm.max_map_count)
 
 public:
     ProcessMemoryStats();
-    ProcessMemoryStats(uint64_t mapped_virt, uint64_t mapped_rss,
-                       uint64_t anonymous_virt, uint64_t anonymous_rss);
     static ProcessMemoryStats create(); // based on /proc/self/smaps
     uint64_t getMappedVirt() const { return _mapped_virt; }
     uint64_t getMappedRss() const { return _mapped_rss; }
     uint64_t getAnonymousVirt() const { return _anonymous_virt; }
     uint64_t getAnonymousRss() const { return _anonymous_rss; }
+    uint64_t getMappingsCount() const { return _mappings_count; }
+
+    /** for unit tests only */
+    ProcessMemoryStats(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
 };
 
 } // namespace vespalib
