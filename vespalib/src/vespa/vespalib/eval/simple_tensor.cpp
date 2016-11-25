@@ -386,7 +386,7 @@ SimpleTensor::SimpleTensor(const ValueType &type_in, Cells &&cells_in)
 std::unique_ptr<SimpleTensor>
 SimpleTensor::reduce(const BinaryOperation &op, const std::vector<vespalib::string> &dimensions) const
 {
-    ValueType result_type = _type.remove_dimensions(dimensions);
+    ValueType result_type = _type.reduce(dimensions);
     Builder builder(result_type);
     IndexList selector = TypeAnalyzer(_type, result_type).overlap_a;
     View view(*this, selector);
