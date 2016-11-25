@@ -177,6 +177,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request,
     double factor = 0.95;
     if (softTimeoutEnabled) {
         factor = Factor::lookup(feature_overrides, _stats.softDoomFactor());
+        LOG(info, "Enabling soft-timeout computed factor=%1.3f, used factor=%1.3f", _stats.softDoomFactor(), factor);
     }
     uint64_t safeLeft = request.getTimeLeft() * factor;
     fastos::TimeStamp safeDoom(fastos::ClockSystem::now() + safeLeft);
@@ -290,6 +291,7 @@ Matcher::match(const SearchRequest &request,
         vespalib::LockGuard guard(_statsLock);
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
+            LOG(info, "Triggered softtimeout limit=%1.3f and duration=%1.3f", limit.sec(), duration.sec());
             _stats.updatesoftDoomFactor(limit, duration);
         }
     }
