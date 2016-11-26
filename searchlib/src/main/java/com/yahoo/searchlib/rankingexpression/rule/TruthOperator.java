@@ -15,7 +15,8 @@ public enum TruthOperator  implements Serializable {
     EQUAL("==")  { public boolean evaluate(double x, double y) { return x==y; } },
     APPROX_EQUAL("~=") { public boolean evaluate(double x, double y) { return approxEqual(x,y); } },
     LARGER(">")   { public boolean evaluate(double x, double y) { return x>y; } },
-    LARGEREQUAL(">=")  { public boolean evaluate(double x, double y) { return x>=y; } };
+    LARGEREQUAL(">=")  { public boolean evaluate(double x, double y) { return x>=y; } },
+    NOTEQUAL("!=")  { public boolean evaluate(double x, double y) { return x!=y; } };
 
     private final String operatorString;
 
