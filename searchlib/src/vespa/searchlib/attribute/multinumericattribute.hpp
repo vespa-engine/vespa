@@ -70,7 +70,7 @@ MultiValueNumericAttribute<B, M>::onCommit()
 template <typename B, typename M>
 void MultiValueNumericAttribute<B, M>::onUpdateStat()
 {
-    MemoryUsage usage = this->_mvMapping.updateMemoryUsage();
+    MemoryUsage usage = this->_mvMapping.updateStat();
     this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_mvMapping.getTotalValueCnt(), usage.allocatedBytes(),
                            usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());
 }

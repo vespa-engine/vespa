@@ -45,7 +45,7 @@ public:
 
     virtual void compactWorst() override;
 
-    AddressSpace getAddressSpaceUsage() const;
+    virtual AddressSpace getAddressSpaceUsage() const override;
     virtual MemoryUsage getArrayStoreMemoryUsage() const override;
 
     static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
