@@ -213,7 +213,7 @@ ArrayStore<EntryT, RefT>::addressSpaceUsage() const
 {
     uint32_t numPossibleBuffers = RefT::numBuffers();
     assert(_store.getNumActiveBuffers() <= numPossibleBuffers);
-    return AddressSpace(_store.getNumActiveBuffers(), numPossibleBuffers);
+    return AddressSpace(_store.getNumActiveBuffers(), 0, numPossibleBuffers);
 }
 
 template <typename EntryT, typename RefT>
