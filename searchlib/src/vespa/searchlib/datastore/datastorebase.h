@@ -7,6 +7,7 @@
 #include "bufferstate.h"
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/searchlib/util/memoryusage.h>
+#include <vespa/searchlib/common/address_space.h>
 
 namespace search {
 namespace datastore {
@@ -231,6 +232,8 @@ public:
     void switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded);
 
     MemoryUsage getMemoryUsage() const;
+
+    AddressSpace getAddressSpaceUsage() const;
 
     /**
      * Get active buffer id for the given type id.

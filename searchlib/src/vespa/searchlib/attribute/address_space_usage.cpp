@@ -25,7 +25,7 @@ AddressSpaceUsage::defaultEnumStoreUsage()
 AddressSpace
 AddressSpaceUsage::defaultMultiValueUsage()
 {
-    return AddressSpace(0, 0, 8192);
+    return AddressSpace(0, 0, (1ull << 32));
 }
 
 } // namespace search

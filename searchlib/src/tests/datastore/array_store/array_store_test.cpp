@@ -255,13 +255,16 @@ TEST_F("require that used, onHold and dead memory usage is tracked for large arr
                                     dead(f.largeArraySize())));
 }
 
-TEST_F("require that address space usage is ratio between active buffers and number of possible buffers", NumberFixture(3))
+TEST_F("require that address space usage is ratio between used clusters and number of possible clusters", NumberFixture(3))
 {
     f.add({2,2});
     f.add({4,4,4});
-    // All buffer types occupy 1 buffer each
-    EXPECT_EQUAL(4.0, f.store.addressSpaceUsage().used());
-    EXPECT_EQUAL(F1::EntryRefType::numBuffers(), f.store.addressSpaceUsage().limit());
+    // 1 cluster is reserved (buffer 0, offset 0).
+    EXPECT_EQUAL(3, f.store.addressSpaceUsage().used());
+    EXPECT_EQUAL(1, f.store.addressSpaceUsage().dead());
+    size_t fourgig = (1ull << 32);
+    EXPECT_EQUAL(static_cast<double>(2)/ fourgig, f.store.addressSpaceUsage().usage());
+    EXPECT_EQUAL(fourgig, f.store.addressSpaceUsage().limit());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

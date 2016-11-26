@@ -8,7 +8,6 @@
 #include "datastore.h"
 #include "entryref.h"
 #include "i_compaction_context.h"
-#include <vespa/searchlib/common/address_space.h>
 #include <vespa/vespalib/util/array.h>
 #include <unordered_map>
 
