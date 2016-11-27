@@ -23,6 +23,10 @@ public class SoftTimeoutTestCase {
         assertTrue(query.getRanking().getSoftTimeout().getEnable());
         assertEquals(Double.valueOf(0.7), query.getRanking().getSoftTimeout().getFactor());
         assertEquals(Double.valueOf(0.3), query.getRanking().getSoftTimeout().getTailcost());
+        query.prepare();
+        assertEquals("true", query.getRanking().getProperties().get("vespa.softtimeout.enable").get(0));
+        assertEquals("0.7", query.getRanking().getProperties().get("vespa.softtimeout.factor").get(0));
+        assertEquals("0.3", query.getRanking().getProperties().get("vespa.softtimeout.tailcost").get(0));
     }
 
     private void verifyException(String key, String value) {
