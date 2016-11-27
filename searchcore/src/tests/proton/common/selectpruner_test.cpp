@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("selectpruner_test");
-
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/repo/configbuilder.h>
@@ -11,8 +8,10 @@ LOG_SETUP("selectpruner_test");
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("selectpruner_test");
 
-using search::index::Schema;
+using namespace search::index;
 using document::DocumentTypeRepo;
 using document::DocumentType;
 using document::select::Node;
@@ -38,12 +37,12 @@ namespace
 void
 makeSchema(Schema &s)
 {
-    s.addIndexField(Schema::IndexField("ia", Schema::STRING));
-    s.addAttributeField(Schema::AttributeField("aa", Schema::INT32));
-    s.addAttributeField(Schema::AttributeField("aaa", Schema::INT32,
-                                               Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("aaw", Schema::INT32,
-                                               Schema::WEIGHTEDSET));
+    s.addIndexField(Schema::IndexField("ia", schema::STRING));
+    s.addAttributeField(Schema::AttributeField("aa", schema::INT32));
+    s.addAttributeField(Schema::AttributeField("aaa", schema::INT32,
+                                               schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("aaw", schema::INT32,
+                                               schema::WEIGHTEDSET));
 }
 
 const int32_t doc_type_id = 787121340;
