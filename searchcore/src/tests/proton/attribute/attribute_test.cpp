@@ -142,10 +142,10 @@ struct Fixture
 TEST_F("require that attribute adapter handles put", Fixture)
 {
     Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", Schema::INT32, Schema::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a2", Schema::INT32, Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("a3", Schema::FLOAT, Schema::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a4", Schema::STRING, Schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a1", schema::INT32, schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a2", schema::INT32, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("a3", schema::FLOAT, schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a4", schema::STRING, schema::SINGLE));
 
     DocBuilder idb(s);
 
@@ -236,8 +236,7 @@ TEST_F("require that attribute adapter handles put", Fixture)
 TEST_F("require that attribute adapter handles predicate put", Fixture)
 {
     Schema s;
-    s.addAttributeField(
-            Schema::AttributeField("a1", Schema::BOOLEANTREE, Schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a1", schema::BOOLEANTREE, schema::SINGLE));
     DocBuilder idb(s);
 
     proton::AttributeManager & am = *f._m;
@@ -285,8 +284,8 @@ TEST_F("require that attribute adapter handles remove", Fixture)
     AttributeVector::SP a1 = f.addAttribute("a1");
     AttributeVector::SP a2 = f.addAttribute("a2");
     Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", Schema::INT32, Schema::SINGLE));
-    s.addAttributeField(Schema::AttributeField("a2", Schema::INT32, Schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a1", schema::INT32, schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a2", schema::INT32, schema::SINGLE));
 
     DocBuilder idb(s);
 
@@ -323,7 +322,7 @@ TEST_F("require that visibilitydelay is honoured", Fixture)
                                              AVConfig(AVBasicType::STRING),
                                              createSerialNum);
     Schema s;
-    s.addAttributeField(Schema::AttributeField("a1", Schema::STRING, Schema::SINGLE));
+    s.addAttributeField(Schema::AttributeField("a1", schema::STRING, schema::SINGLE));
     DocBuilder idb(s);
     EXPECT_EQUAL(1u, a1->getNumDocs());
     EXPECT_EQUAL(0u, a1->getStatus().getLastSyncToken());
@@ -373,7 +372,7 @@ TEST_F("require that attribute adapter handles predicate remove", Fixture)
                                              createSerialNum);
     Schema s;
     s.addAttributeField(
-            Schema::AttributeField("a1", Schema::BOOLEANTREE, Schema::SINGLE));
+            Schema::AttributeField("a1", schema::BOOLEANTREE, schema::SINGLE));
 
     DocBuilder idb(s);
     PredicateSlimeBuilder builder;
@@ -399,12 +398,8 @@ TEST_F("require that attribute adapter handles update", Fixture)
     fillAttribute(a2, 1, 20, 1);
 
     Schema schema;
-    schema.addAttributeField(Schema::AttributeField(
-                    "a1", Schema::INT32,
-                    Schema::SINGLE));
-    schema.addAttributeField(Schema::AttributeField(
-                    "a2", Schema::INT32,
-                    Schema::SINGLE));
+    schema.addAttributeField(Schema::AttributeField("a1", schema::INT32, schema::SINGLE));
+    schema.addAttributeField(Schema::AttributeField("a2", schema::INT32, schema::SINGLE));
     DocBuilder idb(schema);
     const document::DocumentType &dt(idb.getDocumentType());
     DocumentUpdate upd(dt, DocumentId("doc::1"));
@@ -441,9 +436,7 @@ TEST_F("require that attribute adapter handles predicate update", Fixture)
                                              AVConfig(AVBasicType::PREDICATE),
                                              createSerialNum);
     Schema schema;
-    schema.addAttributeField(Schema::AttributeField(
-                    "a1", Schema::BOOLEANTREE,
-                    Schema::SINGLE));
+    schema.addAttributeField(Schema::AttributeField("a1", schema::BOOLEANTREE, schema::SINGLE));
 
     DocBuilder idb(schema);
     PredicateSlimeBuilder builder;
@@ -587,8 +580,7 @@ createTensorAttribute(Fixture &f) {
 Schema
 createTensorSchema() {
     Schema schema;
-    schema.addAttributeField(Schema::AttributeField("a1", Schema::TENSOR,
-                                               Schema::SINGLE));
+    schema.addAttributeField(Schema::AttributeField("a1", schema::TENSOR, schema::SINGLE));
     return schema;
 }
 
