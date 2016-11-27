@@ -259,7 +259,7 @@ struct SchemaContext {
         schema(new Schema()),
         builder()
     {
-        schema->addIndexField(Schema::IndexField("i1", Schema::STRING, Schema::SINGLE));
+        schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
         builder.reset(new DocBuilder(*schema));
     }
     DocTypeName getDocType() const {
