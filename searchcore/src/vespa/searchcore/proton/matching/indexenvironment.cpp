@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.indexenvironment");
 #include "indexenvironment.h"
 
 #include <vespa/searchlib/fef/functiontablefactory.h>
@@ -18,9 +16,9 @@ namespace {
 
 search::fef::CollectionType convertCollectionType(search::index::Schema::CollectionType type) {
     switch (type) {
-    case search::index::Schema::SINGLE:      return search::fef::CollectionType::SINGLE;
-    case search::index::Schema::ARRAY:       return search::fef::CollectionType::ARRAY;
-    case search::index::Schema::WEIGHTEDSET: return search::fef::CollectionType::WEIGHTEDSET;
+    case search::index::schema::SINGLE:      return search::fef::CollectionType::SINGLE;
+    case search::index::schema::ARRAY:       return search::fef::CollectionType::ARRAY;
+    case search::index::schema::WEIGHTEDSET: return search::fef::CollectionType::WEIGHTEDSET;
     default:
         abort();
     }

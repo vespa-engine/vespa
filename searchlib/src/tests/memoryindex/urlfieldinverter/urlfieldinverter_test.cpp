@@ -3,8 +3,6 @@
 
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("urlfieldinverter_test");
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
 #include <vespa/searchlib/memoryindex/urlfieldinverter.h>
@@ -13,25 +11,16 @@ LOG_SETUP("urlfieldinverter_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 
-namespace search
-{
-
+namespace search {
 
 using document::Document;
-using index::DocBuilder;
-using index::DocTypeBuilder;
-using index::Schema;
+using namespace index;
 
-namespace memoryindex
-{
+
+namespace memoryindex {
 
 namespace {
 const vespalib::string url = "url";
-}
-
-
-namespace
-{
 
 Document::UP
 makeDoc10Single(DocBuilder &b)
@@ -200,8 +189,7 @@ struct Fixture
     makeSchema(Schema::CollectionType collectionType)
     {
         Schema schema;
-        schema.addUriIndexFields(Schema::IndexField("url", Schema::STRING,
-                                                    collectionType));
+        schema.addUriIndexFields(Schema::IndexField("url", index::schema::STRING, collectionType));
         return schema;
     }
 
@@ -258,7 +246,7 @@ struct Fixture
 };
 
 
-TEST_F("requireThatSingleUrlFieldWorks", Fixture(Schema::SINGLE))
+TEST_F("requireThatSingleUrlFieldWorks", Fixture(schema::SINGLE))
 {
     f.invertDocument(10, *makeDoc10Single(f._b));
     f.pushDocuments();
@@ -297,7 +285,7 @@ TEST_F("requireThatSingleUrlFieldWorks", Fixture(Schema::SINGLE))
 }
 
 
-TEST_F("requireThatArrayUrlFieldWorks", Fixture(Schema::ARRAY))
+TEST_F("requireThatArrayUrlFieldWorks", Fixture(schema::ARRAY))
 {
     f.invertDocument(10, *makeDoc10Array(f._b));
     f.pushDocuments();
@@ -340,7 +328,7 @@ TEST_F("requireThatArrayUrlFieldWorks", Fixture(Schema::ARRAY))
                  f._inserter.toStr());
 }
 
-TEST_F("requireThatWeightedSetFieldWorks", Fixture(Schema::WEIGHTEDSET))
+TEST_F("requireThatWeightedSetFieldWorks", Fixture(schema::WEIGHTEDSET))
 {
     f.invertDocument(10, *makeDoc10WeightedSet(f._b));
     f.pushDocuments();
@@ -385,7 +373,7 @@ TEST_F("requireThatWeightedSetFieldWorks", Fixture(Schema::WEIGHTEDSET))
                  f._inserter.toStr());
 }
 
-TEST_F("requireThatAnnotatedSingleUrlFieldWorks", Fixture(Schema::SINGLE))
+TEST_F("requireThatAnnotatedSingleUrlFieldWorks", Fixture(schema::SINGLE))
 {
     f.enableAnnotations();
     f.invertDocument(10, *makeDoc10Single(f._b));
@@ -426,7 +414,7 @@ TEST_F("requireThatAnnotatedSingleUrlFieldWorks", Fixture(Schema::SINGLE))
 }
 
 
-TEST_F("requireThatAnnotatedArrayUrlFieldWorks", Fixture(Schema::ARRAY))
+TEST_F("requireThatAnnotatedArrayUrlFieldWorks", Fixture(schema::ARRAY))
 {
     f.enableAnnotations();
     f.invertDocument(10, *makeDoc10Array(f._b));
@@ -472,7 +460,7 @@ TEST_F("requireThatAnnotatedArrayUrlFieldWorks", Fixture(Schema::ARRAY))
 }
 
 TEST_F("requireThatAnnotatedWeightedSetFieldWorks",
-       Fixture(Schema::WEIGHTEDSET))
+       Fixture(schema::WEIGHTEDSET))
 {
     f.enableAnnotations();
     f._inserter.setVerbose();
@@ -521,7 +509,14 @@ TEST_F("requireThatAnnotatedWeightedSetFieldWorks",
 }
 
 
-TEST_F("requireThatEmptySingleFieldWorks", Fixture(Schema::SINGLE))
+TEST_F("requireThatEmptySingleFieldWorks", Fixture(schema::SINGLE))
+{
+    f.invertDocument(10, *makeDoc10Empty(f._b));
+    f.pushDocuments();
+    EXPECT_EQUAL("", f._inserter.toStr());
+}
+
+TEST_F("requireThatEmptyArrayFieldWorks", Fixture(schema::ARRAY))
 {
     f.invertDocument(10, *makeDoc10Empty(f._b));
     f.pushDocuments();
@@ -529,48 +524,35 @@ TEST_F("requireThatEmptySingleFieldWorks", Fixture(Schema::SINGLE))
                  f._inserter.toStr());
 }
 
-TEST_F("requireThatEmptyArrayFieldWorks", Fixture(Schema::ARRAY))
+TEST_F("requireThatEmptyWeightedSetFieldWorks", Fixture(schema::WEIGHTEDSET))
 {
     f.invertDocument(10, *makeDoc10Empty(f._b));
     f.pushDocuments();
-    EXPECT_EQUAL("",
-                 f._inserter.toStr());
+    EXPECT_EQUAL("", f._inserter.toStr());
 }
 
-TEST_F("requireThatEmptyWeightedSetFieldWorks", Fixture(Schema::WEIGHTEDSET))
-{
-    f.invertDocument(10, *makeDoc10Empty(f._b));
-    f.pushDocuments();
-    EXPECT_EQUAL("",
-                 f._inserter.toStr());
-}
-
-TEST_F("requireThatAnnotatedEmptySingleFieldWorks", Fixture(Schema::SINGLE))
+TEST_F("requireThatAnnotatedEmptySingleFieldWorks", Fixture(schema::SINGLE))
 {
     f.enableAnnotations();
     f.invertDocument(10, *makeDoc10Empty(f._b));
     f.pushDocuments();
-    EXPECT_EQUAL("",
-                 f._inserter.toStr());
+    EXPECT_EQUAL("", f._inserter.toStr());
 }
 
-TEST_F("requireThatAnnotatedEmptyArrayFieldWorks", Fixture(Schema::ARRAY))
+TEST_F("requireThatAnnotatedEmptyArrayFieldWorks", Fixture(schema::ARRAY))
 {
     f.enableAnnotations();
     f.invertDocument(10, *makeDoc10Empty(f._b));
     f.pushDocuments();
-    EXPECT_EQUAL("",
-                 f._inserter.toStr());
+    EXPECT_EQUAL("", f._inserter.toStr());
 }
 
-TEST_F("requireThatAnnotatedEmptyWeightedSetFieldWorks",
-       Fixture(Schema::WEIGHTEDSET))
+TEST_F("requireThatAnnotatedEmptyWeightedSetFieldWorks", Fixture(schema::WEIGHTEDSET))
 {
     f.enableAnnotations();
     f.invertDocument(10, *makeDoc10Empty(f._b));
     f.pushDocuments();
-    EXPECT_EQUAL("",
-                 f._inserter.toStr());
+    EXPECT_EQUAL("", f._inserter.toStr());
 }
 
 } // namespace memoryindex

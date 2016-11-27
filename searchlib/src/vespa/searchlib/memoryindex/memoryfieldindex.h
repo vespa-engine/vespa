@@ -35,22 +35,11 @@ public:
     struct WordKey {
         datastore::EntryRef _wordRef;
 
-        explicit WordKey(datastore::EntryRef wordRef)
-            : _wordRef(wordRef)
-        {
-        }
-
-        WordKey(void)
-            : _wordRef()
-        {
-        }
+        explicit WordKey(datastore::EntryRef wordRef) : _wordRef(wordRef) { }
+        WordKey() : _wordRef() { }
 
         friend vespalib::asciistream &
-        operator<<(vespalib::asciistream & os, const WordKey & rhs)
-        {
-            os << "wr(" << rhs._wordRef.ref() << ")";
-            return os;
-        }
+        operator<<(vespalib::asciistream & os, const WordKey & rhs);
     };
 
     class KeyComp {
@@ -71,8 +60,7 @@ public:
         KeyComp(const WordStore &wordStore, const vespalib::stringref word)
             : _wordStore(wordStore),
               _word(word)
-        {
-        }
+        { }
 
         bool
         operator()(const WordKey & lhs, const WordKey & rhs) const

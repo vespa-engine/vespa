@@ -3,11 +3,14 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vector>
+#include "datatype.h"
 
+namespace vespalib {
+    class asciistream;
+}
 namespace search {
 namespace index {
 
@@ -22,34 +25,9 @@ public:
     typedef std::shared_ptr<Schema> SP;
     typedef vespalib::PtrHolder<Schema> PH;
 
-    /**
-     * Basic data type for a field.
-     **/
-    enum DataType { UINT1 = 0,
-                    UINT2 = 1,
-                    UINT4 = 2,
-                    INT8 = 3,
-                    INT16 = 4,
-                    INT32 = 5,
-                    INT64 = 6,
-                    FLOAT = 7,
-                    DOUBLE = 8,
-                    STRING = 9,
-                    RAW = 10,
-                    //FEATURE = 11,
-                    BOOLEANTREE = 12,
-                    TENSOR = 13};
-    static DataType dataTypeFromName(const vespalib::stringref &name);
-    static vespalib::string getTypeName(DataType type);
+    using DataType = schema::DataType;
 
-    /**
-     * Collection type for a field.
-     **/
-    enum CollectionType { SINGLE = 0,
-                          ARRAY = 1,
-                          WEIGHTEDSET = 2 };
-    static CollectionType collectionTypeFromName(const vespalib::stringref &n);
-    static vespalib::string getTypeName(CollectionType type);
+    using CollectionType = schema::CollectionType;
 
     /**
      * A single field has a name, data type and collection
@@ -107,8 +85,7 @@ public:
 
     public:
         IndexField(const vespalib::stringref &name, DataType dt);
-        IndexField(const vespalib::stringref &name, DataType dt,
-                   CollectionType ct);
+        IndexField(const vespalib::stringref &name, DataType dt, CollectionType ct);
         /**
          * Create this index field based on the given config lines.
          **/
@@ -176,7 +153,7 @@ private:
     std::vector<AttributeField>  _attributeFields;
     std::vector<SummaryField>    _summaryFields;
     std::vector<FieldSet> _fieldSets;
-    typedef vespalib::hash_map<vespalib::string, uint32_t> Name2IdMap;
+    using Name2IdMap = vespalib::hash_map<vespalib::string, uint32_t>;
     Name2IdMap _indexIds;
     Name2IdMap _attributeIds;
     Name2IdMap _summaryIds;

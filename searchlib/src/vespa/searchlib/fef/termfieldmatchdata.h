@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include "termfieldmatchdataposition.h"
 #include "fieldpositionsiterator.h"
 #include "fieldinfo.h"
 #include <vespa/searchlib/common/feature.h>
-#include <vespa/vespalib/util/noncopyable.hpp>
 #include <string.h>
 #include <assert.h>
 

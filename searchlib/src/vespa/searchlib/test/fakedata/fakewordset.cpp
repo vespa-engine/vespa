@@ -1,17 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fakewordset");
 #include "fakewordset.h"
 #include "fakeword.h"
 #include <vespa/searchlib/index/schemautil.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fakewordset");
 
-namespace search
-{
+namespace search {
 
-namespace fakedata
-{
+namespace fakedata {
 
 using index::PostingListParams;
 using index::SchemaUtil;
@@ -65,16 +63,14 @@ FakeWordSet::setupParams(bool hasElements,
     _schema.clear();
 
     assert(hasElements || !hasElementWeights);
-    Schema::CollectionType collectionType(Schema::SINGLE);
+    Schema::CollectionType collectionType(index::schema::SINGLE);
     if (hasElements) {
         if (hasElementWeights)
-            collectionType = Schema::WEIGHTEDSET;
+            collectionType = index::schema::WEIGHTEDSET;
         else
-            collectionType = Schema::ARRAY;
+            collectionType = index::schema::ARRAY;
     }
-    Schema::IndexField indexField("field0",
-                                  Schema::STRING,
-                                  collectionType);
+    Schema::IndexField indexField("field0", index::schema::STRING, collectionType);
     indexField.setAvgElemLen(512u);
     _schema.addIndexField(indexField);
     _fieldsParams.resize(_schema.getNumIndexFields());

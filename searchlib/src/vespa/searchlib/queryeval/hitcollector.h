@@ -5,10 +5,9 @@
 #include "scores.h"
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/searchlib/common/resultset.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/vespalib/util/sort.h>
 #include <algorithm>
 #include <vector>
+#include <vespa/vespalib/util/sort.h>
 
 namespace search {
 
@@ -37,13 +36,13 @@ private:
     const uint32_t _maxReRankHitsSize;
     const uint32_t _maxDocIdVectorSize;
 
-    std::vector<Hit>      _hits;  // used as a heap when _hits.size == _maxHitsSize
-    std::vector<uint32_t> _scoreOrder; // Holds an indirection to the N best hits
-    SortOrder             _hitsSortOrder;
-    bool                  _unordered;
-    std::vector<uint32_t> _docIdVector;
-    BitVector::UP         _bitVector;
-    std::vector<Hit>      _reRankedHits;
+    std::vector<Hit>            _hits;  // used as a heap when _hits.size == _maxHitsSize
+    std::vector<uint32_t>       _scoreOrder; // Holds an indirection to the N best hits
+    SortOrder                   _hitsSortOrder;
+    bool                        _unordered;
+    std::vector<uint32_t>       _docIdVector;
+    std::unique_ptr<BitVector>  _bitVector;
+    std::vector<Hit>            _reRankedHits;
 
     std::pair<Scores, Scores> _ranges;
     feature_t _scale;
@@ -108,43 +107,32 @@ private:
             }
         }
     protected:
-        void replaceHitInVector(uint32_t docId, feature_t score) {
-            // replace lowest scored hit in hit vector
-            std::pop_heap(_hc._hits.begin(), _hc._hits.end(), ScoreComparator());
-            _hc._hits.back().first = docId;
-            _hc._hits.back().second = score;
-            std::push_heap(_hc._hits.begin(), _hc._hits.end(), ScoreComparator());
-        }
+        void replaceHitInVector(uint32_t docId, feature_t score);
         HitCollector &_hc;
     };
 
     class RankedHitCollector : public CollectorBase {
     public:
         RankedHitCollector(HitCollector &hc) : CollectorBase(hc) { }
-        virtual void collect(uint32_t docId, feature_t score);
+        void collect(uint32_t docId, feature_t score) override;
         void collectAndChangeCollector(uint32_t docId, feature_t score) __attribute__((noinline));
-        virtual bool isRankedHitCollector() const { return true; }
+        bool isRankedHitCollector() const override { return true; }
     };
 
     template <bool CollectRankedHit>
     class DocIdCollector : public CollectorBase {
     public:
         DocIdCollector(HitCollector &hc) : CollectorBase(hc) { }
-        virtual void collect(uint32_t docId, feature_t score);
+        void collect(uint32_t docId, feature_t score) override;
         void collectAndChangeCollector(uint32_t docId) __attribute__((noinline));
-        virtual bool isDocIdCollector() const { return true; }
+        bool isDocIdCollector() const override { return true; }
     };
 
     template <bool CollectRankedHit>
     class BitVectorCollector : public CollectorBase {
     public:
         BitVectorCollector(HitCollector &hc) : CollectorBase(hc) { }
-        virtual void collect(uint32_t docId, feature_t score) {
-            this->_hc._bitVector->setBit(docId);
-            if (CollectRankedHit) {
-                this->considerForHitVector(docId, score);
-            }
-        }
+        virtual void collect(uint32_t docId, feature_t score) override;
     };
     
     HitRank getReScore(feature_t score) const {

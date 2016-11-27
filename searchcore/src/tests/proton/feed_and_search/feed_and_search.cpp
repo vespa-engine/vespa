@@ -96,8 +96,7 @@ const uint32_t field_id = 1;
 
 Schema getSchema() {
     Schema schema;
-    schema.addIndexField(Schema::IndexField(field_name,
-                                            Schema::STRING));
+    schema.addIndexField(Schema::IndexField(field_name, search::index::schema::STRING));
     return schema;
 }
 

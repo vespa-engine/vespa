@@ -17,15 +17,13 @@ public:
     TermFieldMatchDataPositionKey()
         : _elementId(0u),
           _position(0u)
-    {
-    }
+    { }
 
     TermFieldMatchDataPositionKey(uint32_t elementId,
                                   uint32_t position)
         : _elementId(elementId),
           _position(position)
-    {
-    }
+    { }
 
     uint32_t getElementId() const { return _elementId; }
     uint32_t getPosition() const { return _position; }
@@ -61,8 +59,7 @@ public:
           _elementLen(SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH),
           _matchLength(1),
           _matchExactness(1.0)
-    {
-    }
+    { }
 
     const TermFieldMatchDataPositionKey &key() const {
         return *this;
@@ -89,8 +86,7 @@ public:
           _elementLen(elementLen),
           _matchLength(1),
           _matchExactness(1.0)
-    {
-    }
+    { }
 
     int32_t getElementWeight() const { return _elementWeight; }
     uint32_t getElementLen() const { return _elementLen; }

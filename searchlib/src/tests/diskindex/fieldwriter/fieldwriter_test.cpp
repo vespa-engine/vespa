@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("fieldwriter_test");
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/util/rand48.h>
@@ -22,6 +20,8 @@ LOG_SETUP("fieldwriter_test");
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
+#include <vespa/log/log.h>
+LOG_SETUP("fieldwriter_test");
 
 
 using search::ResultSet;
@@ -47,12 +47,12 @@ using search::diskindex::FieldReader;
 using search::diskindex::DocIdMapping;
 using search::diskindex::WordNumMapping;
 using search::diskindex::PageDict4RandRead;
+using namespace search::index;
 
 // needed to resolve external symbol from httpd.h on AIX
-void FastS_block_usr2() {}
+void FastS_block_usr2() { }
 
-namespace fieldwriter
-{
+namespace fieldwriter {
 
 uint32_t minSkipDocs = 64;
 uint32_t minChunkDocs = 262144;
@@ -198,8 +198,8 @@ WrappedFieldWriter::WrappedFieldWriter(const vespalib::string &namepref,
       _schema(),
       _indexId()
 {
-    Schema::CollectionType ct(Schema::SINGLE);
-    _schema.addIndexField(Schema::IndexField("field1", Schema::STRING, ct));
+    schema::CollectionType ct(schema::SINGLE);
+    _schema.addIndexField(Schema::IndexField("field1", schema::STRING, ct));
     _indexId = _schema.getIndexFieldId("field1");
 }
 
@@ -334,12 +334,12 @@ WrappedFieldReader::WrappedFieldReader(const vespalib::string &namepref,
       _oldSchema(),
       _schema()
 {
-    Schema::CollectionType ct(Schema::SINGLE);
+    Schema::CollectionType ct(schema::SINGLE);
     _oldSchema.addIndexField(Schema::IndexField("field1",
-                                                Schema::STRING,
+                                                schema::STRING,
                                                 ct));
     _schema.addIndexField(Schema::IndexField("field1",
-                                             Schema::STRING,
+                                             schema::STRING,
                                              ct));
 }
 
