@@ -63,17 +63,17 @@ TEST("testBasic") {
     EXPECT_EQUAL(0u, s.getNumAttributeFields());
     EXPECT_EQUAL(0u, s.getNumSummaryFields());
 
-    s.addIndexField(Schema::IndexField("foo", Schema::STRING));
-    s.addIndexField(Schema::IndexField("bar", Schema::INT32));
+    s.addIndexField(Schema::IndexField("foo", schema::STRING));
+    s.addIndexField(Schema::IndexField("bar", schema::INT32));
 
-    s.addAttributeField(Schema::AttributeField("foo", Schema::STRING, Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("bar", Schema::INT32,  Schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("cox", Schema::STRING));
+    s.addAttributeField(Schema::AttributeField("foo", schema::STRING, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("bar", schema::INT32,  schema::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("cox", schema::STRING));
 
-    s.addSummaryField(Schema::SummaryField("foo", Schema::STRING, Schema::ARRAY));
-    s.addSummaryField(Schema::SummaryField("bar", Schema::INT32,  Schema::WEIGHTEDSET));
-    s.addSummaryField(Schema::SummaryField("cox", Schema::STRING));
-    s.addSummaryField(Schema::SummaryField("fox", Schema::RAW));
+    s.addSummaryField(Schema::SummaryField("foo", schema::STRING, schema::ARRAY));
+    s.addSummaryField(Schema::SummaryField("bar", schema::INT32,  schema::WEIGHTEDSET));
+    s.addSummaryField(Schema::SummaryField("cox", schema::STRING));
+    s.addSummaryField(Schema::SummaryField("fox", schema::RAW));
 
     s.addFieldSet(Schema::FieldSet("default").
                   addField("foo").addField("bar"));
@@ -81,15 +81,15 @@ TEST("testBasic") {
     EXPECT_EQUAL(2u, s.getNumIndexFields());
     {
         EXPECT_EQUAL("foo", s.getIndexField(0).getName());
-        EXPECT_EQUAL(Schema::STRING, s.getIndexField(0).getDataType());
-        EXPECT_EQUAL(Schema::SINGLE, s.getIndexField(0).getCollectionType());
+        EXPECT_EQUAL(schema::STRING, s.getIndexField(0).getDataType());
+        EXPECT_EQUAL(schema::SINGLE, s.getIndexField(0).getCollectionType());
         EXPECT_TRUE(!s.getIndexField(0).hasPrefix());
         EXPECT_TRUE(!s.getIndexField(0).hasPhrases());
         EXPECT_TRUE(s.getIndexField(0).hasPositions());
 
         EXPECT_EQUAL("bar", s.getIndexField(1).getName());
-        EXPECT_EQUAL(Schema::INT32, s.getIndexField(1).getDataType());
-        EXPECT_EQUAL(Schema::SINGLE, s.getIndexField(1).getCollectionType());
+        EXPECT_EQUAL(schema::INT32, s.getIndexField(1).getDataType());
+        EXPECT_EQUAL(schema::SINGLE, s.getIndexField(1).getCollectionType());
 
         EXPECT_EQUAL(0u, s.getIndexFieldId("foo"));
         EXPECT_EQUAL(1u, s.getIndexFieldId("bar"));
@@ -98,19 +98,16 @@ TEST("testBasic") {
     EXPECT_EQUAL(3u, s.getNumAttributeFields());
     {
         EXPECT_EQUAL("foo", s.getAttributeField(0).getName());
-        EXPECT_EQUAL(Schema::STRING, s.getAttributeField(0).getDataType());
-        EXPECT_EQUAL(Schema::ARRAY,
-                     s.getAttributeField(0).getCollectionType());
+        EXPECT_EQUAL(schema::STRING, s.getAttributeField(0).getDataType());
+        EXPECT_EQUAL(schema::ARRAY, s.getAttributeField(0).getCollectionType());
 
         EXPECT_EQUAL("bar", s.getAttributeField(1).getName());
-        EXPECT_EQUAL(Schema::INT32, s.getAttributeField(1).getDataType());
-        EXPECT_EQUAL(Schema::WEIGHTEDSET,
-                     s.getAttributeField(1).getCollectionType());
+        EXPECT_EQUAL(schema::INT32, s.getAttributeField(1).getDataType());
+        EXPECT_EQUAL(schema::WEIGHTEDSET, s.getAttributeField(1).getCollectionType());
 
         EXPECT_EQUAL("cox", s.getAttributeField(2).getName());
-        EXPECT_EQUAL(Schema::STRING, s.getAttributeField(2).getDataType());
-        EXPECT_EQUAL(Schema::SINGLE,
-                     s.getAttributeField(2).getCollectionType());
+        EXPECT_EQUAL(schema::STRING, s.getAttributeField(2).getDataType());
+        EXPECT_EQUAL(schema::SINGLE, s.getAttributeField(2).getCollectionType());
 
         EXPECT_EQUAL(0u, s.getAttributeFieldId("foo"));
         EXPECT_EQUAL(1u, s.getAttributeFieldId("bar"));
@@ -120,21 +117,20 @@ TEST("testBasic") {
     EXPECT_EQUAL(4u, s.getNumSummaryFields());
     {
         EXPECT_EQUAL("foo", s.getSummaryField(0).getName());
-        EXPECT_EQUAL(Schema::STRING, s.getSummaryField(0).getDataType());
-        EXPECT_EQUAL(Schema::ARRAY, s.getSummaryField(0).getCollectionType());
+        EXPECT_EQUAL(schema::STRING, s.getSummaryField(0).getDataType());
+        EXPECT_EQUAL(schema::ARRAY, s.getSummaryField(0).getCollectionType());
 
         EXPECT_EQUAL("bar", s.getSummaryField(1).getName());
-        EXPECT_EQUAL(Schema::INT32, s.getSummaryField(1).getDataType());
-        EXPECT_EQUAL(Schema::WEIGHTEDSET,
-                     s.getSummaryField(1).getCollectionType());
+        EXPECT_EQUAL(schema::INT32, s.getSummaryField(1).getDataType());
+        EXPECT_EQUAL(schema::WEIGHTEDSET, s.getSummaryField(1).getCollectionType());
 
         EXPECT_EQUAL("cox", s.getSummaryField(2).getName());
-        EXPECT_EQUAL(Schema::STRING, s.getSummaryField(2).getDataType());
-        EXPECT_EQUAL(Schema::SINGLE, s.getSummaryField(2).getCollectionType());
+        EXPECT_EQUAL(schema::STRING, s.getSummaryField(2).getDataType());
+        EXPECT_EQUAL(schema::SINGLE, s.getSummaryField(2).getCollectionType());
 
         EXPECT_EQUAL("fox", s.getSummaryField(3).getName());
-        EXPECT_EQUAL(Schema::RAW, s.getSummaryField(3).getDataType());
-        EXPECT_EQUAL(Schema::SINGLE, s.getSummaryField(3).getCollectionType());
+        EXPECT_EQUAL(schema::RAW, s.getSummaryField(3).getDataType());
+        EXPECT_EQUAL(schema::SINGLE, s.getSummaryField(3).getCollectionType());
 
         EXPECT_EQUAL(0u, s.getSummaryFieldId("foo"));
         EXPECT_EQUAL(1u, s.getSummaryFieldId("bar"));
@@ -155,8 +151,8 @@ TEST("testLoadAndSave") {
     typedef Schema::IndexField SIF;
     typedef Schema::AttributeField SAF;
     typedef Schema::SummaryField SSF;
-    typedef Schema SDT;
-    typedef Schema SCT;
+    using SDT = schema::DataType;
+    using SCT = schema::CollectionType;
     typedef Schema::FieldSet SFS;
 
     { // load from config -> save to file -> load from file
@@ -229,7 +225,7 @@ TEST("require that schema can save and load timestamps for fields") {
     const fastos::TimeStamp timestamp(42);
     const std::string file_name = "schema-with-timestamps.txt";
     Schema s;
-    Schema::IndexField f("foo", Schema::STRING);
+    Schema::IndexField f("foo", schema::STRING);
     f.setTimestamp(timestamp);
     s.addIndexField(f);
     ASSERT_TRUE(s.saveToFile(file_name));
@@ -242,7 +238,7 @@ TEST("require that schema can save and load timestamps for fields") {
 TEST("require that timestamps are omitted when 0.") {
     const std::string file_name = "schema-without-timestamps.txt";
     Schema s;
-    s.addIndexField(Schema::IndexField("foo", Schema::STRING));
+    s.addIndexField(Schema::IndexField("foo", schema::STRING));
     ASSERT_TRUE(s.saveToFile(file_name));
 
     std::ifstream file(file_name.c_str());
@@ -260,15 +256,15 @@ TEST("require that timestamps are omitted when 0.") {
 
 void addAllFieldTypes(const string &name, Schema &schema,
                       fastos::TimeStamp timestamp) {
-    Schema::IndexField index_field(name, Schema::STRING);
+    Schema::IndexField index_field(name, schema::STRING);
     index_field.setTimestamp(timestamp);
     schema.addIndexField(index_field);
 
-    Schema::AttributeField attribute_field(name, Schema::STRING);
+    Schema::AttributeField attribute_field(name, schema::STRING);
     attribute_field.setTimestamp(timestamp);
     schema.addAttributeField(attribute_field);
 
-    Schema::SummaryField summary_field(name, Schema::STRING);
+    Schema::SummaryField summary_field(name, schema::STRING);
     summary_field.setTimestamp(timestamp);
     schema.addSummaryField(summary_field);
 
@@ -373,9 +369,9 @@ TEST("require that schema can calculate intersection") {
 TEST("require that incompatible fields are removed from intersection") {
     const string name = "foo";
     Schema s1;
-    s1.addIndexField(Schema::IndexField(name, Schema::STRING));
+    s1.addIndexField(Schema::IndexField(name, schema::STRING));
     Schema s2;
-    s2.addIndexField(Schema::IndexField(name, Schema::INT32));
+    s2.addIndexField(Schema::IndexField(name, schema::INT32));
     Schema::UP schema = Schema::intersect(s1, s2);
     EXPECT_EQUAL(0u, schema->getNumIndexFields());
     EXPECT_FALSE(schema->isIndexField(name));
