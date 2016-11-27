@@ -253,7 +253,7 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
     vespalib::Clock clock;
     vespalib::Doom doom(clock, std::numeric_limits<long>::max());
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec sorter(nullptr, doom, ucaFactory, _sortMethod);
+    FastS_SortSpec sorter(7, doom, ucaFactory, _sortMethod);
     // init sorter with sort data
     for(uint32_t i = 0; i < spec.size(); ++i) {
         AttributeGuard ag;

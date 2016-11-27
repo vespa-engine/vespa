@@ -7,9 +7,8 @@
 #include <vespa/searchlib/util/sort.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/vespalib/util/array.h>
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".search.attribute.sortresults");
 
@@ -229,7 +228,7 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     size_t variableWidth = 0;
     for (auto iter = _vectors.begin(); iter != _vectors.end(); ++iter) {
         if (iter->_type >= ASC_DOCID) { // doc id
-            fixedWidth += (_metaStore != nullptr) ? 8 : 4;
+            fixedWidth += sizeof(uint32_t) + sizeof(uint16_t);
         }else if (iter->_type >= ASC_RANK) { // rank value
             fixedWidth += sizeof(search::HitRank);
         } else {
@@ -253,30 +252,20 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
         uint32_t len = 0;
         for (auto iter = _vectors.begin(); iter != _vectors.end(); ++iter) {
             int written(0);
-            if (available < std::max(sizeof(hits->_docId), sizeof(hits->_rankValue))) {
+            if (available < std::max(sizeof(hits->_docId) + sizeof(_partitionId), sizeof(hits->_rankValue))) {
                 mySortData = realloc(n, variableWidth, available, dataSize, mySortData);
             }
             do {
                 switch (iter->_type) {
                 case ASC_DOCID:
-                    if (_metaStore) {
-                        _metaStore->getGidEvenIfMoved(hits[i].getDocId(), gid);
-                        serializeForSort<convertForSort<uint64_t, true> >(*reinterpret_cast<const uint64_t *>(gid.get()), mySortData);
-                        written = sizeof(uint64_t);
-                    } else {
-                        serializeForSort<convertForSort<uint32_t, true> >(hits[i].getDocId(), mySortData);
-                        written = sizeof(hits->_docId);
-                    }
+                    serializeForSort<convertForSort<uint32_t, true> >(hits[i].getDocId(), mySortData);
+                    serializeForSort<convertForSort<uint16_t, true> >(_partitionId, mySortData + sizeof(hits->_docId));
+                    written = sizeof(hits->_docId) + sizeof(_partitionId);
                     break;
                 case DESC_DOCID:
-                    if (_metaStore) {
-                        _metaStore->getGidEvenIfMoved(hits[i].getDocId(), gid);
-                        serializeForSort<convertForSort<uint64_t, false> >(*reinterpret_cast<const uint64_t *>(gid.get()), mySortData);
-                        written = sizeof(uint64_t);
-                    } else {
-                        serializeForSort<convertForSort<uint32_t, false> >(hits[i].getDocId(), mySortData);
-                        written = sizeof(hits->_docId);
-                    }
+                    serializeForSort<convertForSort<uint32_t, false> >(hits[i].getDocId(), mySortData);
+                    serializeForSort<convertForSort<uint16_t, false> >(_partitionId, mySortData + sizeof(hits->_docId));
+                    written = sizeof(hits->_docId) + sizeof(_partitionId);
                     break;
                 case ASC_RANK:
                     serializeForSort<convertForSort<search::HitRank, true> >(hits[i]._rankValue, mySortData);
@@ -312,8 +301,8 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
 }
 
 
-FastS_SortSpec::FastS_SortSpec(const search::IDocumentMetaStore * metaStore, const Doom & doom, const ConverterFactory & ucaFactory, int method) :
-    _metaStore(metaStore),
+FastS_SortSpec::FastS_SortSpec(uint32_t partitionId, const Doom & doom, const ConverterFactory & ucaFactory, int method) :
+    _partitionId(partitionId),
     _doom(doom),
     _ucaFactory(ucaFactory),
     _method(method),

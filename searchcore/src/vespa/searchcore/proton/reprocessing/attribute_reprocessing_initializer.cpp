@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.reprocessing.attribute_reprocessing_initializer");
-
 #include "attribute_reprocessing_initializer.h"
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 
-using search::index::Schema;
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.reprocessing.attribute_reprocessing_initializer");
+
+using namespace search::index;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::SerialNum;
@@ -28,9 +28,9 @@ toStr(bool value)
     return (value ? "true" : "false");
 }
 
-bool fastPartialUpdateAttribute(const Schema::DataType &attrType) {
+bool fastPartialUpdateAttribute(const schema::DataType &attrType) {
     // Partial update to tensor or predicate attribute must update document
-    return ((attrType != Schema::BOOLEANTREE) && (attrType != Schema::TENSOR));
+    return ((attrType != schema::BOOLEANTREE) && (attrType != schema::TENSOR));
 }
 
 
@@ -95,7 +95,7 @@ getFieldsToPopulate(const ARIConfig &newCfg,
         bool inNewSchema = newCfg.getInspector()->hasField(name);
         // NOTE: If it is a string and index field we shall
         // keep the original in order to preserve annotations.
-        bool isStringIndexField = attrField.getDataType() == Schema::STRING &&
+        bool isStringIndexField = attrField.getDataType() == schema::STRING &&
                 newCfg.getSchema().isIndexField(name);
         bool populateField = !inNewAttrMgr && inNewSchema && !isStringIndexField &&
                              fastPartialUpdateAttribute(attrType);
@@ -103,7 +103,7 @@ getFieldsToPopulate(const ARIConfig &newCfg,
                 "isStringIndexField=%s, dataType=%s, populate=%s",
                 name.c_str(), toStr(inNewAttrMgr), toStr(inNewSchema),
             toStr(isStringIndexField),
-            Schema::getTypeName(attrType).c_str(),
+            schema::getTypeName(attrType).c_str(),
             toStr(populateField));
         if (populateField) {
             fieldsToPopulate.push_back(IReprocessingRewriter::SP

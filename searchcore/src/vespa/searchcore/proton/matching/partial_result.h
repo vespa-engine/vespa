@@ -6,8 +6,6 @@
 #include <vespa/vespalib/util/dual_merge_director.h>
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vector>
-#include <algorithm>
-#include <memory>
 
 namespace proton {
 namespace matching {

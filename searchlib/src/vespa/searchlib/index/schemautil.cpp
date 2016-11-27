@@ -7,18 +7,16 @@
 #include <set>
 LOG_SETUP(".index.schemautil");
 
-namespace search
-{
+namespace search {
 
-namespace index
-{
+namespace index {
 
 SchemaUtil::IndexSettings
 SchemaUtil::getIndexSettings(const Schema &schema,
                              const uint32_t index)
 {
     IndexSettings ret;
-    Schema::DataType indexDataType(Schema::STRING);
+    Schema::DataType indexDataType(schema::STRING);
     bool error = false;
     bool somePrefixes = false;
     bool someNotPrefixes = false;
@@ -42,7 +40,7 @@ SchemaUtil::getIndexSettings(const Schema &schema,
         someNotPositions = true;
     indexDataType = iField.getDataType();
     switch (indexDataType) {
-    case Schema::STRING:
+    case schema::STRING:
         break;
     default:
         error = true;
@@ -115,7 +113,7 @@ SchemaUtil::validateIndexField(const Schema::IndexField &field)
             field.getName().c_str());
         ok = false;
     }
-    if (field.getDataType() != Schema::STRING) {
+    if (field.getDataType() != schema::STRING) {
         if (field.hasPrefix()) {
             LOG(error,
                 "Field %s is non-string but has prefix",
@@ -196,7 +194,7 @@ SchemaUtil::validateSchema(const Schema &schema)
 
 bool
 SchemaUtil::getIndexIds(const Schema &schema,
-                        DataType dataType,
+                        schema::DataType dataType,
                         std::vector<uint32_t> &indexes)
 {
     typedef SchemaUtil::IndexIterator IndexIterator;

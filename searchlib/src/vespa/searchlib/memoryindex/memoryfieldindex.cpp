@@ -27,6 +27,13 @@ using index::Schema;
 
 namespace memoryindex {
 
+vespalib::asciistream &
+operator<<(vespalib::asciistream & os, const MemoryFieldIndex::WordKey & rhs)
+{
+    os << "wr(" << rhs._wordRef.ref() << ")";
+    return os;
+}
+
 MemoryFieldIndex::MemoryFieldIndex(const Schema & schema, uint32_t fieldId)
     : _wordStore(),
       _numUniqueWords(0),
@@ -37,8 +44,7 @@ MemoryFieldIndex::MemoryFieldIndex(const Schema & schema, uint32_t fieldId)
       _fieldId(fieldId),
       _remover(_wordStore),
       _inserter(std::make_unique<OrderedDocumentInserter>(*this))
-{
-}
+{ }
 
 MemoryFieldIndex::~MemoryFieldIndex(void)
 {

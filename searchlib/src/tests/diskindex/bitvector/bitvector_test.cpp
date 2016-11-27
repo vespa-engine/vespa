@@ -191,7 +191,7 @@ Test::Test()
     : _schema(),
       _indexId(0)
 {
-    _schema.addIndexField(Schema::IndexField("f1", Schema::STRING));
+    _schema.addIndexField(Schema::IndexField("f1", schema::STRING));
 }
 
 int

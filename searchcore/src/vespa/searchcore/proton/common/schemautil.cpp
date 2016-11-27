@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
+#include "schemautil.h"
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.common.schemautil");
 
-#include "schemautil.h"
-
-using search::index::Schema;
+using namespace search::index;
 
 namespace proton {
 
@@ -205,24 +205,24 @@ SchemaUtil::listSchema(const Schema &schema,
         const Schema::AttributeField &field = schema.getAttributeField(i);
         quads.push_back(
                 FieldQuad(field.getName(),
-                          Schema::getTypeName(field.getDataType()),
-                          Schema::getTypeName(field.getCollectionType()),
+                          schema::getTypeName(field.getDataType()),
+                          schema::getTypeName(field.getCollectionType()),
                           "a"));
     }
     for (uint32_t i = 0; i < schema.getNumIndexFields(); ++i) {
         const Schema::IndexField &field = schema.getIndexField(i);
         quads.push_back(
                 FieldQuad(field.getName(),
-                          Schema::getTypeName(field.getDataType()),
-                          Schema::getTypeName(field.getCollectionType()),
+                          schema::getTypeName(field.getDataType()),
+                          schema::getTypeName(field.getCollectionType()),
                           "i"));
     }
     for (uint32_t i = 0; i < schema.getNumSummaryFields(); ++i) {
         const Schema::SummaryField &field = schema.getSummaryField(i);
         quads.push_back(
                 FieldQuad(field.getName(),
-                          Schema::getTypeName(field.getDataType()),
-                          Schema::getTypeName(field.getCollectionType()),
+                          schema::getTypeName(field.getDataType()),
+                          schema::getTypeName(field.getCollectionType()),
                           "s"));
     }
     std::sort(quads.begin(), quads.end());

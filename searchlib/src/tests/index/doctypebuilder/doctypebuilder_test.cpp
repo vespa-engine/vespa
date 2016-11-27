@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("doctypebuilder_test");
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/index/doctypebuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -13,26 +11,17 @@ namespace index {
 
 TEST("testSearchDocType") {
     Schema s;
-    s.addIndexField(Schema::IndexField("ia", Schema::STRING));
-    s.addIndexField(Schema::IndexField("ib", Schema::STRING, Schema::ARRAY));
-    s.addIndexField(Schema::IndexField("ic", Schema::STRING, Schema::WEIGHTEDSET));
-    s.addUriIndexFields(Schema::IndexField("iu", Schema::STRING));
-    s.addUriIndexFields(Schema::IndexField("iau",
-                                Schema::STRING,
-                                Schema::ARRAY));
-    s.addUriIndexFields(Schema::IndexField("iwu",
-                                Schema::STRING,
-                                Schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("aa", Schema::INT32));
-    s.addAttributeField(Schema::AttributeField("spos",
-                                Schema::INT64));
-    s.addAttributeField(Schema::AttributeField("apos",
-                                Schema::INT64,
-                                Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("wpos",
-                                Schema::INT64,
-                                Schema::WEIGHTEDSET));
-    s.addSummaryField(Schema::SummaryField("sa", Schema::STRING));
+    s.addIndexField(Schema::IndexField("ia", schema::STRING));
+    s.addIndexField(Schema::IndexField("ib", schema::STRING, schema::ARRAY));
+    s.addIndexField(Schema::IndexField("ic", schema::STRING, schema::WEIGHTEDSET));
+    s.addUriIndexFields(Schema::IndexField("iu", schema::STRING));
+    s.addUriIndexFields(Schema::IndexField("iau", schema::STRING, schema::ARRAY));
+    s.addUriIndexFields(Schema::IndexField("iwu", schema::STRING, schema::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("aa", schema::INT32));
+    s.addAttributeField(Schema::AttributeField("spos", schema::INT64));
+    s.addAttributeField(Schema::AttributeField("apos", schema::INT64, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("wpos", schema::INT64, schema::WEIGHTEDSET));
+    s.addSummaryField(Schema::SummaryField("sa", schema::STRING));
 
     DocTypeBuilder docTypeBuilder(s);
     document::DocumenttypesConfig config = docTypeBuilder.makeConfig();
@@ -63,10 +52,8 @@ TEST("testSearchDocType") {
 
 TEST("require that multiple fields can have the same type") {
     Schema s;
-    s.addIndexField(Schema::IndexField("array1", Schema::STRING,
-                                       Schema::ARRAY));
-    s.addIndexField(Schema::IndexField("array2", Schema::STRING,
-                                       Schema::ARRAY));
+    s.addIndexField(Schema::IndexField("array1", schema::STRING, schema::ARRAY));
+    s.addIndexField(Schema::IndexField("array2", schema::STRING, schema::ARRAY));
     DocTypeBuilder docTypeBuilder(s);
     document::DocumenttypesConfig config = docTypeBuilder.makeConfig();
     DocumentTypeRepo repo(config);

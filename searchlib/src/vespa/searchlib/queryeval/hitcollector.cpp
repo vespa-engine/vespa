@@ -2,7 +2,6 @@
 
 #include <vespa/fastos/fastos.h>
 #include "hitcollector.h"
-#include "scores.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sort.h>
 #include <limits>
@@ -83,6 +82,24 @@ HitCollector::RankedHitCollector::collect(uint32_t docId, feature_t score)
     } else {
         collectAndChangeCollector(docId, score);
     }
+}
+
+template <bool CollectRankedHit>
+void
+HitCollector::BitVectorCollector<CollectRankedHit>::collect(uint32_t docId, feature_t score) {
+    this->_hc._bitVector->setBit(docId);
+    if (CollectRankedHit) {
+        this->considerForHitVector(docId, score);
+    }
+}
+
+void
+HitCollector::CollectorBase::replaceHitInVector(uint32_t docId, feature_t score) {
+    // replace lowest scored hit in hit vector
+    std::pop_heap(_hc._hits.begin(), _hc._hits.end(), ScoreComparator());
+    _hc._hits.back().first = docId;
+    _hc._hits.back().second = score;
+    std::push_heap(_hc._hits.begin(), _hc._hits.end(), ScoreComparator());
 }
 
 void

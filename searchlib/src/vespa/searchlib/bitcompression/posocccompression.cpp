@@ -3,8 +3,6 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".posocccompression");
 #include "compression.h"
 #include "posocccompression.h"
 #include <vespa/searchlib/index/schemautil.h>
@@ -12,6 +10,8 @@ LOG_SETUP(".posocccompression");
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".posocccompression");
 
 using search::index::DocIdAndFeatures;
 using search::index::WordDocElementFeatures;
@@ -21,29 +21,25 @@ using search::index::SchemaUtil;
 using search::index::Schema;
 using search::fef::TermFieldMatchData;
 using vespalib::GenericHeader;
+using namespace search::index;
 
-namespace
-{
+namespace {
 
 vespalib::string PosOccId = "PosOcc.3";
-
 vespalib::string PosOccIdCooked = "PosOcc.3.Cooked";
 
 }
 
-namespace
-{
+namespace {
 
 vespalib::string EG64PosOccId = "EG64PosOcc.3";	// Dynamic k values
 vespalib::string EG64PosOccId2 = "EG64PosOcc.2";	// Fixed k values
 
 }
 
-namespace search
-{
+namespace search {
 
-namespace bitcompression
-{
+namespace bitcompression {
 
 
 PosOccFieldParams::PosOccFieldParams(void)
@@ -53,8 +49,7 @@ PosOccFieldParams::PosOccFieldParams(void)
       _avgElemLen(512),
       _collectionType(SINGLE),
       _name()
-{
-}
+{ }
 
 
 bool
@@ -136,24 +131,23 @@ PosOccFieldParams::setSchemaParams(const Schema &schema, uint32_t fieldId)
     assert(fieldId < schema.getNumIndexFields());
     const Schema::IndexField &field = schema.getIndexField(fieldId);
     switch (field.getCollectionType()) {
-    case Schema::SINGLE:
+    case schema::SINGLE:
         _collectionType = SINGLE;
         _hasElements = false;
         _hasElementWeights = false;
         break;
-    case Schema::ARRAY:
+    case schema::ARRAY:
         _collectionType = ARRAY;
         _hasElements = true;
         _hasElementWeights = false;
         break;
-    case Schema::WEIGHTEDSET:
+    case schema::WEIGHTEDSET:
         _collectionType = WEIGHTEDSET;
         _hasElements = true;
         _hasElementWeights = true;
         break;
     default:
-        LOG(error,
-            "Bad collection type");
+        LOG(error, "Bad collection type");
         abort();
     }
     _avgElemLen = field.getAvgElemLen();
@@ -169,27 +163,25 @@ PosOccFieldParams::readHeader(const vespalib::GenericHeader &header,
     vespalib::string collKey(prefix + "collectionType");
     vespalib::string avgElemLenKey(prefix + "avgElemLen");
     _name = header.getTag(nameKey).asString();
-    Schema::CollectionType ct =
-        Schema::collectionTypeFromName(header.getTag(collKey).asString());
+    Schema::CollectionType ct = schema::collectionTypeFromName(header.getTag(collKey).asString());
     switch (ct) {
-    case Schema::SINGLE:
+    case schema::SINGLE:
         _collectionType = SINGLE;
         _hasElements = false;
         _hasElementWeights = false;
         break;
-    case Schema::ARRAY:
+    case schema::ARRAY:
         _collectionType = ARRAY;
         _hasElements = true;
         _hasElementWeights = false;
         break;
-    case Schema::WEIGHTEDSET:
+    case schema::WEIGHTEDSET:
         _collectionType = WEIGHTEDSET;
         _hasElements = true;
         _hasElementWeights = true;
         break;
     default:
-        LOG(error,
-            "Bad collection type when reading field param in header");
+        LOG(error, "Bad collection type when reading field param in header");
         abort();
     }
     _avgElemLen = header.getTag(avgElemLenKey).asInteger();
@@ -204,23 +196,23 @@ PosOccFieldParams::writeHeader(vespalib::GenericHeader &header,
     vespalib::string collKey(prefix + "collectionType");
     vespalib::string avgElemLenKey(prefix + "avgElemLen");
     header.putTag(GenericHeader::Tag(nameKey, _name));
-    Schema::CollectionType ct(Schema::SINGLE);
+    Schema::CollectionType ct(schema::SINGLE);
     switch (_collectionType) {
     case SINGLE:
-        ct = Schema::SINGLE;
+        ct = schema::SINGLE;
         break;
     case ARRAY:
-        ct = Schema::ARRAY;
+        ct = schema::ARRAY;
         break;
     case WEIGHTEDSET:
-        ct = Schema::WEIGHTEDSET;
+        ct = schema::WEIGHTEDSET;
         break;
     default:
         LOG(error,
             "Bad collection type when writing field param in header");
         abort();
     }
-    header.putTag(GenericHeader::Tag(collKey, Schema::getTypeName(ct)));
+    header.putTag(GenericHeader::Tag(collKey, schema::getTypeName(ct)));
     header.putTag(GenericHeader::Tag(avgElemLenKey, _avgElemLen));
 }
 

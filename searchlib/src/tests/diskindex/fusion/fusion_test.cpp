@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("fusion_test");
 #include <vespa/searchlib/diskindex/checkpointfile.h>
 #include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
@@ -27,26 +25,20 @@ LOG_SETUP("fusion_test");
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 
-namespace search
-{
+namespace search {
 
 
 using document::Document;
 using fef::FieldPositionsIterator;
 using fef::TermFieldMatchData;
 using fef::TermFieldMatchDataArray;
-using index::DocBuilder;
-using index::DocIdAndFeatures;
-using index::Schema;
-using index::SchemaUtil;
+using namespace index;
 using search::common::FileHeaderContext;
-using search::index::DummyFileHeaderContext;
 using memoryindex::Dictionary;
 using memoryindex::DocumentInverter;
 using queryeval::SearchIterator;
 
-namespace diskindex
-{
+namespace diskindex {
 
 
 class Test : public vespalib::TestApp
@@ -59,7 +51,6 @@ private:
     requireThatFusionIsWorking(const vespalib::string &prefix,
                                bool directio,
                                bool readmmap);
-
 public:
     Test();
     int Main();
@@ -269,20 +260,19 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
         schema.addIndexField(Schema::IndexField(iField.getName(),
                                      iField.getDataType(),
                                      iField.getCollectionType()));
-        if (iField.getCollectionType() == Schema::WEIGHTEDSET)
+        if (iField.getCollectionType() == schema::WEIGHTEDSET)
             schema2.addIndexField(Schema::IndexField(iField.getName(),
                                           iField.getDataType(),
-                                          Schema::ARRAY));
+                                          schema::ARRAY));
         else
             schema2.addIndexField(Schema::IndexField(iField.getName(),
                                           iField.getDataType(),
                                           iField.getCollectionType()));
         schema3.addIndexField(Schema::IndexField(iField.getName(),
                                       iField.getDataType(),
-                                      Schema::SINGLE));
+                                      schema::SINGLE));
     }
-    schema3.addIndexField(Schema::IndexField("f4",
-                                  Schema::STRING));
+    schema3.addIndexField(Schema::IndexField("f4", schema::STRING));
     schema.addFieldSet(Schema::FieldSet("nc0").
                               addField("f0").addField("f1"));
     schema2.addFieldSet(Schema::FieldSet("nc0").
@@ -467,18 +457,14 @@ Test::requireThatFusionIsWorking(const vespalib::string &prefix,
     } while (0);
 }
 
-
 Test::Test()
     : _schema()
 {
-    _schema.addIndexField(Schema::IndexField("f0", Schema::STRING));
-    _schema.addIndexField(Schema::IndexField("f1", Schema::STRING));
-    _schema.addIndexField(Schema::IndexField("f2", Schema::STRING,
-                                  Schema::ARRAY));
-    _schema.addIndexField(Schema::IndexField("f3", Schema::STRING,
-                                  Schema::WEIGHTEDSET));
+    _schema.addIndexField(Schema::IndexField("f0", schema::STRING));
+    _schema.addIndexField(Schema::IndexField("f1", schema::STRING));
+    _schema.addIndexField(Schema::IndexField("f2", schema::STRING, schema::ARRAY));
+    _schema.addIndexField(Schema::IndexField("f3", schema::STRING, schema::WEIGHTEDSET));
 }
-
 
 int
 Test::Main()
@@ -499,8 +485,6 @@ Test::Main()
 
 }
 
-
 }
-
 
 TEST_APPHOOK(search::diskindex::Test);
