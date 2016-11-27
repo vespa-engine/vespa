@@ -143,12 +143,12 @@ struct MyWorld {
 
     void basicSetup(size_t heapSize=10, size_t arraySize=100) {
         // schema
-        schema.addIndexField(Schema::IndexField("f1", Schema::STRING));
-        schema.addIndexField(Schema::IndexField("f2", Schema::STRING));
-        schema.addIndexField(Schema::IndexField("tensor_field", Schema::TENSOR));
-        schema.addAttributeField(Schema::AttributeField("a1", Schema::INT32));
-        schema.addAttributeField(Schema::AttributeField("a2", Schema::INT32));
-        schema.addAttributeField(Schema::AttributeField("predicate_field", Schema::BOOLEANTREE));
+        schema.addIndexField(Schema::IndexField("f1", schema::STRING));
+        schema.addIndexField(Schema::IndexField("f2", schema::STRING));
+        schema.addIndexField(Schema::IndexField("tensor_field", schema::TENSOR));
+        schema.addAttributeField(Schema::AttributeField("a1", schema::INT32));
+        schema.addAttributeField(Schema::AttributeField("a2", schema::INT32));
+        schema.addAttributeField(Schema::AttributeField("predicate_field", schema::BOOLEANTREE));
 
         // config
         config.add(indexproperties::rank::FirstPhase::NAME, "attribute(a1)");
