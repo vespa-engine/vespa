@@ -97,7 +97,7 @@ public:
             _index = schema.getIndexFieldId(name);
         }
 
-        const Schema getSchema(void) const {
+        const Schema & getSchema(void) const {
             return _schema;
         }
 
