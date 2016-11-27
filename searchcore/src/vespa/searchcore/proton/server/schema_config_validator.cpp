@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.schema_config_validator");
 #include "schema_config_validator.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.schema_config_validator");
 
-using search::index::Schema;
+using namespace search::index;
 using vespalib::make_string;
 
 namespace proton {
@@ -189,8 +189,8 @@ checkDataTypeFunc(const Schema::Field &oldField,
                 make_string("Trying to add %s field `%s' of data type %s, "
                         "but it has been of of data type %s earlier",
                         fieldClass.c_str(), newField.getName().c_str(),
-                        Schema::getTypeName(newField.getDataType()).c_str(),
-                        Schema::getTypeName(oldField.getDataType()).c_str()));
+                        schema::getTypeName(newField.getDataType()).c_str(),
+                        schema::getTypeName(oldField.getDataType()).c_str()));
     }
     return CV::Result();
 }
@@ -205,8 +205,8 @@ checkCollectionTypeFunc(const Schema::Field &oldField,
                 make_string("Trying to add %s field `%s' of collection type %s, "
                         "but it has been of of collection type %s earlier",
                         fieldClass.c_str(), newField.getName().c_str(),
-                        Schema::getTypeName(newField.getCollectionType()).c_str(),
-                        Schema::getTypeName(oldField.getCollectionType()).c_str()));
+                        schema::getTypeName(newField.getCollectionType()).c_str(),
+                        schema::getTypeName(oldField.getCollectionType()).c_str()));
     }
     return CV::Result();
 }

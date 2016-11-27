@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("document_type_inspector_test");
-
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -15,8 +12,8 @@ Schema
 getSchema()
 {
     Schema schema;
-    schema.addSummaryField(Schema::SummaryField("f1", Schema::STRING));
-    schema.addSummaryField(Schema::SummaryField("f2", Schema::STRING));
+    schema.addSummaryField(Schema::SummaryField("f1", schema::STRING));
+    schema.addSummaryField(Schema::SummaryField("f2", schema::STRING));
     return schema;
 }
 

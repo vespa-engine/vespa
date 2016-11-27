@@ -37,7 +37,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeContext;
-using search::index::Schema;
+using namespace search::index;
 using storage::spi::Timestamp;
 using storage::spi::Bucket;
 using storage::spi::PartitionId;
@@ -229,9 +229,9 @@ struct AttrUnitDR : public UnitDR
         : UnitDR(d->getType(), document::Document::UP(d->clone()), t, b, r),
           _amgr(), _schema(), _aa(), _dd(), _ss()
     {
-        createAttribute(_aa, BasicType::INT32, Schema::INT32, "aa");
-        createAttribute(_dd, BasicType::DOUBLE, Schema::DOUBLE, "dd");
-        createAttribute(_ss, BasicType::STRING, Schema::STRING, "ss");
+        createAttribute(_aa, BasicType::INT32, schema::INT32, "aa");
+        createAttribute(_dd, BasicType::DOUBLE, schema::DOUBLE, "dd");
+        createAttribute(_ss, BasicType::STRING, schema::STRING, "ss");
     }
 
     AttrUnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r,
@@ -239,11 +239,11 @@ struct AttrUnitDR : public UnitDR
         : UnitDR(d->getType(), document::Document::UP(d->clone()), t, b, r),
           _amgr(), _schema(), _aa(), _dd(), _ss()
     {
-        createAttribute(_aa, BasicType::INT32, Schema::INT32, "aa");
+        createAttribute(_aa, BasicType::INT32, schema::INT32, "aa");
         addAttribute<IntFieldValue, int32_t>(*_aa, aa);
-        createAttribute(_dd, BasicType::DOUBLE, Schema::DOUBLE, "dd");
+        createAttribute(_dd, BasicType::DOUBLE, schema::DOUBLE, "dd");
         addAttribute<DoubleFieldValue, double>(*_dd, dd);
-        createAttribute(_ss, BasicType::STRING, Schema::STRING, "ss");
+        createAttribute(_ss, BasicType::STRING, schema::STRING, "ss");
         addAttribute<StringFieldValue, vespalib::string>(*_ss, ss);
     }
 
