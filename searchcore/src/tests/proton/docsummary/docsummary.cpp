@@ -1059,14 +1059,9 @@ void
 Test::requireThatPositionsAreUsed()
 {
     Schema s;
-    s.addAttributeField(Schema::AttributeField("sp2",
-                                Schema::INT64));
-    s.addAttributeField(Schema::AttributeField("ap2",
-                                Schema::INT64,
-                                Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("wp2",
-                                Schema::INT64,
-                                Schema::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("sp2", schema::INT64));
+    s.addAttributeField(Schema::AttributeField("ap2", schema::INT64, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("wp2", schema::INT64, schema::WEIGHTEDSET));
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());

@@ -47,8 +47,7 @@ using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
 using search::SearchableStats;
-using search::index::DocBuilder;
-using search::index::Schema;
+using namespace search::index;
 using searchcorespi::IndexSearchable;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
@@ -399,11 +398,11 @@ struct SchemaContext
         _schema(new Schema()),
         _builder()
     {
-        _schema->addIndexField(Schema::IndexField("i1", Schema::STRING, Schema::SINGLE));
-        _schema->addAttributeField(Schema::AttributeField("a1", Schema::STRING, Schema::SINGLE));
-        _schema->addAttributeField(Schema::AttributeField("a2", Schema::BOOLEANTREE, Schema::SINGLE));
-        _schema->addAttributeField(Schema::AttributeField("a3", Schema::TENSOR, Schema::SINGLE));
-        _schema->addSummaryField(Schema::SummaryField("s1", Schema::STRING, Schema::SINGLE));
+        _schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
+        _schema->addAttributeField(Schema::AttributeField("a1", schema::STRING, schema::SINGLE));
+        _schema->addAttributeField(Schema::AttributeField("a2", schema::BOOLEANTREE, schema::SINGLE));
+        _schema->addAttributeField(Schema::AttributeField("a3", schema::TENSOR, schema::SINGLE));
+        _schema->addSummaryField(Schema::SummaryField("s1", schema::STRING, schema::SINGLE));
         _builder.reset(new DocBuilder(*_schema));
     }
     const document::DocumentTypeRepo::SP &getRepo() const { return _builder->getDocumentTypeRepo(); }
