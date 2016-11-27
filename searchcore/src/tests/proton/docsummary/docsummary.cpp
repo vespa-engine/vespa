@@ -421,18 +421,18 @@ void
 Test::requireThatAdapterHandlesAllFieldTypes()
 {
     Schema s;
-    s.addSummaryField(Schema::SummaryField("a", Schema::INT8));
-    s.addSummaryField(Schema::SummaryField("b", Schema::INT16));
-    s.addSummaryField(Schema::SummaryField("c", Schema::INT32));
-    s.addSummaryField(Schema::SummaryField("d", Schema::INT64));
-    s.addSummaryField(Schema::SummaryField("e", Schema::FLOAT));
-    s.addSummaryField(Schema::SummaryField("f", Schema::DOUBLE));
-    s.addSummaryField(Schema::SummaryField("g", Schema::STRING));
-    s.addSummaryField(Schema::SummaryField("h", Schema::STRING));
-    s.addSummaryField(Schema::SummaryField("i", Schema::RAW));
-    s.addSummaryField(Schema::SummaryField("j", Schema::RAW));
-    s.addSummaryField(Schema::SummaryField("k", Schema::STRING));
-    s.addSummaryField(Schema::SummaryField("l", Schema::STRING));
+    s.addSummaryField(Schema::SummaryField("a", schema::INT8));
+    s.addSummaryField(Schema::SummaryField("b", schema::INT16));
+    s.addSummaryField(Schema::SummaryField("c", schema::INT32));
+    s.addSummaryField(Schema::SummaryField("d", schema::INT64));
+    s.addSummaryField(Schema::SummaryField("e", schema::FLOAT));
+    s.addSummaryField(Schema::SummaryField("f", schema::DOUBLE));
+    s.addSummaryField(Schema::SummaryField("g", schema::STRING));
+    s.addSummaryField(Schema::SummaryField("h", schema::STRING));
+    s.addSummaryField(Schema::SummaryField("i", schema::RAW));
+    s.addSummaryField(Schema::SummaryField("j", schema::RAW));
+    s.addSummaryField(Schema::SummaryField("k", schema::STRING));
+    s.addSummaryField(Schema::SummaryField("l", schema::STRING));
 
     BuildContext bc(s);
     bc._bld.startDocument("doc::0");
@@ -481,7 +481,7 @@ void
 Test::requireThatAdapterHandlesMultipleDocuments()
 {
     Schema s;
-    s.addSummaryField(Schema::SummaryField("a", Schema::INT32));
+    s.addSummaryField(Schema::SummaryField("a", schema::INT32));
 
     BuildContext bc(s);
     bc._bld.startDocument("doc::0").
@@ -523,8 +523,7 @@ void
 Test::requireThatAdapterHandlesDocumentIdField()
 {
     Schema s;
-    s.addSummaryField(Schema::SummaryField("documentid",
-                              Schema::STRING));
+    s.addSummaryField(Schema::SummaryField("documentid", schema::STRING));
     BuildContext bc(s);
     bc._bld.startDocument("doc::0").
         startSummaryField("documentid").
@@ -551,7 +550,7 @@ void
 Test::requireThatDocsumRequestIsProcessed()
 {
     Schema s;
-    s.addSummaryField(Schema::SummaryField("a", Schema::INT32));
+    s.addSummaryField(Schema::SummaryField("a", schema::INT32));
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
@@ -609,8 +608,8 @@ void
 Test::requireThatRewritersAreUsed()
 {
     Schema s;
-    s.addSummaryField(Schema::SummaryField("aa", Schema::INT32));
-    s.addSummaryField(Schema::SummaryField("ab", Schema::INT32));
+    s.addSummaryField(Schema::SummaryField("aa", schema::INT32));
+    s.addSummaryField(Schema::SummaryField("ab", schema::INT32));
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
@@ -649,25 +648,16 @@ void
 Test::requireThatAttributesAreUsed()
 {
     Schema s;
-    addField(s, "ba",
-             Schema::INT32, Schema::SINGLE);
-    addField(s, "bb",
-             Schema::FLOAT, Schema::SINGLE);
-    addField(s, "bc",
-             Schema::STRING, Schema::SINGLE);
-    addField(s, "bd",
-             Schema::INT32, Schema::ARRAY);
-    addField(s, "be",
-             Schema::FLOAT, Schema::ARRAY);
-    addField(s, "bf",
-             Schema::STRING, Schema::ARRAY);
-    addField(s, "bg",
-             Schema::INT32, Schema::WEIGHTEDSET);
-    addField(s, "bh",
-             Schema::FLOAT, Schema::WEIGHTEDSET);
-    addField(s, "bi",
-             Schema::STRING, Schema::WEIGHTEDSET);
-    addField(s, "bj", Schema::TENSOR, Schema::SINGLE);
+    addField(s, "ba", schema::INT32, schema::SINGLE);
+    addField(s, "bb", schema::FLOAT, schema::SINGLE);
+    addField(s, "bc", schema::STRING, schema::SINGLE);
+    addField(s, "bd", schema::INT32, schema::ARRAY);
+    addField(s, "be", schema::FLOAT, schema::ARRAY);
+    addField(s, "bf", schema::STRING, schema::ARRAY);
+    addField(s, "bg", schema::INT32, schema::WEIGHTEDSET);
+    addField(s, "bh", schema::FLOAT, schema::WEIGHTEDSET);
+    addField(s, "bi", schema::STRING, schema::WEIGHTEDSET);
+    addField(s, "bj", schema::TENSOR, schema::SINGLE);
 
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
@@ -819,9 +809,7 @@ void
 Test::requireThatSummaryAdapterHandlesPutAndRemove()
 {
     Schema s;
-    s.addSummaryField(Schema::SummaryField("f1",
-                              Schema::STRING,
-                              Schema::SINGLE));
+    s.addSummaryField(Schema::SummaryField("f1", schema::STRING, schema::SINGLE));
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
     Document::UP exp = bc._bld.startDocument("doc::1").
@@ -855,18 +843,10 @@ void
 Test::requireThatAnnotationsAreUsed()
 {
     Schema s;
-    s.addIndexField(Schema::IndexField("g",
-                                       Schema::STRING,
-                                       Schema::SINGLE));
-    s.addSummaryField(Schema::SummaryField("g",
-                              Schema::STRING,
-                              Schema::SINGLE));
-    s.addIndexField(Schema::IndexField("dynamicstring",
-                                       Schema::STRING,
-                                       Schema::SINGLE));
-    s.addSummaryField(Schema::SummaryField("dynamicstring",
-                              Schema::STRING,
-                              Schema::SINGLE));
+    s.addIndexField(Schema::IndexField("g", schema::STRING, schema::SINGLE));
+    s.addSummaryField(Schema::SummaryField("g", schema::STRING, schema::SINGLE));
+    s.addIndexField(Schema::IndexField("dynamicstring", schema::STRING, schema::SINGLE));
+    s.addSummaryField(Schema::SummaryField("dynamicstring", schema::STRING, schema::SINGLE));
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
     Document::UP exp = bc._bld.startDocument("doc::0").
@@ -916,24 +896,12 @@ void
 Test::requireThatUrisAreUsed()
 {
     Schema s;
-    s.addUriIndexFields(Schema::IndexField("urisingle",
-                                Schema::STRING,
-                                Schema::SINGLE));
-    s.addSummaryField(Schema::SummaryField("urisingle",
-                              Schema::STRING,
-                              Schema::SINGLE));
-    s.addUriIndexFields(Schema::IndexField("uriarray",
-                                Schema::STRING,
-                                Schema::ARRAY));
-    s.addSummaryField(Schema::SummaryField("uriarray",
-                              Schema::STRING,
-                              Schema::ARRAY));
-    s.addUriIndexFields(Schema::IndexField("uriwset",
-                                Schema::STRING,
-                                Schema::WEIGHTEDSET));
-    s.addSummaryField(Schema::SummaryField("uriwset",
-                              Schema::STRING,
-                              Schema::WEIGHTEDSET));
+    s.addUriIndexFields(Schema::IndexField("urisingle", schema::STRING, schema::SINGLE));
+    s.addSummaryField(Schema::SummaryField("urisingle", schema::STRING, schema::SINGLE));
+    s.addUriIndexFields(Schema::IndexField("uriarray", schema::STRING, schema::ARRAY));
+    s.addSummaryField(Schema::SummaryField("uriarray", schema::STRING, schema::ARRAY));
+    s.addUriIndexFields(Schema::IndexField("uriwset", schema::STRING, schema::WEIGHTEDSET));
+    s.addSummaryField(Schema::SummaryField("uriwset", schema::STRING, schema::WEIGHTEDSET));
     BuildContext bc(s);
     DBContext dc(bc._repo, getDocTypeName());
     Document::UP exp = bc._bld.startDocument("doc::0").
@@ -1153,14 +1121,9 @@ void
 Test::requireThatRawFieldsWorks()
 {
     Schema s;
-    s.addSummaryField(Schema::AttributeField("i",
-                                Schema::RAW));
-    s.addSummaryField(Schema::AttributeField("araw",
-                                Schema::RAW,
-                                Schema::ARRAY));
-    s.addSummaryField(Schema::AttributeField("wraw",
-                              Schema::RAW,
-                              Schema::WEIGHTEDSET));
+    s.addSummaryField(Schema::AttributeField("i", schema::RAW));
+    s.addSummaryField(Schema::AttributeField("araw", schema::RAW, schema::ARRAY));
+    s.addSummaryField(Schema::AttributeField("wraw", schema::RAW, schema::WEIGHTEDSET));
 
     std::vector<char> binaryBlob;
     binaryBlob.push_back('\0');
@@ -1238,7 +1201,7 @@ void
 Test::requireThatFieldCacheRepoCanReturnDefaultFieldCache()
 {
     Schema s;
-    s.addSummaryField(Schema::SummaryField("a", Schema::INT32));
+    s.addSummaryField(Schema::SummaryField("a", schema::INT32));
     BuildContext bc(s);
     FieldCacheRepo::UP repo = bc.createFieldCacheRepo(getResultConfig());
     FieldCache::CSP cache = repo->getFieldCache("");
