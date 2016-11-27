@@ -78,7 +78,7 @@ const uint32_t docid = 1;
 
 Schema getSchema() {
     Schema schema;
-    schema.addIndexField(Schema::IndexField(field_name, Schema::STRING));
+    schema.addIndexField(Schema::IndexField(field_name, search::index::schema::STRING));
     return schema;
 }
 
