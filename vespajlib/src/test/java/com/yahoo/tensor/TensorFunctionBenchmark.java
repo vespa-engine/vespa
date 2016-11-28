@@ -45,9 +45,9 @@ public class TensorFunctionBenchmark {
     
     private List<Tensor> generateVectors(int vectorCount, int vectorSize) {
         List<Tensor> tensors = new ArrayList<>();
+        TensorType type = new TensorType.Builder().mapped("x").build();
         for (int i = 0; i < vectorCount; i++) {
-            MapTensorBuilder builder = new MapTensorBuilder();
-            builder.dimension("x");
+            MapTensorBuilder builder = new MapTensorBuilder(type);
             for (int j = 0; j < vectorSize; j++) {
                 builder.cell().label("x", String.valueOf(j)).value(random.nextDouble());
             }

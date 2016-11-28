@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,15 +91,15 @@ public class Reduce extends PrimitiveTensorFunction {
     public Tensor evaluate(EvaluationContext context) {
         Tensor argument = this.argument.evaluate(context);
 
-        if ( ! dimensions.isEmpty() && ! argument.dimensions().containsAll(dimensions))
+        if ( ! dimensions.isEmpty() && ! argument.type().dimensionNames().containsAll(dimensions))
             throw new IllegalArgumentException("Cannot reduce " + argument + " over dimensions " + 
                                                dimensions + ": Not all those dimensions are present in this tensor");
 
-        if (dimensions.isEmpty() || dimensions.size() == argument.dimensions().size())
+        if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size())
             return reduceAll(argument);
         
         // Reduce dimensions
-        Set<String> reducedDimensions = new HashSet<>(argument.dimensions());
+        Set<String> reducedDimensions = new HashSet<>(argument.type().dimensionNames());
         reducedDimensions.removeAll(dimensions);
         
         // Reduce cells
@@ -111,7 +112,14 @@ public class Reduce extends PrimitiveTensorFunction {
         ImmutableMap.Builder<TensorAddress, Double> reducedCells = new ImmutableMap.Builder<>();
         for (Map.Entry<TensorAddress, ValueAggregator> aggregatingCell : aggregatingCells.entrySet())
             reducedCells.put(aggregatingCell.getKey(), aggregatingCell.getValue().aggregatedValue());
-        return new MapTensor(reducedDimensions, reducedCells.build());
+        return new MapTensor(asMappedDimensions(reducedDimensions), reducedCells.build());
+    }
+    
+    private TensorType asMappedDimensions(Set<String> dimensionNames) {
+        TensorType.Builder builder = new TensorType.Builder();
+        for (String dimensionName : dimensionNames)
+            builder.mapped(dimensionName);
+        return builder.build();
     }
     
     private TensorAddress reduceDimensions(TensorAddress address, Set<String> reducedDimensions) {
@@ -124,7 +132,7 @@ public class Reduce extends PrimitiveTensorFunction {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
         for (Double cellValue : argument.cells().values())
             valueAggregator.aggregate(cellValue);
-        return new MapTensor(ImmutableMap.of(TensorAddress.empty, valueAggregator.aggregatedValue()));
+        return new MapTensor(TensorType.empty, ImmutableMap.of(TensorAddress.empty, valueAggregator.aggregatedValue()));
     }
     
     private static abstract class ValueAggregator {

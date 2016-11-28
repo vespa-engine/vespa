@@ -51,7 +51,7 @@ public class Map extends PrimitiveTensorFunction {
         ImmutableMap.Builder<TensorAddress, Double> mappedCells = new ImmutableMap.Builder<>();
         for (java.util.Map.Entry<TensorAddress, Double> cell : argument.cells().entrySet())
             mappedCells.put(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
-        return new MapTensor(argument.dimensions(), mappedCells.build());
+        return new MapTensor(argument.type(), mappedCells.build());
     }
 
     @Override

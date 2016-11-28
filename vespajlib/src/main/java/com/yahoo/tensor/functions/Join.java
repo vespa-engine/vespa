@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +69,7 @@ public class Join extends PrimitiveTensorFunction {
         Tensor b = argumentB.evaluate(context);
         
         // Dimension product
-        Set<String> dimensions = combineDimensions(a, b);
+        TensorType type = a.type().combineWith(b.type());
 
         // Cell product (slow baseline implementation)
         ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
@@ -80,14 +81,7 @@ public class Join extends PrimitiveTensorFunction {
             }
         }
         
-        return new MapTensor(dimensions, cells.build());
-    }
-
-    private Set<String> combineDimensions(Tensor a, Tensor b) {
-        ImmutableSet.Builder<String> setBuilder = new ImmutableSet.Builder<>();
-        setBuilder.addAll(a.dimensions());
-        setBuilder.addAll(b.dimensions());
-        return setBuilder.build();
+        return new MapTensor(type, cells.build());
     }
 
     private TensorAddress combineAddresses(TensorAddress a, TensorAddress b) {

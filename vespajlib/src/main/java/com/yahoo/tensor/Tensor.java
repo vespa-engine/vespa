@@ -45,11 +45,7 @@ import java.util.function.Function;
 @Beta
 public interface Tensor {
 
-    /**
-     * Returns the immutable set of dimensions of this tensor.
-     * The size of this set is the tensor's <i>order</i>.
-     */
-    Set<String> dimensions();
+    TensorType type();
 
     /** Returns an immutable map of the cells of this */
     Map<TensorAddress, Double> cells();
@@ -63,8 +59,8 @@ public interface Tensor {
      * @throws IllegalStateException if this does not have zero dimensions and one value
      */
     default double asDouble() {
-        if (dimensions().size() > 0)
-            throw new IllegalStateException("This tensor is no dimensionless. Dimensions: " + dimensions());
+        if (type().dimensions().size() > 0)
+            throw new IllegalStateException("This tensor is not dimensionless. Dimensions: " + type().dimensions().size());
         if (cells().size() != 1)
             throw new IllegalStateException("This tensor does not have a single value, it has " + cells().size());
         return cells().values().iterator().next();
@@ -153,7 +149,7 @@ public interface Tensor {
     /** Returns true if the two given tensors are mathematically equivalent, that is whether both have the same content */
     static boolean equals(Tensor a, Tensor b) {
         if (a == b) return true;
-        if ( ! a.dimensions().equals(b.dimensions())) return false;
+        if ( ! a.type().equals(b.type())) return false;
         if ( ! a.cells().equals(b.cells())) return false;
         return true;
     }
@@ -197,22 +193,12 @@ public interface Tensor {
      * @return the tensor on the standard string format
      */
     static String toStandardString(Tensor tensor) {
-        if ( emptyDimensions(tensor).size() > 0) // explicitly output type TODO: Always do that
-            return typeToString(tensor) + ":" + contentToString(tensor);
+        if (tensor.cells().isEmpty() && ! tensor.type().dimensions().isEmpty()) // explicitly output type TODO: Always do that
+            return tensor.type() + ":" + contentToString(tensor);
         else
             return contentToString(tensor);
     }
 
-    static String typeToString(Tensor tensor) {
-        if (tensor.dimensions().isEmpty()) return "tensor()";
-        StringBuilder b = new StringBuilder("tensor(");
-        for (String dimension : tensor.dimensions())
-            b.append(dimension).append("{},");
-        b.setLength(b.length() -1);
-        b.append(")");
-        return b.toString();
-    }
-    
     static String contentToString(Tensor tensor) {
         List<java.util.Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
         Collections.sort(cellEntries, java.util.Map.Entry.<TensorAddress, Double>comparingByKey());
@@ -226,17 +212,6 @@ public interface Tensor {
             b.setLength(b.length() - 1);
         b.append("}");
         return b.toString();
-    }
-
-    /**
-     * Returns the dimensions of this which have no values.
-     * This is a possibly empty subset of the dimensions of this tensor.
-     */
-    static Set<String> emptyDimensions(Tensor tensor) {
-        Set<String> emptyDimensions = new HashSet<>(tensor.dimensions());
-        for (TensorAddress address : tensor.cells().keySet())
-            emptyDimensions.removeAll(address.dimensions());
-        return emptyDimensions;
     }
 
 }
