@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/log/log.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/stringattribute.h>
 #include <vespa/searchlib/attribute/singleenumattribute.hpp>

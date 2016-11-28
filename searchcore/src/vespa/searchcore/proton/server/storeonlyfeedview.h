@@ -18,7 +18,6 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
-#include <vespa/log/log.h>
 
 namespace search
 {
