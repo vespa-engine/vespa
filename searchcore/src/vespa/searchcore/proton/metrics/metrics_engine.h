@@ -12,15 +12,23 @@
 #include <vespa/metrics/state_api_adapter.h>
 #include <vespa/vespalib/net/metrics_producer.h>
 
+namespace metrics {
+    class Metricmanager;
+    class UpdateHook;
+}
+
+namespace config {
+    class ConfigUri;
+}
 namespace proton {
 
 class MetricsEngine : public MetricsWireService
 {
 private:
-    ContentProtonMetrics     _root;
-    LegacyProtonMetrics      _legacyRoot;
-    metrics::MetricManager   _manager;
-    metrics::StateApiAdapter _metrics_producer;
+    ContentProtonMetrics                      _root;
+    LegacyProtonMetrics                       _legacyRoot;
+    std::unique_ptr<metrics::MetricManager>   _manager;
+    metrics::StateApiAdapter                  _metrics_producer;
 
 public:
     typedef std::unique_ptr<MetricsEngine> UP;
@@ -30,8 +38,8 @@ public:
     ContentProtonMetrics &root() { return _root; }
     LegacyProtonMetrics &legacyRoot() { return _legacyRoot; }
     void start(const config::ConfigUri & configUri);
-    void addMetricsHook(metrics::MetricManager::UpdateHook &hook);
-    void removeMetricsHook(metrics::MetricManager::UpdateHook &hook);
+    void addMetricsHook(metrics::UpdateHook &hook);
+    void removeMetricsHook(metrics::UpdateHook &hook);
     void addExternalMetrics(metrics::Metric &child);
     void removeExternalMetrics(metrics::Metric &child);
     void addDocumentDBMetrics(DocumentDBMetricsCollection &child);
@@ -51,7 +59,7 @@ public:
     void stop();
 
     vespalib::MetricsProducer &metrics_producer() { return _metrics_producer; }
-    metrics::MetricManager &getManager() { return _manager; }
+    metrics::MetricManager &getManager() { return *_manager; }
 };
 
 } // namespace proton

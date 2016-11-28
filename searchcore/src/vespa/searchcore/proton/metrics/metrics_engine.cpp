@@ -1,18 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.metricsengine");
 #include "metrics_engine.h"
 #include <vespa/metrics/jsonwriter.h>
+#include <vespa/metrics/metricmanager.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.metricsengine");
 
 namespace proton {
 
 MetricsEngine::MetricsEngine()
     : _root(),
       _legacyRoot(),
-      _manager(),
-      _metrics_producer(_manager)
+      _manager(std::make_unique<metrics::MetricManager>()),
+      _metrics_producer(*_manager)
 {
 }
 
@@ -24,15 +25,15 @@ void
 MetricsEngine::start(const config::ConfigUri &)
 {
     {
-        metrics::MetricLockGuard guard(_manager.getMetricLock());
-        _manager.registerMetric(guard, _root);
-        _manager.registerMetric(guard, _legacyRoot);
+        metrics::MetricLockGuard guard(_manager->getMetricLock());
+        _manager->registerMetric(guard, _root);
+        _manager->registerMetric(guard, _legacyRoot);
     }
 
     // Storage doesnt snapshot unset metrics to save memory. Currently
     // feature seems a bit bugged. Disabling this optimalization for search.
     // Can enable it later when it is confirmed to be working well.
-    _manager.snapshotUnsetMetrics(true);
+    _manager->snapshotUnsetMetrics(true);
 
     // Currently, when injecting a metric manager into the content layer,
     // the content layer require to be the one initializing and starting it.
@@ -41,28 +42,28 @@ MetricsEngine::start(const config::ConfigUri &)
 }
 
 void
-MetricsEngine::addMetricsHook(metrics::MetricManager::UpdateHook &hook)
+MetricsEngine::addMetricsHook(metrics::UpdateHook &hook)
 {
-    _manager.addMetricUpdateHook(hook, 5);
+    _manager->addMetricUpdateHook(hook, 5);
 }
 
 void
-MetricsEngine::removeMetricsHook(metrics::MetricManager::UpdateHook &hook)
+MetricsEngine::removeMetricsHook(metrics::UpdateHook &hook)
 {
-    _manager.removeMetricUpdateHook(hook);
+    _manager->removeMetricUpdateHook(hook);
 }
 
 void
 MetricsEngine::addExternalMetrics(metrics::Metric &child)
 {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     _legacyRoot.registerMetric(child);
 }
 
 void
 MetricsEngine::removeExternalMetrics(metrics::Metric &child)
 {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     _legacyRoot.unregisterMetric(child);
 }
 
@@ -109,7 +110,7 @@ removeLegacyDocumentDBMetrics(LegacyProtonMetrics &legacyRoot,
 void
 MetricsEngine::addDocumentDBMetrics(DocumentDBMetricsCollection &child)
 {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     addLegacyDocumentDBMetrics(_legacyRoot, child.getMetrics());
 
     _root.registerMetric(child.getTaggedMetrics());
@@ -118,7 +119,7 @@ MetricsEngine::addDocumentDBMetrics(DocumentDBMetricsCollection &child)
 void
 MetricsEngine::removeDocumentDBMetrics(DocumentDBMetricsCollection &child)
 {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     removeLegacyDocumentDBMetrics(_legacyRoot, child.getMetrics());
 
     _root.unregisterMetric(child.getTaggedMetrics());
@@ -170,7 +171,7 @@ MetricsEngine::addAttribute(AttributeMetrics &subAttributes,
                             AttributeMetrics *totalAttributes,
                             const std::string &name)
 {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     doAddAttribute(subAttributes, name);
     if (totalAttributes != NULL) {
         doAddAttribute(*totalAttributes, name);
@@ -182,7 +183,7 @@ MetricsEngine::removeAttribute(AttributeMetrics &subAttributes,
                                AttributeMetrics *totalAttributes,
                                const std::string &name)
 {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     doRemoveAttribute(subAttributes, name);
     if (totalAttributes != NULL) {
         doRemoveAttribute(*totalAttributes, name);
@@ -193,7 +194,7 @@ void
 MetricsEngine::cleanAttributes(AttributeMetrics &subAttributes,
                                AttributeMetrics *totalAttributes)
 {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     doCleanAttributes(subAttributes);
     if (totalAttributes != NULL) {
         doCleanAttributes(*totalAttributes);
@@ -203,7 +204,7 @@ MetricsEngine::cleanAttributes(AttributeMetrics &subAttributes,
 void MetricsEngine::addRankProfile(LegacyDocumentDBMetrics &owner,
                                    const std::string &name,
                                    size_t numDocIdPartitions) {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::LP &entry =
         owner.matching.rank_profiles[name];
     if (entry.get()) {
@@ -216,7 +217,7 @@ void MetricsEngine::addRankProfile(LegacyDocumentDBMetrics &owner,
 }
 
 void MetricsEngine::cleanRankProfiles(LegacyDocumentDBMetrics &owner) {
-    metrics::MetricLockGuard guard(_manager.getMetricLock());
+    metrics::MetricLockGuard guard(_manager->getMetricLock());
     LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMap metrics;
     owner.matching.rank_profiles.swap(metrics);
     for (LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMap::const_iterator
@@ -228,7 +229,7 @@ void MetricsEngine::cleanRankProfiles(LegacyDocumentDBMetrics &owner) {
 void
 MetricsEngine::stop()
 {
-    _manager.stop();
+    _manager->stop();
 }
 
 } // namespace proton

@@ -11,7 +11,6 @@
 #include <vespa/metrics/loadmetric.h>
 #include <vespa/metrics/summetric.h>
 #include <vespa/metrics/metricset.h>
-#include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/metricsnapshot.h>
 #include <vespa/metrics/metrictimer.h>
 

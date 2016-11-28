@@ -76,13 +76,13 @@ Component::registerMetricUpdateHook(MetricUpdateHook& hook, SecondTime period)
     }
 }
 
-metrics::MetricLockGuard
+vespalib::MonitorGuard
 Component::getMetricManagerLock()
 {
     if (_metricReg != 0) {
         return _metricReg->getMetricManagerLock();
     } else {
-        return metrics::MetricLockGuard();
+        return vespalib::MonitorGuard();
     }
 }
 

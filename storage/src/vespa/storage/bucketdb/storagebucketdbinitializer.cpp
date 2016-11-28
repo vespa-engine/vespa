@@ -13,10 +13,24 @@
 #include <vespa/config-stor-filestor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/config.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 LOG_SETUP(".storage.bucketdb.initializer");
 
 namespace storage {
+
+using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
+
+struct BucketReadState {
+    typedef vespalib::LinkedPtr<BucketReadState> LP;
+
+    BucketSet _pending;
+    document::BucketId _databaseIterator;
+    bool _done;
+
+    BucketReadState() : _done(false) {}
+};
+
 
 StorageBucketDBInitializer::Config::Config(const config::ConfigUri & configUri)
     : _listPriority(0),

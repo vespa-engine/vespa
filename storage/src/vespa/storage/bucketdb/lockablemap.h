@@ -19,6 +19,7 @@
 #include <list>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
