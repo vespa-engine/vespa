@@ -19,10 +19,8 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.host.HostValidator;
-import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
@@ -31,7 +29,7 @@ import com.yahoo.vespa.config.server.provision.ProvisionerAdapter;
 import com.yahoo.vespa.config.server.session.FileDistributionFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.SessionContext;
-import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.config.server.tenant.Rotations;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,19 +47,13 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private static final Logger log = Logger.getLogger(PreparedModelsBuilder.class.getName());
 
     private final PermanentApplicationPackage permanentApplicationPackage;
-    private final ConfigserverConfig configserverConfig;
     private final ConfigDefinitionRepo configDefinitionRepo;
-    private final Curator curator;
-    private final Zone zone;
     private final SessionContext context;
     private final DeployLogger logger;
     private final PrepareParams params;
     private final FileDistributionFactory fileDistributionFactory;
     private final HostProvisionerProvider hostProvisionerProvider;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
-    private final ApplicationId applicationId;
-    private final Rotations rotations;
-    private final Set<Rotation> rotationsSet;
     private final ModelContext.Properties properties;
 
     /** Construct from global component registry */
@@ -75,11 +67,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  Path tenantPath) {
         super(globalComponentRegistry.getModelFactoryRegistry());
         this.permanentApplicationPackage = globalComponentRegistry.getPermanentApplicationPackage();
-        this.configserverConfig = globalComponentRegistry.getConfigserverConfig();
         this.configDefinitionRepo = globalComponentRegistry.getConfigDefinitionRepo();
-        this.curator = globalComponentRegistry.getCurator();
-        this.zone = globalComponentRegistry.getZone();
-
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
 
@@ -88,32 +76,28 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         this.params = params;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
 
-        this.applicationId = params.getApplicationId();
-        this.rotations = new Rotations(curator, tenantPath);
-        this.rotationsSet = getRotations(params.rotations());
-        this.properties = createModelContextProperties(params.getApplicationId(), configserverConfig, zone, rotationsSet);
+        Rotations rotationsSetFromZk = new Rotations(globalComponentRegistry.getCurator(), tenantPath);
+        Set<Rotation> rotationsSet = getRotations(params.rotations(), rotationsSetFromZk, params.getApplicationId());
+        this.properties = createModelContextProperties(params.getApplicationId(),
+                                                       globalComponentRegistry.getConfigserverConfig(),
+                                                       globalComponentRegistry.getZone(),
+                                                       rotationsSet);
     }
 
     /** Construct with all dependencies passed separately */
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
                                  PermanentApplicationPackage permanentApplicationPackage,
-                                 ConfigserverConfig configserverConfig,
                                  ConfigDefinitionRepo configDefinitionRepo,
-                                 Curator curator,
-                                 Zone zone,
                                  FileDistributionFactory fileDistributionFactory,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  SessionContext context,
                                  DeployLogger logger,
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
-                                 Path tenantPath) {
+                                 ModelContext.Properties properties) {
         super(modelFactoryRegistry);
         this.permanentApplicationPackage = permanentApplicationPackage;
-        this.configserverConfig = configserverConfig;
         this.configDefinitionRepo = configDefinitionRepo;
-        this.curator = curator;
-        this.zone = zone;
 
         this.fileDistributionFactory = fileDistributionFactory;
         this.hostProvisionerProvider = hostProvisionerProvider;
@@ -123,16 +107,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         this.params = params;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
 
-        this.applicationId = params.getApplicationId();
-        this.rotations = new Rotations(curator, tenantPath);
-        this.rotationsSet = getRotations(params.rotations());
-        this.properties = new ModelContextImpl.Properties(
-                params.getApplicationId(),
-                configserverConfig.multitenant(),
-                ConfigServerSpec.fromConfig(configserverConfig),
-                configserverConfig.hostedVespa(),
-                zone,
-                rotationsSet);
+        this.properties = properties;
     }
 
     @Override
@@ -181,9 +156,10 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 .collect(Collectors.toList()));
     }
 
-    private Set<Rotation> getRotations(Set<Rotation> rotations) {
-        if (rotations == null || rotations.isEmpty()) {
-            rotations = this.rotations.readRotationsFromZooKeeper(applicationId);
+    private Set<Rotation> getRotations(Set<Rotation> rotationsInRequestParameter, Rotations rotationsFromZk, ApplicationId applicationId) {
+        Set<Rotation> rotations = rotationsInRequestParameter;
+        if (rotationsInRequestParameter == null || rotationsInRequestParameter.isEmpty()) {
+            rotations = rotationsFromZk.readRotationsFromZooKeeper(applicationId);
         }
         return rotations;
     }

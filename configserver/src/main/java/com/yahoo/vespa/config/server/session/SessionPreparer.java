@@ -141,17 +141,14 @@ public class SessionPreparer {
                                                               rotationsSet);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
-                                                                   configserverConfig,
                                                                    configDefinitionRepo,
-                                                                   curator,
-                                                                   zone,
                                                                    fileDistributionFactory,
                                                                    hostProvisionerProvider,
                                                                    context,
                                                                    logger,
                                                                    params,
                                                                    currentActiveApplicationSet,
-                                                                   tenantPath);
+                                                                   properties);
         }
 
         void checkTimeout(String step) {
