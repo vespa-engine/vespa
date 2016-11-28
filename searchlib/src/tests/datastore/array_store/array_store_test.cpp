@@ -263,6 +263,13 @@ TEST_F("require that address space usage is ratio between used clusters and numb
     EXPECT_EQUAL(3, f.store.addressSpaceUsage().used());
     EXPECT_EQUAL(1, f.store.addressSpaceUsage().dead());
     size_t fourgig = (1ull << 32);
+    /*
+     * Expected limit is sum of allocated clusters for active buffers and
+     * potentially allocated clusters for free buffers. If all buffers were
+     * free then the limit would be 4 Gi.  Then we subtract clusters for 4
+     * buffers that are not free, and add their actual number of allocated
+     * clusters (16 clusters per buffer).
+     */
     size_t expLimit = fourgig - 4 * F1::EntryRefType::offsetSize() + 4 * 16;
     EXPECT_EQUAL(static_cast<double>(2)/ expLimit, f.store.addressSpaceUsage().usage());
     EXPECT_EQUAL(expLimit, f.store.addressSpaceUsage().limit());
