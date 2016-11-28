@@ -87,9 +87,9 @@ MultiValueMapping2Base::considerCompact(const CompactionStrategy &compactionStra
     size_t usedClusters = _cachedArrayStoreAddressSpaceUsage.used();
     size_t deadClusters = _cachedArrayStoreAddressSpaceUsage.dead();
     bool compactMemory = ((deadBytes >= DEAD_BYTES_SLACK) &&
-                          (usedBytes * compactionStrategy.getMaxDeadRatio() < deadBytes));
+                          (usedBytes * compactionStrategy.getMaxDeadBytesRatio() < deadBytes));
     bool compactAddressSpace = ((deadClusters >= DEAD_CLUSTERS_SLACK) &&
-                                (usedClusters * compactionStrategy.getMaxDeadRatio() < deadClusters));
+                                (usedClusters * compactionStrategy.getMaxDeadAddressSpaceRatio() < deadClusters));
     if (compactMemory || compactAddressSpace) {
         compactWorst();
         return true;

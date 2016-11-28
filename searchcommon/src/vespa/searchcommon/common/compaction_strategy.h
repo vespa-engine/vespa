@@ -12,19 +12,24 @@ namespace search {
 class CompactionStrategy
 {
 private:
-    double _maxDeadRatio; // Max ratio of dead bytes before compaction
+    double _maxDeadBytesRatio; // Max ratio of dead bytes before compaction
+    double _maxDeadAddressSpaceRatio; // Max ratio of dead address space before compaction
 public:
     CompactionStrategy()
-        : _maxDeadRatio(0.2)
+        : _maxDeadBytesRatio(0.2),
+          _maxDeadAddressSpaceRatio(0.2)
     {
     }
-    CompactionStrategy(double maxDeadRatio)
-        : _maxDeadRatio(maxDeadRatio)
+    CompactionStrategy(double maxDeadBytesRatio, double maxDeadAddressSpaceRatio)
+        : _maxDeadBytesRatio(maxDeadBytesRatio),
+          _maxDeadAddressSpaceRatio(maxDeadAddressSpaceRatio)
     {
     }
-    double getMaxDeadRatio() const { return _maxDeadRatio; }
+    double getMaxDeadBytesRatio() const { return _maxDeadBytesRatio; }
+    double getMaxDeadAddressSpaceRatio() const { return _maxDeadAddressSpaceRatio; }
     bool operator==(const CompactionStrategy & rhs) const {
-        return _maxDeadRatio == rhs._maxDeadRatio;
+        return _maxDeadBytesRatio == rhs._maxDeadBytesRatio &&
+            _maxDeadAddressSpaceRatio == rhs._maxDeadAddressSpaceRatio;
     }
     bool operator!=(const CompactionStrategy & rhs) const { return !(operator==(rhs)); }
 };
