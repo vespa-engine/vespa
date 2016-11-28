@@ -124,25 +124,45 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
 
     /**
-     * Returns a list of nodes that should be trusted by the given node. The list will contain:
-     *
-     * - All nodes in the same application as the given node (if node is allocated)
-     * - All proxy nodes
-     * - All config servers
+     * Returns a list of nodes that should be trusted by the given node.
      */
     public List<Node> getTrustedNodes(Node node) {
         final List<Node> trustedNodes = new ArrayList<>();
 
-        // Add nodes in application
-        node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+        switch (node.type()) {
+            case tenant:
+                // Tenant nodes trust nodes in same application and all infrastructure nodes
+                node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+                trustedNodes.addAll(getNodes(NodeType.proxy));
+                trustedNodes.addAll(getConfigNodes());
+                break;
 
-        // Add proxy nodes
-        trustedNodes.addAll(getNodes(NodeType.proxy));
+            case config:
+                // Config servers trust each other and all nodes in the zone
+                trustedNodes.addAll(getConfigNodes());
+                trustedNodes.addAll(getNodes());
+                break;
 
-        // Add config servers
-        trustedNodes.addAll(getConfigNodes());
+            case proxy:
+                // Proxy nodes only trust config servers. They also trust any traffic to ports 4080/4443, but these
+                // static rules are configured by the node itself
+                trustedNodes.addAll(getConfigNodes());
+                break;
+
+            default:
+                throw new IllegalArgumentException(
+                        String.format("Don't know how to create ACL for node [hostname=%s type=%s]",
+                                node.hostname(), node.type()));
+        }
 
         return Collections.unmodifiableList(trustedNodes);
+    }
+
+    /** Get config node by hostname */
+    public Optional<Node> getConfigNode(String hostname) {
+        return getConfigNodes().stream()
+                .filter(n -> hostname.equals(n.hostname()))
+                .findFirst();
     }
 
     // ----------------- Node lifecycle -----------------------------------------------------------

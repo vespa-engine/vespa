@@ -37,8 +37,9 @@ public class NodeAclResponse extends HttpResponse {
     }
 
     private void toSlime(String hostname, Cursor object) {
-        final Node node = nodeRepository.getNode(hostname)
-                .orElseThrow(() -> new IllegalArgumentException("No node with hostname '" + hostname + "'"));
+        Node node = nodeRepository.getNode(hostname)
+                .orElseGet(() -> nodeRepository.getConfigNode(hostname)
+                        .orElseThrow(() -> new IllegalArgumentException("No node with hostname '" + hostname + "'")));
         toSlime(nodeRepository.getTrustedNodes(node), object.setArray("trustedNodes"));
     }
 

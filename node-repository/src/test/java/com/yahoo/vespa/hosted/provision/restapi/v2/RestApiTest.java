@@ -220,7 +220,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void acl_request() throws Exception {
+    public void acl_request_by_tenant_node() throws Exception {
         String hostname = "foo.yahoo.com";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                         ("[" + asNodeJson(hostname, "default") + "]").
@@ -236,6 +236,16 @@ public class RestApiTest {
                 "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
                 "]}");
         assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/" + hostname), responsePattern);
+    }
+
+    @Test
+    public void acl_request_by_config_server() throws Exception {
+        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
+                "]}");
+        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
     }
 
     @Test
