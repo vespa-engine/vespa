@@ -587,7 +587,13 @@ void parse_tensor_reduce(ParseContext &ctx) {
         return;
     }
     auto dimensions = get_ident_list(ctx, false);
-    ctx.push_expression(std::make_unique<nodes::TensorReduce>(std::move(child), *maybe_aggr, std::move(dimensions)));
+    if ((*maybe_aggr == nodes::Aggr::SUM) && dimensions.empty()) {
+        ctx.push_expression(std::make_unique<nodes::TensorSum>(std::move(child)));
+    } else if ((*maybe_aggr == nodes::Aggr::SUM) && (dimensions.size() == 1)) {
+        ctx.push_expression(std::make_unique<nodes::TensorSum>(std::move(child), dimensions[0]));
+    } else {
+        ctx.push_expression(std::make_unique<nodes::TensorReduce>(std::move(child), *maybe_aggr, std::move(dimensions)));
+    }
 }
 
 void parse_tensor_rename(ParseContext &ctx) {
