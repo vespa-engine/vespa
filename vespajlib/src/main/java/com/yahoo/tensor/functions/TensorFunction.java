@@ -1,5 +1,9 @@
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.Tensor;
+
+import java.util.List;
+
 /**
  * A representation of a tensor function which is able to be translated to a set of primitive
  * tensor functions if necessary.
@@ -9,6 +13,16 @@ package com.yahoo.tensor.functions;
  */
 public abstract class TensorFunction {
 
+    /** Returns the function arguments of this node in the order they are applied */
+    public abstract List<TensorFunction> functionArguments();
+
+    /**
+     * Returns a copy of this tensor function with the arguments replaced by the given list of arguments.
+     *
+     * @throws IllegalArgumentException if the argument list has the wrong size for this function
+     */
+    public abstract TensorFunction replaceArguments(List<TensorFunction> arguments);
+
     /**
      * Translate this function - and all of its arguments recursively -
      * to a tree of primitive functions only.
@@ -16,5 +30,25 @@ public abstract class TensorFunction {
      * @return a tree of primitive functions implementing this
      */
     public abstract PrimitiveTensorFunction toPrimitive();
+
+    /**
+     * Evaluates this tensor.
+     *
+     * @param context a context which must be passed to all nexted functions when evaluating
+     */
+    public abstract Tensor evaluate(EvaluationContext context);
+
+    /** Evaluate with no context */
+    public final Tensor evaluate() { return evaluate(EvaluationContext.empty()); }
+
+    /**
+     * Return a string representation of this context.
+     * 
+     * @param context a context which must be passed to all nexted functions when requesting the string value
+     */
+    public abstract String toString(ToStringContext context);
+    
+    @Override
+    public final String toString() { return toString(ToStringContext.empty()); }
 
 }
