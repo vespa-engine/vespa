@@ -16,9 +16,7 @@
  * </pre>
  ****************************************************************************/
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
-LOG_SETUP("SrcTestSuite");
 #include <vespa/fastlib/testsuite/suite.h>
 #include "testenv.h"
 #include "mcandTest.h"

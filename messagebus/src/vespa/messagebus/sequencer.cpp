@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".sequencer");
-
 #include <vespa/vespalib/util/vstringfmt.h>
 #include "sequencer.h"
 #include "tracelevel.h"
@@ -90,7 +87,7 @@ Sequencer::handleReply(Reply::UP reply)
         vespalib::LockGuard guard(_lock);
         QueueMap::iterator it = _seqMap.find(seq);
         MessageQueue *que = it->second;
-        LOG_ASSERT(it != _seqMap.end());
+        assert(it != _seqMap.end());
         if (que == NULL || que->size() == 0) {
             if (que != NULL) {
                 delete que;

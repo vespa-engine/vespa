@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".routingnode");
-
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/tracelevel.h>
@@ -83,7 +80,7 @@ RoutingNode::clearChildren()
 void
 RoutingNode::discard()
 {
-    LOG_ASSERT(_parent == NULL);
+    assert(_parent == NULL);
     if (_discardHandler != NULL) {
         _discardHandler->handleDiscard(Context());
     }
@@ -245,7 +242,7 @@ RoutingNode::notifyTransmit()
                 if (node->hasReply()) {
                     node->notifyParent();
                 } else {
-                    LOG_ASSERT(node->_serviceAddress.get() != NULL);
+                    assert(node->_serviceAddress.get() != NULL);
                     sendTo.push_back(node);
                 }
             } else {

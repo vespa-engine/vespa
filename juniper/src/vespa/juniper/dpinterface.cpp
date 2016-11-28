@@ -2,6 +2,4 @@
 /* $Id$ */
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.dpinterface");
 #include "dpinterface.h"

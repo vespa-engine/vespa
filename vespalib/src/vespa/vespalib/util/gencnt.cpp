@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".gencnt");
 #include "gencnt.h"
 
 namespace vespalib {
@@ -45,7 +43,7 @@ GenCnt::distance(const GenCnt &other) const
 {
     if (other._val == 0) {
         // special case
-        LOG_ASSERT(_val == 0);
+        assert(_val == 0);
         return 0;
     }
     if (_val <= other._val) {

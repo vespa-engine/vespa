@@ -174,7 +174,6 @@ DataType::operator<(const DataType& other) const
 FieldPath::UP
 DataType::buildFieldPath(const vespalib::stringref  & remainFieldName) const
 {
-//    LOG(debug, "remainFieldName = %s, dataType=%s", remainFieldName.c_str(), getClass().name());
     if ( !remainFieldName.empty() ) {
         return onBuildFieldPath(remainFieldName);
     }

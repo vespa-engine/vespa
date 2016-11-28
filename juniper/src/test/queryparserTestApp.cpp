@@ -17,9 +17,7 @@
  * </pre>
  ****************************************************************************/
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
-LOG_SETUP("queryparserTest");
 #include "queryparserTest.h"
 #include "testenv.h"
 

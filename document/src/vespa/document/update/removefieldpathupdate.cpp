@@ -3,10 +3,6 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/update/removefieldpathupdate.h>
-#include <vespa/log/log.h>
-
-LOG_SETUP(".document.update.fieldpathupdate");
-
 
 namespace document {
 

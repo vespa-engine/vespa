@@ -1,23 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".bodyfielddetector");
-
 #include "bodyfielddetector.h"
-
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/closure.h>
 #include "valuenode.h"
 
-namespace document
-{
+namespace document {
 
-namespace select
-{
-
+namespace select {
 
 void
 BodyFieldDetector::detectFieldType(const FieldValueNode *expr,

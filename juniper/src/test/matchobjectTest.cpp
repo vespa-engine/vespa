@@ -17,8 +17,6 @@
  * </pre>
  ***************************************************************************/
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("");
 #include "matchobjectTest.h"
 #include "fakerewriter.h"
 

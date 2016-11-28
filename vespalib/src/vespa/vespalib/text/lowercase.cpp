@@ -5,9 +5,6 @@
 #include "lowercase.h"
 #include <vespa/vespalib/text/utf8.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".vespalib.lowercase");
-
 namespace vespalib {
 
 vespalib::string

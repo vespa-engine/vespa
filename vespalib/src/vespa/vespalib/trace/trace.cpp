@@ -4,10 +4,7 @@
 
 #include <algorithm>
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/util/vstringfmt.h>
-
-LOG_SETUP(".trace");
 
 namespace vespalib {
 

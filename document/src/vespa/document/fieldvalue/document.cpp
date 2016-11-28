@@ -8,12 +8,10 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <fstream>
 
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using vespalib::nbostream;
@@ -21,7 +19,6 @@ using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 
-LOG_SETUP(".document.fieldvalue.document");
 
 namespace document {
 namespace {

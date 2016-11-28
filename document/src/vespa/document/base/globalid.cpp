@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".globalid");
-
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -29,8 +26,7 @@ getHexVal(char c)
     } else if (c >= 'A' && c <= 'F') {
         return (c - 'A' + 10);
     }
-    LOG_ASSERT(validateHex(c));
-    abort();
+    assert(validateHex(c));
     abort();
 }
 
@@ -92,7 +88,7 @@ GlobalId::parse(const vespalib::stringref & source)
                 + "'.", VESPA_STRLOC);
     }
     if (source.size() != 2 * LENGTH + 7) {
-        std::ostringstream ost;
+        vespalib::asciistream ost;
         ost << "A gid string representation must be exactly "
             << (2 * LENGTH + 7) << " bytes long. Invalid source: '"
             << source << "'.";

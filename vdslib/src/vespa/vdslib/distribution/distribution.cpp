@@ -5,7 +5,6 @@
 
 #include <cmath>
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/bobhash.h>
@@ -17,6 +16,7 @@
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/print/asciiconfigreader.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".vdslib.distribution");
 
 namespace storage {

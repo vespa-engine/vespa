@@ -144,8 +144,6 @@ namespace vespalib {
  *
  * Simple test example:
  * <pre>
- * \#include <vespa/log/log.h>
- * LOG_SETUP("true_test");
  * \#include <vespa/fastos/fastos.h>
  * \#include <vespa/vespalib/testkit/testapp.h>
  *

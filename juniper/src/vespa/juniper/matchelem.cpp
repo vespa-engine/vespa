@@ -2,8 +2,6 @@
 /* $Id$ */
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.matchelem");
 #include "matchelem.h"
 
 MatchElement::MatchElement(off_t spos, off_t stoken) :
