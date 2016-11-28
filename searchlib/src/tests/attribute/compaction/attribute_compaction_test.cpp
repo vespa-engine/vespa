@@ -33,25 +33,55 @@ VectorType &as(AttributePtr &v)
     return dynamic_cast<VectorType &>(*v);
 }
 
-void populateAttribute(IntegerAttribute &v, uint32_t docIdLimit)
+void populateAttribute(IntegerAttribute &v, uint32_t docIdLimit, uint32_t values)
 {
     for(uint32_t docId = 0; docId < docIdLimit; ++docId) {
         uint32_t checkDocId = 0;
         EXPECT_TRUE(v.addDoc(checkDocId));
         EXPECT_EQUAL(docId, checkDocId);
         v.clearDoc(docId);
-        for (size_t vi = 0; vi <= 40; ++vi) {
+        for (uint32_t vi = 0; vi <= values; ++vi) {
             EXPECT_TRUE(v.append(docId, 42, 1) );
+        }
+        if ((docId % 100) == 0) {
+            v.commit();
         }
     }
     v.commit(true);
     v.incGeneration();
 }
 
-void populateAttribute(AttributePtr &v, uint32_t docIdLimit)
+void populateAttribute(AttributePtr &v, uint32_t docIdLimit, uint32_t values)
 {
     if (is<IntegerAttribute>(v)) {
-        populateAttribute(as<IntegerAttribute>(v), docIdLimit);
+        populateAttribute(as<IntegerAttribute>(v), docIdLimit, values);
+    }
+}
+
+void hammerAttribute(IntegerAttribute &v, uint32_t docIdLow, uint32_t docIdHigh, uint32_t count)
+{
+    uint32_t work = 0;
+    for (uint32_t i = 0; i < count; ++i) {
+        for (uint32_t docId = docIdLow; docId < docIdHigh; ++docId) {
+            v.clearDoc(docId);
+            EXPECT_TRUE(v.append(docId, 42, 1));
+        }
+        work += (docIdHigh - docIdLow);
+        if (work >= 100000) {
+            v.commit(true);
+            work = 0;
+        } else {
+            v.commit();
+        }
+    }
+    v.commit(true);
+    v.incGeneration();
+}
+
+void hammerAttribute(AttributePtr &v, uint32_t docIdLow, uint32_t docIdHigh, uint32_t count)
+{
+    if (is<IntegerAttribute>(v)) {
+        hammerAttribute(as<IntegerAttribute>(v), docIdLow, docIdHigh, count);
     }
 }
 
@@ -74,7 +104,8 @@ public:
         : _v()
     { _v = search::AttributeFactory::createAttribute("test", cfg); }
     ~Fixture() { }
-    void populate(uint32_t docIdLimit) { populateAttribute(_v, docIdLimit); }
+    void populate(uint32_t docIdLimit, uint32_t values) { populateAttribute(_v, docIdLimit, values); }
+    void hammer(uint32_t docIdLow, uint32_t docIdHigh, uint32_t count) { hammerAttribute(_v, docIdLow, docIdHigh, count); }
     void clean(uint32_t docIdLimit) { cleanAttribute(*_v, docIdLimit); }
     AttributeStatus getStatus() { _v->commit(true); return _v->getStatus(); }
     AttributeStatus getStatus(const vespalib::string &prefix) {
@@ -87,11 +118,26 @@ public:
 
 TEST_F("Test that compaction of integer array attribute reduces memory usage", Fixture({ BasicType::INT64, CollectionType::ARRAY }))
 {
-    f.populate(3000);
+    f.populate(3000, 40);
     AttributeStatus beforeStatus = f.getStatus("before");
     f.clean(2000);
     AttributeStatus afterStatus = f.getStatus("after");
     EXPECT_LESS(afterStatus.getUsed(), beforeStatus.getUsed());
+}
+
+TEST_F("Test that compaction uses right metrics to start compaction", Fixture({ BasicType::INT8, CollectionType::ARRAY }))
+{
+    uint32_t largeDocs = 1024 * 1024 * 16;
+    f.populate(largeDocs, 1000);
+    AttributeStatus beforeStatus = f.getStatus("before");
+    (void) beforeStatus;
+    uint32_t docIdLow = largeDocs - 1000;
+    for (uint32_t i = 0; i < 40; ++i) {
+        LOG(info, "hammer gen %u", i);
+        f.hammer(docIdLow, largeDocs, 100000);
+        AttributeStatus afterStatus = f.getStatus("after");
+        (void) afterStatus;
+    }
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
