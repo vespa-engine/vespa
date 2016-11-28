@@ -359,6 +359,9 @@ DataStoreBase::getAddressSpaceUsage(void) const
             deadClusters += bState.getDeadElems() / clusterSize;
             limitClusters += bState.capacity() / clusterSize;
         } else if (bState.isOnHold()) {
+            uint32_t clusterSize = bState.getClusterSize();
+            usedClusters += bState.size() / clusterSize;
+            limitClusters += bState.capacity() / clusterSize;
         } else if (bState.isFree()) {
             limitClusters += _maxClusters;
         } else {
