@@ -68,10 +68,10 @@ public class StringValue extends Value {
     }
 
     @Override
-    public Value compare(TruthOperator operator, Value value) {
+    public boolean compare(TruthOperator operator, Value value) {
         if (operator.equals(TruthOperator.EQUAL))
-            return new BooleanValue(this.equals(value));
-        throw new UnsupportedOperationException("String values ('" + value + "') cannot be compared except with '=='");
+            return this.equals(value);
+        throw new UnsupportedOperationException("String values ('" + value + "') cannot be compared except with '='");
     }
 
     @Override

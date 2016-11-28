@@ -20,7 +20,7 @@ public class ClusterState implements Cloneable {
     private Map<Node, NodeState> nodeStates = new TreeMap<>();
 
     // TODO: Change to one count for distributor and one for storage, rather than an array
-    // TODO: RenameFunction, this is not the highest node count but the highest index
+    // TODO: Rename, this is not the highest node count but the highest index
     private ArrayList<Integer> nodeCount = new ArrayList<>(2);
 
     private String description = "";

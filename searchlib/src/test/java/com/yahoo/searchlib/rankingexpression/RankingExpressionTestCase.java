@@ -6,10 +6,7 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
-import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import junit.framework.TestCase;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,18 +14,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
 /**
- * @author Simon Thoresen
- * @author bratseth
+ * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
-public class RankingExpressionTestCase {
+public class RankingExpressionTestCase extends TestCase {
 
-    @Test
     public void testParamInFeature() throws ParseException {
         assertParse("if (1 > 2, dotProduct(allparentid,query(cate1_parentid)), 2)",
                     "if ( 1 > 2,\n" +
@@ -37,7 +31,6 @@ public class RankingExpressionTestCase {
                     ")");
     }
 
-    @Test
     public void testDollarShorthand() throws ParseException {
         assertParse("query(var1)", " $var1");
         assertParse("query(var1)", " $var1 ");
@@ -51,7 +44,6 @@ public class RankingExpressionTestCase {
         assertParse("if (if (f1.out < query(p1), 0, 1) < if (f2.out < query(p2), 0, 1), f3.out, query(p3))", "if(if(f1.out<$p1,0,1)<if(f2.out<$p2,0,1),f3.out,$p3)");
     }
 
-    @Test
     public void testLookaheadIndefinitely() throws Exception {
         ExecutorService exec = Executors.newSingleThreadExecutor();
         Future<Boolean> future = exec.submit(new Callable<Boolean>() {
@@ -68,8 +60,7 @@ public class RankingExpressionTestCase {
         assertTrue(future.get(60, TimeUnit.SECONDS));
     }
 
-    @Test
-    public void testSelfRecursionSerialization() throws ParseException {
+    public void testSelfRecursionScript() throws ParseException {
         List<ExpressionFunction> macros = new ArrayList<>();
         macros.add(new ExpressionFunction("foo", null, new RankingExpression("foo")));
 
@@ -81,8 +72,7 @@ public class RankingExpressionTestCase {
         }
     }
 
-    @Test
-    public void testMacroCycleSerialization() throws ParseException {
+    public void testMacroCycleScript() throws ParseException {
         List<ExpressionFunction> macros = new ArrayList<>();
         macros.add(new ExpressionFunction("foo", null, new RankingExpression("bar")));
         macros.add(new ExpressionFunction("bar", null, new RankingExpression("foo")));
@@ -95,48 +85,42 @@ public class RankingExpressionTestCase {
         }
     }
 
-    @Test
-    public void testSerialization() throws ParseException {
+    public void testScript() throws ParseException {
         List<ExpressionFunction> macros = new ArrayList<>();
         macros.add(new ExpressionFunction("foo", Arrays.asList("arg1", "arg2"), new RankingExpression("min(arg1, pow(arg2, 2))")));
         macros.add(new ExpressionFunction("bar", Arrays.asList("arg1", "arg2"), new RankingExpression("arg1 * arg1 + 2 * arg1 * arg2 + arg2 * arg2")));
         macros.add(new ExpressionFunction("baz", Arrays.asList("arg1", "arg2"), new RankingExpression("foo(1, 2) / bar(arg1, arg2)")));
         macros.add(new ExpressionFunction("cox", null, new RankingExpression("10 + 08 * 1977")));
 
-        assertSerialization(Arrays.asList(
-         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(foo@af74e3fd9070bd18.a368ed0a5ba3a5d0) * rankingExpression(foo@dbab346efdad5362.e5c39e42ebd91c30)",
-         "min(5,pow(rankingExpression(foo@d1d1417259cdc651.573bbcd4be18f379),2))",
-         "min(6,pow(7,2))",
-         "min(1,pow(2,2))",
-         "min(3,pow(4,2))",
-         "min(rankingExpression(foo@84951be88255b0ec.d0303e061b36fab8),pow(8,2))"), "foo(1,2) + foo(3,4) * foo(5, foo(foo(6, 7), 8))", macros);
-        assertSerialization(Arrays.asList(
-         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(bar@af74e3fd9070bd18.a368ed0a5ba3a5d0)",
-         "min(1,pow(2,2))",
-         "3 * 3 + 2 * 3 * 4 + 4 * 4"), "foo(1, 2) + bar(3, 4)", macros);
-        assertSerialization(Arrays.asList(
-         "rankingExpression(baz@e2dc17a89864aed0.12232eb692c6c502)",
-         "min(1,pow(2,2))",
-         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) / rankingExpression(bar@e2dc17a89864aed0.12232eb692c6c502)",
-         "1 * 1 + 2 * 1 * 2 + 2 * 2"), "baz(1, 2)", macros);
-        assertSerialization(Arrays.asList(
-         "rankingExpression(cox)",
-         "10 + 08 * 1977"), "cox", macros
-        );
-    }
-    
-    @Test
-    public void testTensorSerialization() {
-        assertSerialization("map(constant(tensor0), f(a)(cos(a)))", 
-                            "map(constant(tensor0), f(a)(cos(a)))");
-        assertSerialization("map(constant(tensor0), f(a)(cos(a))) + join(attribute(tensor1), map(reduce(map(attribute(tensor1), f(a)(a * a)), sum, x), f(a)(sqrt(a))), f(a,b)(a / b))", 
-                            "map(constant(tensor0), f(a)(cos(a))) + l2_normalize(attribute(tensor1), x)");
-        assertSerialization("join(reduce(join(reduce(join(constant(tensor0), attribute(tensor1), f(a,b)(a * b)), sum, x), attribute(tensor1), f(a,b)(a * b)), sum, y), query(tensor2), f(a,b)(a + b))", 
-                            "xw_plus_b(matmul(constant(tensor0), attribute(tensor1), x), attribute(tensor1), query(tensor2), y)");
-        
+        assertScript("foo(1,2) + foo(3,4) * foo(5, foo(foo(6, 7), 8))", macros,
+                     Arrays.asList(
+                             "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(foo@af74e3fd9070bd18.a368ed0a5ba3a5d0) * rankingExpression(foo@dbab346efdad5362.e5c39e42ebd91c30)",
+                             "min(5,pow(rankingExpression(foo@d1d1417259cdc651.573bbcd4be18f379),2))",
+                             "min(6,pow(7,2))",
+                             "min(1,pow(2,2))",
+                             "min(3,pow(4,2))",
+                             "min(rankingExpression(foo@84951be88255b0ec.d0303e061b36fab8),pow(8,2))"
+                     ));
+        assertScript("foo(1, 2) + bar(3, 4)", macros,
+                     Arrays.asList(
+                             "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(bar@af74e3fd9070bd18.a368ed0a5ba3a5d0)",
+                             "min(1,pow(2,2))",
+                             "3 * 3 + 2 * 3 * 4 + 4 * 4"
+                     ));
+        assertScript("baz(1, 2)", macros,
+                     Arrays.asList(
+                             "rankingExpression(baz@e2dc17a89864aed0.12232eb692c6c502)",
+                             "min(1,pow(2,2))",
+                             "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) / rankingExpression(bar@e2dc17a89864aed0.12232eb692c6c502)",
+                             "1 * 1 + 2 * 1 * 2 + 2 * 2"
+                     ));
+        assertScript("cox", macros,
+                     Arrays.asList(
+                             "rankingExpression(cox)",
+                             "10 + 08 * 1977"
+                     ));
     }
 
-    @Test
     public void testBug3464208() throws ParseException {
         List<ExpressionFunction> macros = new ArrayList<>();
         macros.add(new ExpressionFunction("log10tweetage", null, new RankingExpression("69")));
@@ -151,11 +135,18 @@ public class RankingExpressionTestCase {
         String expRhs = "(rankingExpression(log10tweetage) * rankingExpression(log10tweetage) * " +
                         "rankingExpression(log10tweetage)) + 5.0 * attribute(ythl)";
 
-        assertSerialization(Arrays.asList(expLhs + " + " + expRhs, "69"), lhs + " + " + rhs, macros);
-        assertSerialization(Arrays.asList(expLhs + " - " + expRhs, "69"), lhs + " - " + rhs, macros);
+        assertScript(lhs + " + " + rhs, macros,
+                     Arrays.asList(
+                             expLhs + " + " + expRhs,
+                             "69"
+                     ));
+        assertScript(lhs + " - " + rhs, macros,
+                     Arrays.asList(
+                             expLhs + " - " + expRhs,
+                             "69"
+                     ));
     }
 
-    @Test
     public void testParse() throws ParseException, IOException {
         BufferedReader reader = new BufferedReader(new FileReader("src/tests/rankingexpression/rankingexpressionlist"));
         String line;
@@ -190,43 +181,36 @@ public class RankingExpressionTestCase {
         }
     }
 
-    @Test
     public void testIssue() throws ParseException {
         assertEquals("feature.0", new RankingExpression("feature.0").toString());
         assertEquals("if (1 > 2, 3, 4) + feature(arg1).out.out",
                      new RankingExpression("if ( 1 > 2 , 3 , 4 ) + feature ( arg1 ) . out.out").toString());
     }
 
-    @Test
     public void testNegativeConstantArgument() throws ParseException {
         assertEquals("foo(-1.2)", new RankingExpression("foo(-1.2)").toString());
     }
 
-    @Test
     public void testNaming() throws ParseException {
         RankingExpression test = new RankingExpression("a+b");
         test.setName("test");
         assertEquals("test: a + b", test.toString());
     }
 
-    @Test
     public void testCondition() throws ParseException {
         RankingExpression expression = new RankingExpression("if(1<2,3,4)");
         assertTrue(expression.getRoot() instanceof IfNode);
     }
 
-    @Test
     public void testFileImporting() throws ParseException {
         RankingExpression expression = new RankingExpression(new File("src/test/files/simple.expression"));
         assertEquals("simple: a + b", expression.toString());
     }
 
-    @Test
     public void testNonCanonicalLegalStrings() throws ParseException {
         assertParse("a * b + c * d", "a* (b) + \nc*d");
     }
 
-    @Test
     public void testEquality() throws ParseException {
         assertEquals(new RankingExpression("if ( attribute(foo)==\"BAR\",log(attribute(popularity)+5),log(fieldMatch(title).proximity)*fieldMatch(title).completeness)"),
                      new RankingExpression("if(attribute(foo)==\"BAR\",  log(attribute(popularity)+5),log(fieldMatch(title).proximity) * fieldMatch(title).completeness)"));
@@ -235,7 +219,6 @@ public class RankingExpressionTestCase {
                     new RankingExpression("if(attribute(foo)==\"BAR\",  log(attribute(popularity)+5),log(fieldMatch(title).earliness) * fieldMatch(title).completeness)")));
     }
 
-    @Test
     public void testSetMembershipConditions() throws ParseException {
         assertEquals(new RankingExpression("if ( attribute(foo) in [\"FOO\",  \"BAR\"],log(attribute(popularity)+5),log(fieldMatch(title).proximity)*fieldMatch(title).completeness)"),
                      new RankingExpression("if(attribute(foo) in [\"FOO\",\"BAR\"],  log(attribute(popularity)+5),log(fieldMatch(title).proximity) * fieldMatch(title).completeness)"));
@@ -248,7 +231,6 @@ public class RankingExpressionTestCase {
         assertEquals(new RankingExpression("if (GENDER$ in [-1.0, 1.0], 1, 0)"), new RankingExpression("if (GENDER$ in [-1.0, 1.0], 1, 0)"));
     }
 
-    @Test
     public void testComments() throws ParseException {
         assertEquals(new RankingExpression("if ( attribute(foo) in [\"FOO\",  \"BAR\"],\n" +
         		"# a comment\n" +
@@ -259,7 +241,6 @@ public class RankingExpressionTestCase {
                 new RankingExpression("if(attribute(foo) in [\"FOO\",\"BAR\"],  log(attribute(popularity)+5),log(fieldMatch(title).proximity) * fieldMatch(title).completeness)"));
     }
 
-    @Test
     public void testIsNan() throws ParseException {
         String strExpr = "if (isNan(attribute(foo)) == 1.0, 1.0, attribute(foo))";
         RankingExpression expr = new RankingExpression(strExpr);
@@ -274,59 +255,27 @@ public class RankingExpressionTestCase {
         assertEquals(expected, new RankingExpression(expression).toString());
     }
 
-    /** Test serialization with no macros */
-    private void assertSerialization(String expectedSerialization, String expressionString) {
-        String serializedExpression;
-        try {
-            RankingExpression expression = new RankingExpression(expressionString);
-            // No macros -> expect one rank property 
-            serializedExpression = expression.getRankProperties(Collections.emptyList()).values().iterator().next();
-            assertEquals(expectedSerialization, serializedExpression);
-        }
-        catch (ParseException e) {
-            throw new IllegalArgumentException(e);
-        }
+    private void assertScript(String expression, List<ExpressionFunction> macros, List<String> expectedScripts)
+            throws ParseException {
+        boolean print = false;
+        if (print)
+            System.out.println("Parsing expression '" + expression + "'.");
 
-        try {
-            // No macros -> output should be parseable to a ranking expression 
-            // (but not the same one due to primitivization)
-            RankingExpression reparsedExpression = new RankingExpression(serializedExpression);
-            // Serializing the primitivized expression should yield the same expression again
-            String reserializedExpression = 
-                    reparsedExpression.getRankProperties(Collections.emptyList()).values().iterator().next();
-            assertEquals(expectedSerialization, reserializedExpression);
-        }
-        catch (ParseException e) {
-            throw new IllegalArgumentException("Could not parse the serialized expression", e);
-        }
-    }
-
-    private void assertSerialization(List<String> expectedSerialization, String expressionString, 
-                                     List<ExpressionFunction> macros) {
-        assertSerialization(expectedSerialization, expressionString, macros, false);
-    }
-    private void assertSerialization(List<String> expectedSerialization, String expressionString, 
-                                     List<ExpressionFunction> macros, boolean print) {
-        try {
-            if (print)
-                System.out.println("Parsing expression '" + expressionString + "'.");
-
-            RankingExpression expression = new RankingExpression(expressionString);
-            Map<String, String> rankProperties = expression.getRankProperties(macros);
-            if (print) {
-                for (String key : rankProperties.keySet())
-                    System.out.println("Property '" + key + "': " + rankProperties.get(key));
+        RankingExpression exp = new RankingExpression(expression);
+        Map<String, String> scripts = exp.getRankProperties(macros);
+        if (print) {
+            for (String key : scripts.keySet()) {
+                System.out.println("Script '" + key + "': " + scripts.get(key));
             }
-            for (int i = 0; i < expectedSerialization.size();) {
-                String val = expectedSerialization.get(i++);
-                assertTrue("Properties contains " + val, rankProperties.containsValue(val));
-            }
-            if (print)
-                System.out.println("");
         }
-        catch (ParseException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
 
+        for (Map.Entry<String, String> m : scripts.entrySet())
+            System.out.println(m);
+        for (int i = 0; i < expectedScripts.size();) {
+            String val = expectedScripts.get(i++);
+            assertTrue("Script contains " + val, scripts.containsValue(val));
+        }
+        if (print)
+            System.out.println("");
+    }
 }

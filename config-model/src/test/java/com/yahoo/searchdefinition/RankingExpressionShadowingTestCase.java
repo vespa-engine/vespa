@@ -4,7 +4,6 @@ import com.yahoo.collections.Pair;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -166,11 +165,11 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
         for (Object o : testRankProperties)
             System.out.println(o);
         assertEquals("(rankingExpression(relu).rankingScript,max(1.0,x))", testRankProperties.get(0).toString());
-        assertEquals("(rankingExpression(relu@).rankingScript,max(1.0,reduce(query(q) * constant(W_hidden), sum, input) + constant(b_input)))", censorBindingHash(testRankProperties.get(1).toString()));
+        assertEquals("(rankingExpression(relu@).rankingScript,max(1.0,sum(query(q) * constant(W_hidden), input) + constant(b_input)))", censorBindingHash(testRankProperties.get(1).toString()));
         assertEquals("(rankingExpression(hidden_layer).rankingScript,rankingExpression(relu@))", censorBindingHash(testRankProperties.get(2).toString()));
-        assertEquals("(rankingExpression(final_layer).rankingScript,sigmoid(reduce(rankingExpression(hidden_layer) * constant(W_final), sum, hidden) + constant(b_final)))", testRankProperties.get(3).toString());
+        assertEquals("(rankingExpression(final_layer).rankingScript,sigmoid(sum(rankingExpression(hidden_layer) * constant(W_final), hidden) + constant(b_final)))", testRankProperties.get(3).toString());
         assertEquals("(vespa.rank.secondphase,rankingExpression(secondphase))", testRankProperties.get(4).toString());
-        assertEquals("(rankingExpression(secondphase).rankingScript,reduce(rankingExpression(final_layer), sum))", testRankProperties.get(5).toString());
+        assertEquals("(rankingExpression(secondphase).rankingScript,sum(rankingExpression(final_layer)))", testRankProperties.get(5).toString());
     }
 
     private String censorBindingHash(String s) {

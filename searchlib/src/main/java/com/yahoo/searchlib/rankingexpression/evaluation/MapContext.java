@@ -34,9 +34,11 @@ public class MapContext extends Context {
      * Creates a map context from a map.
      * The ownership of the map is transferred to this - it cannot be further modified by the caller.
      * All the Values of the map will be frozen.
+     *
+     * @since 5.1.5
      */
     public MapContext(Map<String,Value> bindings) {
-        this.bindings = bindings;
+        this.bindings=bindings;
         for (Value boundValue : bindings.values())
             boundValue.freeze();
     }
@@ -65,9 +67,6 @@ public class MapContext extends Context {
         if (frozen) return bindings;
         return Collections.unmodifiableMap(bindings);
     }
-    
-    /** Returns a new, modifiable context containing all the bindings of this */
-    public MapContext thawedCopy() { return new MapContext(new HashMap<>(bindings)); }
 
     /** Returns an unmodifiable map of the names of this */
     public @Override Set<String> names() {
