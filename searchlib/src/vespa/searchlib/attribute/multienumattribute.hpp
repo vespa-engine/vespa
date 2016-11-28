@@ -162,7 +162,7 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
     MemoryUsage total;
     total.merge(this->_enumStore.getMemoryUsage());
     total.merge(this->_enumStore.getTreeMemoryUsage());
-    total.merge(this->_mvMapping.updateMemoryUsage());
+    total.merge(this->_mvMapping.updateStat());
     mergeMemoryStats(total);
     this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.getNumUniques(), total.allocatedBytes(),
                      total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());

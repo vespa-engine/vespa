@@ -346,6 +346,30 @@ DataStoreBase::getMemStats(void) const
     return stats;
 }
 
+AddressSpace
+DataStoreBase::getAddressSpaceUsage(void) const
+{
+    size_t usedClusters = 0;
+    size_t deadClusters = 0;
+    size_t limitClusters = 0;
+    for (const BufferState & bState: _states) {
+        if (bState.isActive()) {
+            uint32_t clusterSize = bState.getClusterSize();
+            usedClusters += bState.size() / clusterSize;
+            deadClusters += bState.getDeadElems() / clusterSize;
+            limitClusters += bState.capacity() / clusterSize;
+        } else if (bState.isOnHold()) {
+            uint32_t clusterSize = bState.getClusterSize();
+            usedClusters += bState.size() / clusterSize;
+            limitClusters += bState.capacity() / clusterSize;
+        } else if (bState.isFree()) {
+            limitClusters += _maxClusters;
+        } else {
+            abort();
+        }
+    }
+    return AddressSpace(usedClusters, deadClusters, limitClusters);
+}
 
 void
 DataStoreBase::onActive(uint32_t bufferId, uint32_t typeId,

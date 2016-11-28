@@ -11,6 +11,7 @@ namespace {
 
 // minimum dead bytes in multi value mapping before consider compaction
 constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
+constexpr size_t DEAD_CLUSTERS_SLACK = 0x10000u;
 
 }
 
@@ -18,7 +19,8 @@ MultiValueMapping2Base::MultiValueMapping2Base(const GrowStrategy &gs,
                                                vespalib::GenerationHolder &genHolder)
     : _indices(gs, genHolder),
       _totalValues(0u),
-      _cachedArrayStoreMemoryUsage()
+      _cachedArrayStoreMemoryUsage(),
+      _cachedArrayStoreAddressSpaceUsage(0, 0, (1ull << 32))
 {
 }
 
@@ -68,8 +70,9 @@ MultiValueMapping2Base::getMemoryUsage() const
 }
 
 MemoryUsage
-MultiValueMapping2Base::updateMemoryUsage()
+MultiValueMapping2Base::updateStat()
 {
+    _cachedArrayStoreAddressSpaceUsage = getAddressSpaceUsage();
     MemoryUsage retval = getArrayStoreMemoryUsage();
     _cachedArrayStoreMemoryUsage = retval;
     retval.merge(_indices.getMemoryUsage());
@@ -79,10 +82,15 @@ MultiValueMapping2Base::updateMemoryUsage()
 bool
 MultiValueMapping2Base::considerCompact(const CompactionStrategy &compactionStrategy)
 {
-    size_t used = _cachedArrayStoreMemoryUsage.usedBytes();
-    size_t dead = _cachedArrayStoreMemoryUsage.deadBytes();
-    if ((dead >= DEAD_BYTES_SLACK) &&
-        (used * compactionStrategy.getMaxDeadRatio() < dead)) {
+    size_t usedBytes = _cachedArrayStoreMemoryUsage.usedBytes();
+    size_t deadBytes = _cachedArrayStoreMemoryUsage.deadBytes();
+    size_t usedClusters = _cachedArrayStoreAddressSpaceUsage.used();
+    size_t deadClusters = _cachedArrayStoreAddressSpaceUsage.dead();
+    bool compactMemory = ((deadBytes >= DEAD_BYTES_SLACK) &&
+                          (usedBytes * compactionStrategy.getMaxDeadBytesRatio() < deadBytes));
+    bool compactAddressSpace = ((deadClusters >= DEAD_CLUSTERS_SLACK) &&
+                                (usedClusters * compactionStrategy.getMaxDeadAddressSpaceRatio() < deadClusters));
+    if (compactMemory || compactAddressSpace) {
         compactWorst();
         return true;
     }

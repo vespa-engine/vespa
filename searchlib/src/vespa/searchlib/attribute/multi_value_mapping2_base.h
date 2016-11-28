@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/searchlib/common/address_space.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <functional>
 
@@ -26,6 +27,7 @@ protected:
     RefVector _indices;
     size_t    _totalValues;
     MemoryUsage _cachedArrayStoreMemoryUsage;
+    AddressSpace _cachedArrayStoreAddressSpaceUsage;
 
     MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMapping2Base();
@@ -37,8 +39,9 @@ public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
     virtual MemoryUsage getArrayStoreMemoryUsage() const = 0;
+    virtual AddressSpace getAddressSpaceUsage() const = 0;
     MemoryUsage getMemoryUsage() const;
-    MemoryUsage updateMemoryUsage();
+    MemoryUsage updateStat();
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 

@@ -131,7 +131,7 @@ EnumStoreBase::getAddressSpaceUsage() const
 {
     const datastore::BufferState &activeState =
             _store.getBufferState(_store.getActiveBufferId(TYPE_ID));
-    return AddressSpace(activeState.size() - activeState.getDeadElems(),
+    return AddressSpace(activeState.size(), activeState.getDeadElems(),
                         DataStoreType::RefType::offsetSize());
 }
 

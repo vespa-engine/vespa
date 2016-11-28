@@ -19,13 +19,13 @@ AddressSpaceUsage::AddressSpaceUsage(const AddressSpace &enumStoreUsage_,
 AddressSpace
 AddressSpaceUsage::defaultEnumStoreUsage()
 {
-    return AddressSpace(0, EnumStoreBase::DataStoreType::RefType::offsetSize());
+    return AddressSpace(0, 0, EnumStoreBase::DataStoreType::RefType::offsetSize());
 }
 
 AddressSpace
 AddressSpaceUsage::defaultMultiValueUsage()
 {
-    return AddressSpace(0, 8192);
+    return AddressSpace(0, 0, (1ull << 32));
 }
 
 } // namespace search

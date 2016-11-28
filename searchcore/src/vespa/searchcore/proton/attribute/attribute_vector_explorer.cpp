@@ -54,6 +54,7 @@ convertAddressSpaceToSlime(const AddressSpace &addressSpace, Cursor &object)
 {
     object.setDouble("usage", addressSpace.usage());
     object.setLong("used", addressSpace.used());
+    object.setLong("dead", addressSpace.dead());
     object.setLong("limit", addressSpace.limit());
 }
 
