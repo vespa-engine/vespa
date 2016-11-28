@@ -34,6 +34,13 @@ public class Map extends PrimitiveTensorFunction {
     public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
 
     @Override
+    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        if ( arguments.size() != 1)
+            throw new IllegalArgumentException("Map must have 1 argument, got " + arguments.size());
+        return new Map(arguments.get(0), mapper);
+    }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() {
         return new Map(argument.toPrimitive(), mapper);
     }

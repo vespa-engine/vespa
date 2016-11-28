@@ -20,6 +20,13 @@ public class L2Normalize extends CompositeTensorFunction {
     public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
 
     @Override
+    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        if ( arguments.size() != 1)
+            throw new IllegalArgumentException("L2Normalize must have 1 argument, got " + arguments.size());
+        return new L2Normalize(arguments.get(0), dimension);
+    }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() {
         TensorFunction primitiveArgument = argument.toPrimitive();
         return new Join(primitiveArgument,

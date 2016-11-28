@@ -44,6 +44,13 @@ public class Rename extends PrimitiveTensorFunction {
     public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
 
     @Override
+    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        if ( arguments.size() != 1)
+            throw new IllegalArgumentException("Rename must have 1 argument, got " + arguments.size());
+        return new Rename(arguments.get(0), fromDimensions, toDimensions);
+    }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override

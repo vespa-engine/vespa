@@ -23,6 +23,13 @@ public class XwPlusB extends CompositeTensorFunction {
     public List<TensorFunction> functionArguments() { return ImmutableList.of(x, w, b); }
 
     @Override
+    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        if ( arguments.size() != 3)
+            throw new IllegalArgumentException("XwPlusB must have 3 arguments, got " + arguments.size());
+        return new XwPlusB(arguments.get(0), arguments.get(1), arguments.get(2), dimension);
+    }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() {
         TensorFunction primitiveX = x.toPrimitive();
         TensorFunction primitiveW = w.toPrimitive();

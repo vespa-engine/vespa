@@ -63,6 +63,13 @@ public class Reduce extends PrimitiveTensorFunction {
     public List<TensorFunction> functionArguments() { return Collections.singletonList(argument); }
 
     @Override
+    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        if ( arguments.size() != 1)
+            throw new IllegalArgumentException("Reduce must have 1 argument, got " + arguments.size());
+        return new Reduce(arguments.get(0), aggregator, dimensions);
+    }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() {
         return new Reduce(argument.toPrimitive(), aggregator, dimensions);
     }

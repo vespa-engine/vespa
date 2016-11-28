@@ -22,6 +22,13 @@ public class Matmul extends CompositeTensorFunction {
     public List<TensorFunction> functionArguments() { return ImmutableList.of(argument1, argument2); }
 
     @Override
+    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        if ( arguments.size() != 2)
+            throw new IllegalArgumentException("Matmul must have 2 arguments, got " + arguments.size());
+        return new Matmul(arguments.get(0), arguments.get(1), dimension);
+    }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() {
         TensorFunction primitiveArgument1 = argument1.toPrimitive();
         TensorFunction primitiveArgument2 = argument2.toPrimitive();

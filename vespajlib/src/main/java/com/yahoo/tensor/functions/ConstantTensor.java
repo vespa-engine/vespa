@@ -27,6 +27,13 @@ public class ConstantTensor extends PrimitiveTensorFunction {
     public List<TensorFunction> functionArguments() { return Collections.emptyList(); }
 
     @Override
+    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        if ( arguments.size() != 1)
+            throw new IllegalArgumentException("ConstantTensor must have 0 arguments, got " + arguments.size());
+        return this;
+    }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() { return this; }
 
     @Override

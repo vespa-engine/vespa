@@ -17,6 +17,13 @@ public abstract class TensorFunction {
     public abstract List<TensorFunction> functionArguments();
 
     /**
+     * Returns a copy of this tensor function with the arguments replaced by the given list of arguments.
+     *
+     * @throws IllegalArgumentException if the argument list has the wrong size for this function
+     */
+    public abstract TensorFunction replaceArguments(List<TensorFunction> arguments);
+
+    /**
      * Translate this function - and all of its arguments recursively -
      * to a tree of primitive functions only.
      *

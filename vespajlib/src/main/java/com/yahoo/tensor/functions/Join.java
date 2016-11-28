@@ -44,6 +44,13 @@ public class Join extends PrimitiveTensorFunction {
     public List<TensorFunction> functionArguments() { return ImmutableList.of(argumentA, argumentB); }
 
     @Override
+    public TensorFunction replaceArguments(List<TensorFunction> arguments) {
+        if ( arguments.size() != 2)
+            throw new IllegalArgumentException("Join must have 2 arguments, got " + arguments.size());
+        return new Join(arguments.get(0), arguments.get(1), combinator);
+    }
+
+    @Override
     public PrimitiveTensorFunction toPrimitive() {
         return new Join(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
     }
