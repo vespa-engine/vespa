@@ -2,8 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/vdslib/container/parameters.h>
-
-#include <sstream>
+#include <vespa/vespalib/objects/nbostream.h>
 
 using namespace vdslib;
 

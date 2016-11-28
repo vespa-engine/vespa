@@ -3,8 +3,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib
-{
+namespace vespalib {
 
 class IFieldBase
 {

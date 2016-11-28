@@ -8,9 +8,9 @@
 #include <vespa/searchlib/expression/nullresultnode.h>
 #include <vespa/searchlib/expression/positiveinfinityresultnode.h>
 #include <cmath>
-#include <vespa/log/log.h>
-
-LOG_SETUP(".searchlib.documentexpressions");
+#include <vespa/vespalib/objects/visit.hpp>
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/deserializer.hpp>
 
 namespace search {
 namespace expression {

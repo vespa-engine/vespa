@@ -37,12 +37,11 @@
 #include <vespa/searchlib/expression/strcatserializer.h>
 #include <vespa/searchlib/expression/normalizesubjectfunctionnode.h>
 #include <vespa/searchlib/expression/arrayoperationnode.h>
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/deserializer.hpp>
 
 #include <map>
 #include <vespa/vespalib/util/md5.h>
-#include <vespa/log/log.h>
-
-LOG_SETUP(".searchlib.documentexpressions");
 
 namespace search {
 namespace expression {
@@ -201,7 +200,6 @@ namespace {
 
 void MultiArgFunctionNode::onPrepare(bool preserveAccurateTypes)
 {
-    LOG(debug, "MultiArgFunctionNode::onPrepare(this=%p) Actual class = %s", this, getClass().name());
     for(size_t i(0), m(_args.size()); i < m; i++) {
         _args[i]->prepare(preserveAccurateTypes);
     }

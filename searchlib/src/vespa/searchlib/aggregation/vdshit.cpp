@@ -2,6 +2,8 @@
 #include <vespa/fastos/fastos.h>
 #include "vdshit.h"
 #include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/deserializer.hpp>
 
 namespace search {
 namespace aggregation {

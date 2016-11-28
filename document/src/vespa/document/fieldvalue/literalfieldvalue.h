@@ -16,8 +16,7 @@
 
 #include <vespa/document/datatype/primitivedatatype.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/document/util/stringutil.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
 
 namespace document {
 

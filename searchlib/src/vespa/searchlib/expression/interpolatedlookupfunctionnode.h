@@ -4,6 +4,8 @@
 #include <vespa/searchlib/expression/unaryfunctionnode.h>
 
 namespace search {
+    namespace attribute { class IAttributeVector; }
+
 namespace expression {
 
 class InterpolatedLookup : public UnaryFunctionNode

@@ -5,6 +5,7 @@
 #include "idocumentstore.h"
 #include "cachestats.h"
 #include <vespa/vespalib/stllike/cache.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/alloc.h>
 
 namespace search {

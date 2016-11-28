@@ -2,7 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "multisearch.h"
-#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/objects/visit.hpp>
 
 namespace search {
 namespace queryeval {

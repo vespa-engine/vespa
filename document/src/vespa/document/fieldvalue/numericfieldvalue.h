@@ -17,6 +17,7 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
 
 namespace document {
 
@@ -41,27 +42,25 @@ public:
     value_type getValue() const { return _value; }
     void setValue(Number newValue) { _value = newValue; }
 
-        // FieldValue implementation.
-    virtual FieldValue& assign(const FieldValue&);
-    virtual int compare(const FieldValue& other) const;
+    FieldValue& assign(const FieldValue&) override ;
+    int compare(const FieldValue& other) const override;
 
-    virtual FieldValue& operator=(const vespalib::stringref &);
-    virtual FieldValue& operator=(int32_t);
-    virtual FieldValue& operator=(int64_t);
-    virtual FieldValue& operator=(float);
-    virtual FieldValue& operator=(double);
-    virtual size_t hash() const { return vespalib::hash<Number>()(_value); }
+    FieldValue& operator=(const vespalib::stringref &) override;
+    FieldValue& operator=(int32_t) override;
+    FieldValue& operator=(int64_t) override;
+    FieldValue& operator=(float) override;
+    FieldValue& operator=(double) override;
+    size_t hash() const { return vespalib::hash<Number>()(_value); }
 
-    virtual char getAsByte() const;
-    virtual int32_t getAsInt() const;
-    virtual int64_t getAsLong() const;
-    virtual float getAsFloat() const;
-    virtual double getAsDouble() const;
-    virtual vespalib::string getAsString() const;
+    char getAsByte() const override;
+    int32_t getAsInt() const override;
+    int64_t getAsLong() const override;
+    float getAsFloat() const override;
+    double getAsDouble() const override;
+    vespalib::string getAsString() const override;
 
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual bool hasChanged() const { return _altered; }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    virtual bool hasChanged() const override { return _altered; }
 };
 
 template<typename Number>

@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/document/datatype/numericdatatype.h>
+#include <ostream>
 
 namespace document {
 

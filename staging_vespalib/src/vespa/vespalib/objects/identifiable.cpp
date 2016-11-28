@@ -1,26 +1,105 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
+#include "identifiable.hpp"
 #include <cassert>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdexcept>
 #include <algorithm>
-#include <vespa/vespalib/objects/identifiable.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include "objectdumper.h"
 #include "visit.h"
 #include "objectpredicate.h"
 #include "objectoperation.h"
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+
 
 namespace vespalib {
 
-Identifiable::Register * Identifiable::_register = NULL;
-Identifiable::ILoader  * Identifiable::_classLoader = NULL;
+namespace {
+
+class Register {
+public:
+    using RuntimeClass = Identifiable::RuntimeClass;
+    Register();
+    ~Register();
+    bool append(RuntimeClass * c);
+    bool erase(RuntimeClass * c);
+    const RuntimeClass * classFromId(unsigned id) const;
+    const RuntimeClass * classFromName(const char * name) const;
+    const char * id2Name(unsigned id) const;
+    unsigned name2Id(const char * name) const;
+    bool empty() const { return _listById.empty(); }
+private:
+    struct GetId   { uint32_t operator() (const RuntimeClass * f) const { return f->id(); } };
+    struct HashId  { size_t operator() (const RuntimeClass * f) const { return f->id(); } };
+    struct EqualId { bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return a->id() == b->id(); } };
+    struct GetName   { const char * operator() (const RuntimeClass * f) const { return f->name(); } };
+    struct HashName  { size_t operator() (const RuntimeClass * f) const { return hashValue(f->name()); } };
+    struct EqualName { bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return strcmp(a->name(), b->name()) == 0; } };
+    typedef hash_set<RuntimeClass *, HashId, EqualId> IdList;
+    typedef hash_set<RuntimeClass *, HashName, EqualName> NameList;
+    IdList   _listById;
+    NameList _listByName;
+};
+
+Register::Register() :
+    _listById(),
+    _listByName()
+{ }
+
+Register::~Register() { }
+
+bool Register::erase(Identifiable::RuntimeClass * c)
+{
+    _listById.erase(c);
+    _listByName.erase(c);
+    return true;
+}
+
+bool Register::append(Identifiable::RuntimeClass * c)
+{
+    bool ok((_listById.find(c) == _listById.end()) && ((_listByName.find(c) == _listByName.end())));
+    if (ok) {
+        _listById.insert(c);
+        _listByName.insert(c);
+    }
+    return ok;
+}
+
+const Identifiable::RuntimeClass * Register::classFromId(unsigned id) const
+{
+    IdList::const_iterator it(_listById.find<uint32_t, GetId, hash<uint32_t>, std::equal_to<uint32_t> >(id));
+    return  (it != _listById.end()) ? *it : NULL;
+}
+
+const Identifiable::RuntimeClass * Register::classFromName(const char *name) const
+{
+    NameList::const_iterator it(_listByName.find<const char *, GetName, hash<const char *>, std::equal_to<const char *> >(name));
+    return  (it != _listByName.end()) ? *it : NULL;
+}
+
+Register * _register = nullptr;
+
+}
+
+Identifiable::ILoader  * Identifiable::_classLoader = nullptr;
 FieldBase Identifiable::hasObjectField("hasObject");
 FieldBase Identifiable::sizeField("size");
 FieldBase Identifiable::classIdField("classId");
 FieldBase Identifiable::objectField("object");
 
 IMPLEMENT_IDENTIFIABLE(Identifiable, Identifiable);
+
+const Identifiable::RuntimeClass *
+Identifiable::classFromId(unsigned id) {
+    return _register->classFromId(id);
+}
+
+const Identifiable::RuntimeClass *
+Identifiable::classFromName(const char * name) {
+    return _register->classFromName(name);
+}
 
 Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo * info_) :
     _rt(info_)
@@ -36,23 +115,23 @@ Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo * info_) :
             }
         }
     }
-    if (Identifiable::_register == NULL) {
-        Identifiable::_register = new Register();
+    if (_register == NULL) {
+        _register = new Register();
     }
-    if (! Identifiable::_register->append(this)) {
-        const RuntimeClass * old = Identifiable::_register->classFromId(id());
+    if (! _register->append(this)) {
+        const RuntimeClass * old = _register->classFromId(id());
         throw std::runtime_error(make_string("Duplicate Identifiable object(%s, %s, %d) being registered. Choose a unique id. Object (%s, %s, %d) is using it.", name(), info(), id(), old->name(), old->info(), old->id()));
     }
 }
 
 Identifiable::RuntimeClass::~RuntimeClass()
 {
-    if ( ! Identifiable::_register->erase(this) ) {
+    if ( ! _register->erase(this) ) {
         assert(0);
     }
-    if (Identifiable::_register->empty()) {
-        delete Identifiable::_register;
-        Identifiable::_register = NULL;
+    if (_register->empty()) {
+        delete _register;
+        _register = NULL;
     }
 }
 
@@ -61,23 +140,6 @@ bool Identifiable::RuntimeClass::inherits(unsigned cid) const
     const RuntimeInfo *cur;
     for (cur = _rt; (cur != &Identifiable::_RTInfo) && cid != cur->_id; cur = cur->_base) { }
     return (cid == cur->_id);
-}
-
-Identifiable::Register::Register() :
-    _listById(),
-    _listByName()
-{
-}
-
-Identifiable::Register::~Register()
-{
-}
-
-bool Identifiable::Register::erase(Identifiable::RuntimeClass * c)
-{
-    _listById.erase(c);
-    _listByName.erase(c);
-    return true;
 }
 
 class SortById : public std::binary_function<const Identifiable::RuntimeClass *, const Identifiable::RuntimeClass *, bool> {
@@ -93,28 +155,6 @@ public:
         return strcmp(x->name(), y->name()) < 0;
     }
 };
-
-bool Identifiable::Register::append(Identifiable::RuntimeClass * c)
-{
-    bool ok((_listById.find(c) == _listById.end()) && ((_listByName.find(c) == _listByName.end())));
-    if (ok) {
-        _listById.insert(c);
-        _listByName.insert(c);
-    }
-    return ok;
-}
-
-const Identifiable::RuntimeClass * Identifiable::Register::classFromId(unsigned id) const
-{
-    IdList::const_iterator it(_listById.find<uint32_t, GetId, hash<uint32_t>, std::equal_to<uint32_t> >(id));
-    return  (it != _listById.end()) ? *it : NULL;
-}
-
-const Identifiable::RuntimeClass * Identifiable::Register::classFromName(const char *name) const
-{
-    NameList::const_iterator it(_listByName.find<const char *, GetName, hash<const char *>, std::equal_to<const char *> >(name));
-    return  (it != _listByName.end()) ? *it : NULL;
-}
 
 Serializer & operator << (Serializer & os, const Identifiable & obj)
 {

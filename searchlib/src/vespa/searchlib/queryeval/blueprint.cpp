@@ -3,7 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 #include "blueprint.h"
-#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include "leaf_blueprints.h"

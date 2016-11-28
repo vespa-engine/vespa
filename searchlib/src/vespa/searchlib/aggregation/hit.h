@@ -18,7 +18,6 @@ private:
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT_NS2(search, aggregation, Hit);
     DECLARE_NBO_SERIALIZE;
-    typedef vespalib::IdentifiablePtr<Hit> CP;
     typedef std::unique_ptr<Hit> UP;
 
     Hit() : _rank() {}

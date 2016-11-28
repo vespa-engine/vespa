@@ -3,6 +3,7 @@
 #include <vespa/persistence/spi/clusterstate.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace storage {
 namespace spi {

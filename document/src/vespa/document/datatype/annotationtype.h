@@ -4,8 +4,9 @@
 
 #include "datatype.h"
 #include <memory>
-#include <string>
 #include <vector>
+
+namespace vespalib { class asciistream; }
 
 namespace document {
 

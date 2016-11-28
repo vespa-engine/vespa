@@ -3,6 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "equiv_blueprint.h"
 #include "equivsearch.h"
+#include <vespa/vespalib/objects/visit.hpp>
 
 namespace search {
 namespace queryeval {

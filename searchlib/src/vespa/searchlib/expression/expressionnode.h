@@ -3,10 +3,13 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/common/identifiable.h>
-#include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/vespalib/objects/identifiable.hpp>
 #include <vespa/vespalib/objects/visit.h>
 
 namespace search {
+
+namespace attribute { class IAttributeContext; }
+
 namespace expression {
 
 typedef uint32_t DocId;

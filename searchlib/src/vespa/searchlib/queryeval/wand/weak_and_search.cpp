@@ -6,7 +6,7 @@
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/priority_queue.h>
-#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/objects/visit.hpp>
 
 namespace search {
 namespace queryeval {
