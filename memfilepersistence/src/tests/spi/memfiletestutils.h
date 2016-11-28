@@ -32,20 +32,24 @@ public:
 
     framework::MicroSecTime _absoluteTime;
 
-    FakeClock() {};
+    FakeClock() {}
 
     virtual void addSecondsToTime(uint32_t nr) {
         _absoluteTime += framework::MicroSecTime(nr * uint64_t(1000000));
     }
 
-    virtual framework::MicroSecTime getTimeInMicros() const {
+    framework::MicroSecTime getTimeInMicros() const override {
         return _absoluteTime;
     }
-    virtual framework::MilliSecTime getTimeInMillis() const {
+    framework::MilliSecTime getTimeInMillis() const override {
         return getTimeInMicros().getMillis();
     }
-    virtual framework::SecondTime getTimeInSeconds() const {
+    framework::SecondTime getTimeInSeconds() const override {
         return getTimeInMicros().getSeconds();
+    }
+    framework::MonotonicTimePoint getMonotonicTime() const override {
+        return framework::MonotonicTimePoint(std::chrono::microseconds(
+                getTimeInMicros().getTime()));
     }
 };
 

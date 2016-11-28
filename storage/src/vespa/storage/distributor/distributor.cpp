@@ -421,7 +421,8 @@ Distributor::leaveRecoveryMode()
 {
     if (isInRecoveryMode()) {
         LOG(debug, "Leaving recovery mode");
-        _metrics->recoveryModeTime.addValue(_recoveryTimeStarted);
+        _metrics->recoveryModeTime.addValue(
+                _recoveryTimeStarted.getElapsedTimeAsDouble());
     }
     _schedulingMode = MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
 }

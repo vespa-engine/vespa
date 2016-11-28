@@ -154,7 +154,7 @@ FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name,
     : MetricSet(name, "partofsum disk", description, owner, "disk"),
       sum("allthreads", "sum", "", this),
       queueSize("queuesize", "", "Size of input message queue.", this),
-      averageQueueWaitingTime(loadTypes, metrics::LongAverageMetric(
+      averageQueueWaitingTime(loadTypes, metrics::DoubleAverageMetric(
               "averagequeuewait", "",
               "Average time an operation spends in input queue."), this),
       pendingMerges("pendingmerge", "", "Number of buckets currently being merged.", this),

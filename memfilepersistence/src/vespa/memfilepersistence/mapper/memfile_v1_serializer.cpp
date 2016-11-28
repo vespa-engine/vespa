@@ -137,7 +137,7 @@ MemFileV1Serializer::loadFile(MemFile& file, Environment& env,
             }
             assert(bytesRead == firstAlignedHeaderByte);
         }
-        metrics.tooLargeMetaReadLatency.addValue(timer);
+        metrics.tooLargeMetaReadLatency.addValue(timer.getElapsedTimeAsDouble());
     }
 
     FileInfo::UP data(new FileInfo);
@@ -314,25 +314,25 @@ MemFileV1Serializer::cacheLocations(MemFileIOInterface& io,
         buf.getSharedBuffer()->getUsedSize(),
         buf.getSharedBuffer()->getFreeSize());
 
-    framework::MilliSecTime readStart(env._clock.getTimeInMillis());
+    framework::MilliSecTimer readTimer(env._clock);
     SerializationMetrics& metrics(getMetrics().serialization);
 
     uint64_t total(read(cache.getFileHandle(), buf.getBuffer(), readLocations));
 
-    metrics::LongAverageMetric& latency(part == HEADER ? metrics.headerReadLatency
-                                                       : metrics.bodyReadLatency);
+    metrics::DoubleAverageMetric& latency(
+            part == HEADER ? metrics.headerReadLatency
+                           : metrics.bodyReadLatency);
     metrics::LongAverageMetric& sz(part == HEADER ? metrics.headerReadSize
                                                   : metrics.bodyReadSize);
-    framework::MilliSecTime readDone(env._clock.getTimeInMillis());
-    latency.addValue((readDone - readStart).getTime());
+    latency.addValue(readTimer.getElapsedTimeAsDouble());
     sz.addValue(total);
 
+    framework::MilliSecTimer cacheUpdateTimer(env._clock);
     cacheLocationsForPart(cache, part, blockStartIndex, locations,
                           readLocations, buf);
 
-    framework::MilliSecTime timeNow(env._clock.getTimeInMillis());
     metrics.cacheUpdateAndImplicitVerifyLatency.addValue(
-            (timeNow - readDone).getTime());
+            cacheUpdateTimer.getElapsedTimeAsDouble());
 }
 
 uint64_t
@@ -403,7 +403,7 @@ MemFileV1Serializer::writeMetaData(BufferedFileWriter& writer,
 MemFileV1Serializer::FlushResult
 MemFileV1Serializer::flushUpdatesToFile(MemFile& file, Environment& env)
 {
-    framework::MilliSecTime startTime(env._clock.getTimeInMillis());
+    framework::MilliSecTimer totalWriteTimer(env._clock);
     MemFilePersistenceThreadMetrics& metrics(getMetrics());
     SerializationWriteMetrics& writeMetrics(metrics.serialization.partialWrite);
     SimpleMemFileIOBuffer& ioBuf(
@@ -556,9 +556,9 @@ MemFileV1Serializer::flushUpdatesToFile(MemFile& file, Environment& env)
     // we only write the raw data to disk.
     Buffer buffer(1024 * 1024);
     BufferedFileWriter writer(ioBuf.getFileHandle(), buffer, buffer.getSize());
-    framework::MilliSecTime locationWriteTime(env._clock.getTimeInMillis());
 
     for (uint32_t partId = 0; partId < 2; ++partId) {
+        framework::MilliSecTimer writeTimer(env._clock);
         DocumentPart part(static_cast<DocumentPart>(partId));
         LocationMap& locations(part == HEADER ? headersToWrite : bodiesToWrite);
 
@@ -609,16 +609,17 @@ MemFileV1Serializer::flushUpdatesToFile(MemFile& file, Environment& env)
         assert(part == BODY || pos <= data.getBlockIndex(BODY));
         writer.writeGarbage(pos - writer.getFilePosition());
         
-        framework::MilliSecTime timeNow(env._clock.getTimeInMillis());
-        metrics::LongAverageMetric& latency(part == HEADER ? writeMetrics.headerLatency
-                                                           : writeMetrics.bodyLatency);
-        metrics::LongAverageMetric& sz(part == HEADER ? writeMetrics.headerSize
-                                                      : writeMetrics.bodySize);
-        latency.addValue((timeNow - locationWriteTime).getTime());
+        metrics::DoubleAverageMetric& latency(
+                part == HEADER ? writeMetrics.headerLatency
+                               : writeMetrics.bodyLatency);
+        metrics::LongAverageMetric& sz(
+                part == HEADER ? writeMetrics.headerSize
+                               : writeMetrics.bodySize);
+        latency.addValue(writeTimer.getElapsedTimeAsDouble());
         sz.addValue(bytesToWrite[part]);
-        locationWriteTime = timeNow;
     }
 
+    framework::MilliSecTimer metaWriteTimer(env._clock);
     // Write metadata back to file
     writer.setFilePosition(0);
     writeMetaData(writer, file);
@@ -626,10 +627,9 @@ MemFileV1Serializer::flushUpdatesToFile(MemFile& file, Environment& env)
     writer.flush();
     MapperSlotOperation::clearFlag(file, SLOTS_ALTERED);
 
-    framework::MilliSecTime finishTime(env._clock.getTimeInMillis());
-    writeMetrics.metaLatency.addValue((finishTime - locationWriteTime).getTime());
+    writeMetrics.metaLatency.addValue(metaWriteTimer.getElapsedTimeAsDouble());
+    writeMetrics.totalLatency.addValue(totalWriteTimer.getElapsedTimeAsDouble());
     writeMetrics.metaSize.addValue(writer.getFilePosition());
-    writeMetrics.totalLatency.addValue((finishTime - startTime).getTime());
     return FlushResult::ChangesWritten;
 }
 
@@ -832,11 +832,13 @@ MemFileV1Serializer::writeAndUpdateLocations(
 
     SerializationWriteMetrics& writeMetrics(
             getMetrics().serialization.fullWrite);
-    metrics::LongAverageMetric& latency(part == HEADER ? writeMetrics.headerLatency
-                                                       : writeMetrics.bodyLatency);
-    metrics::LongAverageMetric& sz(part == HEADER ? writeMetrics.headerSize
-                                                  : writeMetrics.bodySize);
-    latency.addValue(timer);
+    metrics::DoubleAverageMetric& latency(
+            part == HEADER ? writeMetrics.headerLatency
+                           : writeMetrics.bodyLatency);
+    metrics::LongAverageMetric& sz(
+            part == HEADER ? writeMetrics.headerSize
+                           : writeMetrics.bodySize);
+    latency.addValue(timer.getElapsedTimeAsDouble());
     sz.addValue(index); // Equal to written size.
 
     return index;
@@ -845,7 +847,7 @@ MemFileV1Serializer::writeAndUpdateLocations(
 void
 MemFileV1Serializer::rewriteFile(MemFile& file, Environment& env)
 {
-    framework::MilliSecTime startTime(env._clock.getTimeInMillis());
+    framework::MilliSecTimer totalWriteTimer(env._clock);
     SerializationWriteMetrics& writeMetrics(
             getMetrics().serialization.fullWrite);
     file.ensureHeaderAndBodyBlocksCached();
@@ -933,7 +935,7 @@ MemFileV1Serializer::rewriteFile(MemFile& file, Environment& env)
         writer.writeGarbage(data->_bodyBlockSize - bodyIndex);
     }
 
-    framework::MilliSecTime timeBeforeMetaWrite(env._clock.getTimeInMillis());
+    framework::MilliSecTimer metaWriteTimer(env._clock);
     // Update meta entries
     std::vector<MetaSlot> writeSlots(header._metaDataListSize);
 
@@ -1004,10 +1006,9 @@ MemFileV1Serializer::rewriteFile(MemFile& file, Environment& env)
     }
     MapperSlotOperation::clearFlag(file, SLOTS_ALTERED);
 
-    framework::MilliSecTime timeAfterMetaWrite(env._clock.getTimeInMillis());
-    writeMetrics.metaLatency.addValue((timeAfterMetaWrite - timeBeforeMetaWrite).getTime());
+    writeMetrics.metaLatency.addValue(metaWriteTimer.getElapsedTimeAsDouble());
+    writeMetrics.totalLatency.addValue(totalWriteTimer.getElapsedTimeAsDouble());
     writeMetrics.metaSize.addValue(sizeof(MetaSlot) * header._metaDataListSize);
-    writeMetrics.totalLatency.addValue((timeAfterMetaWrite - startTime).getTime());
 }
 
 bool
@@ -1021,7 +1022,7 @@ MemFileV1Serializer::verify(MemFile& file, Environment& env,
     
     bool ok(verifier.verify(file, env, reportStream, repairErrors, fileVerifyFlags));
 
-    metrics.verifyLatency.addValue(timer);
+    metrics.verifyLatency.addValue(timer.getElapsedTimeAsDouble());
     return ok;
 }
 
