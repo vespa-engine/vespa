@@ -61,7 +61,7 @@ public class TensorType {
             b.add(thisDimension);
         for (Dimension otherDimension : other.dimensions) {
             Dimension thisDimension = b.dimensions.get(otherDimension.name());
-            b.add(otherDimension.combineWith(Optional.ofNullable(thisDimension)));
+            b.addOrReplace(otherDimension.combineWith(Optional.ofNullable(thisDimension)));
         }
         return b.build();
     }
@@ -232,6 +232,18 @@ public class TensorType {
 
             if ( ! dimensions.isEmpty()) {
                 validateDimensionName(dimension);
+                validateDimensionType(dimension);
+            }
+
+            dimensions.put(dimension.name(), dimension);
+            prevDimension = dimension;
+            return this;
+        }
+
+        private Builder addOrReplace(Dimension dimension) { // TODO: Not quite sure I like this solution
+            Objects.requireNonNull(dimension, "A dimension cannot be null");
+
+            if ( ! dimensions.isEmpty()) {
                 validateDimensionType(dimension);
             }
 

@@ -58,6 +58,7 @@ public class TensorFunctionBenchmark {
     
     public static void main(String[] args) {
         // Was: 144 ms
+        // After adding type: 290 ms
         new TensorFunctionBenchmark().benchmark(100);
     }
 
