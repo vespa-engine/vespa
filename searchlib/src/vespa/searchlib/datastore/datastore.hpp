@@ -123,10 +123,11 @@ DataStoreT<RefT>::freeListAllocator(uint32_t typeId)
 }
 
 template <typename RefT>
-RawAllocator<RefT>
+template <typename EntryT>
+RawAllocator<EntryT, RefT>
 DataStoreT<RefT>::rawAllocator(uint32_t typeId)
 {
-    return RawAllocator<RefT>(*this, typeId);
+    return RawAllocator<EntryT, RefT>(*this, typeId);
 }
 
 

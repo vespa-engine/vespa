@@ -114,7 +114,7 @@ DenseTensorStore::allocRawBuffer(size_t numCells)
 {
     size_t bufSize = numCells * _cellSize;
     size_t alignedBufSize = alignedSize(numCells);
-    auto result = _concreteStore.rawAllocator(_typeId).alloc(alignedBufSize);
+    auto result = _concreteStore.rawAllocator<char>(_typeId).alloc(alignedBufSize);
     clearPadAreaAfterBuffer(result.data, bufSize, alignedBufSize, unboundDimSizesSize());
     return result;
 }

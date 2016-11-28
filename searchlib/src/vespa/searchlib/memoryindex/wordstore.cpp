@@ -32,25 +32,19 @@ WordStore::~WordStore(void)
 datastore::EntryRef
 WordStore::addWord(const vespalib::stringref word)
 {
-    _store.ensureBufferCapacity(_typeId, RefType::align(word.size() + 1));
-    uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    datastore::BufferState &state = _store.getBufferState(activeBufferId);
-    size_t oldSize = state.size();
-    RefType ref(oldSize, activeBufferId);
-    assert(oldSize == ref.offset());
-    char *be = _store.getBufferEntry<char>(activeBufferId, oldSize);
+    size_t wordSize = word.size() + 1;
+    size_t bufferSize = RefType::align(wordSize);
+    auto result = _store.rawAllocator<char>(_typeId).alloc(bufferSize);
+    char *be = result.data;
     for (size_t i = 0; i < word.size(); ++i) {
         *be++ = word[i];
     }
     *be++ = 0;
-    state.pushed_back(word.size() + 1);
-    size_t pad = RefType::pad(state.size());
-    for (size_t i = 0; i < pad; ++i) {
+    for (size_t i = wordSize; i < bufferSize; ++i) {
         *be++ = 0;
     }
-    state.pushed_back(pad);
     ++_numWords;
-    return ref;
+    return result.ref;
 }
 
 

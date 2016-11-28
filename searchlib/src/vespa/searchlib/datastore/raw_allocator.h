@@ -10,13 +10,14 @@ namespace search {
 namespace datastore {
 
 /**
- * Allocator used to allocate raw buffers (char *) in an underlying data store.
+ * Allocator used to allocate raw buffers (EntryT *) in an underlying data store
+ * with no construction or de-construction of elements in the buffer.
  */
-template <typename RefT>
+template <typename EntryT, typename RefT>
 class RawAllocator
 {
 public:
-    using HandleType = Handle<char>;
+    using HandleType = Handle<EntryT>;
 
 private:
     DataStoreBase &_store;
@@ -25,7 +26,10 @@ private:
 public:
     RawAllocator(DataStoreBase &store, uint32_t typeId);
 
-    HandleType alloc(size_t numBytes);
+    HandleType alloc(size_t numElems) {
+        return alloc(numElems, 0);
+    }
+    HandleType alloc(size_t numElems, size_t extraElems);
 };
 
 }

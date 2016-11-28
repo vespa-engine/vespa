@@ -84,7 +84,8 @@ public:
     template <typename EntryT, typename ReclaimerT>
     FreeListAllocator<EntryT, RefT, ReclaimerT> freeListAllocator(uint32_t typeId);
 
-    RawAllocator<RefT> rawAllocator(uint32_t typeId);
+    template <typename EntryT>
+    RawAllocator<EntryT, RefT> rawAllocator(uint32_t typeId);
 
 };
 

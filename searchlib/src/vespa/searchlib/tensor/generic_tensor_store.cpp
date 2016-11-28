@@ -57,7 +57,7 @@ GenericTensorStore::allocRawBuffer(uint32_t size)
     }
     size_t extSize = size + sizeof(uint32_t);
     size_t bufSize = RefType::align(extSize);
-    auto result = _concreteStore.rawAllocator(_typeId).alloc(bufSize);
+    auto result = _concreteStore.rawAllocator<char>(_typeId).alloc(bufSize);
     *reinterpret_cast<uint32_t *>(result.data) = size;
     char *padWritePtr = result.data + extSize;
     for (size_t i = extSize; i < bufSize; ++i) {
