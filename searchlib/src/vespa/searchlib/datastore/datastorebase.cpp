@@ -351,15 +351,21 @@ DataStoreBase::getAddressSpaceUsage(void) const
 {
     size_t usedClusters = 0;
     size_t deadClusters = 0;
+    size_t limitClusters = 0;
     for (const BufferState & bState: _states) {
-        BufferState::State state = bState.getState();
-        if (state == BufferState::ACTIVE) {
+        if (bState.isActive()) {
             uint32_t clusterSize = bState.getClusterSize();
             usedClusters += bState.size() / clusterSize;
             deadClusters += bState.getDeadElems() / clusterSize;
+            limitClusters += bState.capacity() / clusterSize;
+        } else if (bState.isOnHold()) {
+        } else if (bState.isFree()) {
+            limitClusters += _maxClusters;
+        } else {
+            abort();
         }
     }
-    return AddressSpace(usedClusters, deadClusters, (1ull << 32));
+    return AddressSpace(usedClusters, deadClusters, limitClusters);
 }
 
 void

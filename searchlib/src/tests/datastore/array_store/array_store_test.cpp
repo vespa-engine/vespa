@@ -263,8 +263,9 @@ TEST_F("require that address space usage is ratio between used clusters and numb
     EXPECT_EQUAL(3, f.store.addressSpaceUsage().used());
     EXPECT_EQUAL(1, f.store.addressSpaceUsage().dead());
     size_t fourgig = (1ull << 32);
-    EXPECT_EQUAL(static_cast<double>(2)/ fourgig, f.store.addressSpaceUsage().usage());
-    EXPECT_EQUAL(fourgig, f.store.addressSpaceUsage().limit());
+    size_t expLimit = fourgig - 4 * F1::EntryRefType::offsetSize() + 4 * 16;
+    EXPECT_EQUAL(static_cast<double>(2)/ expLimit, f.store.addressSpaceUsage().usage());
+    EXPECT_EQUAL(expLimit, f.store.addressSpaceUsage().limit());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

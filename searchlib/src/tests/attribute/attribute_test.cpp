@@ -2156,8 +2156,8 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
         EXPECT_EQUAL(before.multiValueUsage().used(), 1u);
         EXPECT_EQUAL(before.multiValueUsage().dead(), 1u);
         EXPECT_GREATER_EQUAL(after.multiValueUsage().used(), before.multiValueUsage().used());
-        EXPECT_EQUAL(after.multiValueUsage().limit(), before.multiValueUsage().limit());
-        EXPECT_EQUAL((1ull << 32), after.multiValueUsage().limit());
+        EXPECT_GREATER(after.multiValueUsage().limit(), before.multiValueUsage().limit());
+        EXPECT_GREATER((1ull << 32), after.multiValueUsage().limit());
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT multi-value", attrName.c_str());
         EXPECT_EQUAL(before.multiValueUsage().used(), 0u);
