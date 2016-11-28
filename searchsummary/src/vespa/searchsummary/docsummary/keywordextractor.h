@@ -62,7 +62,6 @@ private:
     IndexPrefix         *_legalPrefixes;
     Set                  _legalIndexes;
 
-
     bool IsLegalIndexPrefix(const char *idxName) const
     {
         for (const IndexPrefix *pt = _legalPrefixes;

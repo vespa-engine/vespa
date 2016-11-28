@@ -21,46 +21,28 @@
 #pragma once
 
 #include <vespa/metrics/memoryconsumption.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace metrics {
 
+class NameSet;
+
 class NameHash {
-    vespalib::hash_set<std::string> _hash;
+    std::unique_ptr<NameSet> _hash;
     uint32_t _unifiedCounter;
     uint32_t _checkedCounter;
 
 public:
     NameHash(const NameHash &) = delete;
     NameHash & operator = (const NameHash &) = delete;
-    NameHash() : _unifiedCounter(0), _checkedCounter(0) {}
+    NameHash();
+    ~NameHash();
 
-    void updateName(std::string& name) {
-        ++_checkedCounter;
-        vespalib::hash_set<std::string>::const_iterator it(_hash.find(name));
-        if (it != _hash.end()) {
-            if (name.c_str() != it->c_str()) {
-                name = *it;
-                ++_unifiedCounter;
-            }
-        } else {
-            _hash.insert(name);
-        }
-    }
+    void updateName(std::string& name);
 
     uint32_t getUnifiedStringCount() const { return _unifiedCounter; }
     uint32_t getCheckedStringCount() const { return _checkedCounter; }
     void resetCounts() { _unifiedCounter = 0; _checkedCounter = 0; }
-    void addMemoryUsage(MemoryConsumption& mc) const {
-        mc._nameHash += sizeof(NameHash)
-                     + _hash.getMemoryConsumption()
-                     - sizeof(vespalib::hash_set<std::string>);
-        for (const std::string & name : _hash) {
-            mc._nameHashStrings += mc.getStringMemoryUsage(name, mc._nameHashUnique);
-        }
-    }
+    void addMemoryUsage(MemoryConsumption& mc) const;
 };
 
-
 } // metrics
-

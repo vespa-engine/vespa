@@ -6,10 +6,7 @@
 #include "documentinverter.h"
 #include <vespa/document/document.h>
 #include <vespa/searchlib/queryeval/searchable.h>
-#include <string>
 #include <vector>
-#include <map>
-#include <set>
 #include <vespa/vespalib/stllike/hash_set.h>
 
 namespace search {

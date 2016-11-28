@@ -18,12 +18,14 @@
 #pragma once
 
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <sstream>
 
 namespace metrics {
 
-struct MemoryConsumption : public vespalib::Printable {
+class SeenStrings;
+class SnapShotUsage;
+
+class MemoryConsumption : public vespalib::Printable {
+public:
     typedef std::unique_ptr<MemoryConsumption> UP;
 
     uint32_t _consumerCount;
@@ -80,9 +82,6 @@ struct MemoryConsumption : public vespalib::Printable {
 
     uint32_t _totalStringCount;
 
-    vespalib::hash_set<const void*> _seenStrings;
-    std::vector<std::pair<std::string, uint32_t> > _snapShotUsage;
-
     MemoryConsumption();
     ~MemoryConsumption();
 
@@ -94,6 +93,9 @@ struct MemoryConsumption : public vespalib::Printable {
     virtual void print(std::ostream& out, bool verbose, const std::string& indent) const;
 
     static std::string bval(uint32_t bytes);
+private:
+    std::unique_ptr<SeenStrings>   _seenStrings;
+    std::unique_ptr<SnapShotUsage> _snapShotUsage;
 };
 
 } // metrics
