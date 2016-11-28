@@ -2,12 +2,16 @@
 #pragma once
 
 #include <boost/operators.hpp>
-#include <limits>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <limits>
+#include <chrono>
 
 namespace storage {
 namespace framework {
+
+using MonotonicTimePoint = std::chrono::steady_clock::time_point;
+using MonotonicDuration = std::chrono::steady_clock::duration;
 
 class Clock;
 
@@ -26,6 +30,9 @@ enum TimeFormat {
  * header file).
  */
 vespalib::string getTimeString(uint64_t microSecondTime, TimeFormat format);
+
+// TODO deprecate framework time point and duration classes in favor of
+// using std::chrono.
 
 // As this class can't include clock, this utility function can be used in
 // header implementation to get actual time.

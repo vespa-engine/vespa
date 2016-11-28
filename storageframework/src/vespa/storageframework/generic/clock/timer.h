@@ -4,9 +4,6 @@
  * \ingroup clock
  *
  * \brief Class used to measure time differences.
- *
- * This timer class is a simple class that then used as a time_t instance, it
- * will calculate time difference from some preset point of time.
  */
 
 #pragma once
@@ -18,17 +15,26 @@ namespace framework {
 
 class MilliSecTimer {
     const Clock* _clock;
-    time_t _startTime;
+    MonotonicTimePoint _startTime;
 
 public:
     MilliSecTimer(const Clock& clock)
-        : _clock(&clock), _startTime(getCurrentTime()) {}
+        : _clock(&clock), _startTime(_clock->getMonotonicTime()) {}
 
-    MilliSecTime getTime() const { return MilliSecTime(getCurrentTime() - _startTime); }
-    operator time_t() const { return getCurrentTime() - _startTime; }
+    // Copy construction makes the most sense when creating a timer that is
+    // intended to inherit another timer's start time point, without incurring
+    // the cost of an initial clock sampling.
+    MilliSecTimer(const MilliSecTimer&) = default;
+    MilliSecTimer& operator=(const MilliSecTimer&) = default;
 
-    time_t getCurrentTime() const
-        { return _clock->getTimeInMillis().getTime(); }
+    MonotonicDuration getElapsedTime() const {
+        return _clock->getMonotonicTime() - _startTime;
+    }
+
+    double getElapsedTimeAsDouble() const {
+        using ToDuration = std::chrono::duration<double, std::milli>;
+        return std::chrono::duration_cast<ToDuration>(getElapsedTime()).count();
+    }
 };
 
 } // framework
