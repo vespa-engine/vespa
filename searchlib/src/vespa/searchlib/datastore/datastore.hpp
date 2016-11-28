@@ -5,6 +5,7 @@
 #include "datastore.h"
 #include "allocator.hpp"
 #include "free_list_allocator.hpp"
+#include "raw_allocator.hpp"
 
 namespace search {
 namespace datastore {
@@ -119,6 +120,13 @@ FreeListAllocator<EntryT, RefT, ReclaimerT>
 DataStoreT<RefT>::freeListAllocator(uint32_t typeId)
 {
     return FreeListAllocator<EntryT, RefT, ReclaimerT>(*this, typeId);
+}
+
+template <typename RefT>
+RawAllocator<RefT>
+DataStoreT<RefT>::rawAllocator(uint32_t typeId)
+{
+    return RawAllocator<RefT>(*this, typeId);
 }
 
 

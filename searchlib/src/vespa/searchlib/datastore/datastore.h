@@ -5,6 +5,7 @@
 #include "allocator.h"
 #include "datastorebase.h"
 #include "free_list_allocator.h"
+#include "raw_allocator.h"
 
 namespace search {
 namespace btree {
@@ -82,6 +83,8 @@ public:
 
     template <typename EntryT, typename ReclaimerT>
     FreeListAllocator<EntryT, RefT, ReclaimerT> freeListAllocator(uint32_t typeId);
+
+    RawAllocator<RefT> rawAllocator(uint32_t typeId);
 
 };
 
