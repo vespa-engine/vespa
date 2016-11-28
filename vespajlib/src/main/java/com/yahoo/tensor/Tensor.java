@@ -13,6 +13,7 @@ import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -55,6 +56,19 @@ public interface Tensor {
 
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
+
+    /** 
+     * Returns the value of this as a double if it has no dimensions and one value
+     *
+     * @throws IllegalStateException if this does not have zero dimensions and one value
+     */
+    default double asDouble() {
+        if (dimensions().size() > 0)
+            throw new IllegalStateException("This tensor is no dimensionless. Dimensions: " + dimensions());
+        if (cells().size() != 1)
+            throw new IllegalStateException("This tensor does not have a single value, it has " + cells().size());
+        return cells().values().iterator().next();
+    }
     
     // ----------------- Primitive tensor functions
     
@@ -62,6 +76,10 @@ public interface Tensor {
         return new com.yahoo.tensor.functions.Map(new ConstantTensor(this), mapper).evaluate();
     }
 
+    /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
+    default Tensor reduce(Reduce.Aggregator aggregator, String ... dimensions) {
+        return new Reduce(new ConstantTensor(this), aggregator, Arrays.asList(dimensions)).evaluate();
+    }
     /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
     default Tensor reduce(Reduce.Aggregator aggregator, List<String> dimensions) {
         return new Reduce(new ConstantTensor(this), aggregator, dimensions).evaluate();
