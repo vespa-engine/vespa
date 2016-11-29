@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -265,7 +266,7 @@ public class NodeRepository extends AbstractComponent {
      * Fails this node and returns it in its new state.
      *
      * @return the node in its new state
-     * @throws IllegalArgumentException if the node is not found
+     * @throws NotFoundException if the node is not found
      */
     public Node fail(String hostname) {
         return move(hostname, Node.State.failed);
@@ -275,7 +276,7 @@ public class NodeRepository extends AbstractComponent {
      * Parks this node and returns it in its new state.
      *
      * @return the node in its new state
-     * @throws IllegalArgumentException if the node is not found
+     * @throws NotFoundException if the node is not found
      */
     public Node park(String hostname) {
         return move(hostname, Node.State.parked);
@@ -285,7 +286,7 @@ public class NodeRepository extends AbstractComponent {
      * Moves a previously failed or parked node back to the active state.
      *
      * @return the node in its new state
-     * @throws IllegalArgumentException if the node is not found
+     * @throws NotFoundException if the node is not found
      */
     public Node reactivate(String hostname) {
         return move(hostname, Node.State.active);
@@ -294,7 +295,7 @@ public class NodeRepository extends AbstractComponent {
     public Node move(String hostname, Node.State toState) {
         Optional<Node> node = getNode(hostname);
         if ( ! node.isPresent())
-            throw new IllegalArgumentException("Could not move " + hostname + " to " + toState + ": Node not found");
+            throw new NotFoundException("Could not move " + hostname + " to " + toState + ": Node not found");
         try (Mutex lock = lock(node.get())) {
             return zkClient.writeTo(toState, node.get());
         }
