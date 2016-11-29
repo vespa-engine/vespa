@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +84,7 @@ public class TensorType {
     public boolean equals(Object other) {
         if (this == other) return true;
         if (other == null || getClass() != other.getClass()) return false;
-        return dimensions.equals(((TensorType)other).dimensions);
+        return new HashSet<>(dimensions).equals(new HashSet<>(((TensorType)other).dimensions));
     }
 
     @Override
