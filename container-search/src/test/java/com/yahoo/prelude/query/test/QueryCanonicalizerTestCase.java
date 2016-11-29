@@ -4,16 +4,19 @@ package com.yahoo.prelude.query.test;
 import com.yahoo.prelude.query.*;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author bratseth
  */
-public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
+public class QueryCanonicalizerTestCase {
 
-    public QueryCanonicalizerTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testSingleLevelSingleItemComposite() {
         CompositeItem root = new AndItem();
 
@@ -21,6 +24,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("word", null, root);
     }
 
+    @Test
     public void testSingleLevelSingleItemNonReducibleComposite() {
         CompositeItem root = new WeakAndItem();
 
@@ -28,6 +32,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("WAND(100) word", null, root);
     }
 
+    @Test
     public void testMultilevelSingleItemComposite() {
         CompositeItem root = new AndItem();
         CompositeItem and1 = new AndItem();
@@ -39,6 +44,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("word", null, root);
     }
 
+    @Test
     public void testMultilevelComposite() {
         // AND (RANK (AND a b c)) WAND(25,0.0,1.0)
         AndItem and = new AndItem();
@@ -55,6 +61,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("AND (AND a b c) WAND(100,0.0,1.0) default}", null, and);
     }
 
+    @Test
     public void testMultilevelEmptyComposite() {
         CompositeItem root = new AndItem();
         CompositeItem and1 = new AndItem();
@@ -65,6 +72,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("NULL", "No query", new Query());
     }
 
+    @Test
     public void testMultilevelMultiBranchEmptyComposite() {
         CompositeItem root = new AndItem();
         CompositeItem and1 = new AndItem();
@@ -81,6 +89,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("NULL", "No query", new Query());
     }
 
+    @Test
     public void testMultilevelMultiBranchSingleItemComposite() {
         CompositeItem root = new AndItem();
         CompositeItem and1 = new AndItem();
@@ -98,10 +107,12 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("word", null, new Query("?query=word"));
     }
 
+    @Test
     public void testNullRoot() {
         assertCanonicalized("NULL", "No query", new Query());
     }
 
+    @Test
     public void testNestedNull() {
         CompositeItem root = new AndItem();
         CompositeItem or = new AndItem();
@@ -116,6 +127,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("NULL", "No query: Contained an empty AND only", root);
     }
 
+    @Test
     public void testNestedNullItem() {
         CompositeItem root = new AndItem();
         CompositeItem or = new AndItem();
@@ -132,6 +144,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("NULL", "No query: Contained an empty AND only", root);
     }
 
+    @Test
     public void testNestedNullAndSingle() {
         CompositeItem root = new AndItem();
         CompositeItem or = new OrItem();
@@ -144,6 +157,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("word", null, root);
     }
 
+    @Test
     public void testRemovalOfUnnecessaryComposites() {
         CompositeItem root = new AndItem();
         CompositeItem or = new OrItem();
@@ -158,6 +172,27 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("OR word1 word2 word3", null, root);
     }
 
+    /** Multiple levels of the same composite should collapse */
+    @Test
+    public void testMultilevelCollapsing() {
+        CompositeItem root = new AndItem();
+        CompositeItem child = new AndItem();
+        CompositeItem grandchild = new AndItem();
+        CompositeItem grandgrandchild = new AndItem();
+        
+        root.addItem(child);
+        child.addItem(new WordItem("childItem"));
+
+        child.addItem(grandchild);
+        grandchild.addItem(new WordItem("grandchildItem"));
+
+        grandchild.addItem(grandgrandchild);
+        grandgrandchild.addItem(new WordItem("grandgrandchildItem"));
+
+        assertCanonicalized("AND childItem grandchildItem grandgrandchildItem", null, root);
+    }
+
+    @Test
     public void testNegativeMustHaveNegatives() {
         CompositeItem root = new NotItem();
 
@@ -165,14 +200,15 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("positive", null, root);
     }
 
+    @Test
     public void testNegativeMustHavePositive() {
         NotItem root = new NotItem();
 
         root.addNegativeItem(new WordItem("negative"));
-        assertCanonicalized("+(null) -negative",
-                "Can not search for only negative items", root);
+        assertCanonicalized("NULL","Can not search for only negative items", root);
     }
 
+    @Test
     public void testNegativeMustHavePositiveNested() {
         CompositeItem root = new AndItem();
         NotItem not = new NotItem();
@@ -180,14 +216,14 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         root.addItem(not);
         root.addItem(new WordItem("word"));
         not.addNegativeItem(new WordItem("negative"));
-        assertCanonicalized("AND (+(null) -negative) word",
-                "Can not search for only negative items", root);
+        assertCanonicalized("NULL","Can not search for only negative items", root);
     }
 
     /**
      * Tests that connexity is preserved by cloning and transferred to rank properties by preparing the query
      * (which strictly is an implementation detail which we should rather hide).
      */
+    @Test
     public void testConnexityAndCloning() {
         Query q = new Query("?query=a%20b");
         CompositeItem root = (CompositeItem) q.getModel().getQueryTree().getRoot();
@@ -207,6 +243,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
      * Tests that significance is transferred to rank properties by preparing the query
      * (which strictly is an implementation detail which we should rather hide).
      */
+    @Test
     public void testSignificance() {
         Query q = new Query("?query=a%20b");
         CompositeItem root = (CompositeItem) q.getModel().getQueryTree().getRoot();
@@ -217,6 +254,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertEquals("0.95", q.getRanking().getProperties().get("vespa.term.2.significance").get(0));
     }
 
+    @Test
     public void testPhraseWeight() {
         PhraseItem root = new PhraseItem();
         root.setWeight(200);
@@ -224,6 +262,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         assertCanonicalized("a!200", null, root);
     }
 
+    @Test
     public void testEquivDuplicateRemoval() {
         {
             EquivItem root = new EquivItem();
@@ -289,6 +328,7 @@ public class QueryCanonicalizerTestCase extends junit.framework.TestCase {
         }
     }
 
+    @Test
     public void testRankDuplicateCheapification() {
         AndItem and = new AndItem();
         WordItem shoe = new WordItem("shoe", "prod");

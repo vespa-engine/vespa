@@ -22,7 +22,7 @@ import java.util.List;
  *
  * <p>This is also the home of accessor methods which eases querying into and manipulation of the query tree.</p>
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class QueryTree extends CompositeItem {
 
