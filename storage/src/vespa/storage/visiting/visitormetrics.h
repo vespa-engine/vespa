@@ -19,9 +19,9 @@ struct VisitorMetrics : public metrics::MetricSet
     metrics::LongAverageMetric queueSize;
     metrics::LongCountMetric queueSkips;
     metrics::LongCountMetric queueFull;
-    metrics::LongAverageMetric queueWaitTime;
-    metrics::LongAverageMetric queueTimeoutWaitTime;
-    metrics::LongAverageMetric queueEvictedWaitTime;
+    metrics::DoubleAverageMetric queueWaitTime;
+    metrics::DoubleAverageMetric queueTimeoutWaitTime;
+    metrics::DoubleAverageMetric queueEvictedWaitTime;
     std::vector<std::shared_ptr<VisitorThreadMetrics> > threads;
     metrics::SumMetric<MetricSet> sum;
 

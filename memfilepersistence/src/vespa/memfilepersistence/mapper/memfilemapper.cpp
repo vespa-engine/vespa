@@ -156,7 +156,7 @@ MemFileMapper::loadFileImpl(MemFile& file, Environment& env)
         throw CorruptMemFileException(err.str(), file.getFile(), VESPA_STRLOC);
     }
     SerializationMetrics& metrics(getMetrics().serialization);
-    metrics.initialMetaReadLatency.addValue(timer);
+    metrics.initialMetaReadLatency.addValue(timer.getElapsedTimeAsDouble());
 
     file.setFlag(BUCKET_INFO_OUTDATED);
 
@@ -172,7 +172,7 @@ MemFileMapper::loadFileImpl(MemFile& file, Environment& env)
     }
     serializer->second->loadFile(file, env, buffer, readBytes);
 
-    metrics.totalLoadFileLatency.addValue(timer);
+    metrics.totalLoadFileLatency.addValue(timer.getElapsedTimeAsDouble());
 }
 
 void
@@ -292,7 +292,8 @@ MemFileMapper::deleteFile(const MemFile& constFile, Environment& env)
     PartitionMonitor& partitionMonitor(
             *constFile.getFile().getDirectory().getPartition().getMonitor());
     partitionMonitor.removingData(fileSize);
-    getMetrics().serialization.deleteFileLatency.addValue(timer);
+    getMetrics().serialization.deleteFileLatency.addValue(
+            timer.getElapsedTimeAsDouble());
 }
 
 void
