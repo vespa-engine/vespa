@@ -53,7 +53,7 @@ public:
 
     uint32_t getNumKeys() const { return _indices.size(); }
     uint32_t getCapacityKeys() const { return _indices.capacity(); }
-    virtual void compactWorst() = 0;
+    virtual void compactWorst(bool compatMemory, bool compactAddressSpace) = 0;
     bool considerCompact(const CompactionStrategy &compactionStrategy);
 };
 

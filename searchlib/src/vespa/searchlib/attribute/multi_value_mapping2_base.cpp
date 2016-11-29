@@ -91,7 +91,7 @@ MultiValueMapping2Base::considerCompact(const CompactionStrategy &compactionStra
     bool compactAddressSpace = ((deadClusters >= DEAD_CLUSTERS_SLACK) &&
                                 (usedClusters * compactionStrategy.getMaxDeadAddressSpaceRatio() < deadClusters));
     if (compactMemory || compactAddressSpace) {
-        compactWorst();
+        compactWorst(compactMemory, compactAddressSpace);
         return true;
     }
     return false;

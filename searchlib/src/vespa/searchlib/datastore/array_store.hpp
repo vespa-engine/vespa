@@ -159,27 +159,33 @@ private:
     using ArrayStoreType = ArrayStore<EntryT, RefT>;
     DataStoreBase &_dataStore;
     ArrayStoreType &_store;
-    uint32_t _bufferIdToCompact;
+    std::vector<uint32_t> _bufferIdsToCompact;
 
+    bool compactingBuffer(uint32_t bufferId) {
+        return std::find(_bufferIdsToCompact.begin(), _bufferIdsToCompact.end(),
+                         bufferId) != _bufferIdsToCompact.end();
+    }
 public:
     CompactionContext(DataStoreBase &dataStore,
                       ArrayStoreType &store,
-                      uint32_t bufferIdToCompact)
+                      std::vector<uint32_t> bufferIdsToCompact)
         : _dataStore(dataStore),
           _store(store),
-          _bufferIdToCompact(bufferIdToCompact)
+          _bufferIdsToCompact(std::move(bufferIdsToCompact))
     {}
     virtual ~CompactionContext() {
-        _dataStore.holdBuffer(_bufferIdToCompact);
+        _dataStore.finishCompact(_bufferIdsToCompact);
     }
     virtual void compact(vespalib::ArrayRef<EntryRef> refs) override {
-        for (auto &ref : refs) {
-            if (ref.valid()) {
-                RefT internalRef(ref);
-                if (internalRef.bufferId() == _bufferIdToCompact) {
-                    EntryRef newRef = _store.add(_store.get(ref));
-                    std::atomic_thread_fence(std::memory_order_release);
-                    ref = newRef;
+        if (!_bufferIdsToCompact.empty()) {
+            for (auto &ref : refs) {
+                if (ref.valid()) {
+                    RefT internalRef(ref);
+                    if (compactingBuffer(internalRef.bufferId())) {
+                        EntryRef newRef = _store.add(_store.get(ref));
+                        std::atomic_thread_fence(std::memory_order_release);
+                        ref = newRef;
+                    }
                 }
             }
         }
@@ -190,11 +196,11 @@ public:
 
 template <typename EntryT, typename RefT>
 ICompactionContext::UP
-ArrayStore<EntryT, RefT>::compactWorst()
+ArrayStore<EntryT, RefT>::compactWorst(bool compactMemory, bool compactAddressSpace)
 {
-    uint32_t bufferIdToCompact = _store.startCompactWorstBuffer();
+    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compactMemory, compactAddressSpace);
     return std::make_unique<arraystore::CompactionContext<EntryT, RefT>>
-            (_store, *this, bufferIdToCompact);
+        (_store, *this, std::move(bufferIdsToCompact));
 }
 
 template <typename EntryT, typename RefT>

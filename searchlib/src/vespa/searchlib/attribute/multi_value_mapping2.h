@@ -43,7 +43,7 @@ public:
 
     void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
-    virtual void compactWorst() override;
+    virtual void compactWorst(bool compactMemory, bool compactAddressSpace) override;
 
     virtual AddressSpace getAddressSpaceUsage() const override;
     virtual MemoryUsage getArrayStoreMemoryUsage() const override;

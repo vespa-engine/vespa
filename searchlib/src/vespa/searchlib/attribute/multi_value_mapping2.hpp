@@ -46,9 +46,9 @@ MultiValueMapping2<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
 
 template <typename EntryT, typename RefT>
 void
-MultiValueMapping2<EntryT,RefT>::compactWorst()
+MultiValueMapping2<EntryT,RefT>::compactWorst(bool compactMemory, bool compactAddressSpace)
 {
-    datastore::ICompactionContext::UP compactionContext(_store.compactWorst());
+    datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compactMemory, compactAddressSpace));
     if (compactionContext) {
         compactionContext->compact(vespalib::ArrayRef<EntryRef>(&_indices[0],
                                                                 _indices.size()));

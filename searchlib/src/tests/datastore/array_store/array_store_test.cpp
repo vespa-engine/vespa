@@ -110,8 +110,8 @@ struct Fixture
         store.transferHoldLists(generation++);
         store.trimHoldLists(generation);
     }
-    void compactWorst() {
-        ICompactionContext::UP ctx = store.compactWorst();
+    void compactWorst(bool compactMemory, bool compactAddressSpace) {
+        ICompactionContext::UP ctx = store.compactWorst(compactMemory, compactAddressSpace);
         std::vector<EntryRef> refs;
         for (auto itr = refStore.begin(); itr != refStore.end(); ++itr) {
             refs.push_back(itr->first);
@@ -218,7 +218,7 @@ TEST_F("require that the buffer with most dead space is compacted", NumberFixtur
     uint32_t size3BufferId = f.getBufferId(size3Ref);
 
     EXPECT_EQUAL(3u, f.refStore.size());
-    f.compactWorst();
+    f.compactWorst(true, false);
     EXPECT_EQUAL(3u, f.refStore.size());
     f.assertStoreContent();
 
@@ -230,6 +230,85 @@ TEST_F("require that the buffer with most dead space is compacted", NumberFixtur
     EXPECT_TRUE(f.store.bufferState(size2Ref).isOnHold());
     f.trimHoldLists();
     EXPECT_TRUE(f.store.bufferState(size2Ref).isFree());
+}
+
+namespace {
+
+void testCompaction(NumberFixture &f, bool compactMemory, bool compactAddressSpace)
+{
+    EntryRef size1Ref = f.add({1});
+    EntryRef size2Ref = f.add({2,2});
+    EntryRef size3Ref = f.add({3,3,3});
+    f.remove(f.add({5,5,5}));
+    f.remove(f.add({6}));
+    f.remove(f.add({7}));
+    f.trimHoldLists();
+    TEST_DO(f.assertBufferState(size1Ref, MemStats().used(3).dead(2)));
+    TEST_DO(f.assertBufferState(size2Ref, MemStats().used(2).dead(0)));
+    TEST_DO(f.assertBufferState(size3Ref, MemStats().used(6).dead(3)));
+    uint32_t size1BufferId = f.getBufferId(size1Ref);
+    uint32_t size2BufferId = f.getBufferId(size2Ref);
+    uint32_t size3BufferId = f.getBufferId(size3Ref);
+
+    EXPECT_EQUAL(3u, f.refStore.size());
+    f.compactWorst(compactMemory, compactAddressSpace);
+    EXPECT_EQUAL(3u, f.refStore.size());
+    f.assertStoreContent();
+
+    if (compactMemory) {
+        EXPECT_NOT_EQUAL(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
+    } else {
+        EXPECT_EQUAL(size3BufferId, f.getBufferId(f.getEntryRef({3,3,3})));
+    }
+    if (compactAddressSpace) {
+        EXPECT_NOT_EQUAL(size1BufferId, f.getBufferId(f.getEntryRef({1})));
+    } else {
+        EXPECT_EQUAL(size1BufferId, f.getBufferId(f.getEntryRef({1})));
+    }
+    EXPECT_EQUAL(size2BufferId, f.getBufferId(f.getEntryRef({2,2})));
+    f.assertGet(size1Ref, {1}); // Old ref should still point to data.
+    f.assertGet(size3Ref, {3,3,3}); // Old ref should still point to data.
+    if (compactMemory) {
+        EXPECT_TRUE(f.store.bufferState(size3Ref).isOnHold());
+    } else {
+        EXPECT_FALSE(f.store.bufferState(size3Ref).isOnHold());
+    }
+    if (compactAddressSpace) {
+        EXPECT_TRUE(f.store.bufferState(size1Ref).isOnHold());
+    } else {
+        EXPECT_FALSE(f.store.bufferState(size1Ref).isOnHold());
+    }
+    EXPECT_FALSE(f.store.bufferState(size2Ref).isOnHold());
+    f.trimHoldLists();
+    if (compactMemory) {
+        EXPECT_TRUE(f.store.bufferState(size3Ref).isFree());
+    } else {
+        EXPECT_FALSE(f.store.bufferState(size3Ref).isFree());
+    }
+    if (compactAddressSpace) {
+        EXPECT_TRUE(f.store.bufferState(size1Ref).isFree());
+    } else {
+        EXPECT_FALSE(f.store.bufferState(size1Ref).isFree());
+    }
+    EXPECT_FALSE(f.store.bufferState(size2Ref).isFree());
+}
+
+}
+
+TEST_F("require that compactWorst selects on only memory", NumberFixture(3)) {
+    testCompaction(f, true, false);
+}
+
+TEST_F("require that compactWorst selects on only address space", NumberFixture(3)) {
+    testCompaction(f, false, true);
+}
+
+TEST_F("require that compactWorst selects on both memory and address space", NumberFixture(3)) {
+    testCompaction(f, true, true);
+}
+
+TEST_F("require that compactWorst selects on neither memory nor address space", NumberFixture(3)) {
+    testCompaction(f, false, false);
 }
 
 TEST_F("require that used, onHold and dead memory usage is tracked for small arrays", NumberFixture(2))

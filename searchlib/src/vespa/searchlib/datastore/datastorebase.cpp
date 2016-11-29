@@ -455,13 +455,6 @@ DataStoreBase::startCompactWorstBuffer(uint32_t typeId) {
                                    [=](const BufferState &state) { return state.isActive(typeId); });
 }
 
-uint32_t
-DataStoreBase::startCompactWorstBuffer()
-{
-    uint32_t activeBufferId = getActiveBufferId(0);
-   return startCompactWorstBuffer(activeBufferId, [](const BufferState &state){ return state.isActive(); });
-}
-
 template <typename BufferStateActiveFilter>
 uint32_t
 DataStoreBase::startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc)
@@ -478,19 +471,64 @@ DataStoreBase::startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateAc
             }
         }
     }
-    auto &worstBufferState = getBufferState(worstBufferId);
-    uint32_t activeBufferId = getActiveBufferId(worstBufferState.getTypeId());
-    if ((worstBufferId == activeBufferId) ||
-        activeWriteBufferTooDead(getBufferState(activeBufferId)))
-    {
-        switchActiveBuffer(worstBufferState.getTypeId(), 0u);
-    }
-    worstBufferState.setCompacting();
-    worstBufferState.disableElemHoldList();
-    disableFreeList(worstBufferId);
+    markCompacting(worstBufferId);
     return worstBufferId;
 }
 
+void
+DataStoreBase::markCompacting(uint32_t bufferId)
+{
+    auto &state = getBufferState(bufferId);
+    uint32_t typeId = state.getTypeId();
+    uint32_t activeBufferId = getActiveBufferId(typeId);
+    if ((bufferId == activeBufferId) || activeWriteBufferTooDead(getBufferState(activeBufferId))) {
+        switchActiveBuffer(typeId, 0u);
+    }
+    state.setCompacting();
+    state.disableElemHoldList();
+    state.setFreeListList(nullptr);
+}
+
+std::vector<uint32_t>
+DataStoreBase::startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace)
+{
+    constexpr uint32_t noBufferId = std::numeric_limits<uint32_t>::max();
+    uint32_t worstMemoryBufferId = noBufferId;
+    uint32_t worstAddressSpaceBufferId = noBufferId;
+    size_t worstDeadElems = 0;
+    size_t worstDeadClusters = 0;
+    for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
+        const auto &state = getBufferState(bufferId);
+        if (state.isActive()) {
+            auto typeHandler = state.getTypeHandler();
+            uint32_t clusterSize = typeHandler->getClusterSize();
+            uint32_t reservedElements = typeHandler->getReservedElements(bufferId);
+            size_t deadElems = state.getDeadElems() - reservedElements;
+            if (compactMemory && deadElems > worstDeadElems) {
+                worstMemoryBufferId = bufferId;
+                worstDeadElems = deadElems;
+            }
+            if (compactAddressSpace) {
+                size_t deadClusters = deadElems / clusterSize;
+                if (deadClusters > worstDeadClusters) {
+                    worstAddressSpaceBufferId = bufferId;
+                    worstDeadClusters = deadClusters;
+                }
+            }
+        }
+    }
+    std::vector<uint32_t> result;
+    if (worstMemoryBufferId != noBufferId) {
+        markCompacting(worstMemoryBufferId);
+        result.emplace_back(worstMemoryBufferId);
+    }
+    if (worstAddressSpaceBufferId != noBufferId &&
+        worstAddressSpaceBufferId != worstMemoryBufferId) {
+        markCompacting(worstAddressSpaceBufferId);
+        result.emplace_back(worstAddressSpaceBufferId);
+    }
+    return result;
+}
 
 } // namespace datastore
 } // namespace search
