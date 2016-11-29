@@ -1141,13 +1141,13 @@ MetricManagerTest::textOutputSupportsDimensions()
 }
 
 namespace {
-    struct MyUpdateHook : public MetricManager::UpdateHook {
+    struct MyUpdateHook : public UpdateHook {
         std::ostringstream& _output;
         FakeTimer& _timer;
 
         MyUpdateHook(std::ostringstream& output, const char* name,
                      FakeTimer& timer)
-            : MetricManager::UpdateHook(name), _output(output), _timer(timer) {}
+            : UpdateHook(name), _output(output), _timer(timer) {}
 
         void updateMetrics(const MetricLockGuard & ) override {
             _output << _timer.getTime() << ": " << getName() << " called\n";
