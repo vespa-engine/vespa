@@ -14,35 +14,29 @@ public class MapTensorBuilderTestCase {
 
     @Test
     public void requireThatEmptyTensorCanBeBuilt() {
-        Tensor tensor = new MapTensorBuilder().build();
-        assertEquals(0, tensor.dimensions().size());
+        Tensor tensor = new MapTensorBuilder(TensorType.empty).build();
+        assertEquals(0, tensor.type().dimensions().size());
         assertEquals("{}", tensor.toString());
     }
 
     @Test
     public void requireThatOneDimensionalTensorCanBeBuilt() {
-        Tensor tensor = new MapTensorBuilder().
+        TensorType type = new TensorType.Builder().mapped("x").build();
+        Tensor tensor = new MapTensorBuilder(type).
                 cell().label("x", "0").value(1).
                 cell().label("x", "1").value(2).build();
-        assertEquals(Sets.newHashSet("x"), tensor.dimensions());
+        assertEquals(Sets.newHashSet("x"), tensor.type().dimensionNames());
         assertEquals("{{x:0}:1.0,{x:1}:2.0}", tensor.toString());
     }
 
     @Test
     public void requireThatTwoDimensionalTensorCanBeBuilt() {
-        Tensor tensor = new MapTensorBuilder().
+        TensorType type = new TensorType.Builder().mapped("x").mapped("y").build();
+        Tensor tensor = new MapTensorBuilder(type).
                 cell().label("x", "0").label("y", "0").value(1).
                 cell().label("x", "1").label("y", "0").value(2).build();
-        assertEquals(Sets.newHashSet("x", "y"), tensor.dimensions());
+        assertEquals(Sets.newHashSet("x", "y"), tensor.type().dimensionNames());
         assertEquals("{{x:1,y:0}:2.0,{x:0,y:0}:1.0}", tensor.toString());
-    }
-
-    @Test
-    public void requireThatExtraDimensionsCanBeSpecified() {
-        Tensor tensor = new MapTensorBuilder().dimension("y").dimension("z").
-                cell().label("x", "0").value(1).build();
-        assertEquals(Sets.newHashSet("x", "y", "z"), tensor.dimensions());
-        assertEquals("tensor(x{},y{},z{}):{{x:0}:1.0}", tensor.toString());
     }
 
 }

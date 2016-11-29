@@ -584,27 +584,13 @@ public class JsonReader {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         MapTensorBuilder tensorBuilder = new MapTensorBuilder();
+        // read tensor cell fields and ignore everything else
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
-            if (TENSOR_DIMENSIONS.equals(buffer.currentName())) {
-                readTensorDimensions(tensorBuilder);
-            } else if (TENSOR_CELLS.equals(buffer.currentName())) {
+            if (TENSOR_CELLS.equals(buffer.currentName()))
                 readTensorCells(tensorBuilder);
-            }
         }
         expectObjectEnd(buffer.currentToken());
         tensorFieldValue.assign(tensorBuilder.build());
-    }
-
-    private void readTensorDimensions(MapTensorBuilder tensorBuilder) {
-        expectArrayStart(buffer.currentToken());
-        int initNesting = buffer.nesting();
-        for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
-            if (buffer.currentToken().isScalarValue()) {
-                String dimension = buffer.currentText();
-                tensorBuilder.dimension(dimension);
-            }
-        }
-        expectCompositeEnd(buffer.currentToken());
     }
 
     private void readTensorCells(MapTensorBuilder tensorBuilder) {

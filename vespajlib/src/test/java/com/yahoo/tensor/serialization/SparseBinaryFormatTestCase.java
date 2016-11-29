@@ -27,7 +27,7 @@ public class SparseBinaryFormatTestCase {
 
     private static void assertSerialization(String tensorString, Set<String> dimensions) {
         Tensor tensor = MapTensor.from(tensorString);
-        assertEquals(dimensions, tensor.dimensions());
+        assertEquals(dimensions, tensor.type().dimensionNames());
         assertSerialization(tensor);
     }
 
@@ -68,10 +68,10 @@ public class SparseBinaryFormatTestCase {
                 2, // num dimensions
                 2, (byte)'x', (byte)'y', 1, (byte)'z', // dimensions
                 2, // num cells,
-                2, (byte)'a', (byte)'b', 0, 64, 0, 0, 0, 0, 0, 0, 0, // cell 0
+                2, (byte)'a', (byte)'b', 1, (byte)'e', 64, 0, 0, 0, 0, 0, 0, 0, // cell 0
                 2, (byte)'c', (byte)'d', 1, (byte)'e', 64, 8, 0, 0, 0, 0, 0, 0}; // cell 1
         assertEquals(Arrays.toString(encodedTensor),
-                Arrays.toString(TypedBinaryFormat.encode(MapTensor.from("{{xy:ab}:2.0,{xy:cd,z:e}:3.0}"))));
+                Arrays.toString(TypedBinaryFormat.encode(MapTensor.from("{{xy:ab,z:e}:2.0,{xy:cd,z:e}:3.0}"))));
     }
 
 }

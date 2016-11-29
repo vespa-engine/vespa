@@ -276,6 +276,10 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("tensor(x{},y{}):{{x:1}:1.0}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1}:1 }");
     }
 
+    public void testTmp() {
+        assertEvaluates("{ {newX:1,y:2}:3 }", "rename(tensor0, x, newX)", "{ {x:1,y:2}:3.0 }");
+    }
+
     public void testProgrammaticBuildingAndPrecedence() {
         RankingExpression standardPrecedence = new RankingExpression(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, new ArithmeticNode(constant(3), ArithmeticOperator.MULTIPLY, constant(4))));
         RankingExpression oppositePrecedence = new RankingExpression(new ArithmeticNode(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, constant(3)), ArithmeticOperator.MULTIPLY, constant(4)));
@@ -301,15 +305,6 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         for (String tensorArgument : tensorArguments)
             context.put("tensor" + (argumentIndex++), new TensorValue(MapTensor.from(tensorArgument)));
         return assertEvaluates(new TensorValue(MapTensor.from(expectedTensor)), expressionString, context);
-    }
-
-    /** Validate also that the dimension of the resulting tensors are as expected */
-    private RankingExpression assertEvaluates_old(String tensorDimensions, String resultTensor, String expressionString) {
-        RankingExpression expression = assertEvaluates(new TensorValue(MapTensor.from(resultTensor)), expressionString, defaultContext);
-        TensorValue value = (TensorValue)expression.evaluate(defaultContext);
-        assertEquals(toSet(tensorDimensions), value.asTensor().dimensions());
-        assertEquals("String values are equals", resultTensor, expression.evaluate(defaultContext).toString());
-        return expression;
     }
 
     private RankingExpression assertEvaluates(Value value, String expressionString) {

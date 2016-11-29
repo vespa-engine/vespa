@@ -7,6 +7,7 @@ import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.MapTensorBuilder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 
 import java.util.*;
@@ -27,32 +28,34 @@ class SparseBinaryFormat implements BinaryFormat {
 
     @Override
     public void encode(GrowableByteBuffer buffer, Tensor tensor) {
-        List<String> sortedDimensions = new ArrayList<>(tensor.dimensions());
+        List<TensorType.Dimension> sortedDimensions = new ArrayList<>(tensor.type().dimensions());
         Collections.sort(sortedDimensions);
         encodeDimensions(buffer, sortedDimensions);
         encodeCells(buffer, tensor.cells(), sortedDimensions);
     }
 
-    private static void encodeDimensions(GrowableByteBuffer buffer, List<String> sortedDimensions) {
+    private static void encodeDimensions(GrowableByteBuffer buffer, List<TensorType.Dimension> sortedDimensions) {
         buffer.putInt1_4Bytes(sortedDimensions.size());
-        for (String dimension : sortedDimensions) {
-            encodeString(buffer, dimension);
+        for (TensorType.Dimension dimension : sortedDimensions) {
+            if ( ! (dimension instanceof TensorType.MappedDimension))
+                throw new UnsupportedOperationException("Serialization of indexed tensors is no not implemented");
+            encodeString(buffer, dimension.name());
         }
     }
 
     private static void encodeCells(GrowableByteBuffer buffer, Map<TensorAddress, Double> cells,
-                                    List<String> sortedDimensions) {
+                                    List<TensorType.Dimension> sortedDimensions) {
         buffer.putInt1_4Bytes(cells.size());
         for (Map.Entry<TensorAddress, Double> cellEntry : cells.entrySet()) {
             encodeAddress(buffer, cellEntry.getKey(), sortedDimensions);
-            buffer.putDouble(cellEntry.getValue().doubleValue());
+            buffer.putDouble(cellEntry.getValue());
         }
     }
 
-    private static void encodeAddress(GrowableByteBuffer buffer, TensorAddress address, List<String> sortedDimensions) {
-        for (String dimension : sortedDimensions) {
+    private static void encodeAddress(GrowableByteBuffer buffer, TensorAddress address, List<TensorType.Dimension> sortedDimensions) {
+        for (TensorType.Dimension dimension : sortedDimensions) {
             Optional<TensorAddress.Element> element =
-                    address.elements().stream().filter(elem -> elem.dimension().equals(dimension)).findFirst();
+                    address.elements().stream().filter(elem -> elem.dimension().equals(dimension.name())).findFirst();
             String label = (element.isPresent() ? element.get().label() : "");
             encodeString(buffer, label);
         }
@@ -66,40 +69,36 @@ class SparseBinaryFormat implements BinaryFormat {
 
     @Override
     public Tensor decode(GrowableByteBuffer buffer) {
-        List<String> sortedDimensions = decodeDimensions(buffer);
-        MapTensorBuilder builder = new MapTensorBuilder();
-        for (String dimension : sortedDimensions) {
-            builder.dimension(dimension);
-        }
-        decodeCells(buffer, builder, sortedDimensions);
+        TensorType type = decodeType(buffer);
+        MapTensorBuilder builder = new MapTensorBuilder(type);
+        decodeCells(buffer, builder, type);
         return builder.build();
     }
 
-    private static List<String> decodeDimensions(GrowableByteBuffer buffer) {
+    private static TensorType decodeType(GrowableByteBuffer buffer) {
+        TensorType.Builder builder = new TensorType.Builder();
         int numDimensions = buffer.getInt1_4Bytes();
-        List<String> sortedDimensions = new ArrayList<>();
         for (int i = 0; i < numDimensions; ++i) {
-            sortedDimensions.add(decodeString(buffer));
+            builder.mapped(decodeString(buffer)); // TODO: Support indexed
         }
-        return sortedDimensions;
+        return builder.build();
     }
 
-    private static void decodeCells(GrowableByteBuffer buffer, MapTensorBuilder builder,
-                                    List<String> sortedDimensions) {
+    private static void decodeCells(GrowableByteBuffer buffer, MapTensorBuilder builder, TensorType type) {
         int numCells = buffer.getInt1_4Bytes();
         for (int i = 0; i < numCells; ++i) {
             MapTensorBuilder.CellBuilder cellBuilder = builder.cell();
-            decodeAddress(buffer, cellBuilder, sortedDimensions);
+            decodeAddress(buffer, cellBuilder, type);
             cellBuilder.value(buffer.getDouble());
         }
     }
 
     private static void decodeAddress(GrowableByteBuffer buffer, MapTensorBuilder.CellBuilder builder,
-                                      List<String> sortedDimensions) {
-        for (String dimension : sortedDimensions) {
+                                      TensorType type) {
+        for (TensorType.Dimension dimension : type.dimensions()) {
             String label = decodeString(buffer);
-            if (!label.isEmpty()) {
-                builder.label(dimension, label);
+            if ( ! label.isEmpty()) {
+                builder.label(dimension.name(), label);
             }
         }
     }
@@ -110,4 +109,5 @@ class SparseBinaryFormat implements BinaryFormat {
         buffer.get(stringBytes);
         return Utf8.toString(stringBytes);
     }
+
 }

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,18 +58,25 @@ public class Rename extends PrimitiveTensorFunction {
     public Tensor evaluate(EvaluationContext context) {
         Tensor tensor = argument.evaluate(context);
         Map<String, String> fromToMap = fromToMap();
-        Set<String> renamedDimensions = tensor.dimensions().stream()
-                                                           .map((d) -> fromToMap.getOrDefault(d, d))
-                                                           .collect(Collectors.toSet());
+        Set<String> renamedDimensions = tensor.type().dimensions().stream()
+                                                                  .map((d) -> fromToMap.getOrDefault(d.name(), d.name()))
+                                                                  .collect(Collectors.toSet());
         
         ImmutableMap.Builder<TensorAddress, Double> renamedCells = new ImmutableMap.Builder<>();
         for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
             TensorAddress renamedAddress = rename(cell.getKey(), fromToMap);
             renamedCells.put(renamedAddress, cell.getValue());
         }
-        return new MapTensor(renamedDimensions, renamedCells.build());
+        return new MapTensor(asMappedDimensions(renamedDimensions), renamedCells.build());
     }
-    
+
+    private TensorType asMappedDimensions(Set<String> dimensionNames) {
+        TensorType.Builder builder = new TensorType.Builder();
+        for (String dimensionName : dimensionNames)
+            builder.mapped(dimensionName);
+        return builder.build();
+    }
+
     private TensorAddress rename(TensorAddress address, Map<String, String> fromToMap) {
         List<TensorAddress.Element> renamedElements = new ArrayList<>();
         for (TensorAddress.Element element : address.elements()) {

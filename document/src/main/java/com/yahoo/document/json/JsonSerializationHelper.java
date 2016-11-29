@@ -68,7 +68,6 @@ public class JsonSerializationHelper {
 
             if (value.getTensor().isPresent()) {
                 Tensor tensor = value.getTensor().get();
-                serializeTensorDimensions(generator, tensor.dimensions());
                 serializeTensorCells(generator, tensor.cells());
             }
             generator.writeEndObject();
