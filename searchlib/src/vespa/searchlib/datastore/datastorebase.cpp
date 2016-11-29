@@ -455,13 +455,6 @@ DataStoreBase::startCompactWorstBuffer(uint32_t typeId) {
                                    [=](const BufferState &state) { return state.isActive(typeId); });
 }
 
-uint32_t
-DataStoreBase::startCompactWorstBuffer()
-{
-    uint32_t activeBufferId = getActiveBufferId(0);
-   return startCompactWorstBuffer(activeBufferId, [](const BufferState &state){ return state.isActive(); });
-}
-
 template <typename BufferStateActiveFilter>
 uint32_t
 DataStoreBase::startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc)
@@ -478,16 +471,7 @@ DataStoreBase::startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateAc
             }
         }
     }
-    auto &worstBufferState = getBufferState(worstBufferId);
-    uint32_t activeBufferId = getActiveBufferId(worstBufferState.getTypeId());
-    if ((worstBufferId == activeBufferId) ||
-        activeWriteBufferTooDead(getBufferState(activeBufferId)))
-    {
-        switchActiveBuffer(worstBufferState.getTypeId(), 0u);
-    }
-    worstBufferState.setCompacting();
-    worstBufferState.disableElemHoldList();
-    disableFreeList(worstBufferId);
+    markCompacting(worstBufferId);
     return worstBufferId;
 }
 

@@ -405,12 +405,6 @@ public:
 
     uint32_t startCompactWorstBuffer(uint32_t typeId);
 
-    /**
-     * Prepare for compacting the buffer with most dead usage among all buffers
-     * and return the bufferId for this buffer.
-     */
-    uint32_t startCompactWorstBuffer();
-
     std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
 };
 
