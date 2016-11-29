@@ -93,8 +93,7 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
         segmenterVersion = null;
     }
 
-    void addProperty(Map<String, String> queryMap, Query query,
-            CompoundName property) {
+    void addProperty(Map<String, String> queryMap, Query query, CompoundName property) {
         Object o = query.properties().get(property);
         if (o != null) {
             queryMap.put(property.toString(), o.toString());
@@ -173,10 +172,10 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
 
     public String marshalQuery(QueryTree root) {
         QueryTree rootClone = root.clone(); // TODO: Why?
-        QueryCanonicalizer.CanonicalizationResult result = QueryCanonicalizer.treeCanonicalize(rootClone, null);
-        if (result.isError()) return null;
+        String error = QueryCanonicalizer.canonicalize(rootClone);
+        if (error != null) return null;
 
-        return marshalRoot(result.newRoot().orElse(rootClone.getRoot()));
+        return marshalRoot(rootClone.getRoot());
     }
 
     private String marshalRoot(Item root) {

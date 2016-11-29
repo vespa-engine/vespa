@@ -36,8 +36,8 @@ public class QueryTree extends CompositeItem {
     }
 
     public ItemType getItemType() {
-        throw new RuntimeException("Packet type access attempted. " +
-                "A query tree has no packet code. This is probably a misbehaving searcher.");
+        throw new RuntimeException("Packet type access attempted. A query tree has no packet code. " + 
+                                   "This is probably a misbehaving searcher.");
     }
 
     public String getName() { return "ROOT"; }
@@ -53,15 +53,15 @@ public class QueryTree extends CompositeItem {
 
     /** Returns the query root. This is null if this is a null query. */
     public Item getRoot() {
-        if (getItemCount()==0) return null;
+        if (getItemCount() == 0) return null;
         return getItem(0);
     }
 
     public final void setRoot(Item root) {
-        if (root==this) throw new IllegalArgumentException("Cannot make a root point at itself");
+        if (root == this) throw new IllegalArgumentException("Cannot make a root point at itself");
         if (root == null) throw new IllegalArgumentException("Root must not be null, use NullItem instead.");
         if (root instanceof QueryTree) throw new IllegalArgumentException("Do not use a new QueryTree instance as a root.");
-        if (this.getItemCount()==0) // initializing
+        if (this.getItemCount() == 0) // initializing
             super.addItem(root);
         else
             setItem(0,root); // replacing
@@ -103,7 +103,7 @@ public class QueryTree extends CompositeItem {
 
     /** Returns true if this represents the null query */
     public boolean isEmpty() {
-        return getRoot() instanceof NullItem;
+        return getRoot() instanceof NullItem || getItemCount() == 0;
     }
 
     // -------------- Facade

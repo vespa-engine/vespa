@@ -69,7 +69,7 @@ public class QueryCanonicalizerTestCase {
 
         root.addItem(and1);
         and1.addItem(and2);
-        assertCanonicalized("NULL", "No query", new Query());
+        assertCanonicalized(null, "No query", new Query());
     }
 
     @Test
@@ -86,7 +86,7 @@ public class QueryCanonicalizerTestCase {
         and1.addItem(and22);
         and22.addItem(and31);
         and22.addItem(and32);
-        assertCanonicalized("NULL", "No query", new Query());
+        assertCanonicalized(null, "No query", new Query());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class QueryCanonicalizerTestCase {
 
     @Test
     public void testNullRoot() {
-        assertCanonicalized("NULL", "No query", new Query());
+        assertCanonicalized(null, "No query", new Query());
     }
 
     @Test
@@ -124,7 +124,7 @@ public class QueryCanonicalizerTestCase {
 
         query.getModel().getQueryTree().setRoot(root);
 
-        assertCanonicalized("NULL", "No query: Contained an empty AND only", root);
+        assertCanonicalized(null, "No query", root);
     }
 
     @Test
@@ -141,7 +141,7 @@ public class QueryCanonicalizerTestCase {
 
         query.getModel().getQueryTree().setRoot(root);
 
-        assertCanonicalized("NULL", "No query: Contained an empty AND only", root);
+        assertCanonicalized(null, "No query", root);
     }
 
     @Test
@@ -205,7 +205,7 @@ public class QueryCanonicalizerTestCase {
         NotItem root = new NotItem();
 
         root.addNegativeItem(new WordItem("negative"));
-        assertCanonicalized("NULL","Can not search for only negative items", root);
+        assertCanonicalized("+(null) -negative","Can not search for only negative items", root);
     }
 
     @Test
@@ -216,7 +216,7 @@ public class QueryCanonicalizerTestCase {
         root.addItem(not);
         root.addItem(new WordItem("word"));
         not.addNegativeItem(new WordItem("negative"));
-        assertCanonicalized("NULL","Can not search for only negative items", root);
+        assertCanonicalized("AND (+(null) -negative) word","Can not search for only negative items", root);
     }
 
     /**

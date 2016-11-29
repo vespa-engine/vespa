@@ -32,9 +32,9 @@ public class QueryCanonicalizer {
      * @return null if the query is valid, an error message if it is invalid
      */
     public static String canonicalize(QueryTree query) {
-        CanonicalizationResult result = treeCanonicalize(query.getRoot(), null);
-        if (result.newRoot().isPresent())
-            query.setRoot(result.newRoot().get());
+        ListIterator<Item> rootItemIterator = query.getItemIterator();
+        CanonicalizationResult result = recursivelyCanonicalize(rootItemIterator.next(), rootItemIterator);
+        if (query.isEmpty() && ! result.isError()) return "No query";
         return result.error().orElse(null);
     }
 
@@ -42,13 +42,21 @@ public class QueryCanonicalizer {
      * Canonicalize this query
      * 
      * @param item the item to canonicalize
-     * @param parentIterator iterator for the parent of this item, or null if there is no parent
+     * @param parentIterator iterator for the parent of this item, never null
      * @return true if the given query is valid, false otherwise
      */
-    public static CanonicalizationResult treeCanonicalize(Item item, ListIterator<Item> parentIterator) {
-        if (parentIterator == null && (item == null || item instanceof NullItem)) 
-            return CanonicalizationResult.error("No query");
-
+    private static CanonicalizationResult recursivelyCanonicalize(Item item, ListIterator<Item> parentIterator) {
+        if (item instanceof CompositeItem) { // children first as they may be removed
+            CompositeItem composite = (CompositeItem)item;
+            for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); ) {
+                CanonicalizationResult childResult = recursivelyCanonicalize(i.next(), i);
+                if (childResult.isError()) return childResult;
+            }
+        }
+        return canonicalizeThis(item, parentIterator);
+    }
+    
+    private static CanonicalizationResult canonicalizeThis(Item item, ListIterator<Item> parentIterator) {
         if (item instanceof TermItem) return CanonicalizationResult.success();
 
         if (item instanceof NullItem) parentIterator.remove();
@@ -56,11 +64,12 @@ public class QueryCanonicalizer {
         if ( ! (item instanceof CompositeItem)) return CanonicalizationResult.success();
 
         CompositeItem composite = (CompositeItem)item;
-        for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext();) {
-            CanonicalizationResult childResult = treeCanonicalize(i.next(), i);
-            if (childResult.isError()) return childResult;
+        if (composite.getItemCount() == 0) {
+            System.out.println(item + " is empty, removing it");
+            parentIterator.remove();
+            return CanonicalizationResult.success();
         }
-
+            
         if (composite instanceof EquivItem) {
             removeDuplicates((EquivItem) composite);
         }
@@ -72,22 +81,13 @@ public class QueryCanonicalizer {
                 return CanonicalizationResult.error("Can not search for only negative items");
         }
 
-        if (composite.getItemCount() == 0) {
-            if (parentIterator == null)
-                return CanonicalizationResult.error("No query: Contained an empty " + composite.getName() + " only");
-            else
-                parentIterator.remove();
-        }
+        if (composite.getItemCount() == 0)
+            parentIterator.remove();
 
         if (composite.getItemCount() == 1 && ! (composite instanceof NonReducibleCompositeItem)) {
-            if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem) {
+            if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem)
                 composite.getItem(0).setWeight(composite.getWeight());
-            }
-            if (parentIterator == null) {
-                return CanonicalizationResult.successWithRoot(composite.getItem(0));
-            } else {
-                parentIterator.set(composite.getItem(0));
-            }
+            parentIterator.set(composite.getItem(0));
         }
 
         return CanonicalizationResult.success();
