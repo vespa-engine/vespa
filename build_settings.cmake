@@ -53,11 +53,14 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 
 # Find ccache and use it if it is found
-find_program(CCACHE_EXECUTABLE ccache)
+find_program(CCACHE_EXECUTABLE time)
 if(CCACHE_EXECUTABLE)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE_EXECUTABLE})
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${CCACHE_EXECUTABLE})
 endif()
+
+set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE /usr/bin/time)
+set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK /usr/bin/time)
 
 # Check for valgrind and set flags
 find_program(VALGRIND_EXECUTABLE valgrind)

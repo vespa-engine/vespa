@@ -11,6 +11,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/test/initrange.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/vespalib/objects/visit.hpp>
 
 using namespace vespalib;
 using namespace search;
