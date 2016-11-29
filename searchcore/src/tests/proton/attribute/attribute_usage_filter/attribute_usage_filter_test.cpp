@@ -90,7 +90,7 @@ TEST_F("Check that enum store limit can be reached", Fixture)
                 "reason: \""
                 "enum store address space used (0.9375) > limit (0.8)"
                 "\", "
-                "enumStore: { used: 32212254720, limit: 34359738368}, "
+                "enumStore: { used: 32212254720, dead: 0, limit: 34359738368}, "
                 "attributeName: \"enumeratedName\", subdb: \"ready\"}");
 }
 
@@ -102,13 +102,12 @@ TEST_F("Check that multivalue limit can be reached", Fixture)
     f.setAttributeStats(stats);
     f.testWrite("multiValueLimitReached: { "
                 "action: \""
-                "use 'huge' setting on attribute field "
-                "or add more content nodes"
+                "add more content nodes"
                 "\", "
                 "reason: \""
                 "multiValue address space used (0.992188) > limit (0.8)"
                 "\", "
-                "multiValue: { used: 133169152, limit: 134217728}, "
+                "multiValue: { used: 133169152, dead: 0, limit: 134217728}, "
                 "attributeName: \"multiValueName\", subdb: \"ready\"}");
 }
 
@@ -127,18 +126,17 @@ TEST_F("Check that both enumstore limit and multivalue limit can be reached",
                 "reason: \""
                 "enum store address space used (0.9375) > limit (0.8)"
                 "\", "
-                "enumStore: { used: 32212254720, limit: 34359738368}, "
+                "enumStore: { used: 32212254720, dead: 0, limit: 34359738368}, "
                 "attributeName: \"enumeratedName\", subdb: \"ready\"}"
                 ", "
                 "multiValueLimitReached: { "
                 "action: \""
-                "use 'huge' setting on attribute field "
-                "or add more content nodes"
+                "add more content nodes"
                 "\", "
                 "reason: \""
                 "multiValue address space used (0.992188) > limit (0.8)"
                 "\", "
-                "multiValue: { used: 133169152, limit: 134217728}, "
+                "multiValue: { used: 133169152, dead: 0, limit: 134217728}, "
                 "attributeName: \"multiValueName\", subdb: \"ready\"}");
 }
 
