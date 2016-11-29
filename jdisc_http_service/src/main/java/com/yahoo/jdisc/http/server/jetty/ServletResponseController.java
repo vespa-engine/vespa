@@ -178,18 +178,20 @@ public class ServletResponseController {
 
     private static void setStatus_holdingLock(Response jdiscResponse, HttpServletResponse servletResponse) {
         if (jdiscResponse instanceof HttpResponse) {
-            // TODO: Figure out what this does to the response (with Jetty), and move to non-deprecated APIs.
-            // Deprecate our own code as necessary.
-            servletResponse.setStatus(jdiscResponse.getStatus(), ((HttpResponse) jdiscResponse).getMessage());
+            setStatus(servletResponse, jdiscResponse.getStatus(), Optional.ofNullable(((HttpResponse) jdiscResponse).getMessage()));
         } else {
-            Optional<String> errorMessage = getErrorMessage(jdiscResponse);
-            if (errorMessage.isPresent()) {
-                // TODO: Figure out what this does to the response (with Jetty), and move to non-deprecated APIs.
-                // Deprecate our own code as necessary.
-                servletResponse.setStatus(jdiscResponse.getStatus(), errorMessage.get());
-            } else {
-                servletResponse.setStatus(jdiscResponse.getStatus());
-            }
+            setStatus(servletResponse, jdiscResponse.getStatus(), getErrorMessage(jdiscResponse));
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void setStatus(HttpServletResponse response, int statusCode, Optional<String> reasonPhrase) {
+        if (reasonPhrase.isPresent()) {
+            // Sets the status line: a status code along with a custom message.
+            // Using a custom status message is deprecated in the Servlet API. No alternative exist.
+            response.setStatus(statusCode, reasonPhrase.get()); // DEPRECATED
+        } else {
+            response.setStatus(statusCode);
         }
     }
 
