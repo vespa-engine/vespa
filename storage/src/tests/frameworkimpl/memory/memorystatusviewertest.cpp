@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/metrics/metrics.h>
+#include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/frameworkimpl/memory/memorystatusviewer.h>
 #include <vespa/storageframework/defaultimplementation/memory/prioritymemorylogic.h>
 #include <tests/common/teststorageapp.h>

@@ -17,8 +17,8 @@
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
 #include <iostream>
-#include <string>
 #include <chrono>
+#include <vespa/metrics/metricmanager.h>
 
 LOG_SETUP(".test.metrics");
 
