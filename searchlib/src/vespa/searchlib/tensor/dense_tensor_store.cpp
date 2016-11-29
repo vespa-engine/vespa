@@ -264,11 +264,11 @@ template <class TensorType>
 TensorStore::EntryRef
 DenseTensorStore::setDenseTensor(const TensorType &tensor)
 {
-    size_t numCells = tensor.cells().size();
+    size_t numCells = tensor.cellsRef().size();
     checkMatchingType(_type, tensor.type(), numCells);
     auto raw = allocRawBuffer(numCells);
     setDenseTensorUnboundDimSizes(raw.data, _type, _numUnboundDims, tensor.type());
-    memcpy(raw.data, &tensor.cells()[0], numCells * _cellSize);
+    memcpy(raw.data, &tensor.cellsRef()[0], numCells * _cellSize);
     return raw.ref;
 }
 
@@ -278,10 +278,6 @@ DenseTensorStore::setTensor(const Tensor &tensor)
     const DenseTensorView *view(dynamic_cast<const DenseTensorView *>(&tensor));
     if (view) {
         return setDenseTensor(*view);
-    }
-    const DenseTensor *dense(dynamic_cast<const DenseTensor *>(&tensor));
-    if (dense) {
-        return setDenseTensor(*dense);
     }
     abort();
 }

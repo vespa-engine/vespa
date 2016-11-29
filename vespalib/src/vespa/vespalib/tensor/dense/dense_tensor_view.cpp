@@ -51,12 +51,12 @@ void
 checkCellsSize(const DenseTensorView &arg)
 {
     auto cellsSize = calcCellsSize(arg.type());
-    if (arg.cells().size() != cellsSize) {
+    if (arg.cellsRef().size() != cellsSize) {
         throw IllegalStateException(make_string("wrong cell size, "
                                                 "expected=%zu, "
                                                 "actual=%zu",
                                                 cellsSize,
-                                                arg.cells().size()));
+                                                arg.cellsRef().size()));
     }
 }
 
@@ -90,13 +90,13 @@ joinDenseTensors(const DenseTensorView &lhs, const DenseTensorView &rhs,
                  Function &&func)
 {
     DenseTensor::Cells cells;
-    cells.reserve(lhs.cells().size());
-    auto rhsCellItr = rhs.cells().cbegin();
-    for (const auto &lhsCell : lhs.cells()) {
+    cells.reserve(lhs.cellsRef().size());
+    auto rhsCellItr = rhs.cellsRef().cbegin();
+    for (const auto &lhsCell : lhs.cellsRef()) {
         cells.push_back(func(lhsCell, *rhsCellItr));
         ++rhsCellItr;
     }
-    assert(rhsCellItr == rhs.cells().cend());
+    assert(rhsCellItr == rhs.cellsRef().cend());
     return std::make_unique<DenseTensor>(lhs.type(),
                                          std::move(cells));
 }
@@ -112,12 +112,6 @@ joinDenseTensors(const DenseTensorView &lhs, const Tensor &rhs,
     if (view) {
         checkDimensions(lhs, *view, operation);
         return joinDenseTensors(lhs, *view, func);
-    }
-    const DenseTensor *dense = dynamic_cast<const DenseTensor *>(&rhs);
-    if (dense) {
-        DenseTensorView rhsView(*dense);
-        checkDimensions(lhs, rhsView, operation);
-        return joinDenseTensors(lhs, rhsView, func);
     }
     return Tensor::UP();
 }
@@ -139,8 +133,8 @@ bool sameCells(DenseTensorView::CellsRef lhs, DenseTensorView::CellsRef rhs)
 
 
 DenseTensorView::DenseTensorView(const DenseTensor &rhs)
-    : _type(rhs.type()),
-      _cells(rhs.cells())
+    : _typeRef(rhs.type()),
+      _cellsRef(rhs.cellsRef())
 {
 }
 
@@ -148,20 +142,20 @@ DenseTensorView::DenseTensorView(const DenseTensor &rhs)
 bool
 DenseTensorView::operator==(const DenseTensorView &rhs) const
 {
-    return (_type == rhs._type) && sameCells(_cells, rhs._cells);
+    return (_typeRef == rhs._typeRef) && sameCells(_cellsRef, rhs._cellsRef);
 }
 
 eval::ValueType
 DenseTensorView::getType() const
 {
-    return _type;
+    return _typeRef;
 }
 
 double
 DenseTensorView::sum() const
 {
     double result = 0.0;
-    for (const auto &cell : _cells) {
+    for (const auto &cell : _cellsRef) {
         result += cell;
     }
     return result;
@@ -218,14 +212,14 @@ DenseTensorView::match(const Tensor &arg) const
 Tensor::UP
 DenseTensorView::apply(const CellFunction &func) const
 {
-    Cells newCells(_cells.size());
+    Cells newCells(_cellsRef.size());
     auto itr = newCells.begin();
-    for (const auto &cell : _cells) {
+    for (const auto &cell : _cellsRef) {
         *itr = func.apply(cell);
         ++itr;
     }
     assert(itr == newCells.end());
-    return std::make_unique<DenseTensor>(_type, std::move(newCells));
+    return std::make_unique<DenseTensor>(_typeRef, std::move(newCells));
 }
 
 Tensor::UP
@@ -243,10 +237,6 @@ DenseTensorView::equals(const Tensor &arg) const
     if (view) {
         return *this == *view;
     }
-    const DenseTensor *dense = dynamic_cast<const DenseTensor *>(&arg);
-    if (dense) {
-        return *this == DenseTensorView(*dense);
-    }
     return false;
 }
 
@@ -261,8 +251,8 @@ DenseTensorView::toString() const
 Tensor::UP
 DenseTensorView::clone() const
 {
-    return std::make_unique<DenseTensor>(_type,
-                                         Cells(_cells.cbegin(), _cells.cend()));
+    return std::make_unique<DenseTensor>(_typeRef,
+                                         Cells(_cellsRef.cbegin(), _cellsRef.cend()));
 }
 
 namespace {
@@ -284,7 +274,7 @@ DenseTensorView::toSpec() const
 {
     TensorSpec result(getType().to_spec());
     TensorSpec::Address address;
-    for (CellsIterator itr(_type, _cells); itr.valid(); itr.next()) {
+    for (CellsIterator itr(_typeRef, _cellsRef); itr.valid(); itr.next()) {
         buildAddress(itr, address);
         result.add(address, itr.cell());
         address.clear();
@@ -298,7 +288,7 @@ DenseTensorView::print(std::ostream &out) const
     // TODO (geirst): print on common format.
     out << "[ ";
     bool first = true;
-    for (const auto &dim : _type.dimensions()) {
+    for (const auto &dim : _typeRef.dimensions()) {
         if (!first) {
             out << ", ";
         }
@@ -307,7 +297,7 @@ DenseTensorView::print(std::ostream &out) const
     }
     out << " ] { ";
     first = true;
-    for (const auto &cell : cells()) {
+    for (const auto &cell : cellsRef()) {
         if (!first) {
             out << ", ";
         }
@@ -320,14 +310,14 @@ DenseTensorView::print(std::ostream &out) const
 void
 DenseTensorView::accept(TensorVisitor &visitor) const
 {
-    CellsIterator iterator(_type, _cells);
+    CellsIterator iterator(_typeRef, _cellsRef);
     TensorAddressBuilder addressBuilder;
     TensorAddress address;
     vespalib::string label;
     while (iterator.valid()) {
         addressBuilder.clear();
         auto rawIndex = iterator.address().begin();
-        for (const auto &dimension : _type.dimensions()) {
+        for (const auto &dimension : _typeRef.dimensions()) {
             label = vespalib::make_string("%zu", *rawIndex);
             addressBuilder.add(dimension.name, label);
             ++rawIndex;
@@ -351,7 +341,7 @@ DenseTensorView::reduce(const eval::BinaryOperation &op,
                         const std::vector<vespalib::string> &dimensions) const
 {
     return dense::reduce(*this,
-                         (dimensions.empty() ? _type.dimension_names() : dimensions),
+                         (dimensions.empty() ? _typeRef.dimension_names() : dimensions),
                          [&op](double lhsValue, double rhsValue)
                          { return op.eval(lhsValue, rhsValue); });
 }
