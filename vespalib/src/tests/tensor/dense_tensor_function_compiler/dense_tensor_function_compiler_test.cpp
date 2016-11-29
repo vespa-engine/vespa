@@ -48,15 +48,16 @@ TEST("require that dot product with compatible dimensions is compiled")
     TEST_DO(assertCompiledDotProduct("tensor(x[5])", "tensor(x[5])"));
     TEST_DO(assertCompiledDotProduct("tensor(x[3])", "tensor(x[5])"));
     TEST_DO(assertCompiledDotProduct("tensor(x[5])", "tensor(x[3])"));
+    TEST_DO(assertCompiledDotProduct("tensor(x[])",  "tensor(x[5])"));
+    TEST_DO(assertCompiledDotProduct("tensor(x[5])", "tensor(x[])"));
+    TEST_DO(assertCompiledDotProduct("tensor(x[])",  "tensor(x[])"));
 }
 
 TEST("require that dot product with incompatible dimensions is NOT compiled")
 {
     TEST_DO(assertNotCompiledDotProduct("tensor(x[5])",      "tensor(y[5])"));
     TEST_DO(assertNotCompiledDotProduct("tensor(y[5])",      "tensor(x[5])"));
-    TEST_DO(assertNotCompiledDotProduct("tensor(x[])",       "tensor(x[5])"));
-    TEST_DO(assertNotCompiledDotProduct("tensor(x[5])",      "tensor(x[])"));
-    TEST_DO(assertNotCompiledDotProduct("tensor(x[])",       "tensor(x[])"));
+    TEST_DO(assertNotCompiledDotProduct("tensor(y[])",       "tensor(x[])"));
     TEST_DO(assertNotCompiledDotProduct("tensor(x[5])",      "tensor(x[5],y[7])"));
     TEST_DO(assertNotCompiledDotProduct("tensor(x[5],y[7])", "tensor(x[5],y[7])"));
 }
