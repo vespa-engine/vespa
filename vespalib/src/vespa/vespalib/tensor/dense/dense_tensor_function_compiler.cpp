@@ -31,16 +31,16 @@ willReduceAllDimensions(const std::vector<vespalib::string> &dimensions)
 }
 
 bool
-is1dBoundDenseTensor(const ValueType &type)
+is1dDenseTensor(const ValueType &type)
 {
-    return (type.is_dense() && (type.dimensions().size() == 1) && type.dimensions()[0].is_bound());
+    return (type.is_dense() && (type.dimensions().size() == 1));
 }
 
 bool
 isCompatibleTensorsForDotProduct(const ValueType &lhsType, const ValueType &rhsType)
 {
-    return (is1dBoundDenseTensor(lhsType) &&
-            is1dBoundDenseTensor(rhsType) &&
+    return (is1dDenseTensor(lhsType) &&
+            is1dDenseTensor(rhsType) &&
             (lhsType.dimensions()[0].name == rhsType.dimensions()[0].name));
 }
 
