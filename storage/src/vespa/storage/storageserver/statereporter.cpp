@@ -2,12 +2,12 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/storage/storageserver/statereporter.h>
-
-#include <vespa/log/log.h>
 #include <vespa/metrics/jsonwriter.h>
+#include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/vdslib/state/nodestate.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".status.statereporter");
 
 namespace storage {

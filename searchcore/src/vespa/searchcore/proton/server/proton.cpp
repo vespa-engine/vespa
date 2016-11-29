@@ -958,7 +958,7 @@ int countOpenFiles()
 } // namespace <unnamed>
 
 void
-Proton::updateMetrics(const metrics::MetricLockGuard &)
+Proton::updateMetrics(const vespalib::MonitorGuard &)
 {
     {
         ContentProtonMetrics &metrics = _metricsEngine->root();

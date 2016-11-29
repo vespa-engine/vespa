@@ -61,13 +61,13 @@ private:
     typedef std::map<vespalib::string, DynamicLibrarySP>  LibraryMap;
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
 
-    struct MetricsUpdateHook : metrics::MetricManager::UpdateHook
+    struct MetricsUpdateHook : metrics::UpdateHook
     {
         Proton &self;
         MetricsUpdateHook(Proton &s)
-            : metrics::MetricManager::UpdateHook("proton-hook"),
+            : metrics::UpdateHook("proton-hook"),
               self(s) {}
-        void updateMetrics(const MetricLockGuard &guard) override { self.updateMetrics(guard); }
+        void updateMetrics(const vespalib::MonitorGuard &guard) override { self.updateMetrics(guard); }
     };
     friend struct MetricsUpdateHook;
 
@@ -166,7 +166,7 @@ private:
      * the metric manager). Do not call this function in multiple
      * threads at once.
      **/
-    void updateMetrics(const metrics::MetricLockGuard &guard);
+    void updateMetrics(const vespalib::MonitorGuard &guard);
 
     void waitForInitDone();
     void waitForOnlineState();
