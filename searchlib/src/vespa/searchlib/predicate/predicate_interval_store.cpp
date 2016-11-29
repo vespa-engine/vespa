@@ -19,16 +19,10 @@ namespace search {
 namespace predicate {
 
 template <typename T>
-PredicateIntervalStore::Entry<T> PredicateIntervalStore::allocNewEntry(
-        uint32_t type_id, uint32_t size) {
-    _store.ensureBufferCapacity(type_id, size);
-    uint32_t active_buffer_id = _store.getActiveBufferId(type_id);
-    datastore::BufferState &state = _store.getBufferState(active_buffer_id);
-    assert(state.isActive());
-    size_t old_size = state.size();
-    T *buf = _store.getBufferEntry<T>(active_buffer_id, old_size);
-    state.pushed_back(size);
-    return {RefType(old_size, active_buffer_id), buf};
+PredicateIntervalStore::Entry<T> PredicateIntervalStore::allocNewEntry(uint32_t type_id, uint32_t size)
+{
+    auto result = _store.rawAllocator<T>(type_id).alloc(size);
+    return {RefType(result.ref), result.data};
 }
 
 PredicateIntervalStore::PredicateIntervalStore()

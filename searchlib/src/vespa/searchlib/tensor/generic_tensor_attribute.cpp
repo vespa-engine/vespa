@@ -85,9 +85,9 @@ GenericTensorAttribute::onLoad()
         uint32_t tensorSize = tensorReader.getNextTensorSize();
         auto raw = _genericTensorStore.allocRawBuffer(tensorSize);
         if (tensorSize != 0) {
-            tensorReader.readTensor(raw.first, tensorSize);
+            tensorReader.readTensor(raw.data, tensorSize);
         }
-        _refVector.push_back(raw.second);
+        _refVector.push_back(raw.ref);
     }
     setNumDocs(numDocs);
     setCommittedDocIdLimit(numDocs);

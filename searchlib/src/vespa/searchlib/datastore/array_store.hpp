@@ -82,17 +82,7 @@ EntryRef
 ArrayStore<EntryT, RefT>::addSmallArray(const ConstArrayRef &array)
 {
     uint32_t typeId = getTypeId(array.size());
-    _store.ensureBufferCapacity(typeId, array.size());
-    uint32_t activeBufferId = _store.getActiveBufferId(typeId);
-    BufferState &state = _store.getBufferState(activeBufferId);
-    assert(state.isActive());
-    size_t oldBufferSize = state.size();
-    EntryT *buf = _store.template getBufferEntry<EntryT>(activeBufferId, oldBufferSize);
-    for (size_t i = 0; i < array.size(); ++i) {
-        new (static_cast<void *>(buf + i)) EntryT(array[i]);
-    }
-    state.pushed_back(array.size());
-    return RefT((oldBufferSize / array.size()), activeBufferId);
+    return _store.template allocator<EntryT>(typeId).allocArray(array).ref;
 }
 
 template <typename EntryT, typename RefT>

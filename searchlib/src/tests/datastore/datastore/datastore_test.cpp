@@ -90,7 +90,7 @@ public:
         int previ = 0;
         int prevBuffer = -1;
         while (sizes.size() < bufs) {
-            RefType iRef = _store.allocNewEntry<int>(_typeId).first;
+            RefType iRef(_store.allocator<int>(_typeId).alloc().ref);
             int buffer = iRef.bufferId();
             if (buffer != prevBuffer) {
                 if (prevBuffer >= 0) {
@@ -109,7 +109,7 @@ public:
         int prevBuffer = -1;
         size_t prevAllocated = _store.getMemoryUsage().allocatedBytes();
         for (;;) {
-            RefType iRef = _store.allocNewEntry<int>(_typeId).first;
+            RefType iRef = _store.allocator<int>(_typeId).alloc().ref;
             size_t allocated = _store.getMemoryUsage().allocatedBytes();
             if (allocated != prevAllocated) {
                 sizes.push_back(i);

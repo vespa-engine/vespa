@@ -155,43 +155,43 @@ public:
     }
 
     LeafNodeTypeRefPair
-    allocNewLeafNode(void) {
-        return _store.allocNewEntry<LeafNodeType>(NODETYPE_LEAF);
+    allocNewLeafNode() {
+        return _store.allocator<LeafNodeType>(NODETYPE_LEAF).alloc();
     }
 
     LeafNodeTypeRefPair
-    allocLeafNode(void) {
-        return _store.allocEntry<LeafNodeType, BTreeNodeReclaimer>(NODETYPE_LEAF);
+    allocLeafNode() {
+        return _store.freeListAllocator<LeafNodeType, BTreeNodeReclaimer>(NODETYPE_LEAF).alloc();
     }
 
     LeafNodeTypeRefPair
     allocNewLeafNodeCopy(const LeafNodeType &rhs) {
-        return _store.allocNewEntryCopy<LeafNodeType>(NODETYPE_LEAF, rhs);
+        return _store.allocator<LeafNodeType>(NODETYPE_LEAF).alloc(rhs);
     }
 
     LeafNodeTypeRefPair
     allocLeafNodeCopy(const LeafNodeType &rhs) {
-        return _store.allocEntryCopy<LeafNodeType, BTreeNodeReclaimer>(NODETYPE_LEAF, rhs);
+        return _store.freeListAllocator<LeafNodeType, BTreeNodeReclaimer>(NODETYPE_LEAF).alloc(rhs);
     }
 
     InternalNodeTypeRefPair
-    allocNewInternalNode(void) {
-        return _store.allocNewEntry<InternalNodeType>(NODETYPE_INTERNAL);
+    allocNewInternalNode() {
+        return _store.allocator<InternalNodeType>(NODETYPE_INTERNAL).alloc();
     }
 
     InternalNodeTypeRefPair
-    allocInternalNode(void) {
-        return _store.allocEntry<InternalNodeType, BTreeNodeReclaimer>(NODETYPE_INTERNAL);
+    allocInternalNode() {
+        return _store.freeListAllocator<InternalNodeType, BTreeNodeReclaimer>(NODETYPE_INTERNAL).alloc();
     }
 
     InternalNodeTypeRefPair
     allocNewInternalNodeCopy(const InternalNodeType &rhs) {
-        return _store.allocNewEntryCopy<InternalNodeType>(NODETYPE_INTERNAL, rhs);
+        return _store.allocator<InternalNodeType>(NODETYPE_INTERNAL).alloc(rhs);
     }
 
     InternalNodeTypeRefPair
     allocInternalNodeCopy(const InternalNodeType &rhs) {
-        return _store.allocEntryCopy<InternalNodeType, BTreeNodeReclaimer>(NODETYPE_INTERNAL, rhs);
+        return _store.freeListAllocator<InternalNodeType, BTreeNodeReclaimer>(NODETYPE_INTERNAL).alloc(rhs);
     }
 
     void
@@ -288,119 +288,5 @@ extern template class BTreeNodeStore<uint32_t, int32_t,
 
 } // namespace btree
 
-namespace datastore {
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, uint32_t, btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocNewEntryCopy<btree::BTreeLeafNode<uint32_t,
-                                uint32_t,
-                                btree::NoAggregated> >
-(uint32_t, const btree::BTreeLeafNode<uint32_t, uint32_t, btree::NoAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, btree::BTreeNoLeafData,
-                                       btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocNewEntryCopy<btree::BTreeLeafNode<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated> >(
-        uint32_t,
-        const btree::BTreeLeafNode<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeInternalNode<uint32_t, btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocNewEntryCopy<btree::BTreeInternalNode<uint32_t, btree::NoAggregated> >(
-        uint32_t, const btree::BTreeInternalNode<uint32_t, btree::NoAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, int32_t, btree::MinMaxAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocNewEntryCopy<btree::BTreeLeafNode<uint32_t,
-                                int32_t,
-                                btree::MinMaxAggregated> >
-(uint32_t, const btree::BTreeLeafNode<uint32_t, int32_t, btree::MinMaxAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocNewEntryCopy<btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated> >(
-        uint32_t, const btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, uint32_t, btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntry<btree::BTreeLeafNode<uint32_t, uint32_t, btree::NoAggregated>,
-           btree::BTreeNodeReclaimer>(uint32_t);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, btree::BTreeNoLeafData,
-                                       btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntry<btree::BTreeLeafNode<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated>,
-           btree::BTreeNodeReclaimer>(uint32_t);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeInternalNode<uint32_t, btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntry<btree::BTreeInternalNode<uint32_t, btree::NoAggregated>,
-           btree::BTreeNodeReclaimer>(uint32_t);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, int32_t, btree::MinMaxAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntry<btree::BTreeLeafNode<uint32_t, int32_t, btree::MinMaxAggregated>,
-           btree::BTreeNodeReclaimer>(uint32_t);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntry<btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated>,
-           btree::BTreeNodeReclaimer>(uint32_t);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, uint32_t, btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntryCopy<btree::BTreeLeafNode<uint32_t, uint32_t, btree::NoAggregated>,
-               btree::BTreeNodeReclaimer>(
-                       uint32_t,
-                       const btree::BTreeLeafNode<uint32_t, uint32_t,
-                       btree::NoAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, btree::BTreeNoLeafData,
-                                       btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntryCopy<btree::BTreeLeafNode<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated>,
-               btree::BTreeNodeReclaimer>(
-                       uint32_t,
-                       const btree::BTreeLeafNode<uint32_t, btree::BTreeNoLeafData,
-                       btree::NoAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeInternalNode<uint32_t, btree::NoAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntryCopy<btree::BTreeInternalNode<uint32_t, btree::NoAggregated>, btree::BTreeNodeReclaimer>(
-        uint32_t, const btree::BTreeInternalNode<uint32_t, btree::NoAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeLeafNode<uint32_t, int32_t, btree::MinMaxAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntryCopy<btree::BTreeLeafNode<uint32_t, int32_t, btree::MinMaxAggregated>,
-               btree::BTreeNodeReclaimer>(
-                       uint32_t,
-                       const btree::BTreeLeafNode<uint32_t, int32_t,
-                       btree::MinMaxAggregated> &);
-
-extern template
-std::pair<EntryRefT<22>, btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated> *>
-DataStoreT<EntryRefT<22> >::
-allocEntryCopy<btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated>,
-               btree::BTreeNodeReclaimer>(
-        uint32_t, const btree::BTreeInternalNode<uint32_t, btree::MinMaxAggregated> &);
-
-
-} // namespace datastore
-
 } // namespace search
-
 

@@ -30,7 +30,7 @@ public:
 
     std::pair<const void *, uint32_t> getRawBuffer(RefType ref) const;
 
-    std::pair<void *, RefType> allocRawBuffer(uint32_t size);
+    datastore::Handle<char> allocRawBuffer(uint32_t size);
 
     virtual void holdTensor(EntryRef ref) override;
 

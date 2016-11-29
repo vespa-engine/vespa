@@ -103,7 +103,7 @@ public:
     using Parent::_allocator;
     using Parent::_aggrCalc;
     using Parent::BUFFERTYPE_BTREE;
-    typedef std::pair<EntryRef, BitVectorEntry *> BitVectorRefPair;
+    typedef datastore::Handle<BitVectorEntry> BitVectorRefPair;
     
 
     PostingStore(EnumPostingTree &dict, Status &status, const Config &config);
@@ -140,8 +140,8 @@ public:
     BitVectorRefPair
     allocBitVector(void)
     {
-        return _store.template allocEntry<BitVectorEntry,
-            btree::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR);
+        return _store.template freeListAllocator<BitVectorEntry,
+            btree::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
     }
 
     /*
