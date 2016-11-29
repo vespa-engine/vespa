@@ -79,7 +79,8 @@ public class VespaMetricSet extends MetricSet {
         metrics.add(new Metric("mem.heap.total.average"));
         metrics.add(new Metric("mem.heap.free.average"));
         metrics.add(new Metric("mem.heap.used.average"));
-        metrics.add(new Metric("memory_mappings_count.max"));
+        metrics.add(new Metric("jdisc.memory_mappings.max"));
+        metrics.add(new Metric("jdisc.open_file_descriptors.max"));
 
         return metrics;
     }
@@ -190,7 +191,8 @@ public class VespaMetricSet extends MetricSet {
         // resource usage
         metrics.add(new Metric("content.proton.resource_usage.disk.average"));
         metrics.add(new Metric("content.proton.resource_usage.memory.average"));
-        metrics.add(new Metric("content.proton.resource_usage.memory_mappings_count.max"));
+        metrics.add(new Metric("content.proton.resource_usage.memory_mappings.max"));
+        metrics.add(new Metric("content.proton.resource_usage.open_file_descriptors.max"));
         metrics.add(new Metric("content.proton.resource_usage.feeding_blocked.last"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.enum_store.average"));
         metrics.add(new Metric("content.proton.documentdb.attribute.resource_usage.multi_value.average"));
