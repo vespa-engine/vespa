@@ -69,7 +69,9 @@ public class DockerTestUtils {
     public static void createDockerTestNetworkIfNeeded(DockerImpl docker) {
         if (! docker.dockerClient.listNetworksCmd().withNameFilter(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
-        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config().withSubnet("172.18.0.0/16"));
+        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
+                .withSubnet("172.18.0.0/16")
+                .withGateway("172.18.0.1"));
         docker.dockerClient.createNetworkCmd()
                 .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
     }
