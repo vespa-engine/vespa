@@ -1048,14 +1048,6 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void testParsingOfTensorWithDimensions() {
-        assertTensorField("tensor(x{},y{}):{}",
-                createPutWithTensor("{ "
-                        + "  \"dimensions\": [\"x\",\"y\"] "
-                        + "}"));
-    }
-
-    @Test
     public void testParsingOfTensorWithCells() {
         assertTensorField("{{x:a,y:b}:2.0,{x:c}:3.0}}",
                 createPutWithTensor("{ "
@@ -1096,34 +1088,6 @@ public class JsonReaderTestCase {
                         + "  \"cells\": [ "
                         + "    { \"address\": { \"x\": \"a\" } } "
                         + "  ]"
-                        + "}"));
-    }
-
-    @Test
-    public void testParsingOfTensorWithDimensionsAndCells() {
-        assertTensorField("tensor(x{},y{},z{}):{{x:a,y:b}:2.0,{x:c}:3.0}",
-                createPutWithTensor("{ "
-                        + "  \"dimensions\": [\"x\",\"y\",\"z\"], "
-                        + "  \"cells\": [ "
-                        + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
-                        + "      \"value\": 2.0 }, "
-                        + "    { \"address\": { \"x\": \"c\" }, "
-                        + "      \"value\": 3.0 } "
-                        + "  ]"
-                        + "}"));
-    }
-
-    @Test
-    public void testParsingOfTensorWithDimensionsAndCellsInDifferentJsonOrder() {
-        assertTensorField("tensor(x{},y{},z{}):{{x:a,y:b}:2.0,{x:c}:3.0}",
-                createPutWithTensor("{ "
-                        + "  \"cells\": [ "
-                        + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
-                        + "      \"value\": 2.0 }, "
-                        + "    { \"address\": { \"x\": \"c\" }, "
-                        + "      \"value\": 3.0 } "
-                        + "  ],"
-                        + "  \"dimensions\": [\"x\",\"y\",\"z\"] "
                         + "}"));
     }
 

@@ -23,6 +23,11 @@ public class MapTensorBuilder {
     private final TensorType type;
     private final Map<TensorAddress, Double> cells = new HashMap<>();
 
+    // TODO: Remove this, and the TODO below
+    public MapTensorBuilder() {
+        this.type = null;
+    }
+    
     public MapTensorBuilder(TensorType type) {
         this.type = type;
     }
@@ -32,7 +37,17 @@ public class MapTensorBuilder {
     }
 
     public Tensor build() {
-        return new MapTensor(type, cells);
+        return new MapTensor(type != null ? type : typeFromCells(), cells);
+    }
+
+    // TODO: Remove this, and the TODO above
+    private TensorType typeFromCells() { 
+        if (cells.size() == 0) return TensorType.empty;
+        
+        TensorType.Builder b = new TensorType.Builder();
+        for (String dimension : cells.keySet().iterator().next().dimensions())
+            b.mapped(dimension);
+        return b.build();
     }
 
     public class CellBuilder {
