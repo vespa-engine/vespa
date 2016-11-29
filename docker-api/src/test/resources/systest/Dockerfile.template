@@ -1,4 +1,4 @@
-FROM docker-registry.ops.yahoo.com:4443/vespa/ci:6.50.12
+FROM $VESPA_BASE_IMAGE
 
 # Don't autostart anything when building image
 RUN yinst set root.autostart=off
