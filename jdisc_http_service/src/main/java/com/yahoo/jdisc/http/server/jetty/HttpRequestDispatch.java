@@ -62,6 +62,7 @@ class HttpRequestDispatch {
         this.servletRequest = servletRequest;
         honourMaxKeepAliveRequests();
         this.servletResponseController = new ServletResponseController(
+                servletRequest,
                 servletResponse,
                 jDiscContext.janitor,
                 metricReporter,

@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 /**
  * @author tonytv
+ * @author bjorncs
  */
 public class ServletOutputStreamWriter {
     /** Rules:
@@ -75,11 +76,12 @@ public class ServletOutputStreamWriter {
         this.metricReporter = metricReporter;
     }
 
-    public void setSendingError() {
+    public void sendErrorContentAndCloseAsync(ByteBuffer errorContent) {
         synchronized (monitor) {
             // Assert that no content has been written as it is too late to write error response if the response is committed.
             assertStateIs(state, State.NOT_STARTED);
-            state = State.FINISHED_OR_ERROR;
+            writeBuffer(errorContent, null);
+            close(null);
         }
     }
 
