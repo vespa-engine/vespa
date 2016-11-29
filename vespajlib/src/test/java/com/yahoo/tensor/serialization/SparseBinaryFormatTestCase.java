@@ -52,14 +52,14 @@ public class SparseBinaryFormatTestCase {
     @Test
     public void testSerializationOfTensorsWithSparseTensorAddresses() {
         assertSerialization("{{x:0}:2.0, {}:3.0}", Sets.newHashSet("x"));
-        assertSerialization("tensor(x{},y{}):{{x:0}:2.0}", Sets.newHashSet("x", "y"));
-        assertSerialization("tensor(x{},y{}):{{x:0}:2.0, {}:3.0}", Sets.newHashSet("x", "y"));
-        assertSerialization("tensor(x{},y{}):{{x:0}:2.0,{x:1}:3.0}", Sets.newHashSet("x", "y"));
-        assertSerialization("tensor(x{},y{},z{}):{{x:0,y:0}:2.0}", Sets.newHashSet("x", "y", "z"));
-        assertSerialization("tensor(x{},y{},z{}):{{x:0,y:0}:2.0,{x:0,y:1}:3.0}", Sets.newHashSet("x", "y", "z"));
-        assertSerialization("tensor(x{},y{},z{}):{{y:0,x:0}:2.0}", Sets.newHashSet("x", "y", "z"));
-        assertSerialization("tensor(x{},y{},z{}):{{y:0,x:0}:2.0,{y:1,x:0}:3.0}", Sets.newHashSet("x", "y", "z"));
-        assertSerialization("tensor(x{},y{},z{}):{{}:2.0,{x:0}:3.0,{x:0,y:0}:5.0}", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("({{y:-}:1} * {{x:0}:2.0})", Sets.newHashSet("x", "y"));
+        assertSerialization("({{y:-}:1} * {{x:0}:2.0, {}:3.0})", Sets.newHashSet("x", "y"));
+        assertSerialization("({{y:-}:1} * {{x:0}:2.0,{x:1}:3.0})", Sets.newHashSet("x", "y"));
+        assertSerialization("({{z:-}:1} * {{x:0,y:0}:2.0})", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("({{z:-}:1} * {{x:0,y:0}:2.0,{x:0,y:1}:3.0})", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("({{z:-}:1} * {{y:0,x:0}:2.0})", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("({{z:-}:1} * {{y:0,x:0}:2.0,{y:1,x:0}:3.0})", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("({{z:-}:1} * {{}:2.0,{x:0}:3.0,{x:0,y:0}:5.0})", Sets.newHashSet("x", "y", "z"));
     }
 
     @Test

@@ -42,7 +42,7 @@ public class MapTensorBuilderTestCase {
         Tensor tensor = new MapTensorBuilder().dimension("y").dimension("z").
                 cell().label("x", "0").value(1).build();
         assertEquals(Sets.newHashSet("x", "y", "z"), tensor.dimensions());
-        assertEquals("tensor(x{},y{},z{}):{{x:0}:1.0}", tensor.toString());
+        assertEquals("( {{y:-,z:-}:1.0} * {{x:0}:1.0} )", tensor.toString());
     }
 
 }

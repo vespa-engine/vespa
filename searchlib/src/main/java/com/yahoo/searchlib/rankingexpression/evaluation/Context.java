@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
-import com.yahoo.tensor.functions.EvaluationContext;
 
 import java.util.Set;
 
@@ -11,7 +10,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public abstract class Context implements EvaluationContext {
+public abstract class Context {
 
     /**
      * <p>Returns the value of a simple variable name.</p>
@@ -42,7 +41,7 @@ public abstract class Context implements EvaluationContext {
      *                  "main" (or only) value.
      */
     public Value get(String name, Arguments arguments,String output) {
-        if (arguments!=null && arguments.expressions().size() > 0)
+        if (arguments!=null && arguments.expressions().size()>0)
             throw new UnsupportedOperationException(this + " does not support structured ranking expression variables, attempted to reference '" +
                                                     name + arguments + "'");
         if (output==null)
