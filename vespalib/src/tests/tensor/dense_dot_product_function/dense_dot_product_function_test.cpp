@@ -57,7 +57,6 @@ private:
     tensor::Tensor::UP _rhsTensor;
     const DenseTensor &_lhsDenseTensor;
     const DenseTensor &_rhsDenseTensor;
-    DenseTensorView _rhsView;
     TensorValue _lhsValue;
     TensorValue _rhsValue;
 
@@ -67,11 +66,10 @@ public:
           _rhsTensor(makeTensor(rhsNumCells, 5.0)),
           _lhsDenseTensor(asDenseTensor(*_lhsTensor)),
           _rhsDenseTensor(asDenseTensor(*_rhsTensor)),
-          _rhsView(_rhsDenseTensor),
           _lhsValue(std::make_unique<DenseTensor>(_lhsDenseTensor.type(),
                                                   _lhsDenseTensor.cells())),
-          _rhsValue(std::make_unique<DenseTensorView>(_rhsView.type(),
-                                                      _rhsView.cells()))
+          _rhsValue(std::make_unique<DenseTensor>(_rhsDenseTensor.type(),
+                                                  _rhsDenseTensor.cells()))
     {}
     virtual const Value &get_tensor(size_t id) const override {
         if (id == 0) {
