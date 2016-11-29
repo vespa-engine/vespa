@@ -31,14 +31,14 @@ public class RankFeaturesTestCase {
 
     @Test
     public void requireThatSingleTensorIsBinaryEncoded() {
-        Tensor tensor = MapTensor.from("{ {x:a, y:b}:2.0, {z:c}:3.0 }");
+        Tensor tensor = MapTensor.from("{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
         assertTensorEncodingAndDecoding("query(my_tensor)", "my_tensor", tensor);
         assertTensorEncodingAndDecoding("$my_tensor", "my_tensor", tensor);
     }
 
     @Test
     public void requireThatMultipleTensorsAreBinaryEncoded() {
-        Tensor tensor1 = MapTensor.from("{ {x:a, y:b}:2.0, {z:c}:3.0 }");
+        Tensor tensor1 = MapTensor.from("{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
         Tensor tensor2 = MapTensor.from("{ {x:a, y:b, z:c}:5.0 }");
         assertTensorEncodingAndDecoding(Arrays.asList(
                 new Entry("query(tensor1)", "tensor1", tensor1),

@@ -303,15 +303,6 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         return assertEvaluates(new TensorValue(MapTensor.from(expectedTensor)), expressionString, context);
     }
 
-    /** Validate also that the dimension of the resulting tensors are as expected */
-    private RankingExpression assertEvaluates_old(String tensorDimensions, String resultTensor, String expressionString) {
-        RankingExpression expression = assertEvaluates(new TensorValue(MapTensor.from(resultTensor)), expressionString, defaultContext);
-        TensorValue value = (TensorValue)expression.evaluate(defaultContext);
-        assertEquals(toSet(tensorDimensions), value.asTensor().dimensions());
-        assertEquals("String values are equals", resultTensor, expression.evaluate(defaultContext).toString());
-        return expression;
-    }
-
     private RankingExpression assertEvaluates(Value value, String expressionString) {
         return assertEvaluates(value, expressionString, defaultContext);
     }

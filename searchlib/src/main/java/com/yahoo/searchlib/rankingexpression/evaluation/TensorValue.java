@@ -37,15 +37,14 @@ public class TensorValue extends Value {
 
     @Override
     public double asDouble() {
-        if (value.dimensions().size() == 0)
+        if (hasDouble())
             return value.get(TensorAddress.empty);
-        throw new UnsupportedOperationException("Requires a double value from a tensor with dimensions " +
-                                                value.dimensions() + ", but a tensor of order > 0 does " +
-                                                "not have a double value. Input tensor: " + this);
+        throw new UnsupportedOperationException("Requires a double value, but " + this.value + " cannot be " +
+                                                "used as a double");
     }
 
     @Override
-    public boolean hasDouble() { return value.dimensions().size() == 0; }
+    public boolean hasDouble() { return value.type().dimensions().isEmpty() && ! value.cells().isEmpty(); }
 
     @Override
     public boolean asBoolean() {
