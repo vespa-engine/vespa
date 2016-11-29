@@ -67,7 +67,7 @@ public:
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const;
     void remove(EntryRef ref);
-    ICompactionContext::UP compactWorst();
+    ICompactionContext::UP compactWorst(bool compactMemory, bool compactAddressSpace);
     MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 
     /**

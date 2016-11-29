@@ -187,6 +187,7 @@ protected:
     template <typename BufferStateActiveFilter>
     uint32_t startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc);
 
+    void markCompacting(uint32_t bufferId);
 public:
     uint32_t
     addType(BufferTypeBase *typeHandler);
@@ -409,6 +410,8 @@ public:
      * and return the bufferId for this buffer.
      */
     uint32_t startCompactWorstBuffer();
+
+    std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
 };
 
 

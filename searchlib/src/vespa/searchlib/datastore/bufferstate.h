@@ -105,6 +105,8 @@ public:
      */
     void setFreeListList(FreeListList *freeListList);
 
+    void disableFreeList() { setFreeListList(nullptr); }
+
     /**
      * Add buffer state to list of buffer states with nonempty free lists.
      */
