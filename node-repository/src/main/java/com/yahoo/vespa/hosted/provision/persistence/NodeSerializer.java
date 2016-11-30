@@ -97,7 +97,7 @@ public class NodeSerializer {
 
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
-        node.ipAddress().ifPresent(ipAddress -> object.setString(ipAddressKey, ipAddress));
+        object.setString(ipAddressKey, node.ipAddress());
         object.setString(openStackIdKey, node.openStackId());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         object.setString(flavorKey, node.flavor().name());
@@ -146,7 +146,7 @@ public class NodeSerializer {
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(openStackIdKey).asString(),
-                        ipAddressFromResolverOrSlime(object, state),
+                        ipAddressFromResolverOrSlime(object),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),
@@ -224,21 +224,12 @@ public class NodeSerializer {
             return Optional.empty();
     }
 
-    private Optional<String> ipAddressFromResolverOrSlime(Inspector object, Node.State state) {
-        if (object.field(ipAddressKey).valid()) return Optional.of(object.field(ipAddressKey).asString());
-
-        // TODO: Always return empty when 6.48 is live everywhere
-        if (reachableWithoutPassingReady(state))
-            return Optional.empty();
-        else
-            return Optional.of(nameResolver.getByNameOrThrow(object.field("hostname").asString()));
-    }
-    
-    private boolean reachableWithoutPassingReady(Node.State state) {
-        switch (state) {
-            case provisioned: case failed: case dirty: return true;
-            default: return false;
+    // TODO: Remove this and use the field directly after 6.48 has been deployed everywhere
+    private String ipAddressFromResolverOrSlime(Inspector object) {
+        if (!object.field(ipAddressKey).valid()) {
+            return nameResolver.getByNameOrThrow(object.field("hostname").asString());
         }
+        return object.field(ipAddressKey).asString();
     }
     
     private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {

@@ -33,33 +33,35 @@ public class MapTensorTestCase {
             fail("Expected parse error");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("Excepted a string starting by { or (, got '--'", expected.getMessage());
+            assertEquals("Excepted a number or a string starting by { or tensor(, got '--'", expected.getMessage());
         }
     }
 
     @Test
     public void testConstruction() {
-        assertEquals("{}", new MapTensor(Collections.emptyMap()).toString());
-        assertEquals("{{}:5.0}", new MapTensor(Collections.singletonMap(TensorAddress.empty, 5.0)).toString());
+        assertEquals("{}", new MapTensor(TensorType.empty, Collections.emptyMap()).toString());
+        assertEquals("{{}:5.0}", new MapTensor(TensorType.empty, Collections.singletonMap(TensorAddress.empty, 5.0)).toString());
 
         Map<TensorAddress, Double> cells = new LinkedHashMap<>();
         cells.put(TensorAddress.fromSorted(Collections.singletonList(new TensorAddress.Element("d1","l1"))), 5.0);
         cells.put(TensorAddress.fromSorted(Collections.singletonList(new TensorAddress.Element("d2","l1"))), 6.0);
         cells.put(TensorAddress.empty, 7.0);
-        assertEquals("{{}:7.0,{d1:l1}:5.0,{d2:l1}:6.0}", new MapTensor(cells).toString());
+        TensorType type = new TensorType.Builder().mapped("d1").mapped("d2").build();
+        // TODO: This is illegal
+        assertEquals("{{}:7.0,{d1:l1}:5.0,{d2:l1}:6.0}", new MapTensor(type, cells).toString());
     }
 
     @Test
     public void testDimensions() {
-        Set<String> dimensions1 = MapTensor.from("{} ").dimensions();
+        Set<String> dimensions1 = MapTensor.from("{} ").type().dimensionNames();
         assertEquals(0, dimensions1.size());
 
-        Set<String> dimensions2 = MapTensor.from("{ {d1:l1}:5, {d2:l2, d1:l1}:6.0} ").dimensions();
+        Set<String> dimensions2 = MapTensor.from("{ {d1:l1, d2:l2}:5, {d1:l2, d2:l2}:6.0} ").type().dimensionNames();
         assertEquals(2, dimensions2.size());
         assertTrue(dimensions2.contains("d1"));
         assertTrue(dimensions2.contains("d2"));
 
-        Set<String> dimensions3 = MapTensor.from("{ {d1:l1, d2:l1}:5, {d2:l2, d3:l1}:6.0} ").dimensions();
+        Set<String> dimensions3 = MapTensor.from("{ {d1:l1, d2:l1, d3:l1}:5, {d1:l1, d2:l2, d3:l1}:6.0} ").type().dimensionNames();
         assertEquals(3, dimensions3.size());
         assertTrue(dimensions3.contains("d1"));
         assertTrue(dimensions3.contains("d2"));

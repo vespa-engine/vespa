@@ -13,20 +13,24 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/storageframework/generic/clock/time.h>
+#include <memory>
+#include <chrono>
 
 namespace storage {
 namespace framework {
 
 struct Clock {
-    typedef std::unique_ptr<Clock> UP;
+    using UP = std::unique_ptr<Clock>;
 
     virtual ~Clock() {}
 
     virtual MicroSecTime getTimeInMicros() const = 0;
     virtual MilliSecTime getTimeInMillis() const = 0;
     virtual SecondTime getTimeInSeconds() const = 0;
+
+    // Time point resolution is intentionally not defined here.
+    virtual MonotonicTimePoint getMonotonicTime() const = 0;
 };
 
 } // framework

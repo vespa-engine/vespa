@@ -17,10 +17,11 @@ interface BinaryFormat {
     /**
      * Serialize the given tensor into binary format.
      */
-    public void encode(GrowableByteBuffer buffer, Tensor tensor);
+    void encode(GrowableByteBuffer buffer, Tensor tensor);
 
     /**
      * Deserialize the given binary data into a Tensor object.
      */
-    public Tensor decode(GrowableByteBuffer buffer);
+    Tensor decode(GrowableByteBuffer buffer);
+
 }

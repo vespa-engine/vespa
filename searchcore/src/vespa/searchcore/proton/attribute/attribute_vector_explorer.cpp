@@ -6,7 +6,6 @@ LOG_SETUP(".proton.attribute.attribute_vector_explorer");
 
 #include "attribute_vector_explorer.h"
 #include <vespa/searchlib/attribute/enumstorebase.h>
-#include <vespa/searchlib/attribute/multivaluemapping.h>
 #include <vespa/searchlib/attribute/multi_value_mapping2.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
@@ -55,6 +54,7 @@ convertAddressSpaceToSlime(const AddressSpace &addressSpace, Cursor &object)
 {
     object.setDouble("usage", addressSpace.usage());
     object.setLong("used", addressSpace.used());
+    object.setLong("dead", addressSpace.dead());
     object.setLong("limit", addressSpace.limit());
 }
 

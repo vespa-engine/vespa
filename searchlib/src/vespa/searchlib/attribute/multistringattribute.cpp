@@ -8,10 +8,8 @@
 LOG_SETUP(".searchlib.attribute.multistringattribute");
 namespace search {
 
-template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::Value<EnumStoreBase::Index>, multivalue::Index32>>;
-template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::WeightedValue<EnumStoreBase::Index>, multivalue::Index32>>;
-template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::Value<EnumStoreBase::Index>, multivalue::Index64>>;
-template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::WeightedValue<EnumStoreBase::Index>, multivalue::Index64>>; 
+template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> >;
+template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> >;
 
 } // namespace search
 

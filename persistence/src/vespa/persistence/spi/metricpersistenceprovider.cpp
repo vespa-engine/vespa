@@ -25,7 +25,7 @@ namespace {
     typedef MetricPersistenceProvider Impl;
 }
 
-using metrics::LongAverageMetric;
+using metrics::DoubleAverageMetric;
 using std::make_unique;
 
 Impl::ResultMetrics::~ResultMetrics() { }
@@ -34,12 +34,12 @@ Impl::ResultMetrics::ResultMetrics(const char* opName)
     : metrics::MetricSet(opName, "", ""),
       _metric(Result::ERROR_COUNT)
 {
-    _metric[Result::NONE] = make_unique<LongAverageMetric>("success", "", "", this);
-    _metric[Result::TRANSIENT_ERROR] = make_unique<LongAverageMetric>("transient_error", "", "", this);
-    _metric[Result::PERMANENT_ERROR] = make_unique<LongAverageMetric>("permanent_error", "", "", this);
-    _metric[Result::TIMESTAMP_EXISTS] = make_unique<LongAverageMetric>("timestamp_exists", "", "", this);
-    _metric[Result::FATAL_ERROR] = make_unique<LongAverageMetric>("fatal_error", "", "", this);
-    _metric[Result::RESOURCE_EXHAUSTED] = make_unique<LongAverageMetric>("resource_exhausted", "", "", this);
+    _metric[Result::NONE] = make_unique<DoubleAverageMetric>("success", "", "", this);
+    _metric[Result::TRANSIENT_ERROR] = make_unique<DoubleAverageMetric>("transient_error", "", "", this);
+    _metric[Result::PERMANENT_ERROR] = make_unique<DoubleAverageMetric>("permanent_error", "", "", this);
+    _metric[Result::TIMESTAMP_EXISTS] = make_unique<DoubleAverageMetric>("timestamp_exists", "", "", this);
+    _metric[Result::FATAL_ERROR] = make_unique<DoubleAverageMetric>("fatal_error", "", "", this);
+    _metric[Result::RESOURCE_EXHAUSTED] = make_unique<DoubleAverageMetric>("resource_exhausted", "", "", this);
     // Assert that the above initialized all entries in vector
     for (size_t i=0; i<_metric.size(); ++i) assert(_metric[i].get());
 }

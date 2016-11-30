@@ -12,7 +12,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -21,6 +20,7 @@ import java.util.logging.Logger;
 
 /**
  * @author tonytv
+ * @author bjorncs
  */
 public class ServletOutputStreamWriter {
     /** Rules:
@@ -76,11 +76,12 @@ public class ServletOutputStreamWriter {
         this.metricReporter = metricReporter;
     }
 
-    public void setSendingError() {
+    public void sendErrorContentAndCloseAsync(ByteBuffer errorContent) {
         synchronized (monitor) {
-            // TODO: This assert seems fishy. Investigate.
+            // Assert that no content has been written as it is too late to write error response if the response is committed.
             assertStateIs(state, State.NOT_STARTED);
-            state = State.FINISHED_OR_ERROR;
+            writeBuffer(errorContent, null);
+            close(null);
         }
     }
 
@@ -159,7 +160,7 @@ public class ServletOutputStreamWriter {
                 lastOperationWasFlush = false;
 
                 if (contentPart.buf == CLOSE_STREAM_BUFFER) {
-                    closeOutputStream(contentPart.handler);
+                    contentPart.handler.completed();
                     setFinished(Optional.empty());
                 } else {
                     writeBufferToOutputStream(contentPart);
@@ -203,14 +204,8 @@ public class ServletOutputStreamWriter {
                 () -> failedParts.forEach(failCompletionHandler));
     }
 
-    private void closeOutputStream(CompletionHandler handler) throws Exception {
-        callCompletionHandlerWhenDone(handler, () -> {
-            return null;
-        });
-    }
-
     private void writeBufferToOutputStream(ResponseContentPart contentPart) throws Throwable {
-        callCompletionHandlerWhenDone(contentPart.handler, () -> {
+        try {
             ByteBuffer buffer = contentPart.buf;
             final int bytesToSend = buffer.remaining();
             try {
@@ -226,24 +221,11 @@ public class ServletOutputStreamWriter {
                 metricReporter.failedWrite();
                 throw throwable;
             }
-
-            return null;
-        });
-    }
-
-    //Using Callable<Void> instead of Runnable since Callable supports throwing exceptions.
-    private void callCompletionHandlerWhenDone(CompletionHandler handler, Callable<Void> callable) throws Exception {
-        try {
-            callable.call();
+            contentPart.handler.completed(); //Might throw an exception, handling in the enclosing scope.
         } catch (Throwable e) {
-            assert !Thread.holdsLock(monitor);
-            runCompletionHandler_logOnExceptions(
-                    () -> handler.failed(e));
+            runCompletionHandler_logOnExceptions(() -> contentPart.handler.failed(e));
             throw e;
         }
-
-        assert !Thread.holdsLock(monitor);
-        handler.completed(); //Might throw an exception, handling in the enclosing scope.
     }
 
     private void runCompletionHandler_logOnExceptions(Runnable runnable) {
@@ -255,7 +237,7 @@ public class ServletOutputStreamWriter {
         }
     }
 
-    private void assertStateIs(State currentState, State expectedState) {
+    private static void assertStateIs(State currentState, State expectedState) {
         if (currentState != expectedState) {
             AssertionError error = new AssertionError("Expected state " + expectedState + ", got state " + currentState);
             log.log(Level.WARNING, "Assertion failed.", error);

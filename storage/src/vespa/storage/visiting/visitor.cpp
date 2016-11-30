@@ -874,7 +874,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
                                 reply->getEntries(),
                                 *_hitCounter);
                 metrics.averageProcessingTime[reply->getLoadType()]
-                    .addValue(processingTimer);
+                    .addValue(processingTimer.getElapsedTimeAsDouble());
 
                 MBUS_TRACE(reply->getTrace(), 5, "Done processing data block in visitor plugin");
 

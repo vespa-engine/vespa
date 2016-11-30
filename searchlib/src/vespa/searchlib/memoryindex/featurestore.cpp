@@ -39,12 +39,8 @@ datastore::EntryRef
 FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
 {
     uint32_t pad = RefType::pad(byteLen);
-    _store.ensureBufferCapacity(_typeId, byteLen + pad + DECODE_SAFETY);
-    uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    datastore::BufferState &state = _store.getBufferState(activeBufferId);
-    size_t oldSize = state.size();
-    RefType ref(oldSize, activeBufferId);
-    uint8_t * dst = _store.getBufferEntry<uint8_t>(activeBufferId, oldSize);
+    auto result = _store.rawAllocator<uint8_t>(_typeId).alloc(byteLen + pad, DECODE_SAFETY);
+    uint8_t *dst = result.data;
     memcpy(dst, src, byteLen);
     dst += byteLen;
     if (pad > 0) {
@@ -52,8 +48,7 @@ FeatureStore::addFeatures(const uint8_t *src, uint64_t byteLen)
         dst += pad;
     }
     memset(dst, 0, DECODE_SAFETY);
-    state.pushed_back(byteLen + pad);
-    return ref;
+    return result.ref;
 }
 
 

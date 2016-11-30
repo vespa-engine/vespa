@@ -24,21 +24,28 @@ public:
     using CellsIterator = DenseTensorCellsIterator;
 
 private:
-    const eval::ValueType &_type;
+    const eval::ValueType &_typeRef;
 protected:
-    CellsRef               _cells;
+    CellsRef _cellsRef;
+
+    void initCellsRef(CellsRef cells_in) {
+        _cellsRef = cells_in;
+    }
 
 public:
     explicit DenseTensorView(const DenseTensor &rhs);
     DenseTensorView(const eval::ValueType &type_in, CellsRef cells_in)
-        : _type(type_in),
-          _cells(cells_in)
-    {
-    }
-    const eval::ValueType &type() const { return _type; }
-    const CellsRef &cells() const { return _cells; }
+        : _typeRef(type_in),
+          _cellsRef(cells_in)
+    {}
+    DenseTensorView(const eval::ValueType &type_in)
+            : _typeRef(type_in),
+              _cellsRef()
+    {}
+    const eval::ValueType &type() const { return _typeRef; }
+    const CellsRef &cellsRef() const { return _cellsRef; }
     bool operator==(const DenseTensorView &rhs) const;
-    CellsIterator cellsIterator() const { return CellsIterator(_type, _cells); }
+    CellsIterator cellsIterator() const { return CellsIterator(_typeRef, _cellsRef); }
 
     virtual eval::ValueType getType() const override;
     virtual double sum() const override;

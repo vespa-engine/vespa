@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Collections;
 import java.util.Optional;
 
 /**
@@ -17,7 +18,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
- @Beta
+@Beta
 public class TensorValue extends Value {
 
     /** The tensor value of this */
@@ -36,15 +37,14 @@ public class TensorValue extends Value {
 
     @Override
     public double asDouble() {
-        if (value.dimensions().size() == 0)
+        if (hasDouble())
             return value.get(TensorAddress.empty);
-        throw new UnsupportedOperationException("Requires a double value from a tensor with dimensions " +
-                                                value.dimensions() + ", but a tensor of order > 0 does " +
-                                                "not have a double value. Input tensor: " + this);
+        throw new UnsupportedOperationException("Requires a double value, but " + this.value + " cannot be " +
+                                                "used as a double");
     }
 
     @Override
-    public boolean hasDouble() { return value.dimensions().size() == 0; }
+    public boolean hasDouble() { return value.type().dimensions().isEmpty() && ! value.cells().isEmpty(); }
 
     @Override
     public boolean asBoolean() {
@@ -53,7 +53,7 @@ public class TensorValue extends Value {
 
     @Override
     public Value negate() {
-        return new TensorValue(value.apply((Double value) -> -value));
+        return new TensorValue(value.map((value) -> -value));
     }
 
     @Override
@@ -61,7 +61,7 @@ public class TensorValue extends Value {
         if (argument instanceof TensorValue)
             return new TensorValue(value.add(((TensorValue)argument).value));
         else
-            return new TensorValue(value.apply((Double value) -> value + argument.asDouble()));
+            return new TensorValue(value.map((value) -> value + argument.asDouble()));
     }
 
     @Override
@@ -69,7 +69,7 @@ public class TensorValue extends Value {
         if (argument instanceof TensorValue)
             return new TensorValue(value.subtract(((TensorValue) argument).value));
         else
-            return new TensorValue(value.apply((Double value) -> value - argument.asDouble()));
+            return new TensorValue(value.map((value) -> value - argument.asDouble()));
     }
 
     @Override
@@ -77,35 +77,15 @@ public class TensorValue extends Value {
         if (argument instanceof TensorValue)
             return new TensorValue(value.multiply(((TensorValue) argument).value));
         else
-            return new TensorValue(value.apply((Double value) -> value * argument.asDouble()));
+            return new TensorValue(value.map((value) -> value * argument.asDouble()));
     }
 
     @Override
     public Value divide(Value argument) {
         if (argument instanceof TensorValue)
-            throw new UnsupportedOperationException("Two tensors cannot be divided");
+            return new TensorValue(value.divide(((TensorValue) argument).value));
         else
-            return new TensorValue(value.apply((Double value) -> value / argument.asDouble()));
-    }
-
-    public Value match(Value argument) {
-        return new TensorValue(value.match(asTensor(argument, "match")));
-    }
-
-    public Value min(Value argument) {
-        return new TensorValue(value.min(asTensor(argument, "min")));
-    }
-
-    public Value max(Value argument) {
-        return new TensorValue(value.max(asTensor(argument, "max")));
-    }
-
-    public Value sum(String dimension) {
-        return new TensorValue(value.sum(dimension));
-    }
-
-    public Value sum() {
-        return new DoubleValue(value.sum());
+            return new TensorValue(value.map((value) -> value / argument.asDouble()));
     }
 
     private Tensor asTensor(Value value, String operationName) {
@@ -122,18 +102,37 @@ public class TensorValue extends Value {
     }
 
     @Override
-    public boolean compare(TruthOperator operator, Value value) {
-        throw new UnsupportedOperationException("A tensor cannot be compared with any value");
+    public Value compare(TruthOperator operator, Value argument) {
+        return new TensorValue(compareTensor(operator, asTensor(argument, operator.toString())));
+    }
+    
+    private Tensor compareTensor(TruthOperator operator, Tensor argument) {
+        switch (operator) {
+            case LARGER: return value.larger(argument);
+            case LARGEREQUAL: return value.largerOrEqual(argument);
+            case SMALLER: return value.smaller(argument);
+            case SMALLEREQUAL: return value.smallerOrEqual(argument);
+            case EQUAL: return value.equal(argument);
+            case NOTEQUAL: return value.notEqual(argument);
+            default: throw new UnsupportedOperationException("Tensors cannot be compared with " + operator);
+        }
     }
 
     @Override
-    public Value function(Function function, Value argument) {
-        if (function.equals(Function.min) && argument instanceof TensorValue)
-            return min(argument);
-        else if (function.equals(Function.max) && argument instanceof TensorValue)
-            return max(argument);
+    public Value function(Function function, Value arg) {
+        if (arg instanceof TensorValue)
+            return new TensorValue(functionOnTensor(function, asTensor(arg, function.toString())));
         else
-            return new TensorValue(value.apply((Double value) -> function.evaluate(value, argument.asDouble())));
+            return new TensorValue(value.map((value) -> function.evaluate(value, arg.asDouble())));
+    }
+        
+    private Tensor functionOnTensor(Function function, Tensor argument) {
+        switch (function) {
+            case min: return value.min(argument);
+            case max: return value.max(argument);
+            case atan2: return value.atan2(argument);
+            default: throw new UnsupportedOperationException("Cannot combine two tensors using " + function);
+        }
     }
 
     @Override

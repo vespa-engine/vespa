@@ -199,11 +199,6 @@ class ServletRequestReader implements ReadListener {
                 state = State.REQUEST_CONTENT_CLOSED;
             }
         }
-        // Early complete if response is already committed. No point of waiting for any exceptions from request handler
-        // if we cannot write back an error anyway
-        if (responseController.isResponseCommitted()) {
-            finishedFuture.complete(null);
-        }
 
         if (shouldCloseRequestContentChannel) {
            closeCompletionHandler_noThrow();

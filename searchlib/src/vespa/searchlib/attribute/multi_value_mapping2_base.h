@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/common/rcuvector.h>
+#include <vespa/searchlib/common/address_space.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <functional>
 
@@ -26,6 +27,7 @@ protected:
     RefVector _indices;
     size_t    _totalValues;
     MemoryUsage _cachedArrayStoreMemoryUsage;
+    AddressSpace _cachedArrayStoreAddressSpaceUsage;
 
     MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMapping2Base();
@@ -37,8 +39,9 @@ public:
     using RefCopyVector = vespalib::Array<EntryRef>;
 
     virtual MemoryUsage getArrayStoreMemoryUsage() const = 0;
+    virtual AddressSpace getAddressSpaceUsage() const = 0;
     MemoryUsage getMemoryUsage() const;
-    MemoryUsage updateMemoryUsage();
+    MemoryUsage updateStat();
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 
@@ -48,26 +51,9 @@ public:
     void clearDocs(uint32_t lidLow, uint32_t lidLimit, std::function<void(uint32_t)> clearDoc);
     uint32_t size() const { return _indices.size(); }
 
-    // Mockups to temporarily silence code written for old multivalue mapping
-    class Histogram
-    {
-    private:
-        using HistogramM = vespalib::hash_map<uint32_t, size_t>;
-    public:
-        using const_iterator = HistogramM::const_iterator;
-        Histogram() : _histogram() { _histogram.insert({0, 0}); }
-        size_t & operator [] (uint32_t) { return _histogram[0u]; }
-        const_iterator begin() const { return _histogram.begin(); }
-        const_iterator   end() const { return _histogram.end(); }
-    private:
-        HistogramM _histogram;
-    };
-    Histogram getEmptyHistogram() const { return Histogram(); }
-    Histogram getRemaining() const { return Histogram(); }
-    static size_t maxValues() { return 0; }
     uint32_t getNumKeys() const { return _indices.size(); }
     uint32_t getCapacityKeys() const { return _indices.capacity(); }
-    virtual void compactWorst() = 0;
+    virtual void compactWorst(bool compatMemory, bool compactAddressSpace) = 0;
     bool considerCompact(const CompactionStrategy &compactionStrategy);
 };
 

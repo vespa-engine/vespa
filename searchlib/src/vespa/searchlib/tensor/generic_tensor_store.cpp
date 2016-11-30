@@ -10,9 +10,10 @@
 #include <vespa/document/util/serializable.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 
+using document::DeserializeException;
+using search::datastore::Handle;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TypedBinaryFormat;
-using document::DeserializeException;
 
 namespace search {
 
@@ -31,12 +32,10 @@ GenericTensorStore::GenericTensorStore()
     _store.initActiveBuffers();
 }
 
-
 GenericTensorStore::~GenericTensorStore()
 {
     _store.dropBuffers();
 }
-
 
 std::pair<const void *, uint32_t>
 GenericTensorStore::getRawBuffer(RefType ref) const
@@ -50,29 +49,22 @@ GenericTensorStore::getRawBuffer(RefType ref) const
     return std::make_pair(buf + sizeof(uint32_t), len);
 }
 
-
-std::pair<void *, GenericTensorStore::RefType>
+Handle<char>
 GenericTensorStore::allocRawBuffer(uint32_t size)
 {
     if (size == 0) {
-        return std::make_pair(nullptr, RefType());
+        return Handle<char>();
     }
     size_t extSize = size + sizeof(uint32_t);
     size_t bufSize = RefType::align(extSize);
-    _store.ensureBufferCapacity(_typeId, bufSize);
-    uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    datastore::BufferState &state = _store.getBufferState(activeBufferId);
-    size_t oldSize = state.size();
-    char *bufferEntryWritePtr =
-        _store.getBufferEntry<char>(activeBufferId, oldSize);
-    *reinterpret_cast<uint32_t *>(bufferEntryWritePtr) = size;
-    char *padWritePtr = bufferEntryWritePtr + extSize;
+    auto result = _concreteStore.rawAllocator<char>(_typeId).alloc(bufSize);
+    *reinterpret_cast<uint32_t *>(result.data) = size;
+    char *padWritePtr = result.data + extSize;
     for (size_t i = extSize; i < bufSize; ++i) {
         *padWritePtr++ = 0;
     }
-    state.pushed_back(bufSize);
-    return std::make_pair(bufferEntryWritePtr + sizeof(uint32_t),
-                          RefType(oldSize, activeBufferId));
+    // Hide length of buffer (first 4 bytes) from users of the buffer.
+    return Handle<char>(result.ref, result.data + sizeof(uint32_t));
 }
 
 void
@@ -88,17 +80,17 @@ GenericTensorStore::holdTensor(EntryRef ref)
     _concreteStore.holdElem(ref, len + sizeof(uint32_t));
 }
 
-
 TensorStore::EntryRef
-GenericTensorStore::move(EntryRef ref) {
+GenericTensorStore::move(EntryRef ref)
+{
     if (!ref.valid()) {
         return RefType();
     }
     auto oldraw = getRawBuffer(ref);
     auto newraw = allocRawBuffer(oldraw.second);
-    memcpy(newraw.first, oldraw.first, oldraw.second);
+    memcpy(newraw.data, oldraw.first, oldraw.second);
     _concreteStore.holdElem(ref, oldraw.second + sizeof(uint32_t));
-    return newraw.second;
+    return newraw.ref;
 }
 
 std::unique_ptr<Tensor>
@@ -118,15 +110,14 @@ GenericTensorStore::getTensor(EntryRef ref) const
     return std::move(tensor);
 }
 
-
 TensorStore::EntryRef
 GenericTensorStore::setTensor(const Tensor &tensor)
 {
     vespalib::nbostream stream;
     TypedBinaryFormat::serialize(stream, tensor);
     auto raw = allocRawBuffer(stream.size());
-    memcpy(raw.first, stream.peek(), stream.size());
-    return raw.second;
+    memcpy(raw.data, stream.peek(), stream.size());
+    return raw.ref;
 }
 
 }  // namespace search::attribute

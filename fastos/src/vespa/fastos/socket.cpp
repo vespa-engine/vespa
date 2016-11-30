@@ -240,12 +240,6 @@ bool FastOS_SocketInterface::TuneTransport ()
 {
     if (!SetSoIntOpt(SO_KEEPALIVE, 1)) { return false; }
     if (!SetSoLinger(true, 0)) { return false; }
-    int swin = 0;                       // SO_SNDBUF: buffer size for output
-    if (!GetSoIntOpt(SO_SNDBUF, swin)) { return false; }
-    if(swin < (32*1024)) {
-        swin = 32 * 1024;   // magic numbers?!!
-    }
-    if (!SetSoIntOpt(SO_SNDBUF, swin)) { return false; }
     return true;
 }
 

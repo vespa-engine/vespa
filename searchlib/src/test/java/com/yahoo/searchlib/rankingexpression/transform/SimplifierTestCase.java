@@ -69,12 +69,4 @@ public class SimplifierTestCase {
         assertEquals("a + (b + c) / 100000000.0", transformed.toString());
     }
 
-    @Test
-    public void testSimplificationWithTensorConstants() throws ParseException {
-        new Simplifier().transform(new RankingExpression(
-                "sum(sum((tensorFromWeightedSet(query(wset_query),x)+" +
-                "         tensorFromWeightedSet(attribute(wset),x)) * " +
-                "    {{x:0,y:0}:54, {x:0,y:1} :69, {x:1,y:0} :72, {x:1,y:1} :93},x))"));
-    }
-
 }

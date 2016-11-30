@@ -11,6 +11,7 @@ vespa_add_executable(metrics_testrunner_app TEST
     snapshottest.cpp
     stresstest.cpp
     metrictest.cpp
+    metric_timer_test.cpp
     DEPENDS
     metrics
     vdstestlib

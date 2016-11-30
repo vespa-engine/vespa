@@ -87,27 +87,11 @@ template <typename B, typename M>
 void
 MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
 {
-    Histogram capacityNeeded = this->_mvMapping.getEmptyHistogram();
     uint32_t numDocs(this->getNumDocs());
     size_t numValues = loaded.size();
     size_t count = 0;
-    for (DocId doc = 0; doc < numDocs; ++doc) {
-        uint32_t valueCount(0);
-        for(;(count < numValues) && (loaded.read()._docId == doc); count++, loaded.next()) {
-            valueCount++;
-        }
-        if (valueCount < this->_mvMapping.maxValues()) {
-            capacityNeeded[valueCount] += 1;
-        } else {
-            capacityNeeded[this->_mvMapping.maxValues()] += 1;
-        }
-    }
-
-    this->_mvMapping.reset(numDocs, capacityNeeded);
-
-    loaded.rewind();
-    count = 0;
     WeightedIndexVector indices;
+    this->_mvMapping.prepareLoadFromMultiValue();
     for (DocId doc = 0; doc < numDocs; ++doc) {
         for(const typename LoadedVector::Type * v = & loaded.read();(count < numValues) && (v->_docId == doc); count++, loaded.next(), v = & loaded.read()) {
             indices.push_back(WeightedIndex(v->getEidx(), v->getWeight()));
@@ -116,6 +100,7 @@ MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
         this->_mvMapping.set(doc, indices);
         indices.clear();
     }
+    this->_mvMapping.doneLoadFromMultiValue();
 }
 
 
@@ -177,7 +162,7 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
     MemoryUsage total;
     total.merge(this->_enumStore.getMemoryUsage());
     total.merge(this->_enumStore.getTreeMemoryUsage());
-    total.merge(this->_mvMapping.updateMemoryUsage());
+    total.merge(this->_mvMapping.updateStat());
     mergeMemoryStats(total);
     this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.getNumUniques(), total.allocatedBytes(),
                      total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());
@@ -216,8 +201,7 @@ MultiValueEnumAttribute<B, M>::onInitSave()
     }
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
                                              takeGuard());
-    return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex,
-        typename M::Index>>
+    return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex>>
         (std::move(guard), this->createSaveTargetConfig(), this->_mvMapping,
          this->_enumStore);
 }

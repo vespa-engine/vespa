@@ -8,7 +8,6 @@
 #include "datastore.h"
 #include "entryref.h"
 #include "i_compaction_context.h"
-#include <vespa/searchlib/common/address_space.h>
 #include <vespa/vespalib/util/array.h>
 #include <unordered_map>
 
@@ -68,7 +67,7 @@ public:
     EntryRef add(const ConstArrayRef &array);
     ConstArrayRef get(EntryRef ref) const;
     void remove(EntryRef ref);
-    ICompactionContext::UP compactWorst();
+    ICompactionContext::UP compactWorst(bool compactMemory, bool compactAddressSpace);
     MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 
     /**

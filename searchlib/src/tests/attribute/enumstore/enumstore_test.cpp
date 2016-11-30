@@ -735,15 +735,15 @@ EnumStoreTest::requireThatAddressSpaceUsageIsReported()
     const size_t ADDRESS_LIMIT = 34359738368; // NumericEnumStore::DataStoreType::RefType::offsetSize()
     NumericEnumStore store(200, false);
 
-    EXPECT_EQUAL(AddressSpace(0, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQUAL(AddressSpace(16, 16, ADDRESS_LIMIT), store.getAddressSpaceUsage());
     NumericEnumStore::Index idx1 = addEnum(store, 10);
-    EXPECT_EQUAL(AddressSpace(16, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQUAL(AddressSpace(32, 16, ADDRESS_LIMIT), store.getAddressSpaceUsage());
     NumericEnumStore::Index idx2 = addEnum(store, 20);
-    EXPECT_EQUAL(AddressSpace(32, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQUAL(AddressSpace(48, 16, ADDRESS_LIMIT), store.getAddressSpaceUsage());
     decRefCount(store, idx1);
-    EXPECT_EQUAL(AddressSpace(16, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQUAL(AddressSpace(48, 32, ADDRESS_LIMIT), store.getAddressSpaceUsage());
     decRefCount(store, idx2);
-    EXPECT_EQUAL(AddressSpace(0, ADDRESS_LIMIT), store.getAddressSpaceUsage());
+    EXPECT_EQUAL(AddressSpace(48, 48, ADDRESS_LIMIT), store.getAddressSpaceUsage());
 }
 
 size_t

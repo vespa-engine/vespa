@@ -4,6 +4,7 @@
 #include "multienumattributesaver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include "multivalueattributesaverutils.h"
+#include "multivalue.h"
 
 using vespalib::GenerationHandler;
 using search::multivalueattributesaver::CountWriter;
@@ -69,8 +70,8 @@ public:
 
 }
 
-template <typename MultiValueT, typename IndexT>
-MultiValueEnumAttributeSaver<MultiValueT, IndexT>::
+template <typename MultiValueT>
+MultiValueEnumAttributeSaver<MultiValueT>::
 MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
                              const IAttributeSaveTarget::Config &cfg,
                              const MultiValueMapping &mvMapping,
@@ -83,15 +84,14 @@ MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
 
 
 
-template <typename MultiValueT, typename IndexT>
-MultiValueEnumAttributeSaver<MultiValueT, IndexT>::
-~MultiValueEnumAttributeSaver()
+template <typename MultiValueT>
+MultiValueEnumAttributeSaver<MultiValueT>::~MultiValueEnumAttributeSaver()
 {
 }
 
-template <typename MultiValueT, typename IndexT>
+template <typename MultiValueT>
 bool
-MultiValueEnumAttributeSaver<MultiValueT, IndexT>::
+MultiValueEnumAttributeSaver<MultiValueT>::
 onSave(IAttributeSaveTarget &saveTarget)
 {
     CountWriter countWriter(saveTarget);
@@ -113,9 +113,7 @@ onSave(IAttributeSaveTarget &saveTarget)
 using EnumIdxArray = multivalue::Value<EnumStoreIndex>;
 using EnumIdxWset = multivalue::WeightedValue<EnumStoreIndex>;
 
-template class MultiValueEnumAttributeSaver<EnumIdxArray, multivalue::Index32>;
-template class MultiValueEnumAttributeSaver<EnumIdxWset, multivalue::Index32>;
-template class MultiValueEnumAttributeSaver<EnumIdxArray, multivalue::Index64>;
-template class MultiValueEnumAttributeSaver<EnumIdxWset, multivalue::Index64>;
+template class MultiValueEnumAttributeSaver<EnumIdxArray>;
+template class MultiValueEnumAttributeSaver<EnumIdxWset>;
 
 }  // namespace search

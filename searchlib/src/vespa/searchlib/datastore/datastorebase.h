@@ -7,6 +7,7 @@
 #include "bufferstate.h"
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/searchlib/util/memoryusage.h>
+#include <vespa/searchlib/common/address_space.h>
 
 namespace search {
 namespace datastore {
@@ -186,6 +187,7 @@ protected:
     template <typename BufferStateActiveFilter>
     uint32_t startCompactWorstBuffer(uint32_t initWorstBufferId, BufferStateActiveFilter &&filterFunc);
 
+    void markCompacting(uint32_t bufferId);
 public:
     uint32_t
     addType(BufferTypeBase *typeHandler);
@@ -231,6 +233,8 @@ public:
     void switchOrGrowActiveBuffer(uint32_t typeId, size_t sizeNeeded);
 
     MemoryUsage getMemoryUsage() const;
+
+    AddressSpace getAddressSpaceUsage() const;
 
     /**
      * Get active buffer id for the given type id.
@@ -401,11 +405,7 @@ public:
 
     uint32_t startCompactWorstBuffer(uint32_t typeId);
 
-    /**
-     * Prepare for compacting the buffer with most dead usage among all buffers
-     * and return the bufferId for this buffer.
-     */
-    uint32_t startCompactWorstBuffer();
+    std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
 };
 
 

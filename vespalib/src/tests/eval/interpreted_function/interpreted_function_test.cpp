@@ -24,6 +24,9 @@ std::vector<vespalib::string> unsupported = {
 };
 
 bool is_unsupported(const vespalib::string &expression) {
+    if (expression == "reduce(a,sum)") {
+        return false;
+    }
     for (const auto &prefix: unsupported) {
         if (starts_with(expression, prefix)) {
             return true;

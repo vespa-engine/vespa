@@ -13,7 +13,8 @@ void makeAddressSpaceMessage(std::ostream &os,
                               const AddressSpaceUsageStats &usage)
 {
     os << "{ used: " <<
-        usage.getUsage().used() << ", limit: " <<
+        usage.getUsage().used() << ", dead: " <<
+        usage.getUsage().dead() << ", limit: " <<
         usage.getUsage().limit() << "}, attributeName: \"" <<
         usage.getAttributeName() << "\", subdb: \"" <<
         usage.getSubDbName() << "\"}";
@@ -40,7 +41,7 @@ void makeMultiValueMessage(std::ostream &os,
 {
     os << "multiValueLimitReached: { "
         "action: \""
-        "use 'huge' setting on attribute field or add more content nodes"
+        "add more content nodes"
         "\", "
         "reason: \""
         "multiValue address space used (" << used << ") > "

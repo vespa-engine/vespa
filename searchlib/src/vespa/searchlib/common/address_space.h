@@ -14,20 +14,22 @@ class AddressSpace
 {
 private:
     size_t _used;
+    size_t _dead;
     size_t _limit;
 
 public:
-    AddressSpace(size_t used_, size_t limit_);
+    AddressSpace(size_t used_, size_t dead_, size_t limit_);
     size_t used() const { return _used; }
+    size_t dead() const { return _dead; }
     size_t limit() const  { return _limit; }
     double usage() const {
         if (_limit > 0) {
-            return (double)_used / (double)_limit;
+            return (double)(_used - _dead) / (double)_limit;
         }
         return 0;
     }
     bool operator==(const AddressSpace &rhs) const {
-        return _used == rhs._used && _limit == rhs._limit;
+        return _used == rhs._used && _dead == rhs._dead && _limit == rhs._limit;
     }
 };
 

@@ -609,7 +609,8 @@ BucketManager::processRequestBucketInfoCommands(BIList& reqs)
         _component.getBucketDatabase().chunkedAll(builder,
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
-    _metrics->fullBucketInfoLatency.addValue(runStartTime);
+    _metrics->fullBucketInfoLatency.addValue(
+            runStartTime.getElapsedTimeAsDouble());
     for (auto& nodeAndCmd : requests) {
         auto reply(std::make_shared<api::RequestBucketInfoReply>(
                 *nodeAndCmd.second));

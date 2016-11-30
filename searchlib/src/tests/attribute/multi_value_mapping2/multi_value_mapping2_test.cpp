@@ -128,7 +128,7 @@ public:
     }
 
     void compactWorst() {
-        _mvMapping.compactWorst();
+        _mvMapping.compactWorst(true, false);
         _attr.commit();
         _attr.incGeneration();
     }

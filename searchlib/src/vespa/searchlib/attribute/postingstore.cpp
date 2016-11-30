@@ -196,7 +196,7 @@ PostingStore<DataT>::makeDegradedTree(EntryRef &ref,
 {
     assert(!ref.valid());
     BTreeTypeRefPair tPair(allocBTree());
-    BTreeType *tree = tPair.second;
+    BTreeType *tree = tPair.data;
     Builder &builder = _builder;
     builder.reuse();
     uint32_t docIdLimit = _bvSize;
@@ -209,7 +209,7 @@ PostingStore<DataT>::makeDegradedTree(EntryRef &ref,
     tree->assign(builder, _allocator);
     assert(tree->size(_allocator) == bv.countTrueBits());
     // barrier ?
-    ref = tPair.first;
+    ref = tPair.ref;
 }
 
 
@@ -270,7 +270,7 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     bv.invalidateCachedCount();
     assert(bv.countTrueBits() == expDocFreq);
     BitVectorRefPair bPair(allocBitVector());
-    BitVectorEntry *bve = bPair.second;
+    BitVectorEntry *bve = bPair.data;
     if (_enableOnlyBitVector) {
         BTreeType *tree = getWTreeEntry(iRef);
         tree->clear(_allocator);
@@ -279,11 +279,11 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
         bve->_tree = ref;
     }
     bve->_bv = bvsp;
-    _bvs.insert(bPair.first.ref());
+    _bvs.insert(bPair.ref.ref());
     _status.incBitVectors();
     _bvExtraBytes += bv.extraByteSize();
     // barrier ?
-    ref = bPair.first;
+    ref = bPair.ref;
 }
 
     
@@ -311,16 +311,16 @@ PostingStore<DataT>::applyNewBitVector(EntryRef &ref,
     bv.invalidateCachedCount();
     assert(bv.countTrueBits() == expDocFreq);
     BitVectorRefPair bPair(allocBitVector());
-    BitVectorEntry *bve = bPair.second;
+    BitVectorEntry *bve = bPair.data;
     if (!_enableOnlyBitVector) {
         applyNewTree(bve->_tree, aOrg, ae, CompareT());
     }
     bve->_bv = bvsp;
-    _bvs.insert(bPair.first.ref());
+    _bvs.insert(bPair.ref.ref());
     _status.incBitVectors();
     _bvExtraBytes += bv.extraByteSize();
     // barrier ?
-    ref = bPair.first;
+    ref = bPair.ref;
 }
 
     

@@ -53,8 +53,7 @@ public:
 
 
 typedef MultiValueNumericAttribute< IntegerAttributeTemplate<int32_t>,
-                                    multivalue::MVMTemplateArg<
-    multivalue::Value<int32_t>, multivalue::Index32> >
+                                    multivalue::Value<int32_t> >
 TestAttributeBase;
 
 class TestAttribute : public TestAttributeBase

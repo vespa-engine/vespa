@@ -22,7 +22,7 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     struct Op : public metrics::MetricSet {
         std::string _name;
         metrics::LongCountMetric count;
-        metrics::LongAverageMetric latency;
+        metrics::DoubleAverageMetric latency;
         metrics::LongCountMetric failed;
 
         Op(const std::string& id, const std::string name, MetricSet* owner = 0);
@@ -114,10 +114,10 @@ public:
     std::vector<FileStorThreadMetrics::SP> threads;
     metrics::SumMetric<MetricSet> sum;
     metrics::LongAverageMetric queueSize;
-    metrics::LoadMetric<metrics::LongAverageMetric> averageQueueWaitingTime;
+    metrics::LoadMetric<metrics::DoubleAverageMetric> averageQueueWaitingTime;
     metrics::LongAverageMetric pendingMerges;
     metrics::DoubleAverageMetric waitingForLockHitRate;
-    metrics::LongAverageMetric lockWaitTime;
+    metrics::DoubleAverageMetric lockWaitTime;
 
     FileStorDiskMetrics(const std::string& name, const std::string& description,
                         const metrics::LoadTypeSet& loadTypes, MetricSet* owner);

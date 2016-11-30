@@ -124,33 +124,59 @@ public class NodeRepository extends AbstractComponent {
     public List<Node> getFailed() { return zkClient.getNodes(Node.State.failed); }
 
     /**
-     * Returns a list of nodes that should be trusted by the given node. The list will contain:
-     *
-     * - All nodes in the same application as the given node (if node is allocated)
-     * - All proxy nodes
-     * - All config servers
+     * Returns a list of nodes that should be trusted by the given node.
      */
     public List<Node> getTrustedNodes(Node node) {
         final List<Node> trustedNodes = new ArrayList<>();
 
-        // Add nodes in application
-        node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+        switch (node.type()) {
+            case tenant:
+                // Tenant nodes trust nodes in same application and all infrastructure nodes
+                node.allocation().ifPresent(allocation -> trustedNodes.addAll(getNodes(allocation.owner())));
+                trustedNodes.addAll(getNodes(NodeType.proxy));
+                trustedNodes.addAll(getConfigNodes());
+                break;
 
-        // Add proxy nodes
-        trustedNodes.addAll(getNodes(NodeType.proxy, Node.State.active));
+            case config:
+                // Config servers trust each other and all nodes in the zone
+                trustedNodes.addAll(getConfigNodes());
+                trustedNodes.addAll(getNodes());
+                break;
 
-        // Add config servers
-        trustedNodes.addAll(getConfigNodes());
+            case proxy:
+                // Proxy nodes only trust config servers. They also trust any traffic to ports 4080/4443, but these
+                // static rules are configured by the node itself
+                trustedNodes.addAll(getConfigNodes());
+                break;
+
+            default:
+                throw new IllegalArgumentException(
+                        String.format("Don't know how to create ACL for node [hostname=%s type=%s]",
+                                node.hostname(), node.type()));
+        }
 
         return Collections.unmodifiableList(trustedNodes);
     }
 
+    /** Get config node by hostname */
+    public Optional<Node> getConfigNode(String hostname) {
+        return getConfigNodes().stream()
+                .filter(n -> hostname.equals(n.hostname()))
+                .findFirst();
+    }
+
     // ----------------- Node lifecycle -----------------------------------------------------------
 
-    /** Creates a new node object, without adding it to the node repo */
+    /** Creates a new node object, without adding it to the node repo. If no IP address is given, it will be resolved */
+    public Node createNode(String openStackId, String hostname, Optional<String> ipAddress, Optional<String> parentHostname,
+                           Flavor flavor, NodeType type) {
+        return Node.create(openStackId, ipAddress.orElseGet(() -> nameResolver.getByNameOrThrow(hostname)), hostname,
+                parentHostname, flavor, type);
+    }
+
     public Node createNode(String openStackId, String hostname, Optional<String> parentHostname,
                            Flavor flavor, NodeType type) {
-        return Node.create(openStackId, hostname, parentHostname, flavor, type);
+        return createNode(openStackId, hostname, Optional.empty(), parentHostname, flavor, type);
     }
 
     /** Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes */
@@ -165,23 +191,16 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    /**
-     * Sets a list of nodes ready and returns the nodes in the ready state.
-     * Ready nodes must have an ip address; If the node is newly provisioned and its ip address has not yet
-     * propagated this call will fail and must be retried later.
-     */
+    /** Sets a list of nodes ready and returns the nodes in the ready state */
     public List<Node> setReady(List<Node> nodes) {
         for (Node node : nodes)
             if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
                 throw new IllegalArgumentException("Can not set " + node + " ready. It is not provisioned or dirty.");
-        
-        nodes = resolveIp(nodes);
-        
         try (Mutex lock = lockUnallocated()) {
             return zkClient.writeTo(Node.State.ready, nodes);
         }
     }
-    
+
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
     public List<Node> reserve(List<Node> nodes) { return zkClient.writeTo(Node.State.reserved, nodes); }
 
@@ -246,7 +265,7 @@ public class NodeRepository extends AbstractComponent {
      * Fails this node and returns it in its new state.
      *
      * @return the node in its new state
-     * @throws IllegalArgumentException if the node is not found
+     * @throws NotFoundException if the node is not found
      */
     public Node fail(String hostname) {
         return move(hostname, Node.State.failed);
@@ -256,7 +275,7 @@ public class NodeRepository extends AbstractComponent {
      * Parks this node and returns it in its new state.
      *
      * @return the node in its new state
-     * @throws IllegalArgumentException if the node is not found
+     * @throws NotFoundException if the node is not found
      */
     public Node park(String hostname) {
         return move(hostname, Node.State.parked);
@@ -266,7 +285,7 @@ public class NodeRepository extends AbstractComponent {
      * Moves a previously failed or parked node back to the active state.
      *
      * @return the node in its new state
-     * @throws IllegalArgumentException if the node is not found
+     * @throws NotFoundException if the node is not found
      */
     public Node reactivate(String hostname) {
         return move(hostname, Node.State.active);
@@ -275,7 +294,7 @@ public class NodeRepository extends AbstractComponent {
     public Node move(String hostname, Node.State toState) {
         Optional<Node> node = getNode(hostname);
         if ( ! node.isPresent())
-            throw new IllegalArgumentException("Could not move " + hostname + " to " + toState + ": Node not found");
+            throw new NotFoundException("Could not move " + hostname + " to " + toState + ": Node not found");
         try (Mutex lock = lock(node.get())) {
             return zkClient.writeTo(toState, node.get());
         }
@@ -371,17 +390,6 @@ public class NodeRepository extends AbstractComponent {
         }
         return resultingNodes;
     }
-    
-    private List<Node> resolveIp(List<Node> nodes) {
-        List<Node> resolvedNodes = new ArrayList<>();
-        for (Node node : nodes) {
-            if (node.ipAddress().isPresent())
-                resolvedNodes.add(node);
-            else
-                resolvedNodes.add(node.withIpAddress(nameResolver.getByNameOrThrow(node.hostname())));
-        }
-        return resolvedNodes;
-    }
 
     private List<Node> getConfigNodes() {
         // TODO: Revisit this when config servers are added to the repository
@@ -390,10 +398,9 @@ public class NodeRepository extends AbstractComponent {
                 .map(host -> createNode(host, host, Optional.empty(),
                         flavors.getFlavorOrThrow("v-4-8-100"), // Must be a flavor that exists in Hosted Vespa
                         NodeType.config))
-                .map(n -> n.withIpAddress(nameResolver.getByNameOrThrow(n.hostname())))
                 .collect(Collectors.toList());
     }
-    
+
     /** Create a lock which provides exclusive rights to making changes to the given application */
     public Mutex lock(ApplicationId application) { return zkClient.lock(application); }
 

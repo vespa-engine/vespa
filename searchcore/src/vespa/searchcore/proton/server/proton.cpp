@@ -933,6 +933,30 @@ Proton::listSchema(const vespalib::string &documentType,
 }
 
 
+namespace {
+
+int countOpenFiles()
+{
+    static const char * const fd_dir_name = "/proc/self/fd";
+    int count = 0;
+    DIR *dp = opendir(fd_dir_name);
+    if (dp != NULL) {
+        struct dirent entry;
+        struct dirent *ptr = &entry;
+        while (readdir_r(dp, &entry, &ptr) == 0 && ptr != NULL) {
+            if (strcmp(".", entry.d_name) == 0) continue;
+            if (strcmp("..", entry.d_name) == 0) continue;
+            ++count;
+        }
+        closedir(dp);
+    } else {
+        LOG(warning, "could not scan directory %s: %s", fd_dir_name, strerror(errno));
+    }
+    return count;
+}
+
+} // namespace <unnamed>
+
 void
 Proton::updateMetrics(const metrics::MetricLockGuard &)
 {
@@ -943,6 +967,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.disk.set(usageFilter.getDiskUsedRatio());
         metrics.resourceUsage.memory.set(usageFilter.getMemoryUsedRatio());
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
+        metrics.resourceUsage.openFileDescriptors.set(countOpenFiles());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
     }
     {

@@ -66,19 +66,14 @@ public class NodeRepositoryImpl implements NodeRepository {
 
     @Override
     public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) throws IOException {
-        final GetNodesResponse nodeResponse = requestExecutor.get(
-                "/nodes/v2/node/?hostname=" + hostName + "&recursive=true",
-                port,
-                GetNodesResponse.class);
+        final GetNodesResponse.Node nodeResponse = requestExecutor.get("/nodes/v2/node/" + hostName,
+                                                                       port,
+                                                                       GetNodesResponse.Node.class);
 
-
-        if (nodeResponse.nodes.size() == 0) {
+        if (nodeResponse == null) {
             return Optional.empty();
         }
-        if (nodeResponse.nodes.size() != 1) {
-            throw new RuntimeException("Did not get data for one node using hostname=" + hostName + "\n" + nodeResponse.toString());
-        }
-        return Optional.of(createContainerNodeSpec(nodeResponse.nodes.get(0)));
+        return Optional.of(createContainerNodeSpec(nodeResponse));
     }
 
     private static ContainerNodeSpec createContainerNodeSpec(GetNodesResponse.Node node)

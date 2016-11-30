@@ -9,8 +9,12 @@ declare -r CONFIG_SERVER_IP="$NETWORK_PREFIX.1.1"
 
 declare -r APP_HOSTNAME_PREFIX=cnode-
 declare -r APP_NETWORK_PREFIX="$NETWORK_PREFIX.2"
-
 declare -r NUM_APP_CONTAINERS=20  # Statically allocated number of nodes.
+
+declare -r SYSTEM_TEST_HOSTNAME_PREFIX=stest-
+declare -r SYSTEM_TEST_NETWORK_PREFIX="$NETWORK_PREFIX.3"
+declare -r NUM_SYSTEM_TEST_CONTAINERS=5  # Statically allocated number of nodes.
+
 declare -r HOSTS_FILE=/etc/hosts
 declare -r HOSTS_LINE_SUFFIX=" # Managed by etc-hosts.sh"
 
@@ -87,6 +91,14 @@ function StartAsRoot {
     do
         local ip="$APP_NETWORK_PREFIX.$index"
         local container_name="$APP_HOSTNAME_PREFIX$index"
+        AddHost "$ip" "$container_name" "$HOSTS_FILE"
+    done
+
+    local -i index=1
+    for ((; index <= NUM_SYSTEM_TEST_CONTAINERS; ++index))
+    do
+        local ip="$SYSTEM_TEST_NETWORK_PREFIX.$index"
+        local container_name="$SYSTEM_TEST_HOSTNAME_PREFIX$index"
         AddHost "$ip" "$container_name" "$HOSTS_FILE"
     done
 }

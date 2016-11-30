@@ -27,7 +27,7 @@ public class SparseBinaryFormatTestCase {
 
     private static void assertSerialization(String tensorString, Set<String> dimensions) {
         Tensor tensor = MapTensor.from(tensorString);
-        assertEquals(dimensions, tensor.dimensions());
+        assertEquals(dimensions, tensor.type().dimensionNames());
         assertSerialization(tensor);
     }
 
@@ -52,14 +52,14 @@ public class SparseBinaryFormatTestCase {
     @Test
     public void testSerializationOfTensorsWithSparseTensorAddresses() {
         assertSerialization("{{x:0}:2.0, {}:3.0}", Sets.newHashSet("x"));
-        assertSerialization("({{y:-}:1} * {{x:0}:2.0})", Sets.newHashSet("x", "y"));
-        assertSerialization("({{y:-}:1} * {{x:0}:2.0, {}:3.0})", Sets.newHashSet("x", "y"));
-        assertSerialization("({{y:-}:1} * {{x:0}:2.0,{x:1}:3.0})", Sets.newHashSet("x", "y"));
-        assertSerialization("({{z:-}:1} * {{x:0,y:0}:2.0})", Sets.newHashSet("x", "y", "z"));
-        assertSerialization("({{z:-}:1} * {{x:0,y:0}:2.0,{x:0,y:1}:3.0})", Sets.newHashSet("x", "y", "z"));
-        assertSerialization("({{z:-}:1} * {{y:0,x:0}:2.0})", Sets.newHashSet("x", "y", "z"));
-        assertSerialization("({{z:-}:1} * {{y:0,x:0}:2.0,{y:1,x:0}:3.0})", Sets.newHashSet("x", "y", "z"));
-        assertSerialization("({{z:-}:1} * {{}:2.0,{x:0}:3.0,{x:0,y:0}:5.0})", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("tensor(x{},y{}):{{x:0}:2.0}", Sets.newHashSet("x", "y"));
+        assertSerialization("tensor(x{},y{}):{{x:0}:2.0, {}:3.0}", Sets.newHashSet("x", "y"));
+        assertSerialization("tensor(x{},y{}):{{x:0}:2.0,{x:1}:3.0}", Sets.newHashSet("x", "y"));
+        assertSerialization("tensor(x{},y{},z{}):{{x:0,y:0}:2.0}", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("tensor(x{},y{},z{}):{{x:0,y:0}:2.0,{x:0,y:1}:3.0}", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("tensor(x{},y{},z{}):{{y:0,x:0}:2.0}", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("tensor(x{},y{},z{}):{{y:0,x:0}:2.0,{y:1,x:0}:3.0}", Sets.newHashSet("x", "y", "z"));
+        assertSerialization("tensor(x{},y{},z{}):{{}:2.0,{x:0}:3.0,{x:0,y:0}:5.0}", Sets.newHashSet("x", "y", "z"));
     }
 
     @Test
@@ -68,10 +68,10 @@ public class SparseBinaryFormatTestCase {
                 2, // num dimensions
                 2, (byte)'x', (byte)'y', 1, (byte)'z', // dimensions
                 2, // num cells,
-                2, (byte)'a', (byte)'b', 0, 64, 0, 0, 0, 0, 0, 0, 0, // cell 0
+                2, (byte)'a', (byte)'b', 1, (byte)'e', 64, 0, 0, 0, 0, 0, 0, 0, // cell 0
                 2, (byte)'c', (byte)'d', 1, (byte)'e', 64, 8, 0, 0, 0, 0, 0, 0}; // cell 1
         assertEquals(Arrays.toString(encodedTensor),
-                Arrays.toString(TypedBinaryFormat.encode(MapTensor.from("{{xy:ab}:2.0,{xy:cd,z:e}:3.0}"))));
+                Arrays.toString(TypedBinaryFormat.encode(MapTensor.from("{{xy:ab,z:e}:2.0,{xy:cd,z:e}:3.0}"))));
     }
 
 }

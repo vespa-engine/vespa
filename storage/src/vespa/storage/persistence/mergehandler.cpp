@@ -911,7 +911,8 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     if (applyDiffNeedLocalData(cmd->getDiff(), 0, true)) {
         framework::MilliSecTimer startTime(_env._component.getClock());
         fetchLocalData(bucket, cmd->getLoadType(), cmd->getDiff(), 0, context);
-        _env._metrics.mergeDataReadLatency.addValue(startTime);
+        _env._metrics.mergeDataReadLatency.addValue(
+                startTime.getElapsedTimeAsDouble());
     }
     status.pendingId = cmd->getMsgId();
     LOG(debug, "Sending %s", cmd->toString().c_str());
@@ -1019,7 +1020,8 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd,
                      "Bucket not found in buildBucketInfo step");
         return tracker;
     }
-    _env._metrics.mergeMetadataReadLatency.addValue(s->startTime);
+    _env._metrics.mergeMetadataReadLatency.addValue(
+            s->startTime.getElapsedTimeAsDouble());
     LOG(spam, "Sending GetBucketDiff %" PRIu64 " for %s to next node %u "
         "with diff of %u entries.",
         cmd2->getMsgId(),
@@ -1204,7 +1206,8 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd,
         LOG(error, "Diffing %s found suspect entries.",
             bucket.toString().c_str());
     }
-    _env._metrics.mergeMetadataReadLatency.addValue(startTime);
+    _env._metrics.mergeMetadataReadLatency.addValue(
+            startTime.getElapsedTimeAsDouble());
 
     // If last node in merge chain, we can send reply straight away
     if (index + 1u >= cmd.getNodes().size()) {
@@ -1343,7 +1346,8 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
                     // We have sent something on, and shouldn't reply now.
                     clearState = false;
                 } else {
-                    _env._metrics.mergeLatencyTotal.addValue(s.startTime);
+                    _env._metrics.mergeLatencyTotal.addValue(
+                            s.startTime.getElapsedTimeAsDouble());
                 }
             }
         } else {
@@ -1397,7 +1401,8 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
        framework::MilliSecTimer startTime(_env._component.getClock());
         fetchLocalData(bucket, cmd.getLoadType(), cmd.getDiff(), index,
                        context);
-        _env._metrics.mergeDataReadLatency.addValue(startTime);
+        _env._metrics.mergeDataReadLatency.addValue(
+                startTime.getElapsedTimeAsDouble());
     } else {
         LOG(spam, "Merge(%s): Moving %" PRIu64 " entries, didn't need "
                   "local data on node %u (%u).",
@@ -1410,7 +1415,8 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd,
        framework::MilliSecTimer startTime(_env._component.getClock());
         api::BucketInfo info(applyDiffLocally(bucket, cmd.getLoadType(),
                                               cmd.getDiff(), index, context));
-        _env._metrics.mergeDataWriteLatency.addValue(startTime);
+        _env._metrics.mergeDataWriteLatency.addValue(
+                startTime.getElapsedTimeAsDouble());
     } else {
         LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u).",
             bucket.toString().c_str(), _env._nodeIndex, index);
@@ -1512,7 +1518,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                 fetchLocalData(bucket, reply.getLoadType(), diff, index,
                                s.context);
                 _env._metrics.mergeDataReadLatency.addValue(
-                        startTime);
+                        startTime.getElapsedTimeAsDouble());
             }
             if (applyDiffHasLocallyNeededData(diff, index)) {
                 framework::MilliSecTimer startTime(_env._component.getClock());
@@ -1520,7 +1526,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                         applyDiffLocally(bucket, reply.getLoadType(), diff,
                                          index, s.context));
                 _env._metrics.mergeDataWriteLatency.addValue(
-                        startTime);
+                        startTime.getElapsedTimeAsDouble());
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
                     bucket.toString().c_str(),
@@ -1566,7 +1572,8 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                     // We have sent something on and shouldn't reply now.
                     clearState = false;
                 } else {
-                    _env._metrics.mergeLatencyTotal.addValue(s.startTime);
+                    _env._metrics.mergeLatencyTotal.addValue(
+                            s.startTime.getElapsedTimeAsDouble());
                 }
             }
         } else {

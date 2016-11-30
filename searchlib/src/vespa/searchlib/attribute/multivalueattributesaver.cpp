@@ -8,8 +8,7 @@ using search::IAttributeSaveTarget;
 
 namespace search {
 
-template <typename IndexT>
-MultiValueAttributeSaver<IndexT>::
+MultiValueAttributeSaver::
 MultiValueAttributeSaver(GenerationHandler::Guard &&guard,
                          const IAttributeSaveTarget::Config &cfg,
                          const MvMappingBase &mvMapping)
@@ -19,14 +18,8 @@ MultiValueAttributeSaver(GenerationHandler::Guard &&guard,
 }
 
 
-template <typename IndexT>
-MultiValueAttributeSaver<IndexT>::~MultiValueAttributeSaver()
+MultiValueAttributeSaver::~MultiValueAttributeSaver()
 {
 }
-
-template class MultiValueAttributeSaver<multivalue::Index32>;
-
-template class MultiValueAttributeSaver<multivalue::Index64>;
-
 
 }  // namespace search

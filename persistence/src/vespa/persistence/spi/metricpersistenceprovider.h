@@ -15,7 +15,7 @@ class MetricPersistenceProvider : public PersistenceProvider,
                                   public metrics::MetricSet
 {
     struct ResultMetrics : public metrics::MetricSet {
-        std::vector<std::unique_ptr<metrics::LongAverageMetric> > _metric;
+        std::vector<std::unique_ptr<metrics::DoubleAverageMetric> > _metric;
 
         ResultMetrics(const char* opName);
         ~ResultMetrics();

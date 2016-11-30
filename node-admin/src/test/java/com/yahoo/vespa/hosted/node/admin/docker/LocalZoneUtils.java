@@ -67,7 +67,7 @@ public class LocalZoneUtils {
         docker.startContainer(CONFIG_SERVER_CONTAINER_NAME);
 
         int maxRetries = 2000;
-        for (int i = 0; i < maxRetries; i++) {
+        for (int i = 1; i < maxRetries; i++) {
             try {
                 if (i % 100 == 0) System.out.println("Check if config server is up, try " + i + " of " + maxRetries);
 

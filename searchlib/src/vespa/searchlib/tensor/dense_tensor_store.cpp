@@ -13,6 +13,7 @@
 #include <vespa/document/util/serializable.h>
 #include <vespa/searchlib/datastore/datastore.hpp>
 
+using search::datastore::Handle;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::DenseTensor;
 using vespalib::tensor::DenseTensorView;
@@ -108,32 +109,27 @@ void clearPadAreaAfterBuffer(char *buffer, size_t bufSize, size_t alignedBufSize
 
 }
 
-std::pair<void *, DenseTensorStore::RefType>
+Handle<char>
 DenseTensorStore::allocRawBuffer(size_t numCells)
 {
     size_t bufSize = numCells * _cellSize;
     size_t alignedBufSize = alignedSize(numCells);
-    _store.ensureBufferCapacity(_typeId, alignedBufSize);
-    uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    datastore::BufferState &state = _store.getBufferState(activeBufferId);
-    size_t oldSize = state.size();
-    char *buffer = _store.getBufferEntry<char>(activeBufferId, oldSize);
-    clearPadAreaAfterBuffer(buffer, bufSize, alignedBufSize, unboundDimSizesSize());
-    state.pushed_back(alignedBufSize);
-    return std::make_pair(buffer, RefType(oldSize, activeBufferId));
+    auto result = _concreteStore.rawAllocator<char>(_typeId).alloc(alignedBufSize);
+    clearPadAreaAfterBuffer(result.data, bufSize, alignedBufSize, unboundDimSizesSize());
+    return result;
 }
 
-std::pair<void *, DenseTensorStore::RefType>
+Handle<char>
 DenseTensorStore::allocRawBuffer(size_t numCells,
                                  const std::vector<uint32_t> &unboundDimSizes)
 {
     assert(unboundDimSizes.size() == _numUnboundDims);
     auto ret = allocRawBuffer(numCells);
     if (_numUnboundDims > 0) {
-        memcpy(static_cast<char *>(ret.first) - unboundDimSizesSize(),
+        memcpy(ret.data - unboundDimSizesSize(),
                &unboundDimSizes[0], unboundDimSizesSize());
     }
-    assert(numCells == getNumCells(ret.first));
+    assert(numCells == getNumCells(ret.data));
     return ret;
 }
 
@@ -157,11 +153,11 @@ DenseTensorStore::move(EntryRef ref)
     auto oldraw = getRawBuffer(ref);
     size_t numCells = getNumCells(oldraw);
     auto newraw = allocRawBuffer(numCells);
-    memcpy(static_cast<char *>(newraw.first) - unboundDimSizesSize(),
+    memcpy(newraw.data - unboundDimSizesSize(),
            static_cast<const char *>(oldraw) - unboundDimSizesSize(),
            numCells * _cellSize + unboundDimSizesSize());
     _concreteStore.holdElem(ref, alignedSize(numCells));
-    return newraw.second;
+    return newraw.ref;
 }
 
 namespace {
@@ -268,12 +264,12 @@ template <class TensorType>
 TensorStore::EntryRef
 DenseTensorStore::setDenseTensor(const TensorType &tensor)
 {
-    size_t numCells = tensor.cells().size();
+    size_t numCells = tensor.cellsRef().size();
     checkMatchingType(_type, tensor.type(), numCells);
     auto raw = allocRawBuffer(numCells);
-    setDenseTensorUnboundDimSizes(raw.first, _type, _numUnboundDims, tensor.type());
-    memcpy(raw.first, &tensor.cells()[0], numCells * _cellSize);
-    return raw.second;
+    setDenseTensorUnboundDimSizes(raw.data, _type, _numUnboundDims, tensor.type());
+    memcpy(raw.data, &tensor.cellsRef()[0], numCells * _cellSize);
+    return raw.ref;
 }
 
 TensorStore::EntryRef
@@ -282,10 +278,6 @@ DenseTensorStore::setTensor(const Tensor &tensor)
     const DenseTensorView *view(dynamic_cast<const DenseTensorView *>(&tensor));
     if (view) {
         return setDenseTensor(*view);
-    }
-    const DenseTensor *dense(dynamic_cast<const DenseTensor *>(&tensor));
-    if (dense) {
-        return setDenseTensor(*dense);
     }
     abort();
 }

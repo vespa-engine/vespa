@@ -39,20 +39,14 @@ public:
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
-    template <class Reader>
-    void prepareLoadFromMultiValue(Reader &) { _store.setInitializing(true); }
+    void prepareLoadFromMultiValue() { _store.setInitializing(true); }
 
     void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
-    virtual void compactWorst() override;
+    virtual void compactWorst(bool compactMemory, bool compactAddressSpace) override;
 
-    AddressSpace getAddressSpaceUsage() const;
+    virtual AddressSpace getAddressSpaceUsage() const override;
     virtual MemoryUsage getArrayStoreMemoryUsage() const override;
-
-    // Mockups to temporarily silence code written for old multivalue mapping
-    bool enoughCapacity(const Histogram &) { return true; }
-    void performCompaction(Histogram &) { }
-    void reset(uint32_t, const Histogram &) { }
 
     static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,

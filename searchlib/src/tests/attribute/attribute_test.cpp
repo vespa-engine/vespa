@@ -1728,7 +1728,7 @@ AttributeTest::testStatus()
         expUsed += 1 * InternalNodeSize + 1 * LeafNodeSize; // enum store tree
         expUsed += 1 * 32; // enum store (uniquevalues * bytes per entry)
         // multi value mapping (numdocs * sizeof(MappingIndex) + numvalues * sizeof(EnumIndex))
-        expUsed += 100 * sizeof(search::multivalue::Index32) + 100 * 4;
+        expUsed += 100 * sizeof(datastore::EntryRef) + 100 * 4;
         EXPECT_GREATER_EQUAL(ptr->getStatus().getUsed(), expUsed);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getAllocated(), expUsed);
     }
@@ -1752,7 +1752,7 @@ AttributeTest::testStatus()
         expUsed += numUniq * 32; // enum store (16 unique values, 32 bytes per entry)
         // multi value mapping (numdocs * sizeof(MappingIndex) + numvalues * sizeof(EnumIndex) +
         // numdocs * sizeof(Array<EnumIndex>) (due to vector vector))
-        expUsed += numDocs * sizeof(search::multivalue::Index32) + numDocs * numValuesPerDoc * sizeof(EnumStoreBase::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
+        expUsed += numDocs * sizeof(datastore::EntryRef) + numDocs * numValuesPerDoc * sizeof(EnumStoreBase::Index) + ((numValuesPerDoc > 1024) ? numDocs * NestedVectorSize : 0);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getUsed(), expUsed);
         EXPECT_GREATER_EQUAL(ptr->getStatus().getAllocated(), expUsed);
     }
@@ -2139,22 +2139,25 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
     AddressSpaceUsage after = attrPtr->getAddressSpaceUsage();
     if (attrPtr->hasEnum()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has enum", attrName.c_str());
-        EXPECT_EQUAL(before.enumStoreUsage().used(), 0u);
+        EXPECT_EQUAL(before.enumStoreUsage().used(), 16u);
+        EXPECT_EQUAL(before.enumStoreUsage().dead(), 16u);
         EXPECT_GREATER(after.enumStoreUsage().used(), before.enumStoreUsage().used());
         EXPECT_EQUAL(after.enumStoreUsage().limit(), before.enumStoreUsage().limit());
         EXPECT_EQUAL(34359738368u, after.enumStoreUsage().limit()); // EnumStoreBase::DataStoreType::RefType::offsetSize()
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT enum", attrName.c_str());
         EXPECT_EQUAL(before.enumStoreUsage().used(), 0u);
+        EXPECT_EQUAL(before.enumStoreUsage().dead(), 0u);
         EXPECT_EQUAL(after.enumStoreUsage(), before.enumStoreUsage());
         EXPECT_EQUAL(AddressSpaceUsage::defaultEnumStoreUsage(), after.enumStoreUsage());
     }
     if (attrPtr->hasMultiValue()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has multi-value", attrName.c_str());
-        EXPECT_EQUAL(before.multiValueUsage().used(), 1024u);
+        EXPECT_EQUAL(before.multiValueUsage().used(), 1u);
+        EXPECT_EQUAL(before.multiValueUsage().dead(), 1u);
         EXPECT_GREATER_EQUAL(after.multiValueUsage().used(), before.multiValueUsage().used());
-        EXPECT_EQUAL(after.multiValueUsage().limit(), before.multiValueUsage().limit());
-        EXPECT_EQUAL(8192u, after.multiValueUsage().limit());
+        EXPECT_GREATER(after.multiValueUsage().limit(), before.multiValueUsage().limit());
+        EXPECT_GREATER((1ull << 32), after.multiValueUsage().limit());
     } else {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): NOT multi-value", attrName.c_str());
         EXPECT_EQUAL(before.multiValueUsage().used(), 0u);
