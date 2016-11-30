@@ -58,7 +58,7 @@ public class QueryCanonicalizerTestCase {
         WandItem wand = new WandItem("default", 100);
         and.addItem(wand);
 
-        assertCanonicalized("AND (AND a b c) WAND(100,0.0,1.0) default}", null, and);
+        assertCanonicalized("AND a b c WAND(100,0.0,1.0) default}", null, and);
     }
 
     @Test
