@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
@@ -100,7 +101,7 @@ public class NodeRepositoryImplTest {
     }
 
     @Test
-    public void testGetContainers() throws InterruptedException, IOException {
+    public void testGetContainer() throws InterruptedException, IOException {
         waitForJdiscContainerToServe();
         NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
         String hostname = "host4.yahoo.com";
@@ -108,6 +109,15 @@ public class NodeRepositoryImplTest {
         assertThat(nodeSpec.isPresent(), is(true));
         assertThat(nodeSpec.get().hostname, is(hostname));
         assertThat(nodeSpec.get().containerName, is(new ContainerName("host4")));
+    }
+
+    @Test
+    public void testGetContainerForNonExistingNode() throws InterruptedException, IOException {
+        waitForJdiscContainerToServe();
+        NodeRepository nodeRepositoryApi = new NodeRepositoryImpl(configServerHosts, port, "dockerhost4");
+        String hostname = "host-that-does-not-exist";
+        Optional<ContainerNodeSpec> nodeSpec = nodeRepositoryApi.getContainerNodeSpec(hostname);
+        assertFalse(nodeSpec.isPresent());
     }
 
     @Test
