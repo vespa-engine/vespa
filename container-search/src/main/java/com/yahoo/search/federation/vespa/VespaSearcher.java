@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation.vespa;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -28,11 +27,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cache.QrBinaryCacheConfig;
 import com.yahoo.search.cache.QrBinaryCacheRegionConfig;
-import com.yahoo.search.federation.FederationSearcher;
 import com.yahoo.search.federation.ProviderConfig;
 import com.yahoo.search.federation.http.ConfiguredHTTPProviderSearcher;
 import com.yahoo.search.federation.http.Connection;
-import com.yahoo.search.intent.model.IntentModel;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.textserialize.TextSerialize;
 import com.yahoo.search.yql.MinimalQueryInserter;
@@ -46,28 +43,25 @@ import edu.umd.cs.findbugs.annotations.Nullable;
  * <p>If the "sources" argument should be honored on an external cluster
  * when using YQL+, override {@link #chooseYqlSources(Set)}.</p>
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Arne Bergene Fossaa
+ * @author Steinar Knutsen
  */
 @Provides("Vespa")
 @After("*")
 public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
+
     private final ThreadLocal<XMLReader> readerHolder = new ThreadLocal<>();
     private final Query.Type queryType;
     private final Tuple2<String, Version> segmenterVersion;
 
     private static final CompoundName select = new CompoundName("select");
-    private static final CompoundName streamingUserid = new CompoundName(
-            "streaming.userid");
-    private static final CompoundName streamingGroupname = new CompoundName(
-            "streaming.groupname");
-    private static final CompoundName streamingSelection = new CompoundName(
-            "streaming.selection");
+    private static final CompoundName streamingUserid = new CompoundName("streaming.userid");
+    private static final CompoundName streamingGroupname = new CompoundName("streaming.groupname");
+    private static final CompoundName streamingSelection = new CompoundName("streaming.selection");
 
     /** Create an instance from configuration */
-    public VespaSearcher(ComponentId id, ProviderConfig config,
-            QrBinaryCacheConfig c, QrBinaryCacheRegionConfig r,
-            Statistics statistics) {
+    public VespaSearcher(ComponentId id, ProviderConfig config, QrBinaryCacheConfig c, 
+                         QrBinaryCacheRegionConfig r, Statistics statistics) {
         this(id, config, c, r, statistics, null);
     }
 
@@ -99,8 +93,7 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
         segmenterVersion = null;
     }
 
-    void addProperty(Map<String, String> queryMap, Query query,
-            CompoundName property) {
+    void addProperty(Map<String, String> queryMap, Query query, CompoundName property) {
         Object o = query.properties().get(property);
         if (o != null) {
             queryMap.put(property.toString(), o.toString());
@@ -147,8 +140,7 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
         } else if (providerQueryType == ProviderConfig.QueryType.YQL) {
             return Query.Type.YQL;
         } else {
-            throw new RuntimeException("Query type " + providerQueryType
-                    + " unsupported.");
+            throw new RuntimeException("Query type " + providerQueryType + " unsupported.");
         }
     }
 
@@ -169,8 +161,7 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
         Query workQuery = query.clone();
         String error = QueryCanonicalizer.canonicalize(workQuery);
         if (error != null) {
-            getLogger().log(LogLevel.WARNING,
-                    "Could not normalize [" + query.toString() + "]: " + error);
+            getLogger().log(LogLevel.WARNING,"Could not normalize [" + query.toString() + "]: " + error);
             // Just returning null here is the pattern from existing code...
             return null;
         }
@@ -180,26 +171,18 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
     }
 
     public String marshalQuery(QueryTree root) {
-        QueryCanonicalizer.QueryWrapper qw = new QueryCanonicalizer.QueryWrapper();
-        root = root.clone();
-        qw.setRoot(root.getRoot());
-        boolean could = QueryCanonicalizer.treeCanonicalize(qw, root.getRoot(),
-                null);
-        if (!could) {
-            return null;
-        }
-        return marshalRoot(qw.getRoot());
+        QueryTree rootClone = root.clone(); // TODO: Why?
+        String error = QueryCanonicalizer.canonicalize(rootClone);
+        if (error != null) return null;
+
+        return marshalRoot(rootClone.getRoot());
     }
 
     private String marshalRoot(Item root) {
         switch (queryType) {
-        case ADVANCED:
-            QueryMarshaller marshaller = new QueryMarshaller();
-            return marshaller.marshal(root);
-        case PROGRAMMATIC:
-            return TextSerialize.serialize(root);
-        default:
-            throw new RuntimeException("Unsupported query type.");
+            case ADVANCED: return new QueryMarshaller().marshal(root);
+            case PROGRAMMATIC: return TextSerialize.serialize(root);
+            default: throw new RuntimeException("Unsupported query type.");
         }
     }
 
@@ -223,8 +206,7 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
 
     /** Returns the canonical Vespa ping URI, http://host:port/status.html */
     @Override
-    public URI getPingURI(Connection connection) throws MalformedURLException,
-            URISyntaxException {
+    public URI getPingURI(Connection connection) throws MalformedURLException, URISyntaxException {
         return new URL(getParameters().getSchema(), connection.getHost(),
                 connection.getPort(), "/status.html").toURI();
     }
@@ -267,4 +249,5 @@ public class VespaSearcher extends ConfiguredHTTPProviderSearcher {
     protected void chooseYqlSummaryFields(Set<String> summaryFields) {
        summaryFields.clear();
     }
+
 }

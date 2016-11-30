@@ -49,8 +49,8 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.MAX_REWRITES + "=3",
                                    "query 'OR (AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 " +
-                                   "(AND new york city travel)) (OR pn (AND phone number))) (OR ta (AND travel agency)) " +
-                                   "(OR tr travel)'");
+                                   "(AND new york city travel)) (OR pn (AND phone number))) ta (AND travel agency) " +
+                                   "tr travel'");
     }
 
     /**
@@ -60,7 +60,7 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
         utils.assertRewrittenQuery("?query=(modern new york city travel phone number) OR (travel agency) OR travel&type=adv&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
                                    "query 'OR (AND modern new york city travel phone number) " +
-                                   "(OR ta (AND travel agency)) (OR tr travel)'");
+                                   "ta (AND travel agency) tr travel'");
     }
 
     /**
@@ -70,8 +70,8 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
         utils.assertRewrittenQuery("?query=ca OR (modern new york city travel phone number) OR (travel agency) OR travel&" +
                                    "type=adv&filter=citystate:santa clara ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
-                                   "query 'RANK (OR (OR california ca) (AND modern new york city travel phone number) " +
-                                   "(OR ta (AND travel agency)) (OR tr travel)) |citystate:santa |clara |ca'");
+                                   "query 'RANK (OR california ca (AND modern new york city travel phone number) " +
+                                   "ta (AND travel agency) tr travel) |citystate:santa |clara |ca'");
     }
 
     /**
@@ -83,9 +83,9 @@ public class GenericExpansionRewriterTestCase extends junit.framework.TestCase {
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.MAX_REWRITES + "=0",
-                                   "query 'RANK (OR (OR california ca) (AND modern (OR \"rewrite11 rewrite12\" " +
+                                   "query 'RANK (OR california ca (AND modern (OR \"rewrite11 rewrite12\" " +
                                    "rewrite2 rewrite3 rewrite4 rewrite5 (AND new york city travel)) " +
-                                   "(OR pn (AND phone number))) (OR ta (AND travel agency)) (OR tr travel)) " +
+                                   "(OR pn (AND phone number))) ta (AND travel agency) tr travel) " +
                                    "|citystate:santa |clara |ca'");
     }
 

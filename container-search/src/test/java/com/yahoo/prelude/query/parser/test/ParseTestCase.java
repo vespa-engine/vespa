@@ -1613,7 +1613,7 @@ public class ParseTestCase {
     @Test
     public void testDurbin() {
         tester.assertParsed(
-                "AND \"Richard Durbin\" Welfare (+(OR language:en (OR \"Durbin said\" \"Durbin says\" \"Durbin added\" \"Durbin agreed\" \"Durbin questioned\") date:>1109664000) -newstype:rssexclude)",
+                "AND \"Richard Durbin\" Welfare (+(OR language:en \"Durbin said\" \"Durbin says\" \"Durbin added\" \"Durbin agreed\" \"Durbin questioned\" date:>1109664000) -newstype:rssexclude)",
                 "(\"Richard Durbin\" ) \"Welfare\" ((\"Durbin said\" \"Durbin says\" \"Durbin added\" \"Durbin agreed\" \"Durbin questioned\" )  -newstype:rssexclude date:>1109664000 (language:en )",
                 Query.Type.ALL);
     }
@@ -1827,7 +1827,7 @@ public class ParseTestCase {
 
     @Test
     public void testNestedParensAndLittleElse() {
-        tester.assertParsed("OR (OR a b) (OR c d)", "((a b) (c d))", Query.Type.ALL);
+        tester.assertParsed("OR a b c d", "((a b) (c d))", Query.Type.ALL);
     }
 
     // This is simply to control it doesn't crash
@@ -1838,7 +1838,7 @@ public class ParseTestCase {
 
     @Test
     public void testNestedUnbalancedParensAndLittleElseMoreBroken() {
-        tester.assertParsed("OR (OR a b) c d", "((a b) +(c d)", Query.Type.ALL);
+        tester.assertParsed("OR a b c d", "((a b) +(c d)", Query.Type.ALL);
     }
 
     @Test
@@ -1848,12 +1848,12 @@ public class ParseTestCase {
 
     @Test
     public void testUnbalancedStartingParens() {
-        tester.assertParsed("OR (OR a b) c d", "((a b) +(c d", Query.Type.ALL);
+        tester.assertParsed("OR a b c d", "((a b) +(c d", Query.Type.ALL);
     }
 
     @Test
     public void testJPMobileExceptionQuery() {
-        tester.assertParsed("OR (OR concat and) (OR \"make string\" 1 47) or",
+        tester.assertParsed("OR concat and \"make string\" 1 47 or",
                      "(concat \"and\" (make-string 1 47) \"or\")", Query.Type.ALL);
     }
 
@@ -1876,15 +1876,15 @@ public class ParseTestCase {
     @Test
     public void testTicket443882() {
         tester.assertParsed(
-                "AND australian LOTTERY (+(OR language:en (OR IN AFFILIATION WITH THE UK NATIONAL LOTTERY) date:>1125475200) -newstype:rssexclude)",
+                "AND australian LOTTERY (+(OR language:en IN AFFILIATION WITH THE UK NATIONAL LOTTERY date:>1125475200) -newstype:rssexclude)",
                 "australian LOTTERY (IN AFFILIATION WITH THE UK NATIONAL LOTTERY -newstype:rssexclude date:>1125475200 (language:en )",
                 Query.Type.ALL);
         tester.assertParsed(
-                "AND AND consulting (+(OR language:en (OR albuquerque \"new mexico\") date:>1125475200) -newstype:rssexclude)",
+                "AND AND consulting (+(OR language:en albuquerque \"new mexico\" date:>1125475200) -newstype:rssexclude)",
                 ") AND (consulting) ((albuquerque \"new mexico\" ) -newstype:rssexclude date:>1125475200 (language:en )",
                 Query.Type.ALL);
         tester.assertParsed(
-                "AND the church of Jesus Christ of latter Day Saints (+(OR language:en (OR Mormon temples) date:>1125475200) -newstype:rssexclude)",
+                "AND the church of Jesus Christ of latter Day Saints (+(OR language:en Mormon temples date:>1125475200) -newstype:rssexclude)",
                 "the church of Jesus Christ of latter Day Saints (Mormon temples -newstype:rssexclude date:>1125475200 (language:en )",
                 Query.Type.ALL);
     }
@@ -2397,26 +2397,23 @@ public class ParseTestCase {
         tester.assertParsed("NEAR(2) a b*","a NEAR b*",Query.Type.ADVANCED);
     }
 
-    // bug 3672512
-    // This is make sure these doesn't fail, not that they're parsed very nicely
     @Test
     public void testNestedBracesAndPhrases() {
         String userQuery = "(\"Secondary Curriculum\" (\"Key Stage 3\" OR KS3) (\"Key Stage 4\" OR KS4)) ";
         tester.assertParsed(
-                "OR (OR \"Secondary Curriculum\" (OR \"Key Stage 3\" OR KS3)) (OR \"Key Stage 4\" OR KS4)",
+                "OR \"Secondary Curriculum\" \"Key Stage 3\" OR KS3 \"Key Stage 4\" OR KS4",
                 userQuery, Query.Type.ALL);
         userQuery = "(\"Grande distribution\" (\"developpement durable\" OR \"commerce equitable\"))";
         tester.assertParsed(
-                "OR \"Grande distribution\" (OR \"developpement durable\" OR \"commerce equitable\")",
+                "OR \"Grande distribution\" \"developpement durable\" OR \"commerce equitable\"",
                 userQuery, Query.Type.ALL);
         userQuery = "(\"road tunnel\" (\"tunnel management\" OR AID OR \"traffic systems\" OR supervision OR "
                 + "\"decision aid system\") (Spie OR Telegra OR Telvent OR Steria)) ";
         tester.assertParsed(
-                "OR (OR \"road tunnel\" (OR \"tunnel management\" OR AID OR \"traffic systems\" OR supervision OR \"decision aid system\")) (OR Spie OR Telegra OR Telvent OR Steria)",
+                "OR \"road tunnel\" \"tunnel management\" OR AID OR \"traffic systems\" OR supervision OR \"decision aid system\" Spie OR Telegra OR Telvent OR Steria",
                 userQuery, Query.Type.ALL);
     }
 
-    // bug 3726354
     @Test
     public void testYetAnotherCycleQuery() {
         tester.assertParsed("+(OR (+d -f) b) -c",

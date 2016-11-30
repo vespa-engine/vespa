@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 /**
  * A place holder for null queries to make searchers easier to write.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class NullItem extends Item {
 
