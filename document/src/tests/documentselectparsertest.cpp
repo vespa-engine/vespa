@@ -165,17 +165,17 @@ DocumentSelectParserTest::createDocs()
     {
         StructFieldValue sval(_doc.back()->getField("mystruct").getDataType());
         sval.set("key", 14);
-        sval.set("value", "structval");
+        sval.set("value", (const char *)"structval");
         _doc.back()->setValue("mystruct", sval);
         ArrayFieldValue
             aval(_doc.back()->getField("structarray").getDataType());
         {
             StructFieldValue sval1(aval.getNestedType());
             sval1.set("key", 15);
-            sval1.set("value", "structval1");
+            sval1.set("value", (const char *)"structval1");
             StructFieldValue sval2(aval.getNestedType());
             sval2.set("key", 16);
-            sval2.set("value", "structval2");
+            sval2.set("value", (const char *)"structval2");
             aval.add(sval1);
             aval.add(sval2);
         }
@@ -187,19 +187,17 @@ DocumentSelectParserTest::createDocs()
         mval.put(document::IntFieldValue(7), document::StringFieldValue("c"));
         _doc.back()->setValue("mymap", mval);
 
-        MapFieldValue
-            amval(_doc.back()->getField("structarrmap").getDataType());
+        MapFieldValue amval(_doc.back()->getField("structarrmap").getDataType());
         amval.put(StringFieldValue("foo"), aval);
 
-        ArrayFieldValue
-            abval(_doc.back()->getField("structarray").getDataType());
+        ArrayFieldValue abval(_doc.back()->getField("structarray").getDataType());
         {
             StructFieldValue sval1(aval.getNestedType());
             sval1.set("key", 17);
-            sval1.set("value", "structval3");
+            sval1.set("value", (const char *)"structval3");
             StructFieldValue sval2(aval.getNestedType());
             sval2.set("key", 18);
-            sval2.set("value", "structval4");
+            sval2.set("value", (const char *)"structval4");
             abval.add(sval1);
             abval.add(sval2);
         }

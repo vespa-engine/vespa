@@ -1,4 +1,4 @@
-#include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using namespace vespalib;
 

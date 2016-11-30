@@ -30,15 +30,17 @@ Test::Main()
     TEST_DONE();
 }
 
+
 void
 Test::testNormalUsage()
 {
+    const char * UP = "up";
     std::ostringstream ost;
     XmlOutputStream xos(ost);
     using namespace vespalib::xml;
     xos << XmlTag("car")
             << XmlTag("door")
-                << XmlAttribute("windowstate", "up")
+                << XmlAttribute("windowstate", UP)
             << XmlEndTag()
             << XmlTag("description")
                 << "This is a car description used to test"
@@ -55,12 +57,13 @@ Test::testNormalUsage()
 void
 Test::testEscaping()
 {
+    const char * P100 = "<100%\" &\n>";
     std::ostringstream ost;
     XmlOutputStream xos(ost);
     using namespace vespalib::xml;
     xos << XmlTag("!#trash%-", CONVERT_ILLEGAL_CHARACTERS)
             << XmlTag("foo")
-                << XmlAttribute("bar", "<100%\" &\n>")
+                << XmlAttribute("bar", P100)
             << XmlEndTag()
             << XmlTag("escaped")
                 << XmlEscapedContent()
@@ -89,13 +92,14 @@ Test::testEscaping()
 }
 
 namespace {
+    const char * BLUE = "blue";
     struct LookAndFeel : public XmlSerializable {
 
         LookAndFeel() {}
 
         void printXml(XmlOutputStream& out) const {
             using namespace vespalib::xml;
-            out << XmlAttribute("color", "blue")
+            out << XmlAttribute("color", BLUE)
                 << XmlTag("other")
                     << XmlAttribute("count", 5)
                     << XmlTag("something") << "foo" << XmlEndTag()

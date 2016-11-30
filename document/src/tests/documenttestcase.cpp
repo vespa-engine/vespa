@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
@@ -17,6 +16,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <fstream>
+#include <vespa/document/util/serializableexceptions.h>
 
 using vespalib::nbostream;
 
@@ -719,14 +719,14 @@ void DocumentTest::testReadSerializedAllVersions()
                      DocumentId("doc:serializetest:http://test.doc.id/"));
         doc.set("intfield", 5);
         doc.set("floatfield", -9.23);
-        doc.set("stringfield", "This is a string.");
+        doc.set("stringfield", (const char *)"This is a string.");
         doc.set("longfield", static_cast<int64_t>(398420092938472983LL));
         doc.set("doublefield", 98374532.398820);
         doc.set("bytefield", -2);
         doc.setValue("rawfield", RawFieldValue("RAW DATA", 8));
         Document docInDoc(*docInDocType,
                           DocumentId("doc:serializetest:http://doc.in.doc/"));
-        docInDoc.set("stringindocfield", "Elvis is dead");
+        docInDoc.set("stringindocfield", (const char *)"Elvis is dead");
         //docInDoc.setCompression(CompressionConfig(CompressionConfig::NONE, 0, 0));
         doc.setValue("docfield", docInDoc);
         ArrayFieldValue floatArray(*arrayOfFloatDataType);
@@ -876,12 +876,12 @@ void DocumentTest::testGenerateSerializedFile()
 
     doc.set("intfield", 5);
     doc.set("floatfield", -9.23);
-    doc.set("stringfield", "This is a string.");
+    doc.set("stringfield", (const char *)"This is a string.");
     doc.set("longfield", (int64_t) 398420092938472983ll);
     doc.set("doublefield", 98374532.398820);
-    doc.set("urifield", "http://this.is.a.test/");
+    doc.set("urifield", (const char *)"http://this.is.a.test/");
     doc.set("bytefield", -2);
-    doc.set("rawfield", "RAW DATA");
+    doc.set("rawfield", (const char *)"RAW DATA");
 
     const DocumentType *docindoc_type = repo.getDocumentType("docindoc");
     CPPUNIT_ASSERT(docindoc_type);
@@ -1065,7 +1065,7 @@ DocumentTest::testHasChanged()
         buf->setPos(0);
         Document doc2(test_repo.getTypeRepo(), *buf);
 
-        doc2.set("hstringval", "bla bla bla bla bla");
+        doc2.set("hstringval", (const char *)"bla bla bla bla bla");
         CPPUNIT_ASSERT(doc2.hasChanged());
     }
         // Clearing value tags us changed.
