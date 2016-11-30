@@ -71,11 +71,8 @@ template<typename MetricType>
 void
 LoadMetric<MetricType>::addMemoryUsage(MemoryConsumption& mc) const {
     ++mc._loadMetricCount;
-    mc._loadMetricMeta += sizeof(Metric::LP) * _ownerList.size();
-    for (const auto & unused : _metrics) {
-        (void) unused;
-        mc._loadMetricMeta += sizeof(uint32_t) + sizeof(MetricTypeLP);
-    }
+    mc._loadMetricMeta += (sizeof(Metric::LP) * _ownerList.capacity())
+                        + (sizeof(typename MetricMap::value_type) * _metrics.capacity());
     _sum.addMemoryUsage(mc);
     mc._loadMetricMeta += sizeof(LoadMetric<MetricType>)
                         - sizeof(MetricSet)
