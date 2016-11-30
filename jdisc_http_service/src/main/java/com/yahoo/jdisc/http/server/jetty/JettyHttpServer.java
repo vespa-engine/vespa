@@ -15,12 +15,7 @@ import com.yahoo.jdisc.http.server.FilterBindings;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.http.HttpField;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.ConnectorStatistics;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.RequestLog;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
@@ -350,10 +345,10 @@ public class JettyHttpServer extends AbstractServerProvider {
     }
 
     private void setConnectorMetrics(JDiscServerConnector connector) {
-        ConnectorStatistics statistics = connector.getStatistics();
-        metric.set(Metrics.NUM_CONNECTIONS, statistics.getConnections(), connector.getMetricContext());
-        metric.set(Metrics.NUM_OPEN_CONNECTIONS, statistics.getConnectionsOpen(), connector.getMetricContext());
-        metric.set(Metrics.NUM_CONNECTIONS_OPEN_MAX, statistics.getConnectionsOpenMax(), connector.getMetricContext());
+        ServerConnectionStatistics statistics = connector.getStatistics();
+        metric.set(Metrics.NUM_CONNECTIONS, statistics.getConnectionsTotal(), connector.getMetricContext());
+        metric.set(Metrics.NUM_OPEN_CONNECTIONS, statistics.getConnections(), connector.getMetricContext());
+        metric.set(Metrics.NUM_CONNECTIONS_OPEN_MAX, statistics.getConnectionsMax(), connector.getMetricContext());
         metric.set(Metrics.CONNECTION_DURATION_MAX, statistics.getConnectionDurationMax(), connector.getMetricContext());
         metric.set(Metrics.CONNECTION_DURATION_MEAN, statistics.getConnectionDurationMean(), connector.getMetricContext());
         metric.set(Metrics.CONNECTION_DURATION_STD_DEV, statistics.getConnectionDurationStdDev(), connector.getMetricContext());
