@@ -69,6 +69,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
         catch (NotFoundException e) {
             return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
         }
+        catch (com.yahoo.vespa.hosted.provision.NotFoundException e) {
+            return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
+        }
         catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }

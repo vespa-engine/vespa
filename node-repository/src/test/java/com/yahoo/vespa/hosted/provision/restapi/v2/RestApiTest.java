@@ -250,6 +250,15 @@ public class RestApiTest {
 
     @Test
     public void test_invalid_requests() throws Exception {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/node-does-not-exist",
+                                   new byte[0], Request.Method.GET),
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'node-does-not-exist'\"}");
+
+        // Attempt to fail and ready an allocated node without going through dirty
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/node-does-not-exist",
+                                   new byte[0], Request.Method.PUT),
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not move node-does-not-exist to failed: Node not found\"}");
+
         // Attempt to fail and ready an allocated node without going through dirty
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
