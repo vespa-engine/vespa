@@ -115,6 +115,17 @@ public:
         return HandlerSP();
     }
 
+    bool hasHandler(const HandlerSP &handler) const {
+        bool found = false;
+        for (const auto &kv : _handlers) {
+            if (handler == kv.second) {
+                found = true;
+                break;
+            }
+        }
+        return found;
+    }
+
     /**
      * Removes and returns the handler for the given document type. If no
      * handler was registered, this method returns an empty shared pointer.
