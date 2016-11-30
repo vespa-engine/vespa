@@ -268,6 +268,25 @@ public class QueryCanonicalizerTestCase {
         assertCanonicalized("AND (+(null) -negative) word","Can not search for only negative items", root);
     }
 
+    @Test
+    public void testCollapseFalseItemInAnd() {
+        CompositeItem root = new AndItem();
+        root.addItem(new WordItem("i1"));
+        root.addItem(new FalseItem());
+        assertCanonicalized("FALSE", null, root);
+    }
+
+    @Test
+    public void testRemoveFalseItemInOr() {
+        CompositeItem root = new OrItem();
+        AndItem and = new AndItem(); // this gets collapse to just FALSE, which is then removed
+        root.addItem(and);
+        and.addItem(new WordItem("i1"));
+        and.addItem(new FalseItem());
+        root.addItem(new WordItem("i1")); // ... which causes the OR to collapse, leaving this
+        assertCanonicalized("i1", null, root);
+    }
+
     /**
      * Tests that connexity is preserved by cloning and transferred to rank properties by preparing the query
      * (which strictly is an implementation detail which we should rather hide).

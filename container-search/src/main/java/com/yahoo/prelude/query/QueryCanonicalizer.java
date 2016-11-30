@@ -63,10 +63,8 @@ public class QueryCanonicalizer {
         if ( ! (item instanceof CompositeItem)) return CanonicalizationResult.success();
         CompositeItem composite = (CompositeItem)item;
 
-        if (composite.getItemCount() == 0) { // TODO: Remove
-            parentIterator.remove();
-            return CanonicalizationResult.success();
-        }
+        boolean replacedByFalse = collapseFalse(composite, parentIterator);
+        if (replacedByFalse) return CanonicalizationResult.success();
 
         collapseLevels(composite);
 
@@ -116,6 +114,33 @@ public class QueryCanonicalizer {
     private static void moveChildren(CompositeItem from, ListIterator<Item> toIterator) {
         for (ListIterator<Item> i = from.getItemIterator(); i.hasNext(); )
             toIterator.add(i.next());
+    }
+
+    /** 
+     * Handle FALSE items in the immediate children of this
+     * 
+     * @return true if this composite was replaced by FALSE
+     */
+    private static boolean collapseFalse(CompositeItem composite, ListIterator<Item> parentIterator) {
+        if ( ! containsFalse(composite)) return false;
+
+        if (composite instanceof AndItem) { // AND false is always false
+            parentIterator.set(new FalseItem());
+            return true;
+        }
+        else if (composite instanceof OrItem) { // OR false is unnecessary
+            for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
+                if (i.next() instanceof FalseItem)
+                    i.remove();
+            return false;
+        }
+        return false;
+    }
+    
+    private static boolean containsFalse(CompositeItem composite) {
+        for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
+            if (i.next() instanceof FalseItem) return true;
+        return false;
     }
 
     private static void removeDuplicates(EquivItem composite) {
