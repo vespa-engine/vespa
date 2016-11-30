@@ -10,7 +10,7 @@ using search::IAttributeSaveTarget;
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 namespace {
 
@@ -61,6 +61,6 @@ DenseTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 }
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

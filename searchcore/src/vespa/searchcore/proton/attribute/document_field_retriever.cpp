@@ -23,7 +23,7 @@ using search::index::Schema;
 using search::attribute::AttributeContent;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedType;
-using search::attribute::TensorAttribute;
+using search::tensor::TensorAttribute;
 using vespalib::IllegalStateException;
 
 namespace proton {

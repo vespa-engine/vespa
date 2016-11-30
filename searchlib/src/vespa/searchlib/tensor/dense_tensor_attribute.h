@@ -9,7 +9,7 @@ namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 /**
  * Attribute vector class used to store dense tensors for all
@@ -31,6 +31,6 @@ public:
 };
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

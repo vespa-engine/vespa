@@ -12,7 +12,7 @@ using vespalib::tensor::TensorMapper;
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 namespace {
 
@@ -114,6 +114,6 @@ GenericTensorAttribute::compactWorst()
 }
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

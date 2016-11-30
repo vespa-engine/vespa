@@ -10,7 +10,7 @@ LOG_SETUP("dense_tensor_store_test");
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/dense/mutable_dense_tensor_view.h>
 
-using search::attribute::DenseTensorStore;
+using search::tensor::DenseTensorStore;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::tensor::MutableDenseTensorView;

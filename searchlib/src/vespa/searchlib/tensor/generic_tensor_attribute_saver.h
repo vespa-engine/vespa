@@ -8,7 +8,7 @@
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 class GenericTensorStore;
 
@@ -34,6 +34,6 @@ public:
     virtual ~GenericTensorAttributeSaver();
 };
 
-} // namespace search::attribute
+} // namespace search::tensor
 
 } // namespace search

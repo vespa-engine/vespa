@@ -786,8 +786,8 @@ Test::requireThatAttributesAreUsed()
         attributeManager->getAttributeFieldWriter();
     search::AttributeVector *bjAttr =
         attributeManager->getWritableAttribute("bj");
-    search::attribute::TensorAttribute *bjTensorAttr =
-        dynamic_cast<search::attribute::TensorAttribute *>(bjAttr);
+    search::tensor::TensorAttribute *bjTensorAttr =
+        dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
 
     attributeFieldWriter.
         execute("bj",

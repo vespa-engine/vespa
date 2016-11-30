@@ -14,7 +14,7 @@ using vespalib::tensor::TensorMapper;
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 namespace {
 
@@ -178,6 +178,6 @@ DenseTensorAttribute::getVersion() const
     return DENSE_TENSOR_ATTRIBUTE_VERSION;
 }
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search
