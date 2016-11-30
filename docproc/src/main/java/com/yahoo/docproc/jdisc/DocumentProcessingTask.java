@@ -141,12 +141,12 @@ public class DocumentProcessingTask implements Comparable<DocumentProcessingTask
             } else if (DocumentProcessor.Progress.FAILED.equals(progress)) {
                 logProcessingFailure(processing, null);
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
-                                                "Document processing failed.");
+                        progress.getReason().orElse("Document processing failed."));
                 return progress;
             } else if (DocumentProcessor.Progress.PERMANENT_FAILURE.equals(progress)) {
                 logProcessingFailure(processing, null);
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE,
-                                                "Document processing failed.");
+                        progress.getReason().orElse("Document processing failed."));
                 return progress;
             }
         }
