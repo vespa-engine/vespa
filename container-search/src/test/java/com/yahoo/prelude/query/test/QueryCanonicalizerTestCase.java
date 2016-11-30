@@ -176,20 +176,42 @@ public class QueryCanonicalizerTestCase {
     @Test
     public void testMultilevelCollapsing() {
         CompositeItem root = new AndItem();
-        CompositeItem child = new AndItem();
-        CompositeItem grandchild = new AndItem();
-        CompositeItem grandgrandchild = new AndItem();
+        CompositeItem l1 = new AndItem();
+        CompositeItem l2 = new AndItem();
+        CompositeItem l3 = new AndItem();
         
-        root.addItem(child);
-        child.addItem(new WordItem("childItem"));
+        root.addItem(l1);
+        l1.addItem(new WordItem("l1i1"));
+        l1.addItem(l2);
+        
+        l2.addItem(new WordItem("l2i1"));
+        l2.addItem(l3);
+        l2.addItem(new WordItem("l2i2"));
+        
+        l3.addItem(new WordItem("l3i1"));
+        l3.addItem(new WordItem("l3i2"));
 
-        child.addItem(grandchild);
-        grandchild.addItem(new WordItem("grandchildItem"));
+        assertCanonicalized("AND l1i1 l2i1 l3i1 l3i2 l2i2", null, root);
+    }
 
-        grandchild.addItem(grandgrandchild);
-        grandgrandchild.addItem(new WordItem("grandgrandchildItem"));
+    /** Multiple levels of different composites should not collapse */
+    @Test
+    public void testMultilevelNonCollapsing() {
+        CompositeItem root = new AndItem();
+        CompositeItem l1 = new AndItem();
+        CompositeItem l2 = new OrItem();
+        CompositeItem l3 = new AndItem();
 
-        assertCanonicalized("AND childItem grandchildItem grandgrandchildItem", null, root);
+        root.addItem(l1);
+        l1.addItem(new WordItem("l1i1"));
+
+        l1.addItem(l2);
+        l2.addItem(new WordItem("l2i1"));
+
+        l2.addItem(l3);
+        l3.addItem(new WordItem("l3i1"));
+
+        assertCanonicalized("AND l1i1 (OR l2i1 l3i1)", null, root);
     }
 
     @Test
