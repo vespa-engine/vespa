@@ -70,6 +70,7 @@ class HttpRequestDispatch {
 
         this.async = servletRequest.startAsync();
         async.setTimeout(0);
+        servletResponseController.registerWriteListener();
     }
 
     public void dispatch() throws IOException {
