@@ -433,6 +433,21 @@ XmlSerializable::toXml(const std::string& indent) const
     printXml(xos);
     return ost.str();
 }
+using CharP = char *;
+using ConstCharP = const char *;
+
+template XmlAttribute::XmlAttribute(const std::string &, const std::string &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const vespalib::string &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const vespalib::stringref &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const CharP &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const ConstCharP &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const int16_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const int32_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const int64_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const uint16_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const uint32_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const uint64_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const double &, unsigned int);
 
 } // xml
 } // vespalib

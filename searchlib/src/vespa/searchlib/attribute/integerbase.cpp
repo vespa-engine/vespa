@@ -1,13 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include "integerbase.h"
+#include "integerbase.hpp"
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.integerbase");
 
 namespace search {
 

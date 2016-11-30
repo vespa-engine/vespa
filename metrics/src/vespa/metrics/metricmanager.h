@@ -292,15 +292,8 @@ private:
     void handleMetricsAltered(const MetricLockGuard & guard);
 
     typedef std::pair<uint32_t, std::string> SnapSpec;
-    static std::vector<SnapSpec> createSnapshotPeriods(
-            const MetricsmanagerConfig& config);
-    void assertMetricLockLocked(const MetricLockGuard& g) const {
-        if (!g.monitors(_waiter)) {
-            throw vespalib::IllegalArgumentException(
-                    "Given lock does not lock the metric lock.", VESPA_STRLOC);
-        }
-    }
-
+    static std::vector<SnapSpec> createSnapshotPeriods( const MetricsmanagerConfig& config);
+    void assertMetricLockLocked(const MetricLockGuard& g) const;
 };
 
 } // metrics

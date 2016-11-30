@@ -6,6 +6,7 @@
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/metricsnapshot.h>
 #include <vespa/metrics/valuemetric.h>
+#include <sstream>
 
 namespace metrics {
 

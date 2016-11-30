@@ -11,14 +11,22 @@
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/textwriter.h>
 #include <vespa/metrics/xmlwriter.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
-#include <stack>
 
 LOG_SETUP(".metrics.manager");
 
 namespace metrics {
 
 typedef MetricsmanagerConfig Config;
+
+void
+MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {
+    if (!g.monitors(_waiter)) {
+        throw vespalib::IllegalArgumentException(
+                "Given lock does not lock the metric lock.", VESPA_STRLOC);
+    }
+}
 
 void
 MetricManager::ConsumerSpec::print(std::ostream& out, bool verbose,

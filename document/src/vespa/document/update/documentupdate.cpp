@@ -12,7 +12,6 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/bufferexceptions.h>
-#include <vespa/vespalib/util/xmlserializable.hpp>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;

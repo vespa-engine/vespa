@@ -2,7 +2,6 @@
 #include "arithmeticvalueupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/vespalib/util/xmlserializable.hpp>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
