@@ -4,6 +4,7 @@
 #include <vespa/document/datatype/primitivedatatype.h>
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <sstream>
 
 namespace document {
 

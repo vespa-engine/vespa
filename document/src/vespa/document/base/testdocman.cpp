@@ -6,6 +6,7 @@
 #include <boost/random.hpp>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/datatypes.h>
+#include <sstream>
 
 namespace document {
 

@@ -29,6 +29,7 @@ public:
     typedef string value_type;
 
     LiteralFieldValueB();
+    ~LiteralFieldValueB();
 
     LiteralFieldValueB(const LiteralFieldValueB &);
     LiteralFieldValueB(const string& value);

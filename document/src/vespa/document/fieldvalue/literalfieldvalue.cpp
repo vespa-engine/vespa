@@ -8,6 +8,17 @@ namespace document {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(LiteralFieldValueB, FieldValue);
 
+LiteralFieldValueB::LiteralFieldValueB() :
+    FieldValue(),
+    _value(),
+    _backing(),
+    _altered(true)
+{
+    _value = _backing;
+}
+
+LiteralFieldValueB::~LiteralFieldValueB() { }
+
 LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
     : FieldValue(other),
       _value(),

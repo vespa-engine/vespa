@@ -9,6 +9,7 @@
 #include <boost/cast.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/numeric/conversion/cast.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace document {
 
