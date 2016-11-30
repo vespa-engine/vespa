@@ -4,6 +4,7 @@ vespa_add_library(storage_visitor OBJECT
     ${CMAKE_CURRENT_BINARY_DIR}/config-stor-visitor.h
     visitor.cpp
     visitormanager.cpp
+    visitormetrics.cpp
     visitorthread.cpp
     testvisitor.cpp
     recoveryvisitor.cpp

@@ -63,6 +63,7 @@ vespa_add_library(searchlib_attribute OBJECT
     multistringpostattribute.cpp
     multivalueattribute.cpp
     multivalueattributesaver.cpp
+    not_implemented_attribute.cpp
     numericbase.cpp
     postingchange.cpp
     postinglistattribute.cpp

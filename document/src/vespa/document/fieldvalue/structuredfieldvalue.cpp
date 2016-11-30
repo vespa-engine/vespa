@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/structuredfieldvalue.h>
+#include <vespa/document/fieldvalue/structuredfieldvalue.hpp>
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -171,5 +171,11 @@ StructuredFieldValue::onIterateNested(
         return status;
     }
 }
+
+using ConstCharP = const char *;
+template void StructuredFieldValue::set(const vespalib::stringref & field, const int32_t & value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, const int64_t & value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, const double & value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, const ConstCharP & value);
 
 } // document

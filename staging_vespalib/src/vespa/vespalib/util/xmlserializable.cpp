@@ -441,6 +441,7 @@ template XmlAttribute::XmlAttribute(const std::string &, const vespalib::string 
 template XmlAttribute::XmlAttribute(const std::string &, const vespalib::stringref &, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, const CharP &, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, const ConstCharP &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const bool &, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, const int16_t &, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, const int32_t &, unsigned int);
 template XmlAttribute::XmlAttribute(const std::string &, const int64_t &, unsigned int);

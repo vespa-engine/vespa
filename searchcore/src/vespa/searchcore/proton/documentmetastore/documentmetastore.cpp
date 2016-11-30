@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.documentmetastore.documentmetastore");
 #include "documentmetastore.h"
 #include "search_context.h"
 
@@ -15,6 +12,7 @@ LOG_SETUP(".proton.documentmetastore.documentmetastore");
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>

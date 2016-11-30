@@ -6,8 +6,9 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/config/config.h>
-#include <iostream>
 #include <vespa/config/print/ostreamconfigwriter.h>
+#include <iostream>
+#include <sstream>
 
 namespace storage {
 

@@ -1,13 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include "floatbase.h"
+#include "floatbase.hpp"
+#include "attributevector.hpp"
 #include <vespa/searchlib/common/sort.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.floatbase");
 
 namespace search {
 
@@ -87,4 +83,13 @@ bool FloatingPointAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
     return retval;
 }
 
+const char *
+FloatingPointAttribute::getString(DocId doc, char * s, size_t sz) const {
+    double v = getFloat(doc);
+    snprintf(s, sz, "%g", v);
+    return s;
+}
+
+template class FloatingPointAttributeTemplate<float>;
+template class FloatingPointAttributeTemplate<double>;
 }

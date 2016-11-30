@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include <vespa/vdslib/distribution/idealnodecalculator.h>
+#include "idealnodecalculator.h"
 
 namespace storage {
 namespace lib {
@@ -16,48 +16,17 @@ class IdealNodeCalculatorImpl : public IdealNodeCalculatorConfigurable {
     const ClusterState* _clusterState;
 
 public:
-    IdealNodeCalculatorImpl()
-        : _distribution(0),
-          _clusterState(0)
-    {
-        initUpStateMapping();
-    }
+    IdealNodeCalculatorImpl();
+    ~IdealNodeCalculatorImpl();
 
-    virtual void setDistribution(const Distribution& d) {
-        _distribution = &d;
-    }
-    virtual void setClusterState(const ClusterState& cs) {
-        _clusterState = &cs;
-    }
+    void setDistribution(const Distribution& d) override;
+    void setClusterState(const ClusterState& cs) override;
 
-    virtual IdealNodeList getIdealNodes(const NodeType& nodeType,
-                                        const document::BucketId& bucket,
-                                        UpStates upStates) const
-    {
-        assert(_clusterState != 0);
-        assert(_distribution != 0);
-        std::vector<uint16_t> nodes;
-        _distribution->getIdealNodes(nodeType, *_clusterState, bucket, nodes,
-                                     _upStates[upStates]);
-        IdealNodeList list;
-        for (uint32_t i=0; i<nodes.size(); ++i) {
-            list.push_back(Node(nodeType, nodes[i]));
-        }
-        return list;
-    }
-
+    IdealNodeList getIdealNodes(const NodeType& nodeType,
+                                const document::BucketId& bucket,
+                                UpStates upStates) const override;
 private:
-    void initUpStateMapping() {
-        _upStates.clear();
-        _upStates.resize(UP_STATE_COUNT);
-        _upStates[UpInit] = "ui";
-        _upStates[UpInitMaintenance] = "uim";
-        for (uint32_t i=0; i<_upStates.size(); ++i) {
-            if (_upStates[i] == 0) throw vespalib::IllegalStateException(
-                    "Failed to initialize up state. Code likely not updated "
-                    "after another upstate was added.", VESPA_STRLOC);
-        }
-    }
+    void initUpStateMapping();
 };
 
 } // lib

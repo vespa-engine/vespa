@@ -1,11 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include "storagelinkqueued.h"
+#include "storagelinkqueued.hpp"
 #include <vespa/log/log.h>
 
 LOG_SETUP(".application.link.queued");
 
 namespace storage {
+
+StorageLinkQueued::StorageLinkQueued(const std::string& name, framework::ComponentRegister& cr)
+    : StorageLink(name),
+      _compReg(cr),
+      _replyDispatcher(*this),
+      _commandDispatcher(*this),
+      _closeState(0)
+{ }
 
 StorageLinkQueued::~StorageLinkQueued()
 {
@@ -60,5 +67,7 @@ void StorageLinkQueued::logError(const char* err) {
 void StorageLinkQueued::logDebug(const char* err) {
     LOG(info, "%s", err);
 };
+
+template class StorageLinkQueued::Dispatcher<storage::api::StorageMessage>;
 
 } // storage

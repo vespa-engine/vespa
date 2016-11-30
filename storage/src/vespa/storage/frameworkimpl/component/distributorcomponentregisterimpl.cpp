@@ -1,12 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/frameworkimpl/component/distributorcomponentregisterimpl.h>
-
-#include <vespa/log/log.h>
+#include "distributorcomponentregisterimpl.h"
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
-
-LOG_SETUP(".storage.component.register.distributor");
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace storage {
 
@@ -25,8 +20,7 @@ DistributorComponentRegisterImpl::handleNewState()
 }
 
 void
-DistributorComponentRegisterImpl::registerDistributorComponent(
-        DistributorManagedComponent& smc)
+DistributorComponentRegisterImpl::registerDistributorComponent(DistributorManagedComponent& smc)
 {
     vespalib::LockGuard lock(_componentLock);
     _components.push_back(&smc);
@@ -53,8 +47,7 @@ DistributorComponentRegisterImpl::setTimeCalculator(UniqueTimeCalculator& utc)
 }
 
 void
-DistributorComponentRegisterImpl::setDistributorConfig(
-        const DistributorConfig& c)
+DistributorComponentRegisterImpl::setDistributorConfig(const DistributorConfig& c)
 {
     vespalib::LockGuard lock(_componentLock);
     _distributorConfig = c;

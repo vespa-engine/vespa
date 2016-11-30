@@ -1,9 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "integerbase.hpp"
+#include "integerbase.h"
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace search {
+
+using largeint_t = attribute::IAttributeVector::largeint_t;
 
 template<typename T>
 uint32_t

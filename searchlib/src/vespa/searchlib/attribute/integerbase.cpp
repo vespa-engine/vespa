@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "integerbase.hpp"
+#include "attributevector.hpp"
 #include <vespa/searchlib/common/sort.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
 namespace search {
@@ -82,5 +82,10 @@ bool IntegerAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
     }
     return retval;
 }
+
+template class IntegerAttributeTemplate<int8_t>;
+template class IntegerAttributeTemplate<int16_t>;
+template class IntegerAttributeTemplate<int32_t>;
+template class IntegerAttributeTemplate<int64_t>;
 
 }

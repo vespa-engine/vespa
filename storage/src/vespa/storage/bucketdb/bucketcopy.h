@@ -92,11 +92,7 @@ public:
 
     void print(std::ostream&, bool verbose, const std::string& indent) const;
 
-    std::string toString() const {
-        std::ostringstream ost;
-        print(ost, true, "");
-        return ost.str();
-    }
+    std::string toString() const;
 
     bool operator==(const BucketCopy& other) const {
         return

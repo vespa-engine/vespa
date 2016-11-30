@@ -10,6 +10,7 @@
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/storage/bucketdb/judyarray.h>
 #include <iostream>
+#include <sstream>
 
 namespace storage {
 
@@ -285,21 +286,16 @@ std::vector<std::string> getFileNames(const std::string& testdir) {
         std::string name(reinterpret_cast<char*>(&entry->d_name));
         assert(name.size() > 0);
         if (name.size() < 27) {
-            // std::cerr << "Ignoring file with too short name: " << name
-            //           << "\n";
             continue;
         }
         if (name.substr(0, 8) != "storage.") {
-            // std::cerr << "Ignoring non-storage file: " << name << "\n";
             continue;
         }
         std::string::size_type pos = name.find('.', 8);
         if (pos == std::string::npos) {
-            // std::cerr << "Ignoring file without two dots: " << name << "\n";
             continue;
         }
         if (name.substr(pos) != ".shell.filelist.gz") {
-            // std::cerr << "Ignoring file not filelisting: " << name << "\n";
             continue;
         }
         files.push_back(name);
@@ -359,8 +355,6 @@ struct Analyzer {
                          uint16_t nodeIndex, uint16_t diskIndex)
     {
         (void) name; (void) size; (void) nodeIndex; (void) diskIndex;
-        //std::cerr << "Recording dir " << nodeIndex << " " << diskIndex << ": "
-        //          << size << ' ' << name << "\n";
     }
     void report() {
         std::cout << "Found " << bucketdb.size() << " buckets\n";

@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/bucketdb/bucketcopy.h>
+#include "bucketcopy.h"
 
 namespace storage {
 
@@ -17,6 +17,7 @@ private:
 
 public:
     BucketInfo();
+    ~BucketInfo();
 
     /**
      * @return Returns the last time when this bucket was "garbage collected".
@@ -137,11 +138,7 @@ public:
     */
     void clear() { _nodes.clear(); }
 
-    std::string toString() const {
-        std::ostringstream ost;
-        print(ost, true, "");
-        return ost.str();
-    };
+    std::string toString() const;
 
     bool verifyLegal() const { return true; }
 

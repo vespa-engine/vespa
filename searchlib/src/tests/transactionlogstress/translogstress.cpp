@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchlib/util/rand48.h>
@@ -10,6 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <vespa/log/log.h>
 LOG_SETUP("translogstress");
 
 using document::ByteBuffer;
