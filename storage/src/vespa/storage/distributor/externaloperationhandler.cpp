@@ -44,8 +44,6 @@ ExternalOperationHandler::ExternalOperationHandler(
         DistributorComponentRegister& compReg)
     : ManagedBucketSpaceComponent(owner, bucketSpace, compReg,
                                   "External operation handler"),
-      _visitorMetrics(getLoadTypes()->getMetricLoadTypes(),
-                      *&VisitorMetricSet(NULL)),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached() // At epoch
 {
@@ -264,7 +262,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
                                 *this,
                                 cmd,
                                 visitorConfig,
-                                &_visitorMetrics[cmd->getLoadType()]));
+                                getMetrics().visits[cmd->getLoadType()]));
     return true;
 }
 

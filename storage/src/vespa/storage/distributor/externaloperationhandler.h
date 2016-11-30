@@ -5,7 +5,6 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
-#include <vespa/storage/distributor/visitormetricsset.h>
 #include <vespa/storage/distributor/managed_bucket_space_component.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageframework/storageframework.h>
@@ -53,7 +52,6 @@ public:
     }
 
 private:
-    metrics::LoadMetric<VisitorMetricSet> _visitorMetrics;
     const MaintenanceOperationGenerator& _operationGenerator;
     Operation::SP _op;
     TimePoint _rejectFeedBeforeTimeReached;

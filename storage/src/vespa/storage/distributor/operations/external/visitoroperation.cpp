@@ -12,6 +12,7 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/bucketownership.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>
+#include <vespa/storage/distributor/visitormetricsset.h>
 
 namespace storage {
 
@@ -48,14 +49,15 @@ VisitorOperation::VisitorOperation(
         DistributorComponent& owner,
         const api::CreateVisitorCommand::SP& m,
         const Config& config,
-        VisitorMetricSet* metric)
+        VisitorMetricSet& metrics)
     : Operation(),
       _owner(owner),
       _msg(m),
       _sentReply(false),
       _config(config),
-      _metrics(metric),
-      _trace(TRACE_SOFT_MEMORY_LIMIT)
+      _metrics(metrics),
+      _trace(TRACE_SOFT_MEMORY_LIMIT),
+      _operationTimer(owner.getClock())
 {
     const std::vector<document::BucketId>& buckets = m->getBuckets();
 
@@ -72,8 +74,6 @@ VisitorOperation::VisitorOperation(
     if (_toTime == 0) {
         _toTime = owner.getUniqueTimestamp();
     }
-
-    _startVisitorTime = owner.getClock().getTimeInMillis();
 }
 
 VisitorOperation::~VisitorOperation()
@@ -124,14 +124,12 @@ VisitorOperation::getLastBucketVisited()
 uint64_t
 VisitorOperation::timeLeft() const noexcept
 {
-    framework::MilliSecTime now = _owner.getClock().getTimeInMillis();
-    framework::MilliSecTime timeSpent = now - _startVisitorTime;
+    const auto elapsed = _operationTimer.getElapsedTime();
+    framework::MilliSecTime timeSpent(
+            std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
 
     LOG(spam,
-        "Checking if visitor has timed out: now=%zu, start=%zu, "
-        "diff=%zu, timeout=%u",
-        now.getTime(),
-        _startVisitorTime.getTime(),
+        "Checking if visitor has timed out: elapsed=%zu ms, timeout=%u ms",
         timeSpent.getTime(),
         _msg->getTimeout());
 
@@ -987,10 +985,7 @@ VisitorOperation::sendReply(const api::ReturnCode& code, DistributorMessageSende
 
         sender.sendReply(reply);
 
-        if (_metrics) {
-            framework::MilliSecTime timeNow(_owner.getClock().getTimeInMillis());
-            _metrics->latency.addValue((timeNow - _startVisitorTime).getTime());
-        }
+        _metrics.latency.addValue(_operationTimer.getElapsedTimeAsDouble());
         _sentReply = true;
     }
 }
