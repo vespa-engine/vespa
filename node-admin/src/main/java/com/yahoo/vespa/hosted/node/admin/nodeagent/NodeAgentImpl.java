@@ -326,6 +326,8 @@ public class NodeAgentImpl implements NodeAgent {
                 stopServices(containerName);
             }
             dockerOperations.removeContainer(nodeSpec, existingContainer.get(), orchestrator);
+            metricReceiver.unsetMetricsForContainer(hostname);
+            lastCpuMetric = new CpuUsageReporter();
             return true;
         }
         return false;
@@ -400,11 +402,6 @@ public class NodeAgentImpl implements NodeAgent {
 
         synchronized (monitor) {
             if (!nodeSpec.equals(lastNodeSpec)) {
-                // If we transition from active, to not active state, unset the current metrics
-                if (lastNodeSpec != null && lastNodeSpec.nodeState == Node.State.active && nodeSpec.nodeState != Node.State.active) {
-                    metricReceiver.unsetMetricsForContainer(hostname);
-                    lastCpuMetric = new CpuUsageReporter();
-                }
                 addDebugMessage("Loading new node spec: " + nodeSpec.toString());
                 lastNodeSpec = nodeSpec;
             }
@@ -497,8 +494,8 @@ public class NodeAgentImpl implements NodeAgent {
         if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
 
         Dimensions dimensions = dimensionsBuilder.build();
-        long currentCpuContainerTotalTime = (long) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage");
-        long currentCpuSystemTotalTime = (long) stats.getCpuStats().get("system_cpu_usage");
+        long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
+        long currentCpuSystemTotalTime = ((Number) stats.getCpuStats().get("system_cpu_usage")).longValue();
 
         double cpuPercentage = lastCpuMetric.getCpuUsagePercentage(currentCpuContainerTotalTime, currentCpuSystemTotalTime);
         metricReceiver.declareGauge(dimensions, "node.cpu.busy.pct").sample(cpuPercentage);
@@ -587,10 +584,6 @@ public class NodeAgentImpl implements NodeAgent {
             long deltaSystemUsage = currentSystemUsage - totalSystemUsage;
             double cpuUsagePct = (deltaSystemUsage == 0 || totalSystemUsage == 0) ?
                     0 : 100.0 * (currentContainerUsage - totalContainerUsage) / deltaSystemUsage;
-
-            logger.info("Previous container usage: " + totalContainerUsage + ", previous system usage: " +
-                    totalSystemUsage + " | Current container usage: " + currentContainerUsage +
-                    ", current system usage: " + currentSystemUsage + " -> CPU usage: " + cpuUsagePct);
 
             totalContainerUsage = currentContainerUsage;
             totalSystemUsage = currentSystemUsage;
