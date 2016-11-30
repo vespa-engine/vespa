@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/metrics/valuemetric.h>
 #include <chrono>
 

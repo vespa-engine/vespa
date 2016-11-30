@@ -5,8 +5,9 @@
    @date 2004-03-15
 */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/util/bytebuffer.h>
+#include "bytebuffer.h"
+#include "bufferexceptions.h"
+#include "stringutil.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
 

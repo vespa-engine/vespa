@@ -28,14 +28,7 @@ public:
     typedef std::unique_ptr<LiteralFieldValueB> UP;
     typedef string value_type;
 
-    LiteralFieldValueB() :
-        FieldValue(),
-        _value(),
-        _backing(),
-        _altered(true)
-    {
-        _value = _backing;
-    }
+    LiteralFieldValueB();
 
     LiteralFieldValueB(const LiteralFieldValueB &);
     LiteralFieldValueB(const string& value);
@@ -60,26 +53,25 @@ public:
         _value = _backing;
         _altered = true;
     }
-    virtual size_t hash() const { return vespalib::hashValue(_value.c_str()); }
+    size_t hash() const override { return vespalib::hashValue(_value.c_str()); }
     void setValue(const char* val, size_t size) { setValue(stringref(val, size)); }
 
-        // FieldValue implementation.
-    virtual int compare(const FieldValue& other) const;
+    int compare(const FieldValue& other) const override;
 
-    virtual vespalib::string getAsString() const;
-    virtual std::pair<const char*, size_t> getAsRaw() const;
+    vespalib::string getAsString() const override;
+    std::pair<const char*, size_t> getAsRaw() const override;
 
-    virtual void printXml(XmlOutputStream& out) const;
-    virtual void print(std::ostream& out, bool verbose,
-                       const std::string& indent) const;
-    virtual FieldValue& assign(const FieldValue&);
-    virtual bool hasChanged() const { return _altered; }
+    void printXml(XmlOutputStream& out) const override;
+    void print(std::ostream& out, bool verbose,
+                       const std::string& indent) const override;
+    FieldValue& assign(const FieldValue&) override;
+    bool hasChanged() const  override{ return _altered; }
 
-    virtual FieldValue& operator=(const vespalib::stringref &);
-    virtual FieldValue& operator=(int32_t);
-    virtual FieldValue& operator=(int64_t);
-    virtual FieldValue& operator=(float);
-    virtual FieldValue& operator=(double);
+    FieldValue& operator=(const vespalib::stringref &) override;
+    FieldValue& operator=(int32_t) override;
+    FieldValue& operator=(int64_t) override;
+    FieldValue& operator=(float) override;
+    FieldValue& operator=(double) override;
 protected:
     void syncBacking() const __attribute__((noinline));
     void sync() const {
@@ -97,28 +89,14 @@ private:
 template<typename SubClass, int type, bool addZeroTerm>
 class LiteralFieldValue : public LiteralFieldValueB {
 private:
-    virtual bool getAddZeroTerm() const { return addZeroTerm; }
+    bool getAddZeroTerm() const  override{ return addZeroTerm; }
 public:
     typedef std::unique_ptr<SubClass> UP;
 
     LiteralFieldValue() : LiteralFieldValueB() { }
     LiteralFieldValue(const string& value) : LiteralFieldValueB(value) { }
-    virtual const DataType *getDataType() const;
+    const DataType *getDataType() const override;
 };
-
-template<typename SubClass, int type, bool addZeroTerm>
-const DataType *
-LiteralFieldValue<SubClass, type, addZeroTerm>::getDataType() const
-{
-    switch (type) {
-    case DataType::T_URI:    return DataType::URI;
-    case DataType::T_STRING: return DataType::STRING;
-    case DataType::T_RAW:    return DataType::RAW;
-    default:
-        throw vespalib::IllegalStateException(vespalib::make_string(
-                        "Illegal literal type id %i", type), VESPA_STRLOC);
-    }
-}
 
 } // document
 

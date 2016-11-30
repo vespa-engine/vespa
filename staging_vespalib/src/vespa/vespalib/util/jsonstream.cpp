@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "jsonstream.h"
+#include "jsonexception.h"
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace vespalib {
-
-VESPA_IMPLEMENT_EXCEPTION_SPINE(JsonStreamException);
 
 const char*
 JsonStream::getStateName(const State& s) {

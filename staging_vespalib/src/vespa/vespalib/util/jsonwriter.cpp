@@ -257,9 +257,9 @@ JSONWriter::appendJSON(const vespalib::stringref & json)
 
 JSONStringer::JSONStringer() :
     JSONWriter(),
-    _oss()
+    _oss(std::make_unique<asciistream>())
 {
-    setOutputStream(_oss);
+    setOutputStream(*_oss);
 }
 
 JSONStringer &
@@ -267,8 +267,15 @@ JSONStringer::clear()
 {
     JSONWriter::clear();
     // clear the string stream as well
-    _oss.clear();
+    _oss->clear();
     return *this;
+}
+
+JSONStringer::~JSONStringer() { }
+
+stringref
+JSONStringer::toString() const {
+    return _oss->str();
 }
 
 }

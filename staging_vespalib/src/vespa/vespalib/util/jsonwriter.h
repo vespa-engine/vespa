@@ -6,6 +6,8 @@
 
 namespace vespalib {
 
+class asciistream;
+
 /**
  * If you want a simpler interface to write JSON with, look at the JsonStream
  * class in the same directory as this class, this uses this class to make a
@@ -18,11 +20,11 @@ private:
         OBJECT,
         ARRAY
     };
-    vespalib::asciistream * _os;
-    std::vector<State>      _stack;
-    bool                    _comma;
-    bool                    _pretty;
-    uint32_t                _indent;
+    asciistream         * _os;
+    std::vector<State>    _stack;
+    bool                  _comma;
+    bool                  _pretty;
+    uint32_t              _indent;
 
     void push(State next);
     void pop(State expected);
@@ -33,41 +35,42 @@ private:
 
 public:
     JSONWriter();
-    JSONWriter(vespalib::asciistream & output);
+    JSONWriter(asciistream & output);
 
-    JSONWriter & setOutputStream(vespalib::asciistream & output);
+    JSONWriter & setOutputStream(asciistream & output);
     JSONWriter & clear();
     JSONWriter & beginObject();
     JSONWriter & endObject();
     JSONWriter & beginArray();
     JSONWriter & endArray();
     JSONWriter & appendNull();
-    JSONWriter & appendKey(const vespalib::stringref & str);
+    JSONWriter & appendKey(const stringref & str);
     JSONWriter & appendBool(bool v);
     JSONWriter & appendDouble(double v);
     JSONWriter & appendFloat(float v);
     JSONWriter & appendInt64(int64_t v);
     JSONWriter & appendUInt64(uint64_t v);
-    JSONWriter & appendString(const vespalib::stringref & str);
-    JSONWriter & appendJSON(const vespalib::stringref & json);
+    JSONWriter & appendString(const stringref & str);
+    JSONWriter & appendJSON(const stringref & json);
 
     void setPretty() { _pretty = true; };
 };
 
 class JSONStringer : public JSONWriter {
 private:
-    vespalib::asciistream _oss;
+    std::unique_ptr<asciistream> _oss;
 
 public:
     JSONStringer();
+    ~JSONStringer();
     JSONStringer & clear();
-    vespalib::stringref toString() { return _oss.str(); }
+    stringref toString() const;
 };
 
 template<typename T>
 struct JSONPrinter
 {
-    static void printJSON(vespalib::JSONWriter& w, T v) {
+    static void printJSON(JSONWriter& w, T v) {
         w.appendInt64(v);
     }
 };
@@ -75,7 +78,7 @@ struct JSONPrinter
 template<>
 struct JSONPrinter<uint64_t>
 {
-    static void printJSON(vespalib::JSONWriter& w, uint64_t v) {
+    static void printJSON(JSONWriter& w, uint64_t v) {
         w.appendUInt64(v);
     }
 };
@@ -83,7 +86,7 @@ struct JSONPrinter<uint64_t>
 template<>
 struct JSONPrinter<float>
 {
-    static void printJSON(vespalib::JSONWriter& w, float v) {
+    static void printJSON(JSONWriter& w, float v) {
         w.appendDouble(v);
     }
 };
@@ -91,11 +94,9 @@ struct JSONPrinter<float>
 template<>
 struct JSONPrinter<double>
 {
-    static void printJSON(vespalib::JSONWriter& w, double v) {
+    static void printJSON(JSONWriter& w, double v) {
         w.appendDouble(v);
     }
 };
 
-
 }
-

@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/util/serializable.h>
-
-#include <stdio.h>
-#include <vespa/document/util/bytebuffer.h>
+#include "serializable.h"
+#include "bufferexceptions.h"
+#include "serializableexceptions.h"
+#include "bytebuffer.h"
 
 namespace document {
 
@@ -45,5 +44,42 @@ SerializeException::SerializeException(
 {
 }
 
+void
+Serializable::serialize(ByteBuffer& buffer) const {
+    int pos = buffer.getPos();
+    try{
+        onSerialize(buffer);
+    } catch (...) {
+        buffer.setPos(pos);
+        throw;
+    }
+}
+
+void
+Deserializable::deserialize(const DocumentTypeRepo &repo, ByteBuffer& buffer) {
+    int pos = buffer.getPos();
+    try {
+        onDeserialize(repo, buffer);
+    } catch (const DeserializeException &) {
+        buffer.setPos(pos);
+        throw;
+    } catch (const BufferOutOfBoundsException &) {
+        buffer.setPos(pos);
+        throw;
+    }
+}
+void
+VersionedDeserializable::deserialize(ByteBuffer& buffer, uint16_t version) {
+    int pos = buffer.getPos();
+    try{
+        onDeserialize(buffer, version);
+    } catch (const DeserializeException &) {
+        buffer.setPos(pos);
+        throw;
+    } catch (const BufferOutOfBoundsException &) {
+        buffer.setPos(pos);
+        throw;
+    }
+}
 
 }

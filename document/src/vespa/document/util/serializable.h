@@ -12,10 +12,6 @@
 
 #pragma once
 
-#include <map>
-#include <vector>
-
-#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/objects/identifiable.h>
 
@@ -24,22 +20,6 @@
 
 namespace document {
 class DocumentTypeRepo;
-
-class DeserializeException : public vespalib::IoException {
-public:
-    DeserializeException(const vespalib::string& msg, const vespalib::string& location = "");
-    DeserializeException(const vespalib::string& msg, const vespalib::Exception& cause,
-                         const vespalib::string& location = "");
-    VESPA_DEFINE_EXCEPTION_SPINE(DeserializeException)
-};
-
-class SerializeException : public vespalib::IoException {
-public:
-    SerializeException(const vespalib::string& msg, const vespalib::string& location = "");
-    SerializeException(const vespalib::string& msg, const vespalib::Exception& cause,
-                       const vespalib::string& location = "");
-    VESPA_DEFINE_EXCEPTION_SPINE(SerializeException)
-};
 
 /**
  * Base class for classes that can be converted into a bytestream,
@@ -72,15 +52,7 @@ public:
      *                           serialized.
      * @throw BufferOutOfBoundsException If buffer does not have enough space.
      */
-    void serialize(ByteBuffer& buffer) const {
-        int pos = buffer.getPos();
-        try{
-            onSerialize(buffer);
-        } catch (...) {
-            buffer.setPos(pos);
-            throw;
-        }
-    }
+    void serialize(ByteBuffer& buffer) const;
 
     /**
      * Creates a bytebuffer with enough space to serialize this instance
@@ -102,8 +74,7 @@ public:
 class Deserializable : public vespalib::Cloneable, public Serializable
 {
 protected:
-    virtual void onDeserialize(const DocumentTypeRepo &repo,
-                               ByteBuffer& buffer) = 0;
+    virtual void onDeserialize(const DocumentTypeRepo &repo, ByteBuffer& buffer) = 0;
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(Deserializable);
@@ -120,18 +91,7 @@ public:
      * @throw BufferOutOfBoundsException If instance wants to read more data
      *                                   than is available in the buffer.
      */
-    void deserialize(const DocumentTypeRepo &repo, ByteBuffer& buffer) {
-        int pos = buffer.getPos();
-        try {
-            onDeserialize(repo, buffer);
-        } catch (const DeserializeException &) {
-            buffer.setPos(pos);
-            throw;
-        } catch (const BufferOutOfBoundsException &) {
-            buffer.setPos(pos);
-            throw;
-        }
-    }
+    void deserialize(const DocumentTypeRepo &repo, ByteBuffer& buffer);
 };
 
 /**
@@ -163,18 +123,7 @@ public:
      * @throw BufferOutOfBoundsException If instance wants to read more data
      *                                   than is available in the buffer.
      */
-    void deserialize(ByteBuffer& buffer, uint16_t version) {
-        int pos = buffer.getPos();
-        try{
-            onDeserialize(buffer, version);
-        } catch (const DeserializeException &) {
-            buffer.setPos(pos);
-            throw;
-        } catch (const BufferOutOfBoundsException &) {
-            buffer.setPos(pos);
-            throw;
-        }
-    }
+    void deserialize(ByteBuffer& buffer, uint16_t version);
 };
 
 }
