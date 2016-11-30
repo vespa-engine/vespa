@@ -63,13 +63,13 @@ public class QueryCanonicalizer {
         if ( ! (item instanceof CompositeItem)) return CanonicalizationResult.success();
         CompositeItem composite = (CompositeItem)item;
 
-        collapseLevels(composite);
-        
-        if (composite.getItemCount() == 0) {
+        if (composite.getItemCount() == 0) { // TODO: Remove
             parentIterator.remove();
             return CanonicalizationResult.success();
         }
-            
+
+        collapseLevels(composite);
+
         if (composite instanceof EquivItem) {
             removeDuplicates((EquivItem) composite);
         }
@@ -94,14 +94,23 @@ public class QueryCanonicalizer {
     }
     
     private static void collapseLevels(CompositeItem composite) {
-        if ( ! (composite instanceof AndItem || composite instanceof OrItem)) return;
-
-        for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); ) {
-            Item child = i.next();
-            if (child.getClass() != composite.getClass()) continue;
-            i.remove();
-            moveChildren((CompositeItem)child, i);
+        if (composite instanceof RankItem || composite instanceof NotItem) {
+            collapseLevels(composite, composite.getItemIterator()); // collapse the first item only
         }
+        else if (composite instanceof AndItem || composite instanceof OrItem) {
+            for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
+                collapseLevels(composite, i);
+        }
+    }
+    
+    /** Collapse the next item of this iterator into the given parent, if appropriate */
+    private static void collapseLevels(CompositeItem composite, ListIterator<Item> i) {
+        if ( ! i.hasNext()) return;
+        Item child = i.next();
+        if (child == null) return;
+        if (child.getClass() != composite.getClass()) return;
+        i.remove();
+        moveChildren((CompositeItem) child, i);
     }
     
     private static void moveChildren(CompositeItem from, ListIterator<Item> toIterator) {

@@ -172,7 +172,7 @@ public class QueryCanonicalizerTestCase {
         assertCanonicalized("OR word1 word2 word3", null, root);
     }
 
-    /** Multiple levels of the same composite should collapse */
+    /** Multiple levels of the same AND/OR should collapse */
     @Test
     public void testMultilevelCollapsing() {
         CompositeItem root = new AndItem();
@@ -181,6 +181,7 @@ public class QueryCanonicalizerTestCase {
         CompositeItem l3 = new AndItem();
         
         root.addItem(l1);
+
         l1.addItem(new WordItem("l1i1"));
         l1.addItem(l2);
         
@@ -203,15 +204,41 @@ public class QueryCanonicalizerTestCase {
         CompositeItem l3 = new AndItem();
 
         root.addItem(l1);
+
         l1.addItem(new WordItem("l1i1"));
-
         l1.addItem(l2);
-        l2.addItem(new WordItem("l2i1"));
 
+        l2.addItem(new WordItem("l2i1"));
         l2.addItem(l3);
+
         l3.addItem(new WordItem("l3i1"));
 
         assertCanonicalized("AND l1i1 (OR l2i1 l3i1)", null, root);
+    }
+
+    /** Multiple levels of RANK should collapse */
+    @Test
+    public void testMultilevelRankCollapsing() {
+        CompositeItem root = new RankItem();
+        CompositeItem l1 = new RankItem();
+        CompositeItem l2 = new RankItem();
+        CompositeItem l3 = new RankItem();
+        CompositeItem l4 = new RankItem();
+
+        root.addItem(l1);
+
+        l1.addItem(l2);
+        l1.addItem(new WordItem("l1"));
+
+        l2.addItem(l3);
+        l2.addItem(new WordItem("l2"));
+
+        l3.addItem(l4);
+        l3.addItem(new WordItem("l3"));
+
+        l4.addItem(new WordItem("l4"));
+
+        assertCanonicalized("RANK l4 l3 l2 l1", null, root);
     }
 
     @Test
