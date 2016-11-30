@@ -67,6 +67,9 @@ public class ServletResponseController {
                 new ServletOutputStreamWriter(servletResponse.getOutputStream(), executor, metricReporter);
     }
 
+    public void registerWriteListener() {
+        servletOutputStreamWriter.registerWriteListener();
+    }
 
     private static int getStatusCode(Throwable t) {
         if (t instanceof BindingNotFoundException) {
@@ -147,6 +150,7 @@ public class ServletResponseController {
             servletResponse.setContentLength(errorContent.length);
             servletOutputStreamWriter.sendErrorContentAndCloseAsync(ByteBuffer.wrap(errorContent));
         } else {
+            servletResponse.setContentLength(0);
             servletOutputStreamWriter.close(null);
         }
     }
