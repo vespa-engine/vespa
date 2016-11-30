@@ -90,6 +90,7 @@ class WebSocketRequestDispatch extends WebSocketAdapter {
         this.metricCtx = metricCtx;
     }
 
+    @SuppressWarnings("try")
     public WebSocketRequestDispatch dispatch(final ServletUpgradeRequest servletRequest,
                                              final ServletUpgradeResponse servletResponse) {
         final HttpRequest jdiscRequest = WebSocketRequestFactory.newJDiscRequest(container, servletRequest);

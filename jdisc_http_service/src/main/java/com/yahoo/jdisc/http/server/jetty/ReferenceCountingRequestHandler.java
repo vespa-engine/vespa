@@ -25,6 +25,7 @@ import java.util.logging.Logger;
  *
  * @author bakksjo
  */
+@SuppressWarnings("try")
 class ReferenceCountingRequestHandler implements RequestHandler {
 
     private static final Logger log = Logger.getLogger(ReferenceCountingRequestHandler.class.getName());

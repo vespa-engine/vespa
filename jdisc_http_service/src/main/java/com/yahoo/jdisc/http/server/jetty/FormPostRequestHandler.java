@@ -86,6 +86,7 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
         completionHandler.completed();
     }
 
+    @SuppressWarnings("try")
     @Override
     public void close(final CompletionHandler completionHandler) {
         try (final ResourceReference ref = requestReference) {
