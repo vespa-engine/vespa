@@ -63,10 +63,8 @@ public class QueryCanonicalizer {
         if ( ! (item instanceof CompositeItem)) return CanonicalizationResult.success();
         CompositeItem composite = (CompositeItem)item;
 
-        if (composite.getItemCount() == 0) { // TODO: Remove
-            parentIterator.remove();
-            return CanonicalizationResult.success();
-        }
+        boolean replacedByFalse = collapseFalse(composite, parentIterator);
+        if (replacedByFalse) return CanonicalizationResult.success();
 
         collapseLevels(composite);
 
@@ -118,6 +116,50 @@ public class QueryCanonicalizer {
             toIterator.add(i.next());
     }
 
+    /** 
+     * Handle FALSE items in the immediate children of this
+     * 
+     * @return true if this composite was replaced by FALSE
+     */
+    private static boolean collapseFalse(CompositeItem composite, ListIterator<Item> parentIterator) {
+        if ( ! containsFalse(composite)) return false;
+
+        if (composite instanceof AndItem) { // AND false is always false
+            parentIterator.set(new FalseItem());
+            return true;
+        }
+        else if (composite instanceof OrItem) { // OR false is unnecessary
+            removeFalseIn(composite.getItemIterator());
+            return false;
+        }
+        else if (composite instanceof NotItem || composite instanceof RankItem) { // collapse if first, remove otherwise
+            ListIterator<Item> i = composite.getItemIterator();
+            if (i.next() instanceof FalseItem) {
+                parentIterator.set(new FalseItem());
+                return true;
+            }
+            else {
+                removeFalseIn(i);
+                return false;
+            }
+        }
+        else { // other composites not handled
+            return false;
+        }
+    }
+    
+    private static boolean containsFalse(CompositeItem composite) {
+        for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
+            if (i.next() instanceof FalseItem) return true;
+        return false;
+    }
+
+    private static void removeFalseIn(ListIterator<Item> iterator) {
+        while (iterator.hasNext())
+            if (iterator.next() instanceof FalseItem)
+                iterator.remove();
+    }
+    
     private static void removeDuplicates(EquivItem composite) {
         int origSize = composite.getItemCount();
         for (int i = origSize - 1; i >= 1; --i) {
