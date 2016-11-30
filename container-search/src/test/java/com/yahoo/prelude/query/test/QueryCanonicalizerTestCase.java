@@ -287,6 +287,38 @@ public class QueryCanonicalizerTestCase {
         assertCanonicalized("i1", null, root);
     }
 
+    @Test
+    public void testCollapseFalseItemInNot() {
+        CompositeItem root = new NotItem();
+        root.addItem(new FalseItem()); // false ANDNOT ... is false
+        root.addItem(new WordItem("i1"));
+        assertCanonicalized("FALSE", null, root);
+    }
+
+    @Test
+    public void testRemoveFalseItemInNot() {
+        CompositeItem root = new NotItem();
+        root.addItem(new WordItem("i1"));
+        root.addItem(new FalseItem()); // ... ANDNOT false is redundant
+        assertCanonicalized("i1", null, root);
+    }
+
+    @Test
+    public void testCollapseFalseItemInRank() {
+        CompositeItem root = new RankItem();
+        root.addItem(new FalseItem()); // false RANK ... is false
+        root.addItem(new WordItem("i1"));
+        assertCanonicalized("FALSE", null, root);
+    }
+
+    @Test
+    public void testRemoveFalseItemInRank() {
+        CompositeItem root = new RankItem();
+        root.addItem(new WordItem("i1"));
+        root.addItem(new FalseItem()); // ... RANK false is redundant
+        assertCanonicalized("i1", null, root);
+    }
+
     /**
      * Tests that connexity is preserved by cloning and transferred to rank properties by preparing the query
      * (which strictly is an implementation detail which we should rather hide).

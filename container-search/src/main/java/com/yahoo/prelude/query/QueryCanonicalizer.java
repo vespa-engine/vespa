@@ -129,12 +129,23 @@ public class QueryCanonicalizer {
             return true;
         }
         else if (composite instanceof OrItem) { // OR false is unnecessary
-            for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
-                if (i.next() instanceof FalseItem)
-                    i.remove();
+            removeFalseIn(composite.getItemIterator());
             return false;
         }
-        return false;
+        else if (composite instanceof NotItem || composite instanceof RankItem) { // collapse if first, remove otherwise
+            ListIterator<Item> i = composite.getItemIterator();
+            if (i.next() instanceof FalseItem) {
+                parentIterator.set(new FalseItem());
+                return true;
+            }
+            else {
+                removeFalseIn(i);
+                return false;
+            }
+        }
+        else { // other composites not handled
+            return false;
+        }
     }
     
     private static boolean containsFalse(CompositeItem composite) {
@@ -143,6 +154,12 @@ public class QueryCanonicalizer {
         return false;
     }
 
+    private static void removeFalseIn(ListIterator<Item> iterator) {
+        while (iterator.hasNext())
+            if (iterator.next() instanceof FalseItem)
+                iterator.remove();
+    }
+    
     private static void removeDuplicates(EquivItem composite) {
         int origSize = composite.getItemCount();
         for (int i = origSize - 1; i >= 1; --i) {
