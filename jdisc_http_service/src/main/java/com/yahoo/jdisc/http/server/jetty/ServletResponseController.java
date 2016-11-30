@@ -147,6 +147,7 @@ public class ServletResponseController {
             servletResponse.setContentLength(errorContent.length);
             servletOutputStreamWriter.sendErrorContentAndCloseAsync(ByteBuffer.wrap(errorContent));
         } else {
+            servletResponse.setContentLength(0);
             servletOutputStreamWriter.close(null);
         }
     }
