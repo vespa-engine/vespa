@@ -11,7 +11,7 @@ using vespalib::tensor::TensorMapper;
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 namespace {
 
@@ -204,6 +204,6 @@ TensorAttribute::getRefCopy() const
     return RefCopyVector(&_refVector[0], &_refVector[0] + size);
 }
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

@@ -6,7 +6,7 @@
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 /**
  * Class for storing serialized tensors in memory, used by TensorAttribute.
@@ -42,6 +42,6 @@ public:
 };
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

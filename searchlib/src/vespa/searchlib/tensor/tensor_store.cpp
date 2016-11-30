@@ -6,7 +6,7 @@
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
 
@@ -20,6 +20,6 @@ TensorStore::~TensorStore()
 {
 }
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

@@ -21,7 +21,7 @@ using vespalib::tensor::MutableDenseTensorView;
 using vespalib::eval::ValueType;
 
 namespace search {
-namespace attribute {
+namespace tensor {
 
 constexpr size_t MIN_BUFFER_CLUSTERS = 1024;
 
@@ -282,5 +282,5 @@ DenseTensorStore::setTensor(const Tensor &tensor)
     abort();
 }
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 }  // namespace search

@@ -8,7 +8,7 @@
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 class DenseTensorStore;
 
@@ -34,6 +34,6 @@ public:
     virtual ~DenseTensorAttributeSaver();
 };
 
-} // namespace search::attribute
+} // namespace search::tensor
 
 } // namespace search

@@ -4,7 +4,7 @@
 #include "dense_tensor_attribute_executor.h"
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 
-using search::attribute::DenseTensorAttribute;
+using search::tensor::DenseTensorAttribute;
 using vespalib::eval::Tensor;
 using vespalib::eval::TensorValue;
 using vespalib::tensor::MutableDenseTensorView;

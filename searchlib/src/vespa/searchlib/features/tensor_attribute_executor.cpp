@@ -8,7 +8,7 @@ namespace search {
 namespace features {
 
 TensorAttributeExecutor::
-TensorAttributeExecutor(const search::attribute::TensorAttribute *attribute)
+TensorAttributeExecutor(const search::tensor::TensorAttribute *attribute)
     : _attribute(attribute),
       _tensor(),
       _emptyTensor(std::make_unique<vespalib::eval::TensorValue>(attribute->getEmptyTensor()))

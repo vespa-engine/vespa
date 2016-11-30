@@ -10,7 +10,7 @@ using search::IAttributeSaveTarget;
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 GenericTensorAttributeSaver::
 GenericTensorAttributeSaver(GenerationHandler::Guard &&guard,
@@ -47,6 +47,6 @@ GenericTensorAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
 }
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

@@ -60,9 +60,9 @@ AttributeFactory::createSingleStd(const vespalib::string & baseFileName, const C
         break;
     case BasicType::TENSOR:
         if (info.tensorType().is_dense()) {
-            ret.reset(new attribute::DenseTensorAttribute(baseFileName, info));
+            ret.reset(new tensor::DenseTensorAttribute(baseFileName, info));
         } else {
-            ret.reset(new attribute::GenericTensorAttribute(baseFileName, info));
+            ret.reset(new tensor::GenericTensorAttribute(baseFileName, info));
         }
         break;
     default:

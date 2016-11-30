@@ -9,18 +9,18 @@
 #include <vespa/vespalib/tensor/default_tensor.h>
 
 namespace search {
-namespace attribute { class TensorAttribute; }
+namespace tensor { class TensorAttribute; }
 namespace features {
 
 class TensorAttributeExecutor : public fef::FeatureExecutor
 {
 private:
-    const search::attribute::TensorAttribute *_attribute;
+    const search::tensor::TensorAttribute *_attribute;
     vespalib::eval::TensorValue::UP _tensor;
     vespalib::eval::TensorValue::UP _emptyTensor;
 
 public:
-    TensorAttributeExecutor(const search::attribute::TensorAttribute *attribute);
+    TensorAttributeExecutor(const search::tensor::TensorAttribute *attribute);
     virtual void execute(fef::MatchData &data);
 };
 

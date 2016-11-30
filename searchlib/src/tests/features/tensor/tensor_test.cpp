@@ -23,7 +23,7 @@ using namespace search::fef::indexproperties;
 using namespace search::fef::test;
 using namespace search::features;
 using search::AttributeFactory;
-using search::attribute::TensorAttribute;
+using search::tensor::TensorAttribute;
 using search::AttributeVector;
 using vespalib::eval::Function;
 using vespalib::eval::Value;

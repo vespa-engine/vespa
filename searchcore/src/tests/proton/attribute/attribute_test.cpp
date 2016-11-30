@@ -47,7 +47,7 @@ using namespace document;
 using namespace proton;
 using namespace search;
 using namespace search::index;
-using search::attribute::TensorAttribute;
+using search::tensor::TensorAttribute;
 using search::TuneFileAttributes;
 using search::index::DummyFileHeaderContext;
 using search::predicate::PredicateIndex;

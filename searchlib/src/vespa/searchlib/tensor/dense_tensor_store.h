@@ -9,7 +9,7 @@ namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 /**
  * Class for storing dense tensors with known bounds in memory, used
@@ -84,6 +84,6 @@ public:
 };
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search
