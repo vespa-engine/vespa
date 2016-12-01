@@ -3,9 +3,11 @@
 
 #include <vespa/vespalib/objects/serializer.h>
 #include <vespa/vespalib/objects/deserializer.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vespalib {
+
+class asciistream;
+
 class AsciiSerializer : public Serializer {
 public:
     AsciiSerializer(asciistream &stream) : _stream(stream) { }

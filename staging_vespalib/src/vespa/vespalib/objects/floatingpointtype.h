@@ -23,10 +23,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <iosfwd> // To get std::ostream for output operator
 
 namespace vespalib {
+
+class asciistream;
 
 template<typename Number>
 class FloatingPointType {

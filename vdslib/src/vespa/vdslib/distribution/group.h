@@ -17,7 +17,12 @@
 #include <vespa/config-stor-distribution.h>
 #include <vespa/vdslib/distribution/redundancygroupdistribution.h>
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+
+namespace vespalib {
+
+class asciistream;
+
+}
 
 namespace storage {
 namespace lib {

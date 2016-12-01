@@ -3,6 +3,7 @@
 #include "jsonstream.h"
 #include "jsonexception.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vespalib {
 
@@ -14,8 +15,7 @@ JsonStream::getStateName(const State& s) {
         case State::ARRAY: return "ArrayExpectingValue";
         case State::ROOT: return "RootExpectingArrayOrObjectStart";
     }
-    throw IllegalStateException("Control should not reach this point",
-                                VESPA_STRLOC);
+    throw IllegalStateException("Control should not reach this point", VESPA_STRLOC);
 }
 
 JsonStream::JsonStream(vespalib::asciistream& as, bool createIndents)

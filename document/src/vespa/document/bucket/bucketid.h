@@ -21,15 +21,13 @@
 
 #pragma once
 
-#include <vespa/fastos/types.h>
-#include <limits>
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.h>
 
 namespace vespalib {
     class nbostream;
+    class asciistream;
 }
 
 namespace document {

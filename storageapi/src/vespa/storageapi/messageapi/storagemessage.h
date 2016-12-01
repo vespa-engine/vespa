@@ -15,7 +15,6 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/messagebus/trace.h>
@@ -23,6 +22,10 @@
 #include <vespa/storageframework/generic/memory/memorytoken.h>
 #include <vespa/document/bucket/bucketid.h>
 
+
+namespace vespalib {
+    class asciistream;
+}
 // The following macros are provided as a way to write storage messages simply.
 // They implement the parts of the code that can easily be automaticly
 // generated.
@@ -67,7 +70,6 @@ public: \
     { \
         return std::unique_ptr<storage::api::StorageReply>(new reply(*this)); \
     }
-
 
 namespace storage {
 

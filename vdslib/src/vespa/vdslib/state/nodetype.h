@@ -9,9 +9,12 @@
  */
 #pragma once
 
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <stdint.h>
-#include <ostream>
+
+namespace vespalib {
+    class asciistream;
+}
 
 namespace storage {
 namespace lib {

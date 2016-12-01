@@ -5,7 +5,6 @@
 #include "bucketspace.h"
 #include "bucketid.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <cstdint>
 
 namespace document {

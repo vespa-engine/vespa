@@ -1,14 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
 
 namespace vespalib {
+
+class asciistream;
 
 /*
  * Helper class to provide hex dump of the contents in a buffer.
@@ -82,6 +82,7 @@ class nbostream
         _wp = rhs.size();
         memcpy(&_wbuf[0], &rhs._rbuf[rhs._rp], _wp);
     }
+    ~nbostream();
     nbostream & operator = (const nbostream & rhs) {
         if (this != &rhs) {
             nbostream n(rhs);

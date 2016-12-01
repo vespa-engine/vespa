@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vector>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib {
 
