@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/util/rand48.h>
@@ -20,6 +19,7 @@
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
 
