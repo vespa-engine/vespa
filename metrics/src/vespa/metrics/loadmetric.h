@@ -46,7 +46,8 @@ template<typename MetricType>
 class LoadMetric : public MetricSet {
     std::vector<Metric::LP> _ownerList;
     typedef vespalib::LinkedPtr<MetricType> MetricTypeLP;
-    vespalib::hash_map<uint32_t, MetricTypeLP> _metrics;
+    using MetricMap = vespalib::hash_map<uint32_t, MetricTypeLP>;
+    MetricMap _metrics;
     SumMetric<MetricType> _sum;
 
 public:
@@ -90,5 +91,5 @@ public:
     void addMemoryUsage(MemoryConsumption& mc) const override;
 };
 
-} // documentapi
+} // metrics
 

@@ -10,13 +10,11 @@ struct VisitorMetricSet : public metrics::MetricSet {
     metrics::DoubleAverageMetric latency;
     metrics::LongCountMetric failed;
 
-    VisitorMetricSet(MetricSet* owner = 0);
+    VisitorMetricSet(MetricSet* owner = nullptr);
     ~VisitorMetricSet();
 
     MetricSet * clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
                       MetricSet* owner, bool includeUnused) const override;
-
-    VisitorMetricSet* operator&() { return this; }
 };
 
 } // storage
