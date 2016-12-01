@@ -26,6 +26,7 @@
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/storage/bucketdb/lockablemap.hpp>
 
 LOG_SETUP(".persistence.filestor.manager");
 
