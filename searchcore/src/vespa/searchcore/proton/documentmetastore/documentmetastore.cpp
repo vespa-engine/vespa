@@ -669,8 +669,7 @@ DocumentMetaStore::getGidEvenIfMoved(DocId lid, GlobalId &gid) const
     gid = getRawGid(lid);
     if ( ! validLid(lid) ) {
         uint32_t newLid(0);
-        if (getLid(gid, newLid)) {
-        } else {
+        if (!getLid(gid, newLid)) {
             return false;
         }
     }
