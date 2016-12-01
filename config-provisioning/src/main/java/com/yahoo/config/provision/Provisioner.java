@@ -41,6 +41,7 @@ public interface Provisioner {
      * @param application The {@link ApplicationId} that was removed.
      * @deprecated use remove(transaction, application) instead
      */
+    // TODO: Remove when no version older than 6.51 is in use
     @Deprecated
     default void removed(ApplicationId application) {
         throw new IllegalStateException("Unexpected use of deprecated method");
@@ -48,16 +49,12 @@ public interface Provisioner {
 
     /**
      * Transactionally remove this application.
-     * This default implementation delegates to removed(application), i.e performs the removal non-transactional.
-     * 
-     * @param application
+     *
+     * @param transaction Transaction with operations to commit together with any operations done within the provisioner.
+     * @param application the application to remove
      */
-    // TODO: Remove the default implementation in this when
-    //       no applications are on a version before 5.17
     @SuppressWarnings("deprecation")
-    default void remove(NestedTransaction transaction, ApplicationId application) {
-        removed(application);
-    }
+    void remove(NestedTransaction transaction, ApplicationId application);
 
     /**
      * Requests a restart of the services of the given application
