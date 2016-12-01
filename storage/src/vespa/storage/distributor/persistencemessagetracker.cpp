@@ -21,11 +21,11 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
       _metric(metric),
       _reply(reply),
       _manager(link),
-      _success(true),
       _revertTimestamp(revertTimestamp),
-      _priority(reply->getPriority())
+      _requestTimer(link.getClock()),
+      _priority(reply->getPriority()),
+      _success(true)
 {
-    _creationTime.SetNow();
 }
 
 void
@@ -62,7 +62,7 @@ PersistenceMessageTrackerImpl::updateMetrics()
     } else {
         ++_metric.failures.storagefailure;
     }
-    _metric.latency.addValue(_creationTime.MilliSecsToNow());
+    _metric.latency.addValue(_requestTimer.getElapsedTimeAsDouble());
 }
 
 void
