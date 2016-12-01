@@ -22,6 +22,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -144,9 +145,10 @@ public class NodeRepository extends AbstractComponent {
                 break;
 
             case proxy:
-                // Proxy nodes only trust config servers. They also trust any traffic to ports 4080/4443, but these
-                // static rules are configured by the node itself
+                // Proxy nodes only trust config servers and other proxy nodes. They also trust any traffic to ports
+                // 4080/4443, but these static rules are configured by the node itself
                 trustedNodes.addAll(getConfigNodes());
+                trustedNodes.addAll(getNodes(NodeType.proxy));
                 break;
 
             default:
@@ -154,6 +156,9 @@ public class NodeRepository extends AbstractComponent {
                         String.format("Don't know how to create ACL for node [hostname=%s type=%s]",
                                 node.hostname(), node.type()));
         }
+
+        // Sort by hostname so that the resulting list is always the same if trusted nodes don't change
+        trustedNodes.sort(Comparator.comparing(Node::hostname));
 
         return Collections.unmodifiableList(trustedNodes);
     }

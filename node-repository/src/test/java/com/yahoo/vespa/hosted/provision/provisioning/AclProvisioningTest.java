@@ -113,10 +113,10 @@ public class AclProvisioningTest {
         // Get trusted nodes for first proxy node
         Node node = proxyNodes.get(0);
         List<Node> trustedNodes = tester.nodeRepository().getTrustedNodes(node);
-        assertEquals(configServers.size(), trustedNodes.size());
+        assertEquals(configServers.size() + proxyNodes.size(), trustedNodes.size());
 
-        // Trusted nodes contains all config servers
-        assertContainsOnly(toHostNames(trustedNodes), configServers);
+        // Trusted nodes contains all config servers and all proxy nodes
+        assertContainsOnly(toHostNames(trustedNodes), flatten(Arrays.asList(toHostNames(proxyNodes), configServers)));
     }
 
     @Test
