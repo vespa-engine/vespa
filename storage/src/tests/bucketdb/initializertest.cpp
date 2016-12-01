@@ -2,11 +2,10 @@
 /**
  * Tests storage initialization without depending on persistence layer.
  */
-#include <vespa/fastos/fastos.h>
 #include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
 
 #include <vespa/document/base/testdocman.h>
-#include <vespa/log/log.h>
+
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -16,6 +15,8 @@
 #include <tests/common/testhelper.h>
 #include <vespa/vdstestlib/cppunit/dirconfig.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/storage/bucketdb/lockablemap.hpp>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".test.bucketdb.initializing");
 
