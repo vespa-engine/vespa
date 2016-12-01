@@ -7,6 +7,7 @@
 #include "namehash.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <algorithm>
 #include <iterator>
