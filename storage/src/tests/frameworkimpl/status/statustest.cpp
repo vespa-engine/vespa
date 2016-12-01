@@ -71,7 +71,7 @@ namespace {
                 const framework::HttpUrlPath&) const
         {
             xos << vespalib::xml::XmlTag("mytag")
-                << vespalib::xml::XmlAttribute("foo", "bar")
+                << vespalib::xml::XmlAttribute("foo", (const char *)"bar")
                 << vespalib::xml::XmlContent("content")
                 << vespalib::xml::XmlEndTag();
             return "";

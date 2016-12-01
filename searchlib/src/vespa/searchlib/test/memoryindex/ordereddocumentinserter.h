@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/memoryindex/iordereddocumentinserter.h>
+#include <sstream>
 
 namespace search
 {

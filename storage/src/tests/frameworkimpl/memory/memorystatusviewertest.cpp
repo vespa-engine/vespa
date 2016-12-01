@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/frameworkimpl/memory/memorystatusviewer.h>
 #include <vespa/storageframework/defaultimplementation/memory/prioritymemorylogic.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <boost/lexical_cast.hpp>
 
 namespace storage {
 

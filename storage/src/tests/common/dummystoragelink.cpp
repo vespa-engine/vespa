@@ -1,8 +1,8 @@
+#include "dummystoragelink.h"
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <sys/time.h>
-#include "dummystoragelink.h"
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace storage {
 
