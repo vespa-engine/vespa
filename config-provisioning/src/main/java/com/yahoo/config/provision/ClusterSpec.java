@@ -80,19 +80,6 @@ public final class ClusterSpec {
         return true;
     }
 
-    // TODO: Remove when no version older than 6.41 is used
-    /** Returns whether this is equal, disregarding the group value */
-    @Deprecated
-    public boolean equalsIgnoringGroup(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof ClusterSpec)) return false;
-        ClusterSpec other = (ClusterSpec)o;
-        if ( ! other.type.equals(this.type)) return false;
-        if ( ! other.id.equals(this.id)) return false;
-        if ( ! other.dockerImage.equals(this.dockerImage)) return false;
-        return true;
-    }
-
     /** A cluster type */
     public enum Type {
 
