@@ -343,7 +343,9 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     MonitorGuard guard(_monitor);
     _flushing.erase(taskId);
     assert(ctx.getHandler());
-    _pendingPrune.insert(ctx.getHandler());
+    if (_handlers.hasHandler(ctx.getHandler())) {
+        _pendingPrune.insert(ctx.getHandler());
+    }
     guard.broadcast();
 }
 
