@@ -13,7 +13,7 @@ import com.yahoo.jdisc.http.ssl.SslKeyStore;
 import com.yahoo.jdisc.http.ssl.SslKeyStoreFactory;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.ConnectionFactory;
-import org.eclipse.jetty.server.ConnectorStatistics;
+import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -185,7 +185,7 @@ public class ConnectorFactory {
             factory.setTrustStorePassword(password.orElseThrow(passwordRequiredForJKSKeyStore("trust")));
         }
 
-        factory.setSslKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
+        factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
         factory.setProtocol(sslConfig.protocol());
         return new SslConnectionFactory(factory, HttpVersion.HTTP_1_1.asString());
     }
@@ -253,7 +253,7 @@ public class ConnectorFactory {
         public static final String REQUEST_ATTRIBUTE = JDiscServerConnector.class.getName();
         private final static Logger log = Logger.getLogger(JDiscServerConnector.class.getName());
         private final Metric.Context metricCtx;
-        private final ConnectorStatistics statistics;
+        private final ServerConnectionStatistics statistics;
         private final boolean tcpKeepAlive;
         private final boolean tcpNoDelay;
         private final ServerSocketChannel channelOpenedByActivator;
@@ -270,7 +270,7 @@ public class ConnectorFactory {
             this.tcpNoDelay = config.tcpNoDelay();
             this.metricCtx = createMetricContext(config, metric);
 
-            this.statistics = new ConnectorStatistics();
+            this.statistics = new ServerConnectionStatistics();
             addBean(statistics);
         }
 
@@ -339,7 +339,7 @@ public class ConnectorFactory {
             acceptChannelField.set(this, channelOpenedByActivator);
         }
 
-        public ConnectorStatistics getStatistics() { return statistics; }
+        public ServerConnectionStatistics getStatistics() { return statistics; }
 
         public Metric.Context getMetricContext() { return metricCtx; }
 

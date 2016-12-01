@@ -20,6 +20,7 @@ import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.jdisc.References;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.FormBodyPart;
 import org.apache.http.entity.mime.content.StringBody;
 import org.testng.annotations.Test;
@@ -527,7 +528,7 @@ public class HttpServerTest {
             throws Exception {
         return new FormBodyPart(
                 parameterName,
-                new StringBody(fileContent) {
+                new StringBody(fileContent, ContentType.TEXT_PLAIN) {
                     @Override
                     public String getFilename() {
                         return fileName;

@@ -142,6 +142,7 @@ class HttpRequestDispatch {
         };
     }
 
+    @SuppressWarnings("try")
     private ServletRequestReader handleRequest() throws IOException {
         HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container, servletRequest);
         final ContentChannel requestContentChannel;
