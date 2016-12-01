@@ -144,9 +144,10 @@ public class NodeRepository extends AbstractComponent {
                 break;
 
             case proxy:
-                // Proxy nodes only trust config servers. They also trust any traffic to ports 4080/4443, but these
-                // static rules are configured by the node itself
+                // Proxy nodes only trust config servers and other proxy nodes. They also trust any traffic to ports
+                // 4080/4443, but these static rules are configured by the node itself
                 trustedNodes.addAll(getConfigNodes());
+                trustedNodes.addAll(getNodes(NodeType.proxy));
                 break;
 
             default:
