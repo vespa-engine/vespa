@@ -42,7 +42,6 @@ public class ServletOutputStreamWriter {
 
     private static final Logger log = Logger.getLogger(ServletOutputStreamWriter.class.getName());
 
-    // TODO: This reference is not guaranteed to be unique; ByteBuffer.allocate(0) MAY in principle return a singleton!
     // If so, application code could fake a close by writing such a byte buffer.
     // The problem can be solved by filtering out zero-length byte buffers from application code.
     // Other ways to express this are also possible, e.g. with a 'closed' state checked when queue goes empty.
@@ -78,25 +77,37 @@ public class ServletOutputStreamWriter {
     }
 
     public void registerWriteListener() {
-        synchronized (monitor) {
-            assertStateIs(state, State.NOT_STARTED);
-            outputStream.setWriteListener(writeListener);
-        }
+        outputStream.setWriteListener(writeListener);
     }
 
     public void sendErrorContentAndCloseAsync(ByteBuffer errorContent) {
+        boolean thisThreadShouldWrite;
+
         synchronized (monitor) {
             // Assert that no content has been written as it is too late to write error response if the response is committed.
             switch (state) {
                 case NOT_STARTED:
+                    queueErrorContent_holdingLock(errorContent);
+                    state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
+                    thisThreadShouldWrite = false;
+                    break;
                 case WAITING_FOR_FIRST_BUFFER:
-                    writeBuffer(errorContent, null);
-                    close(null);
-                    return;
+                    queueErrorContent_holdingLock(errorContent);
+                    state = State.WRITING_BUFFERS;
+                    thisThreadShouldWrite = true;
+                    break;
                 default:
                     throw createAndLogAssertionError("Invalid state: " + state);
             }
         }
+        if (thisThreadShouldWrite) {
+            writeBuffersInQueueToOutputStream();
+        }
+    }
+
+    private void queueErrorContent_holdingLock(ByteBuffer errorContent) {
+        responseContentQueue.addLast(new ResponseContentPart(errorContent, null));
+        responseContentQueue.addLast(new ResponseContentPart(CLOSE_STREAM_BUFFER, null));
     }
 
     public void writeBuffer(ByteBuffer buf, CompletionHandler handler) {
@@ -129,7 +140,6 @@ public class ServletOutputStreamWriter {
         }
 
         if (thisThreadShouldWrite) {
-            // TODO: Consider refactoring to avoid multiple monitor entry-exit.
             writeBuffersInQueueToOutputStream();
         }
     }
