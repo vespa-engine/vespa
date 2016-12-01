@@ -3,6 +3,7 @@
 #include <vespa/searchlib/docstore/documentstore.h>
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using namespace search;
 
