@@ -444,7 +444,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainer(eq(hostName)))
                 .thenReturn(Optional.of(new Container(hostName, new DockerImage("wantedDockerImage"), containerName, true)));
 
-        Optional<String> version = Optional.of("1.2.3");
+        nodeAgent.vespaVersion = Optional.of("1.2.3");
         ContainerNodeSpec.Owner owner = new ContainerNodeSpec.Owner("tester", "testapp", "testinstance");
         ContainerNodeSpec.Membership membership = new ContainerNodeSpec.Membership("clustType", "clustId", "grp", 3, false);
         nodeAgent.lastNodeSpec = new ContainerNodeSpec.Builder()
@@ -453,7 +453,6 @@ public class NodeAgentImplTest {
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .vespaVersion(version)
                 .owner(Optional.of(owner))
                 .membership(Optional.of(membership))
                 .build();

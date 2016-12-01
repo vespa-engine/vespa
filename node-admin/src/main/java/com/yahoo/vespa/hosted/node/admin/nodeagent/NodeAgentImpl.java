@@ -53,8 +53,6 @@ public class NodeAgentImpl implements NodeAgent {
     private final PrefixLogger logger;
 
     private DockerImage imageBeingDownloaded = null;
-    private Optional<String> vespaVersion = Optional.empty();
-
     private final String hostname;
 
     private final NodeRepository nodeRepository;
@@ -86,6 +84,7 @@ public class NodeAgentImpl implements NodeAgent {
     private NodeAttributes lastAttributesSet = null;
     ContainerNodeSpec lastNodeSpec = null;
     CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
+    Optional<String> vespaVersion = Optional.empty();
 
     public NodeAgentImpl(
             final String hostName,
