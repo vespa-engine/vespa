@@ -1,14 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
+import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Flavor;
+import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.node.Generation;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -55,7 +56,7 @@ public final class Node {
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation,
                 History history, NodeType type) {
         Objects.requireNonNull(openStackId, "A node must have an openstack id");
-        requireNonEmptyString(ipAddress, "A node must have an IP address");
+        requireIpAddress(ipAddress, "A node must have a valid IP address");
         requireNonEmptyString(hostname, "A node must have a hostname");
         requireNonEmptyString(parentHostname, "A parent host name must be a proper value");
         Objects.requireNonNull(flavor, "A node must have a flavor");
@@ -212,6 +213,14 @@ public final class Node {
         Objects.requireNonNull(value, message);
         if (value.trim().isEmpty())
             throw new IllegalArgumentException(message + ", but was '" + value + "'");
+    }
+
+    private void requireIpAddress(String value, String message) {
+        try {
+            InetAddresses.forString(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(message, e);
+        }
     }
     
     @Override

@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A mock DNS resolver. Can be configured to only answer specific lookups or any lookup.
@@ -50,8 +50,17 @@ public class MockNameResolver implements NameResolver {
             return records.get(hostname);
         }
         if (mockAnyLookup) {
-            return UUID.randomUUID().toString();
+            return randomIpAddress();
         }
         throw new RuntimeException(new UnknownHostException("Could not resolve: " + hostname));
+    }
+
+    private static String randomIpAddress() {
+        // Generate a random IP in 127/8 (loopback block)
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        return String.format("127.%d.%d.%d",
+                random.nextInt(1, 255 + 1),
+                random.nextInt(1, 255 + 1),
+                random.nextInt(1, 255 + 1));
     }
 }

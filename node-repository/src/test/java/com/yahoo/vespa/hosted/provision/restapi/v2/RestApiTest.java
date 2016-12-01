@@ -172,10 +172,24 @@ public class RestApiTest {
     @Test
     public void post_node_with_ip_address() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson("host-with-ip.yahoo.com", "127.0.0.1", "default") + "]").
+                        ("[" + asNodeJson("ipv4-host.yahoo.com", "127.0.0.1", "default") + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson("ipv6-host.yahoo.com", "::1", "default") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+    }
+
+    @Test
+    public void post_node_with_invalid_ip_address() throws Exception {
+        Request req = new Request("http://localhost:8080/nodes/v2/node",
+                ("[" + asNodeJson("host-with-ip.yahoo.com", "foo", "default") + "]").
+                        getBytes(StandardCharsets.UTF_8),
+                Request.Method.POST);
+        assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"A node must have a valid IP address: 'foo' is not an IP string literal.\"}");
     }
 
     @Test
