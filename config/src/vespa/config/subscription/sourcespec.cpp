@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".config.subscription.sourcespec");
 #include "sourcespec.h"
+#include "configinstancespec.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/raw/rawsourcefactory.h>
 #include <vespa/config/file/filesourcefactory.h>
@@ -14,7 +12,9 @@ LOG_SETUP(".config.subscription.sourcespec");
 #include <vespa/config/set/configinstancesourcefactory.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".config.subscription.sourcespec");
 
 namespace config {
 
