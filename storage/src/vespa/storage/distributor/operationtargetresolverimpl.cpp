@@ -2,6 +2,7 @@
 
 #include "operationtargetresolverimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/printable.hpp>
 #include <sstream>
 
 namespace storage {
@@ -136,6 +137,11 @@ BucketInstanceList::createTargets()
         result.push_back(OperationTarget(bi._bucket, bi._node, !bi._exist));
     }
     return result;
+}
+
+void
+BucketInstanceList::print(vespalib::asciistream& out, const PrintProperties& p) const {
+    vespalib::print(_instances, out, p);
 }
 
 namespace {
