@@ -9,7 +9,6 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace distributor {

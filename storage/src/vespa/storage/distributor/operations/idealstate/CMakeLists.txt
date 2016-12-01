@@ -9,6 +9,7 @@ vespa_add_library(storage_distributoroperationidealstate OBJECT
     setbucketstateoperation.cpp
     garbagecollectionoperation.cpp
     mergelimiter.cpp
+    mergemetadata.cpp
     DEPENDS
     AFTER
     storage_storageconfig

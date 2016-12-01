@@ -3,7 +3,9 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+namespace vespalib {
+    class asciistream;
+}
 
 namespace search {
 namespace query {

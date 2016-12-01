@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "location.h"
 #include "point.h"
 #include "rectangle.h"
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using vespalib::asciistream;
 
@@ -55,6 +55,10 @@ Location::Location(const Rectangle &rect) {
         << "," << rect.bottom
         << "]" ;
     _location_string = loc.str();
+}
+
+vespalib::asciistream &operator<<(vespalib::asciistream &out, const Location &loc) {
+    return out << loc.getLocationString();
 }
 
 }  // namespace query

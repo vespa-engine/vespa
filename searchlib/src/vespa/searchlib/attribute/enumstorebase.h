@@ -6,21 +6,20 @@
 #include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/datastore/datastore.h>
 #include <vespa/searchlib/util/memoryusage.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.h>
-#include <list>
 #include <set>
 #include <vespa/searchlib/btree/btree.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <atomic>
 
-namespace search
-{
+namespace vespalib {
+    class asciistream;
+}
+namespace search {
 
 class BufferWriter;
 
-namespace attribute
-{
+namespace attribute {
 
 class Status;
 
