@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -12,8 +11,8 @@ import java.util.Set;
 
 /**
  * Maintains the list of hosts that should be allowed to access ZooKeeper in this runtime.
- * These are the zokeeper servers and all tenant and proxy nodes. This is maintained in the background because
- * nodes could be added or removed on another server. 
+ * These are the zookeeper servers and all nodes in node repository. This is maintained in the background
+ * because nodes could be added or removed on another server.
  * 
  * We could limit access to the <i>active</i> subset of nodes, but that 
  * does not seem to have any particular operational or security benefits and might make it more problematic
@@ -29,14 +28,12 @@ public class ZooKeeperAccessMaintainer extends Maintainer {
         super(nodeRepository, maintenanceInterval);
         this.curator = curator;
     }
-    
+
     @Override
     protected void maintain() {
         Set<String> hosts = new HashSet<>();
 
-        for (Node node : nodeRepository().getNodes(NodeType.tenant))
-            hosts.add(node.hostname());
-        for (Node node : nodeRepository().getNodes(NodeType.proxy))
+        for (Node node : nodeRepository().getNodes())
             hosts.add(node.hostname());
 
         if ( ! hosts.isEmpty()) { // no nodes -> not a hosted instance: Pass an empty list to deactivate restriction
