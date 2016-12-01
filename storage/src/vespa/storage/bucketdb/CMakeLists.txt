@@ -1,15 +1,16 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(storage_bucketdb OBJECT
     SOURCES
-    bucketinfo.cpp
     bucketcopy.cpp
     bucketdatabase.cpp
-    mapbucketdatabase.cpp
-    storagebucketdbinitializer.cpp
-    storbucketdb.cpp
-    judyarray.cpp
+    bucketinfo.cpp
     bucketmanager.cpp
     distribution_hash_normalizer.cpp
+    judyarray.cpp
+    mapbucketdatabase.cpp
+    lockablemap.cpp
+    storagebucketdbinitializer.cpp
+    storbucketdb.cpp
     DEPENDS
     AFTER
     storage_storageconfig

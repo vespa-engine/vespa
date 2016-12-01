@@ -1,12 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/persistence/filestorage/filestormanager.h>
+#include "filestormanager.h"
 
-#include <set>
-#include <sys/types.h>
-#include <signal.h>
-#include <unistd.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
@@ -30,6 +25,7 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/storage/common/bucketoperationlogger.h>
 
 LOG_SETUP(".persistence.filestor.manager");
 
