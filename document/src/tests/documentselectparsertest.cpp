@@ -165,17 +165,17 @@ DocumentSelectParserTest::createDocs()
     {
         StructFieldValue sval(_doc.back()->getField("mystruct").getDataType());
         sval.set("key", 14);
-        sval.set("value", (const char *)"structval");
+        sval.set("value", "structval");
         _doc.back()->setValue("mystruct", sval);
         ArrayFieldValue
             aval(_doc.back()->getField("structarray").getDataType());
         {
             StructFieldValue sval1(aval.getNestedType());
             sval1.set("key", 15);
-            sval1.set("value", (const char *)"structval1");
+            sval1.set("value", "structval1");
             StructFieldValue sval2(aval.getNestedType());
             sval2.set("key", 16);
-            sval2.set("value", (const char *)"structval2");
+            sval2.set("value", "structval2");
             aval.add(sval1);
             aval.add(sval2);
         }
@@ -194,10 +194,10 @@ DocumentSelectParserTest::createDocs()
         {
             StructFieldValue sval1(aval.getNestedType());
             sval1.set("key", 17);
-            sval1.set("value", (const char *)"structval3");
+            sval1.set("value", "structval3");
             StructFieldValue sval2(aval.getNestedType());
             sval2.set("key", 18);
-            sval2.set("value", (const char *)"structval4");
+            sval2.set("value", "structval4");
             abval.add(sval1);
             abval.add(sval2);
         }
@@ -275,8 +275,7 @@ DocumentSelectParserTest::createDocs()
 }
 
 namespace {
-void doVerifyParse(select::Node *node, const std::string &query,
-                   const char *expected) {
+void doVerifyParse(select::Node *node, const std::string &query, const char *expected) {
     std::string message("Query "+query+" failed to parse.");
     CPPUNIT_ASSERT_MESSAGE(message, node != 0);
     std::ostringstream actual;
