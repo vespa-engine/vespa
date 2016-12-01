@@ -5,16 +5,15 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
@@ -26,92 +25,96 @@ import static org.junit.Assert.assertEquals;
  * To get started:
  *  1. Add system test host hostnames to /etc/hosts:
  *      $ sudo ./vespa/node-admin/scripts/etc-hosts.sh
- *  2. Set environmental variable in shell or e.g. ~/.bashrc:
- *      VESPA_DOCKER_REGISTRY="docker.registry.hostname.com:1234"
- *      SYSTEMTESTS_PATH="/path/to/git/repo/systemtests/"
- *
- *
- * To run systemtests with SNAPSHOT Vespa:
- *  1. Add "--vespa-version=6-SNAPSHOT" argument to {@link #runTest(DockerImpl, ContainerName, Path, String... arguments)}
- *  2. List all the modules that need to be built and added to local repository in order in
- *          {@link #mavenInstallModules(DockerImpl, ContainerName, String... listOfModules)}
- *  3. Copy jars from {@code PATH_TO_VESPA_REPO_IN_CONTAINER.resolve(module).resolve(CONTAINER_TARGET_DIRECTORY).resolve(module.jar}
  *
  *</pre>
  * @author freva
  */
 public class RunSystemTests {
-    private static final DockerImage VESPA_BASE_IMAGE = new DockerImage(
-            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/ci:6.50.111");
     private static final DockerImage SYSTEMTESTS_DOCKER_IMAGE = new DockerImage("vespa-systest:latest");
-    private static final String CONTAINER_TARGET_DIRECTORY = "target_container";
 
-    private final Path PATH_TO_SYSTEMTESTS_IN_HOST = Paths.get(System.getenv("SYSTEMTESTS_PATH"));
-    private final Path PATH_TO_SYSTEMTESTS_IN_CONTAINER = Paths.get("/systemtests");
-    private final Path PATH_TO_VESPA_REPO_IN_HOST = Paths.get("").toAbsolutePath().getParent();
-    private final Path PATH_TO_VESPA_REPO_IN_CONTAINER = Paths.get("/vespa");
-    private final Path PATH_TO_TEST_RUNNER = PATH_TO_SYSTEMTESTS_IN_CONTAINER.resolve("bin/run_test.rb");
+    private final DockerImpl docker;
+    private final DockerImage vespaBaseImage;
+    private final Path pathToSystemtestsInHost;
+    private final Path pathToSystemtestsInContainer = Paths.get("/systemtests");
+    private final Path pathToVespaRepoInHost = Paths.get("").toAbsolutePath();
+    private final Path pathToVespaRepoInContainer = Paths.get("/vespa");
+    private final Path pathToTestRunner = pathToSystemtestsInContainer.resolve("bin/run_test.rb");
+    private final Path pathToLibJars = Paths.get("/home/y/lib/jars");
 
     private final Logger logger = Logger.getLogger("systemtest");
 
-    @Test
-    public void runBasicSearch() throws IOException, InterruptedException {
-        DockerImpl docker = DockerTestUtils.getDocker();
-        ContainerName systemTestContainerName = new ContainerName("stest-1");
-        Path testToRunPath = PATH_TO_SYSTEMTESTS_IN_CONTAINER.resolve("tests/search/basicsearch/basic_search.rb");
+    public RunSystemTests(DockerImage vespaBaseImage, Path pathToSystemtestsInHost) {
+        this.docker = DockerTestUtils.getDocker();
+        this.vespaBaseImage = vespaBaseImage;
+        this.pathToSystemtestsInHost = pathToSystemtestsInHost;
+    }
 
-        logger.info("Building " + SYSTEMTESTS_DOCKER_IMAGE.asString());
-        buildVespaSystestDockerImage(docker, VESPA_BASE_IMAGE);
+    /**
+     * @param systemtestHost name of the container that will execute the test, if it does not exist, a new
+     *                       one will be started.
+     * @param systemtestToRun relative path from the root of systemtests to the test to run, f.ex.
+     *                        tests/search/basicsearch/basic_search.rb
+     */
+    void runSystemTest(ContainerName systemtestHost, Path systemtestToRun, String... arguments) throws InterruptedException, ExecutionException, IOException {
+        startSystemTestNodeIfNeeded(systemtestHost);
 
-        logger.info("Starting systemtests host");
-        startSystemTestNodeIfNeeded(docker, systemTestContainerName);
+        Path pathToSystetestToRun = pathToSystemtestsInContainer.resolve(systemtestToRun);
 
-//        mavenInstallModules(docker, systemTestContainerName, "docproc", "container-dev");
-//        executeInContainer(docker, systemTestContainerName, "cp",
-//                PATH_TO_VESPA_REPO_IN_CONTAINER.resolve("docproc").resolve(CONTAINER_TARGET_DIRECTORY).resolve("docproc.jar").toString(),
-//                "/home/y/lib/jars/");
-
-        logger.info("Running test " + testToRunPath);
-        Integer testExitCode = runTest(docker, systemTestContainerName, testToRunPath);
+        logger.info("Running test " + pathToSystetestToRun);
+        Integer testExitCode = runTest(systemtestHost, pathToSystetestToRun, arguments);
         assertEquals("Test did not finish with exit code 0", Integer.valueOf(0), testExitCode);
     }
 
     /**
-     * This method runs mvn install inside container to update container's local repository, but because it runs as
-     * root we have to move around the target/ otherwise mvn will fail on host next time you run it.
+     * This method runs mvn install inside container to update container's local repository, then copies any
+     * existing and updated file from target to /home/y/lib/jars.
+     *
+     * Because it runs as root we have to temporarly move around the target/ otherwise mvn will overwrite it and
+     * as root, making mvn on host fail next time it runs.
+     *
+     * @param containerName name of the container to install modules in, if it does not exist, a new
+     *                       one will be started.
+     * @param modules list of modules to install in order
      */
-    private void mavenInstallModules(DockerImpl docker, ContainerName containerName, String... modules) throws InterruptedException, IOException {
-        for (String module : modules) {
-            Path pathToModule = PATH_TO_VESPA_REPO_IN_CONTAINER.resolve(module);
-            Path pathToTarget = PATH_TO_VESPA_REPO_IN_HOST.resolve(module).resolve("target");
-            Path pathToTargetBackup = PATH_TO_VESPA_REPO_IN_HOST.resolve(module).resolve("target_bcp");
+    void mavenInstallModules(ContainerName containerName, String... modules) throws InterruptedException, IOException, ExecutionException {
+        startSystemTestNodeIfNeeded(containerName);
 
-            if (Files.exists(pathToTarget)) {
-                Files.move(pathToTarget, pathToTargetBackup, StandardCopyOption.REPLACE_EXISTING);
+        for (String module : modules) {
+            Path pathToModule = pathToVespaRepoInContainer.resolve(module);
+            Path pathToTargetInHost = pathToVespaRepoInHost.resolve(module).resolve("target");
+            Path pathToTargetBackupInHost = pathToVespaRepoInHost.resolve(module).resolve("target_bcp");
+
+            if (Files.exists(pathToTargetInHost)) {
+                Files.move(pathToTargetInHost, pathToTargetBackupInHost, StandardCopyOption.REPLACE_EXISTING);
             }
 
             try {
-                assert 0 == executeInContainer(docker, containerName, "mvn", "-DskipTests", "-e",
+                executeInContainer(containerName, "mvn", "-DskipTests", "-e",
                         "-f=" + pathToModule.resolve("pom.xml"), "install");
-            } finally {
-                executeInContainer(docker, containerName, "mv",
-                        PATH_TO_VESPA_REPO_IN_CONTAINER.resolve(module).resolve("target").toString(),
-                        PATH_TO_VESPA_REPO_IN_CONTAINER.resolve(module).resolve(CONTAINER_TARGET_DIRECTORY).toString());
 
-                if (Files.exists(pathToTargetBackup)) {
-                    Files.move(pathToTargetBackup, pathToTarget);
+                executeInContainer(containerName, "rsync", "--archive", "--existing", "--update",
+                        pathToModule.resolve("target").toString() + "/", pathToLibJars.toString() + "/");
+            } finally {
+                executeInContainer(containerName, "rm", "-rf", pathToModule.resolve("target").toString());
+
+                if (Files.exists(pathToTargetBackupInHost)) {
+                    Files.move(pathToTargetBackupInHost, pathToTargetInHost);
                 }
             }
         }
     }
 
-    private void startSystemTestNodeIfNeeded(Docker docker, ContainerName containerName) throws UnknownHostException, InterruptedException {
+    private void startSystemTestNodeIfNeeded(ContainerName containerName) throws IOException, InterruptedException, ExecutionException {
+        logger.info("Building " + SYSTEMTESTS_DOCKER_IMAGE.asString());
+        buildVespaSystestDockerImage(docker, vespaBaseImage);
+
         Optional<Container> container = docker.getContainer(containerName.asString());
         if (container.isPresent()) {
             if (container.get().isRunning) return;
             else docker.deleteContainer(containerName);
         }
 
+        logger.info("Starting systemtests host");
         InetAddress nodeInetAddress = InetAddress.getByName(containerName.asString());
         docker.createContainerCommand(
                 SYSTEMTESTS_DOCKER_IMAGE,
@@ -125,8 +128,8 @@ public class RunSystemTests {
                 .withUlimit("core", -1, -1)
                 .withVolume(Paths.get(System.getProperty("user.home")).resolve(".m2/settings.xml").toString(), "/root/.m2/settings.xml")
                 .withVolume("/etc/hosts", "/etc/hosts")
-                .withVolume(PATH_TO_SYSTEMTESTS_IN_HOST.toString(), PATH_TO_SYSTEMTESTS_IN_CONTAINER.toString())
-                .withVolume(PATH_TO_VESPA_REPO_IN_HOST.toString(), PATH_TO_VESPA_REPO_IN_CONTAINER.toString())
+                .withVolume(pathToSystemtestsInHost.toString(), pathToSystemtestsInContainer.toString())
+                .withVolume(pathToVespaRepoInHost.toString(), pathToVespaRepoInContainer.toString())
                 .create();
 
         docker.startContainer(containerName);
@@ -134,8 +137,13 @@ public class RunSystemTests {
         Thread.sleep(1000);
     }
 
-    private void buildVespaSystestDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
-        Path systestBuildDirectory = Paths.get("src/test/resources/systest/");
+    private void buildVespaSystestDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException, ExecutionException, InterruptedException {
+        if (!docker.imageIsDownloaded(vespaBaseImage)) {
+            logger.info("Pulling " + vespaBaseImage.asString() + " (This may take a while)");
+            docker.pullImageAsync(vespaBaseImage).get();
+        }
+
+        Path systestBuildDirectory = pathToVespaRepoInHost.resolve("docker-api/src/test/resources/systest/");
         Path systestDockerfile = systestBuildDirectory.resolve("Dockerfile");
 
         String dockerfileTemplate = new String(Files.readAllBytes(systestBuildDirectory.resolve("Dockerfile.template")))
@@ -145,7 +153,8 @@ public class RunSystemTests {
         docker.buildImage(systestDockerfile.toFile(), SYSTEMTESTS_DOCKER_IMAGE);
     }
 
-    private static Integer executeInContainer(DockerImpl docker, ContainerName containerName, String... args) throws InterruptedException {
+    private Integer executeInContainer(ContainerName containerName, String... args) throws InterruptedException {
+        logger.info("Executing in container: " + String.join(" ", args));
         ExecCreateCmdResponse response = docker.dockerClient.execCreateCmd(containerName.asString())
                 .withCmd(args)
                 .withAttachStdout(true)
@@ -159,12 +168,12 @@ public class RunSystemTests {
         return state.getExitCode();
     }
 
-    private Integer runTest(DockerImpl docker, ContainerName containerName, Path testToRun, String... args) throws InterruptedException {
+    private Integer runTest(ContainerName containerName, Path testToRun, String... args) throws InterruptedException {
         String[] combinedArgs = new String[args.length + 2];
-        combinedArgs[0] = PATH_TO_TEST_RUNNER.toString();
+        combinedArgs[0] = pathToTestRunner.toString();
         combinedArgs[1] = testToRun.toString();
         System.arraycopy(args, 0, combinedArgs, 2, args.length);
 
-        return executeInContainer(docker, containerName, combinedArgs);
+        return executeInContainer(containerName, combinedArgs);
     }
 }

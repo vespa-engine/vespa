@@ -37,4 +37,3 @@ Testing
 /build.ninja
 /rules.ninja
 *_test_app
-*/target_container/*
