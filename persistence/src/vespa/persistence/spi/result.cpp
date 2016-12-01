@@ -2,6 +2,8 @@
 
 #include "result.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
 
 namespace storage {
 

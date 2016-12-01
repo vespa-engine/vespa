@@ -14,9 +14,7 @@
 #pragma once
 
 #include <vespa/metrics/loadmetric.h>
-#include <string>
 #include <vespa/vespalib/util/linkedptr.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/documentapi/messagebus/priority.h>
 
 namespace documentapi {

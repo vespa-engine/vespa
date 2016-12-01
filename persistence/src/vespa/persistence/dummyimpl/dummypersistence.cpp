@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <algorithm>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/document/select/parser.h>
@@ -12,6 +10,8 @@
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/log/log.h>
 
 using std::binary_search;
 using std::lower_bound;

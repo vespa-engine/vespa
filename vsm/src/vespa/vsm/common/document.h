@@ -3,7 +3,6 @@
 
 #include <vespa/searchlib/query/base.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace vsm
