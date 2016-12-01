@@ -4,8 +4,7 @@
 
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <algorithm>
-#include <vespa/util/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace lib {
@@ -200,7 +199,7 @@ Group::getDistributionConfigHash() const {
     vespalib::asciistream ost;
     getConfigHash(ost);
     return ost.str();
- 
+}
 
-} // lib
-} // storage
+}
+}
