@@ -89,8 +89,8 @@ public:
     XmlAttribute(const XmlAttribute&);
     /** Add any value that can be written to an ostringstream. */
     template<typename T>
-    XmlAttribute(const std::string& name, const T& value,
-                 uint32_t flags = NONE);
+    XmlAttribute(const std::string& name, const T& value, uint32_t flags = NONE);
+    XmlAttribute(const std::string& name, const char * value, uint32_t flags = NONE);
     ~XmlAttribute();
 
     const std::string& getName() const { return _name; }

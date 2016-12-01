@@ -374,6 +374,21 @@ XmlAttribute::XmlAttribute(const XmlAttribute& attribute)
 {
 }
 
+XmlAttribute::XmlAttribute(const std::string& name, const char * value, uint32_t flags)
+        : _name(name),
+          _value(),
+          _next()
+{
+    std::ostringstream ost;
+    if (flags & HEX) ost << std::hex << "0x";
+    ost << value;
+    _value = ost.str();
+    if (!isLegalName(name)) {
+        throw vespalib::IllegalArgumentException("Name '" + name + "' contains "
+                "illegal XML characters and cannot be used as attribute name");
+    }
+}
+
 XmlEndTag::XmlEndTag()
 {
 }
