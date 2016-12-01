@@ -1,24 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-
-#include <vespa/fnet/fnet.h>
-#include <vespa/fnet/frt/frt.h>
 
 #include "sbenv.h"
+#include "rpchooks.h"
+#include "selfcheck.h"
+#include "remote_check.h"
+#include <vespa/fnet/fnet.h>
+#include <vespa/fnet/frt/frt.h>
 #include <memory>
 #include <string>
 #include <sstream>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/util/host_name.h>
-
-#include "rpchooks.h"
-#include "selfcheck.h"
-#include "remote_check.h"
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sbenv");
-
 
 namespace slobrok {
 namespace {

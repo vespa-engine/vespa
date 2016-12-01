@@ -6,6 +6,8 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
 
 using vespalib::Double;
 
