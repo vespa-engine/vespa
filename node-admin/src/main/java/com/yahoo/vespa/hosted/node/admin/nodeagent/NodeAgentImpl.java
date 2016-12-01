@@ -53,6 +53,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final PrefixLogger logger;
 
     private DockerImage imageBeingDownloaded = null;
+    private Optional<String> vespaVersion = Optional.empty();
 
     private final String hostname;
 
@@ -232,6 +233,9 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (dockerOperations.startContainerIfNeeded(nodeSpec)) {
+            vespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
+            metricReceiver.unsetMetricsForContainer(hostname);
+
             configureContainerMetrics(nodeSpec);
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
                             RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
@@ -491,7 +495,7 @@ public class NodeAgentImpl implements NodeAgent {
                     .add("clusterid", nodeSpec.membership.get().clusterId);
         }
 
-        if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
+        if (vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", vespaVersion.get());
 
         Dimensions dimensions = dimensionsBuilder.build();
         long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
