@@ -3,7 +3,7 @@
 
 #include <vespa/vespalib/util/jsonstream.h>
 #include <vespa/vespalib/util/jsonexception.h>
-#include <cmath>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using namespace vespalib;
 
