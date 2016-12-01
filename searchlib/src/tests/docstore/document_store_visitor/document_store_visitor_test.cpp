@@ -64,7 +64,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
     mainstr << " and end field";
     doc->set("main", mainstr.c_str());
     if (!before) {
-        doc->set("extra", (const char *)"foo");
+        doc->set("extra", "foo");
     }
     
     return doc;
@@ -169,7 +169,7 @@ MyRewriteVisitor::visit(uint32_t lid, Document &doc)
     Document::UP expDoc(makeDoc(_repo, lid, _before));
     EXPECT_TRUE(*expDoc == doc);
     _valid->slowSetBit(lid);
-    doc.set("extra", (const char *)"foo");
+    doc.set("extra", "foo");
 }
 
 

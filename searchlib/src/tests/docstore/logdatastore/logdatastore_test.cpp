@@ -431,7 +431,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool extra_field)
     mainstr << " and end field";
     doc->set("main", mainstr.c_str());
     if (extra_field) {
-        doc->set("extra", (const char *)"foo");
+        doc->set("extra", "foo");
     }
 
     return doc;

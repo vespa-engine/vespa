@@ -149,9 +149,9 @@ public:
     void setValue(const vespalib::stringref & fieldName, const FieldValue& value)
         { setFieldValue(getField(fieldName), value); }
     template<typename PrimitiveType>
-    void set(const Field& field, const PrimitiveType& value);
+    void set(const Field& field, PrimitiveType value);
     template<typename PrimitiveType>
-    void set(const vespalib::stringref & fieldName, const PrimitiveType& value);
+    void set(const vespalib::stringref & fieldName, PrimitiveType value);
 
     size_t getSetFieldCount() const {
         size_t count = 0;

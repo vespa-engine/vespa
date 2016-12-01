@@ -173,10 +173,12 @@ StructuredFieldValue::onIterateNested(
 }
 
 using ConstCharP = const char *;
-template void StructuredFieldValue::set(const vespalib::stringref & field, const int32_t & value);
-template void StructuredFieldValue::set(const vespalib::stringref & field, const int64_t & value);
-template void StructuredFieldValue::set(const vespalib::stringref & field, const double & value);
-template void StructuredFieldValue::set(const vespalib::stringref & field, const ConstCharP & value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, int32_t value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, int64_t value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, double value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, ConstCharP value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, vespalib::stringref value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, vespalib::string value);
 
 template std::unique_ptr<MapFieldValue> StructuredFieldValue::getAs<MapFieldValue>(const Field &field) const;
 template std::unique_ptr<ArrayFieldValue> StructuredFieldValue::getAs<ArrayFieldValue>(const Field &field) const;

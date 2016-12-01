@@ -2621,7 +2621,7 @@ FileStorManagerTest::testMultiOp()
         Document::SP doc(createDocument(
                     "some content", did.str()).release());
         doc->set("headerval", (int) i);
-        doc->set("content", (const char *)"some content");
+        doc->set("content", "some content");
         std::shared_ptr<api::PutCommand> cmd(
                 new api::PutCommand(document::BucketId(16, 0), doc, 100 + i));
         cmd->setAddress(address);

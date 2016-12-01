@@ -22,7 +22,7 @@ StructuredFieldValue::getAs(const Field &field) const {
 
 template<typename PrimitiveType>
 void
-StructuredFieldValue::set(const Field& field, const PrimitiveType& value)
+StructuredFieldValue::set(const Field& field, PrimitiveType value)
 {
     FieldValue::UP fval(field.getDataType().createFieldValue());
     *fval = value;
@@ -31,8 +31,7 @@ StructuredFieldValue::set(const Field& field, const PrimitiveType& value)
 
 template<typename PrimitiveType>
 void
-StructuredFieldValue::set(const vespalib::stringref & fieldName,
-                          const PrimitiveType& value)
+StructuredFieldValue::set(const vespalib::stringref & fieldName, PrimitiveType value)
 {
     set(getField(fieldName), value);
 }
