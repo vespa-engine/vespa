@@ -457,7 +457,7 @@ public class ModelProvisioningTest {
         assertEquals("default12", clusterControllers.getContainers().get(2).getHostName());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(8, cluster.getRootGroup().getSubgroups().size());
-        assertEquals(8, cluster.distributionBits());
+        assertEquals(16, cluster.distributionBits());
         // first group
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getIndex(), is("0"));
         assertThat(cluster.getRootGroup().getSubgroups().get(0).getNodes().size(), is(1));
@@ -506,7 +506,7 @@ public class ModelProvisioningTest {
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals( 8, cluster.distributionBits());
+        assertEquals( 16, cluster.distributionBits());
         assertEquals("We get the closest odd numer", 5, clusterControllers.getContainers().size());
         assertEquals("bar-controllers", clusterControllers.getName());
         assertEquals("default10", clusterControllers.getContainers().get(0).getHostName());

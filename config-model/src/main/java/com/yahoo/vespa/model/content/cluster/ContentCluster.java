@@ -60,7 +60,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     // TODO: Make private
     private String documentSelection;
     ContentSearchCluster search;
-    final Map<String, NewDocumentType> documentDefinitions;
+    private final Map<String, NewDocumentType> documentDefinitions;
     com.yahoo.vespa.model.content.StorageGroup rootGroup;
     StorageCluster storageNodes;
     DistributorCluster distributorNodes;
@@ -69,6 +69,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
     PersistenceEngine.PersistenceFactory persistenceFactory;
     String clusterName;
     Integer maxNodesPerMerge;
+    private final boolean hostedVespa;
 
     /**
      * If multitenant or a cluster controller was explicitly configured in this cluster:
@@ -462,6 +463,7 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
         this.documentDefinitions = documentDefinitions;
         this.documentSelection = routingSelection;
         this.redundancy = redundancy;
+        this.hostedVespa = parent.getRoot().getDeployState().getProperties().hostedVespa();
     }
 
     public void prepare() {
@@ -578,13 +580,13 @@ public class ContentCluster extends AbstractConfigProducer implements StorDistri
 
     /**
      * Returns the distribution bits this cluster should use.
-     * OnHosted Vespa this is hardcoded not computed from the nodes because reducing the number of nodes is a common
+     * On Hosted Vespa this is hardcoded not computed from the nodes because reducing the number of nodes is a common
      * operation while reducing the number of distribution bits can lead to consistency problems.
      * This hardcoded value should work fine from 1-200 nodes. Those who have more will need to set this value
      * in config and not remove it again if they reduce the node count.
      */
     public int distributionBits() {
-        // if (hostedVespa) return 16; TODO: Re-enable this later (Nov 2015, ref VESPA-1702)
+        if (hostedVespa) return 16;
         return DistributionBitCalculator.getDistributionBits(getNodeCountPerGroup(), getDistributionMode());
     }
 
