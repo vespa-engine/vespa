@@ -36,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
+ * <pre>
  * Requires docker daemon, see {@link com.yahoo.vespa.hosted.dockerapi.DockerTestUtils} for more details.
  *
  * To get started:
@@ -48,10 +49,16 @@ import static org.mockito.Mockito.when;
  * Linux only:
  *  1. Create /home/docker/container-storage with read/write permissions
  *
+ * Example usage:
+     DockerImage vespaDockerBase = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.52.35");
+     Path pathToAppToDeploy = Paths.get("/home/valerijf/dev/basic-search/target/application.zip");
+     RunVespaLocal runVespaLocal = new RunVespaLocal(vespaDockerBase, pathToAppToDeploy);
+     runVespaLocal.runVespaLocalTest();
  *
  * Issues:
  *  1. If you cannot make Docker Toolbox start, try starting Virtualbox and turn off the "default" machine
  *  2. If the above is not enough try "sudo ifconfig vboxnet0 down && sudo ifconfig vboxnet0 up" (see https://github.com/docker/kitematic/issues/1193)
+ * </pre>
  *
  * @author freva
  */

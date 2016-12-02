@@ -26,7 +26,21 @@ import static org.junit.Assert.assertEquals;
  *  1. Add system test host hostnames to /etc/hosts:
  *      $ sudo ./vespa/node-admin/scripts/etc-hosts.sh
  *
- *</pre>
+ *
+ * Example usage:
+     DockerImage vespaDockerBase = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.52.35");
+     Path pathToSystemtestsInHost = Paths.get("/home/valerijf/dev/systemtests");
+     RunSystemTests runSystemTests = new RunSystemTests(vespaDockerBase, pathToSystemtestsInHost);
+
+     ContainerName systemtestsHost = new ContainerName("stest-1");
+     // Update maven local repository and /home/y/lib/jars with the current version of these modules...
+     runSystemTests.mavenInstallModules(systemtestsHost, "docproc", "container-search-and-docproc", "container-dev");
+
+     Path systemTestToRun = Paths.get("tests/search/basicsearch/basic_search.rb");
+     // When using mavenInstallModules(), add --vespa-version argument
+     runSystemTests.runSystemTest(systemtestsHost, systemTestToRun, "--vespa-version=6-SNAPSHOT");
+ * </pre>
+ *
  * @author freva
  */
 public class RunSystemTests {
