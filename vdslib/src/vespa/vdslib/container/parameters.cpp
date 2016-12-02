@@ -156,12 +156,15 @@ std::string Parameters::toString() const
     return ret;
 }
 
-template void vdslib::Parameters::set(const vespalib::stringref &, int);
-template void vdslib::Parameters::set(const vespalib::stringref &, long);
+template void vdslib::Parameters::set(const vespalib::stringref &, int32_t);
+template void vdslib::Parameters::set(const vespalib::stringref &, int64_t);
+template void vdslib::Parameters::set(const vespalib::stringref &, uint64_t);
 template void vdslib::Parameters::set(const vespalib::stringref &, double);
 template void vdslib::Parameters::set(const vespalib::stringref &, const char *);
+template void vdslib::Parameters::set(const vespalib::stringref &, vespalib::string);
 template void vdslib::Parameters::set(const vespalib::stringref &, std::string);
-template int vdslib::Parameters::get(const vespalib::stringref &, int) const;
-template long vdslib::Parameters::get(const vespalib::stringref &, long) const;
+template int32_t vdslib::Parameters::get(const vespalib::stringref &, int32_t) const;
+template int64_t vdslib::Parameters::get(const vespalib::stringref &, int64_t) const;
+template uint64_t vdslib::Parameters::get(const vespalib::stringref &, uint64_t) const;
 template double vdslib::Parameters::get(const vespalib::stringref &, double) const;
 template std::string vdslib::Parameters::get(const vespalib::stringref &, std::string) const;
