@@ -17,6 +17,7 @@ import java.util.Set;
  *
  * @author geirst
  */
+// TODO: Move below MapTensor
 @Beta
 public class MapTensorBuilder {
 

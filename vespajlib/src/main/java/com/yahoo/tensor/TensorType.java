@@ -4,6 +4,7 @@ package com.yahoo.tensor;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,10 +30,13 @@ public class TensorType {
 
     public static final TensorType empty = new TensorType(Collections.emptyList());
 
+    /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;
 
     private TensorType(Collection<Dimension> dimensions) {
-        this.dimensions = ImmutableList.copyOf(dimensions);
+        List<Dimension> dimensionList = new ArrayList<>(dimensions);
+        Collections.sort(dimensionList);
+        this.dimensions = ImmutableList.copyOf(dimensionList);
     }
 
     /**
@@ -84,7 +88,7 @@ public class TensorType {
     public boolean equals(Object other) {
         if (this == other) return true;
         if (other == null || getClass() != other.getClass()) return false;
-        return new HashSet<>(dimensions).equals(new HashSet<>(((TensorType)other).dimensions));
+        return new HashSet<>(dimensions).equals(new HashSet<>(((TensorType)other).dimensions)); // TODO: 
     }
 
     @Override
