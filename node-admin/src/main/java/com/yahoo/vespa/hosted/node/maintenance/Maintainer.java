@@ -24,14 +24,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class Maintainer {
     private static final Path ROOT = Paths.get("/");
@@ -45,7 +44,6 @@ public class Maintainer {
     public static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
     public static final String JOB_ARCHIVE_APP_DATA = "archive-app-data";
     public static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
-    public static final String JOB_CLEAN_HOME = "clean-home";
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -61,7 +59,6 @@ public class Maintainer {
                 .withCommands(Help.class,
                         DeleteOldAppDataArguments.class,
                         CleanCoreDumpsArguments.class,
-                        CleanHomeArguments.class,
                         ArchiveApplicationData.class);
 
         Cli<Runnable> gitParser = builder.build();
@@ -79,10 +76,6 @@ public class Maintainer {
 
     public static void deleteOldAppData(PrefixLogger logger) {
         executeMaintainer(logger, JOB_DELETE_OLD_APP_DATA);
-    }
-
-    public static void cleanHome(PrefixLogger logger) {
-        executeMaintainer(logger, JOB_CLEAN_HOME);
     }
 
     public static void archiveAppData(PrefixLogger logger, ContainerName containerName) {
@@ -134,24 +127,6 @@ public class Maintainer {
 
             if (coreDumpsDir.exists()) {
                 DeleteOldAppData.deleteFilesExceptNMostRecent(coreDumpsDir.getAbsolutePath(), 1);
-            }
-        }
-    }
-
-    @Command(name = JOB_CLEAN_HOME, description = "Clean home directories for large files")
-    public static class CleanHomeArguments implements Runnable {
-        @Override
-        public void run() {
-            List<String> exceptions = Arrays.asList("docker", "y", "yahoo");
-            File homeDir = new File("/home/");
-            long MB = 1 << 20;
-
-            if (homeDir.exists() && homeDir.isDirectory()) {
-                for (File file : homeDir.listFiles()) {
-                    if (! exceptions.contains(file.getName())) {
-                        DeleteOldAppData.deleteFilesLargerThan(file, 100*MB);
-                    }
-                }
             }
         }
     }
