@@ -32,7 +32,7 @@ public:
     virtual void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const {}
     virtual Blueprint::UP createInstance() const { return Blueprint::UP(new StaticRankBlueprint()); }
     virtual bool setup(const IIndexEnvironment & indexEnv, const StringVector & params);
-    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment & queryEnv) const;
+    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment & queryEnv) const override;
 };
 
 } // namespace test

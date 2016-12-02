@@ -101,7 +101,7 @@ public:
 
     // Inherit doc from Blueprint.
     virtual search::fef::FeatureExecutor::LP
-    createExecutor(const search::fef::IQueryEnvironment & env) const;
+    createExecutor(const search::fef::IQueryEnvironment & env) const override;
 };
 
 //-----------------------------------------------------------------------------

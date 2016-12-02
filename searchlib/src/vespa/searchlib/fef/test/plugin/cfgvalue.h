@@ -22,7 +22,7 @@ public:
     virtual void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const;
     virtual Blueprint::UP createInstance() const { return Blueprint::UP(new CfgValueBlueprint()); }
     virtual bool setup(const IIndexEnvironment & indexEnv, const StringVector & params);
-    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment & queryEnv) const {
+    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment & queryEnv) const override {
         (void) queryEnv;
         return FeatureExecutor::LP(new search::features::ValueExecutor(_values));
     }

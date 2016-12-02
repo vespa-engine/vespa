@@ -36,7 +36,7 @@ public:
     virtual bool setup(const search::fef::IIndexEnvironment &env,
                        const search::fef::ParameterList &params);
     virtual search::fef::FeatureExecutor::LP
-    createExecutor(const search::fef::IQueryEnvironment &env) const;
+    createExecutor(const search::fef::IQueryEnvironment &env) const override;
 };
 
 } // namespace features

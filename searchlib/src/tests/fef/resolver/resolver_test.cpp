@@ -23,7 +23,7 @@ public:
         describeOutput("baz", "baz");
         return true;
     }
-    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment &) const {
+    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment &) const override {
         return FeatureExecutor::LP(NULL);
     }
 };
@@ -43,7 +43,7 @@ public:
         describeOutput("out", "out");
         return true;
     }
-    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment &) const {
+    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment &) const override {
         return FeatureExecutor::LP(NULL);
     }
 };

@@ -51,7 +51,7 @@ public:
                        const fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const;
+    virtual fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const override;
 };
 
 
