@@ -141,12 +141,14 @@ public class RunSystemTests {
                 .withUlimit("nproc", 409600, 409600)
                 .withUlimit("core", -1, -1)
                 .withVolume(Paths.get(System.getProperty("user.home")).resolve(".m2/settings.xml").toString(), "/root/.m2/settings.xml")
-                .withVolume("/etc/hosts", "/etc/hosts")
                 .withVolume(pathToSystemtestsInHost.toString(), pathToSystemtestsInContainer.toString())
                 .withVolume(pathToVespaRepoInHost.toString(), pathToVespaRepoInContainer.toString())
                 .create();
 
         docker.startContainer(containerName);
+        docker.dockerClient.copyArchiveToContainerCmd(containerName.asString())
+                .withHostResource("/etc/hosts").withRemotePath("/etc/").exec();
+
         // TODO: Should check something to see if node_server.rb is ready
         Thread.sleep(1000);
     }
