@@ -1,14 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.text.XML;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
+import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import org.junit.Test;
-import org.w3c.dom.Document;
-
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -18,13 +15,12 @@ import static org.junit.Assert.assertTrue;
  */
 public class StorageGroupTest {
 
-    ContentCluster parse(String xml) {
-        Document doc = XML.getDocument(xml);
-        return new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
+    ContentCluster parse(String xml) throws Exception {
+        return ContentClusterUtils.createCluster(xml, new MockRoot());
     }
 
     @Test
-    public void testSingleGroup() {
+    public void testSingleGroup() throws Exception {
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
         ContentCluster cluster = parse(
                 "<content id=\"storage\">\n" +
@@ -80,7 +76,7 @@ public class StorageGroupTest {
     }
 
     @Test
-    public void testNestedGroups() {
+    public void testNestedGroups() throws Exception {
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
         parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
@@ -134,7 +130,7 @@ public class StorageGroupTest {
     }
 
     @Test
-    public void testGroupCapacity() {
+    public void testGroupCapacity() throws Exception {
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
         parse(
                 "<content version=\"1.0\" id=\"storage\">\n" +
