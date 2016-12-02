@@ -15,13 +15,14 @@ class IConfigHandler;
  * A ConfigAgent will register with the config server and obtain
  * config on behalf of a IConfigHandler.
  **/
-class ConfigAgent : public config::IFetcherCallback<messagebus::MessagebusConfig>,
-                    public vespalib::noncopyable
+class ConfigAgent : public config::IFetcherCallback<messagebus::MessagebusConfig>
 {
 private:
     IConfigHandler &_handler;
 
 public:
+    ConfigAgent(const ConfigAgent &) = delete;
+    ConfigAgent & operator = (const ConfigAgent &) = delete;
     ConfigAgent(IConfigHandler & handler);
 
     // Implements IFetcherCallback

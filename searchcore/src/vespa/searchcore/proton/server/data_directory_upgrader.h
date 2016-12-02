@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace proton {
 

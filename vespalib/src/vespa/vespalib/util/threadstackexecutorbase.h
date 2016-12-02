@@ -8,7 +8,7 @@
 #include "arrayqueue.hpp"
 #include "sync.h"
 #include <memory>
-#include "noncopyable.hpp"
+#include <vector>
 #include <vespa/fastos/thread.h>
 
 namespace vespalib {
@@ -17,8 +17,7 @@ namespace vespalib {
  * An executor service that executes tasks in multiple threads.
  **/
 class ThreadStackExecutorBase : public ThreadExecutor,
-                                public FastOS_Runnable,
-                                public noncopyable
+                                public FastOS_Runnable
 {
 public:
     /**
@@ -173,6 +172,8 @@ protected:
     void internalSetTaskLimit(uint32_t taskLimit);
 
 public:
+    ThreadStackExecutorBase(const ThreadStackExecutorBase &) = delete;
+    ThreadStackExecutorBase & operator = (const ThreadStackExecutorBase &) = delete;
     /**
      * Observe and reset stats for this object.
      *

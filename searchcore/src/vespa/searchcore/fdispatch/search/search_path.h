@@ -4,6 +4,8 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <set>
+#include <vector>
+
 namespace vespalib {
     class asciistream;
 }
