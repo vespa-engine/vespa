@@ -13,6 +13,7 @@
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/base/exceptions.h>
 #include <sstream>
 
 using vespalib::nbostream;

@@ -46,7 +46,12 @@ uint32_t IntegerAttribute::get(DocId doc, WeightedConstChar * v, uint32_t sz) co
     (void) sz;
     return 0;
 }
-
+const char *
+IntegerAttribute::getString(DocId doc, char * s, size_t sz) const {
+    largeint_t v = getInt(doc);
+    snprintf(s, sz, "%" PRId64, v);
+    return s;
+}
 uint32_t IntegerAttribute::get(DocId doc, vespalib::string * s, uint32_t sz) const
 {
     largeint_t * v = new largeint_t[sz];

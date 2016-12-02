@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/metrics/metricsnapshot.h>
-
+#include "metricsnapshot.h"
+#include "metricmanager.h"
 #include <vespa/log/log.h>
-#include <vespa/metrics/metricmanager.h>
 
 LOG_SETUP(".metrics.snapshot");
 
@@ -115,7 +114,7 @@ MetricSnapshotSet::timeForAnotherSnapshot(time_t currentTime) {
             LOG(warning, "Metric snapshot set %s was asked if it was time for "
                          "another snapshot, a whole period beyond when it "
                          "should have been done (Last update was at time %"
-                         PRIu64 ", current time is %" PRIu64" and period is %u). "
+                         PRIu64 ", current time is %" PRIu64 " and period is %u). "
                          "Clearing data and updating time to current time.",
                 getName().c_str(), lastTime, currentTime, getPeriod());
             reset(currentTime);

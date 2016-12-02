@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sys/mman.h>
 #include <linux/mman.h>
+#include <fcntl.h>
 
 namespace search
 {

@@ -10,6 +10,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fastos/file.h>
 
 namespace search
 {

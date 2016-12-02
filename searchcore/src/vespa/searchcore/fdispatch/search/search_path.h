@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <set>
-
+namespace vespalib {
+    class asciistream;
+}
 namespace fdispatch {
 
 class SearchPath

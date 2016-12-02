@@ -3,6 +3,7 @@
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <ostream>
 
 namespace document {
 

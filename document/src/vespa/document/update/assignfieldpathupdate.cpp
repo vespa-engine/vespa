@@ -5,6 +5,7 @@
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/update/assignfieldpathupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <vespa/log/log.h>

@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
+#include <sys/types.h>
+#include <stdint.h>
 
 namespace vespalib {
 
@@ -31,7 +32,7 @@ public:
      **/
     struct TaggedPtr
     {
-        TaggedPtr() : _ptr(NULL), _tag(0) { }
+        TaggedPtr() : _ptr(nullptr), _tag(0) { }
         TaggedPtr(void * h, size_t t) : _ptr(h), _tag(t) { }
         TaggedPtr(const TaggedPtr & h) : _ptr(h._ptr), _tag(h._tag) { }
         TaggedPtr & operator = (const TaggedPtr & h) { if (this != &h) {_ptr = h._ptr; _tag = h._tag; }; return *this; }

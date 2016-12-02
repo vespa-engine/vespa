@@ -1,14 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.searchable_feed_view");
 #include "searchable_feed_view.h"
 #include "ireplayconfig.h"
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
+#include "forcecommitcontext.h"
+#include "operationdonecontext.h"
+#include "removedonecontext.h"
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
@@ -17,20 +13,15 @@ LOG_SETUP(".proton.server.searchable_feed_view");
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchlib/common/lambdatask.h>
-#include "forcecommitcontext.h"
-#include "operationdonecontext.h"
-#include "removedonecontext.h"
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.searchable_feed_view");
 
 using document::BucketId;
 using document::Document;
 using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using documentapi::DocumentProtocol;
-using documentapi::DocumentReply;
-using documentapi::RemoveDocumentReply;
-using documentapi::UpdateDocumentReply;
-using proton::matching::ISearchContext;
 using proton::matching::MatchContext;
 using proton::matching::Matcher;
 using search::index::Schema;

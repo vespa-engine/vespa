@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <atomic>
+#include <assert.h>
 
 namespace vespalib {
 
@@ -37,8 +38,7 @@ public:
             : _refCount(1),
               _generation(0),
               _next(0)
-        {
-        }
+        { }
 
         ~GenerationHold()
         {

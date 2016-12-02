@@ -6,11 +6,11 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
 
 using std::binary_search;

@@ -6,7 +6,6 @@
 #include "iattributesavetarget.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastlib/text/normwordfolder.h>
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcommon/attribute/status.h>
@@ -84,13 +83,12 @@ public:
         return _value == rhs._value;
     }
 
-    friend vespalib::asciistream &
-    operator << (vespalib::asciistream & os, const UnWeightedType & v) {
-        return os << "(" << v._value << ", 1)";
-    }
 private:
     T       _value;
 };
+
+template <typename T>
+vespalib::asciistream & operator << (vespalib::asciistream & os, const UnWeightedType<T> & v);
 
 class IExtendAttribute
 {

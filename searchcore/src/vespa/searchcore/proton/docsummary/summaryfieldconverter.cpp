@@ -1,11 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.docsummary.summaryfieldconverter");
-
 #include "summaryfieldconverter.h"
-
 #include "linguisticsannotation.h"
 #include "searchdatatype.h"
 #include <vespa/document/annotation/alternatespanlist.h>
@@ -48,6 +43,7 @@ LOG_SETUP(".proton.docsummary.summaryfieldconverter");
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/tensor/serialization/slime_binary_format.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 
 using document::AlternateSpanList;

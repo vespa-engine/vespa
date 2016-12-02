@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/xmlserializable.hpp>
 #include <vector>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vespalib {
 namespace xml {
@@ -66,7 +67,7 @@ namespace {
     }
 
     const std::string xmlAttributeEscape(const std::string& s) {
-        std::ostringstream ost;
+        vespalib::asciistream ost;
         for (uint32_t i=0, n=s.size(); i<n; ++i) {
             if (s[i] == '"' || s[i] == '\n'
                 || escapedXmlChars[static_cast<uint8_t>(s[i])])
@@ -379,8 +380,8 @@ XmlAttribute::XmlAttribute(const std::string& name, const char * value, uint32_t
           _value(),
           _next()
 {
-    std::ostringstream ost;
-    if (flags & HEX) ost << std::hex << "0x";
+    vespalib::asciistream ost;
+    if (flags & HEX) ost << vespalib::hex << "0x";
     ost << value;
     _value = ost.str();
     if (!isLegalName(name)) {

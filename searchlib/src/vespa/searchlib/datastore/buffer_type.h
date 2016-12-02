@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <assert.h>
+
 namespace search {
 namespace datastore {
 

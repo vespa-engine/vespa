@@ -3,8 +3,6 @@
 #pragma once
 
 #include <limits>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <string>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/table.h>
@@ -37,16 +35,7 @@ typedef const char * ConstCharPtr;
  * @return The numeric value.
  */
 template <typename T>
-T strToNum(const vespalib::stringref &str)
-{
-    vespalib::asciistream iss(str);
-    T retval = 0;
-    try {
-        iss >> retval;
-    } catch (const vespalib::IllegalArgumentException &) {
-    }
-    return retval;
-}
+T strToNum(vespalib::stringref str);
 
 template <typename T>
 feature_t getAsFeature(const T &value) __attribute__((__always_inline__));

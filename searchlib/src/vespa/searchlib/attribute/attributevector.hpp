@@ -166,5 +166,10 @@ bool AttributeVector::remove(ChangeVectorT< ChangeTemplate<T> > & changes, DocId
     return retval;
 }
 
+template<typename T>
+vespalib::asciistream & operator << (vespalib::asciistream & os, const UnWeightedType<T> & v) {
+    return os << "(" << v._value << ", 1)";
+}
+
 }
 

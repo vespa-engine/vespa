@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/frameworkimpl/status/statuswebserver.h>
+
+#include "statuswebserver.h"
 
 #include <vespa/document/util/stringutil.h>
 #include <vespa/log/log.h>
@@ -10,6 +10,7 @@
 #include <vespa/fastlib/net/url.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 LOG_SETUP(".status");
 

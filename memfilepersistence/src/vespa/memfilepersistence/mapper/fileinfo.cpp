@@ -1,10 +1,46 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "fileinfo.h"
-#include <sstream>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 
 namespace memfile {
+
+void
+MetaSlot::print(std::ostream & out) const {
+    vespalib::asciistream tmp;
+    print(tmp);
+    out << tmp.str();
+}
+
+void
+MetaSlot::print(vespalib::asciistream & out) const {
+    out << "Slot(" << std::dec << _timestamp << ", " << _gid << ", "
+        << _headerPos << " - " << _headerSize << ", " << _bodyPos
+        << " - " << _bodySize << ", 0x" << std::hex << _flags << ", 0x"
+        << _checksum << ")" << std::dec;
+}
+
+std::ostream& operator<<(std::ostream& out, const MetaSlot& slot) {
+    vespalib::asciistream tmp;
+    slot.print(tmp);
+    return out << tmp.str();
+}
+vespalib::asciistream& operator<<(vespalib::asciistream & out, const MetaSlot& slot) {
+    slot.print(out); return out;
+}
+
+void
+Header::print(std::ostream& out, const std::string& indent) const {
+    out << indent << "SlotFileHeader(\n"
+        << indent << "  version: " << std::hex << _version << std::dec << "\n"
+        << indent << "  meta data list size: " << _metaDataListSize << "\n"
+        << indent << "  header block size: " << _headerBlockSize << "b\n"
+        << indent << "  checksum: " << std::hex << _checksum
+        << indent << (verify() ? " (OK)\n" : " (MISMATCH)\n")
+        << indent << "  file checksum: " << _fileChecksum << "\n"
+        << indent << ")";
+}
 
 FileInfo::FileInfo()
     : _metaDataListSize(0),
@@ -28,6 +64,8 @@ FileInfo::FileInfo(const Header& header, size_t fileSize)
               fileSize - header._headerBlockSize
               - sizeof(MetaSlot) * header._metaDataListSize - sizeof(Header))
 { }
+
+FileInfo::~FileInfo() { }
 
 uint32_t
 FileInfo::getHeaderBlockStartIndex() const

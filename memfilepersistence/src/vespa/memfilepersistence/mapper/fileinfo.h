@@ -37,17 +37,8 @@ struct MetaSlot : private Types {
         return (_flags & IN_USE);
     }
 
-    void print(std::ostream & out) const {
-        vespalib::asciistream tmp;
-        print(tmp);
-        out << tmp.str();
-    }
-    void print(vespalib::asciistream & out) const {
-        out << "Slot(" << std::dec << _timestamp << ", " << _gid << ", "
-                << _headerPos << " - " << _headerSize << ", " << _bodyPos
-            << " - " << _bodySize << ", 0x" << std::hex << _flags << ", 0x"
-            << _checksum << ")" << std::dec;
-    }
+    void print(std::ostream & out) const;
+    void print(vespalib::asciistream & out) const;
 
     // Functions used by unit tests (avoid renaming all old func usage)
     void updateChecksum() { _checksum = calcSlotChecksum(); }
@@ -60,14 +51,8 @@ struct MetaSlot : private Types {
     { _flags = (isInUse ? _flags | IN_USE : _flags & ~IN_USE); }
 };
 
-inline std::ostream& operator<<(std::ostream& out, const MetaSlot& slot) {
-    vespalib::asciistream tmp;
-    slot.print(tmp);
-    return out << tmp.str();
-}
-inline vespalib::asciistream& operator<<(vespalib::asciistream & out, const MetaSlot& slot) {
-    slot.print(out); return out;
-}
+std::ostream& operator<<(std::ostream& out, const MetaSlot& slot);
+vespalib::asciistream& operator<<(vespalib::asciistream & out, const MetaSlot& slot);
 
 /**
  * Represents a slotfile header.
@@ -111,16 +96,7 @@ struct Header {
     void setMetaDataListSize(uint32_t sz) { _metaDataListSize = sz; }
     void setHeaderBlockSize(uint32_t sz) { _headerBlockSize = sz; }
 
-    void print(std::ostream& out, const std::string& indent = "") const {
-        out << indent << "SlotFileHeader(\n"
-            << indent << "  version: " << std::hex << _version << std::dec << "\n"
-            << indent << "  meta data list size: " << _metaDataListSize << "\n"
-            << indent << "  header block size: " << _headerBlockSize << "b\n"
-            << indent << "  checksum: " << std::hex << _checksum
-            << indent << (verify() ? " (OK)\n" : " (MISMATCH)\n")
-            << indent << "  file checksum: " << _fileChecksum << "\n"
-            << indent << ")";
-    }
+    void print(std::ostream& out, const std::string& indent = "") const;
  };
 
 struct FileInfo {
@@ -137,6 +113,7 @@ struct FileInfo {
     FileInfo();
     FileInfo(uint32_t metaDataListSize, uint32_t headerBlockSize, uint32_t bodyBlockSize);
     FileInfo(const Header& header, size_t fileSize);
+    ~FileInfo();
 
     uint32_t getBlockSize(Types::DocumentPart part) const {
         return (part == Types::BODY ? _bodyBlockSize : _headerBlockSize);

@@ -3,9 +3,10 @@
 
 #include <boost/operators.hpp>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <limits>
-#include <chrono>
+
+namespace vespalib {
+    class asciistream;
+}
 
 namespace storage {
 namespace framework {
@@ -92,14 +93,10 @@ Type& operator*(Type& type, Number n) {
 }
 
 template<typename Type, int MPU>
-std::ostream& operator<<(std::ostream& out, const Time<Type, MPU>& t) {
-    return out << t.getTime();
-}
+std::ostream& operator<<(std::ostream& out, const Time<Type, MPU>& t);
 
 template<typename Type, int MPU>
-vespalib::asciistream& operator<<(vespalib::asciistream& out, const Time<Type, MPU>& t) {
-    return out << t.getTime();
-}
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const Time<Type, MPU>& t);
 
 class MicroSecTime;
 class MilliSecTime;
@@ -175,5 +172,4 @@ inline MicroSecTime MilliSecTime::getMicros() const {
 
 } // framework
 } // storage
-
 

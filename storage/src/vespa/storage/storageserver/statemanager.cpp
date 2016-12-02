@@ -1,10 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "statemanager.h"
 #include <vespa/defaults.h>
-#include <vespa/storage/storageserver/statemanager.h>
-
-#include <vespa/log/log.h>
 #include <fstream>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
@@ -16,6 +13,8 @@
 #include <unistd.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".state.manager");
 
@@ -34,8 +33,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _listenerLock(),
       _grabbedExternalLock(false),
       _notifyingListeners(false),
-      _nodeState(new lib::NodeState(
-            _component.getNodeType(), lib::State::INITIALIZING)),
+      _nodeState(new lib::NodeState(_component.getNodeType(), lib::State::INITIALIZING)),
       _nextNodeState(),
       _systemState(new lib::ClusterState),
       _nextSystemState(),

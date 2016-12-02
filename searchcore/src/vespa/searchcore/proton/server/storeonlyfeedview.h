@@ -8,7 +8,6 @@
 #include "replaypacketdispatcher.h"
 #include "searchcontext.h"
 #include "tlcproxy.h"
-#include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feeddebugger.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
@@ -19,15 +18,13 @@
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
 
-namespace search
-{
+namespace search {
 
 class IDestructorCallback;
 
 }
 
-namespace proton
-{
+namespace proton {
 
 class IReplayConfig;
 class PerDocTypeFeedMetrics;

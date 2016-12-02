@@ -30,8 +30,8 @@ public:
         return AttributeVector::remove(_changes, doc, NumericChangeData<largeint_t>(v), weight);
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
-    virtual bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust);
-    virtual uint32_t clearDoc(DocId doc);
+    bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
+    uint32_t clearDoc(DocId doc) override;
 protected:
     IntegerAttribute(const vespalib::string & name, const Config & c);
     typedef ChangeTemplate<NumericChangeData<largeint_t> > Change;
@@ -39,11 +39,11 @@ protected:
     ChangeVector _changes;
 
 private:
-    virtual const char * getString(DocId doc, char * s, size_t sz) const { largeint_t v = getInt(doc); snprintf(s, sz, "%" PRId64, v); return s; }
-    virtual uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, const char ** v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const;
+    const char * getString(DocId doc, char * s, size_t sz) const override;
+    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
+    uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override;
     virtual largeint_t getIntFromEnum(EnumHandle e) const = 0;
 };
 

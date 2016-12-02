@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/atomic.h>
+#include <assert.h>
 
 namespace vespalib
 {

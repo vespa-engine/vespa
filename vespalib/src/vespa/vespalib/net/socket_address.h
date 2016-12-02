@@ -6,6 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "socket_handle.h"
 #include <vector>
+#include <sys/socket.h>
 
 namespace vespalib {
 

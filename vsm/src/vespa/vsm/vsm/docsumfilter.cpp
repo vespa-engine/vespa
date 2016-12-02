@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".vsm.docsumfilter");
 
-#include <vespa/vsm/vsm/docsumfilter.h>
-#include <vespa/vsm/vsm/jsondocsumwriter.h>
+#include "docsumfilter.h"
+#include "jsondocsumwriter.h"
 #include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/vespalib/util/jsonwriter.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
-#include <stack>
+#include <vespa/document/fieldvalue/literalfieldvalue.h>
+#include <vespa/document/base/exceptions.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".vsm.docsumfilter");
 
 using namespace search::docsummary;
 
@@ -212,12 +211,9 @@ DocsumFilter::DocsumFilter(const DocsumToolsPtr &tools, const IDocSumCache & doc
     _snippetModifiers(NULL),
     _cachedValue(),
     _emptyFieldPath()
-{
-}
+{ }
 
-DocsumFilter::~DocsumFilter()
-{
-}
+DocsumFilter::~DocsumFilter() { }
 
 void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPathMap)
 {

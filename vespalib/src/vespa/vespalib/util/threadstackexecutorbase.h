@@ -9,6 +9,7 @@
 #include "sync.h"
 #include <memory>
 #include "noncopyable.hpp"
+#include <vespa/fastos/thread.h>
 
 namespace vespalib {
 

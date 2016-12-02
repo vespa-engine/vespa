@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include <sstream>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace storage {
 namespace memfile {

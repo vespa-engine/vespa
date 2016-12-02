@@ -1,10 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdslib/container/parameters.h>
+#include "parameters.hpp"
 #include <vespa/vespalib/objects/nbostream.h>
 
 using namespace vdslib;
+
+Parameters::Parameters() : _parameters() { }
+
+Parameters::Parameters(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer)
+    : _parameters()
+{
+    deserialize(repo, buffer);
+}
 
 Parameters::~Parameters()
 {
@@ -30,8 +37,7 @@ void Parameters::onSerialize(document::ByteBuffer& buffer) const
     }
 }
 
-void Parameters::onDeserialize(const document::DocumentTypeRepo &repo,
-                               document::ByteBuffer& buffer)
+void Parameters::onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer)
 {
     (void) repo;
     _parameters.clear();
@@ -149,3 +155,13 @@ std::string Parameters::toString() const
     }
     return ret;
 }
+
+template void vdslib::Parameters::set(const vespalib::stringref &, int);
+template void vdslib::Parameters::set(const vespalib::stringref &, long);
+template void vdslib::Parameters::set(const vespalib::stringref &, double);
+template void vdslib::Parameters::set(const vespalib::stringref &, const char *);
+template void vdslib::Parameters::set(const vespalib::stringref &, std::string);
+template int vdslib::Parameters::get(const vespalib::stringref &, int) const;
+template long vdslib::Parameters::get(const vespalib::stringref &, long) const;
+template double vdslib::Parameters::get(const vespalib::stringref &, double) const;
+template std::string vdslib::Parameters::get(const vespalib::stringref &, std::string) const;

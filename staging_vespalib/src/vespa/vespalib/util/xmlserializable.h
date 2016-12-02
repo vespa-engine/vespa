@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include <ostream>
+#include <iosfwd>
 #include <list>
 #include <memory>
 

@@ -24,6 +24,7 @@
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/fastos/dynamiclibrary.h>
 
 namespace document
 {

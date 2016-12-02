@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "annotationreferencedatatype.h"
 #include <vespa/document/fieldvalue/annotationreferencefieldvalue.h>
+#include <ostream>
 
 using std::unique_ptr;
 using std::ostream;

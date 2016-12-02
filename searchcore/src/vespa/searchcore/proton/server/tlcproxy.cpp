@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.tlcproxy");
 
 #include "tlcproxy.h"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.tlcproxy");
 
 using vespalib::nbostream;
 

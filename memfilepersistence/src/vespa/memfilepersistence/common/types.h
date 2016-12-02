@@ -15,7 +15,6 @@
  */
 #pragma once
 
-#include <iosfwd>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/fieldvalue/document.h>

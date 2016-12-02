@@ -1,14 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.storeonlyfeedview");
 #include "ireplayconfig.h"
 #include "storeonlyfeedview.h"
-#include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/documentreply.h>
-#include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
-#include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
 #include <vespa/searchcore/proton/metrics/feed_metrics.h>
@@ -24,16 +17,15 @@ LOG_SETUP(".proton.server.storeonlyfeedview");
 #include "putdonecontext.h"
 #include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.storeonlyfeedview");
 
 using document::BucketId;
 using document::DocumentTypeRepo;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
-using documentapi::DocumentProtocol;
-using documentapi::DocumentReply;
-using documentapi::RemoveDocumentReply;
-using documentapi::UpdateDocumentReply;
 using search::index::Schema;
 using storage::spi::BucketInfoResult;
 using storage::spi::Timestamp;
