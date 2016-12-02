@@ -95,11 +95,11 @@ MatchBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-MatchBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+MatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     (void) env;
-    return FeatureExecutor::LP(new MatchExecutor(_params));
+    return stash.create<MatchExecutor>(_params);
 }
 
 

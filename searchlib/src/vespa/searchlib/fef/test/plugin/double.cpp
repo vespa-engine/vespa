@@ -54,6 +54,13 @@ DoubleBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & 
     return true;
 }
 
+FeatureExecutor &
+DoubleBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<DoubleExecutor>(_cnt);
+}
+
 } // namespace test
 } // namespace fef
 } // namespace search

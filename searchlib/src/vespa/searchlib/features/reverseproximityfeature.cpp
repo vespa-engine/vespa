@@ -127,10 +127,10 @@ ReverseProximityBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new ReverseProximityBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-ReverseProximityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+ReverseProximityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new ReverseProximityExecutor(env, _config));
+    return stash.create<ReverseProximityExecutor>(env, _config);
 }
 
 }}

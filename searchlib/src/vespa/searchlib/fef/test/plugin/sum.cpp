@@ -69,6 +69,13 @@ SumBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & par
     return true;
 }
 
+FeatureExecutor &
+SumBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<SumExecutor>();
+}
+
 } // namespace test
 } // namespace fef
 } // namespace search

@@ -300,10 +300,10 @@ FieldMatchBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-FieldMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+FieldMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new FieldMatchExecutor(env, *_field, _params));
+    return stash.create<FieldMatchExecutor>(env, *_field, _params);
 }
 
 

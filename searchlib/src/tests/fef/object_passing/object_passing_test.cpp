@@ -58,8 +58,8 @@ struct ProxyBlueprint : Blueprint {
         describeOutput("was_object", "whether input was object", FeatureType::number());
         return true;
     }
-    FeatureExecutor::LP createExecutor(const IQueryEnvironment &) const override {
-        return FeatureExecutor::LP(new ProxyExecutor());
+    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
+        return stash.create<ProxyExecutor>();
     }
 };
 

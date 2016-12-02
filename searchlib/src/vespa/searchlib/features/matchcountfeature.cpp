@@ -65,13 +65,13 @@ MatchCountBlueprint::createInstance() const
     return Blueprint::UP(new MatchCountBlueprint());
 }
 
-FeatureExecutor::LP
-MatchCountBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
+FeatureExecutor &
+MatchCountBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     if (_field == nullptr) {
-        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     }
-    return FeatureExecutor::LP(new MatchCountExecutor(_field->id(), queryEnv));
+    return stash.create<MatchCountExecutor>(_field->id(), queryEnv);
 }
 
 } // namespace features

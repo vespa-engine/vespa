@@ -82,7 +82,7 @@ RankProgram::add_unboxing_executors(MatchDataLayout &my_mdl)
         if (specs[seed.executor].output_types[seed.output]) {
             FeatureHandle old_handle = _executors[seed.executor]->outputs()[seed.output];
             FeatureHandle new_handle = my_mdl.allocFeature(false);
-            _executors.emplace_back(new UnboxingExecutor(_shared_inputs, old_handle, new_handle));
+            _executors.emplace_back(&_stash.create<UnboxingExecutor>(_shared_inputs, old_handle, new_handle));
             _unboxed_seeds[seed_entry.first] = std::make_pair(old_handle, new_handle);
         }
     }
@@ -116,6 +116,7 @@ RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(resolver),
       _shared_inputs(),
       _program(),
+      _stash(),
       _executors(),
       _unboxed_seeds()
 {
@@ -135,12 +136,12 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
     const auto &specs = _resolver->getExecutorSpecs();
     _executors.reserve(specs.size());
     for (uint32_t i = 0; i < specs.size(); ++i) {
-        FeatureExecutor::UP executor(specs[i].blueprint->createExecutor(queryEnv).release());
+        FeatureExecutor *executor = &(specs[i].blueprint->createExecutor(queryEnv, _stash));
         assert(executor);
         executor->bind_shared_inputs(_shared_inputs);
         for (; (override < override_end) && (override->ref.executor == i); ++override) {
-            FeatureExecutor::LP tmp(executor.release());
-            executor.reset(new FeatureOverrider(tmp, override->ref.output, override->value));
+            FeatureExecutor *tmp = executor;
+            executor = &(_stash.create<FeatureOverrider>(*tmp, override->ref.output, override->value));
             executor->bind_shared_inputs(_shared_inputs);
         }
         for (auto ref: specs[i].inputs) {
@@ -152,7 +153,7 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
             executor->bindOutput(my_mdl.allocFeature(specs[i].output_types[out_idx]));
         }
         executor->outputs_done();
-        _executors.push_back(std::move(executor));
+        _executors.push_back(executor);
     }
     add_unboxing_executors(my_mdl);
     _match_data = my_mdl.createMatchData();
@@ -163,7 +164,7 @@ namespace {
 
 template <typename Each>
 void extract_handles(const BlueprintResolver::FeatureMap &features,
-                     const std::vector<FeatureExecutor::UP> &executors,
+                     const std::vector<FeatureExecutor *> &executors,
                      const Each &each)
 {
     each.reserve(features.size());

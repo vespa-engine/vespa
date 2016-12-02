@@ -87,13 +87,6 @@ private:
 
 public:
     /**
-     * Convenience typedef for a shared pointer to this class.
-     **/
-    typedef vespalib::LinkedPtr<FeatureExecutor> LP;
-
-    typedef std::unique_ptr<FeatureExecutor> UP;
-
-    /**
      * Create a feature executor that has not yet been bound to neither
      * inputs nor outputs.
      **/

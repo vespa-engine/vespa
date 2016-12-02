@@ -140,10 +140,10 @@ ProximityBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new ProximityBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-ProximityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+ProximityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new ProximityExecutor(env, _config));
+    return stash.create<ProximityExecutor>(env, _config);
 }
 
 }}

@@ -47,10 +47,10 @@ NativeDotProductBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-NativeDotProductBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
+FeatureExecutor &
+NativeDotProductBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new NativeDotProductExecutor(queryEnv, _field->id()));
+    return stash.create<NativeDotProductExecutor>(queryEnv, _field->id());
 }
 
 } // namespace features

@@ -31,8 +31,8 @@ struct ImpureValueBlueprint : Blueprint {
         describeOutput("out", "the impure value");
         return true;
     }
-    FeatureExecutor::LP createExecutor(const IQueryEnvironment &) const override {
-        return FeatureExecutor::LP(new ImpureValueExecutor(value));
+    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
+        return stash.create<ImpureValueExecutor>(value);
     }
 };
 

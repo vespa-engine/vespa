@@ -123,8 +123,8 @@ DistanceToPathBlueprint::setup(const search::fef::IIndexEnvironment & env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     // Retrieve path from query using the name of this and "path" as property.
     std::vector<Vector2> path;
@@ -170,7 +170,7 @@ DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
     }
 
     // Create and return a compatible executor.
-    return search::fef::FeatureExecutor::LP(new DistanceToPathExecutor(path, pos));
+    return stash.create<DistanceToPathExecutor>(path, pos);
 }
 
 } // namespace features

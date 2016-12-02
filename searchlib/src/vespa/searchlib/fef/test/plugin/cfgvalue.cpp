@@ -53,6 +53,13 @@ CfgValueBlueprint::setup(const IIndexEnvironment &indexEnv, const StringVector &
     return true;
 }
 
+FeatureExecutor &
+CfgValueBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<search::features::ValueExecutor>(_values);
+}
+
 } // namespace test
 } // namespace fef
 } // namespace search

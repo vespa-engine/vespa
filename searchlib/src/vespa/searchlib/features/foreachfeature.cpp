@@ -4,6 +4,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.foreachfeature");
 #include "foreachfeature.h"
+#include "valuefeature.h"
 #include "utils.h"
 
 #include <boost/algorithm/string/replace.hpp>
@@ -107,8 +108,8 @@ ForeachBlueprint::setExecutorCreator(CO condition)
         CO _condition;
     public:
         ExecutorCreator(CO cond) : _condition(cond) {}
-        virtual search::fef::FeatureExecutor::LP create(uint32_t numInputs) const {
-            return search::fef::FeatureExecutor::LP(new ForeachExecutor<CO, OP>(_condition,  numInputs));
+        virtual search::fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const {
+            return stash.create<ForeachExecutor<CO, OP>>(_condition,  numInputs);
         }
     };
     _executorCreator.reset(new ExecutorCreator(condition));
@@ -172,13 +173,13 @@ ForeachBlueprint::createInstance() const
     return Blueprint::UP(new ForeachBlueprint());
 }
 
-FeatureExecutor::LP
-ForeachBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+ForeachBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
     if (_executorCreator.get() != NULL) {
-        return _executorCreator->create(_num_inputs);
+        return _executorCreator->create(_num_inputs, stash);
     }
-    return FeatureExecutor::LP(NULL);
+    return stash.create<SingleZeroValueExecutor>();
 }
 
 

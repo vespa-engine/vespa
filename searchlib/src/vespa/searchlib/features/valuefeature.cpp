@@ -61,5 +61,13 @@ ValueBlueprint::setup(const search::fef::IIndexEnvironment &,
     return true;
 }
 
+search::fef::FeatureExecutor &
+ValueBlueprint::createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<ValueExecutor>(_values);
+}
+
+
 } // namespace features
 } // namespace search

@@ -109,8 +109,8 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-DistanceBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     const search::attribute::IAttributeVector * pos = NULL;
     const Location & location = env.getLocation();
@@ -138,7 +138,7 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment & env) const
         }
     }
 
-    return FeatureExecutor::LP(new DistanceExecutor(location, pos));
+    return stash.create<DistanceExecutor>(location, pos);
 }
 
 

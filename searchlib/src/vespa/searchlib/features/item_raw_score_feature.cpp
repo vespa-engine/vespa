@@ -49,16 +49,16 @@ ItemRawScoreBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-ItemRawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
+FeatureExecutor &
+ItemRawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
     HandleVector handles = resolve(queryEnv, _label);
     if (handles.size() == 1) {
-        return FeatureExecutor::LP(new SimpleItemRawScoreExecutor(handles[0]));
+        return stash.create<SimpleItemRawScoreExecutor>(handles[0]);
     } else if (handles.size() == 0) {
-        return FeatureExecutor::LP(new SingleZeroValueExecutor());
+        return stash.create<SingleZeroValueExecutor>();
     } else {        
-        return FeatureExecutor::LP(new ItemRawScoreExecutor(handles));
+        return stash.create<ItemRawScoreExecutor>(handles);
     }
 }
 

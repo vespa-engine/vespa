@@ -62,7 +62,7 @@ public:
     }
     virtual bool setup(const search::fef::IIndexEnvironment & env,
                        const search::fef::ParameterList & params);
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &queryEnv) const override;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
 };
 
 } // namespace features

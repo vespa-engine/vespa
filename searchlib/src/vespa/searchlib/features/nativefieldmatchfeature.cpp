@@ -164,14 +164,14 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-NativeFieldMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+NativeFieldMatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    std::unique_ptr<NativeFieldMatchExecutor> native(new NativeFieldMatchExecutor(env, _params));
-    if (native->empty()) {
-        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+    NativeFieldMatchExecutor &native = stash.create<NativeFieldMatchExecutor>(env, _params);
+    if (native.empty()) {
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     } else {
-        return FeatureExecutor::LP(native.release());
+        return native;
     }
 }
 

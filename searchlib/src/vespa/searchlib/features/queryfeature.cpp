@@ -111,10 +111,10 @@ QueryBlueprint::setup(const IIndexEnvironment &env,
 
 namespace {
 
-FeatureExecutor::LP
+FeatureExecutor &
 createTensorExecutor(const search::fef::IQueryEnvironment &env,
                      const vespalib::string &queryKey,
-                     const ValueType &valueType)
+                     const ValueType &valueType, vespalib::Stash &stash)
 {
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
@@ -128,18 +128,18 @@ createTensorExecutor(const search::fef::IQueryEnvironment &env,
             vespalib::tensor::Tensor::UP mappedTensor = mapper.map(*tensor);
             tensor = std::move(mappedTensor);
         }
-        return ConstantTensorExecutor::create(std::move(tensor));
+        return ConstantTensorExecutor::create(std::move(tensor), stash);
     }
-    return ConstantTensorExecutor::createEmpty(valueType);
+    return ConstantTensorExecutor::createEmpty(valueType, stash);
 }
 
 }
 
-FeatureExecutor::LP
-QueryBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     if (_valueType.is_tensor()) {
-        return createTensorExecutor(env, _key, _valueType);
+        return createTensorExecutor(env, _key, _valueType, stash);
     } else {
         std::vector<feature_t> values;
         Property p = env.getProperties().lookup(_key);
@@ -151,7 +151,7 @@ QueryBlueprint::createExecutor(const IQueryEnvironment &env) const
         } else {
             values.push_back(_defaultValue);
         }
-        return FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
 }
 

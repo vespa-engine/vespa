@@ -66,8 +66,8 @@ RandomBlueprint::setup(const search::fef::IIndexEnvironment & env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-RandomBlueprint::createExecutor(const search::fef::IQueryEnvironment & env) const
+search::fef::FeatureExecutor &
+RandomBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     uint64_t seed = _seed;
     if (seed == 0) {
@@ -79,7 +79,7 @@ RandomBlueprint::createExecutor(const search::fef::IQueryEnvironment & env) cons
     uint64_t matchSeed = util::strToNum<uint64_t>
         (env.getProperties().lookup(getName(), "match", "seed").get("1024")); // default seed
 
-    return search::fef::FeatureExecutor::LP(new RandomExecutor(seed, matchSeed));
+    return stash.create<RandomExecutor>(seed, matchSeed);
 }
 
 

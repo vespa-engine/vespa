@@ -20,7 +20,7 @@ private:
     FeatureOverrider(const FeatureOverrider &);
     FeatureOverrider &operator=(const FeatureOverrider &);
 
-    FeatureExecutor::LP _executor;
+    FeatureExecutor &   _executor;
     uint32_t            _outputIdx;
     FeatureHandle       _handle;
     feature_t           _value;
@@ -34,7 +34,7 @@ public:
      * @param outputIdx which output to override
      * @param value what value to override with
      **/
-    FeatureOverrider(FeatureExecutor::LP executor, uint32_t outputIdx, feature_t value);
+    FeatureOverrider(FeatureExecutor &executor, uint32_t outputIdx, feature_t value);
     void inputs_done() override;
     void outputs_done() override;
     bool isPure() override;

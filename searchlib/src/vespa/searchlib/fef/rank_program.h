@@ -33,7 +33,8 @@ private:
     FeatureExecutor::SharedInputs            _shared_inputs;
     std::vector<FeatureExecutor*>            _program;
     MatchData::UP                            _match_data;
-    std::vector<FeatureExecutor::UP>         _executors;
+    vespalib::Stash                          _stash;
+    std::vector<FeatureExecutor *> _executors;
     std::map<vespalib::string, MappedHandle> _unboxed_seeds;
 
     /**

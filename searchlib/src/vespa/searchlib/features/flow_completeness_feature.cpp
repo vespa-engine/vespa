@@ -297,10 +297,10 @@ FlowCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-FlowCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+FlowCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new FlowCompletenessExecutor(env, _params));
+    return stash.create<FlowCompletenessExecutor>(env, _params);
 }
 
 //-----------------------------------------------------------------------------

@@ -66,7 +66,7 @@ public:
                        const fef::ParameterList &params) override;
 
     // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment &env) const override;
+    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 };
 

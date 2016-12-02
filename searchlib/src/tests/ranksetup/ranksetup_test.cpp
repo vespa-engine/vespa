@@ -265,8 +265,9 @@ RankSetupTest::testValueBlueprint()
         EXPECT_EQUAL(deps.output[0], "0");
         EXPECT_EQUAL(deps.output[1], "1");
 
-        FeatureExecutor::LP fe = bp->createExecutor(_queryEnv);
-        ValueExecutor * vfe = static_cast<ValueExecutor *>(fe.get());
+        vespalib::Stash stash;
+        FeatureExecutor &fe = bp->createExecutor(_queryEnv, stash);
+        ValueExecutor * vfe = static_cast<ValueExecutor *>(&fe);
         EXPECT_EQUAL(vfe->getValues().size(), 2u);
         EXPECT_EQUAL(vfe->getValues()[0], 5.5f);
         EXPECT_EQUAL(vfe->getValues()[1], 10.5f);
@@ -417,8 +418,9 @@ RankSetupTest::testCfgValueBlueprint()
         EXPECT_EQUAL(deps.output[1], "1");
         EXPECT_EQUAL(deps.output[2], "2");
 
-        FeatureExecutor::LP fe = bp->createExecutor(_queryEnv);
-        ValueExecutor *vfe = static_cast<ValueExecutor *>(fe.get());
+        vespalib::Stash stash;
+        FeatureExecutor &fe = bp->createExecutor(_queryEnv, stash);
+        ValueExecutor *vfe = static_cast<ValueExecutor *>(&fe);
         EXPECT_EQUAL(vfe->getValues().size(), 3u);
         EXPECT_EQUAL(vfe->getValues()[0], 1.0f);
         EXPECT_EQUAL(vfe->getValues()[1], 2.0f);

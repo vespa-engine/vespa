@@ -5,6 +5,7 @@ LOG_SETUP("resolver_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/features/valuefeature.h>
 
 namespace search {
 namespace fef {
@@ -23,8 +24,12 @@ public:
         describeOutput("baz", "baz");
         return true;
     }
-    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment &) const override {
-        return FeatureExecutor::LP(NULL);
+    virtual FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
+        std::vector<feature_t> values;
+        values.push_back(0.0);
+        values.push_back(0.0);
+        values.push_back(0.0);
+        return stash.create<features::ValueExecutor>(values);
     }
 };
 
@@ -43,8 +48,8 @@ public:
         describeOutput("out", "out");
         return true;
     }
-    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment &) const override {
-        return FeatureExecutor::LP(NULL);
+    virtual FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
+        return stash.create<features::SingleZeroValueExecutor>();
     }
 };
 

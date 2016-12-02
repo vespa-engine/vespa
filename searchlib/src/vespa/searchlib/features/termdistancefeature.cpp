@@ -78,12 +78,12 @@ TermDistanceBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-TermDistanceBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+TermDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    std::unique_ptr<TermDistanceExecutor> tde(new TermDistanceExecutor(env, _params));
-    if (tde->valid()) {
-        return FeatureExecutor::LP(tde.release());
+    TermDistanceExecutor &tde(stash.create<TermDistanceExecutor>(env, _params));
+    if (tde.valid()) {
+        return tde;
     } else {
         TermDistanceCalculator::Result r;
         std::vector<feature_t> values(4);
@@ -91,7 +91,7 @@ TermDistanceBlueprint::createExecutor(const IQueryEnvironment & env) const
         values[1] = r.forwardTermPos;
         values[2] = r.reverseDist;
         values[3] = r.reverseTermPos;
-        return FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
 }
 

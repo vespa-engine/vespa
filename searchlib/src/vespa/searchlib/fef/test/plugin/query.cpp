@@ -32,13 +32,13 @@ QueryBlueprint::setup(const IIndexEnvironment &indexEnv, const StringVector &par
     return true;
 }
 
-FeatureExecutor::LP
-QueryBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
+FeatureExecutor &
+QueryBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
     std::vector<feature_t> values;
     std::string val = queryEnv.getProperties().lookup(_key).get("0.0");
     values.push_back(strtod(val.data(), NULL));
-    return FeatureExecutor::LP(new search::features::ValueExecutor(values));
+    return stash.create<search::features::ValueExecutor>(values);
 }
 
 } // namespace test

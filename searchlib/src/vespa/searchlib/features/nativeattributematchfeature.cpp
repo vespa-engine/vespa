@@ -47,17 +47,18 @@ NativeAttributeMatchExecutor::preComputeSetup(const IQueryEnvironment & env,
     return precomputed;
 }
 
-FeatureExecutor::LP
+FeatureExecutor &
 NativeAttributeMatchExecutor::createExecutor(const IQueryEnvironment & env,
-                                             const NativeAttributeMatchParams & params)
+                                             const NativeAttributeMatchParams & params,
+                                             vespalib::Stash &stash)
 {
     Precomputed setup = preComputeSetup(env, params);
     if (setup.first.size() == 0) {
-        return LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     } else if (setup.first.size() == 1) {
-        return LP(new NativeAttributeMatchExecutorSingle(setup));
+        return stash.create<NativeAttributeMatchExecutorSingle>(setup);
     } else {
-        return LP(new NativeAttributeMatchExecutorMulti(setup));
+        return stash.create<NativeAttributeMatchExecutorMulti>(setup);
     }
 }
 
@@ -139,10 +140,10 @@ NativeAttributeMatchBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-NativeAttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+NativeAttributeMatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(NativeAttributeMatchExecutor::createExecutor(env, _params));
+    return NativeAttributeMatchExecutor::createExecutor(env, _params, stash);
 }
 
 

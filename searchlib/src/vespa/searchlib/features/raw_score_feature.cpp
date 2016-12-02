@@ -47,10 +47,10 @@ RawScoreBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-RawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
+FeatureExecutor &
+RawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new RawScoreExecutor(queryEnv, _field->id()));
+    return stash.create<RawScoreExecutor>(queryEnv, _field->id());
 }
 
 } // namespace features

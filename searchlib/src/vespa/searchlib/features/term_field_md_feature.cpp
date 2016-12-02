@@ -104,10 +104,10 @@ TermFieldMdBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-TermFieldMdBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+TermFieldMdBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new TermFieldMdExecutor(env, _field->id()));
+    return stash.create<TermFieldMdExecutor>(env, _field->id());
 }
 
 

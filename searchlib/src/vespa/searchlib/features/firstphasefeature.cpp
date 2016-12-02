@@ -51,10 +51,10 @@ FirstPhaseBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-FirstPhaseBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+FirstPhaseBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new FirstPhaseExecutor());
+    return stash.create<FirstPhaseExecutor>();
 }
 
 

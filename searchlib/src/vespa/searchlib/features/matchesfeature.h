@@ -63,7 +63,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment & env) const override;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 } // namespace features

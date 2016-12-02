@@ -99,10 +99,10 @@ ClosenessBlueprint::createInstance() const
     return Blueprint::UP(new ClosenessBlueprint());
 }
 
-FeatureExecutor::LP
-ClosenessBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+ClosenessBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new ClosenessExecutor(_maxDistance, _scaleDistance));
+    return stash.create<ClosenessExecutor>(_maxDistance, _scaleDistance);
 }
 
 

@@ -208,10 +208,10 @@ TextSimilarityBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-TextSimilarityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+TextSimilarityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new TextSimilarityExecutor(env, _field_id));
+    return stash.create<TextSimilarityExecutor>(env, _field_id);
 }
 
 //-----------------------------------------------------------------------------

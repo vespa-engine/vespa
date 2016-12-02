@@ -89,10 +89,10 @@ FreshnessBlueprint::createInstance() const
     return Blueprint::UP(new FreshnessBlueprint());
 }
 
-FeatureExecutor::LP
-FreshnessBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+FreshnessBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new FreshnessExecutor(_maxAge, _scaleAge));
+    return stash.create<FreshnessExecutor>(_maxAge, _scaleAge);
 }
 
 
