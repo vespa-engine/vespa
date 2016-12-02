@@ -14,10 +14,10 @@ public class QueryCanonicalizerMicroBenchmark {
 
     public void run() {
         System.out.println("Running ...");
-        for (int i = 0; i < 10*1000; i++)
+        for (int i = 0; i < 10 * 1000; i++)
             canonicalize();
         long startTime = System.currentTimeMillis();
-        int repetitions = 10 * 1000 * 1000;
+        int repetitions = 10* 1000 * 1000;
         for (int i = 0; i < repetitions; i++)
             canonicalize();
         long totalTime = System.currentTimeMillis() - startTime;
