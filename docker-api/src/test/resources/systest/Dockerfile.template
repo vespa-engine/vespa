@@ -5,4 +5,6 @@ RUN yinst set root.autostart=off
 
 RUN yinst install -branch test vespa_systemtest_base vespa_systemtest_gems
 
-ENTRYPOINT /systemtests/bin/node_server.rb
+# Start node_server through bash to avoid zombie processes, see
+# https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/
+ENTRYPOINT ["/bin/bash", "-c", "set -e && /systemtests/bin/node_server.rb"]

@@ -17,11 +17,11 @@ import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Before;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
@@ -36,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
+ * <pre>
  * Requires docker daemon, see {@link com.yahoo.vespa.hosted.dockerapi.DockerTestUtils} for more details.
  *
  * To get started:
@@ -44,32 +45,43 @@ import static org.mockito.Mockito.when;
  *  2. Set environmental variables in shell or e.g. ~/.bashrc:
  *      VESPA_HOME="/home/y"
  *      VESPA_WEB_SERVICE_PORT="4080"
- *      VESPA_DOCKER_REGISTRY="<registry hostname>:<port>"
- *      VESPA_PATH_TO_APP="<path to vespa app to deploy>.zip"
  *
  * Linux only:
  *  1. Create /home/docker/container-storage with read/write permissions
  *
+ * Example usage:
+     DockerImage vespaDockerBase = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.52.35");
+     Path pathToAppToDeploy = Paths.get("/home/valerijf/dev/basic-search/target/application.zip");
+     RunVespaLocal runVespaLocal = new RunVespaLocal(vespaDockerBase, pathToAppToDeploy);
+     runVespaLocal.runVespaLocalTest();
  *
  * Issues:
  *  1. If you cannot make Docker Toolbox start, try starting Virtualbox and turn off the "default" machine
  *  2. If the above is not enough try "sudo ifconfig vboxnet0 down && sudo ifconfig vboxnet0 up" (see https://github.com/docker/kitematic/issues/1193)
+ * </pre>
  *
  * @author freva
  */
 public class RunVespaLocal {
-    private static final DockerImage VESPA_BASE_IMAGE = new DockerImage(
-            System.getenv("VESPA_DOCKER_REGISTRY") + "/vespa/ci:6.50.111");
     private static final Environment environment = new Environment(
             Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
             HostName.getLocalhost(), new InetAddressResolver());
     private static final Maintainer maintainer = mock(Maintainer.class);
-    private static final String PATH_TO_APP_TO_DEPLOY = System.getenv("VESPA_PATH_TO_APP");
+
+    private final Docker docker;
+    private final DockerImage vespaBaseImage;
+    private final Path pathToAppToDeploy;
+
     private final Logger logger = Logger.getLogger("RunVespaLocal");
 
 
-    @Test
-    public void runVespaLocalTest() throws IOException, InterruptedException {
+    RunVespaLocal(DockerImage vespaBaseImage, Path pathToAppToDeploy) {
+        this.docker = DockerTestUtils.getDocker();
+        this.vespaBaseImage = vespaBaseImage;
+        this.pathToAppToDeploy = pathToAppToDeploy;
+    }
+
+    void runVespaLocalTest() throws IOException, InterruptedException, ExecutionException {
         DockerTestUtils.OS operatingSystem = DockerTestUtils.getSystemOS();
         if (operatingSystem == DockerTestUtils.OS.Mac_OS_X) {
             when(maintainer.pathInHostFromPathInNode(any(), any())).thenReturn(Paths.get("/tmp/"));
@@ -82,9 +94,13 @@ public class RunVespaLocal {
             return maintainer.pathInHostFromPathInNode((ContainerName) args[0], (String) args[1]);
         });
 
-        Docker docker = DockerTestUtils.getDocker();
+        if (!docker.imageIsDownloaded(vespaBaseImage)) {
+            logger.info("Pulling " + vespaBaseImage.asString() + " (This may take a while)");
+            docker.pullImageAsync(vespaBaseImage).get();
+        }
+
         logger.info("Building " + LocalZoneUtils.VESPA_LOCAL_IMAGE.asString());
-        LocalZoneUtils.buildVespaLocalDockerImage(docker, VESPA_BASE_IMAGE);
+        LocalZoneUtils.buildVespaLocalDockerImage(docker, vespaBaseImage);
 
         logger.info("Starting config-server");
         assertTrue("Could not start config server", LocalZoneUtils.startConfigServerIfNeeded(docker, environment));
@@ -104,7 +120,7 @@ public class RunVespaLocal {
         }
 
         logger.info("Deploying application");
-        LocalZoneUtils.deployApp(docker, Paths.get(PATH_TO_APP_TO_DEPLOY));
+        LocalZoneUtils.deployApp(docker, pathToAppToDeploy);
 
         logger.info("Starting node-admin");
         NodeAdminStateUpdater nodeAdminStateUpdater = new ComponentsProviderImpl(docker,
@@ -129,16 +145,5 @@ public class RunVespaLocal {
 
         LocalZoneUtils.deleteApplication();
         nodeAdminStateUpdater.deconstruct();
-    }
-
-    @Before
-    public void before() throws ExecutionException, InterruptedException {
-        assumeTrue(DockerTestUtils.dockerDaemonIsPresent());
-        Docker docker = DockerTestUtils.getDocker();
-
-        if (!docker.imageIsDownloaded(VESPA_BASE_IMAGE)) {
-            logger.info("Pulling " + VESPA_BASE_IMAGE.asString() + " (This may take a while)");
-            docker.pullImageAsync(VESPA_BASE_IMAGE).get();
-        }
     }
 }

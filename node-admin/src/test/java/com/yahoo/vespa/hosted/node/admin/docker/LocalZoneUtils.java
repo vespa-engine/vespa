@@ -43,6 +43,7 @@ public class LocalZoneUtils {
     private static final String APP_HOSTNAME_PREFIX = "cnode-";
     private static final String TENANT_NAME = "localtenant";
     private static final String APPLICATION_NAME = "default";
+    private static final Path PROJECT_ROOT = Paths.get("").toAbsolutePath();
 
     public static boolean startConfigServerIfNeeded(Docker docker, Environment environment) throws UnknownHostException {
         Optional<Container> container = docker.getContainer(CONFIG_SERVER_HOSTNAME);
@@ -83,7 +84,7 @@ public class LocalZoneUtils {
     }
 
     public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
-        Path dockerfileTemplatePath = Paths.get("Dockerfile.template");
+        Path dockerfileTemplatePath = Paths.get("node-admin/Dockerfile.template");
 
         String dockerfileTemplate = new String(Files.readAllBytes(dockerfileTemplatePath))
                 .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
@@ -97,12 +98,11 @@ public class LocalZoneUtils {
          *
          * Therefore, copy docker-api jar to node-admin/target and used node-admin as build root instead of vespa/
           */
-        Path projectRoot = Paths.get("").toAbsolutePath().getParent();
-        Files.copy(projectRoot.resolve("docker-api/target/docker-api-jar-with-dependencies.jar"),
-                projectRoot.resolve("node-admin/target/docker-api-jar-with-dependencies.jar"),
+        Files.copy(PROJECT_ROOT.resolve("docker-api/target/docker-api-jar-with-dependencies.jar"),
+                PROJECT_ROOT.resolve("node-admin/target/docker-api-jar-with-dependencies.jar"),
                 StandardCopyOption.REPLACE_EXISTING);
 
-        Path dockerfilePath = Paths.get("Dockerfile").toAbsolutePath();
+        Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/Dockerfile");
 
         Files.write(dockerfilePath, dockerfileTemplate.getBytes());
         docker.buildImage(dockerfilePath.getParent().toFile(), VESPA_LOCAL_IMAGE);
