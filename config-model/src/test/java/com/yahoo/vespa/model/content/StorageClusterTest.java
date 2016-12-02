@@ -13,9 +13,9 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
+import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import org.junit.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.util.Collections;
 
@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 
 public class StorageClusterTest {
 
-    StorageCluster parse(String xml) {
+    StorageCluster parse(String xml) throws Exception {
         MockRoot root = new MockRoot();
         root.getDeployState().getDocumentModel().getDocumentManager().add(
                 new NewDocumentType(new NewDocumentType.Name("music"))
@@ -31,16 +31,14 @@ public class StorageClusterTest {
         root.getDeployState().getDocumentModel().getDocumentManager().add(
                 new NewDocumentType(new NewDocumentType.Name("movies"))
         );
-        Document doc = XML.getDocument(xml);
-        Element clusterElem = doc.getDocumentElement();
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), root, clusterElem);
+        ContentCluster cluster = ContentClusterUtils.createCluster(xml, root);
 
         root.freezeModelTopology();
         return cluster.getStorageNodes();
     }
 
     @Test
-    public void testBasics() {
+    public void testBasics() throws Exception {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("<content id=\"foofighters\"><documents/>\n" +
               "  <group>" +
@@ -55,7 +53,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testMerges() {
+    public void testMerges() throws Exception {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("" +
                 "<content id=\"foofighters\">\n" +
@@ -75,7 +73,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testVisitors() {
+    public void testVisitors() throws Exception {
         StorVisitorConfig.Builder builder = new StorVisitorConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -99,7 +97,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testPersistenceThreads() {
+    public void testPersistenceThreads() throws Exception {
         StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -132,7 +130,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testNoPersistenceThreads() {
+    public void testNoPersistenceThreads() throws Exception {
         StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -151,7 +149,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void maintenance_tuning_is_honored_for_vds_provider() {
+    public void maintenance_tuning_is_honored_for_vds_provider() throws Exception {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -175,7 +173,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
+    public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() throws Exception {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -191,7 +189,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void integrity_checker_not_explicitly_disabled_when_running_with_vds_provider() {
+    public void integrity_checker_not_explicitly_disabled_when_running_with_vds_provider() throws Exception {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
