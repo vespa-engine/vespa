@@ -51,7 +51,7 @@ public class ContentClusterUtils {
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) throws Exception {
         Document doc = XML.getDocument(clusterXml);
-        Admin admin = new Admin(new MockRoot(), new Yamas("vespa", 60), new Metrics(), Collections.emptyMap(), false);
+        Admin admin = new Admin(root, new Yamas("vespa", 60), new Metrics(), Collections.emptyMap(), false);
         DeployLogger deployLogger = new BaseDeployLogger();
         return new ContentCluster.Builder(admin, deployLogger).build(Collections.emptyList(), root, doc.getDocumentElement());
     }

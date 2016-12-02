@@ -71,7 +71,6 @@ public class ContentClusterBuilder {
     }
 
     public ContentCluster build(MockRoot root) throws Exception {
-        Document doc = XML.getDocument(getXml());
         return ContentClusterUtils.createCluster(getXml(), root);
     }
 
