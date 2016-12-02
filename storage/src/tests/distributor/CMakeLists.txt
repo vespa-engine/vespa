@@ -39,6 +39,7 @@ vespa_add_library(storage_testdistributor TEST
     nodemaintenancestatstrackertest.cpp
     distributor_host_info_reporter_test.cpp
     ownership_transfer_safe_time_point_calculator_test.cpp
+    distributor_metrics_set_test.cpp
     DEPENDS
     storage_distributor
     storage_testcommon

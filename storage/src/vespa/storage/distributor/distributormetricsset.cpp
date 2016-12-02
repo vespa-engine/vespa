@@ -1,5 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributormetricsset.h"
+#include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
 
@@ -64,6 +65,24 @@ PersistenceOperationMetricSet::clone(std::vector<Metric::LP>& ownerList, CopyTyp
     return (PersistenceOperationMetricSet*)
             (new PersistenceOperationMetricSet(getName(), owner))
                 ->assignValues(*this);
+}
+
+void
+PersistenceOperationMetricSet::updateFromResult(const api::ReturnCode& result)
+{
+    if (result.success()) {
+        ++ok;
+    } else if (result.getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
+        ++failures.wrongdistributor;
+    } else if (result.getResult() == api::ReturnCode::TIMEOUT) {
+        ++failures.timeout;
+    } else if (result.isBusy()) {
+        ++failures.busy;
+    } else if (result.isNodeDownOrNetwork()) {
+        ++failures.notconnected;
+    } else {
+        ++failures.storagefailure;
+    }
 }
 
 DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)

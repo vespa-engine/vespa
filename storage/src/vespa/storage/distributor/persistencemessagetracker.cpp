@@ -51,17 +51,7 @@ void
 PersistenceMessageTrackerImpl::updateMetrics()
 {
     const api::ReturnCode& result(_reply->getResult());
-    if (result.success()) {
-        ++_metric.ok;
-    } else if (result.getResult() == api::ReturnCode::TIMEOUT) {
-        ++_metric.failures.timeout;
-    } else if (result.isBusy()) {
-        ++_metric.failures.busy;
-    } else if (result.isNodeDownOrNetwork()) {
-        ++_metric.failures.notconnected;
-    } else {
-        ++_metric.failures.storagefailure;
-    }
+    _metric.updateFromResult(result);
     _metric.latency.addValue(_requestTimer.getElapsedTimeAsDouble());
 }
 

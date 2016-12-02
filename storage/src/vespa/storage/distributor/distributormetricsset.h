@@ -7,6 +7,10 @@
 
 namespace storage {
 
+namespace api {
+class ReturnCode;
+}
+
 class PersistenceFailuresMetricSet : public metrics::MetricSet
 {
 public:
@@ -39,6 +43,14 @@ public:
 
     MetricSet * clone(std::vector<Metric::LP>& ownerList, CopyType copyType,
                       metrics::MetricSet* owner, bool includeUnused) const override;
+
+    /**
+     * Increments appropriate success/failure count metrics based on the return
+     * code provided in `result`.
+     *
+     * Does _not_ update latency metric.
+     */
+    void updateFromResult(const api::ReturnCode& result);
 };
 
 class DistributorMetricSet : public metrics::MetricSet
