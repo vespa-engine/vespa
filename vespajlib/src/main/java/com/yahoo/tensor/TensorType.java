@@ -88,7 +88,7 @@ public class TensorType {
     public boolean equals(Object other) {
         if (this == other) return true;
         if (other == null || getClass() != other.getClass()) return false;
-        return new HashSet<>(dimensions).equals(new HashSet<>(((TensorType)other).dimensions)); // TODO: 
+        return dimensions.equals(((TensorType)other).dimensions);
     }
 
     @Override
