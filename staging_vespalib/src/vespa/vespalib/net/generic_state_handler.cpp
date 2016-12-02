@@ -7,8 +7,28 @@ namespace vespalib {
 
 namespace {
 
+// escape a path component in the URL
+// (needed to avoid java.net.URI throwing an exception)
+
 vespalib::string url_escape(const vespalib::string &item) {
-    return item;
+    static const char hexdigits[] = "0123456789ABCDEF";
+    vespalib::string r;
+    r.reserve(item.size());
+    for (const char c : item) {
+        if (   ('a' <= c && c <= 'z')
+            || ('0' <= c && c <= '9')
+            || ('A' <= c && c <= 'Z')
+            || (c == '_')
+            || (c == '-'))
+        {
+            r.append(c);
+        } else {
+            r.append('%');
+            r.append(hexdigits[0xF & (c >> 4)]);
+            r.append(hexdigits[0xF & c]);
+        }
+    }
+    return r;
 }
 
 class Url {
