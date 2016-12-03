@@ -4,9 +4,7 @@ package com.yahoo.tensor;
 import com.google.common.annotations.Beta;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Builder class for a MapTensor.
@@ -46,7 +44,7 @@ public class MapTensorBuilder {
         if (cells.size() == 0) return TensorType.empty;
         
         TensorType.Builder b = new TensorType.Builder();
-        for (String dimension : cells.keySet().iterator().next().elements())
+        for (String dimension : cells.keySet().iterator().next().labels())
             b.mapped(dimension);
         return b.build();
     }

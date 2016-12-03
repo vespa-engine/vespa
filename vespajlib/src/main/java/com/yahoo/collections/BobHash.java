@@ -106,7 +106,7 @@ public class BobHash {
      * mod a prime (mod is sooo slow!).  If you need less than 32 bits,
      * use a bitmask.  For example, if you need only 10 bits, do
      * h = (h &amp; hashmask(10));
-     * In which case, the hash table should have hashsize(10) elements.
+     * In which case, the hash table should have hashsize(10) labels.
      *
      * If you are hashing n strings (ub1 **)k, do it like this:
      *  for (i=0, h=0; i&lt;n; ++i) h = hash( k[i], len[i], h);

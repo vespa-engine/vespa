@@ -71,7 +71,7 @@ public class QueryProfileListPropertiesMicroBenchmark {
             Map<String,Object> properties = query.properties().listProperties(propertyPrefix);
             int expectedSize = 10 + (propertyPrefix.isEmpty() ? 3 : 0); // 3 extra properties on the root
             if ( properties.size() != expectedSize )
-                throw new RuntimeException("Expected a map of 10 elements, but got " + expectedSize + ": \n" + toString(properties));
+                throw new RuntimeException("Expected a map of 10 labels, but got " + expectedSize + ": \n" + toString(properties));
         }
     }
 

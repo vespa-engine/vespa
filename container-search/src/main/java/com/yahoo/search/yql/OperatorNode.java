@@ -79,7 +79,7 @@ final class OperatorNode<T extends Operator> {
     }
 
     public Object[] getArguments() {
-        // this is only called by a test right now, but ImmutableList.copyOf won't tolerate null elements
+        // this is only called by a test right now, but ImmutableList.copyOf won't tolerate null labels
         if (args.length == 0) {
             return args;
         }

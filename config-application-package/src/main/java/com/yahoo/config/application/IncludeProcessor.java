@@ -58,7 +58,7 @@ class IncludeProcessor implements PreProcessor {
 
 
     private static void mergeInto(Element destination, List<Element> subElements) {
-        // System.out.println("merging " + subElements.size() + " elements into " + destination.getTagName());
+        // System.out.println("merging " + subElements.size() + " labels into " + destination.getTagName());
         for (Element subElement : subElements) {
             Node copiedNode = destination.getOwnerDocument().importNode(subElement, true);
             destination.appendChild(copiedNode);

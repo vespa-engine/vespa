@@ -206,7 +206,7 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
             numElements = getInt1_2_4Bytes(null);
         }
         if (numElements < 0) {
-            throw new DeserializationException("Bad number of array/map elements, " + numElements);
+            throw new DeserializationException("Bad number of array/map labels, " + numElements);
         }
         return numElements;
     }
@@ -374,7 +374,7 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
 
         int numElements = getInt(null);
         if (numElements < 0) {
-            throw new DeserializationException("Bad number of weighted set elements, " + numElements);
+            throw new DeserializationException("Bad number of weighted set labels, " + numElements);
         }
 
         ws.clearAndReserve(numElements * 2); // Avoid resizing

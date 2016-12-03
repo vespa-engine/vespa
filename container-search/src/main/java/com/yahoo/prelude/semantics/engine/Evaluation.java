@@ -120,7 +120,7 @@ public class Evaluation {
     }
 
 
-    /** Returns the current item, or null if there is no more elements */
+    /** Returns the current item, or null if there is no more labels */
     public FlattenedItem currentItem() {
         if ( (currentIndex>=flattenedItems.size()) || (currentIndex<0)) return null; //PGA
         return flattenedItems.get(currentIndex);

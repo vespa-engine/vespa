@@ -20,8 +20,8 @@ class JavaListTypeChecker extends OperatorTypeChecker {
         Preconditions.checkArgument(argument instanceof List, "Argument %s of %s must be a List<%s>", idx, parent, elementType.getName(), argument.getClass().getName());
         List<?> lst = (List<?>) argument;
         for (Object elt : lst) {
-            Preconditions.checkNotNull(elt, "Argument %s of %s List elements may not be null", idx, parent);
-            Preconditions.checkArgument(elementType.isInstance(elt), "Argument %s of %s List elements must be %s (is %s)", idx, parent, elementType.getName(), elt.getClass().getName());
+            Preconditions.checkNotNull(elt, "Argument %s of %s List labels may not be null", idx, parent);
+            Preconditions.checkArgument(elementType.isInstance(elt), "Argument %s of %s List labels must be %s (is %s)", idx, parent, elementType.getName(), elt.getClass().getName());
         }
     }
 

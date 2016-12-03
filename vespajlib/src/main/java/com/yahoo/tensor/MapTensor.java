@@ -75,7 +75,7 @@ public class MapTensor implements Tensor {
         for (String elementString : addressBody.split(",")) {
             String[] pair = elementString.split(":");
             if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
+                throw new IllegalArgumentException("Expecting argument labels to be on the form dimension:label, " +
                                                    "got '" + elementString + "'");
             builder.mapped(pair[0].trim());
         }
@@ -120,7 +120,7 @@ public class MapTensor implements Tensor {
         for (String elementString : addressBody.split(",")) {
             String[] pair = elementString.split(":");
             if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
+                throw new IllegalArgumentException("Expecting argument labels to be on the form dimension:label, " +
                                                    "got '" + elementString + "'");
             builder.add(pair[0].trim(), pair[1].trim());
         }

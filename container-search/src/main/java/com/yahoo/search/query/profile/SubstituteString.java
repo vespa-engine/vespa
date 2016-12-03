@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A string which contains one or more elements of the form %{name},
+ * A string which contains one or more labels of the form %{name},
  * where these occurrences are to be replaced by a query profile lookup on name.
  * <p>
  * This objects does the analysis on creation and provides a (reasonably) fast method of

@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * The default renderer for processing responses. Renders a response in JSON.
- * This can be overridden to specify particular rendering of leaf Data elements.
+ * This can be overridden to specify particular rendering of leaf Data labels.
  * This default implementation renders the toString of each element.
  *
  * @author bratseth

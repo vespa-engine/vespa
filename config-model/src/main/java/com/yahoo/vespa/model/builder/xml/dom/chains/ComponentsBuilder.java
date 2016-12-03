@@ -59,7 +59,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
     /**
      * @param ancestor The parent config producer
      * @param componentTypes The allowed component types for 'elementContainingComponentElements' - MUST match &lt;T&gt;
-     * @param elementsContainingComponentElems All elements containing elements with name matching ComponentType.name
+     * @param elementsContainingComponentElems All labels containing labels with name matching ComponentType.name
      * @param outerComponentTypeByComponentName Use null if this is the outermost scope, i.e.
      *                                          every component is a definition, not a reference.
      */
@@ -126,7 +126,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         if (componentSpec.getAttributes().getLength() > 1 || !XML.getChildren(componentSpec).isEmpty())
             throw new RuntimeException("Expecting " + componentName +
                     " to be a reference to a global component with the same name," +
-                    " so no additional attributes or nested elements are allowed");
+                    " so no additional attributes or nested labels are allowed");
     }
 
     private void ensureTypesMatch(ComponentType type1, ComponentType type2, String componentName) {

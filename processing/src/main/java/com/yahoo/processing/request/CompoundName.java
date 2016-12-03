@@ -195,7 +195,7 @@ public final class CompoundName {
     }
 
     /**
-     * Returns the number of compound elements in this. Which is exactly the number of dots in the string plus one.
+     * Returns the number of compound labels in this. Which is exactly the number of dots in the string plus one.
      * The size of an empty compound is 0.
      */
     public int size() {

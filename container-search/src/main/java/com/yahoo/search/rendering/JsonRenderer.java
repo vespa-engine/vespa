@@ -65,7 +65,7 @@ import com.yahoo.yolean.trace.TraceVisitor;
  *
  * @author Steinar Knutsen
  */
-// NOTE: The JSON format is a public API. If new elements are added be sure to update the reference doc.
+// NOTE: The JSON format is a public API. If new labels are added be sure to update the reference doc.
 public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");

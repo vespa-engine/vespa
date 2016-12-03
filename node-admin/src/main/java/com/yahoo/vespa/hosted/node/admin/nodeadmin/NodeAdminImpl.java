@@ -197,7 +197,7 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     // Returns a full outer join of two data sources (of types T and U) on some extractable attribute (of type V).
-    // Full outer join means that all elements of both data sources are included in the result,
+    // Full outer join means that all labels of both data sources are included in the result,
     // even when there is no corresponding element (having the same attribute) in the other data set,
     // in which case the value from the other source will be empty.
     static <T, U, V> Stream<Pair<Optional<T>, Optional<U>>> fullOuterJoin(

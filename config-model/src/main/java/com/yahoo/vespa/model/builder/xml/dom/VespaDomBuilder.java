@@ -192,7 +192,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
     }
 
     /**
-     * The SimpleConfigProducer is the producer for elements such as qrservers, topleveldispatchers, gateways.
+     * The SimpleConfigProducer is the producer for labels such as qrservers, topleveldispatchers, gateways.
      * Must support overrides for that too, hence this builder
      *
      * @author vegardh

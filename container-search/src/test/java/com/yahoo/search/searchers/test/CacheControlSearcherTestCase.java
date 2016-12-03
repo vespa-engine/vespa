@@ -52,7 +52,7 @@ public class CacheControlSearcherTestCase extends TestCase {
      */
     private void assertCacheHeaders(String[] values, List<String> cacheheaders) {
         assertNotNull("No headers to test for (was null)", values);
-        assertTrue("No headers to test for (no elements in array)", values.length > 0);
+        assertTrue("No headers to test for (no labels in array)", values.length > 0);
         assertNotNull("No cache headers set in response", cacheheaders);
         assertEquals(values.length, cacheheaders.size());
         for (String header : values) {

@@ -25,7 +25,7 @@ public class WebParser extends AllParser {
     }
 
     protected @Override Item parseItemsBody() {
-        // Algorithm: Collect positive, negative, and'ed and or'ed elements, then combine.
+        // Algorithm: Collect positive, negative, and'ed and or'ed labels, then combine.
         AndItem and=null;
         OrItem or=null;
         NotItem not=null; // Store negatives here as we go

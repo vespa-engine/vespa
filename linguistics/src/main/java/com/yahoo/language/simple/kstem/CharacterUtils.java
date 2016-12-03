@@ -52,7 +52,7 @@ public abstract class CharacterUtils {
   public abstract int codePointAt(final CharSequence seq, final int offset);
   
   /**
-   * Returns the code point at the given index of the char array where only elements
+   * Returns the code point at the given index of the char array where only labels
    * with index less than the limit are used.
    * 
    * @param chars

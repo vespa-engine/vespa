@@ -349,7 +349,7 @@ public class Struct extends StructuredFieldValue {
 
         public Map.Entry<Field, FieldValue> next() {
             if (position >= increasing.length) {
-                throw new NoSuchElementException("No more elements in collection");
+                throw new NoSuchElementException("No more labels in collection");
             }
             FieldEntry retval = new FieldEntry(increasing[position]);
             position++;

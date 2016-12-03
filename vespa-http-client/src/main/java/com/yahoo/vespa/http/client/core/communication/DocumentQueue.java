@@ -41,7 +41,7 @@ class DocumentQueue {
                 queue.wait();
             }
             if (closed) {
-                throw new IllegalStateException("Cannot add elements to closed queue.");
+                throw new IllegalStateException("Cannot add labels to closed queue.");
             }
             queue.add(document);
             queue.notifyAll();

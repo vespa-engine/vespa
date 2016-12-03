@@ -296,7 +296,7 @@ public final class DocumentProtocol implements Protocol, Documentrouteselectorpo
 
     /**
      * Attempts to simplify all route names by removing prefixing plugin name and whatever comes before the dot (.) in
-     * the second naming element. This can only be done to those routes that do not share primary name elements with
+     * the second naming element. This can only be done to those routes that do not share primary name labels with
      * other routes (e.g. a search clusters with the same name as a storage cluster).
      *
      * @param table The routing table whose route names are to be simplified.

@@ -209,7 +209,7 @@ public class PageTemplateXMLReadingTestCase extends junit.framework.TestCase {
         Set<String> sourceNames=new HashSet<>();
         for (Source source : page.getSources())
             sourceNames.add(source.getName());
-        assertEquals("Expected " + expectedSourceNames.length + " elements in " + sourceNames,
+        assertEquals("Expected " + expectedSourceNames.length + " labels in " + sourceNames,
                      expectedSourceNames.length,sourceNames.size());
         for (String expectedSourceName : expectedSourceNames)
             assertTrue("Sources did not include '" + expectedSourceName+ "'",sourceNames.contains(expectedSourceName));

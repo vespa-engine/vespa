@@ -50,7 +50,7 @@ public class PageTemplates implements Serializable, PageTemplatesConfig.Producer
     }
 
     // We are representing these as XML rather than a structured config type because the structure
-    // is not easily representable by config (arbitrary nesting of many types of elements within each other)
+    // is not easily representable by config (arbitrary nesting of many types of labels within each other)
     // and config<->xml generation will not pull its weight in work and possible bugs.
     // The XML content is already validated when we get here.
     public PageTemplates(List<NamedReader> readers) {

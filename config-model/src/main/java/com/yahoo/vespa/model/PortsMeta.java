@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class PortsMeta implements Serializable {
 
-    /** A list of all ports. The list elements are lists of strings. */
+    /** A list of all ports. The list labels are lists of strings. */
     private List<LinkedList<String>> ports;
 
     /** Remember the rpc admin port offset. */

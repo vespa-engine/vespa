@@ -194,7 +194,7 @@ public class AccessLogEntry {
             if (adInfos == null) {
                 return Collections.emptyList();
             }
-            // TODO: The returned list is unmodifiable, but its elements are not. But we're all friendly here, right?
+            // TODO: The returned list is unmodifiable, but its labels are not. But we're all friendly here, right?
             return Collections.unmodifiableList(adInfos);
         }
     }

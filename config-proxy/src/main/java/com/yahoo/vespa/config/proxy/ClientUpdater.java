@@ -72,7 +72,7 @@ public class ClientUpdater {
             return;
         } else {
             if (log.isLoggable(LogLevel.DEBUG)) {
-                log.log(LogLevel.DEBUG, "Delayed response queue has " + responseDelayQueue.size() + " elements");
+                log.log(LogLevel.DEBUG, "Delayed response queue has " + responseDelayQueue.size() + " labels");
             }
         }
         DelayedResponse[] responses = new DelayedResponse[1];

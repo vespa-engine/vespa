@@ -13,9 +13,9 @@ import java.util.Iterator;
 public class CollectionComparator {
     /**
      * Compare the arguments. Shorter Collections are always considered
-     * smaller than longer Collections. For Collections of equal lengths, the elements
-     * are compared one-by-one. Whenever two corresponding elements in the
-     * two Collections are non-equal, the method returns. If all elements at
+     * smaller than longer Collections. For Collections of equal lengths, the labels
+     * are compared one-by-one. Whenever two corresponding labels in the
+     * two Collections are non-equal, the method returns. If all labels at
      * corresponding positions in the two Collections are equal, the Collections
      * are considered equal.
      *

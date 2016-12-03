@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 /**
  * This class represents a size-function in a {@link GroupingExpression}. It evaluates to a number that equals the
- * number of elements in the result of the argument (e.g. the number of elements in an array).
+ * number of labels in the result of the argument (e.g. the number of labels in an array).
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */

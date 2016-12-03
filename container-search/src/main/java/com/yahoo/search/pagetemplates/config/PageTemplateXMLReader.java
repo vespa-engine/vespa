@@ -29,7 +29,7 @@ public class PageTemplateXMLReader {
     /** The registry being constructed */
     private PageTemplateRegistry registry;
 
-    /** XML elements by page id - available after phase 1. Needed for includes. */
+    /** XML labels by page id - available after phase 1. Needed for includes. */
     private Map<ComponentId, Element> pageElementsByPageId=new LinkedHashMap<>();
 
     /**
@@ -167,7 +167,7 @@ public class PageTemplateXMLReader {
         page.freeze();
     }
 
-    /** Fills a section with attributes and sub-elements from a "section" or "page" element */
+    /** Fills a section with attributes and sub-labels from a "section" or "page" element */
     private Section readSection(Element sectionElement,Section section) {
         section.setLayout(Layout.fromString(sectionElement.getAttribute("layout")));
         section.setRegion(sectionElement.getAttribute("region"));
@@ -179,7 +179,7 @@ public class PageTemplateXMLReader {
         return section;
     }
 
-    /** Returns all page elements found under the given node */
+    /** Returns all page labels found under the given node */
     private List<PageElement> readPageElements(Element parent) {
         List<PageElement> pageElements=new ArrayList<>();
         for (Element child : XML.getChildren(parent)) {
@@ -196,7 +196,7 @@ public class PageTemplateXMLReader {
             pageElements.add(pageElement);
     }
 
-    /** Reads the direct descendant elements of an include */
+    /** Reads the direct descendant labels of an include */
     private List<PageElement> readInclude(Element element) {
         PageTemplate included=registry.getComponent(element.getAttribute("idref"));
         if (included==null)

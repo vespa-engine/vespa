@@ -63,7 +63,7 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
 
         if (innerDocuments.size() == 0) {
             //the array is empty, return
-            log.log(LogLevel.DEBUG, "The given Document does not have any elements in array field "
+            log.log(LogLevel.DEBUG, "The given Document does not have any labels in array field "
                                     + arrayFieldName + ", returning. (Was given " + outerDoc + ").");
             return Progress.DONE;
         }

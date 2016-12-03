@@ -168,7 +168,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     }
 
     /**
-     * Returns an array datatype, where the array elements are of the given type
+     * Returns an array datatype, where the array labels are of the given type
      *
      * @param type the type to create an array of
      * @return the array data type
@@ -189,7 +189,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     }
 
     /**
-     * Returns a weighted set datatype, where the elements are of the given type
+     * Returns a weighted set datatype, where the labels are of the given type
      *
      * @param type the type to create a weighted set of
      * @return the weighted set data type
@@ -199,7 +199,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     }
 
     /**
-     * Returns a weighted set datatype, where the elements are of the given type, and which supports the properties
+     * Returns a weighted set datatype, where the labels are of the given type, and which supports the properties
      * createIfNonExistent and removeIfZero
      *
      * @param type                the type to create a weighted set of

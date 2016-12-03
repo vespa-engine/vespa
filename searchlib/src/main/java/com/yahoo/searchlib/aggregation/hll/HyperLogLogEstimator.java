@@ -42,10 +42,10 @@ public class HyperLogLogEstimator implements UniqueCountEstimator<Sketch<?>> {
     }
 
     /**
-     * Estimates the number of unique elements.
+     * Estimates the number of unique labels.
      *
      * @param sketch A sketch populated with values from the aggregation phase of HLL.
-     * @return The estimated number of unique elements.
+     * @return The estimated number of unique labels.
      */
     @Override
     public long estimateCount(Sketch<?> sketch) {

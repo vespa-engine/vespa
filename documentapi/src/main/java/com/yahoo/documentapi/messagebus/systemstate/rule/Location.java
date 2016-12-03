@@ -62,7 +62,7 @@ public class Location {
 
     /**
      * Returns a location object that represents the "next" step along this location path. This means removing the first
-     * elements of this location's items and returning a new location for this sublist.
+     * labels of this location's items and returning a new location for this sublist.
      *
      * @return The next location along this path.
      */

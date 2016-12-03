@@ -5,7 +5,7 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 
 /**
- * A list of strings which does not allow for duplicate elements.
+ * A list of strings which does not allow for duplicate labels.
  *
  * @author steinar
  */

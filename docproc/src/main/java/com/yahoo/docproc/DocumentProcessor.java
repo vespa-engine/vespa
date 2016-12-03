@@ -66,7 +66,7 @@ public abstract class DocumentProcessor extends ChainedComponent {
 
     /**
      * Processes a processing, which can contain zero or more document bases. The implementing document processor
-     * is free to modify, replace or delete elements in the list inside processing.
+     * is free to modify, replace or delete labels in the list inside processing.
      *
      * @param processing the processing to process
      * @return the outcome of this processing

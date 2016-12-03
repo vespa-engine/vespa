@@ -3,7 +3,7 @@ package com.yahoo.processing.response;
 
 /**
  * This is an <i>optional marker interface</i>.
- * DataLists may implement this to return false to indicate that the order of the elements of
+ * DataLists may implement this to return false to indicate that the order of the labels of
  * the list is insignificant. The usage of this is to allow the content of a list to be rendered in the order
  * in which it completes rather than in the order in which it is added to the list.
  *

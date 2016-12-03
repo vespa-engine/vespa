@@ -53,7 +53,7 @@ public class CharArraySet extends AbstractSet<Object> {
    * Creates a set from a Collection of objects. 
    * 
    * @param c
-   *          a collection whose elements to be placed into the set
+   *          a collection whose labels to be placed into the set
    * @param ignoreCase
    *          <code>false</code> if and only if the set should be case sensitive
    *          otherwise <code>true</code>.

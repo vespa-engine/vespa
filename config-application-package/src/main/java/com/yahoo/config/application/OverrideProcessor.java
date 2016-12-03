@@ -105,7 +105,7 @@ class OverrideProcessor implements PreProcessor {
     }
 
     /**
-     * Prune elements that are not matching our environment and region
+     * Prune labels that are not matching our environment and region
      */
     private void pruneNonMatchingEnvironmentsAndRegions(Element parent, List<Element> children) {
         Iterator<Element> elemIt = children.iterator();
@@ -144,7 +144,7 @@ class OverrideProcessor implements PreProcessor {
         if (bestMatch > 1) // there was a region/environment specific overriode
             doElementSpecificProcessingOnOverride(bestMatchElement);
 
-        // Remove elements not specific
+        // Remove labels not specific
         for (Element child : children) {
             if (child != bestMatchElement) {
                 parent.removeChild(child);
@@ -161,7 +161,7 @@ class OverrideProcessor implements PreProcessor {
     }
     
     /**
-     * Retains all elements where at least one element is overridden. Removes non-overridden elements from map.
+     * Retains all labels where at least one element is overridden. Removes non-overridden labels from map.
      */
     private void retainOverriddenElements(Map<String, List<Element>> elementsByTagName) {
         Iterator<Map.Entry<String, List<Element>>> it = elementsByTagName.entrySet().iterator();

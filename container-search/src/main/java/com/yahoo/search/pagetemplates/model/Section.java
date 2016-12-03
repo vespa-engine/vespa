@@ -24,10 +24,10 @@ public class Section extends FreezableClass implements PageElement {
 
     private String region;
 
-    /** The elements of this - sources, subsections etc. and/or choices of the same */
+    /** The labels of this - sources, subsections etc. and/or choices of the same */
     private List<PageElement> elements=new ArrayList<>();
 
-    /** Filtered versions of elements pre-calculated at freeze time */
+    /** Filtered versions of labels pre-calculated at freeze time */
     private List<PageElement> sections, sources, renderers;
 
     private int max=-1;
@@ -80,25 +80,25 @@ public class Section extends FreezableClass implements PageElement {
     }
 
     /**
-     * Returns the elements of this - sources, subsections and presentations and/or choices of these,
+     * Returns the labels of this - sources, subsections and presentations and/or choices of these,
      * as a live reference which can be modified to change the content of this (unless this is frozen).
      * <p>
-     * All elements are kept in a single list to allow multiple elements of each type to be nested within separate
-     * choices, and to maintain the internal order of elements of various types, which is sometimes significant.
-     * To extract a certain kind of elements (say, sources), the element list must be traversed to collect
-     * all source elements as well as all choices of sources.
+     * All labels are kept in a single list to allow multiple labels of each type to be nested within separate
+     * choices, and to maintain the internal order of labels of various types, which is sometimes significant.
+     * To extract a certain kind of labels (say, sources), the element list must be traversed to collect
+     * all source labels as well as all choices of sources.
      * <p>
      * This list is never null but may be empty.
      */
     public List<PageElement> elements() { return elements; }
 
     /**
-     * Convenience method which returns the elements <b>and choices</b> of the given type in elements as a
-     * read-only list. Not that as this returns both concrete elements and choices betwen them,
+     * Convenience method which returns the labels <b>and choices</b> of the given type in labels as a
+     * read-only list. Not that as this returns both concrete labels and choices betwen them,
      * the list element cannot be case to the given class - this must be used in conjunction
      * with a resolve which contains the resolution to the choices.
      *
-     * @param pageTemplateModelElementClass type to returns elements and choices of, a subtype of PageElement
+     * @param pageTemplateModelElementClass type to returns labels and choices of, a subtype of PageElement
      */
     public List<PageElement> elements(@SuppressWarnings("rawtypes") Class pageTemplateModelElementClass) {
         if (isFrozen()) { // Use precalculated lists
@@ -133,7 +133,7 @@ public class Section extends FreezableClass implements PageElement {
         this.order=order;
     }
 
-    /** Returns max number of (immediate) elements/sections permissible within this, -1 means unrestricted. Default: -1. */
+    /** Returns max number of (immediate) labels/sections permissible within this, -1 means unrestricted. Default: -1. */
     public int getMax() { return max; }
 
     public void setMax(int max) {
@@ -141,7 +141,7 @@ public class Section extends FreezableClass implements PageElement {
         this.max=max;
     }
 
-    /** Returns min number of (immediate) elements/sections desired within this, -1 means unrestricted. Default: -1. */
+    /** Returns min number of (immediate) labels/sections desired within this, -1 means unrestricted. Default: -1. */
     public int getMin() { return min; }
 
     public void setMin(int min) {

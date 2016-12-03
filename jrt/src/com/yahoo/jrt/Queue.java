@@ -4,7 +4,7 @@ package com.yahoo.jrt;
 
 /**
  * A queue implementation that is not thread-safe. The implementation
- * uses a growable circular array to hold the elements.
+ * uses a growable circular array to hold the labels.
  **/
 class Queue
 {
@@ -15,7 +15,7 @@ class Queue
 
     /**
      * Ensure the queue has room for the specified number of
-     * additional elements.
+     * additional labels.
      *
      * @param need space needed on queue
      **/
@@ -39,7 +39,7 @@ class Queue
     }
 
     /**
-     * Create a queue. If more elements are put on the queue than can
+     * Create a queue. If more labels are put on the queue than can
      * be held by the initial capacity, the underlying structures will
      * be grown as needed.
      *
@@ -100,17 +100,17 @@ class Queue
     }
 
     /**
-     * @return the number of elements in this queue
+     * @return the number of labels in this queue
      **/
     public int size() {
         return used;
     }
 
     /**
-     * Flush all elements currently in this queue into another
+     * Flush all labels currently in this queue into another
      * queue. Note that this will clear the queue.
      *
-     * @return the number of elements flushed
+     * @return the number of labels flushed
      **/
     public int flush(Queue dst) {
         int cnt = used;

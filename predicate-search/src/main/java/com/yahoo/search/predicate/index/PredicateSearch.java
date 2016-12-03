@@ -266,7 +266,7 @@ public class PredicateSearch {
     }
 
     private void sortIndexes(int numUpdated) {
-        // Sort the updated elements
+        // Sort the updated labels
         boolean swapMergeBuffer =
                 PrimitiveArraySorter.sortAndMerge(sortedIndexes, sortedIndexesMergeBuffer, numUpdated, nPostingLists,
                         (a, b) -> Integer.compare(docIds[a], docIds[b]));

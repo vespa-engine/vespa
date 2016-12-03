@@ -41,7 +41,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         ModelElement adminElement = new ModelElement(w3cAdminElement);
         admin.addConfigservers(getConfigServersFromSpec(admin));
 
-        // Note: These two elements only exists in admin version 4.0
+        // Note: These two labels only exists in admin version 4.0
         // This build handles admin version 3.0 by ignoring its content (as the content is not useful)
         Optional<NodesSpecification> requestedSlobroks   = NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("slobroks"));
         Optional<NodesSpecification> requestedLogservers = NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"));
