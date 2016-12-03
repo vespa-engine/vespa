@@ -4,6 +4,7 @@
 
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/serialization/util.h>
+#include <vector>
 
 namespace vespalib {
     class nbostream;
