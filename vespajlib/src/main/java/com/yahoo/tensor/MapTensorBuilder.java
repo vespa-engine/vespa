@@ -34,7 +34,7 @@ public class MapTensorBuilder {
     }
 
     public CellBuilder cell() {
-        return new CellBuilder();
+        return new CellBuilder(type);
     }
 
     public Tensor build() {
@@ -46,15 +46,19 @@ public class MapTensorBuilder {
         if (cells.size() == 0) return TensorType.empty;
         
         TensorType.Builder b = new TensorType.Builder();
-        for (String dimension : cells.keySet().iterator().next().dimensions())
+        for (String dimension : cells.keySet().iterator().next().elements())
             b.mapped(dimension);
         return b.build();
     }
 
     public class CellBuilder {
 
-        private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder();
+        private final TensorAddress.Builder addressBuilder;
 
+        private CellBuilder(TensorType type) {
+            addressBuilder = new TensorAddress.Builder(type);
+        }
+        
         public CellBuilder label(String dimension, String label) {
             addressBuilder.add(dimension, label);
             return this;

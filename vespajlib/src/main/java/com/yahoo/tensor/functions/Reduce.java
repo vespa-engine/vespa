@@ -98,34 +98,37 @@ public class Reduce extends PrimitiveTensorFunction {
         if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size())
             return reduceAll(argument);
         
-        // Reduce dimensions
-        Set<String> reducedDimensions = new HashSet<>(argument.type().dimensionNames());
-        reducedDimensions.removeAll(dimensions);
+        // Reduce type
+        TensorType.Builder builder = new TensorType.Builder();
+        for (TensorType.Dimension dimension : argument.type().dimensions())
+            if ( ! dimensions.contains(dimension.name())) // keep
+                builder.dimension(dimension);
+        TensorType reducedType = builder.build();
         
         // Reduce cells
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>();
         for (Map.Entry<TensorAddress, Double> cell : argument.cells().entrySet()) {
-            TensorAddress reducedAddress = reduceDimensions(cell.getKey(), reducedDimensions);
+            TensorAddress reducedAddress = reduceDimensions(cell.getKey(), argument.type(), reducedType);
             aggregatingCells.putIfAbsent(reducedAddress, ValueAggregator.ofType(aggregator));
             aggregatingCells.get(reducedAddress).aggregate(cell.getValue());
         }
         ImmutableMap.Builder<TensorAddress, Double> reducedCells = new ImmutableMap.Builder<>();
         for (Map.Entry<TensorAddress, ValueAggregator> aggregatingCell : aggregatingCells.entrySet())
             reducedCells.put(aggregatingCell.getKey(), aggregatingCell.getValue().aggregatedValue());
-        return new MapTensor(asMappedDimensions(reducedDimensions), reducedCells.build());
+        return new MapTensor(reducedType, reducedCells.build());
     }
     
-    private TensorType asMappedDimensions(Set<String> dimensionNames) {
-        TensorType.Builder builder = new TensorType.Builder();
-        for (String dimensionName : dimensionNames)
-            builder.mapped(dimensionName);
-        return builder.build();
-    }
-    
-    private TensorAddress reduceDimensions(TensorAddress address, Set<String> reducedDimensions) {
-        return TensorAddress.fromSorted(address.elements().stream()
-                                                          .filter(e -> reducedDimensions.contains(e.dimension()))
-                                                          .collect(Collectors.toList()));
+    private TensorAddress reduceDimensions(TensorAddress address, TensorType argumentType, TensorType reducedType) {
+        Set<Integer> indexesToRemove = new HashSet<>();
+        for (String dimensionToRemove : this.dimensions)
+            indexesToRemove.add(argumentType.indexOfDimension(dimensionToRemove).get());
+
+        String[] reducedLabels = new String[reducedType.dimensions().size()];
+        int reducedLabelIndex = 0;
+        for (int i = 0; i < address.elements().size(); i++)
+            if ( ! indexesToRemove.contains(i))
+                reducedLabels[reducedLabelIndex++] = address.elements().get(i);
+        return new TensorAddress(reducedLabels);
     }
     
     private Tensor reduceAll(Tensor argument) {
@@ -137,7 +140,7 @@ public class Reduce extends PrimitiveTensorFunction {
     
     private static abstract class ValueAggregator {
         
-        public static ValueAggregator ofType(Aggregator aggregator) {
+        private static ValueAggregator ofType(Aggregator aggregator) {
             switch (aggregator) {
                 case avg : return new AvgAggregator();
                 case count : return new CountAggregator();

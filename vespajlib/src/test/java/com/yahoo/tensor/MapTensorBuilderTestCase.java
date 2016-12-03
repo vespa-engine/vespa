@@ -36,7 +36,7 @@ public class MapTensorBuilderTestCase {
                 cell().label("x", "0").label("y", "0").value(1).
                 cell().label("x", "1").label("y", "0").value(2).build();
         assertEquals(Sets.newHashSet("x", "y"), tensor.type().dimensionNames());
-        assertEquals("{{x:1,y:0}:2.0,{x:0,y:0}:1.0}", tensor.toString());
+        assertEquals("{{x:0,y:0}:1.0,{x:1,y:0}:2.0}", tensor.toString());
     }
 
 }

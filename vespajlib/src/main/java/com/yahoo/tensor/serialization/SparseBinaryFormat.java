@@ -28,37 +28,16 @@ class SparseBinaryFormat implements BinaryFormat {
 
     @Override
     public void encode(GrowableByteBuffer buffer, Tensor tensor) {
-        List<TensorType.Dimension> sortedDimensions = new ArrayList<>(tensor.type().dimensions());
-        Collections.sort(sortedDimensions);
-        encodeDimensions(buffer, sortedDimensions);
-        encodeCells(buffer, tensor.cells(), sortedDimensions);
-    }
-
-    private static void encodeDimensions(GrowableByteBuffer buffer, List<TensorType.Dimension> sortedDimensions) {
-        buffer.putInt1_4Bytes(sortedDimensions.size());
-        for (TensorType.Dimension dimension : sortedDimensions) {
-            if ( ! (dimension instanceof TensorType.MappedDimension))
-                throw new UnsupportedOperationException("Serialization of indexed tensors is no not implemented");
-            encodeString(buffer, dimension.name());
-        }
-    }
-
-    private static void encodeCells(GrowableByteBuffer buffer, Map<TensorAddress, Double> cells,
-                                    List<TensorType.Dimension> sortedDimensions) {
-        buffer.putInt1_4Bytes(cells.size());
-        for (Map.Entry<TensorAddress, Double> cellEntry : cells.entrySet()) {
-            encodeAddress(buffer, cellEntry.getKey(), sortedDimensions);
+        buffer.putInt1_4Bytes(tensor.cells().size());
+        for (Map.Entry<TensorAddress, Double> cellEntry : tensor.cells().entrySet()) {
+            encodeAddress(buffer, cellEntry.getKey());
             buffer.putDouble(cellEntry.getValue());
         }
     }
 
-    private static void encodeAddress(GrowableByteBuffer buffer, TensorAddress address, List<TensorType.Dimension> sortedDimensions) {
-        for (TensorType.Dimension dimension : sortedDimensions) {
-            Optional<TensorAddress.Element> element =
-                    address.elements().stream().filter(elem -> elem.dimension().equals(dimension.name())).findFirst();
-            String label = (element.isPresent() ? element.get().label() : "");
+    private static void encodeAddress(GrowableByteBuffer buffer, TensorAddress address) {
+        for (String label : address.elements())
             encodeString(buffer, label);
-        }
     }
 
     private static void encodeString(GrowableByteBuffer buffer, String value) {

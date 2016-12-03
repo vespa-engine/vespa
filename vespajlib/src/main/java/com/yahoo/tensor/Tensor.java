@@ -205,7 +205,7 @@ public interface Tensor {
 
         StringBuilder b = new StringBuilder("{");
         for (java.util.Map.Entry<TensorAddress, Double> cell : cellEntries) {
-            b.append(cell.getKey()).append(":").append(cell.getValue());
+            b.append(cell.getKey().toString(tensor.type())).append(":").append(cell.getValue());
             b.append(",");
         }
         if (b.length() > 1)

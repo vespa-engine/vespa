@@ -8,97 +8,34 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 /**
- * An immutable address to a tensor cell.
- * <p>
- * Tensor addresses are ordered by increasing size primarily, and by the natural order of the elements in sorted
- * order secondarily.
+ * An immutable address to a tensor cell. This simply supplies a value to each dimension
+ * in a particular tensor type.
  *
  * @author bratseth
  */
 @Beta
 public final class TensorAddress implements Comparable<TensorAddress> {
 
-    public static final TensorAddress empty = new TensorAddress.Builder().build();
+    public static final TensorAddress empty = new TensorAddress.Builder(TensorType.empty).build();
 
-    private final ImmutableList<Element> elements;
+    private final ImmutableList<String> labels;
 
-    /** Note that the elements list MUST be sorted before calling this */
-    private TensorAddress(List<Element> elements) {
-        this.elements = ImmutableList.copyOf(elements);
+    public TensorAddress(String[] labels) {
+        this.labels = ImmutableList.copyOf(labels);
     }
 
-    public static TensorAddress fromSorted(List<Element> elements) {
-        return new TensorAddress(elements);
-    }
+    /** Returns the labels of this as an immutable list in the order of the tensor this is the type of */
+    public List<String> elements() { return labels; }
 
-    /**
-     * Creates a tensor address from an unsorted list of elements.
-     * This call assigns ownership of the elements list to this class.
-     */
-    public static TensorAddress fromUnsorted(List<Element> elements) {
-        Collections.sort(elements);
-        return new TensorAddress(elements);
-    }
-
-    /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
-    public static TensorAddress from(String address) {
-        address = address.trim();
-        if ( ! (address.startsWith("{") && address.endsWith("}")))
-            throw new IllegalArgumentException("Expecting a tensor address to be enclosed in {}, got '" + address + "'");
-
-        String addressBody = address.substring(1, address.length() - 1).trim();
-        if (addressBody.isEmpty()) return TensorAddress.empty;
-
-        List<Element> elements = new ArrayList<>();
-        for (String elementString : addressBody.split(",")) {
-            String[] pair = elementString.split(":");
-            if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
-                                                   "got '" + elementString + "'");
-            elements.add(new Element(pair[0].trim(), pair[1].trim()));
-        }
-        Collections.sort(elements);
-        return TensorAddress.fromSorted(elements);
-    }
-
-    /** Returns an immutable list of the elements of this address in sorted order */
-    public List<Element> elements() { return elements; }
-
-    /** Returns true if this address has a value (other than implicit "undefined") for the given dimension */
-    public boolean hasDimension(String dimension) {
-        for (TensorAddress.Element element : elements)
-            if (element.dimension().equals(dimension))
-                return true;
-        return false;
-    }
-
-    /** Returns a possibly immutable set of the dimensions of this */
-    public Set<String> dimensions() {
-        Set<String> dimensions = new HashSet<>();
-        for (Element e : elements)
-            dimensions.add(e.dimension());
-        return dimensions;
-    }
-
-    /** Returns the label at the given dimension, or empty if this dimension is not present */
-    public Optional<String> labelOfDimension(String dimension) {
-        for (TensorAddress.Element element : elements)
-            if (element.dimension().equals(dimension))
-                return Optional.of(element.label());
-        return Optional.empty();
-    }
-    
     @Override
     public int compareTo(TensorAddress other) {
-        int sizeComparison = Integer.compare(this.elements.size(), other.elements.size());
-        if (sizeComparison != 0) return sizeComparison;
-
-        for (int i = 0; i < elements.size(); i++) {
-            int elementComparison = this.elements.get(i).compareTo(other.elements.get(i));
+        for (int i = 0; i < labels.size(); i++) {
+            int elementComparison = this.labels.get(i).compareTo(other.labels.get(i));
             if (elementComparison != 0) return elementComparison;
         }
 
@@ -106,23 +43,25 @@ public final class TensorAddress implements Comparable<TensorAddress> {
     }
 
     @Override
-    public int hashCode() {
-        return elements.hashCode();
-    }
+    public int hashCode() { return labels.hashCode(); }
 
     @Override
     public boolean equals(Object other) {
         if (other == this) return true;
         if ( ! (other instanceof TensorAddress)) return false;
-        return ((TensorAddress)other).elements.equals(this.elements);
+        return ((TensorAddress)other).labels.equals(this.labels);
     }
 
-    /** Returns this on the form {dimension1:label1,dimension2:label2,... */
     @Override
     public String toString() {
+        return labels.toString();
+    }
+
+    /** Returns this on the appropriate form given the type */
+    public String toString(TensorType type) {
         StringBuilder b = new StringBuilder("{");
-        for (TensorAddress.Element element : elements) {
-            b.append(element.toString());
+        for (int i = 0; i < labels.size(); i++) {
+            b.append(type.dimensions().get(i).name()).append(":").append(labels.get(i));
             b.append(",");
         }
         if (b.length() > 1)
@@ -131,66 +70,38 @@ public final class TensorAddress implements Comparable<TensorAddress> {
         return b.toString();
     }
 
-    /** A tensor address element. Elements have the lexical order of the dimensions as natural order. */
-    public static class Element implements Comparable<Element> {
-
-        private final String dimension;
-        private final String label;
-        private final int hashCode;
-
-        public Element(String dimension, String label) {
-            this.dimension = dimension;
-            this.label = label;
-            this.hashCode = dimension.hashCode() + label.hashCode();
-        }
-
-        public String dimension() { return dimension; }
-
-        public String label() { return label; }
-
-        @Override
-        public int compareTo(Element other) {
-            return this.dimension.compareTo(other.dimension);
-        }
-
-        @Override
-        public int hashCode() { return hashCode; }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            if ( ! (o instanceof Element)) return false;
-            Element other = (Element)o;
-            if ( ! other.dimension.equals(this.dimension)) return false;
-            if ( ! other.label.equals(this.label)) return false;
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            return dimension + ":" + label;
-        }
-
-    }
-
     /** Supports building of a tensor address */
     public static class Builder {
 
-        private final List<Element> elements = new ArrayList<>();
-
+        private final TensorType type;
+        private final String[] labels;
+        
+        public Builder(TensorType type) {
+            this.type = type;
+            labels = new String[type.dimensions().size()];
+        }
+        
         /**
          * Adds a label in a dimension to this.
          *
          * @return this for convenience
          */
         public Builder add(String dimension, String label) {
-            elements.add(new Element(dimension, label));
+            Objects.requireNonNull(dimension, "Dimension cannot be null");
+            Objects.requireNonNull(label, "Label cannot be null");
+            Optional<Integer> labelIndex = type.indexOfDimension(dimension);
+            if ( ! labelIndex.isPresent())
+                throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
+            labels[labelIndex.get()] = label;
             return this;
         }
 
         public TensorAddress build() {
-            Collections.sort(elements); // Consistent order to get a consistent hash
-            return TensorAddress.fromSorted(elements);
+            for (int i = 0; i < labels.length; i++)
+                if (labels[i] == null)
+                    throw new IllegalArgumentException("Missing a value for dimension " + 
+                                                       type.dimensions().get(i).name() + " for " + type);
+            return new TensorAddress(labels);
         }
 
     }
