@@ -181,6 +181,7 @@ public:
     static DistributionConfig getDefaultDistributionConfig(
             uint16_t redundancy = 2, uint16_t nodeCount = 10,
             DiskDistribution distr = MODULO_BID);
+    static vespalib::string getDiskDistributionName(DiskDistribution dist);
 
     /**
      * Utility function used by distributor to split copies into groups to

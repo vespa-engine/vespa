@@ -906,8 +906,8 @@ Test::testDocumentRouteSelectorIgnore()
 namespace {
     string getDefaultDistributionConfig(
                     uint16_t redundancy = 2, uint16_t nodeCount = 10,
-                    vespa::config::content::StorDistributionConfig::DiskDistribution distr
-                            = vespa::config::content::StorDistributionConfig::MODULO_BID)
+                    storage::lib::Distribution::DiskDistribution distr
+                            = storage::lib::Distribution::MODULO_BID)
     {
         std::ostringstream ost;
         ost << "raw:redundancy " << redundancy << "\n"

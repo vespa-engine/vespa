@@ -273,7 +273,11 @@ Distribution::getDiskSeed(
         }
     }
     throw vespalib::IllegalStateException("Unknown disk distribution: "
-            + Config::getDiskDistributionName(toConfig(_diskDistribution)), VESPA_STRLOC);
+            + getDiskDistributionName(_diskDistribution), VESPA_STRLOC);
+}
+
+vespalib::string Distribution::getDiskDistributionName(DiskDistribution dist) {
+    return Config::getDiskDistributionName(toConfig(dist));
 }
 
 void
