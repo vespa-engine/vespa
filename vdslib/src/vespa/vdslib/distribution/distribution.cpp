@@ -233,8 +233,7 @@ Distribution::getStorageSeed(
 }
 
 uint32_t
-Distribution::getDiskSeed(
-        const document::BucketId& bucket, uint16_t nodeIndex) const
+Distribution::getDiskSeed(const document::BucketId& bucket, uint16_t nodeIndex) const
 {
     typedef vespa::config::content::StorDistributionConfig Config;
     switch (_diskDistribution) {
@@ -277,7 +276,8 @@ Distribution::getDiskSeed(
 }
 
 vespalib::string Distribution::getDiskDistributionName(DiskDistribution dist) {
-    return Config::getDiskDistributionName(toConfig(dist));
+
+    return DistributionConfig::getDiskDistributionName(toConfig(dist));
 }
 
 void
