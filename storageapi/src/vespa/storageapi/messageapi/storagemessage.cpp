@@ -166,7 +166,8 @@ const MessageType MessageType::SETBUCKETSTATE_REPLY(
         SETBUCKETSTATE_REPLY_ID,
         &MessageType::SETBUCKETSTATE);
 
-const MessageType& MessageType::get(Id id)
+const MessageType&
+MessageType::MessageType::get(Id id)
 {
     std::map<Id, MessageType*>::const_iterator it = _codes.find(id);
     if (it == _codes.end()) {
@@ -177,6 +178,17 @@ const MessageType& MessageType::get(Id id)
     return *it->second;
 }
 
+void
+MessageType::print(std::ostream& out, bool verbose, const std::string& indent) const
+{
+    (void) verbose; (void) indent;
+    out << "MessageType(" << _id << ", " << _name;
+    if (_replyOf) {
+        out << ", reply of " << _replyOf->getName();
+    }
+    out << ")";
+}
+
 StorageMessageAddress::StorageMessageAddress(const mbus::Route& route)
     : _route(route),
       _retryEnabled(false),
@@ -184,12 +196,14 @@ StorageMessageAddress::StorageMessageAddress(const mbus::Route& route)
       _cluster(""),
       _type(0),
       _index(0xFFFF)
-{
+{ }
+
+std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr) {
+    return os << addr.toString();
 }
 
 static vespalib::string
-createAddress(const vespalib::stringref & cluster, const lib::NodeType& type,
-              uint16_t index)
+createAddress(const vespalib::stringref & cluster, const lib::NodeType& type, uint16_t index)
 {
     vespalib::asciistream os;
     os << STORAGEADDRESS_PREFIX << cluster << '/' << type.toString() << '/' << index << "/default";

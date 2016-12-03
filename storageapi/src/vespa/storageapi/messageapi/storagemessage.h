@@ -279,15 +279,7 @@ public:
     bool operator==(const MessageType& type) const { return (_id == type._id); }
     bool operator!=(const MessageType& type) const { return (_id != type._id); }
 
-    void print(std::ostream& out, bool verbose, const std::string& indent) const
-    {
-        (void) verbose; (void) indent;
-        out << "MessageType(" << _id << ", " << _name;
-        if (_replyOf) {
-            out << ", reply of " << _replyOf->getName();
-        }
-        out << ")";
-    }
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
 /**
@@ -328,10 +320,7 @@ public:
 
     bool operator==(const StorageMessageAddress& other) const;
     vespalib::string toString() const;
-    friend std::ostream & operator <<
-        (std::ostream & os, const StorageMessageAddress & addr) {
-        return os << addr.toString();
-    }
+    friend std::ostream & operator << (std::ostream & os, const StorageMessageAddress & addr);
 
 private:
     void print(vespalib::asciistream & out) const;

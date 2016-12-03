@@ -10,106 +10,59 @@
  */
 #pragma once
 
-#include <vespa/config/config.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
-#include <vespa/metrics/loadmetric.h>
-#include <vector>
-#include <vespa/config-load-type.h>
+#include "loadtype.h"
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <map>
+
+namespace config {
+    class ConfigUri;
+}
+
+namespace vespa {
+namespace config {
+namespace content {
+namespace internal {
+    class InternalLoadTypeType;
+}
+}
+}
+}
 
 namespace documentapi {
 
 class LoadTypeSet
 {
-    vespalib::hash_map<uint32_t, LoadType::LP> _types;
-        // Want order to be ~ alphabetical.
+    using LoadTypeConfig = const vespa::config::content::internal::InternalLoadTypeType;
+    vespalib::hash_map<uint32_t, std::unique_ptr<LoadType>> _types;
+    // Want order to be ~ alphabetical.
     std::map<string, LoadType*> _nameMap;
 
-        // This object cannot be copied
-    LoadTypeSet(const LoadTypeSet&);
-    LoadTypeSet& operator=(const LoadTypeSet&);
-
-    void configure(const vespa::config::content::LoadTypeConfig& config) {
-        // This configure does not support live reconfig
-        if (!_types.empty()) return;
-
-        addLoadType(0, LoadType::DEFAULT.getName(), LoadType::DEFAULT.getPriority());
-
-        for (uint32_t i=0; i<config.type.size(); ++i) {
-            addLoadType(config.type[i].id, config.type[i].name, Priority::getPriority(config.type[i].priority));
-        }
-    }
-
+    void configure(const LoadTypeConfig& config);
 public:
     typedef std::unique_ptr<LoadTypeSet> UP;
     typedef std::shared_ptr<LoadTypeSet> SP;
 
-    LoadTypeSet() {
-        addLoadType(0, LoadType::DEFAULT.getName(), LoadType::DEFAULT.getPriority());
-    }
+    LoadTypeSet(const LoadTypeSet&) = delete;
+    LoadTypeSet& operator=(const LoadTypeSet&) = delete;
 
-    LoadTypeSet(const config::ConfigUri & configUri) {
-        std::unique_ptr<vespa::config::content::LoadTypeConfig> cfg =
-            config::ConfigGetter<vespa::config::content::LoadTypeConfig>::getConfig(configUri.getConfigId(), configUri.getContext());
-        configure(*cfg);
-    }
+    LoadTypeSet();
+    LoadTypeSet(const config::ConfigUri & configUri);
+    LoadTypeSet(const LoadTypeConfig& config);
+    ~LoadTypeSet();
 
-    LoadTypeSet(const vespa::config::content::LoadTypeConfig& config) {
-        configure(config);
-    }
+    void addLoadType(uint32_t id, const string& name, Priority::Value priority);
 
-    void addLoadType(uint32_t id, const string& name, Priority::Value priority) {
-        vespalib::hash_map<uint32_t, LoadType::LP>::iterator it(
-                _types.find(id));
-        if (it != _types.end()) {
-            throw config::InvalidConfigException(
-                    "Load type identifiers need to be non-overlapping, 1+ "
-                    "and without gaps.\n", VESPA_STRLOC);
-        }
-        if (_nameMap.find(name) != _nameMap.end()) {
-            throw config::InvalidConfigException(
-                    "Load type names need to be unique and different from "
-                    "the reserved name \"default\".", VESPA_STRLOC);
-        }
-        _types[id] = LoadType::LP(new LoadType(id, name, priority));
-        _nameMap[name] = _types[id].get();
-    }
+    const std::map<string, LoadType*>& getLoadTypes() const { return _nameMap; }
+    metrics::LoadTypeSet getMetricLoadTypes() const;
 
-    const std::map<string, LoadType*>& getLoadTypes() const
-        { return _nameMap; }
-    metrics::LoadTypeSet getMetricLoadTypes() const {
-        metrics::LoadTypeSet result;
-        for (vespalib::hash_map<uint32_t, LoadType::LP>::const_iterator it
-                = _types.begin(); it != _types.end(); ++it)
-        {
-            result.push_back(metrics::LoadType(
-                        it->first, it->second->getName()));
-        }
-        return result;
-    }
-
-    const LoadType& operator[](uint32_t id) const {
-        vespalib::hash_map<uint32_t, LoadType::LP>::const_iterator it(
-                _types.find(id));
-        return (it == _types.end() ? LoadType::DEFAULT : *it->second);
-    }
-    const LoadType& operator[](const string& name) const {
-        std::map<string, LoadType*>::const_iterator it(
-                _nameMap.find(name));
-
-        return (it == _nameMap.end() ? LoadType::DEFAULT : *it->second);
-    }
-
+    const LoadType& operator[](uint32_t id) const;
+    const LoadType& operator[](const string& name) const;
     uint32_t size() const { return uint32_t(_types.size()); }
 
     /**
      * Attempts to locate a load type with given name. Returns 0 if none found.
      */
-    const LoadType* findLoadType(const string& name) const {
-        std::map<string, LoadType*>::const_iterator it(
-                _nameMap.find(name));
-        return (it == _nameMap.end() ? 0 : it->second);
-    }
+    const LoadType* findLoadType(const string& name) const;
 };
 
 } // documentapi

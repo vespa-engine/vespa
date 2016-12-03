@@ -18,29 +18,12 @@
 
 #pragma once
 
+#include "loadtype.h"
 #include "metricset.h"
 #include "summetric.h"
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace metrics {
-
-class MetricSet;
-
-class LoadType {
-public:
-    using string = vespalib::string;
-    LoadType(uint32_t id, const string& name) : _id(id), _name(name) {}
-
-    uint32_t getId() const { return _id; }
-    const string& getName() const { return _name; }
-
-    string toString() const;
-private:
-    uint32_t _id;
-    string _name;
-};
-
-typedef std::vector<LoadType> LoadTypeSet;
 
 template<typename MetricType>
 class LoadMetric : public MetricSet {
