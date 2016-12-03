@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/document/document.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/docstore/idatastore.h>
 

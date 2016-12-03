@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".vdslib.container.documentlist");

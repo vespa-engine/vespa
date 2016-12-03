@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 

@@ -11,7 +11,7 @@
 #include <vespa/searchlib/expression/relevancenode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/document/document.h>
+#include <vespa/document/fieldvalue/document.h>
 
 namespace search {
 namespace expression {

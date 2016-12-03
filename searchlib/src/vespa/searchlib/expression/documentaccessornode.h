@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/expression/expressionnode.h>
-#include <vespa/document/document.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 

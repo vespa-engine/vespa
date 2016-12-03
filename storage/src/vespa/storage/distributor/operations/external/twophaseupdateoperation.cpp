@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
+
+#include "twophaseupdateoperation.h"
+#include "getoperation.h"
+#include "putoperation.h"
+#include "updateoperation.h"
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/storageapi/message/bucket.h>
+#include <vespa/document/select/parser.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/log/log.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/distributor/operations/external/getoperation.h>
-#include <vespa/storage/distributor/operations/external/putoperation.h>
-#include <vespa/storage/distributor/operations/external/updateoperation.h>
 #include <vespa/storageapi/message/batch.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.twophaseupdate");
 
 using namespace std::literals::string_literals;

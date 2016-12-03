@@ -3,6 +3,7 @@
 
 #include <vespa/storage/persistence/fieldvisitor.h>
 #include <vespa/storage/persistence/testandsethelper.h>
+#include <vespa/document/select/parser.h>
 
 using namespace std::string_literals;
 

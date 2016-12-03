@@ -30,9 +30,6 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/fastos/fastos.h>
-#include <string>
-
 #include <vespa/document/update/fieldupdate.h>
 #include <vespa/document/update/fieldpathupdate.h>
 

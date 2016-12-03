@@ -4,7 +4,7 @@
 
 #include "dictionary.h"
 #include "documentinverter.h"
-#include <vespa/document/document.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vector>
 #include <vespa/vespalib/stllike/hash_set.h>

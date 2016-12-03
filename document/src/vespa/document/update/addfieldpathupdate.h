@@ -16,8 +16,9 @@ public:
                        stringref fieldPath,
                        stringref whereClause,
                        const ArrayFieldValue& values);
+    ~AddFieldPathUpdate();
 
-    FieldPathUpdate* clone() const { return new AddFieldPathUpdate(*this); }
+    FieldPathUpdate* clone() const override;
 
     bool operator==(const FieldPathUpdate& other) const;
 

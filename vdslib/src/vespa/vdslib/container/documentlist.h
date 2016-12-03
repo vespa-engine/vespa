@@ -22,10 +22,13 @@
 
 #pragma once
 
-#include <vespa/document/document.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vdslib/defs.h>
 
+namespace document {
+    class DocumentUpdate;
+}
 namespace vdslib {
 
 class DocumentList : public document::Printable {

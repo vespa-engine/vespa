@@ -6,7 +6,9 @@
  */
 #pragma once
 
-#include <vespa/document/document.h>
+#include <vespa/document/base/documentid.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/storageapi/defs.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
@@ -20,8 +22,7 @@ class TestAndSetCommand : public BucketInfoCommand {
     TestAndSetCondition _condition;
 
 public:
-    TestAndSetCommand(const MessageType & messageType,
-                      const document::BucketId & id)
+    TestAndSetCommand(const MessageType & messageType, const document::BucketId & id)
         : BucketInfoCommand(messageType, id) {}
 
     void setCondition(const TestAndSetCondition & condition) { _condition = condition; }

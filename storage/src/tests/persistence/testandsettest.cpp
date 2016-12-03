@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // @author Vegard Sjonfjell
-#include <vespa/fastos/fastos.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/persistence/persistencethread.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/document/update/assignvalueupdate.h>
 #include <functional>
 
 using std::unique_ptr;

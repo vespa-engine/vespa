@@ -31,7 +31,13 @@ AddFieldPathUpdate::AddFieldPathUpdate(
 
 AddFieldPathUpdate::AddFieldPathUpdate()
     : FieldPathUpdate(), _values()
-{
+{ }
+
+AddFieldPathUpdate::~AddFieldPathUpdate() { }
+
+FieldPathUpdate*
+AddFieldPathUpdate::clone() const {
+    return new AddFieldPathUpdate(*this);
 }
 
 FieldValue::IteratorHandler::ModificationStatus
