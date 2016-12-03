@@ -66,9 +66,11 @@ public class MapTensor implements Tensor {
         s = s.substring(1).trim(); // remove tensor start
         int firstKeyOrEmptyTensorEnd = s.indexOf('}');
         String addressBody = s.substring(0, firstKeyOrEmptyTensorEnd).trim();
-        if (addressBody.isEmpty()) return TensorType.empty;
+        if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
 
         addressBody = addressBody.substring(1); // remove key start
+        if (addressBody.isEmpty()) return TensorType.empty; // Empty key
+
         TensorType.Builder builder = new TensorType.Builder();
         for (String elementString : addressBody.split(",")) {
             String[] pair = elementString.split(":");
