@@ -8,7 +8,8 @@
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <iostream>
+#include <vespa/vespalib/objects/hexdump.h>
+#include <ostream>
 
 using namespace vespalib::tensor;
 using vespalib::nbostream;

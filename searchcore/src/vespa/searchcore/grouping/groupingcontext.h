@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/aggregation/grouping.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vector>
 #include <memory>
 
@@ -17,9 +18,9 @@ namespace grouping {
 class GroupingContext
 {
 public:
-    typedef std::unique_ptr<GroupingContext>                     UP;
+    typedef std::unique_ptr<GroupingContext>               UP;
     typedef std::shared_ptr<search::aggregation::Grouping> GroupingPtr;
-    typedef std::vector<GroupingPtr>                           GroupingList;
+    typedef std::vector<GroupingPtr>                       GroupingList;
 
 private:
     GroupingContext &operator=(const GroupingContext &);

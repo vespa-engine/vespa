@@ -6,6 +6,7 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/serialization/annotationserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/document/serialization/util.h>
 #include <vespa/document/serialization/annotationdeserializer.h>
 #include <vespa/document/repo/fixedtyperepo.h>

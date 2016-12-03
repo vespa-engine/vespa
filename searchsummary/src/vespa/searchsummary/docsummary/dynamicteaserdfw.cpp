@@ -16,13 +16,12 @@
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/searchsummary/docsummary/docsumformat.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/juniper/config.h>
 
 LOG_SETUP(".searchlib.docsummary.dynamicteaserdfw");
 
-namespace juniper
-{
+namespace juniper {
 
 
 struct ExplicitItemData

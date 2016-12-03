@@ -1,46 +1,75 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "nbostream.h"
+#include "nbostream.hpp"
+#include "hexdump.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/optimized.h>
 
 namespace vespalib {
 
-namespace {
+nbostream::nbostream(size_t initialSize) :
+    _wbuf(),
+    _rbuf(),
+    _rp(0),
+    _wp(0),
+    _state(ok),
+    _longLivedBuffer(false)
+{
+    extend(initialSize);
+}
 
-    const char * hexChar = "0123456789ABCDEF";
+nbostream::nbostream(const void * buf, size_t sz, bool longLivedBuffer) :
+    _wbuf(),
+    _rbuf(buf, sz),
+    _rp(0),
+    _wp(sz),
+    _state(ok),
+    _longLivedBuffer(longLivedBuffer)
+{ }
 
+nbostream::nbostream(Alloc && buf, size_t sz) :
+    _wbuf(std::move(buf), sz),
+    _rbuf(&_wbuf[0], sz),
+    _rp(0),
+    _wp(sz),
+    _state(ok),
+    _longLivedBuffer(false)
+{
+    assert(_wbuf.size() >= sz);
+}
+
+nbostream::nbostream(const nbostream & rhs) :
+    _wbuf(),
+    _rbuf(),
+    _rp(0),
+    _wp(0),
+    _state(ok),
+    _longLivedBuffer(false)
+{
+    extend(rhs.size());
+    _wp = rhs.size();
+    memcpy(&_wbuf[0], &rhs._rbuf[rhs._rp], _wp);
+}
+
+nbostream &
+nbostream::operator = (const nbostream & rhs) {
+    if (this != &rhs) {
+        nbostream n(rhs);
+        swap(n);
+    }
+    return *this;
 }
 
 nbostream::~nbostream() { }
-
-string
-HexDump::toString() const {
-    asciistream os;
-    os << *this;
-    return os.str();
-}
-
-asciistream & operator << (asciistream & os, const HexDump & hd)
-{
-    os << hd._sz << ' ';
-    const uint8_t *c = static_cast<const uint8_t *>(hd._buf);
-    for (size_t i(0); i < hd._sz; i++) {
-        os << hexChar[c[i] >> 4] << hexChar[c[i] & 0xf];
-    }
-    return os;
-}
-
-std::ostream & operator << (std::ostream & os, const HexDump & hd)
-{
-    return os << hd.toString();
-}
 
 void nbostream::fail(State s)
 {
     _state = static_cast<State>(_state | s);
     throw IllegalStateException(make_string("Stream failed bufsize(%zu), readp(%zu), writep(%zu)", _wbuf.size(), _rp, _wp), VESPA_STRLOC);
+}
+
+std::ostream & operator << (std::ostream & os, const nbostream & s) {
+    return os << HexDump(&s._rbuf[s._rp], s.left());
 }
 
 void nbostream::reserve(size_t sz)
@@ -95,5 +124,13 @@ void nbostream::swap(nbostream & os)
     std::swap(_rbuf, os._rbuf);
 }
 
+template nbostream& nbostream::saveVector<int16_t>(const std::vector<int16_t> &);
+template nbostream& nbostream::restoreVector<int16_t>(std::vector<int16_t> &);
+template nbostream& nbostream::saveVector<int32_t>(const std::vector<int32_t> &);
+template nbostream& nbostream::restoreVector<int32_t>(std::vector<int32_t> &);
+template nbostream& nbostream::saveVector<uint32_t>(const std::vector<uint32_t> &);
+template nbostream& nbostream::restoreVector<uint32_t>(std::vector<uint32_t> &);
+template nbostream& nbostream::saveVector<uint64_t>(const std::vector<uint64_t> &);
+template nbostream& nbostream::restoreVector<uint64_t>(std::vector<uint64_t> &);
 
 }

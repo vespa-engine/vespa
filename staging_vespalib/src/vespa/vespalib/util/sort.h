@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/nbo.h>
 #include <functional>
 #include <limits>
 #include <algorithm>
@@ -251,7 +251,7 @@ public:
 
 template<typename C>
 uint32_t serializeForSort(typename C::InputType v, void * dst) {
-    typename C::UIntType nbo(vespalib::nbostream::n2h(C::convert(v)));
+    typename C::UIntType nbo(vespalib::nbo::n2h(C::convert(v)));
     memcpy(dst, &nbo, sizeof(nbo));
     return sizeof(nbo);
 }

@@ -5,27 +5,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
-#include <arpa/inet.h>
+#include "nbo.h"
 
 namespace vespalib {
-
-class asciistream;
-
-/*
- * Helper class to provide hex dump of the contents in a buffer.
- */
-class HexDump
-{
-public:
-    HexDump(const void * buf, size_t sz) : _buf(buf), _sz(sz) { }
-    vespalib::string toString() const;
-    friend std::ostream & operator << (std::ostream & os, const HexDump & hd);
-    friend asciistream & operator << (asciistream & os, const HexDump & hd);
-private:
-    const void * _buf;
-    size_t       _sz;
-};
-
 
 /**
  * Class for streaming data in network byte order, used to serialize
@@ -39,74 +21,29 @@ class nbostream
     using Buffer = Array<char>;
     using Alloc = alloc::Alloc;
     enum State { ok=0, eof=0x01};
-    nbostream(size_t initialSize=1024) :
-        _wbuf(),
-        _rbuf(),
-        _rp(0),
-        _wp(0),
-        _state(ok),
-        _longLivedBuffer(false)
-    {
-        extend(initialSize);
-    }
-
-    nbostream(const void * buf, size_t sz, bool longLivedBuffer=false) :
-        _wbuf(),
-        _rbuf(buf, sz),
-        _rp(0),
-        _wp(sz),
-        _state(ok),
-        _longLivedBuffer(longLivedBuffer)
-    {
-    }
-
-    nbostream(Alloc && buf, size_t sz) :
-        _wbuf(std::move(buf), sz),
-        _rbuf(&_wbuf[0], sz),
-        _rp(0),
-        _wp(sz),
-        _state(ok),
-        _longLivedBuffer(false)
-    {
-        assert(_wbuf.size() >= sz);
-    }
-
-    nbostream(const nbostream & rhs) :
-        _wbuf(),
-        _rbuf(),
-        _rp(0),
-        _wp(0),
-        _state(ok),
-        _longLivedBuffer(false)
-    {
-        extend(rhs.size());
-        _wp = rhs.size();
-        memcpy(&_wbuf[0], &rhs._rbuf[rhs._rp], _wp);
-    }
+    nbostream(size_t initialSize=1024);
+    nbostream(const void * buf, size_t sz, bool longLivedBuffer=false);
+    nbostream(Alloc && buf, size_t sz);
+    nbostream(const nbostream & rhs);
     ~nbostream();
-    nbostream & operator = (const nbostream & rhs) {
-        if (this != &rhs) {
-            nbostream n(rhs);
-            swap(n);
-        }
-        return *this;
-    }
-    nbostream & operator << (double v)     { double n(n2h(v)); write8(&n); return *this; }
-    nbostream & operator >> (double & v)   { double n; read8(&n); v = n2h(n); return *this; }
-    nbostream & operator << (float v)      { float n(n2h(v)); write4(&n); return *this; }
-    nbostream & operator >> (float & v)    { float n; read4(&n); v = n2h(n); return *this; }
-    nbostream & operator << (int64_t v)    { int64_t n(n2h(v)); write8(&n); return *this; }
-    nbostream & operator >> (int64_t & v)  { int64_t n; read8(&n); v = n2h(n); return *this; }
-    nbostream & operator << (uint64_t v)   { uint64_t n(n2h(v)); write8(&n); return *this; }
-    nbostream & operator >> (uint64_t & v) { uint64_t n; read8(&n); v = n2h(n); return *this; }
-    nbostream & operator << (int32_t v)    { int32_t n(n2h(v)); write4(&n); return *this; }
-    nbostream & operator >> (int32_t & v)  { int32_t n; read4(&n); v = n2h(n); return *this; }
-    nbostream & operator << (uint32_t v)   { uint32_t n(n2h(v)); write4(&n); return *this; }
-    nbostream & operator >> (uint32_t & v) { uint32_t n; read4(&n); v = n2h(n); return *this; }
-    nbostream & operator << (int16_t v)    { int16_t n(n2h(v)); write2(&n); return *this; }
-    nbostream & operator >> (int16_t & v)  { int16_t n; read2(&n); v = n2h(n); return *this; }
-    nbostream & operator << (uint16_t v)   { uint16_t n(n2h(v)); write2(&n); return *this; }
-    nbostream & operator >> (uint16_t & v) { uint16_t n; read2(&n); v = n2h(n); return *this; }
+    nbostream & operator = (const nbostream & rhs);
+
+    nbostream & operator << (double v)     { double n(nbo::n2h(v)); write8(&n); return *this; }
+    nbostream & operator >> (double & v)   { double n; read8(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (float v)      { float n(nbo::n2h(v)); write4(&n); return *this; }
+    nbostream & operator >> (float & v)    { float n; read4(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (int64_t v)    { int64_t n(nbo::n2h(v)); write8(&n); return *this; }
+    nbostream & operator >> (int64_t & v)  { int64_t n; read8(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (uint64_t v)   { uint64_t n(nbo::n2h(v)); write8(&n); return *this; }
+    nbostream & operator >> (uint64_t & v) { uint64_t n; read8(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (int32_t v)    { int32_t n(nbo::n2h(v)); write4(&n); return *this; }
+    nbostream & operator >> (int32_t & v)  { int32_t n; read4(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (uint32_t v)   { uint32_t n(nbo::n2h(v)); write4(&n); return *this; }
+    nbostream & operator >> (uint32_t & v) { uint32_t n; read4(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (int16_t v)    { int16_t n(nbo::n2h(v)); write2(&n); return *this; }
+    nbostream & operator >> (int16_t & v)  { int16_t n; read2(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (uint16_t v)   { uint16_t n(nbo::n2h(v)); write2(&n); return *this; }
+    nbostream & operator >> (uint16_t & v) { uint16_t n; read2(&n); v = nbo::n2h(n); return *this; }
     nbostream & operator << (int8_t v)     { write1(&v); return *this; }
     nbostream & operator >> (int8_t & v)   { read1(&v); return *this; }
     nbostream & operator << (uint8_t v)    { write1(&v); return *this; }
@@ -198,36 +135,12 @@ class nbostream
     // For checkpointing where capacity should be restored
     template <typename T>
     nbostream &
-    saveVector(const std::vector<T> &val)
-    {
-        size_t valCapacity = val.capacity();
-        size_t valSize = val.size();
-        assert(valCapacity >= valSize);
-        *this << valCapacity << valSize;
-        for (const T & v : val) {
-            *this << v;
-        }
-        return *this;
-    }
+    saveVector(const std::vector<T> &val);
 
     // For checkpointing where capacity should be restored
     template <typename T>
     nbostream &
-    restoreVector(std::vector<T> &val)
-    {
-        size_t valCapacity = 0;
-        size_t valSize = 0;
-        *this >> valCapacity >> valSize;
-        assert(valCapacity >= valSize);
-        val.reserve(valCapacity);
-        val.clear();
-        T i;
-        for (size_t j = 0; j < valSize; ++j) {
-            *this >> i;
-            val.push_back(i);
-        }
-        return *this;
-    }
+    restoreVector(std::vector<T> &val);
 
     size_t size() const { return left(); }
     size_t capacity() const { return _wbuf.size(); }
@@ -241,19 +154,7 @@ class nbostream
     bool good() const { return _state == ok; }
     void clear()        { _wbuf.clear(); _wp = _rp = 0; _state = ok; }
     void adjustReadPos(ssize_t adj) { size_t npos = _rp + adj; if (__builtin_expect(npos > _wp, false)) { fail(eof); } _rp = npos; }
-    friend std::ostream & operator << (std::ostream & os, const nbostream & s) { return os << HexDump(&s._rbuf[s._rp], s.left()); }
-    static bool     n2h(bool v)     { return v; }
-    static int8_t   n2h(int8_t v)   { return v; }
-    static uint8_t  n2h(uint8_t v)  { return v; }
-    static char     n2h(char v)     { return v; }
-    static int16_t  n2h(int16_t v)  { return ntohs(v); }
-    static uint16_t n2h(uint16_t v) { return ntohs(v); }
-    static int32_t  n2h(int32_t v)  { return ntohl(v); }
-    static uint32_t n2h(uint32_t v) { return ntohl(v); }
-    static int64_t  n2h(int64_t v)  { return ntohll(v); }
-    static uint64_t n2h(uint64_t v) { return ntohll(v); }
-    static float    n2h(float v)    { union { uint32_t _u; float _f; } uf; uf._f = v; uf._u = ntohl(uf._u); return uf._f; }
-    static double   n2h(double v)   { union { uint64_t _u; double _f; } uf; uf._f = v; uf._u = ntohll(uf._u); return uf._f; }
+    friend std::ostream & operator << (std::ostream & os, const nbostream & s);
     void write(const void *v, size_t sz) {
         if (__builtin_expect(space() < sz, false)) {
             extend(sz);
@@ -313,7 +214,6 @@ class nbostream
         adjustReadPos(strSize);
     }
  private:
-    static uint64_t ntohll(uint64_t v) { union { uint64_t _ll; uint32_t _l[2]; } w, r; r._ll = v; w._l[0] = n2h(r._l[1]); w._l[1] = n2h(r._l[0]); return w._ll; }
     void read1(void *v) { read(v, 1); }
     void read2(void *v) { read(v, 2); }
     void read4(void *v) { read(v, 4); }

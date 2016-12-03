@@ -2,5 +2,6 @@
 vespa_add_library(vespalib_vespalib_objects OBJECT
     SOURCES
     nbostream.cpp
+    hexdump.cpp
     DEPENDS
 )

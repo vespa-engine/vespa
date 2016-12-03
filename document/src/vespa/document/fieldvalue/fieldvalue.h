@@ -18,8 +18,11 @@
 #include <vespa/document/util/xmlserializable.h>
 #include <vespa/vespalib/util/polymorphicarrays.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <map>
+
+namespace vespalib {
+    class nbostream;
+}
 
 namespace document {
 

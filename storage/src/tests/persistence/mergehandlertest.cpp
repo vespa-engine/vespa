@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/persistence/mergehandler.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
@@ -10,6 +9,7 @@
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/distributor/messagesenderstub.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <cmath>
 
 LOG_SETUP(".test.persistence.handler.merge");

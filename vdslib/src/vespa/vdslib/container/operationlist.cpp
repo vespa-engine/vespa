@@ -2,6 +2,7 @@
 #include "operationlist.h"
 #include "documentlist.h"
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace vdslib {
 

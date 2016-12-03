@@ -6,7 +6,10 @@
 #include <vespa/document/fieldvalue/fieldvaluewriter.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/updatevisitor.h>
-#include <vespa/vespalib/objects/nbostream.h>
+
+namespace vespalib {
+    class nbostream;
+}
 
 namespace document {
 

@@ -2,6 +2,7 @@
 
 #include "parameters.hpp"
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/hexdump.h>
 
 using namespace vdslib;
 

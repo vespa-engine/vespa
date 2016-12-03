@@ -7,6 +7,7 @@
 #include <vespa/vespalib/stllike/cache.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace search {
 namespace docstore {

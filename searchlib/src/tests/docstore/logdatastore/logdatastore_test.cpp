@@ -12,6 +12,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/objects/hexdump.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");

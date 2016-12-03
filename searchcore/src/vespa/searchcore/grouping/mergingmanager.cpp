@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".mergingmanager");
 #include "mergingmanager.h"
 #include <map>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vespalib/objects/objectoperation.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace search {
 namespace grouping {

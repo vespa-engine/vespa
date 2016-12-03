@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+#include "querytermdata.h"
+#include "searchenvironment.h"
+#include "searchvisitor.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
@@ -24,9 +25,8 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vsm/vsm/docsumfilter.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
-#include "querytermdata.h"
-#include "searchenvironment.h"
-#include "searchvisitor.h"
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".visitor.instance.searchvisitor");
 

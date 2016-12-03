@@ -15,6 +15,8 @@
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
+#include <vespa/vespalib/objects/nbostream.h>
+
 
 using document::DocumentType;
 using document::Field;

@@ -7,7 +7,7 @@
 #include "term.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/parsequery/simplequerystack.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/hexdump.h>
 
 namespace search {
 namespace query {

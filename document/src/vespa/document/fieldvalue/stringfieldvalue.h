@@ -11,6 +11,7 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/vespalib/util/buffer.h>
 
 namespace document {
 class FixedTypeRepo;
@@ -52,7 +53,7 @@ private:
 
     class AnnotationData {
     public:
-        typedef vespalib::nbostream::Buffer BackingBlob;
+        typedef std::vector<char> BackingBlob;
         typedef std::unique_ptr<AnnotationData> UP;
         VESPA_DLL_LOCAL AnnotationData(const AnnotationData & rhs);
         VESPA_DLL_LOCAL AnnotationData(vespalib::ConstBufferRef serialized, const FixedTypeRepo &repo,
