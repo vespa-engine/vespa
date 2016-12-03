@@ -1,14 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdslib/distribution/distribution.h>
-
-#include <cmath>
-#include <vespa/document/bucket/bucketid.h>
+#include "distribution.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/bobhash.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <boost/lexical_cast.hpp>
 #include <vespa/config/config.h>
@@ -16,6 +11,7 @@
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/print/asciiconfigreader.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/config-stor-distribution.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vdslib.distribution");
@@ -108,6 +104,8 @@ Distribution::operator=(const Distribution& d)
     return *this;
 }
 
+Distribution::~Distribution() { }
+
 namespace {
     std::vector<uint16_t> getGroupPath(const vespalib::stringref & path) {
         vespalib::StringTokenizer st(path, ".", "");
@@ -116,6 +114,28 @@ namespace {
             result[i] = boost::lexical_cast<uint16_t>(st[i]);
         }
         return result;
+    }
+}
+
+namespace {
+    using ConfigDiskDistribution = vespa::config::content::StorDistributionConfig::DiskDistribution;
+    Distribution::DiskDistribution fromConfig(ConfigDiskDistribution cfg) {
+        switch (cfg) {
+            case ConfigDiskDistribution::MODULO : return Distribution::MODULO;
+            case ConfigDiskDistribution::MODULO_BID : return Distribution::MODULO_BID;
+            case ConfigDiskDistribution::MODULO_INDEX : return Distribution::MODULO_INDEX;
+            case ConfigDiskDistribution::MODULO_KNUTH : return Distribution::MODULO_KNUTH;
+        }
+        abort();
+    }
+    ConfigDiskDistribution toConfig(Distribution::DiskDistribution cfg) {
+        switch (cfg) {
+            case Distribution::MODULO : return ConfigDiskDistribution::MODULO;
+            case Distribution::MODULO_BID : return ConfigDiskDistribution::MODULO_BID;
+            case Distribution::MODULO_INDEX : return ConfigDiskDistribution::MODULO_INDEX;
+            case Distribution::MODULO_KNUTH : return ConfigDiskDistribution::MODULO_KNUTH;
+        }
+        abort();
     }
 }
 
@@ -170,7 +190,7 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     _redundancy = config.redundancy;
     _initialRedundancy = config.initialRedundancy;
     _ensurePrimaryPersisted = config.ensurePrimaryPersisted;
-    _diskDistribution = config.diskDistribution;
+    _diskDistribution = fromConfig(config.diskDistribution);
     _readyCopies = config.readyCopies;
     _activePerGroup = config.activePerLeafGroup;
     _distributorAutoOwnershipTransferOnWholeGroupDown
@@ -253,9 +273,13 @@ Distribution::getDiskSeed(
         }
     }
     throw vespalib::IllegalStateException("Unknown disk distribution: "
-            + Config::getDiskDistributionName(_diskDistribution), VESPA_STRLOC);
+            + Config::getDiskDistributionName(toConfig(_diskDistribution)), VESPA_STRLOC);
 }
 
+void
+Distribution::print(std::ostream& out, bool, const std::string&) const {
+    out << serialize();
+}
 
 // This function should only depend on disk distribution and node index. It is
 // assumed that any other change, for instance in hierarchical grouping, does
@@ -603,9 +627,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
 }
 
 Distribution::DistributionConfig
-Distribution::getDefaultDistributionConfig(
-                    uint16_t redundancy, uint16_t nodeCount,
-                    DiskDistribution distr)
+Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount, DiskDistribution distr)
 {
     vespa::config::content::StorDistributionConfigBuilder config;
     config.redundancy = redundancy;
@@ -617,7 +639,7 @@ Distribution::getDefaultDistributionConfig(
     for (uint16_t i=0; i<nodeCount; ++i) {
         config.group[0].nodes[i].index = i;
     }
-    config.diskDistribution = distr;
+    config.diskDistribution = toConfig(distr);
     return config;
 }
 

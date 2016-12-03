@@ -22,7 +22,8 @@ class IdealNodeList : public document::Printable {
     std::vector<Node> _idealNodes;
 
 public:
-    IdealNodeList() : _idealNodes() {}
+    IdealNodeList();
+    ~IdealNodeList();
 
     void push_back(const Node& node) {
         _idealNodes.push_back(node);
@@ -43,16 +44,7 @@ public:
         return 0xffff;
     }
 
-    virtual void print(std::ostream& out, bool /* verbose */,
-                       const std::string& /* indent */) const
-    {
-        out << "[";
-        for (uint32_t i=0; i<_idealNodes.size(); ++i) {
-            if (i != 0) out << ", ";
-            out << _idealNodes[i];
-        }
-        out << "]";
-    }
+    void print(std::ostream& out, bool, const std::string &) const override;
 };
 
 /**

@@ -11,9 +11,17 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vdslib/distribution/group.h>
 #include <vespa/vdslib/state/nodetype.h>
-#include <vespa/config-stor-distribution.h>
 #include <vespa/vespalib/util/exception.h>
 
+namespace vespa {
+    namespace config {
+        namespace content {
+            namespace internal {
+                class InternalStorDistributionType;
+            }
+        }
+    }
+}
 namespace storage {
 namespace lib {
 
@@ -27,9 +35,9 @@ class Distribution : public document::Printable {
 public:
     typedef std::shared_ptr<Distribution> SP;
     typedef std::unique_ptr<Distribution> UP;
-    typedef vespa::config::content::StorDistributionConfigBuilder
-            DistributionConfig;
-    typedef DistributionConfig::DiskDistribution DiskDistribution;
+    using DistributionConfig = const vespa::config::content::internal::InternalStorDistributionType;
+    using DistributionConfigBuilder = vespa::config::content::internal::InternalStorDistributionType;
+    enum DiskDistribution { MODULO, MODULO_INDEX, MODULO_KNUTH, MODULO_BID };
 
 private:
     std::vector<uint32_t> _distributionBitMasks;
@@ -102,13 +110,14 @@ private:
      * You need to create a new distribution object to change it. This function
      * is thus private so only constructor can call it.
      */
-    void configure(const vespa::config::content::StorDistributionConfig & config);
+    void configure(const DistributionConfig & config);
 
 public:
     Distribution();
     Distribution(const Distribution&);
     Distribution(const DistributionConfig&);
     Distribution(const vespalib::string& serialized);
+    ~Distribution();
 
     Distribution& operator=(const Distribution&);
 
@@ -129,18 +138,7 @@ public:
     bool operator!=(const Distribution& o) const
         { return (_serialized != o._serialized); }
 
-    void print(std::ostream& out, bool, const std::string&) const
-        { out << serialize(); }
-
-    /**
-     * Used by bucket position mapper to do a "thread safe" update. Just
-     * changing the primitive _diskDistribution value should be safe as long as
-     * it doesn't matter if it takes some time before the changed value is
-     * seen. (Should remove this once bucket position mapper can be safely
-     * reconfigured while not in use)
-     */
-    void setDiskDistribution(DistributionConfig::DiskDistribution d)
-        { _diskDistribution = d; }
+    void print(std::ostream& out, bool, const std::string&) const override;
 
     enum DISK_MODE {
         IDEAL_DISK_EVEN_IF_DOWN,
@@ -182,7 +180,7 @@ public:
      */
     static DistributionConfig getDefaultDistributionConfig(
             uint16_t redundancy = 2, uint16_t nodeCount = 10,
-            DiskDistribution distr = DistributionConfig::MODULO_BID);
+            DiskDistribution distr = MODULO_BID);
 
     /**
      * Utility function used by distributor to split copies into groups to

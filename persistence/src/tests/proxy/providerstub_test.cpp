@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for providerstub.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("providerstub_test");
-
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
@@ -18,6 +14,7 @@ LOG_SETUP("providerstub_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/config-stor-distribution.h>
 
 using document::BucketId;
 using document::ByteBuffer;

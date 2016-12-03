@@ -10,15 +10,15 @@
 
 namespace documentapi {
 
-class StoragePolicy : public ExternSlobrokPolicy,
-                      public config::IFetcherCallback<vespa::config::content::StorDistributionConfig>
+class StoragePolicy : public ExternSlobrokPolicy
 {
 private:
     document::BucketIdFactory _bucketIdFactory;
     std::unique_ptr<storage::lib::ClusterState> _state;
     string _clusterName;
     string _clusterConfigId;
-    std::unique_ptr<config::ConfigFetcher> _configFetcher;
+    std::unique_ptr<config::ICallback>          _callBack;
+    std::unique_ptr<config::ConfigFetcher>      _configFetcher;
     std::unique_ptr<storage::lib::Distribution> _distribution;
     std::unique_ptr<storage::lib::Distribution> _nextDistribution;
 
@@ -42,7 +42,7 @@ public:
      */
     const storage::lib::ClusterState* getSystemState() const { return _state.get(); }
 
-    void configure(std::unique_ptr<vespa::config::content::StorDistributionConfig> config);
+    virtual void configure(std::unique_ptr<storage::lib::Distribution::DistributionConfig> config);
 
     string init();
 

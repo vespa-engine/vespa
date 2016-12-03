@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
+#include <vespa/config-stor-distribution.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
 namespace storage {

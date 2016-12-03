@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
+
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/config/config.h>
 
 namespace documentapi {
 
@@ -18,7 +19,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(LoadTypeTest);
 
 #define ASSERT_CONFIG_FAILURE(configId, error) \
     try { \
-        LoadTypeSet createdFromConfigId(configId); \
+        LoadTypeSet createdFromConfigId(vespalib::stringref(configId)); \
         CPPUNIT_FAIL("Config was expected to fail with error: " \
                      + string(error)); \
     } catch (config::InvalidConfigException& e) { \

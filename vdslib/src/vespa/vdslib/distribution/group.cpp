@@ -5,6 +5,7 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace storage {
 namespace lib {

@@ -31,7 +31,7 @@ public:
      * Construct a config URI from a given config id.
      * @param configId The config id.
      */
-    ConfigUri(const vespalib::stringref &configId) : ConfigUri(vespalib::string(configId)) {}
+    ConfigUri(vespalib::stringref configId) : ConfigUri(vespalib::string(configId)) {}
 
     /**
      * Construct a config URI from a given config id.

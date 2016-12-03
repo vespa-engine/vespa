@@ -2,9 +2,27 @@
 
 #include "idealnodecalculatorimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <ostream>
 
 namespace storage {
 namespace lib {
+
+IdealNodeList::IdealNodeList() :
+    _idealNodes()
+{ }
+
+IdealNodeList::~IdealNodeList() { }
+
+void
+IdealNodeList::print(std::ostream& out, bool , const std::string &) const
+{
+    out << "[";
+    for (uint32_t i=0; i<_idealNodes.size(); ++i) {
+        if (i != 0) out << ", ";
+        out << _idealNodes[i];
+    }
+    out << "]";
+}
 
 IdealNodeCalculatorImpl::IdealNodeCalculatorImpl()
     : _distribution(0),

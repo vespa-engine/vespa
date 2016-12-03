@@ -14,7 +14,6 @@
 #include <map>
 #include <vector>
 #include <vespa/vespalib/objects/floatingpointtype.h>
-#include <vespa/config-stor-distribution.h>
 #include <vespa/vdslib/distribution/redundancygroupdistribution.h>
 #include <vespa/vespalib/util/crc.h>
 

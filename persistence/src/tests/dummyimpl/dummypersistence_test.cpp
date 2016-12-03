@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for dummypersistence.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/config-stor-distribution.h>
 
 
 using namespace storage::spi;
