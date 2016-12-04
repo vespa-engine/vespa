@@ -38,7 +38,6 @@ public final class TensorAddress implements Comparable<TensorAddress> {
             int elementComparison = this.labels.get(i).compareTo(other.labels.get(i));
             if (elementComparison != 0) return elementComparison;
         }
-
         return 0;
     }
 

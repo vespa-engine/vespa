@@ -57,27 +57,47 @@ public class Join extends PrimitiveTensorFunction {
         return "join(" + argumentA.toString(context) + ", " + argumentB.toString(context) + ", " + combinator + ")";
     }
 
-    private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
-
     @Override
     public Tensor evaluate(EvaluationContext context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
         
         TensorType joinedType = a.type().combineWith(b.type());
-        int[] aToIndexes = mapIndexes(a.type(), joinedType);
-        int[] bToIndexes = mapIndexes(b.type(), joinedType);        
+        Map<TensorAddress, Double> joinedCells;
+        if (joinedType.dimensions().size() == a.type().dimensions().size()
+            && joinedType.dimensions().size() == b.type().dimensions().size()) {
+            joinedCells = singleSpaceJoin(a, b, joinedType);
+        }
+        else {
+            joinedCells = generalJoin(a, b, joinedType);
+        }
+        return new MapTensor(joinedType, joinedCells);
+    }
 
-        ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
+    /** When both tensors have the same dimensions, at most one cell matches a cell in the other tensor */
+    private Map<TensorAddress, Double> singleSpaceJoin(Tensor a, Tensor b, TensorType joinedType) {
+        ImmutableMap.Builder<TensorAddress, Double> joinedCells = new ImmutableMap.Builder<>();
+        for (Map.Entry<TensorAddress, Double> aCell : a.cells().entrySet()) {
+            Double bCellValue = b.cells().get(aCell.getKey());
+            if (bCellValue == null) continue; // no match
+            joinedCells.put(aCell.getKey(), combinator.applyAsDouble(aCell.getValue(), bCellValue));
+        }
+        return joinedCells.build();
+    }
+
+    private Map<TensorAddress, Double> generalJoin(Tensor a, Tensor b, TensorType joinedType) {
+        int[] aToIndexes = mapIndexes(a.type(), joinedType);
+        int[] bToIndexes = mapIndexes(b.type(), joinedType);
+        ImmutableMap.Builder<TensorAddress, Double> joinedCells = new ImmutableMap.Builder<>();
         for (Map.Entry<TensorAddress, Double> aCell : a.cells().entrySet()) {
             for (Map.Entry<TensorAddress, Double> bCell : b.cells().entrySet()) {
-                TensorAddress combinedAddress = combineAddresses(aCell.getKey(), aToIndexes, 
+                TensorAddress combinedAddress = combineAddresses(aCell.getKey(), aToIndexes,
                                                                  bCell.getKey(), bToIndexes, joinedType);
                 if (combinedAddress == null) continue; // not combinable
-                cells.put(combinedAddress, combinator.applyAsDouble(aCell.getValue(), bCell.getValue()));
+                joinedCells.put(combinedAddress, combinator.applyAsDouble(aCell.getValue(), bCell.getValue()));
             }
         }
-        return new MapTensor(joinedType, cells.build());
+        return joinedCells.build();
     }
 
     /**
