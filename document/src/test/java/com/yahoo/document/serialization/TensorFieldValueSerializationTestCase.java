@@ -34,7 +34,7 @@ public class TensorFieldValueSerializationTestCase {
     public void requireThatTensorFieldValueIsSerializedAndDeserialized() {
         assertSerialization(new TensorFieldValue());
         assertSerialization(createTensor("{}"));
-        assertSerialization(createTensor("{{dimX:a,dimY:bb}:2.0,{dimX:ccc,dimY:dddd}:3.0,{dimX:e}:5.0}"));
+        assertSerialization(createTensor("{{dimX:a,dimY:bb}:2.0,{dimX:ccc,dimY:dddd}:3.0,{dimX:e,dimY:ff}:5.0}"));
     }
 
     @Test
@@ -42,7 +42,7 @@ public class TensorFieldValueSerializationTestCase {
         assertSerializationMatchesCpp("non_existing_tensor", new TensorFieldValue());
         assertSerializationMatchesCpp("empty_tensor", createTensor("{}"));
         assertSerializationMatchesCpp("multi_cell_tensor",
-                createTensor("{{dimX:a,dimY:bb}:2.0,{dimX:ccc,dimY:dddd}:3.0,{dimX:e}:5.0}"));
+                createTensor("{{dimX:a,dimY:bb}:2.0,{dimX:ccc,dimY:dddd}:3.0,{dimX:e,dimY:ff}:5.0}"));
     }
 
     private static void assertSerialization(TensorFieldValue tensor) {

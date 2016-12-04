@@ -1049,12 +1049,12 @@ public class JsonReaderTestCase {
 
     @Test
     public void testParsingOfTensorWithCells() {
-        assertTensorField("{{x:a,y:b}:2.0,{x:c}:3.0}}",
+        assertTensorField("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
                 createPutWithTensor("{ "
                         + "  \"cells\": [ "
                         + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                         + "      \"value\": 2.0 }, "
-                        + "    { \"address\": { \"x\": \"c\" }, "
+                        + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
                         + "      \"value\": 3.0 } "
                         + "  ]"
                         + "}"));
@@ -1105,12 +1105,12 @@ public class JsonReaderTestCase {
 
     @Test
     public void testAssignUpdateOfTensorWithCells() {
-        assertTensorAssignUpdate("{{x:a,y:b}:2.0,{x:c}:3.0}}",
+        assertTensorAssignUpdate("{{x:a,y:b}:2.0,{x:c,y:b}:3.0}}",
                 createAssignUpdateWithTensor("{ "
                         + "  \"cells\": [ "
                         + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                         + "      \"value\": 2.0 }, "
-                        + "    { \"address\": { \"x\": \"c\" }, "
+                        + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
                         + "      \"value\": 3.0 } "
                         + "  ]"
                         + "}"));

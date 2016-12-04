@@ -2,6 +2,7 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
+import com.google.common.collect.ImmutableMap;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,13 +21,8 @@ import java.util.Map;
 public class MapTensorBuilder {
 
     private final TensorType type;
-    private final Map<TensorAddress, Double> cells = new HashMap<>();
+    private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
 
-    // TODO: Remove this, and the TODO below
-    public MapTensorBuilder() {
-        this.type = null;
-    }
-    
     public MapTensorBuilder(TensorType type) {
         this.type = type;
     }
@@ -36,17 +32,7 @@ public class MapTensorBuilder {
     }
 
     public Tensor build() {
-        return new MapTensor(type != null ? type : typeFromCells(), cells);
-    }
-
-    // TODO: Remove this, and the TODO above
-    private TensorType typeFromCells() { 
-        if (cells.size() == 0) return TensorType.empty;
-        
-        TensorType.Builder b = new TensorType.Builder();
-        for (String dimension : cells.keySet().iterator().next().labels())
-            b.mapped(dimension);
-        return b.build();
+        return new MapTensor(type, cells.build());
     }
 
     public class CellBuilder {

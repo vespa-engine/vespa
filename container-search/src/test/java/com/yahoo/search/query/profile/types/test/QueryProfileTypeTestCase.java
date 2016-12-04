@@ -101,7 +101,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
         profile.set("myDouble",2.18, registry);
         profile.set("myBoolean",true, registry);
 
-        String tensorString1 = "{{a:a1, b:b1}:1.0, {a:a2}:2.0}}";
+        String tensorString1 = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
         profile.set("ranking.features.query(myTensor1)", tensorString1, registry);
         String tensorString2 = "{{x:0, y:0}:1.0, {x:0, y:1}:2.0}}";
         profile.set("ranking.features.query(myTensor2)", tensorString2, registry);
@@ -388,7 +388,7 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
         registry.register(profile);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
-        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2}:2.0}}";
+        String tensorString = "{{a:a1, b:b1}:1.0, {a:a2, b:b1}:2.0}}";
         Query query = new Query(HttpRequest.createTestRequest("?" + encode("ranking.features.query(myTensor1)") +
                                                               "=" + encode(tensorString),
                                                               com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("test"));
