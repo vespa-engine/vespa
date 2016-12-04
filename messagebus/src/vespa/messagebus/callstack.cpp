@@ -20,6 +20,8 @@ CallStack::discard()
     }
 }
 
+CallStack::CallStack() : _stack() { }
+CallStack::~CallStack() { }
 void
 CallStack::swap(CallStack &dst)
 {

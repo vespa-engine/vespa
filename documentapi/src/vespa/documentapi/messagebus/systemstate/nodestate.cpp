@@ -36,6 +36,8 @@ NodeState::NodeState(StateMap args) :
     // empty
 }
 
+NodeState::~NodeState() { }
+
 NodeState &
 NodeState::addChild(const string &key, const NodeState &child)
 {

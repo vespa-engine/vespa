@@ -153,11 +153,9 @@ ClusterStateTest::testNodeInitializing()
 
 namespace {
 
-lib::Distribution::DistributionConfig getCfg(uint16_t redundancy,
-                                             uint16_t readyCopies)
+lib::Distribution::DistributionConfig getCfg(uint16_t redundancy, uint16_t readyCopies)
 {
-    lib::Distribution::DistributionConfigBuilder config(
-            lib::Distribution::getDefaultDistributionConfig(redundancy, 100));
+    lib::Distribution::DistributionConfigBuilder config(lib::Distribution::getDefaultDistributionConfig(redundancy, 100).get());
     config.readyCopies = readyCopies;
     return config;
 }

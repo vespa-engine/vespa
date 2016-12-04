@@ -74,8 +74,7 @@ RunStatistics::print(std::ostream& out, bool verbose,
             << " ago";
     }
     out << " with distribution "
-        << vespa::config::content::StorDistributionConfig::getDiskDistributionName(
-                _distribution)
+        << lib::Distribution::getDiskDistributionName(_distribution)
         << "</h3>\n<blockquote>";
     if (!completed) {
         std::ostringstream progress;

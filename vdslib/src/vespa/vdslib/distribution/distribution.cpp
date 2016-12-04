@@ -43,13 +43,12 @@ Distribution::Distribution()
       _ensurePrimaryPersisted(true),
       _diskDistribution()
 {
-    vespa::config::content::StorDistributionConfig& config(
-            getDefaultDistributionConfig(0, 0));
+    auto config(getDefaultDistributionConfig(0, 0));
     vespalib::asciistream ost;
     config::AsciiConfigWriter writer(ost);
-    writer.write(config);
+    writer.write(config.get());
     _serialized = ost.str();
-    configure(config);
+    configure(config.get());
 }
 
 Distribution::Distribution(const Distribution& d)
@@ -66,7 +65,16 @@ Distribution::Distribution(const Distribution& d)
     configure(*reader.read());
 }
 
-Distribution::Distribution(const vespa::config::content::StorDistributionConfig& config)
+Distribution::ConfigWrapper::ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) :
+    _cfg(std::move(cfg))
+{ }
+Distribution::ConfigWrapper::~ConfigWrapper() { }
+
+Distribution::Distribution(const ConfigWrapper & config) :
+    Distribution(config.get())
+{ }
+
+Distribution::Distribution(const vespa::config::content::StorDistributionConfig & config)
     : _distributionBitMasks(getDistributionBitMasks()),
       _nodeGraph(),
       _redundancy(),
@@ -278,6 +286,11 @@ Distribution::getDiskSeed(const document::BucketId& bucket, uint16_t nodeIndex) 
 vespalib::string Distribution::getDiskDistributionName(DiskDistribution dist) {
 
     return DistributionConfig::getDiskDistributionName(toConfig(dist));
+}
+
+Distribution::DiskDistribution
+Distribution::getDiskDistribution(vespalib::stringref name)  {
+    return fromConfig(DistributionConfig::getDiskDistribution(name));
 }
 
 void
@@ -630,21 +643,21 @@ Distribution::getIdealNodes(const NodeType& nodeType,
     }
 }
 
-Distribution::DistributionConfig
+Distribution::ConfigWrapper
 Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount, DiskDistribution distr)
 {
-    vespa::config::content::StorDistributionConfigBuilder config;
-    config.redundancy = redundancy;
-    config.group.resize(1);
-    config.group[0].index = "invalid";
-    config.group[0].name = "invalid";
-    config.group[0].partitions = "*";
-    config.group[0].nodes.resize(nodeCount);
+    std::unique_ptr<vespa::config::content::StorDistributionConfigBuilder> config(new vespa::config::content::StorDistributionConfigBuilder());
+    config->redundancy = redundancy;
+    config->group.resize(1);
+    config->group[0].index = "invalid";
+    config->group[0].name = "invalid";
+    config->group[0].partitions = "*";
+    config->group[0].nodes.resize(nodeCount);
     for (uint16_t i=0; i<nodeCount; ++i) {
-        config.group[0].nodes[i].index = i;
+        config->group[0].nodes[i].index = i;
     }
-    config.diskDistribution = toConfig(distr);
-    return config;
+    config->diskDistribution = toConfig(distr);
+    return ConfigWrapper(std::move(config));
 }
 
 std::vector<uint16_t>

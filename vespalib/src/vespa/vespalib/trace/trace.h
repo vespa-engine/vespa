@@ -28,6 +28,7 @@ public:
      * Create an empty Trace with level set to 0 (no tracing)
      */
     Trace();
+    ~Trace();
 
     /**
      * Create an empty trace with given level.

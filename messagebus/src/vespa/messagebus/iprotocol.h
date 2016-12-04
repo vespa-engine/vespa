@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <string>
 #include <vespa/vespalib/component/version.h>
 #include "blobref.h"
 #include "routable.h"

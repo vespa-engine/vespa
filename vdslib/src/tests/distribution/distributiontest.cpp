@@ -313,7 +313,6 @@ namespace {
     struct Test {
         const NodeType* _nodeType;
         std::string _state;
-        Distribution::DistributionConfig _distributionConfig;
         std::unique_ptr<Distribution> _distribution;
         uint32_t _bucketsToTest;
         const char* _upStates;
@@ -322,9 +321,7 @@ namespace {
         Test()
             : _nodeType(&NodeType::STORAGE),
               _state("distributor:10 storage:10"),
-              _distributionConfig(
-                    Distribution::getDefaultDistributionConfig(3, 10)),
-              _distribution(new Distribution(_distributionConfig)),
+              _distribution(new Distribution(Distribution::getDefaultDistributionConfig(3, 10))),
               _bucketsToTest(100),
               _upStates("uir"),
               _redundancy(2)

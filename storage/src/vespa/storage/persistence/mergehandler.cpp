@@ -614,7 +614,7 @@ MergeHandler::applyDiffLocally(
 
     FlushGuard flushGuard(_spi, bucket, context);
 
-    document::DocumentTypeRepo::SP repo(_env._component.getTypeRepo());
+    std::shared_ptr<document::DocumentTypeRepo> repo(_env._component.getTypeRepo());
     assert(repo.get() != nullptr);
 
     uint32_t existingCount = entries.size();

@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/config/config.h>
 #include <vespa/config/print/ostreamconfigwriter.h>
+#include <vespa/config-stor-distribution.h>
 #include <iostream>
 #include <sstream>
 
@@ -108,9 +108,7 @@ int run(int argc, char** argv) {
     }
 
     uint16_t redundancy(o.redundancy);
-    vespa::config::content::StorDistributionConfig::DiskDistribution diskDistribution(
-            vespa::config::content::StorDistributionConfig::getDiskDistribution(
-                            o.diskDistribution));
+    lib::Distribution::DiskDistribution diskDistribution(lib::Distribution::getDiskDistribution(o.diskDistribution));
     std::unique_ptr<lib::Distribution> distribution;
     lib::ClusterState clusterState(o.clusterState);
 
@@ -123,8 +121,8 @@ int run(int argc, char** argv) {
             config::ConfigUri uri(o.getConfigId());
             std::unique_ptr<vespa::config::content::StorDistributionConfig> config = config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig(uri.getConfigId(), uri.getContext());
             redundancy = config->redundancy;
-            diskDistribution = config->diskDistribution;
             distribution.reset(new lib::Distribution(*config));
+            diskDistribution = distribution->getDiskDistribution();
             if (o.verbose) {
                 std::cerr << "Using distribution config: '";
                 config::OstreamConfigWriter ocw(std::cerr);
@@ -145,16 +143,13 @@ int run(int argc, char** argv) {
                       << redundancy << " with cluster state " << clusterState
                       << "\n";
         }
-        vespa::config::content::StorDistributionConfig config(
-                lib::Distribution::getDefaultDistributionConfig(
-                    redundancy,
-                    clusterState.getNodeCount(lib::NodeType::DISTRIBUTOR),
-                    diskDistribution));
+        lib::Distribution::ConfigWrapper config(lib::Distribution::getDefaultDistributionConfig(
+                    redundancy, clusterState.getNodeCount(lib::NodeType::DISTRIBUTOR), diskDistribution));
         distribution.reset(new lib::Distribution(config));
         if (o.verbose) {
             std::cerr << "Using distribution config: '";
             config::OstreamConfigWriter ocw(std::cerr);
-            ocw.write(config);
+            ocw.write(config.get());
             std::cerr << "'.\n";
         }
     }

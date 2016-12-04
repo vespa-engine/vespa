@@ -144,15 +144,15 @@ struct Distribution {
     lib::ClusterState state;
     std::unique_ptr<lib::Distribution> distribution;
 
-    static vespa::config::content::StorDistributionConfig::DiskDistribution getDistr(Type t) {
+    static lib::Distribution::DiskDistribution getDistr(Type t) {
         switch (t) {
-            case INDEX: return vespa::config::content::StorDistributionConfig::MODULO_INDEX;
-            case BID: return vespa::config::content::StorDistributionConfig::MODULO_BID;
-            case TEST: return vespa::config::content::StorDistributionConfig::MODULO_BID;
+            case INDEX: return lib::Distribution::MODULO_INDEX;
+            case BID: return lib::Distribution::MODULO_BID;
+            case TEST: return lib::Distribution::MODULO_BID;
         }
             // Compiler refuse to detect that the above is all possibilities
         assert(false);
-        return vespa::config::content::StorDistributionConfig::MODULO_BID;
+        return lib::Distribution::MODULO_BID;
     }
 
     static uint8_t getDistributionBits(const lib::ClusterState& state, Type t)
@@ -176,7 +176,7 @@ struct Distribution {
         }
             // Compiler refuse to detect that the above is all possibilities
         assert(false);
-        return vespa::config::content::StorDistributionConfig::MODULO_BID;
+        return lib::Distribution::MODULO_BID;
     }
 
     Distribution(const lib::ClusterState& state_, uint32_t diskCount_, Type t)
@@ -186,7 +186,7 @@ struct Distribution {
           nodeState(),
           diskCount(diskCount_),
           state(state_),
-          distribution(new lib::Distribution(*config::ConfigGetter<vespa::config::content::StorDistributionConfig>::getConfig("storage/cluster.storage")))
+          distribution(new lib::Distribution("storage/cluster.storage"))
     {
         for (uint32_t i=0, n=state.getNodeCount(lib::NodeType::STORAGE);
              i < n; ++i)

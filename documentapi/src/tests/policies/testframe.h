@@ -9,6 +9,7 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <vespa/document/repo/documenttyperepo.h>
 
 using documentapi::string;
 

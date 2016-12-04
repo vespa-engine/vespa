@@ -9,6 +9,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/config-stor-distribution.h>
 #include <set>
 
 using document::BucketId;

@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespaclient/clusterlist/clusterlist.h>
 #include <vespa/vespalib/text/lowercase.h>
+#include <vespa/config-stor-distribution.h>
 
 LOG_SETUP("vdsstatetool");
 

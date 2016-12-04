@@ -341,8 +341,7 @@ BucketMover::storageDistributionChanged()
     lib::Distribution::SP distribution = _component.getDistribution();
 
         // Verify that the actual disk distribution changed, if not ignore
-    vespa::config::content::StorDistributionConfig::DiskDistribution newDistr(
-            distribution->getDiskDistribution());
+    lib::Distribution::DiskDistribution newDistr(distribution->getDiskDistribution());
 
     if (_diskDistribution == newDistr) return;
 
@@ -350,18 +349,14 @@ BucketMover::storageDistributionChanged()
     if (_currentRun.get() != 0) {
         LOG(info, "Aborting bucket mover run as disk distribution changed "
                   "from %s to %s.",
-            vespa::config::content::StorDistributionConfig::getDiskDistributionName(
-                _diskDistribution).c_str(),
-            vespa::config::content::StorDistributionConfig::getDiskDistributionName(
-                newDistr).c_str());
+            lib::Distribution::getDiskDistributionName(_diskDistribution).c_str(),
+            lib::Distribution::getDiskDistributionName(newDistr).c_str());
         _currentRun->abort();
     } else {
         LOG(info, "Regathering state as disk distribution changed "
                   "from %s to %s.",
-            vespa::config::content::StorDistributionConfig::getDiskDistributionName(
-                _diskDistribution).c_str(),
-            vespa::config::content::StorDistributionConfig::getDiskDistributionName(
-                newDistr).c_str());
+            lib::Distribution::getDiskDistributionName(_diskDistribution).c_str(),
+            lib::Distribution::getDiskDistributionName(newDistr).c_str());
     }
     _diskDistribution = newDistr;
     _nextRun = framework::SecondTime(0);
@@ -473,8 +468,7 @@ BucketMover::printCurrentStatus(std::ostream& out,
         << (currentTime - rs._endTime).toString(framework::DIFFERENCE)
         << " ago)</h2>\n"
         << "<p>Disk distribution: "
-        << vespa::config::content::StorDistributionConfig::getDiskDistributionName(
-                _diskDistribution)
+        << lib::Distribution::getDiskDistributionName(_diskDistribution)
         << "</p>\n";
     out << "<p>This is the status from the last completed bucket database scan "
         << "done by the bucket mover. After starting storage, or after "

@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/trace/trace.h>
-
-#include <algorithm>
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <sys/time.h>
 
 namespace vespalib {
 
@@ -21,6 +19,8 @@ Trace::Trace(uint32_t level) :
 {
     // empty
 }
+
+Trace::~Trace() { }
 
 Trace &
 Trace::clear()
@@ -54,8 +54,7 @@ Trace::trace(uint32_t level, const string &note, bool addTime)
     if (addTime) {
         struct timeval tv;
         gettimeofday(&tv, NULL);
-        _root.addChild(vespalib::make_vespa_string(
-                "[%ld.%06ld] %s", tv.tv_sec, tv.tv_usec, note.c_str()));
+        _root.addChild(make_string("[%ld.%06ld] %s", tv.tv_sec, tv.tv_usec, note.c_str()));
     } else {
         _root.addChild(note);
     }

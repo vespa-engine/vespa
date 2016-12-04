@@ -11,6 +11,7 @@
 #include <vespa/messagebus/blobref.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/documentapi/documentapi.h>
+#include "iroutablefactory.h"
 
 namespace document { class DocumentTypeRepo; }
 

@@ -113,9 +113,20 @@ private:
     void configure(const DistributionConfig & config);
 
 public:
+    class ConfigWrapper {
+    public:
+        ConfigWrapper(ConfigWrapper && rhs) = default;
+        ConfigWrapper & operator = (ConfigWrapper && rhs) = default;
+        ConfigWrapper(std::unique_ptr<DistributionConfig> cfg);
+        ~ConfigWrapper();
+        const DistributionConfig & get() const { return *_cfg; }
+    private:
+        std::unique_ptr<DistributionConfig> _cfg;
+    };
     Distribution();
     Distribution(const Distribution&);
-    Distribution(const DistributionConfig&);
+    Distribution(const ConfigWrapper & cfg);
+    Distribution(const DistributionConfig & cfg);
     Distribution(const vespalib::string& serialized);
     ~Distribution();
 
@@ -178,10 +189,11 @@ public:
      * with a really simple setup with no hierarchical grouping. This function
      * should not be used by any production code.
      */
-    static DistributionConfig getDefaultDistributionConfig(
+    static ConfigWrapper getDefaultDistributionConfig(
             uint16_t redundancy = 2, uint16_t nodeCount = 10,
             DiskDistribution distr = MODULO_BID);
     static vespalib::string getDiskDistributionName(DiskDistribution dist);
+    static DiskDistribution getDiskDistribution(vespalib::stringref name);
 
     /**
      * Utility function used by distributor to split copies into groups to

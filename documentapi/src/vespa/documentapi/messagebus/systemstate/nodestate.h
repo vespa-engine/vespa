@@ -44,6 +44,9 @@ private:
     const string toString(const string &prefix) const;
 
 public:
+    NodeState(NodeState && rhs) = default;
+    NodeState & operator = (NodeState && rhs) = default;
+    NodeState & operator = (const NodeState & rhs) = default;
     /**
      * Creates a node state that no internal content.
      */
@@ -63,6 +66,8 @@ public:
      * @param args The arguments to use as state.
      */
     NodeState(StateMap args);
+
+    ~NodeState();
 
     /**
      * Adds a child to this node at the given location. The key can be a location string, in which case the

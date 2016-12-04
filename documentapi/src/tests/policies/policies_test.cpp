@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("policies_test");
 
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/datatype.h>
@@ -29,6 +26,8 @@ LOG_SETUP("policies_test");
 #include <vespa/vdslib/container/mutabledocumentlist.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include "testframe.h"
+#include <vespa/log/log.h>
+LOG_SETUP("policies_test");
 
 using document::DataType;
 using document::Document;
@@ -920,7 +919,7 @@ namespace {
             ost << "group[0].nodes[" << i << "].index " << i << "\n";
         }
         ost << "disk_distribution "
-            << vespa::config::content::StorDistributionConfig::getDiskDistributionName(distr)
+            << storage::lib::Distribution::getDiskDistributionName(distr)
             << "\n";
         return ost.str();
     }

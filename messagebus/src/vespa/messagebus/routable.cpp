@@ -14,6 +14,8 @@ Routable::Routable() :
     // empty
 }
 
+Routable::~Routable() { }
+
 void
 Routable::discard()
 {

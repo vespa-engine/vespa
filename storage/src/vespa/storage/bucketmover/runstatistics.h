@@ -41,7 +41,7 @@
 #include <vespa/storageframework/storageframework.h>
 #include <vector>
 #include <vespa/vdslib/state/nodestate.h>
-#include <vespa/config-stor-distribution.h>
+#include <vespa/vdslib/distribution/distribution.h>
 
 namespace storage {
 
@@ -50,8 +50,7 @@ class Clock;
 namespace bucketmover {
 
 struct RunStatistics : public document::Printable {
-    typedef vespa::config::content::StorDistributionConfig::DiskDistribution
-            DiskDistribution;
+    using DiskDistribution = lib::Distribution::DiskDistribution;
 
     /** Data kept as targets for moves for each disk. */
     struct DiskMatrix {
