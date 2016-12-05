@@ -7,11 +7,9 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.DoubleBinaryOperator;
 
 /**
@@ -119,8 +117,8 @@ public class Join extends PrimitiveTensorFunction {
     private TensorAddress combineAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes, 
                                            TensorType joinedType) {
         String[] joinedLabels = new String[joinedType.dimensions().size()];
-        mapContent(a.elements(), joinedLabels, aToIndexes);
-        boolean compatible = mapContent(b.elements(), joinedLabels, bToIndexes);
+        mapContent(a.labels(), joinedLabels, aToIndexes);
+        boolean compatible = mapContent(b.labels(), joinedLabels, bToIndexes);
         if ( ! compatible) return null;
         return new TensorAddress(joinedLabels);
     }

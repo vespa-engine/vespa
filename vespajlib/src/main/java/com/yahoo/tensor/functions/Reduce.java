@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * The <i>reduce</i> tensor operation returns a tensor produced from the argument tensor where some dimensions 
@@ -125,9 +124,9 @@ public class Reduce extends PrimitiveTensorFunction {
 
         String[] reducedLabels = new String[reducedType.dimensions().size()];
         int reducedLabelIndex = 0;
-        for (int i = 0; i < address.elements().size(); i++)
+        for (int i = 0; i < address.labels().size(); i++)
             if ( ! indexesToRemove.contains(i))
-                reducedLabels[reducedLabelIndex++] = address.elements().get(i);
+                reducedLabels[reducedLabelIndex++] = address.labels().get(i);
         return new TensorAddress(reducedLabels);
     }
     
