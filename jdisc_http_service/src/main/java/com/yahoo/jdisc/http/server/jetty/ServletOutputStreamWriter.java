@@ -18,6 +18,8 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
+
 /**
  * @author tonytv
  * @author bjorncs
@@ -106,8 +108,8 @@ public class ServletOutputStreamWriter {
     }
 
     private void queueErrorContent_holdingLock(ByteBuffer errorContent) {
-        responseContentQueue.addLast(new ResponseContentPart(errorContent, null));
-        responseContentQueue.addLast(new ResponseContentPart(CLOSE_STREAM_BUFFER, null));
+        responseContentQueue.addLast(new ResponseContentPart(errorContent, NOOP_COMPLETION_HANDLER));
+        responseContentQueue.addLast(new ResponseContentPart(CLOSE_STREAM_BUFFER, NOOP_COMPLETION_HANDLER));
     }
 
     public void writeBuffer(ByteBuffer buf, CompletionHandler handler) {
@@ -115,12 +117,9 @@ public class ServletOutputStreamWriter {
 
         synchronized (monitor) {
             if (state == State.FINISHED_OR_ERROR) {
-                if (handler != null) {
-                    executor.execute(() ->  handler.failed(new IllegalStateException("ContentChannel already closed.")));
-                }
+                executor.execute(() ->  handler.failed(new IllegalStateException("ContentChannel already closed.")));
                 return;
             }
-
             responseContentQueue.addLast(new ResponseContentPart(buf, handler));
             switch (state) {
                 case NOT_STARTED:
@@ -146,6 +145,10 @@ public class ServletOutputStreamWriter {
 
     public void close(CompletionHandler handler) {
         writeBuffer(CLOSE_STREAM_BUFFER, handler);
+    }
+
+    public void close() {
+        close(NOOP_COMPLETION_HANDLER);
     }
 
     private void writeBuffersInQueueToOutputStream() {
@@ -306,5 +309,15 @@ public class ServletOutputStreamWriter {
             setFinished(Optional.of(t));
         }
     };
+
+    private static class ResponseContentPart {
+        public final ByteBuffer buf;
+        public final CompletionHandler handler;
+
+        public ResponseContentPart(ByteBuffer buf, CompletionHandler handler) {
+            this.buf = buf;
+            this.handler = handler;
+        }
+    }
 
 }

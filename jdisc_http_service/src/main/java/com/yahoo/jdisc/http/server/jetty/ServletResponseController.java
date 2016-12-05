@@ -25,6 +25,8 @@ import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
+
 /**
  * @author tonytv
  * @author bjorncs
@@ -122,7 +124,7 @@ public class ServletResponseController {
             // TODO: should always have failed here, but that breaks test assumptions. Doing soft close instead.
             //assert !Thread.holdsLock(monitor);
             //servletOutputStreamWriter.fail(t);
-            servletOutputStreamWriter.close(null);
+            servletOutputStreamWriter.close();
         }
 
     }
@@ -151,7 +153,7 @@ public class ServletResponseController {
             servletOutputStreamWriter.sendErrorContentAndCloseAsync(ByteBuffer.wrap(errorContent));
         } else {
             servletResponse.setContentLength(0);
-            servletOutputStreamWriter.close(null);
+            servletOutputStreamWriter.close();
         }
     }
 
@@ -175,7 +177,7 @@ public class ServletResponseController {
 
                 //TODO: should throw an exception here, but this breaks unit tests.
                 //The failures will now instead happen when writing buffers.
-                servletOutputStreamWriter.close(null);
+                servletOutputStreamWriter.close();
                 return;
             }
 
@@ -238,13 +240,17 @@ public class ServletResponseController {
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
             commitResponse();
-            servletOutputStreamWriter.writeBuffer(buf, handler);
+            servletOutputStreamWriter.writeBuffer(buf, handlerOrNoopHandler(handler));
         }
 
         @Override
         public void close(CompletionHandler handler) {
             commitResponse();
-            servletOutputStreamWriter.close(handler);
+            servletOutputStreamWriter.close(handlerOrNoopHandler(handler));
+        }
+
+        private CompletionHandler handlerOrNoopHandler(CompletionHandler handler) {
+            return handler != null ? handler : NOOP_COMPLETION_HANDLER;
         }
     };
 }

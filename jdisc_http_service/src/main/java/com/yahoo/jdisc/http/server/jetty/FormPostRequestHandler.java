@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
+import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
 
 /**
  * Request handler that wraps POST requests of application/x-www-form-urlencoded data.
@@ -38,10 +39,6 @@ import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
  * $Id$
  */
 class FormPostRequestHandler extends AbstractRequestHandler implements ContentChannel {
-    private static final CompletionHandler NOOP_COMPLETION_HANDLER = new CompletionHandler() {
-        @Override public void completed() {}
-        @Override public void failed(final Throwable t) {}
-    };
 
     private final ByteArrayOutputStream accumulatedRequestContent = new ByteArrayOutputStream();
     private final RequestHandler delegateHandler;
