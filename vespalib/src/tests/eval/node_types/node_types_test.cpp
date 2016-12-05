@@ -281,6 +281,14 @@ TEST("require that lambda tensor resolves correct type") {
     TEST_DO(verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])", false));
 }
 
+TEST("require that tensor concat resolves correct type") {
+    TEST_DO(verify("concat(double,double,x)", "tensor(x[2])"));
+    TEST_DO(verify("concat(tensor(x[2]),tensor(x[3]),x)", "tensor(x[5])"));
+    TEST_DO(verify("concat(tensor(x[2]),tensor(x[3]),y)", "tensor(x[2],y[2])"));
+    TEST_DO(verify("concat(tensor(x[2]),tensor(x{}),x)", "error"));
+    TEST_DO(verify("concat(tensor(x[2]),tensor(y{}),x)", "tensor(x[3],y{})"));
+}
+
 TEST("require that double only expressions can be detected") {
     Function plain_fun = Function::parse("1+2");
     Function complex_fun = Function::parse("sum(a)");

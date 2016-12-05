@@ -81,6 +81,7 @@ public:
     static ValueType from_spec(const vespalib::string &spec);
     vespalib::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);
+    static ValueType concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension);
 };
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);

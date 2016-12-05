@@ -365,6 +365,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     virtual void visit(const TensorLambda &node) {
         make_error(node.num_children());
     }
+    virtual void visit(const TensorConcat &node) {
+        make_error(node.num_children());
+    }
 
     // operator nodes
 
