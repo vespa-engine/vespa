@@ -9,10 +9,9 @@ namespace storage {
 using metrics::MetricSet;
 
 VisitorMetricSet::VisitorMetricSet(MetricSet* owner)
-    : MetricSet("visitor", "visitor", "", owner),
-      latency("latency", "", "Latency of visitor (in ms)", this),
-      failed("failed", "", "Number of visitors that failed or were aborted by the user", this)
-{ }
+    : PersistenceOperationMetricSet("visitor", owner)
+{
+}
 
 VisitorMetricSet::~VisitorMetricSet() { }
 

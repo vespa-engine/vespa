@@ -18,6 +18,7 @@ struct DistributorMetricsSetTest : CppUnit::TestFixture {
     // list.
     void busy_failure_is_counted();
     void connection_failure_is_counted();
+    void inconsistent_bucket_is_counted();
     void non_special_cased_failure_codes_are_catchall_counted();
 
     CPPUNIT_TEST_SUITE(DistributorMetricsSetTest);
@@ -26,6 +27,7 @@ struct DistributorMetricsSetTest : CppUnit::TestFixture {
     CPPUNIT_TEST(timeout_failure_is_counted);
     CPPUNIT_TEST(busy_failure_is_counted);
     CPPUNIT_TEST(connection_failure_is_counted);
+    CPPUNIT_TEST(inconsistent_bucket_is_counted);
     CPPUNIT_TEST(non_special_cased_failure_codes_are_catchall_counted);
     CPPUNIT_TEST_SUITE_END();
 
@@ -73,6 +75,12 @@ void DistributorMetricsSetTest::connection_failure_is_counted() {
             mbus::ErrorCode::CONNECTION_ERROR));
     assert_failure_is_counted(metrics, error_code,
                               metrics.failures.notconnected);
+}
+
+void DistributorMetricsSetTest::inconsistent_bucket_is_counted() {
+    PersistenceOperationMetricSet metrics("foo");
+    assert_failure_is_counted(metrics, api::ReturnCode::BUCKET_NOT_FOUND,
+                              metrics.failures.inconsistent_bucket);
 }
 
 void DistributorMetricsSetTest::non_special_cased_failure_codes_are_catchall_counted() {

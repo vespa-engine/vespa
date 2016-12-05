@@ -188,6 +188,10 @@ private:
         return ost.str();
     }
 
+    VisitorMetricSet& defaultVisitorMetrics() {
+        return getDistributor().getMetrics().visits[documentapi::LoadType::DEFAULT];
+    }
+
     std::unique_ptr<VisitorOperation> createOpWithConfig(
             api::CreateVisitorCommand::SP msg,
             const VisitorOperation::Config& config)
@@ -307,6 +311,8 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
                                      "last=BucketId(0x000000007fffffff)) "
                                      "ReturnCode(NONE)"),
                          _sender.getLastReply());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().
+                                     ok.getLongValue("count"));
 }
 
 void
@@ -603,6 +609,8 @@ VisitorOperationTest::testBucketRemovedWhileVisitorPending()
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
                         "ReturnCode(BUCKET_NOT_FOUND)"),
             _sender.getLastReply());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
+                                     inconsistent_bucket.getLongValue("count"));
 }
 
 void
@@ -725,6 +733,8 @@ VisitorOperationTest::testTimeoutDoesNotOverrideCriticalError()
             "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
             "ReturnCode(INTERNAL_FAILURE, [from content node 0] )"s,
             _sender.getLastReply());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
+                                     storagefailure.getLongValue("count"));
 }
 
 void
@@ -737,6 +747,8 @@ VisitorOperationTest::testWrongDistribution()
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
                         "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)"),
             runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
+                                     wrongdistributor.getLongValue("count"));
 }
 
 void
@@ -1181,6 +1193,9 @@ VisitorOperationTest::testFailureOnAllNodes()
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
                         "ReturnCode(BUCKET_NOT_FOUND)"),
             _sender.getLastReply());
+    // TODO it'd be much more accurate to increase the "notconnected" metric
+    // here, but our metrics are currently based on the reply sent back to the
+    // client, not the ones sent from the content nodes to the distributor.
 }
 
 

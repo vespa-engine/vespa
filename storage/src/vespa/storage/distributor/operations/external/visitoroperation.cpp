@@ -985,6 +985,7 @@ VisitorOperation::sendReply(const api::ReturnCode& code, DistributorMessageSende
 
         sender.sendReply(reply);
 
+        _metrics.updateFromResult(code);
         _metrics.latency.addValue(_operationTimer.getElapsedTimeAsDouble());
         _sentReply = true;
     }
