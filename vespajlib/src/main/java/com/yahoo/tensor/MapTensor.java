@@ -3,13 +3,8 @@ package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * A sparse implementation of a tensor backed by a Map of cells to values.
@@ -163,4 +158,52 @@ public class MapTensor implements Tensor {
         return Tensor.equals(this, (Tensor)o);
     }
 
+    /**
+     * Builder class for a MapTensor.
+     *
+     * The set of dimensions of the resulting tensor is the union of
+     * the dimensions specified explicitly and the ones specified in the
+     * tensor cell addresses.
+     *
+     * @author geirst
+     */
+    @Beta
+    public static class Builder {
+    
+        private final TensorType type;
+        private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
+    
+        public Builder(TensorType type) {
+            this.type = type;
+        }
+    
+        public CellBuilder cell() {
+            return new CellBuilder(type);
+        }
+    
+        public Tensor build() {
+            return new MapTensor(type, cells.build());
+        }
+    
+        public class CellBuilder {
+    
+            private final TensorAddress.Builder addressBuilder;
+    
+            private CellBuilder(TensorType type) {
+                addressBuilder = new TensorAddress.Builder(type);
+            }
+            
+            public CellBuilder label(String dimension, String label) {
+                addressBuilder.add(dimension, label);
+                return this;
+            }
+    
+            public Builder value(double cellValue) {
+                cells.put(addressBuilder.build(), cellValue);
+                return Builder.this;
+            }
+    
+        }
+    
+    }
 }

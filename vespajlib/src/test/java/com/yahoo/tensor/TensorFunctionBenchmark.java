@@ -46,7 +46,7 @@ public class TensorFunctionBenchmark {
         List<Tensor> tensors = new ArrayList<>();
         TensorType type = new TensorType.Builder().mapped("x").build();
         for (int i = 0; i < vectorCount; i++) {
-            MapTensorBuilder builder = new MapTensorBuilder(type);
+            MapTensor.Builder builder = new MapTensor.Builder(type);
             for (int j = 0; j < vectorSize; j++) {
                 builder.cell().label("x", String.valueOf(j)).value(random.nextDouble());
             }
@@ -58,7 +58,7 @@ public class TensorFunctionBenchmark {
     private static List<Tensor> generateVectorsInOneTensor(int vectorCount, int vectorSize) {
         List<Tensor> tensors = new ArrayList<>();
         TensorType type = new TensorType.Builder().mapped("i").mapped("x").build();
-        MapTensorBuilder builder = new MapTensorBuilder(type);
+        MapTensor.Builder builder = new MapTensor.Builder(type);
         for (int i = 0; i < vectorCount; i++) {
             for (int j = 0; j < vectorSize; j++) {
                 builder.cell()

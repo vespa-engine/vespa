@@ -3,7 +3,7 @@ package com.yahoo.tensor.serialization;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.tensor.MapTensorBuilder;
+import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -62,7 +62,7 @@ class SparseBinaryFormat implements BinaryFormat {
     @Override
     public Tensor decode(GrowableByteBuffer buffer) {
         TensorType type = decodeDimensions(buffer);
-        MapTensorBuilder builder = new MapTensorBuilder(type);
+        MapTensor.Builder builder = new MapTensor.Builder(type);
         decodeCells(buffer, builder, type);
         return builder.build();
     }
@@ -76,16 +76,16 @@ class SparseBinaryFormat implements BinaryFormat {
         return builder.build();
     }
 
-    private static void decodeCells(GrowableByteBuffer buffer, MapTensorBuilder builder, TensorType type) {
+    private static void decodeCells(GrowableByteBuffer buffer, MapTensor.Builder builder, TensorType type) {
         int numCells = buffer.getInt1_4Bytes();
         for (int i = 0; i < numCells; ++i) {
-            MapTensorBuilder.CellBuilder cellBuilder = builder.cell();
+            MapTensor.Builder.CellBuilder cellBuilder = builder.cell();
             decodeAddress(buffer, cellBuilder, type);
             cellBuilder.value(buffer.getDouble());
         }
     }
 
-    private static void decodeAddress(GrowableByteBuffer buffer, MapTensorBuilder.CellBuilder builder,
+    private static void decodeAddress(GrowableByteBuffer buffer, MapTensor.Builder.CellBuilder builder,
                                       TensorType type) {
         for (TensorType.Dimension dimension : type.dimensions()) {
             String label = decodeString(buffer);

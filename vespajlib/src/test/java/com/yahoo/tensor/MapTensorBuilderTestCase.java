@@ -14,7 +14,7 @@ public class MapTensorBuilderTestCase {
 
     @Test
     public void requireThatEmptyTensorCanBeBuilt() {
-        Tensor tensor = new MapTensorBuilder(TensorType.empty).build();
+        Tensor tensor = new MapTensor.Builder(TensorType.empty).build();
         assertEquals(0, tensor.type().dimensions().size());
         assertEquals("{}", tensor.toString());
     }
@@ -22,7 +22,7 @@ public class MapTensorBuilderTestCase {
     @Test
     public void requireThatOneDimensionalTensorCanBeBuilt() {
         TensorType type = new TensorType.Builder().mapped("x").build();
-        Tensor tensor = new MapTensorBuilder(type).
+        Tensor tensor = new MapTensor.Builder(type).
                 cell().label("x", "0").value(1).
                 cell().label("x", "1").value(2).build();
         assertEquals(Sets.newHashSet("x"), tensor.type().dimensionNames());
@@ -32,7 +32,7 @@ public class MapTensorBuilderTestCase {
     @Test
     public void requireThatTwoDimensionalTensorCanBeBuilt() {
         TensorType type = new TensorType.Builder().mapped("x").mapped("y").build();
-        Tensor tensor = new MapTensorBuilder(type).
+        Tensor tensor = new MapTensor.Builder(type).
                 cell().label("x", "0").label("y", "0").value(1).
                 cell().label("x", "1").label("y", "0").value(2).build();
         assertEquals(Sets.newHashSet("x", "y"), tensor.type().dimensionNames());
