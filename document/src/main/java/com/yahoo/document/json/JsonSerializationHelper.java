@@ -99,7 +99,7 @@ public class JsonSerializationHelper {
     private static void serializeTensorAddress(JsonGenerator generator, TensorAddress address, TensorType type) throws IOException {
         generator.writeObjectFieldStart(JsonReader.TENSOR_ADDRESS);
         for (int i = 0; i < type.dimensions().size(); i++)
-            generator.writeStringField(type.dimensions().get(i).name(), address.labels().get(i));
+            generator.writeStringField(type.dimensions().get(i).name(), address.elements().get(i));
 
         generator.writeEndObject();
     }

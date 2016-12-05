@@ -2,7 +2,7 @@
 package com.yahoo.search.grouping.request;
 
 /**
- * This class represents an count-aggregator in a {@link GroupingExpression}. It evaluates to the number of labels
+ * This class represents an count-aggregator in a {@link GroupingExpression}. It evaluates to the number of elements
  * there are in the input.
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>

@@ -245,7 +245,7 @@ public class HitField {
         return tokenizedContent;
     }
     /**
-     * Return an iterator for the tokens, delimiters and markup labels
+     * Return an iterator for the tokens, delimiters and markup elements
      * of the field.
      */
     public ListIterator<FieldPart> listIterator() {

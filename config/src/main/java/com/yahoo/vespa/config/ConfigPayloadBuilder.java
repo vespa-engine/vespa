@@ -101,7 +101,7 @@ public class ConfigPayloadBuilder {
      * Create a new array where new values may be added.
      *
      * @param name Name of array.
-     * @return Array object supporting adding labels to it.
+     * @return Array object supporting adding elements to it.
      */
     public Array getArray(String name) {
         Array a = arrayMap.get(name);
@@ -191,7 +191,7 @@ public class ConfigPayloadBuilder {
      * Create a new map where new values may be added.
      *
      * @param name Name of map.
-     * @return Map builder supporting adding labels to it.
+     * @return Map builder supporting adding elements to it.
      */
     public MapBuilder getMap(String name) {
         MapBuilder a = mapBuilderMap.get(name);
@@ -325,7 +325,7 @@ public class ConfigPayloadBuilder {
         }
 
         /**
-         * Create a new slime object and returns its payload builder. Append the element after all other labels
+         * Create a new slime object and returns its payload builder. Append the element after all other elements
          * in the array.
          *
          * @return a payload builder for the new slime object.
@@ -385,7 +385,7 @@ public class ConfigPayloadBuilder {
          */
         private void setAppend() {
             if (mode == ArrayMode.INDEX && elements.size() > 0) {
-                throw new IllegalStateException("Cannot append labels to an array in index mode with more than one element");
+                throw new IllegalStateException("Cannot append elements to an array in index mode with more than one element");
             }
             mode = ArrayMode.APPEND;
         }
@@ -395,7 +395,7 @@ public class ConfigPayloadBuilder {
          */
         private void verifyIndex() {
             if (mode == ArrayMode.APPEND)
-                throw new IllegalStateException("Cannot reference array labels with index once append is done");
+                throw new IllegalStateException("Cannot reference array elements with index once append is done");
         }
 
         public void resolve(Cursor parent) {

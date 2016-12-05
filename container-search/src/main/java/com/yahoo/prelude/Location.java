@@ -17,7 +17,7 @@ public class Location {
     // 1 or 2
     private int dimensions = 0;
 
-    // line labels and rectangles
+    // line elements and rectangles
     private int x1 = 0;
     private int y1 = 0;
     private int x2 = 1;

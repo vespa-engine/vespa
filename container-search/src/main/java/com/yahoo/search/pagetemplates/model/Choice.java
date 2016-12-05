@@ -4,7 +4,7 @@ package com.yahoo.search.pagetemplates.model;
 import java.util.*;
 
 /**
- * A choice between some alternative lists of page labels.
+ * A choice between some alternative lists of page elements.
  *
  * @author bratseth
  */
@@ -46,7 +46,7 @@ public final class Choice extends AbstractChoice {
 
     /**
      * Returns the alternatives of this as a live reference to the alternatives of this.
-     * The list and labels may be modified unless this is frozen. This is never null.
+     * The list and elements may be modified unless this is frozen. This is never null.
      */
     public List<List<PageElement>> alternatives() { return alternatives; }
 

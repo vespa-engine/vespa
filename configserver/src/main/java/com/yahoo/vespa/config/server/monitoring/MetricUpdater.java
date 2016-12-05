@@ -59,18 +59,18 @@ public class MetricUpdater {
     }
 
     /**
-     * Sets the count for number of config labels in the {@link ServerCache}
+     * Sets the count for number of config elements in the {@link ServerCache}
      *
-     * @param elems number of labels
+     * @param elems number of elements
      */
     public void setCacheConfigElems(long elems) {
         staticMetrics.put(METRIC_CACHE_CONFIG_ELEMENTS, elems);
     }
 
     /**
-     * Sets the count for number of checksum labels in the {@link ServerCache}
+     * Sets the count for number of checksum elements in the {@link ServerCache}
      *
-     * @param elems number of labels
+     * @param elems number of elements
      */
     public void setCacheChecksumElems(long elems) {
         staticMetrics.put(METRIC_CACHE_CONFIG_CHECKSUMS, elems);
@@ -79,7 +79,7 @@ public class MetricUpdater {
     /**
      * Sets the number of outstanding responses (unchanged config in long poll)
      *
-     * @param elems number of labels
+     * @param elems number of elements
      */
     public void setDelayedResponses(long elems) {
         staticMetrics.put(METRIC_DELAYED_RESPONSES, elems);

@@ -13,7 +13,7 @@ public class Selectable {
 
     /**
      * Apply the predicate to this object. If the predicate returns true, pass this object to the operation, otherwise
-     * invoke the {@link #selectMembers(ObjectPredicate, ObjectOperation)} method to locate sub-labels that might
+     * invoke the {@link #selectMembers(ObjectPredicate, ObjectOperation)} method to locate sub-elements that might
      * trigger the predicate.
      *
      * @param predicate component used to select (sub-)objects

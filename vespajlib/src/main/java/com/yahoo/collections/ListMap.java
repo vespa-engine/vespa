@@ -31,7 +31,7 @@ public class ListMap<K, V> {
         }
     }
 
-    /** Puts an element into this. Multiple labels at the same position are added to the list at this key */
+    /** Puts an element into this. Multiple elements at the same position are added to the list at this key */
     public void put(K key, V value) {
         List<V> list = map.get(key);
         if (list == null) {
@@ -68,8 +68,8 @@ public class ListMap<K, V> {
     }
 
     /**
-     * Returns the List containing the labels with this key, or an empty list
-     * if there are no labels. The list returned is unmodifiable.
+     * Returns the List containing the elements with this key, or an empty list
+     * if there are no elements. The list returned is unmodifiable.
      */
     public List<V> get(K key) {
         List<V> list = map.get(key);

@@ -57,7 +57,7 @@ public class ListenableArrayList<ITEM> extends ArrayList<ITEM> {
     }
 
     /**
-     * Adds a listener which is invoked whenever labels are added to this.
+     * Adds a listener which is invoked whenever elements are added to this.
      * This may not be invoked once for each added element.
      */
     public void addListener(Runnable listener) {

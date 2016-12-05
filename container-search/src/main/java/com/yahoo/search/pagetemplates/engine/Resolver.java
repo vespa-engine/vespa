@@ -44,7 +44,7 @@ public abstract class Resolver extends AbstractComponent {
      * on each choice found in that temnplate. This provides a simple API to resolvers which make each choice
      * independently.
      *
-     * @param pageTemplate the choice of page templates to resolve - a choice containing singleton lists of PageTemplate labels
+     * @param pageTemplate the choice of page templates to resolve - a choice containing singleton lists of PageTemplate elements
      * @param query the query, from which information useful for correct resolution can be found
      * @param result the result, from which further information useful for correct resolution can be found
      * @return the resolution of the choices contained in the given page template

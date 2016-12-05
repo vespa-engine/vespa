@@ -142,7 +142,7 @@ public class DomConfigPayloadBuilder {
 
         if (element.hasAttribute("index")) {
             // Check for legacy (pre Vespa 6) usage
-            throw new IllegalArgumentException("The 'index' attribute on config labels is not supported - use <item>");
+            throw new IllegalArgumentException("The 'index' attribute on config elements is not supported - use <item>");
         } else if (element.hasAttribute("operation")) {
             // leaf array, currently the only supported operation is 'append'
             verifyLegalOperation(element);
@@ -150,7 +150,7 @@ public class DomConfigPayloadBuilder {
             a.append(value);
         } else if ("item".equals(name)) {
             if (parentName == null)
-                throw new ConfigurationRuntimeException("<item> is a reserved keyword for array and map labels");
+                throw new ConfigurationRuntimeException("<item> is a reserved keyword for array and map elements");
             if (element.hasAttribute("key")) {
                 payloadBuilder.getMap(parentName).put(element.getAttribute("key"), value);
             } else {
@@ -167,7 +167,7 @@ public class DomConfigPayloadBuilder {
          // Inner value
         if (element.hasAttribute("index")) {
             // Check for legacy (pre Vespa 6) usage
-            throw new IllegalArgumentException("The 'index' attribute on config labels is not supported - use <item>");
+            throw new IllegalArgumentException("The 'index' attribute on config elements is not supported - use <item>");
         } else if (element.hasAttribute("operation")) {
             // inner array, currently the only supported operation is 'append'
             verifyLegalOperation(element);
@@ -204,12 +204,12 @@ public class DomConfigPayloadBuilder {
                 for (Element child : children)
                     parseElement(child, p, name);
             } else if (numMatching == children.size()) {
-                // Array with <item labels>
+                // Array with <item elements>
                 for (Element child : children) {
                     parseElement(child, payloadBuilder, name);
                 }
             } else {
-                throw new ConfigurationRuntimeException("<item> is a reserved keyword for array and map labels");
+                throw new ConfigurationRuntimeException("<item> is a reserved keyword for array and map elements");
             }
         }
     }
@@ -217,7 +217,7 @@ public class DomConfigPayloadBuilder {
     /**
      * Adds the values and children (recursively) in the given xml element to the given {@link ConfigPayloadBuilder}.
      * @param currElem  The element representing a config parameter.
-     * @param payloadBuilder The builder to use when adding labels.
+     * @param payloadBuilder The builder to use when adding elements.
      */
     private void parseElement(Element currElem, ConfigPayloadBuilder payloadBuilder, String parentName) {
         List<Element> children = XML.getChildren(currElem);

@@ -145,7 +145,7 @@ public class VespaXMLReaderTestCase {
 
     @Test
     public void testNews3() throws Exception {
-        // Updating all labels in a documentType
+        // Updating all elements in a documentType
         VespaXMLFeedReader parser = new VespaXMLFeedReader("src/test/vespaxmlparser/test03.xml", manager);
         VespaXMLFeedReader.Operation op = new VespaXMLFeedReader.Operation();
         parser.read(op);

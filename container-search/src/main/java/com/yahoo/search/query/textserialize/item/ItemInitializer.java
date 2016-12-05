@@ -79,7 +79,7 @@ public class ItemInitializer {
         TypeCheck.ensureInstanceOf(connectivity, List.class);
         List<?> connectivityList = (List<?>) connectivity;
         if (connectivityList.size() != 2) {
-            throw new IllegalArgumentException("Expected two labels for connectivity, got " + connectivityList.size());
+            throw new IllegalArgumentException("Expected two elements for connectivity, got " + connectivityList.size());
         }
 
         Object id = connectivityList.get(0);

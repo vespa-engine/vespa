@@ -30,7 +30,7 @@ public final class TensorAddress implements Comparable<TensorAddress> {
     }
 
     /** Returns the labels of this as an immutable list in the order of the tensor this is the type of */
-    public List<String> labels() { return labels; }
+    public List<String> elements() { return labels; }
 
     @Override
     public int compareTo(TensorAddress other) {

@@ -43,7 +43,7 @@ public class SparseSketch extends Sketch<SparseSketch> {
      *
      * Serialization format
      * ==================
-     * Number of labels:      4 bytes
+     * Number of elements:      4 bytes
      * Elements:            N * 4 bytes
      * @param buf Serializer
      */

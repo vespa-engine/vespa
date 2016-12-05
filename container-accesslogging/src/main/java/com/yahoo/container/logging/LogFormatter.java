@@ -82,7 +82,7 @@ public class LogFormatter extends Formatter {
 
     /**
      * Static insertDate method will insert date fragments into a string
-     * based on '%x' pattern labels.  Equivalents in SimpleDateFormatter patterns,
+     * based on '%x' pattern elements.  Equivalents in SimpleDateFormatter patterns,
      * with examples:
      * <ul>
      * <li>%Y  YYYY  2003

@@ -41,7 +41,7 @@ public class StructTestCase {
         }
 
         {
-            //add three labels and remove one of them, and replace the last one:
+            //add three elements and remove one of them, and replace the last one:
             assertEquals(0, struct.getFields().size());
 
             IntegerFieldValue ifv = new IntegerFieldValue(5);

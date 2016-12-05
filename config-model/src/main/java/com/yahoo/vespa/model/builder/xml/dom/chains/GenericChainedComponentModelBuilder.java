@@ -8,7 +8,7 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import org.w3c.dom.Element;
 
 /**
- * reads the common attributes and labels of all chained component labels.
+ * reads the common attributes and elements of all chained component elements.
  * @author tonytv
  */
 public abstract class GenericChainedComponentModelBuilder {

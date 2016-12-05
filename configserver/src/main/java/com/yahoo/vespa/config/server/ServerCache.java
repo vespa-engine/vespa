@@ -66,7 +66,7 @@ public class ServerCache {
     }
     
     /**
-     * The number of different {@link ConfigResponse} labels
+     * The number of different {@link ConfigResponse} elements
      * @return elems
      */
     public int configElems() {

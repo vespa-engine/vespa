@@ -92,7 +92,7 @@ public class JsonBenchmark {
      * jacksons 1000 40000 = 5.6 seconds
      * jacksont 1000 40000 = 11.0 seconds
      * slime 1000 40000  = 17.5 seconds
-     * @param argv type, num labels in weigted set, num iterations
+     * @param argv type, num elements in weigted set, num iterations
      */
     static public void main(String argv[]) {
         String type = argv[0];

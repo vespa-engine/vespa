@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class CollectionUtil {
 
     /**
-     * Returns a String containing the string representation of all labels from
+     * Returns a String containing the string representation of all elements from
      * the given collection, separated by the separator string.
      *
      * @param collection The collection
@@ -32,7 +32,7 @@ public class CollectionUtil {
     }
 
     /**
-     * Returns a String containing the string representation of all labels from
+     * Returns a String containing the string representation of all elements from
      * the given collection, using a start string, separator strings, and an end string.
      *
      * @param collection The collection
@@ -57,7 +57,7 @@ public class CollectionUtil {
     }
 
     /**
-     * Returns the symmetric difference between two collections, i.e. the set of labels
+     * Returns the symmetric difference between two collections, i.e. the set of elements
      * that occur in exactly one of the collections.
      */
     public static <T> Set<T> symmetricDifference(Collection<? extends T> c1, Collection<? extends T> c2) {
@@ -72,7 +72,7 @@ public class CollectionUtil {
     }
 
     /**
-     * Returns the subset of labels from the given collection that can be cast to the reference
+     * Returns the subset of elements from the given collection that can be cast to the reference
      * type, defined by the given Class object.
      */
     public static <T> Collection<T> filter(Collection<?> collection, Class<T> lowerBound) {

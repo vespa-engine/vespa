@@ -10,9 +10,9 @@ package com.yahoo.collections;
 public class IntArrayComparator {
     /**
      * Compare the arguments. Shorter arrays are always considered
-     * smaller than longer arrays. For arrays of equal lengths, the labels
-     * are compared one-by-one. Whenever two corresponding labels in the
-     * two arrays are non-equal, the method returns. If all labels at
+     * smaller than longer arrays. For arrays of equal lengths, the elements
+     * are compared one-by-one. Whenever two corresponding elements in the
+     * two arrays are non-equal, the method returns. If all elements at
      * corresponding positions in the two arrays are equal, the arrays
      * are considered equal.
      *

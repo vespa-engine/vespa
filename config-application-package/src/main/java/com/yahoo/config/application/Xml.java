@@ -130,14 +130,14 @@ public class Xml {
     }
 
     /**
-     * Will get all sub-labels under parent named "name", just like XML.getChildren(). Then look under
-     * pathFromAppRoot/ in the app package for XML files, parse them and append labels of the same name.
+     * Will get all sub-elements under parent named "name", just like XML.getChildren(). Then look under
+     * pathFromAppRoot/ in the app package for XML files, parse them and append elements of the same name.
      *
      * @param parent parent XML node
-     * @param name name of labels to merge
+     * @param name name of elements to merge
      * @param app an {@link ApplicationPackage}
      * @param pathFromAppRoot path from application root
-     * @return list of all sub-labels with given name
+     * @return list of all sub-elements with given name
      */
     public static List<Element> mergeElems(Element parent, String name, ApplicationPackage app, String pathFromAppRoot) {
         List<Element> children = XML.getChildren(parent, name);

@@ -526,7 +526,7 @@ public class PhraseMatcher {
 
             public Item next() {
                 if (!hasNext())
-                    throw new NoSuchElementException(this + " has no more labels");
+                    throw new NoSuchElementException(this + " has no more elements");
 
                 currentIndex++;
                 if ((phrase.matched instanceof MatchedWord))

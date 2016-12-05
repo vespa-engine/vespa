@@ -31,10 +31,10 @@ public abstract class ConfigModelBuilder<MODEL extends ConfigModel> extends Abst
     }
 
     /**
-     * Method that must return the XML labels this builder handles. Subclasses must implement this in order to
-     * get called when one of the labels have been encountered when parsing.
+     * Method that must return the XML elements this builder handles. Subclasses must implement this in order to
+     * get called when one of the elements have been encountered when parsing.
      *
-     * @return A list of labels that this builder handles.
+     * @return A list of elements that this builder handles.
      */
     public abstract List<ConfigModelId> handlesElements();
 

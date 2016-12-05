@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 public class ResponseTestCase {
 
     /**
-     * Create a nested async tree of data labels, complete it recursively and check completion order.
+     * Create a nested async tree of data elements, complete it recursively and check completion order.
      * Check the recursive toString printing along the way.
      * List variable names ends by numbers specifying the index of the list at each level.
      */
@@ -47,7 +47,7 @@ public class ResponseTestCase {
         list12.add(list123);
         list123.add(list1231);
         list123.add(list1232);
-        // add sync data labels
+        // add sync data elements
         list1.add(new ProcessorLibrary.StringData(request,"list1"));
         list12.add(new ProcessorLibrary.StringData(request,"list12"));
         list14.add(new ProcessorLibrary.StringData(request,"list14"));

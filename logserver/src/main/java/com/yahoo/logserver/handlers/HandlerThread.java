@@ -190,7 +190,7 @@ public class HandlerThread extends Thread implements LogHandler
             throw new NullPointerException("channel is not allowed to be null");
         }
 
-    	// TODO: Make the legmessage labels some kind of composite structure to handle both individual messages and lists uniformly.
+    	// TODO: Make the legmessage elements some kind of composite structure to handle both individual messages and lists uniformly.
         List<ItemOrList> drainList = new ArrayList<ItemOrList>(queue.size() + 1);
         try {
             for (;;) {
@@ -201,7 +201,7 @@ public class HandlerThread extends Thread implements LogHandler
                 queue.drainTo(drainList);
 
                 for (ItemOrList o : drainList) {
-                    // we can get two types of labels here: single log
+                    // we can get two types of elements here: single log
                     // messages or lists of log messages, so we need to
                     // handle them accordingly.
 

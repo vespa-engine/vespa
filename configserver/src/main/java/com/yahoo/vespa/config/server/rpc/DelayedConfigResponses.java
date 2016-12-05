@@ -164,7 +164,7 @@ public class DelayedConfigResponses {
             request.setDelayedResponse(true);
             try {
                 if (log.isLoggable(LogLevel.DEBUG)) {
-                    log.log(LogLevel.DEBUG, context.logPre()+"Putting on delayedRequests queue (" + delayedResponsesQueue.size() + " labels): " +
+                    log.log(LogLevel.DEBUG, context.logPre()+"Putting on delayedRequests queue (" + delayedResponsesQueue.size() + " elements): " +
                             response.getRequest().getShortDescription());
                 }
                 // Config will be resolved in the run() method of DelayedConfigResponse,

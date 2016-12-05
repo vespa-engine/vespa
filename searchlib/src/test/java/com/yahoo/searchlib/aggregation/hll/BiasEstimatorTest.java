@@ -55,7 +55,7 @@ public class BiasEstimatorTest {
     @Test
     public void requireThatLinearInterpolationIsCorrect() {
         BiasEstimator estimator = new BiasEstimator(10);
-        double rawEstimate = (738.1256 + 750.4234) / 2; // average of two first labels
+        double rawEstimate = (738.1256 + 750.4234) / 2; // average of two first elements
         double expectedBias = (737.1256 + 724.4234) / 2;
         assertEstimateEquals(expectedBias, rawEstimate, estimator);
 

@@ -5,7 +5,9 @@ import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Builder class for a MapTensor.

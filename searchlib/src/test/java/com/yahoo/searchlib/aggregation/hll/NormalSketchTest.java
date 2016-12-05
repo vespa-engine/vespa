@@ -20,7 +20,7 @@ public class NormalSketchTest {
 
     @Test
     public void requireThatSerializationIsCorrectForIncompressibleData() {
-        // A sketch of precision 1 contains only two labels and will therefore not be compressible.
+        // A sketch of precision 1 contains only two elements and will therefore not be compressible.
         testSerializationForPrecision(1);
     }
 

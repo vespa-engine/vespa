@@ -47,7 +47,7 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
     }
 
     /**
-     * Optional test and set condition. Common for document/update/remove labels
+     * Optional test and set condition. Common for document/update/remove elements
      * This variable is either set in VespaXMLFieldReader#read (reader for document)
      * or in VespaXMLUpdateReader#read (reader for update).
      */

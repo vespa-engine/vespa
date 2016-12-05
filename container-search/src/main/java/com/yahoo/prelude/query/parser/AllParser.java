@@ -68,7 +68,7 @@ public class AllParser extends SimpleParser {
         return simplifyUnnecessaryComposites(topLevel);
     }
 
-    // Simplify if there are unnecessary composites due to single labels
+    // Simplify if there are unnecessary composites due to single elements
     protected final Item simplifyUnnecessaryComposites(Item item) {
         if (item == null) return null;
 

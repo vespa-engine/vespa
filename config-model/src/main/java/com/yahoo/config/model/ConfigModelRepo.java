@@ -84,7 +84,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     }
 
     /**
-     * If the top level is &lt;services&gt;, it contains a list of services labels,
+     * If the top level is &lt;services&gt;, it contains a list of services elements,
      * otherwise, the top level tag is a single service.
      */
     private List<Element> getServiceElements(Element servicesRoot) {

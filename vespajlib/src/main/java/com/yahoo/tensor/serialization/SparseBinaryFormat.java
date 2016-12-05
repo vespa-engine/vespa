@@ -2,6 +2,7 @@
 package com.yahoo.tensor.serialization;
 
 import com.google.common.annotations.Beta;
+import com.google.common.collect.Sets;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.MapTensorBuilder;
 import com.yahoo.tensor.Tensor;
@@ -49,7 +50,7 @@ class SparseBinaryFormat implements BinaryFormat {
     }
 
     private static void encodeAddress(GrowableByteBuffer buffer, TensorAddress address) {
-        for (String label : address.labels())
+        for (String label : address.elements())
             encodeString(buffer, label);
     }
 

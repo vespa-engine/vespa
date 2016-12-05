@@ -87,7 +87,7 @@ public class DimensionBinding {
     /**
      * Returns the values for the dimensions of this. This value is undefined if this isEmpty()
      * This array is always of the same length as the
-     * length of the dimension list - missing labels are represented as nulls.
+     * length of the dimension list - missing elements are represented as nulls.
      * This is never null but may be empty.
      */
     public DimensionValues getValues() { return values; }

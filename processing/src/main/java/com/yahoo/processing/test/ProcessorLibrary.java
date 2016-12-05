@@ -229,7 +229,7 @@ public class ProcessorLibrary {
     }
 
     /**
-     * Adds a data element containing the (recursive) count of concrete (non-list) data labels in the response
+     * Adds a data element containing the (recursive) count of concrete (non-list) data elements in the response
      */
     public static class DataCounter extends Processor {
 
@@ -353,7 +353,7 @@ public class ProcessorLibrary {
 
                 // wait for other executions and merge the responses
                 for (Response additionalResponse : AsyncExecution.waitForAll(futures, 1000)) {
-                    additionalResponse.data().complete().get(); // block until we have all the data labels
+                    additionalResponse.data().complete().get(); // block until we have all the data elements
                     for (Object item : additionalResponse.data().asList())
                         response.data().add((Data) item);
                     response.mergeWith(additionalResponse);

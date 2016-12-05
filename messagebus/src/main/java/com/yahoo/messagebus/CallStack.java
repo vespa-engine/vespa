@@ -59,9 +59,9 @@ public class CallStack {
     }
 
     /**
-     * Returns the number of labels of the callstack.
+     * Returns the number of elements of the callstack.
      *
-     * @return The number of labels.
+     * @return The number of elements.
      */
     public int size() {
         return stack.size();

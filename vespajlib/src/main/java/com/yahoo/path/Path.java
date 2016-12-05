@@ -10,7 +10,7 @@ import java.util.List;
 // TODO: Remove and replace usage by java.nio.file.Path
 
 /**
- * Represents a path represented by a list of labels. Immutable
+ * Represents a path represented by a list of elements. Immutable
  *
  * @author lulf
  * @since 5.1
@@ -37,8 +37,8 @@ public final class Path {
     }
 
     /**
-     * Create path with given labels.
-     * @param elements a list of path labels
+     * Create path with given elements.
+     * @param elements a list of path elements
      */
     private Path(List<String> elements, String delimiter) {
         this.elements.addAll(elements);
@@ -51,7 +51,7 @@ public final class Path {
     }
 
     /**
-     * Add path labels by splitting based on delimiter and appending to labels.
+     * Add path elements by splitting based on delimiter and appending to elements.
      */
     private void addElementsFromString(String path) {
         String[] pathElements = path.split(delimiter);
@@ -116,7 +116,7 @@ public final class Path {
     }
 
     /**
-     * Get the parent path (all labels except last).
+     * Get the parent path (all elements except last).
      * @return the parent path.
      */
     public Path getParentPath() {

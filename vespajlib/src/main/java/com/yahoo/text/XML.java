@@ -458,7 +458,7 @@ public class XML {
     /**
      * Returns the child Element objects from a w3c dom spec
      *
-     * @return List of labels. Empty list (never null) if none found or if the
+     * @return List of elements. Empty list (never null) if none found or if the
      *         given element is null
      */
     public static List<Element> getChildren(Element spec) {
@@ -480,7 +480,7 @@ public class XML {
     /**
      * Returns the child Element objects with given name from a w3c dom spec
      *
-     * @return List of labels. Empty list (never null) if none found or the
+     * @return List of elements. Empty list (never null) if none found or the
      *         given element is null
      */
     public static List<Element> getChildren(Element spec, String name) {

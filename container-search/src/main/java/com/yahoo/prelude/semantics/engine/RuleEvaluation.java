@@ -120,7 +120,7 @@ public class RuleEvaluation {
 
     /**
      * Returns the current term item to look at,
-     * or null if there are no more labels
+     * or null if there are no more elements
      */
     public FlattenedItem currentItem() {
         if (position>=items.size()) return null;

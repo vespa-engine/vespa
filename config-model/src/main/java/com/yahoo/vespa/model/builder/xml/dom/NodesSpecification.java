@@ -63,7 +63,7 @@ public class NodesSpecification {
 
     /**
      * Returns a requirement for dedicated nodes taken from the <code>nodes</code> element
-     * contained in the given parent element, or empty if the parent element is null, or the nodes labels
+     * contained in the given parent element, or empty if the parent element is null, or the nodes elements
      * is not present.
      */
     public static Optional<NodesSpecification> fromParent(ModelElement parentElement) {
@@ -75,7 +75,7 @@ public class NodesSpecification {
 
     /**
      * Returns a requirement for undedicated or dedicated nodes taken from the <code>nodes</code> element
-     * contained in the given parent element, or empty if the parent element is null, or the nodes labels
+     * contained in the given parent element, or empty if the parent element is null, or the nodes elements
      * is not present.
      */
     public static Optional<NodesSpecification> optionalDedicatedFromParent(ModelElement parentElement) {

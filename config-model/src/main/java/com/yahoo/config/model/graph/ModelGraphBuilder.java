@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Used to add builders and labels in addBuilder, and then build a dependency graph based on the
+ * Used to add builders and elements in addBuilder, and then build a dependency graph based on the
  * constructor arguments.
  *
  * @author lulf

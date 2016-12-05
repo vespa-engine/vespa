@@ -39,7 +39,7 @@ public final class ArraySet<E> implements Set<E> {
         @Override
         public E next() {
             if (!hasNext()) {
-                throw new NoSuchElementException("No more labels available");
+                throw new NoSuchElementException("No more elements available");
             }
             removed = false;
             return (E) entries[++i];
@@ -66,7 +66,7 @@ public final class ArraySet<E> implements Set<E> {
 
     /**
      * Create a set with an initial capacity of initSize. The internal array
-     * will grow automatically with a linear growth rate if more labels than
+     * will grow automatically with a linear growth rate if more elements than
      * initSize are added.
      *
      * @param initSize

@@ -92,7 +92,7 @@ public final class ManhattanContainerModelBuilder extends ContainerModelBuilder 
         List<Element> accessLogElements = getAccessLogElements(spec);
         if (!accessLogElements.isEmpty()) {
             logManhattanInfo("Ignoring " + accessLogElements.size() +
-                    " access log labels in services.xml, using default yapache access logging instead.");
+                    " access log elements in services.xml, using default yapache access logging instead.");
         }
     }
 

@@ -119,7 +119,7 @@ public class CallStack {
     }
 
     /**
-     * Push multiple labels as the <i>next</i> labels on this stack
+     * Push multiple elements as the <i>next</i> elements on this stack
      *
      * @return this for convenience
      */
@@ -148,7 +148,7 @@ public class CallStack {
     }
 
     /**
-     * Adds multiple labels as the <i>last</i> labels on this stack
+     * Adds multiple elements as the <i>last</i> elements on this stack
      *
      * @return this for convenience
      */
@@ -194,7 +194,7 @@ public class CallStack {
     }
 
     /**
-     * Adds multiple labels just before the first occurence of some element on
+     * Adds multiple elements just before the first occurence of some element on
      * the stack. This can not be called during an iteration.
      *
      * @param before
@@ -254,7 +254,7 @@ public class CallStack {
     }
 
     /**
-     * Adds multiple labels just after another given element on the stack.
+     * Adds multiple elements just after another given element on the stack.
      * This can not be called during an iteration.
      *
      * @param after
@@ -332,7 +332,7 @@ public class CallStack {
     }
 
     /**
-     * Returns and removes the next element, or null if there are no more labels
+     * Returns and removes the next element, or null if there are no more elements
      */
     public Call pop() {
         if (elements.isEmpty()) return null;
@@ -342,7 +342,7 @@ public class CallStack {
 
     /**
      * Returns the next element without removing it, or null if there are no
-     * more labels
+     * more elements
      */
     public Call peek() {
         if (elements.isEmpty()) return null;
@@ -362,14 +362,14 @@ public class CallStack {
     }
 
     /**
-     * Returns a modifiable ListIterator over all the remaining labels of this
+     * Returns a modifiable ListIterator over all the remaining elements of this
      * stack, starting by the next element
      */
     public ListIterator<Call> iterator() {
         return elements.listIterator();
     }
 
-    /** Returns the number of remainnig labels in this stack */
+    /** Returns the number of remainnig elements in this stack */
     public int size() {
         return elements.size();
     }

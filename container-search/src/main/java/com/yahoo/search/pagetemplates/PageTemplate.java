@@ -13,7 +13,7 @@ import java.util.Set;
 
 /**
  * A page template represents a particular way to organize a return page. It is a recursive structure of
- * page template labels.
+ * page template elements.
  *
  * @author bratseth
  */

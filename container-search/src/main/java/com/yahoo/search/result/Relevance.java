@@ -32,7 +32,7 @@ public class Relevance implements Comparable<Relevance> {
     /**
      * Set score value to this value. This should ideally be a
      * normalized value between 0 and 1, but that is not enforced.
-     * NaN is also a legal value, for labels where it makes no sense to assign a particular value.
+     * NaN is also a legal value, for elements where it makes no sense to assign a particular value.
      */
     public void setScore(double score) { this.score = score; }
 

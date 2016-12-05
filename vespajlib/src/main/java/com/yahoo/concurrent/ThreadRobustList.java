@@ -46,7 +46,7 @@ public class ThreadRobustList<T> implements Iterable<T> {
     }
 
     /**
-     * Returns an iterator over the labels of this. This iterator does not
+     * Returns an iterator over the elements of this. This iterator does not
      * support remove.
      */
     @Override
@@ -55,7 +55,7 @@ public class ThreadRobustList<T> implements Iterable<T> {
     }
 
     /**
-     * Returns an iterator over the labels of this, starting at the last
+     * Returns an iterator over the elements of this, starting at the last
      * element and working backwards. This iterator does not support remove.
      */
     public Iterator<T> reverseIterator() {
@@ -86,7 +86,7 @@ public class ThreadRobustList<T> implements Iterable<T> {
         @Override
         public T next() {
             if (!hasNext()) {
-                throw new NoSuchElementException("No more labels");
+                throw new NoSuchElementException("No more elements");
             }
 
             return (T) items[nextIndex++];
@@ -135,7 +135,7 @@ public class ThreadRobustList<T> implements Iterable<T> {
         @Override
         public T next() {
             if (!hasNext()) {
-                throw new NoSuchElementException("No more labels");
+                throw new NoSuchElementException("No more elements");
             }
 
             return (T) items[nextIndex--];
