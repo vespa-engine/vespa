@@ -2,7 +2,6 @@
 package com.yahoo.tensor.serialization;
 
 import com.google.common.collect.Sets;
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
@@ -22,11 +21,11 @@ import static org.junit.Assert.assertEquals;
 public class SparseBinaryFormatTestCase {
 
     private static void assertSerialization(String tensorString) {
-        assertSerialization(MapTensor.from(tensorString));
+        assertSerialization(Tensor.from(tensorString));
     }
 
     private static void assertSerialization(String tensorString, Set<String> dimensions) {
-        Tensor tensor = MapTensor.from(tensorString);
+        Tensor tensor = Tensor.from(tensorString);
         assertEquals(dimensions, tensor.type().dimensionNames());
         assertSerialization(tensor);
     }
@@ -67,7 +66,7 @@ public class SparseBinaryFormatTestCase {
                 2, (byte)'a', (byte)'b', 1, (byte)'e', 64, 0, 0, 0, 0, 0, 0, 0, // cell 0
                 2, (byte)'c', (byte)'d', 1, (byte)'e', 64, 8, 0, 0, 0, 0, 0, 0}; // cell 1
         assertEquals(Arrays.toString(encodedTensor),
-                Arrays.toString(TypedBinaryFormat.encode(MapTensor.from("{{xy:ab,z:e}:2.0,{xy:cd,z:e}:3.0}"))));
+                Arrays.toString(TypedBinaryFormat.encode(Tensor.from("{{xy:ab,z:e}:2.0,{xy:cd,z:e}:3.0}"))));
     }
 
 }

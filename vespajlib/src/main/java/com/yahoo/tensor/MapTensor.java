@@ -14,13 +14,12 @@ import java.util.Map;
 @Beta
 public class MapTensor implements Tensor {
 
-    // TODO: Enforce that all addresses are dense (and then avoid storing keys in TensorAddress)
-    
     private final TensorType type;
 
     private final ImmutableMap<TensorAddress, Double> cells;
 
     /** Creates a sparse tensor. The cell addresses must match the type. */
+    // TODO: Privatize
     public MapTensor(TensorType type, Map<TensorAddress, Double> cells) {
         this.type = type;
         this.cells = ImmutableMap.copyOf(cells);
@@ -32,7 +31,7 @@ public class MapTensor implements Tensor {
      * @param s the tensor string
      * @throws IllegalArgumentException if the string is not in the correct format
      */
-    public static MapTensor from(String s) {
+    static MapTensor from(String s) {
         s = s.trim();
         try {
             if (s.startsWith("tensor("))
@@ -158,16 +157,6 @@ public class MapTensor implements Tensor {
         return Tensor.equals(this, (Tensor)o);
     }
 
-    /**
-     * Builder class for a MapTensor.
-     *
-     * The set of dimensions of the resulting tensor is the union of
-     * the dimensions specified explicitly and the ones specified in the
-     * tensor cell addresses.
-     *
-     * @author geirst
-     */
-    @Beta
     public static class Builder {
     
         private final TensorType type;

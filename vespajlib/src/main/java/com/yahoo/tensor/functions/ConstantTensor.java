@@ -16,7 +16,7 @@ public class ConstantTensor extends PrimitiveTensorFunction {
     private final Tensor constant;
     
     public ConstantTensor(String tensorString) {
-        this.constant = MapTensor.from(tensorString);
+        this.constant = Tensor.from(tensorString);
     }
     
     public ConstantTensor(Tensor tensor) {

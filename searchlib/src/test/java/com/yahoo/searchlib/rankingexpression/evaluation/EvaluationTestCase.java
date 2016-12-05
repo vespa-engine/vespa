@@ -3,9 +3,9 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -303,8 +303,8 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         MapContext context = defaultContext.thawedCopy();
         int argumentIndex = 0;
         for (String tensorArgument : tensorArguments)
-            context.put("tensor" + (argumentIndex++), new TensorValue(MapTensor.from(tensorArgument)));
-        return assertEvaluates(new TensorValue(MapTensor.from(expectedTensor)), expressionString, context);
+            context.put("tensor" + (argumentIndex++), new TensorValue(Tensor.from(tensorArgument)));
+        return assertEvaluates(new TensorValue(Tensor.from(expectedTensor)), expressionString, context);
     }
 
     private RankingExpression assertEvaluates(Value value, String expressionString) {

@@ -5,6 +5,7 @@ import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.Tensor;
 
 /**
  * The result of a ranking expression evaluation.
@@ -87,7 +88,7 @@ public abstract class Value {
         else if (value.startsWith("\"") || value.startsWith("'"))
             return new StringValue(UnicodeUtilities.unquote(value));
         else if (value.startsWith("{"))
-            return new TensorValue(MapTensor.from(value));
+            return new TensorValue(Tensor.from(value));
         else
             return new DoubleValue(Double.parseDouble(value));
     }

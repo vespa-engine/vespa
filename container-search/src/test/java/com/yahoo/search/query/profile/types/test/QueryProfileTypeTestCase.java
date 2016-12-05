@@ -4,7 +4,6 @@ package com.yahoo.search.query.profile.types.test;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.prelude.query.QueryException;
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.search.Query;
@@ -393,8 +392,8 @@ public class QueryProfileTypeTestCase extends junit.framework.TestCase {
                                                               "=" + encode(tensorString),
                                                               com.yahoo.jdisc.http.HttpRequest.Method.GET), cRegistry.getComponent("test"));
         assertEquals(0, query.errors().size());
-        assertEquals(MapTensor.from(tensorString), query.properties().get("ranking.features.query(myTensor1)"));
-        assertEquals(MapTensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
+        assertEquals(Tensor.from(tensorString), query.properties().get("ranking.features.query(myTensor1)"));
+        assertEquals(Tensor.from(tensorString), query.getRanking().getFeatures().getTensor("query(myTensor1)").get());
     }
 
     private String encode(String s) throws UnsupportedEncodingException {

@@ -4,7 +4,6 @@ package com.yahoo.fs4.test;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.search.query.ranking.RankFeatures;
 import com.yahoo.search.query.ranking.RankProperties;
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
@@ -31,15 +30,15 @@ public class RankFeaturesTestCase {
 
     @Test
     public void requireThatSingleTensorIsBinaryEncoded() {
-        Tensor tensor = MapTensor.from("{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
+        Tensor tensor = Tensor.from("{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
         assertTensorEncodingAndDecoding("query(my_tensor)", "my_tensor", tensor);
         assertTensorEncodingAndDecoding("$my_tensor", "my_tensor", tensor);
     }
 
     @Test
     public void requireThatMultipleTensorsAreBinaryEncoded() {
-        Tensor tensor1 = MapTensor.from("{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
-        Tensor tensor2 = MapTensor.from("{ {x:a, y:b, z:c}:5.0 }");
+        Tensor tensor1 = Tensor.from("{ {x:a, y:b, z:c}:2.0, {x:a, y:b, z:c2}:3.0 }");
+        Tensor tensor2 = Tensor.from("{ {x:a, y:b, z:c}:5.0 }");
         assertTensorEncodingAndDecoding(Arrays.asList(
                 new Entry("query(tensor1)", "tensor1", tensor1),
                 new Entry("$tensor2", "tensor2", tensor2)));

@@ -5,7 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -61,7 +61,7 @@ public class TensorFieldValueSerializationTestCase {
     }
 
     private static TensorFieldValue createTensor(String tensor) {
-        return new TensorFieldValue(MapTensor.from(tensor));
+        return new TensorFieldValue(Tensor.from(tensor));
     }
 
 }

@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutionException;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.predicate.Predicate;
 
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.Tensor;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -72,7 +72,7 @@ import org.mockito.Mockito;
 /**
  * Functional testing of {@link JsonRenderer}.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class JsonRendererTestCase {
 
@@ -172,13 +172,13 @@ public class JsonRendererTestCase {
         Result r = newEmptyResult();
         Hit h = new Hit("datatypestuff");
         // the floating point values are chosen to get a deterministic string representation
-        h.setField("double", Double.valueOf(0.00390625d));
-        h.setField("float", Float.valueOf(14.29f));
-        h.setField("integer", Integer.valueOf(1));
-        h.setField("long", Long.valueOf(4398046511104L));
+        h.setField("double", 0.00390625d);
+        h.setField("float", 14.29f);
+        h.setField("integer", 1);
+        h.setField("long", 4398046511104L);
         h.setField("string", "stuff");
         h.setField("predicate", Predicate.fromString("a in [b]"));
-        h.setField("tensor", new TensorFieldValue(MapTensor.from("{ {x:a}: 2.0}")));
+        h.setField("tensor", new TensorFieldValue(Tensor.from("{ {x:a}: 2.0}")));
         h.setField("object", new Thingie());
         r.hits().add(h);
         r.setTotalHitCount(1L);
