@@ -155,10 +155,6 @@ public class ServletOutputStreamWriter {
             ResponseContentPart contentPart;
 
             synchronized (monitor) {
-                if (state == State.FINISHED_OR_ERROR) {
-                    return;
-                }
-
                 assertStateIs(state, State.WRITING_BUFFERS);
 
                 if (!outputStream.isReady()) {
@@ -186,11 +182,13 @@ public class ServletOutputStreamWriter {
                 if (contentPart.buf == CLOSE_STREAM_BUFFER) {
                     contentPart.handler.completed();
                     setFinished(Optional.empty());
+                    return;
                 } else {
                     writeBufferToOutputStream(contentPart);
                 }
             } catch (Throwable e) {
                 setFinished(Optional.of(e));
+                return;
             }
         }
     }
