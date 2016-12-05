@@ -12,6 +12,24 @@ namespace {
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
 
+const Dimension *find_dimension(const std::vector<Dimension> &list, const vespalib::string &name) {
+    for (const auto &item: list) {
+        if (item.name == name) {
+            return &item;
+        }
+    }
+    return nullptr;
+}
+
+Dimension *find_dimension(std::vector<Dimension> &list, const vespalib::string &name) {
+    for (auto &item: list) {
+        if (item.name == name) {
+            return &item;
+        }
+    }
+    return nullptr;    
+}
+
 void sort_dimensions(DimensionList &dimensions) {
     std::sort(dimensions.begin(), dimensions.end(),
               [](const auto &a, const auto &b){ return (a.name < b.name); });
@@ -212,6 +230,32 @@ ValueType::join(const ValueType &lhs, const ValueType &rhs)
     DimensionResult result = my_join(lhs._dimensions, rhs._dimensions);
     if (result.mismatch) {
         return error_type();
+    }
+    return tensor_type(std::move(result.dimensions));
+}
+
+ValueType
+ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension)
+{
+    if (lhs.is_error() || rhs.is_error()) {
+        return error_type();
+    } else if (lhs.unknown_dimensions() || rhs.unknown_dimensions()) {
+        return any_type();
+    }
+    DimensionResult result = my_join(lhs._dimensions, rhs._dimensions);
+    auto lhs_dim = find_dimension(lhs.dimensions(), dimension);
+    auto rhs_dim = find_dimension(rhs.dimensions(), dimension);
+    auto res_dim = find_dimension(result.dimensions, dimension);
+    if (result.mismatch || (res_dim && res_dim->is_mapped())) {
+        return error_type();
+    }
+    if (res_dim) {
+        if (res_dim->is_bound()) {
+            res_dim->size = (lhs_dim ? lhs_dim->size : 1)
+                            + (rhs_dim ? rhs_dim->size : 1);
+        }
+    } else {
+        result.dimensions.emplace_back(dimension, 2);
     }
     return tensor_type(std::move(result.dimensions));
 }

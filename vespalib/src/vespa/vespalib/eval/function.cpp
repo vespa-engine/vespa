@@ -636,6 +636,18 @@ void parse_tensor_lambda(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorLambda>(std::move(type), std::move(lambda)));
 }
 
+void parse_tensor_concat(ParseContext &ctx) {
+    parse_expression(ctx);
+    Node_UP lhs = ctx.pop_expression();
+    ctx.eat(',');
+    parse_expression(ctx);
+    Node_UP rhs = ctx.pop_expression();
+    ctx.eat(',');
+    auto dimension = get_ident(ctx, false);
+    ctx.skip_spaces();
+    ctx.push_expression(std::make_unique<nodes::TensorConcat>(std::move(lhs), std::move(rhs), dimension));
+}
+
 // to be replaced with more generic 'reduce'
 void parse_tensor_sum(ParseContext &ctx) {
     parse_expression(ctx);
@@ -672,6 +684,8 @@ bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_tensor_rename(ctx);
             } else if (name == "tensor") {
                 parse_tensor_lambda(ctx);
+            } else if (name == "concat") {
+                parse_tensor_concat(ctx);
             } else if (name == "sum") {
                 parse_tensor_sum(ctx);
             } else {

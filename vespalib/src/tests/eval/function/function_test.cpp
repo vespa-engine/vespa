@@ -861,6 +861,13 @@ TEST("require that tensor lambda can only use dimension names") {
 
 //-----------------------------------------------------------------------------
 
+TEST("require that tensor concat can be parsed") {
+    EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, "concat(a,b,d)").dump());
+    EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, " concat ( a , b , d ) ").dump());
+}
+
+//-----------------------------------------------------------------------------
+
 struct CheckExpressions : test::EvalSpec::EvalTest {
     bool failed = false;
     size_t seen_cnt = 0;

@@ -286,6 +286,10 @@ struct ProgramBuilder : public NodeVisitor, public NodeTraverser {
         // TODO(havardpe): add actual evaluation
         program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));        
     }
+    virtual void visit(const TensorConcat &) {
+        // TODO(havardpe): add actual evaluation
+        program.emplace_back(op_load_const, wrap_param<Value>(stash.create<ErrorValue>()));        
+    }
     virtual void visit(const Add &) {
         program.emplace_back(op_binary<operation::Add>);
     }
@@ -477,7 +481,8 @@ InterpretedFunction::detect_issues(const Function &function)
                                   nodes::TensorJoin,
                                   nodes::TensorReduce,
                                   nodes::TensorRename,
-                                  nodes::TensorLambda>(node)) {
+                                  nodes::TensorLambda,
+                                  nodes::TensorConcat>(node)) {
                 issues.push_back(make_string("unsupported node type: %s",
                                 getClassName(node).c_str()));
             }

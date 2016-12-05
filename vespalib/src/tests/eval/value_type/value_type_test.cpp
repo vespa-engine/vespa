@@ -367,4 +367,54 @@ TEST("require that tensor dimensions can be renamed") {
     EXPECT_EQUAL(ValueType::error_type().rename({"a"}, {"b"}), ValueType::error_type());
 }
 
+TEST("require that types can be concatenated") {
+    ValueType error    = ValueType::error_type();
+    ValueType any      = ValueType::any_type();
+    ValueType tensor   = ValueType::tensor_type({});
+    ValueType scalar   = ValueType::double_type();
+    ValueType vx_2     = ValueType::from_spec("tensor(x[2])");
+    ValueType vx_m     = ValueType::from_spec("tensor(x{})");
+    ValueType vx_3     = ValueType::from_spec("tensor(x[3])");
+    ValueType vx_5     = ValueType::from_spec("tensor(x[5])");
+    ValueType vx_any   = ValueType::from_spec("tensor(x[])");
+    ValueType vy_7     = ValueType::from_spec("tensor(y[7])");
+    ValueType mxy_22   = ValueType::from_spec("tensor(x[2],y[2])");
+    ValueType mxy_52   = ValueType::from_spec("tensor(x[5],y[2])");
+    ValueType mxy_29   = ValueType::from_spec("tensor(x[2],y[9])");
+    ValueType cxyz_572 = ValueType::from_spec("tensor(x[5],y[7],z[2])");
+    ValueType cxyz_m72 = ValueType::from_spec("tensor(x{},y[7],z[2])");
+
+    EXPECT_EQUAL(ValueType::concat(error,  vx_2,   "x"), error);
+    EXPECT_EQUAL(ValueType::concat(vx_2,   error,  "x"), error);
+    EXPECT_EQUAL(ValueType::concat(error,  any,    "x"), error);
+    EXPECT_EQUAL(ValueType::concat(any,    error,  "x"), error);
+    EXPECT_EQUAL(ValueType::concat(vx_m,   vx_2,   "x"), error);
+    EXPECT_EQUAL(ValueType::concat(vx_2,   vx_m,   "x"), error);
+    EXPECT_EQUAL(ValueType::concat(vx_m,   vx_m,   "x"), error);
+    EXPECT_EQUAL(ValueType::concat(vx_m,   scalar, "x"), error);
+    EXPECT_EQUAL(ValueType::concat(scalar, vx_m,   "x"), error);
+    EXPECT_EQUAL(ValueType::concat(vy_7,   vx_m,   "z"), cxyz_m72);
+    EXPECT_EQUAL(ValueType::concat(tensor, vx_2,   "x"), any);
+    EXPECT_EQUAL(ValueType::concat(vx_2,   tensor, "x"), any);
+    EXPECT_EQUAL(ValueType::concat(any,    vx_2,   "x"), any);
+    EXPECT_EQUAL(ValueType::concat(vx_2,   any,    "x"), any);
+    EXPECT_EQUAL(ValueType::concat(any,    tensor, "x"), any);
+    EXPECT_EQUAL(ValueType::concat(tensor, any,    "x"), any);
+    EXPECT_EQUAL(ValueType::concat(scalar, scalar, "x"), vx_2);
+    EXPECT_EQUAL(ValueType::concat(vx_2,   scalar, "x"), vx_3);
+    EXPECT_EQUAL(ValueType::concat(scalar, vx_2,   "x"), vx_3);
+    EXPECT_EQUAL(ValueType::concat(vx_2,   vx_3,   "x"), vx_5);
+    EXPECT_EQUAL(ValueType::concat(vx_2,   vx_any, "x"), vx_any);
+    EXPECT_EQUAL(ValueType::concat(vx_any, vx_2,   "x"), vx_any);
+    EXPECT_EQUAL(ValueType::concat(scalar, vx_2,   "y"), mxy_22);
+    EXPECT_EQUAL(ValueType::concat(vx_2, scalar,   "y"), mxy_22);
+    EXPECT_EQUAL(ValueType::concat(vx_2,   vx_3,   "y"), mxy_22);
+    EXPECT_EQUAL(ValueType::concat(vx_3,   vx_2,   "y"), mxy_22);
+    EXPECT_EQUAL(ValueType::concat(mxy_22, vx_3,   "x"), mxy_52);
+    EXPECT_EQUAL(ValueType::concat(vx_3,   mxy_22, "x"), mxy_52);
+    EXPECT_EQUAL(ValueType::concat(mxy_22, vy_7,   "y"), mxy_29);
+    EXPECT_EQUAL(ValueType::concat(vy_7,   mxy_22, "y"), mxy_29);
+    EXPECT_EQUAL(ValueType::concat(vx_5,   vy_7,   "z"), cxyz_572);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
