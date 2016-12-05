@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.maintenance;
 import com.google.gson.Gson;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogSetup;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
@@ -54,6 +55,8 @@ public class Maintainer {
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
     private static final CoreCollector CORE_COLLECTOR = new CoreCollector(maintainer);
     private static final Gson gson = new Gson();
+    private static final Path DONE_COREDUMPS_PATH = maintainer.pathInNodeAdminFromPathInNode(
+            new ContainerName("processed_coredumps"), "/");
 
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
@@ -111,6 +114,7 @@ public class Maintainer {
     public static void handleCoreDumpsForContainer(PrefixLogger logger, ContainerNodeSpec nodeSpec, Environment environment) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", nodeSpec.hostname);
+        attributes.put("parent_hostname", HostName.getLocalhost());
         attributes.put("region", environment.getRegion());
         attributes.put("environment", environment.getEnvironment());
         attributes.put("flavor", nodeSpec.nodeFlavor);
@@ -181,10 +185,8 @@ public class Maintainer {
     public static class CleanCoreDumpsArguments implements Runnable {
         @Override
         public void run() {
-            File coreDumpsDir = new File("/home/y/var/crash");
-
-            if (coreDumpsDir.exists()) {
-                DeleteOldAppData.deleteFilesExceptNMostRecent(coreDumpsDir.getAbsolutePath(), 1);
+            if (DONE_COREDUMPS_PATH.toFile().exists()) {
+                CoredumpHandler.removeOldCoredumps(DONE_COREDUMPS_PATH);
             }
         }
     }
@@ -271,8 +273,9 @@ public class Maintainer {
                 Map<String, Object> attributesMap = (Map<String, Object>) gson.fromJson(attributes, Map.class);
 
                 Path path = new Maintainer().pathInNodeAdminFromPathInNode(new ContainerName(container), "/home/y/var/crash");
-                CoredumpHandler coredumpHandler = new CoredumpHandler(HTTP_CLIENT, CORE_COLLECTOR, path, attributesMap);
-                coredumpHandler.processAll();
+                CoredumpHandler coredumpHandler = new CoredumpHandler(HTTP_CLIENT, CORE_COLLECTOR, attributesMap);
+                CoredumpHandler.removeJavaCoredumps(path);
+                coredumpHandler.processAndReportCoredumps(path, DONE_COREDUMPS_PATH);
             } catch (Throwable e) {
                 logger.log(Level.WARNING, "Could not process coredumps", e);
             }

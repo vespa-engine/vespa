@@ -89,8 +89,6 @@ public class StorageMaintainer {
     }
 
     public void removeOldFilesFromNode(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-
         String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
         for (String pathToClean : pathsToClean) {
@@ -110,8 +108,6 @@ public class StorageMaintainer {
         if (fileDistrDir.exists()) {
             DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
         }
-
-        Maintainer.cleanCoreDumps(logger);
     }
 
     public void handleCoreDumpsForContainer(ContainerNodeSpec nodeSpec, Environment environment) {
@@ -123,6 +119,7 @@ public class StorageMaintainer {
     public void cleanNodeAdmin() {
         Maintainer.deleteOldAppData(NODE_ADMIN_LOGGER);
         Maintainer.cleanHome(NODE_ADMIN_LOGGER);
+        Maintainer.cleanCoreDumps(NODE_ADMIN_LOGGER);
 
         File nodeAdminJDiskLogsPath = maintainer.pathInNodeAdminFromPathInNode(new ContainerName("node-admin"),
                 "/home/y/logs/jdisc_core/").toFile();

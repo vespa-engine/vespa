@@ -29,84 +29,78 @@ import java.util.stream.Collectors;
 public class CoredumpHandler {
     public static final String FEED_ENDPOINT = "http://panic.vespa.us-west-1.prod.vespa.yahooapis.com:4080/document/v1/panic/core_dump/docid";
     public static final String PROCESSING_DIRECTORY_NAME = "processing";
-    public static final String DONE_DIRECTORY_NAME = "done";
     public static final String METADATA_FILE_NAME = "metadata.json";
 
     private static final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private static final Gson gson = new Gson();
-    private final Path path;
 
     private final HttpClient httpClient;
     private final CoreCollector coreCollector;
-    private final Path processingDir;
-    private final Path doneDir;
 
     private final Map<String, Object> nodeAttributes;
 
-    public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path path, Map<String, Object> nodeAttributes) {
+    public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Map<String, Object> nodeAttributes) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
-        this.path = path;
-        this.processingDir = path.resolve(PROCESSING_DIRECTORY_NAME);
-        this.doneDir = path.resolve(DONE_DIRECTORY_NAME);
         this.nodeAttributes = nodeAttributes;
     }
 
-    public void processAll() throws IOException {
-        removeJavaCoredumps();
-        processCoredumps();
-        reportCoredumps();
-        removeOldCoredumps();
+    public void processAndReportCoredumps(Path coredumpsPath, Path doneCoredumpPath) throws IOException {
+        Path processingCoredumps = processCoredumps(coredumpsPath);
+        reportCoredumps(processingCoredumps, doneCoredumpPath);
     }
 
-    private void removeJavaCoredumps() {
-        DeleteOldAppData.deleteFiles(path.toString(), 0, "^java_pid.*\\.hprof$", false);
+    public static void removeJavaCoredumps(Path javaCoredumpsPath) {
+        DeleteOldAppData.deleteFiles(javaCoredumpsPath.toString(), 0, "^java_pid.*\\.hprof$", false);
     }
 
-    void processCoredumps() throws IOException {
-        processingDir.toFile().mkdirs();
+    Path processCoredumps(Path coredumpsPath) throws IOException {
+        Path processingCoredumpsPath = coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
+        processingCoredumpsPath.toFile().mkdirs();
 
-        Files.list(path)
+        Files.list(coredumpsPath)
                 .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
                 .forEach(coredumpPath -> {
                     try {
-                        coredumpPath = startProcessing(coredumpPath);
+                        coredumpPath = startProcessing(coredumpPath, processingCoredumpsPath);
 
                         Path metadataPath = coredumpPath.getParent().resolve(METADATA_FILE_NAME);
-                        Map<String, Object> metadata = collectMetada(coredumpPath);
+                        Map<String, Object> metadata = collectMetadata(coredumpPath);
                         writeMetadata(metadataPath, metadata);
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Failed to process coredump " + coredumpPath, e);
                     }
                 });
+
+        return processingCoredumpsPath;
     }
 
-    void reportCoredumps() throws IOException {
-        doneDir.toFile().mkdirs();
+    void reportCoredumps(Path processingCoredumpsPath, Path doneCoredumpsPath) throws IOException {
+        doneCoredumpsPath.toFile().mkdirs();
 
-        Files.list(processingDir)
+        Files.list(processingCoredumpsPath)
                 .filter(path -> path.toFile().isDirectory())
                 .forEach(coredumpDirectory -> {
                     try {
                         report(coredumpDirectory);
-                        finishProcessing(coredumpDirectory);
+                        finishProcessing(coredumpDirectory, doneCoredumpsPath);
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Failed to report coredump " + coredumpDirectory, e);
                     }
                 });
     }
 
-    private void removeOldCoredumps() {
-        DeleteOldAppData.deleteDirectories(doneDir.toString(), Duration.ofDays(10).getSeconds(), null);
+    public static void removeOldCoredumps(Path doneCoredumpsPath) {
+        DeleteOldAppData.deleteDirectories(doneCoredumpsPath.toString(), Duration.ofDays(10).getSeconds(), null);
     }
 
-    private Path startProcessing(Path coredumpPath) throws IOException {
-        Path folder = processingDir.resolve(UUID.randomUUID().toString());
+    private static Path startProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
+        Path folder = processingCoredumpsPath.resolve(UUID.randomUUID().toString());
         folder.toFile().mkdirs();
         return Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
     }
 
-    private Map<String, Object> collectMetada(Path coredumpPath) throws IOException, InterruptedException {
+    private Map<String, Object> collectMetadata(Path coredumpPath) throws IOException, InterruptedException {
         Map<String, Object> metadata = coreCollector.collect(coredumpPath);
         metadata.putAll(nodeAttributes);
 
@@ -138,7 +132,7 @@ public class CoredumpHandler {
         logger.info("Successfully reported coredump " + documentId);
     }
 
-    private void finishProcessing(Path coredumpDirectory) throws IOException {
-        Files.move(coredumpDirectory, doneDir.resolve(coredumpDirectory.getFileName()));
+    private static void finishProcessing(Path coredumpDirectory, Path doneCoredumpsPath) throws IOException {
+        Files.move(coredumpDirectory, doneCoredumpsPath.resolve(coredumpDirectory.getFileName()));
     }
 }

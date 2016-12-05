@@ -70,8 +70,8 @@ public class CoredumpHandlerTest {
         Path coredumpPath = crashPath.resolve(".core.dump");
         coredumpPath.toFile().createNewFile();
 
-        CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, attributes);
-        coredumpHandler.processCoredumps();
+        CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, attributes);
+        coredumpHandler.processCoredumps(crashPath);
 
         // The 'processing' directory should be empty
         assertEquals(Files.list(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)).count(), 0);
@@ -90,8 +90,8 @@ public class CoredumpHandlerTest {
 
         when(coreCollector.collect(any())).thenReturn(metadata);
 
-        CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, attributes);
-        coredumpHandler.processCoredumps();
+        CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, attributes);
+        coredumpHandler.processCoredumps(coredumpPath);
 
         // Contents of 'crash' should be only the 'processing' directory
         Set<Path> expectedContentsOfCrash = Collections.singleton(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
@@ -117,6 +117,7 @@ public class CoredumpHandlerTest {
         final String documentId = "UIDD-ABCD-EFGH";
 
         Path crashPath = folder.newFolder("crash").toPath();
+        Path donePath = folder.newFolder("done").toPath();
         Path coredumpPath = crashPath
                 .resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)
                 .resolve(documentId)
@@ -133,8 +134,8 @@ public class CoredumpHandlerTest {
                 new BasicStatusLine(HttpVersion.HTTP_1_1, 200, null), null);
         when(httpClient.execute(any())).thenReturn(httpResponse);
 
-        CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, attributes);
-        coredumpHandler.reportCoredumps();
+        CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, attributes);
+        coredumpHandler.reportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME), donePath);
 
         ArgumentCaptor<HttpPost> capturedPost = ArgumentCaptor.forClass(HttpPost.class);
         verify(httpClient).execute(capturedPost.capture());
@@ -145,8 +146,7 @@ public class CoredumpHandlerTest {
 
         // The coredump should've been moved out of 'processing' and into 'done'
         assertEquals(Files.list(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)).count(), 0);
-        assertTrue(Files.exists(crashPath
-                .resolve(CoredumpHandler.DONE_DIRECTORY_NAME)
+        assertTrue(Files.exists(donePath
                 .resolve(documentId)
                 .resolve(CoredumpHandler.METADATA_FILE_NAME)));
     }
@@ -157,6 +157,7 @@ public class CoredumpHandlerTest {
         final String documentId = "UIDD-ABCD-EFGH";
 
         Path crashPath = folder.newFolder("crash").toPath();
+        Path donePath = folder.newFolder("done").toPath();
         Path coredumpPath = crashPath
                 .resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)
                 .resolve(documentId)
@@ -174,8 +175,8 @@ public class CoredumpHandlerTest {
         httpResponse.setEntity(new StringEntity("Internal server error"));
         when(httpClient.execute(any())).thenReturn(httpResponse);
 
-        CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, crashPath, attributes);
-        coredumpHandler.reportCoredumps();
+        CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, attributes);
+        coredumpHandler.reportCoredumps(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME), donePath);
 
         ArgumentCaptor<HttpPost> capturedPost = ArgumentCaptor.forClass(HttpPost.class);
         verify(httpClient).execute(capturedPost.capture());
@@ -185,7 +186,7 @@ public class CoredumpHandlerTest {
                 new BufferedReader(new InputStreamReader(capturedPost.getValue().getEntity().getContent())).readLine());
 
         // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
-        assertEquals(Files.list(crashPath.resolve(CoredumpHandler.DONE_DIRECTORY_NAME)).count(), 0);
+        assertEquals(Files.list(crashPath.resolve(donePath)).count(), 0);
         assertTrue(Files.exists(crashPath
                 .resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME)
                 .resolve(documentId)
