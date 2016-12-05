@@ -24,7 +24,7 @@ struct Fixture
     vespalib::Stash stash;
     std::vector<FeatureExecutor *> executors;
     MatchData::UP md;
-    Fixture() : mdl(), executors(), md() {}
+    Fixture() : mdl(), stash(), executors(), md() {}
     Fixture &add(FeatureExecutor *executor, size_t outCnt) {
         executor->inputs_done();
         for (uint32_t outIdx = 0; outIdx < outCnt; ++outIdx) {
@@ -56,7 +56,8 @@ struct Fixture
 TEST_F("test decorator - single override", Fixture)
 {
     FeatureExecutor *fe = &f.createValueExecutor();
-    fe = &f.stash.template create<FeatureOverrider>(*fe, 1, 50.0);
+    vespalib::Stash &stash = f.stash;
+    fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
@@ -68,8 +69,9 @@ TEST_F("test decorator - single override", Fixture)
 TEST_F("test decorator - multiple overrides", Fixture)
 {
     FeatureExecutor *fe = &f.createValueExecutor();
-    fe = &f.stash.template create<FeatureOverrider>(*fe, 0, 50.0);
-    fe = &f.stash.template create<FeatureOverrider>(*fe, 2, 100.0);
+    vespalib::Stash &stash = f.stash;
+    fe = &stash.create<FeatureOverrider>(*fe, 0, 50.0);
+    fe = &stash.create<FeatureOverrider>(*fe, 2, 100.0);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
@@ -81,7 +83,8 @@ TEST_F("test decorator - multiple overrides", Fixture)
 TEST_F("test decorator - non-existing override", Fixture)
 {
     FeatureExecutor *fe = &f.createValueExecutor();
-    fe = &f.stash.template create<FeatureOverrider>(*fe, 1000, 50.0);
+    vespalib::Stash &stash = f.stash;
+    fe = &stash.create<FeatureOverrider>(*fe, 1000, 50.0);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
@@ -94,16 +97,17 @@ TEST_F("test decorator - transitive override", Fixture)
 {
     FeatureExecutor::SharedInputs inputs;
     FeatureExecutor *fe = &f.createValueExecutor();
-    fe = &f.stash.template create<FeatureOverrider>(*fe, 1, 50.0);
+    vespalib::Stash &stash = f.stash;
+    fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0);
     f.add(fe, 3);
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
-    FeatureExecutor *fe2 = &f.stash.template create<DoubleExecutor>(3);
+    FeatureExecutor *fe2 = &stash.create<DoubleExecutor>(3);
     fe2->bind_shared_inputs(inputs);
     fe2->addInput(fe->outputs()[0]);
     fe2->addInput(fe->outputs()[1]);
     fe2->addInput(fe->outputs()[2]);
-    fe2 = &f.stash.template create<FeatureOverrider>(*fe2, 2, 10.0);
+    fe2 = &stash.create<FeatureOverrider>(*fe2, 2, 10.0);
     f.add(fe2, 3).run();
     EXPECT_EQUAL(fe2->outputs().size(), 3u);
 
