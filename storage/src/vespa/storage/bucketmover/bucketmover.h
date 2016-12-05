@@ -24,6 +24,9 @@
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storage/common/servicelayercomponent.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/config.h>
 
 namespace storage {
 

@@ -31,6 +31,7 @@
 #include <vespa/storage/visiting/visitorthread.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storageframework/storageframework.h>
+#include <vespa/config/config.h>
 
 namespace storage {
 namespace api {

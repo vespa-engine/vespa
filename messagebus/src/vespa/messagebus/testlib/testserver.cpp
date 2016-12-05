@@ -70,7 +70,7 @@ TestServer::waitState(const SlobrokState &slobrokState)
         for (SlobrokState::ITR itr = slobrokState.begin();
              itr != slobrokState.end(); ++itr)
         {
-            slobrok::api::MirrorAPI::SpecList res = net.getMirror().lookup(itr->first);
+            slobrok::api::IMirrorAPI::SpecList res = net.getMirror().lookup(itr->first);
             if (res.size() != itr->second) {
                 done = false;
             }

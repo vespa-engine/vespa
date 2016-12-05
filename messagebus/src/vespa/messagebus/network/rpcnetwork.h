@@ -5,8 +5,7 @@
 #include <vespa/messagebus/blobref.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/reply.h>
-#include <vespa/slobrok/sbmirror.h>
-#include <vespa/slobrok/sbregister.h>
+#include <vespa/slobrok/imirrorapi.h>
 #include <vespa/vespalib/component/versionspecification.h>
 #include "inetwork.h"
 #include "oosmanager.h"
@@ -15,8 +14,13 @@
 #include "rpcservicepool.h"
 #include "rpctargetpool.h"
 
-namespace mbus {
+namespace slobrok {
+    namespace api {
+        class RegisterAPI;
+    }
+}
 
+namespace mbus {
 /**
  * Network implementation based on RPC. This class is responsible for
  * keeping track of services and for sending messages to services.
@@ -56,8 +60,8 @@ private:
     RPCTargetPool             _targetPool;
     TargetPoolTask            _targetPoolTask;
     RPCServicePool            _servicePool;
-    slobrok::api::MirrorAPI   _mirror;
-    slobrok::api::RegisterAPI _regAPI;
+    std::unique_ptr<slobrok::api::IMirrorAPI>   _mirror;
+    std::unique_ptr<slobrok::api::RegisterAPI>  _regAPI;
     OOSManager                _oosManager;
     int                       _requestedPort;
     RPCSendV1                 _sendV1;

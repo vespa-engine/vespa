@@ -2,15 +2,12 @@
 
 #include "statuswebserver.h"
 
-#include <vespa/document/util/stringutil.h>
-#include <vespa/log/log.h>
-#include <map>
-#include <sstream>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/fastlib/net/url.h>
 #include <vespa/vespalib/util/host_name.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/component/vtag.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".status");
 

@@ -15,7 +15,7 @@
 #include <vespa/storage/config/config-stor-integritychecker.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/storageframework.h>
-#include <vespa/storageframework/storageframework.h>
+#include <vespa/config/config.h>
 
 namespace storage {
 

@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/iprotocol.h>
-#include <vespa/messagebus/tracelevel.h>
-#include <vespa/vespalib/util/vstringfmt.h>
-#include <vespa/vespalib/util/sync.h>
 #include "inetworkowner.h"
 #include "rpcnetwork.h"
 #include "rpcsendv1.h"
 #include "rpcservice.h"
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/iprotocol.h>
+#include <vespa/messagebus/tracelevel.h>
+#include <vespa/slobrok/sbregister.h>
+#include <vespa/slobrok/sbmirror.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".rpcnetwork");
@@ -108,9 +107,9 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _targetPool(params.getConnectionExpireSecs()),
     _targetPoolTask(_scheduler, _targetPool),
     _servicePool(*this, 4096),
-    _mirror(_orb, slobrok::ConfiguratorFactory(params.getSlobrokConfig())),
-    _regAPI(_orb, slobrok::ConfiguratorFactory(params.getSlobrokConfig())),
-    _oosManager(_orb, _mirror, params.getOOSServerPattern()),
+    _mirror(std::make_unique<slobrok::api::MirrorAPI>(_orb, slobrok::ConfiguratorFactory(params.getSlobrokConfig()))),
+    _regAPI(std::make_unique<slobrok::api::RegisterAPI>(_orb, slobrok::ConfiguratorFactory(params.getSlobrokConfig()))),
+    _oosManager(_orb, *_mirror, params.getOOSServerPattern()),
     _requestedPort(params.getListenPort()),
     _sendV1(),
     _sendAdapters()
@@ -221,7 +220,7 @@ bool
 RPCNetwork::waitUntilReady(double seconds) const
 {
     for (uint32_t i = 0; i < seconds * 100; ++i) {
-        if (_mirror.ready() && _oosManager.isReady()) {
+        if (_mirror->ready() && _oosManager.isReady()) {
             return true;
         }
         FastOS_Thread::Sleep(10);
@@ -241,7 +240,7 @@ RPCNetwork::registerSession(const string &session)
     string name = _ident.getServicePrefix();
     name += "/";
     name += session;
-    _regAPI.registerName(name);
+    _regAPI->registerName(name);
 }
 
 void
@@ -253,7 +252,7 @@ RPCNetwork::unregisterSession(const string &session)
     string name = _ident.getServicePrefix();
     name += "/";
     name += session;
-    _regAPI.unregisterName(name);
+    _regAPI->unregisterName(name);
 }
 
 bool
@@ -374,7 +373,7 @@ RPCNetwork::postShutdownHook()
 const slobrok::api::IMirrorAPI &
 RPCNetwork::getMirror() const
 {
-    return _mirror;
+    return *_mirror;
 }
 
 } // namespace mbus

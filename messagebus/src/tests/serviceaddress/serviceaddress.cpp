@@ -97,7 +97,7 @@ bool
 Test::waitSlobrok(RPCNetwork &network, const string &pattern, size_t num)
 {
     for (int i = 0; i < 1000; i++) {
-        slobrok::api::MirrorAPI::SpecList res = network.getMirror().lookup(pattern);
+        slobrok::api::IMirrorAPI::SpecList res = network.getMirror().lookup(pattern);
         if (res.size() == num) {
             return true;
         }

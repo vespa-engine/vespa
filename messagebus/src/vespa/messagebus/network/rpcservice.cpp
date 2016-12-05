@@ -7,7 +7,7 @@
 
 namespace mbus {
 
-RPCService::RPCService(const slobrok::api::IMirrorAPI &mirror,
+RPCService::RPCService(const Mirror &mirror,
                        const string &pattern) :
     _mirror(mirror),
     _pattern(pattern),

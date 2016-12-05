@@ -60,7 +60,7 @@ OOSManager::PerformTask()
 }
 
 OOSManager::OOSManager(FRT_Supervisor &orb,
-                       slobrok::api::MirrorAPI &mirror,
+                       IMirrorAPI &mirror,
                        const string &servicePattern)
     : FNET_Task(orb.GetScheduler()),
       _orb(orb),

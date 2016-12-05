@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/slobrok/sbmirror.h>
-#include <vespa/slobrok/sbregister.h>
+#include <vespa/slobrok/imirrorapi.h>
 #include <vespa/vespalib/util/linkedptr.h>
 #include "rpcserviceaddress.h"
 
@@ -17,8 +16,8 @@ class RPCNetwork;
  */
 class RPCService {
 private:
-    typedef slobrok::api::IMirrorAPI          Mirror;
-    typedef slobrok::api::MirrorAPI::SpecList AddressList;
+    typedef slobrok::api::IMirrorAPI  Mirror;
+    typedef Mirror::SpecList          AddressList;
 
     const Mirror &_mirror;
     string        _pattern;
@@ -37,7 +36,7 @@ public:
      * @param mirror  The naming server to send queries to.
      * @param pattern The pattern to use when querying.
      */
-    RPCService(const slobrok::api::IMirrorAPI &mirror, const string &pattern);
+    RPCService(const Mirror &mirror, const string &pattern);
 
     /**
      * Resolve a concrete address from this service. This service may represent

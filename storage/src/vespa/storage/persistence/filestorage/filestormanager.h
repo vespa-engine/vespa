@@ -25,6 +25,9 @@
 #include <vespa/storage/persistence/providershutdownwrapper.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config/config.h>
 
 namespace storage {
 namespace api {

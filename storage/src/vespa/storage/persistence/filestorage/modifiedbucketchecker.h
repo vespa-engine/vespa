@@ -10,6 +10,7 @@
 #include <vespa/storage/persistence/types.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/config/config.h>
 
 namespace storage {
 

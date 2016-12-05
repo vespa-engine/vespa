@@ -31,7 +31,7 @@ bool
 waitSlobrok(RPCMessageBus &mbus, const std::string &pattern)
 {
     for (int i = 0; i < 30000; i++) {
-        slobrok::api::MirrorAPI::SpecList res = mbus.getRPCNetwork().getMirror().lookup(pattern);
+        slobrok::api::IMirrorAPI::SpecList res = mbus.getRPCNetwork().getMirror().lookup(pattern);
         if (res.size() > 0) {
             return true;
         }

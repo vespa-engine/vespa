@@ -311,7 +311,7 @@ bool
 TestFrame::waitSlobrok(const string &pattern, uint32_t cnt)
 {
     for (uint32_t i = 0; i < 1000; ++i) {
-        slobrok::api::MirrorAPI::SpecList res = _net->getMirror().lookup(pattern);
+        slobrok::api::IMirrorAPI::SpecList res = _net->getMirror().lookup(pattern);
         if (res.size() == cnt) {
             return true;
         }
