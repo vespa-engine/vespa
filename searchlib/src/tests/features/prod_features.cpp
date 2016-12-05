@@ -1211,10 +1211,11 @@ Test::testDotProduct()
         DotProductBlueprint bp;
         DummyDependencyHandler deps(bp);
         EXPECT_TRUE(bp.setup(ft.getIndexEnv(), params));
-        FeatureExecutor::LP exc = bp.createExecutor(ft.getQueryEnv());
+        vespalib::Stash stash;
+        FeatureExecutor &exc = bp.createExecutor(ft.getQueryEnv(), stash);
         // check that we have the optimized enum version
         dotproduct::wset::DotProductExecutor<dotproduct::wset::EnumVector, WeightedEnumContent> * myExc =
-            dynamic_cast<dotproduct::wset::DotProductExecutor<dotproduct::wset::EnumVector, WeightedEnumContent> *>(exc.get());
+            dynamic_cast<dotproduct::wset::DotProductExecutor<dotproduct::wset::EnumVector, WeightedEnumContent> *>(&exc);
         EXPECT_TRUE(myExc != nullptr);
         EXPECT_EQUAL(1u, deps.output.size());
     }

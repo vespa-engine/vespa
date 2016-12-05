@@ -400,15 +400,15 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env,
     return true;
 }
 
-fef::FeatureExecutor::LP
-ElementSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env) const
+fef::FeatureExecutor &
+ElementSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     std::vector<OutputSpec> output_specs;
     for (const auto &output: _outputs) {
         output_specs.emplace_back(output->compile_token->get().get_function<5>(),
                                   output->aggregator_factory->create());
     }
-    return fef::FeatureExecutor::LP(new ElementSimilarityExecutor(VectorizedQueryTerms(env, _field_id), std::move(output_specs)));
+    return stash.create<ElementSimilarityExecutor>(VectorizedQueryTerms(env, _field_id), std::move(output_specs));
 }
 
 //-----------------------------------------------------------------------------

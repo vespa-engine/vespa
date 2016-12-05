@@ -175,10 +175,10 @@ JaroWinklerDistanceBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new JaroWinklerDistanceBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-JaroWinklerDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+JaroWinklerDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new JaroWinklerDistanceExecutor(env, _config));
+    return stash.create<JaroWinklerDistanceExecutor>(env, _config);
 }
 
 }}

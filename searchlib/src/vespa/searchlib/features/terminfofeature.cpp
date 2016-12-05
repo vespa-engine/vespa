@@ -39,8 +39,8 @@ TermInfoBlueprint::setup(const search::fef::IIndexEnvironment &,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-TermInfoBlueprint::createExecutor(const search::fef::IQueryEnvironment &queryEnv) const
+search::fef::FeatureExecutor &
+TermInfoBlueprint::createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
     feature_t queryIdx = -1.0;
     if (queryEnv.getNumTerms() > _termIdx) {
@@ -48,7 +48,7 @@ TermInfoBlueprint::createExecutor(const search::fef::IQueryEnvironment &queryEnv
     }
     std::vector<feature_t> values;
     values.push_back(queryIdx);
-    return search::fef::FeatureExecutor::LP(new ValueExecutor(values));
+    return stash.create<ValueExecutor>(values);
 }
 
 } // namespace features

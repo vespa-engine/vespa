@@ -201,14 +201,14 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-NativeProximityBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+NativeProximityBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    std::unique_ptr<NativeProximityExecutor> native(new NativeProximityExecutor(env, _params));
-    if (native->empty()) {
-        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+    NativeProximityExecutor &native = stash.create<NativeProximityExecutor>(env, _params);
+    if (native.empty()) {
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     } else {
-        return FeatureExecutor::LP(native.release());
+        return native;
     }
 
 }

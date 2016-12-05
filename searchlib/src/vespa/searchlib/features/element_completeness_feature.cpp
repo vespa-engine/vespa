@@ -131,10 +131,10 @@ ElementCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-ElementCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+ElementCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new ElementCompletenessExecutor(env, _params));
+    return stash.create<ElementCompletenessExecutor>(env, _params);
 }
 
 //-----------------------------------------------------------------------------

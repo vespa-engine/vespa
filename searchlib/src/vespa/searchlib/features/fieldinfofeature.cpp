@@ -190,14 +190,14 @@ FieldInfoBlueprint::setup(const fef::IIndexEnvironment &indexEnv,
     return false;
 }
 
-fef::FeatureExecutor::LP
-FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv) const
+fef::FeatureExecutor &
+FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
     if (_overview) {
         std::vector<feature_t> values;
         values.push_back(_indexcnt);
         values.push_back(_attrcnt);
-        return fef::FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
     uint32_t fieldHandle = util::getTermFieldHandle(queryEnv, 0, _fieldId);
     if (fieldHandle == fef::IllegalHandle) {
@@ -210,14 +210,12 @@ FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv) const
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default first pos
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default last pos
         values.push_back(0.0f); // number of hits
-        return fef::FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
     if (_type == 1.0) {  // index
-        return fef::FeatureExecutor::
-            LP(new IndexFieldInfoExecutor(_type, _isFilter, _fieldId, fieldHandle));
+        return stash.create<IndexFieldInfoExecutor>(_type, _isFilter, _fieldId, fieldHandle);
     } else if (_type == 2.0) {  // attribute
-        return fef::FeatureExecutor::LP(
-                new AttrFieldInfoExecutor(_type, fieldHandle));
+        return stash.create<AttrFieldInfoExecutor>(_type, fieldHandle);
     }
     std::vector<feature_t> values;
     values.push_back(_type);
@@ -228,7 +226,7 @@ FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv) const
     values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default first pos
     values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default last pos
     values.push_back(0.0f); // number of hits
-    return fef::FeatureExecutor::LP(new ValueExecutor(values));
+    return stash.create<ValueExecutor>(values);
 }
 
 } // namespace features

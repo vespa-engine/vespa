@@ -50,8 +50,7 @@ public:
     }
     virtual bool setup(const fef::IIndexEnvironment &env,
                        const fef::ParameterList &params);
-    virtual fef::FeatureExecutor::LP
-    createExecutor(const fef::IQueryEnvironment &env) const;
+    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     static HandleVector resolve(const fef::IQueryEnvironment &env,
                                 const vespalib::string &label);

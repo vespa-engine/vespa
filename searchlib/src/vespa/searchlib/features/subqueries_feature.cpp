@@ -49,9 +49,9 @@ bool SubqueriesBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-SubqueriesBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const {
-    return FeatureExecutor::LP(new SubqueriesExecutor(queryEnv, _field->id()));
+FeatureExecutor &
+SubqueriesBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const {
+    return stash.create<SubqueriesExecutor>(queryEnv, _field->id());
 }
 
 } // namespace features

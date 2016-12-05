@@ -97,12 +97,12 @@ DebugAttributeWaitBlueprint::setup(const IIndexEnvironment &env, const Parameter
     return true;
 }
 
-FeatureExecutor::LP
-DebugAttributeWaitBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+DebugAttributeWaitBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     // Get attribute vector
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attribute);
-    return FeatureExecutor::LP(new DebugAttributeWaitExecutor(env, attribute, _params));
+    return stash.create<DebugAttributeWaitExecutor>(env, attribute, _params);
 }
 
 //-----------------------------------------------------------------------------

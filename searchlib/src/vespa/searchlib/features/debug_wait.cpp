@@ -80,10 +80,10 @@ DebugWaitBlueprint::setup(const IIndexEnvironment &env, const ParameterList &par
     return true;
 }
 
-FeatureExecutor::LP
-DebugWaitBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+DebugWaitBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new DebugWaitExecutor(env, _params));
+    return stash.create<DebugWaitExecutor>(env, _params);
 }
 
 //-----------------------------------------------------------------------------

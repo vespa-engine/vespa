@@ -64,6 +64,13 @@ ChainBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & p
     return true;
 }
 
+FeatureExecutor &
+ChainBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<ChainExecutor>();
+}
+
 } // namespace test
 } // namespace fef
 } // namespace search

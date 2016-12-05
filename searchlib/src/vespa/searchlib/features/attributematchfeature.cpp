@@ -320,13 +320,25 @@ AttributeMatchBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_params.attrInfo->name());
     if (attribute == NULL) {
         LOG(error, "The attribute vector '%s' was not found in the attribute manager.", _params.attrInfo->name().c_str());
-        return FeatureExecutor::LP(NULL);
+        std::vector<feature_t> values;
+        values.push_back(0.0); // completeness
+        values.push_back(0.0); // queryCompleteness
+        values.push_back(0.0); // fieldCompleteness
+        values.push_back(0.0); // normalizedWeight
+        values.push_back(0.0); // normalizedWeightedWeight
+        values.push_back(0.0); // weight
+        values.push_back(0.0); // significance
+        values.push_back(0.0); // importance
+        values.push_back(0.0); // matches
+        values.push_back(0.0); // totalWeight
+        values.push_back(0.0); // averageWeight
+        return stash.create<ValueExecutor>(values);
     }
 
     AttributeMatchParams amp = _params;
@@ -334,14 +346,11 @@ AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
     amp.weightedSet = attribute->getCollectionType() == attribute::CollectionType::WSET;
 
     if (attribute->isStringType()) {
-        return FeatureExecutor::LP
-            (new AttributeMatchExecutor<WeightedConstCharContent>(env, amp));
+        return stash.create<AttributeMatchExecutor<WeightedConstCharContent>>(env, amp);
     } else if (attribute->isIntegerType()) {
-        return FeatureExecutor::LP
-            (new AttributeMatchExecutor<WeightedIntegerContent>(env, amp));
+        return stash.create<AttributeMatchExecutor<WeightedIntegerContent>>(env, amp);
     } else { // FLOAT
-        return FeatureExecutor::LP
-            (new AttributeMatchExecutor<WeightedFloatContent>(env, amp));
+        return stash.create<AttributeMatchExecutor<WeightedFloatContent>>(env, amp);
     }
 }
 

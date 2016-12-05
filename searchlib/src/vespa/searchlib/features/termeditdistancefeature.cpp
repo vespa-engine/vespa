@@ -225,10 +225,10 @@ TermEditDistanceBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new TermEditDistanceBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-TermEditDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+TermEditDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new TermEditDistanceExecutor(env, _config));
+    return stash.create<TermEditDistanceExecutor>(env, _config);
 }
 
 }}

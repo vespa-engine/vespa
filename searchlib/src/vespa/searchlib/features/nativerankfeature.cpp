@@ -151,13 +151,13 @@ NativeRankBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-NativeRankBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+NativeRankBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
     if (_params.proximityWeight + _params.fieldMatchWeight + _params.attributeMatchWeight > 0) {
-        return FeatureExecutor::LP(new NativeRankExecutor(_params));
+        return stash.create<NativeRankExecutor>(_params);
     } else {
-        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     }
 }
 

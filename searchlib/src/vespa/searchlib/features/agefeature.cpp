@@ -67,12 +67,12 @@ AgeBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new AgeBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-AgeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+AgeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     // Get docdate attribute vector
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attribute);
-    return search::fef::FeatureExecutor::LP(new AgeExecutor(attribute));
+    return stash.create<AgeExecutor>(attribute);
 }
 
 }

@@ -85,15 +85,15 @@ FieldLengthBlueprint::createInstance() const
     return Blueprint::UP(new FieldLengthBlueprint());
 }
 
-FeatureExecutor::LP
-FieldLengthBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+FieldLengthBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     if (_field == 0) {
         std::vector<feature_t> values;
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH);
-        return FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
-    return FeatureExecutor::LP(new FieldLengthExecutor(env, _field->id()));
+    return stash.create<FieldLengthExecutor>(env, _field->id());
 }
 
 }}

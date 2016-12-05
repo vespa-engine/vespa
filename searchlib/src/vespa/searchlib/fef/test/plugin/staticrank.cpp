@@ -47,11 +47,11 @@ StaticRankBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVecto
     return true;
 }
 
-FeatureExecutor::LP
-StaticRankBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
+FeatureExecutor &
+StaticRankBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     const search::attribute::IAttributeVector * av = queryEnv.getAttributeContext().getAttribute(_attributeName);
-    return FeatureExecutor::LP(new StaticRankExecutor(av));
+    return stash.create<StaticRankExecutor>(av);
 }
 
 } // namespace test

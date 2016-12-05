@@ -32,7 +32,7 @@ public:
         return fef::ParameterDescriptions().desc().attribute(fef::ParameterCollection::ANY).number();
     }
     bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
-    fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 //-----------------------------------------------------------------------------

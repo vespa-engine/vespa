@@ -103,10 +103,10 @@ QueryCompletenessBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new QueryCompletenessBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-QueryCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+QueryCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new QueryCompletenessExecutor(env, _config));
+    return stash.create<QueryCompletenessExecutor>(env, _config);
 }
 
 }}

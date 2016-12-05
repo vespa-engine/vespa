@@ -73,16 +73,16 @@ MatchesBlueprint::createInstance() const
     return Blueprint::UP(new MatchesBlueprint());
 }
 
-FeatureExecutor::LP
-MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
+FeatureExecutor &
+MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     if (_field == 0) {
-        return search::fef::FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     }
     if (_termIdx != std::numeric_limits<uint32_t>::max()) {
-        return FeatureExecutor::LP(new MatchesExecutor(_field->id(), queryEnv, _termIdx, _termIdx + 1));
+        return stash.create<MatchesExecutor>(_field->id(), queryEnv, _termIdx, _termIdx + 1);
     } else {
-        return FeatureExecutor::LP(new MatchesExecutor(_field->id(), queryEnv, 0, queryEnv.getNumTerms()));
+        return stash.create<MatchesExecutor>(_field->id(), queryEnv, 0, queryEnv.getNumTerms());
     }
 }
 

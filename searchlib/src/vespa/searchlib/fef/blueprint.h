@@ -12,6 +12,8 @@
 #include "parameterdescriptions.h"
 #include "feature_type.h"
 
+namespace vespalib { class Stash; }
+
 namespace search {
 namespace fef {
 
@@ -236,10 +238,12 @@ public:
      * initialize a feature executor for this blueprint may be
      * signaled by returning a shared pointer to 0.
      *
-     * @return feature executor wrapped in a shared pointer
+     * @return feature executor allocated in stash.
      * @param queryEnv query environment
+     * @param stash    heterogenous object store
      **/
-    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment &queryEnv) const = 0;
+    virtual FeatureExecutor &createExecutor(const IQueryEnvironment &queryEnv,
+                                            vespalib::Stash &stash) const = 0;
 
     /**
      * Virtual destructor to allow safe subclassing.

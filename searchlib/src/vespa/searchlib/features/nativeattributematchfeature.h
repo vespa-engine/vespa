@@ -48,8 +48,9 @@ private:
                                         const NativeAttributeMatchParams & params);
 
 public:
-    static fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env,
-                                                           const NativeAttributeMatchParams & params);
+    static fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment & env,
+                                                const NativeAttributeMatchParams & params,
+                                                vespalib::Stash &stash);
 };
 
 class NativeAttributeMatchExecutorMulti : public NativeAttributeMatchExecutor
@@ -105,7 +106,7 @@ public:
                        const fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const;
+    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     /**
      * Obtains the parameters used by the executor.

@@ -207,7 +207,7 @@ public:
     virtual void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const;
 
     // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const;
+    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 };
 

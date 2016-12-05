@@ -213,14 +213,14 @@ RankingExpressionBlueprint::createInstance() const
     return fef::Blueprint::UP(new RankingExpressionBlueprint());
 }
 
-fef::FeatureExecutor::LP
-RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &) const
+fef::FeatureExecutor &
+RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &, vespalib::Stash &stash) const
 {
     if (_interpreted_function) {
-        return fef::FeatureExecutor::LP(new InterpretedRankingExpressionExecutor(*_interpreted_function));
+        return stash.create<InterpretedRankingExpressionExecutor>(*_interpreted_function);
     }
     assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
-    return fef::FeatureExecutor::LP(new CompiledRankingExpressionExecutor(_compile_token->get()));
+    return stash.create<CompiledRankingExpressionExecutor>(_compile_token->get());
 }
 
 //-----------------------------------------------------------------------------

@@ -31,7 +31,6 @@ vespa_add_library(searchlib_fef OBJECT
     ranksetup.cpp
     simpletermdata.cpp
     simpletermfielddata.cpp
-    sumexecutor.cpp
     symmetrictable.cpp
     table.cpp
     tablemanager.cpp

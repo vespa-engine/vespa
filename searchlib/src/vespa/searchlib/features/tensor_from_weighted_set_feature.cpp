@@ -71,39 +71,38 @@ TensorFromWeightedSetBlueprint::setup(const search::fef::IIndexEnvironment &env,
 
 namespace {
 
-FeatureExecutor::LP
+FeatureExecutor &
 createAttributeExecutor(const search::fef::IQueryEnvironment &env,
                         const vespalib::string &attrName,
-                        const vespalib::string &dimension)
+                        const vespalib::string &dimension,
+                        vespalib::Stash &stash)
 {
     const IAttributeVector *attribute = env.getAttributeContext().getAttribute(attrName);
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
+        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
     }
     if (attribute->getCollectionType() != search::attribute::CollectionType::WSET ||
             attribute->isFloatingPointType()) {
         LOG(warning, "The attribute vector '%s' is NOT of type weighted set of string or integer."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
+        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
     }
     if (attribute->isIntegerType()) {
         // Using WeightedStringContent ensures that the integer values are converted
         // to strings while extracting them from the attribute.
-        return FeatureExecutor::LP
-                (new TensorFromAttributeExecutor<WeightedStringContent>(attribute, dimension));
+        return stash.create<TensorFromAttributeExecutor<WeightedStringContent>>(attribute, dimension);
     }
     // When the underlying attribute is of type string we can reference these values
     // using WeightedConstCharContent.
-    return FeatureExecutor::LP
-            (new TensorFromAttributeExecutor<WeightedConstCharContent>(attribute, dimension));
+    return stash.create<TensorFromAttributeExecutor<WeightedConstCharContent>>(attribute, dimension);
 }
 
-FeatureExecutor::LP
+FeatureExecutor &
 createQueryExecutor(const search::fef::IQueryEnvironment &env,
                     const vespalib::string &queryKey,
-                    const vespalib::string &dimension)
+                    const vespalib::string &dimension, vespalib::Stash &stash)
 {
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
@@ -115,22 +114,22 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
             tensorBuilder.add_label(dimensionEnum, elem.value());
             tensorBuilder.add_cell(elem.weight());
         }
-        return ConstantTensorExecutor::create(tensorBuilder.build());
+        return ConstantTensorExecutor::create(tensorBuilder.build(), stash);
     }
-    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}));
+    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
 }
 
 }
 
-FeatureExecutor::LP
-TensorFromWeightedSetBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+FeatureExecutor &
+TensorFromWeightedSetBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     if (_sourceType == ATTRIBUTE_SOURCE) {
-        return createAttributeExecutor(env, _sourceParam, _dimension);
+        return createAttributeExecutor(env, _sourceParam, _dimension, stash);
     } else if (_sourceType == QUERY_SOURCE) {
-        return createQueryExecutor(env, _sourceParam, _dimension);
+        return createQueryExecutor(env, _sourceParam, _dimension, stash);
     }
-    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{_dimension}}));
+    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{_dimension}}), stash);
 }
 
 } // namespace features

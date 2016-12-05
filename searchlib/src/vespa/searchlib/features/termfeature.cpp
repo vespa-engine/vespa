@@ -82,10 +82,10 @@ TermBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new TermBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-TermBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+TermBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new TermExecutor(env, _termId));
+    return stash.create<TermExecutor>(env, _termId);
 }
 
 }}

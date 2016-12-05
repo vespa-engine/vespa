@@ -331,35 +331,32 @@ AttributeBlueprint::createInstance() const
 
 #define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
     if (dynamic_cast<const SingleValueNumericAttribute<T> *>(a) != NULL) { \
-        return FeatureExecutor::LP(new SingleAttributeExecutor<SingleValueNumericAttribute<T>>(*static_cast<const SingleValueNumericAttribute<T> *>(a))); \
+        return stash.create<SingleAttributeExecutor<SingleValueNumericAttribute<T>>>(*static_cast<const SingleValueNumericAttribute<T> *>(a)); \
     }
 
 namespace {
 
-search::fef::FeatureExecutor::LP
-createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam)
+search::fef::FeatureExecutor &
+createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning default values.",
                 attrName.c_str());
         std::vector<feature_t> values(4, 0.0f);
-        return FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
     if (attribute->getCollectionType() == CollectionType::WSET) {
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
-                return FeatureExecutor::LP
-                    (new WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>(attribute, extraParam, useKey));
+                return stash.create<WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>>(attribute, extraParam, useKey);
             } else if (attribute->isIntegerType()) {
-                return FeatureExecutor::LP
-                    (new WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>(attribute, util::strToNum<int64_t>(extraParam), useKey));
+                return stash.create<WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>>(attribute, util::strToNum<int64_t>(extraParam), useKey);
             } else { // FLOAT
-                return FeatureExecutor::LP
-                    (new WeightedSetAttributeExecutor<WeightedFloatContent, double>(attribute, util::strToNum<double>(extraParam), useKey));
+                return stash.create<WeightedSetAttributeExecutor<WeightedFloatContent, double>>(attribute, util::strToNum<double>(extraParam), useKey);
             }
         } else {
-            return FeatureExecutor::LP(new CountOnlyAttributeExecutor(*attribute));
+            return stash.create<CountOnlyAttributeExecutor>(*attribute);
         }
     } else { // SINGLE or ARRAY
         if ((attribute->getCollectionType() == CollectionType::SINGLE) && (attribute->isIntegerType() || attribute->isFloatingPointType())) {
@@ -373,39 +370,40 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             if (!extraParam.empty()) {
                 idx = util::strToNum<uint32_t>(extraParam);
             } else if (attribute->getCollectionType() == CollectionType::ARRAY) {
-                return FeatureExecutor::LP(new CountOnlyAttributeExecutor(*attribute));
+                return stash.create<CountOnlyAttributeExecutor>(*attribute);
             }
             if (attribute->isStringType()) {
-                return FeatureExecutor::LP(new AttributeExecutor<ConstCharContent>(attribute, idx));
+                return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
             } else if (attribute->isIntegerType()) {
-                return FeatureExecutor::LP(new AttributeExecutor<IntegerContent>(attribute, idx));
+                return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
             } else { // FLOAT
-                return FeatureExecutor::LP(new AttributeExecutor<FloatContent>(attribute, idx));
+                return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
             }
         }
     }
 }
 
-search::fef::FeatureExecutor::LP
+search::fef::FeatureExecutor &
 createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName,
-                              const ValueType &tensorType)
+                              const ValueType &tensorType,
+                              vespalib::Stash &stash)
 {
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(tensorType);
+        return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (attribute->getCollectionType() != search::attribute::CollectionType::SINGLE ||
             attribute->getBasicType() != search::attribute::BasicType::TENSOR) {
         LOG(warning, "The attribute vector '%s' is NOT of type tensor."
                 " Returning empty tensor.", attribute->getName().c_str());
-        return ConstantTensorExecutor::createEmpty(tensorType);
+        return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     const TensorAttribute *tensorAttribute = dynamic_cast<const TensorAttribute *>(attribute);
     if (tensorAttribute == nullptr) {
         LOG(warning, "The attribute vector '%s' could not be converted to a tensor attribute."
                 " Returning empty tensor.", attribute->getName().c_str());
-        return ConstantTensorExecutor::createEmpty(tensorType);
+        return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (tensorType != tensorAttribute->getConfig().tensorType()) {
         LOG(warning, "The tensor attribute '%s' has tensor type '%s',"
@@ -413,26 +411,26 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 tensorAttribute->getName().c_str(),
                 tensorAttribute->getConfig().tensorType().to_spec().c_str(),
                 tensorType.to_spec().c_str());
-        return ConstantTensorExecutor::createEmpty(tensorType);
+        return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (tensorType.is_dense()) {
         const DenseTensorAttribute *denseTensorAttribute = dynamic_cast<const DenseTensorAttribute *>(tensorAttribute);
         assert(denseTensorAttribute != nullptr);
-        return FeatureExecutor::LP(new DenseTensorAttributeExecutor(denseTensorAttribute));
+        return stash.create<DenseTensorAttributeExecutor>(denseTensorAttribute);
     }
-    return FeatureExecutor::LP(new TensorAttributeExecutor(tensorAttribute));
+    return stash.create<TensorAttributeExecutor>(tensorAttribute);
 }
 
 }
 
-search::fef::FeatureExecutor::LP
-AttributeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+AttributeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     const IAttributeVector *attribute = env.getAttributeContext().getAttribute(_attrName);
     if (_tensorType.is_tensor()) {
-        return createTensorAttributeExecutor(attribute, _attrName, _tensorType);
+        return createTensorAttributeExecutor(attribute, _attrName, _tensorType, stash);
     } else {
-        return createAttributeExecutor(attribute, _attrName, _extra);
+        return createAttributeExecutor(attribute, _attrName, _extra, stash);
     }
 }
 

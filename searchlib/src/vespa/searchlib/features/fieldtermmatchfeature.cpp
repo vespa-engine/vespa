@@ -120,10 +120,10 @@ FieldTermMatchBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new FieldTermMatchBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-FieldTermMatchBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+FieldTermMatchBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new FieldTermMatchExecutor(env, _fieldId, _termId));
+    return stash.create<FieldTermMatchExecutor>(env, _fieldId, _termId);
 }
 
 }}
