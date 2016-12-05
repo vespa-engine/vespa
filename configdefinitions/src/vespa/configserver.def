@@ -33,3 +33,7 @@ defaultContainerFlavor string default="default"
 defaultContentFlavor string default="default"
 
 useVespaVersionInRequest bool default=false
+
+# Docker config
+dockerRegistry string default=""
+dockerVespaBaseImage string default=""
