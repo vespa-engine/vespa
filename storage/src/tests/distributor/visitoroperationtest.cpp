@@ -64,6 +64,8 @@ class VisitorOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testNoClientReplyBeforeAllStorageRepliesReceived);
     CPPUNIT_TEST(testSkipFailedSubBucketsWhenVisitingInconsistent);
     CPPUNIT_TEST(testQueueTimeoutIsFactorOfTotalTimeout);
+    CPPUNIT_TEST(metrics_updated_with_visitor_statistics);
+    CPPUNIT_TEST(statistical_metrics_not_updated_on_wrong_distribution);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -109,6 +111,8 @@ protected:
     void testNoClientReplyBeforeAllStorageRepliesReceived();
     void testSkipFailedSubBucketsWhenVisitingInconsistent();
     void testQueueTimeoutIsFactorOfTotalTimeout();
+    void metrics_updated_with_visitor_statistics();
+    void statistical_metrics_not_updated_on_wrong_distribution();
 public:
     VisitorOperationTest()
         : defaultConfig(framework::MilliSecTime(0),
@@ -237,6 +241,8 @@ private:
 
     std::unique_ptr<VisitorOperation> startOperationWith2StorageNodeVisitors(
             bool inconsistent);
+
+    void do_visitor_roundtrip_with_statistics(const api::ReturnCode& result);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(VisitorOperationTest);
@@ -1619,6 +1625,60 @@ VisitorOperationTest::testQueueTimeoutIsFactorOfTotalTimeout()
 
     auto& cmd(dynamic_cast<CreateVisitorCommand&>(*_sender.commands[0]));
     CPPUNIT_ASSERT_EQUAL(uint32_t(5000), cmd.getQueueTimeout());
+}
+
+void
+VisitorOperationTest::do_visitor_roundtrip_with_statistics(
+        const api::ReturnCode& result)
+{
+    document::BucketId id(0x400000000000007bULL);
+    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    addNodesToBucketDB(id, "0=1/1/1/t");
+
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("metricstats", id, nullId));
+
+    op->start(_sender, framework::MilliSecTime(0));
+    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
+                         _sender.getCommands(true));
+    auto& cmd(dynamic_cast<CreateVisitorCommand&>(*_sender.commands[0]));
+    auto reply = cmd.makeReply();
+    vdslib::VisitorStatistics stats;
+    stats.setBucketsVisited(50);
+    stats.setDocumentsVisited(100);
+    stats.setBytesVisited(2000);
+    static_cast<CreateVisitorReply&>(*reply).setVisitorStatistics(stats);
+    reply->setResult(result);
+
+    op->receive(_sender, api::StorageReply::SP(std::move(reply)));
+}
+
+void
+VisitorOperationTest::metrics_updated_with_visitor_statistics()
+{
+    do_visitor_roundtrip_with_statistics(api::ReturnCode(api::ReturnCode::OK));
+
+    CPPUNIT_ASSERT_EQUAL(int64_t(50), defaultVisitorMetrics().buckets_per_visitor.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(100), defaultVisitorMetrics().docs_per_visitor.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(2000), defaultVisitorMetrics().bytes_per_visitor.getLast());
+}
+
+void
+VisitorOperationTest::statistical_metrics_not_updated_on_wrong_distribution()
+{
+    setupDistributor(1, 100, "distributor:100 storage:2");
+
+    document::BucketId id(uint64_t(0x400000000000127b));
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+                        "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)"),
+            runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
+
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().buckets_per_visitor.getCount());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().docs_per_visitor.getCount());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().bytes_per_visitor.getCount());
+    // Fascinating that count is also a double...
+    CPPUNIT_ASSERT_EQUAL(0.0, defaultVisitorMetrics().latency.getCount());
 }
 
 } // distributor

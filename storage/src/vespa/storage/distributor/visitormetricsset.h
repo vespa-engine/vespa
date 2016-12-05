@@ -8,6 +8,10 @@
 namespace storage {
 
 struct VisitorMetricSet : public PersistenceOperationMetricSet {
+    metrics::LongAverageMetric buckets_per_visitor;
+    metrics::LongAverageMetric docs_per_visitor;
+    metrics::LongAverageMetric bytes_per_visitor;
+
     VisitorMetricSet(MetricSet* owner = nullptr);
     ~VisitorMetricSet();
 

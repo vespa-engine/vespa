@@ -983,12 +983,27 @@ VisitorOperation::sendReply(const api::ReturnCode& code, DistributorMessageSende
             code.toString().c_str(),
             _msg->getInstanceId().c_str(), _msg->getMsgId());
 
+        updateReplyMetrics(code);
         sender.sendReply(reply);
 
-        _metrics.updateFromResult(code);
-        _metrics.latency.addValue(_operationTimer.getElapsedTimeAsDouble());
         _sentReply = true;
     }
+}
+
+void
+VisitorOperation::updateReplyMetrics(const api::ReturnCode& result)
+{
+    _metrics.updateFromResult(result);
+    // WrongDistributionReply happens as a normal and expected part of a visitor
+    // session's lifetime. If we pollute the metrics with measurements taken
+    // from such replies, the averages will not be representative.
+    if (result.getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
+        return;
+    }
+    _metrics.latency.addValue(_operationTimer.getElapsedTimeAsDouble());
+    _metrics.buckets_per_visitor.inc(_visitorStatistics.getBucketsVisited());
+    _metrics.docs_per_visitor.inc(_visitorStatistics.getDocumentsVisited());
+    _metrics.bytes_per_visitor.inc(_visitorStatistics.getBytesVisited());
 }
 
 void
