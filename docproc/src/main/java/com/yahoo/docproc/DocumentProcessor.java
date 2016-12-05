@@ -2,13 +2,12 @@
 package com.yahoo.docproc;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.component.ComponentId;
-import com.yahoo.component.Version;
 import com.yahoo.component.chain.ChainedComponent;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -104,16 +103,31 @@ public abstract class DocumentProcessor extends ChainedComponent {
 
         private String name;
 
+        private Optional<String> reason = Optional.empty();
+
         protected Progress(String name) {
             this.name = name;
+        }
+
+        protected Progress(String name, String reason) {
+            this(name);
+            this.reason = Optional.of(reason);
         }
 
         public static Progress later(long delay) {
             return new LaterProgress(delay);
         }
 
+        public Progress withReason(String reason) {
+            return new Progress(this.name, reason);
+        }
+
         public String toString() {
             return name;
+        }
+
+        public Optional<String> getReason() {
+            return reason;
         }
 
         public boolean equals(Object object) {
