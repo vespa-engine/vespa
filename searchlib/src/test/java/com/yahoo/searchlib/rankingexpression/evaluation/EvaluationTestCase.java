@@ -103,19 +103,19 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("{}", "tensor0", "{}");
 
         // tensor map
-        assertEvaluates("{ {}:1, {d1:l1}:2, {d1:l1,d2:l1 }:3 }",
-                        "map(tensor0, f(x) (log10(x)))", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
-        assertEvaluates("{ {}:4, {d1:l1}:9, {d1:l1,d2:l1 }:16 }",
-                        "map(tensor0, f(x) (x * x))", "{ {}:2, {d1:l1}:3, {d1:l1,d2:l1}:4 }");
+        assertEvaluates("{ {d1:l1}:1, {d1:l2}:2, {d1:l3 }:3 }",
+                        "map(tensor0, f(x) (log10(x)))", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
+        assertEvaluates("{ {d1:l1}:4, {d1:l2}:9, {d1:l3 }:16 }",
+                        "map(tensor0, f(x) (x * x))", "{ {d1:l1}:2, {d1:l2}:3, {d1:l3}:4 }");
         // -- tensor map composites
-        assertEvaluates("{ {}:1, {d1:l1}:2, {d1:l1,d2:l1 }:3 }", 
-                        "log10(tensor0)", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
-        assertEvaluates("{ {}:-10, {d1:l1}:-100, {d1:l1,d2:l1 }:-1000 }",
-                        "- tensor0", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
-        assertEvaluates("{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1 }:0 }",
-                        "min(tensor0, 0)", "{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }");
-        assertEvaluates("{ {}:0, {d1:l1}:0, {d1:l1,d2:l1 }:10 }",
-                        "max(tensor0, 0)", "{ {}:-10, {d1:l1}:0, {d1:l1,d2:l1}:10 }");
+        assertEvaluates("{ {d1:l1}:1, {d1:l2}:2, {d1:l3 }:3 }", 
+                        "log10(tensor0)", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
+        assertEvaluates("{ {d1:l1}:-10, {d1:l2}:-100, {d1:l3 }:-1000 }",
+                        "- tensor0", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
+        assertEvaluates("{ {d1:l1}:-10, {d1:l2}:0, {d1:l3 }:0 }",
+                        "min(tensor0, 0)", "{ {d1:l1}:-10, {d1:l2}:0, {d1:l3}:10 }");
+        assertEvaluates("{ {d1:l1}:0, {d1:l2}:0, {d1:l3 }:10 }",
+                        "max(tensor0, 0)", "{ {d1:l1}:-10, {d1:l2}:0, {d1:l3}:10 }");
         // -- explicitly implemented functions (not foolproof tests as we don't bother testing float value equivalence)
         assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "abs(tensor0)",    "{ {x:1}:1, {x:2}:-2 }");
         assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "acos(tensor0)",   "{ {x:1}:1, {x:2}:1 }");
@@ -177,8 +177,8 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         // -- reduce composites
         assertEvaluates("{ {}: 5   }", "sum(tensor0)", "5.0");
         assertEvaluates("{ {}:-5   }", "sum(tensor0)", "-5.0");
-        assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:l1}:5.5, {d2:l2}:7.0 }");
-        assertEvaluates("{ {}: 0   }", "sum(tensor0)", "{ {d1:l1}:5.0, {d2:l2}:7.0, {}:-12.0}");
+        assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:l1}:5.5, {d1:l2}:7.0 }");
+        assertEvaluates("{ {}: 0   }", "sum(tensor0)", "{ {d1:l1}:5.0, {d1:l2}:7.0, {d1:l3}:-12.0}");
         assertEvaluates("{ {y:1}:4, {y:2}:12.0 }",
                         "sum(tensor0, x)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
         assertEvaluates("{ {x:1}:6, {x:2}:10.0 }",
@@ -215,12 +215,12 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         assertEvaluates("{ {x:1,y:2,z:1}:35, {x:1,y:2,z:2}:65 }",
                         "tensor0 * tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:2,z:1}:7, {y:3,z:1}:11, {y:2,z:2}:13 }");
         assertEvaluates("{{x:1,y:1}:0.0}","tensor1 * tensor2 * tensor3", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1,y:1}:1 }", "{ {x:1,y:1}:1 }");
-        assertEvaluates("{ {}:50, {d1:l1}:500, {d1:l1,d2:l1}:5000 }",
-                        "5 * tensor0", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
-        assertEvaluates("{ {}:13, {d1:l1}:103, {d1:l1,d2:l1}:1003 }",
-                        "tensor0 + 3","{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
-        assertEvaluates("{ {}:1, {d1:l1}:10, {d1:l1,d2:l1 }:100 }",
-                        "tensor0 / 10", "{ {}:10, {d1:l1}:100, {d1:l1,d2:l1}:1000 }");
+        assertEvaluates("{ {d1:l1}:50, {d1:l2}:500, {d1:l3}:5000 }",
+                        "5 * tensor0", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
+        assertEvaluates("{ {d1:l1}:13, {d1:l2}:103, {d1:l3}:1003 }",
+                        "tensor0 + 3","{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
+        assertEvaluates("{ {d1:l1}:1, {d1:l2}:10, {d1:l3 }:100 }",
+                        "tensor0 / 10", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
         assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
         assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:0 }",
                         "atan2(tensor0, tensor1)", "{ {x:1}:0, {x:2}:0 }", "{ {y:1}:1 }");
@@ -273,7 +273,7 @@ public class EvaluationTestCase extends junit.framework.TestCase {
 
         // tensor result dimensions are given from argument dimensions, not the resulting values
         assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2}:1 }");
-        assertEvaluates("tensor(x{},y{}):{{x:1}:1.0}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1}:1 }");
+        assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:3,y:2}:1 }");
     }
 
     public void testTmp() {

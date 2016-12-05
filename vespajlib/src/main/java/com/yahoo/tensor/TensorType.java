@@ -4,6 +4,7 @@ package com.yahoo.tensor;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,10 +30,13 @@ public class TensorType {
 
     public static final TensorType empty = new TensorType(Collections.emptyList());
 
+    /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;
 
     private TensorType(Collection<Dimension> dimensions) {
-        this.dimensions = ImmutableList.copyOf(dimensions);
+        List<Dimension> dimensionList = new ArrayList<>(dimensions);
+        Collections.sort(dimensionList);
+        this.dimensions = ImmutableList.copyOf(dimensionList);
     }
 
     /**
@@ -75,6 +79,14 @@ public class TensorType {
         return dimensions.stream().map(Dimension::name).collect(Collectors.toSet());
     }
 
+    /** Returns the 0-base index of this dimension, or empty if it is not present */
+    public Optional<Integer> indexOfDimension(String dimension) {
+        for (int i = 0; i < dimensions.size(); i++)
+            if (dimensions.get(i).name().equals(dimension))
+                return Optional.of(i);
+        return Optional.empty();
+    }
+
     @Override
     public String toString() {
         return "tensor(" + dimensions.stream().map(Dimension::toString).collect(Collectors.joining(",")) + ")";
@@ -84,7 +96,7 @@ public class TensorType {
     public boolean equals(Object other) {
         if (this == other) return true;
         if (other == null || getClass() != other.getClass()) return false;
-        return new HashSet<>(dimensions).equals(new HashSet<>(((TensorType)other).dimensions));
+        return dimensions.equals(((TensorType)other).dimensions);
     }
 
     @Override
@@ -113,6 +125,9 @@ public class TensorType {
         public abstract Optional<Integer> size();
 
         public abstract Type type();
+
+        /** Returns a copy of this with the name set to the given name */
+        public abstract Dimension withName(String name);
 
         Dimension combineWith(Optional<Dimension> other) {
             if ( ! other.isPresent()) return this;
@@ -151,23 +166,28 @@ public class TensorType {
 
     public static class IndexedBoundDimension extends TensorType.Dimension {
 
-        private final Optional<Integer> size;
+        private final Integer size;
 
         private IndexedBoundDimension(String name, int size) {
             super(name);
             if (size < 1)
                 throw new IllegalArgumentException("Size of bound dimension '" + name + "' must be at least 1");
-            this.size = Optional.of(size);
+            this.size = size;
         }
 
         @Override
-        public Optional<Integer> size() { return size; }
+        public Optional<Integer> size() { return Optional.of(size); }
 
         @Override
         public Type type() { return Type.indexedBound; }
 
         @Override
-        public String toString() { return name() + "[" + size.get() + "]"; }
+        public IndexedBoundDimension withName(String name) {
+            return new IndexedBoundDimension(name, size);
+        }
+
+        @Override
+        public String toString() { return name() + "[" + size + "]"; }
 
         @Override
         public boolean equals(Object o) {
@@ -203,6 +223,11 @@ public class TensorType {
         public Type type() { return Type.indexedUnbound; }
 
         @Override
+        public IndexedUnboundDimension withName(String name) {
+            return new IndexedUnboundDimension(name);
+        }
+
+        @Override
         public String toString() { return name() + "[]"; }
     }
 
@@ -217,6 +242,11 @@ public class TensorType {
 
         @Override
         public Type type() { return Type.mapped; }
+
+        @Override
+        public MappedDimension withName(String name) {
+            return new MappedDimension(name);
+        }
 
         @Override
         public String toString() { return name() + "{}"; }
@@ -280,6 +310,10 @@ public class TensorType {
 
         public Builder mapped(String name) {
             return add(new MappedDimension(name));
+        }
+
+        public Builder dimension(Dimension dimension) {
+            return add(dimension);
         }
 
         public TensorType build() {

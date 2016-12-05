@@ -22,8 +22,8 @@ public class MapTensorTestCase {
     @Test
     public void testStringForm() {
         assertEquals("{}", MapTensor.from("{}").toString());
-        assertEquals("{{d1:l1}:5.0,{d1:l1,d2:l2}:6.0}", MapTensor.from("{ {d1:l1}:5, {d2:l2, d1:l1}:6.0} ").toString());
-        assertEquals("{{d1:l1}:-5.3,{d1:l1,d2:l2}:0.0}", MapTensor.from("{ {d1:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
+        assertEquals("{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}", MapTensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());
+        assertEquals("{{d1:l1,d2:l1}:-5.3,{d1:l1,d2:l2}:0.0}", MapTensor.from("{ {d1:l1,d2:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
     }
 
     @Test
@@ -35,20 +35,6 @@ public class MapTensorTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Excepted a number or a string starting by { or tensor(, got '--'", expected.getMessage());
         }
-    }
-
-    @Test
-    public void testConstruction() {
-        assertEquals("{}", new MapTensor(TensorType.empty, Collections.emptyMap()).toString());
-        assertEquals("{{}:5.0}", new MapTensor(TensorType.empty, Collections.singletonMap(TensorAddress.empty, 5.0)).toString());
-
-        Map<TensorAddress, Double> cells = new LinkedHashMap<>();
-        cells.put(TensorAddress.fromSorted(Collections.singletonList(new TensorAddress.Element("d1","l1"))), 5.0);
-        cells.put(TensorAddress.fromSorted(Collections.singletonList(new TensorAddress.Element("d2","l1"))), 6.0);
-        cells.put(TensorAddress.empty, 7.0);
-        TensorType type = new TensorType.Builder().mapped("d1").mapped("d2").build();
-        // TODO: This is illegal
-        assertEquals("{{}:7.0,{d1:l1}:5.0,{d2:l1}:6.0}", new MapTensor(type, cells).toString());
     }
 
     @Test

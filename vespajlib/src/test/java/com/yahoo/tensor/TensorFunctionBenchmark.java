@@ -74,13 +74,15 @@ public class TensorFunctionBenchmark {
     public static void main(String[] args) {
         // Was: 150 ms
         // After adding type: 300 ms
+        // After sorting dimensions: 100 ms
+        // After special-casing single space: 4 ms
         double timeperJoin = new TensorFunctionBenchmark().benchmark(100, generateVectors(100, 300));
 
-        // This benchmark should be as fast as fast as the previous. Currently it is not by a factor of 5.
+        // This benchmark should be as fast as fast as the previous. Currently it is not by a factor of 600
         double timePerJoinOneTensor = new TensorFunctionBenchmark().benchmark(20, generateVectorsInOneTensor(100, 300));
 
         System.out.println("Time per join: " + timeperJoin +  " ms");
-        System.out.println("Time per join one tensor: " + timePerJoinOneTensor +  " ms");
+        System.out.println("Time per join, one tensor: " + timePerJoinOneTensor +  " ms");
     }
 
 }

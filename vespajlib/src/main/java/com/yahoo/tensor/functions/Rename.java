@@ -7,14 +7,11 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * The <i>rename</i> tensor function returns a tensor where some dimensions are assigned new names.
@@ -57,36 +54,38 @@ public class Rename extends PrimitiveTensorFunction {
     @Override
     public Tensor evaluate(EvaluationContext context) {
         Tensor tensor = argument.evaluate(context);
+
         Map<String, String> fromToMap = fromToMap();
-        Set<String> renamedDimensions = tensor.type().dimensions().stream()
-                                                                  .map((d) -> fromToMap.getOrDefault(d.name(), d.name()))
-                                                                  .collect(Collectors.toSet());
+        TensorType renamedType = rename(tensor.type(), fromToMap);
         
+        // an array which lists the index of each label in the renamed type
+        int[] toIndexes = new int[tensor.type().dimensions().size()];
+        for (int i = 0; i < tensor.type().dimensions().size(); i++) {
+            String dimensionName = tensor.type().dimensions().get(i).name();
+            String newDimensionName = fromToMap.getOrDefault(dimensionName, dimensionName);
+            toIndexes[i] = renamedType.indexOfDimension(newDimensionName).get();
+        }
+            
         ImmutableMap.Builder<TensorAddress, Double> renamedCells = new ImmutableMap.Builder<>();
         for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
-            TensorAddress renamedAddress = rename(cell.getKey(), fromToMap);
+            TensorAddress renamedAddress = rename(cell.getKey(), toIndexes);
             renamedCells.put(renamedAddress, cell.getValue());
         }
-        return new MapTensor(asMappedDimensions(renamedDimensions), renamedCells.build());
+        return new MapTensor(renamedType, renamedCells.build());
     }
 
-    private TensorType asMappedDimensions(Set<String> dimensionNames) {
+    private TensorType rename(TensorType type, Map<String, String> fromToMap) {
         TensorType.Builder builder = new TensorType.Builder();
-        for (String dimensionName : dimensionNames)
-            builder.mapped(dimensionName);
+        for (TensorType.Dimension dimension : type.dimensions())
+            builder.dimension(dimension.withName(fromToMap.getOrDefault(dimension.name(), dimension.name())));
         return builder.build();
     }
-
-    private TensorAddress rename(TensorAddress address, Map<String, String> fromToMap) {
-        List<TensorAddress.Element> renamedElements = new ArrayList<>();
-        for (TensorAddress.Element element : address.elements()) {
-            String toDimension = fromToMap.get(element.dimension());
-            if (toDimension == null)
-                renamedElements.add(element);
-            else
-                renamedElements.add(new TensorAddress.Element(toDimension, element.label()));
-        }
-        return TensorAddress.fromUnsorted(renamedElements);
+    
+    private TensorAddress rename(TensorAddress address, int[] toIndexes) {
+        String[] reorderedLabels = new String[toIndexes.length];
+        for (int i = 0; i < toIndexes.length; i++)
+            reorderedLabels[toIndexes[i]] = address.labels().get(i);
+        return new TensorAddress(reorderedLabels);
     }
 
     @Override

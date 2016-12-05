@@ -240,7 +240,7 @@ public class DocumentUpdateJsonSerializerTest {
                 "            'assign': {",
                 "                'cells': [",
                 "                    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 },",
-                "                    { 'address': { 'x': 'c' }, 'value': 3.0 }",
+                "                    { 'address': { 'x': 'c', 'y': 'b' }, 'value': 3.0 }",
                 "                ]",
                 "            }",
                 "        }",
