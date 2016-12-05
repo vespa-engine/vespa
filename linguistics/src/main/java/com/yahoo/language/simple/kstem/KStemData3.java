@@ -163,7 +163,7 @@ class KStemData3 {
 "electroencephalogram","electroencephalograph","electrolysis","electrolyte","electron",
 "electronic","electronics","electroplate","eleemosynary","elegant",
 "elegiac","elegy","element","elemental","elementary",
-"labels","elephant","elephantiasis","elephantine","elevate",
+"elements","elephant","elephantiasis","elephantine","elevate",
 "elevated","elevation","elevator","eleven","elevenses",
 "elf","elfin","elfish","elicit","elide",
 "eligible","eliminate","elite","elitism","elixir",
