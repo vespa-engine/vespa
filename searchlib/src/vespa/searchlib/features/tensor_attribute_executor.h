@@ -16,8 +16,8 @@ class TensorAttributeExecutor : public fef::FeatureExecutor
 {
 private:
     const search::tensor::TensorAttribute *_attribute;
-    vespalib::eval::TensorValue::UP _tensor;
-    vespalib::eval::TensorValue::UP _emptyTensor;
+    std::unique_ptr<vespalib::eval::Tensor> _emptyTensor;
+    vespalib::eval::TensorValue _tensor;
 
 public:
     TensorAttributeExecutor(const search::tensor::TensorAttribute *attribute);

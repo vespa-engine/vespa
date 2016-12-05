@@ -63,11 +63,13 @@ public:
 class TensorValue : public Value
 {
 private:
-    std::unique_ptr<Tensor> _value;
+    const Tensor *_tensor;
+    std::unique_ptr<Tensor> _stored;
 public:
-    TensorValue(std::unique_ptr<Tensor> value) : _value(std::move(value)) {}
+    TensorValue(const Tensor &value) : _tensor(&value), _stored() {}
+    TensorValue(std::unique_ptr<Tensor> value) : _tensor(value.get()), _stored(std::move(value)) {}
     bool is_tensor() const override { return true; }
-    const Tensor *as_tensor() const override { return _value.get(); }
+    const Tensor *as_tensor() const override { return _tensor; }
     bool equal(const Value &rhs) const override;
     const Value &apply(const UnaryOperation &op, Stash &stash) const override;
     const Value &apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const override;
