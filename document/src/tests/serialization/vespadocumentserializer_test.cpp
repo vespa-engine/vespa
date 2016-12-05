@@ -819,7 +819,7 @@ TEST("Require that tensor deserialization matches Java") {
                          createTensor({ {{{"dimX", "a"}, {"dimY", "bb"}}, 2.0 },
                                            {{{"dimX", "ccc"},
                                                    {"dimY", "dddd"}}, 3.0},
-                                           {{{"dimX", "e"}}, 5.0} },
+                                           {{{"dimX", "e"},{"dimY","ff"}}, 5.0} },
                                       { "dimX", "dimY" }));
 }
 
