@@ -55,8 +55,6 @@ public class Maintainer {
     private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
     private static final CoreCollector CORE_COLLECTOR = new CoreCollector(maintainer);
     private static final Gson gson = new Gson();
-    private static final Path DONE_COREDUMPS_PATH = maintainer.pathInNodeAdminFromPathInNode(
-            new ContainerName("processed_coredumps"), "/");
 
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
@@ -185,8 +183,10 @@ public class Maintainer {
     public static class CleanCoreDumpsArguments implements Runnable {
         @Override
         public void run() {
-            if (DONE_COREDUMPS_PATH.toFile().exists()) {
-                CoredumpHandler.removeOldCoredumps(DONE_COREDUMPS_PATH);
+            Path doneCoredumps = maintainer.pathInNodeAdminToDoneCoredumps();
+
+            if (doneCoredumps.toFile().exists()) {
+                CoredumpHandler.removeOldCoredumps(doneCoredumps);
             }
         }
     }
@@ -272,16 +272,25 @@ public class Maintainer {
             try {
                 Map<String, Object> attributesMap = (Map<String, Object>) gson.fromJson(attributes, Map.class);
 
-                Path path = new Maintainer().pathInNodeAdminFromPathInNode(new ContainerName(container), "/home/y/var/crash");
+                Path path = maintainer.pathInNodeAdminFromPathInNode(new ContainerName(container), "/home/y/var/crash");
+                Path doneCoredumps = maintainer.pathInNodeAdminToDoneCoredumps();
+
                 CoredumpHandler coredumpHandler = new CoredumpHandler(HTTP_CLIENT, CORE_COLLECTOR, attributesMap);
                 CoredumpHandler.removeJavaCoredumps(path);
-                coredumpHandler.processAndReportCoredumps(path, DONE_COREDUMPS_PATH);
+                coredumpHandler.processAndReportCoredumps(path, doneCoredumps);
             } catch (Throwable e) {
                 logger.log(Level.WARNING, "Could not process coredumps", e);
             }
         }
     }
 
+
+    /**
+     * Absolute path in node admin to directory with processed and reported core dumps
+     */
+    private Path pathInNodeAdminToDoneCoredumps() {
+        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve("processed-coredumps");
+    }
 
     /**
      * Absolute path in node admin container to the node cleanup directory.

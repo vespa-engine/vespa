@@ -91,7 +91,7 @@ public class CoredumpHandlerTest {
         when(coreCollector.collect(any())).thenReturn(metadata);
 
         CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, attributes);
-        coredumpHandler.processCoredumps(coredumpPath);
+        coredumpHandler.processCoredumps(crashPath);
 
         // Contents of 'crash' should be only the 'processing' directory
         Set<Path> expectedContentsOfCrash = Collections.singleton(crashPath.resolve(CoredumpHandler.PROCESSING_DIRECTORY_NAME));
