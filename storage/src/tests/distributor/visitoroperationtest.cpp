@@ -1674,6 +1674,9 @@ VisitorOperationTest::statistical_metrics_not_updated_on_wrong_distribution()
                         "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)"),
             runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
 
+    // Note that we're testing the number of _times_ the metric has been
+    // updated, not the value with which it's been updated (which would be zero
+    // even in the case we actually did update the statistical metrics).
     CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().buckets_per_visitor.getCount());
     CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().docs_per_visitor.getCount());
     CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().bytes_per_visitor.getCount());
