@@ -56,7 +56,7 @@ public final class PrepareParams {
         private boolean ignoreValidationErrors = false;
         private boolean dryRun = false;
         private ApplicationId applicationId = ApplicationId.defaultId();
-        private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(5));
+        private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(10));
         private Optional<Version> vespaVersion = Optional.empty();
         private Set<Rotation> rotations;
         private Optional<Version> dockerVespaImageVersion = Optional.empty();
