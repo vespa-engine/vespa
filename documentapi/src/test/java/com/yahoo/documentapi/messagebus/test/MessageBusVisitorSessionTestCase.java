@@ -1062,15 +1062,12 @@ public class MessageBusVisitorSessionTestCase {
 
         mc.visitorSession.start();
         mc.executor.expectAndProcessTasks(1);
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.setLastBucket(ProgressToken.FINISHED_BUCKET);
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(11);
-                stats.setDocumentsReturned(22);
-                reply.setVisitorStatistics(stats);
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.setLastBucket(ProgressToken.FINISHED_BUCKET);
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(11);
+            stats.setDocumentsReturned(22);
+            reply.setVisitorStatistics(stats);
         });
         mc.executor.expectAndProcessTasks(1);
         assertEquals("onProgress : 0 active, 0 pending, 1 finished, 1 total\n" +
@@ -1248,13 +1245,10 @@ public class MessageBusVisitorSessionTestCase {
         mc.visitorSession.start();
         mc.controlHandler.resetMock();
         mc.executor.expectAndProcessTasks(1);
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_ABORTED,
-                        "bucket fell down a well"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_ABORTED,
+                    "bucket fell down a well"));
         });
         mc.executor.expectAndProcessTasks(1); // reply
         // Must have a 100ms delay
@@ -1281,13 +1275,10 @@ public class MessageBusVisitorSessionTestCase {
         mc.visitorSession.start();
         mc.controlHandler.resetMock();
         mc.executor.expectAndProcessTasks(1);
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node caught fire"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node caught fire"));
         });
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectNoTasks();
@@ -1310,26 +1301,20 @@ public class MessageBusVisitorSessionTestCase {
         mc.controlHandler.resetMock(); // clear messages
         mc.executor.expectAndProcessTasks(1);
         assertEquals(2, mc.sender.getMessageCount());
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node fell down a well"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node fell down a well"));
         });
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectNoTasks();
         assertEquals(1, mc.sender.getMessageCount()); // no resending
         assertFalse(mc.visitorSession.isDone()); // not done yet
 
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node got hit by a falling brick"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node got hit by a falling brick"));
         });
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectNoTasks();
@@ -1389,25 +1374,19 @@ public class MessageBusVisitorSessionTestCase {
     public void testMaxTotalHitsEarlyCompletion() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
         visitorParameters.setMaxTotalHits(10);
-        ReplyModifier replyModifier1 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(9);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-            }
+        ReplyModifier replyModifier1 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(9);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
         };
-        ReplyModifier replyModifier2 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(1);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-            }
+        ReplyModifier replyModifier2 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(1);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
         };
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
@@ -1416,25 +1395,19 @@ public class MessageBusVisitorSessionTestCase {
     public void testVisitingCompletedFromSufficientFirstPassHits() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
         visitorParameters.setMaxFirstPassHits(10);
-        ReplyModifier replyModifier1 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(9);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-            }
+        ReplyModifier replyModifier1 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(9);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
         };
-        ReplyModifier replyModifier2 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(1);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-            }
+        ReplyModifier replyModifier2 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(1);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
         };
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
@@ -1443,26 +1416,20 @@ public class MessageBusVisitorSessionTestCase {
     public void testVisitingCompletedFromSecondPassHits() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
         visitorParameters.setMaxTotalHits(10);
-        ReplyModifier replyModifier1 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(5);
-                stats.setSecondPassDocumentsReturned(4);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-            }
+        ReplyModifier replyModifier1 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(5);
+            stats.setSecondPassDocumentsReturned(4);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
         };
-        ReplyModifier replyModifier2 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setSecondPassDocumentsReturned(1);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-            }
+        ReplyModifier replyModifier2 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setSecondPassDocumentsReturned(1);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
         };
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
@@ -1564,31 +1531,23 @@ public class MessageBusVisitorSessionTestCase {
         // Have to do this multi-threaded for once since waitUntilDone/destroy
         // are both synchronous and will not return before session is complete,
         // either through success or failure.
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    boolean ok = session.waitUntilDone(20000);
-                    if (!session.isDone()) {
-                        throw new IllegalStateException("waitUntilDone returned, but session is not marked as done");
-                    }
-                    assertTrue(ok);
-                    session.destroy();
-                    barrier.await(20000, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    exceptionPropagator.setValue(e);
+        Thread t = new Thread(() -> {
+            try {
+                boolean ok = session.waitUntilDone(20000);
+                if (!session.isDone()) {
+                    throw new IllegalStateException("waitUntilDone returned, but session is not marked as done");
                 }
+                assertTrue(ok);
+                session.destroy();
+                barrier.await(20000, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                exceptionPropagator.setValue(e);
             }
         });
         t.start();
 
         try {
-            waitUntilTrue(20000, new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return controlHandler.isWaiting();
-                }
-            });
+            waitUntilTrue(20000, () -> controlHandler.isWaiting());
 
             // Reply to visitor, causing session to complete
             assertEquals("CreateVisitorMessage(buckets=[\n" +
@@ -1642,29 +1601,21 @@ public class MessageBusVisitorSessionTestCase {
         // NOTE: even though the MockControlHandler itself is not thread safe,
         // the control flow of the test should guarantee there is no concurrent
         // access to it.
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    session.destroy();
-                    if (!session.isDone()) {
-                        throw new IllegalStateException("Session is not marked as done after destroy()");
-                    }
-                    barrier.await(20000, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    exceptionPropagator.setValue(e);
+        Thread t = new Thread(() -> {
+            try {
+                session.destroy();
+                if (!session.isDone()) {
+                    throw new IllegalStateException("Session is not marked as done after destroy()");
                 }
+                barrier.await(20000, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                exceptionPropagator.setValue(e);
             }
         });
         t.start();
 
         try {
-            waitUntilTrue(20000, new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return session.isDestroying();
-                }
-            });
+            waitUntilTrue(20000, () -> session.isDestroying());
 
             // Reply to visitor. Normally, the visitor would be resent, but
             // since destroy aborts the session, this won't happen and the
@@ -1872,12 +1823,7 @@ public class MessageBusVisitorSessionTestCase {
         // reply handling where we can reliably force an exception to
         // happen, send a bogus visitor reply with a null result bucket which
         // will trigger NPE when the progress token tries to access it.
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.setLastBucket(null);
-            }
-        });
+        replyToCreateVisitor(mc.sender, (reply) -> reply.setLastBucket(null));
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectNoTasks();
         // Session shall now have failed (and completed)
@@ -2167,12 +2113,7 @@ public class MessageBusVisitorSessionTestCase {
 
         for (int i = 0; i < 2; ++i) {
             final int idx = i;
-            replyToCreateVisitor(mc.sender, new ReplyModifier() {
-                @Override
-                public void modify(CreateVisitorReply reply) {
-                    reply.getTrace().getRoot().addChild(traceNodes[idx]);
-                }
-            });
+            replyToCreateVisitor(mc.sender, (reply) -> reply.getTrace().getRoot().addChild(traceNodes[idx]));
         }
         mc.executor.expectAndProcessTasks(2);
         mc.executor.expectNoTasks();
@@ -2427,21 +2368,15 @@ public class MessageBusVisitorSessionTestCase {
         mc.controlHandler.resetMock(); // clear messages
         mc.executor.expectAndProcessTasks(1);
         assertEquals(2, mc.sender.getMessageCount());
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node fell down a well"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node fell down a well"));
         });
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node got hit by a falling brick"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node got hit by a falling brick"));
         });
 
         // Now 2 pending reply tasks, but 0 pending messages. Ergo, using

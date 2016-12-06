@@ -37,14 +37,14 @@ public class MessageBusVisitorSession implements VisitorSession {
      * Abstract away notion of source session into a generic Sender
      * interface to allow easy mocking.
      */
-    public static interface Sender {
-        public Result send(Message msg);
-        public int getPendingCount();
-        public void destroy();
+    public interface Sender {
+        Result send(Message msg);
+        int getPendingCount();
+        void destroy();
     }
 
-    public static interface SenderFactory {
-        public Sender createSender(ReplyHandler replyHandler, VisitorParameters visitorParameters);
+    public interface SenderFactory {
+        Sender createSender(ReplyHandler replyHandler, VisitorParameters visitorParameters);
     }
 
     /**
@@ -53,24 +53,24 @@ public class MessageBusVisitorSession implements VisitorSession {
      * The implementation must be thread safe since reply() can be invoked
      * from an arbitrary thread.
      */
-    public static interface Receiver {
-        public void reply(Reply reply);
-        public void destroy();
+    public interface Receiver {
+        void reply(Reply reply);
+        void destroy();
         /**
          * Get connection spec that can be used by other clients to send
          * messages to this Receiver.
          * @return connection spec
          */
-        public String getConnectionSpec();
+        String getConnectionSpec();
     }
 
-    public static interface ReceiverFactory {
-        public Receiver createReceiver(MessageHandler messageHandler, String sessionName);
+    public interface ReceiverFactory {
+        Receiver createReceiver(MessageHandler messageHandler, String sessionName);
     }
 
-    public static interface AsyncTaskExecutor {
-        public void submitTask(Runnable event);
-        public void scheduleTask(Runnable event, long delay, TimeUnit unit);
+    public interface AsyncTaskExecutor {
+        void submitTask(Runnable event);
+        void scheduleTask(Runnable event, long delay, TimeUnit unit);
     }
 
     public static class VisitingProgress {
@@ -100,7 +100,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         TIMED_OUT(true);
 
         private final boolean failure;
-        private State(boolean failure) {
+        State(boolean failure) {
             this.failure = failure;
         }
 
