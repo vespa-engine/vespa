@@ -15,7 +15,9 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -172,12 +174,17 @@ public class RestApiTest {
     @Test
     public void post_node_with_ip_address() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson("ipv4-host.yahoo.com", "127.0.0.1", "default") + "]").
+                        ("[" + asNodeJson("ipv4-host.yahoo.com", "default","127.0.0.1") + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[" + asNodeJson("ipv6-host.yahoo.com", "::1", "default") + "]").
+                        ("[" + asNodeJson("ipv6-host.yahoo.com", "default", "::1") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson("dual-stack-host.yahoo.com", "default", "127.0.0.1", "::1") + "]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
@@ -186,10 +193,10 @@ public class RestApiTest {
     @Test
     public void post_node_with_invalid_ip_address() throws Exception {
         Request req = new Request("http://localhost:8080/nodes/v2/node",
-                ("[" + asNodeJson("host-with-ip.yahoo.com", "foo", "default") + "]").
+                ("[" + asNodeJson("host-with-ip.yahoo.com", "default", "foo") + "]").
                         getBytes(StandardCharsets.UTF_8),
                 Request.Method.POST);
-        assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"A node must have a valid IP address: 'foo' is not an IP string literal.\"}");
+        assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"A node must have at least one valid IP address: 'foo' is not an IP string literal.\"}");
     }
 
     @Test
@@ -259,6 +266,23 @@ public class RestApiTest {
                 "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
                 "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
                 "]}");
+        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
+    }
+
+    @Test
+    public void acl_response_with_dual_stack_node() throws Exception {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson("dual-stack-host.yahoo.com", "default", "127.0.0.1", "::1") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"dual-stack-host.yahoo.com\",\"ipAddress\":\"::1\"}," +
+                "\\{\"hostname\":\"dual-stack-host.yahoo.com\",\"ipAddress\":\"127.0.0.1\"}" +
+                ".*]}");
         assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
     }
 
@@ -377,13 +401,26 @@ public class RestApiTest {
                 "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"docker\"}";
     }
 
-    private String asNodeJson(String hostname, String ipAddress, String flavor) {
-        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"" + flavor + "\"" +
-                (ipAddress.isEmpty() ? "" : ", \"ipAddress\":\"" + ipAddress + "\"") + "}";
-    }
-
-    private String asNodeJson(String hostname, String flavor) {
-        return asNodeJson(hostname, "", flavor);
+    private String asNodeJson(String hostname, String flavor, String... ipAddress) {
+        final String ipAddressJsonPart;
+        switch (ipAddress.length) {
+            case 0:
+                ipAddressJsonPart = "";
+                break;
+            case 1:
+                // Old format
+                ipAddressJsonPart = "\"ipAddress\":\"" + ipAddress[0] + "\",";
+                break;
+            default:
+                ipAddressJsonPart = "\"ipAddresses\":[" +
+                        Arrays.stream(ipAddress)
+                                .map(ip -> "\"" + ip + "\"")
+                                .collect(Collectors.joining(",")) +
+                        "],";
+        }
+        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
+                ipAddressJsonPart +
+                "\"flavor\":\"" + flavor + "\"}";
     }
 
     private String asHostJson(String hostname, String flavor) {

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -26,6 +27,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
@@ -44,7 +46,7 @@ public class NodeSerializer {
 
     // Node fields
     private static final String hostnameKey = "hostname";
-    private static final String ipAddressKey = "ipAddress";
+    private static final String ipAddressesKey = "ipAddresses";
     private static final String openStackIdKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
@@ -97,7 +99,7 @@ public class NodeSerializer {
 
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
-        object.setString(ipAddressKey, node.ipAddress());
+        toSlime(node.ipAddresses(), object.setArray(ipAddressesKey));
         object.setString(openStackIdKey, node.openStackId());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         object.setString(flavorKey, node.flavor().name());
@@ -138,6 +140,10 @@ public class NodeSerializer {
             object.setString(agentKey, toString(((History.RetiredEvent)event).agent()));
     }
 
+    private void toSlime(Set<String> ipAddresses, Cursor array) {
+        ipAddresses.forEach(array::addString);
+    }
+
     // ---------------- Deserialization --------------------------------------------------
 
     public Node fromJson(Node.State state, byte[] data) {
@@ -146,7 +152,7 @@ public class NodeSerializer {
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(openStackIdKey).asString(),
-                        ipAddressFromResolverOrSlime(object),
+                        ipAddressesFromResolverOrSlime(object),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),
@@ -224,12 +230,14 @@ public class NodeSerializer {
             return Optional.empty();
     }
 
-    // TODO: Remove this and use the field directly after 6.48 has been deployed everywhere
-    private String ipAddressFromResolverOrSlime(Inspector object) {
-        if (!object.field(ipAddressKey).valid()) {
-            return nameResolver.getByNameOrThrow(object.field("hostname").asString());
+    // TODO: Remove this and use the ipAddresses field directly after 6.55 has been deployed everywhere
+    private Set<String> ipAddressesFromResolverOrSlime(Inspector object) {
+        if (object.field(ipAddressesKey).valid()) {
+            ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
+            object.field(ipAddressesKey).traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
+            return ipAddresses.build();
         }
-        return object.field(ipAddressKey).asString();
+        return nameResolver.getAllByNameOrThrow(object.field("hostname").asString());
     }
     
     private Optional<Status.HardwareFailureType> hardwareFailureFromSlime(Inspector object) {

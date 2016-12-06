@@ -44,11 +44,11 @@ public class NodeAclResponse extends HttpResponse {
     }
 
     private void toSlime(List<Node> trustedNodes, Cursor array) {
-        trustedNodes.forEach(node -> {
+        trustedNodes.forEach(node -> node.ipAddresses().forEach(ipAddress -> {
             Cursor object = array.addObject();
             object.setString("hostname", node.hostname());
-            object.setString("ipAddress", node.ipAddress());
-        });
+            object.setString("ipAddress", ipAddress);
+        }));
     }
 
     @Override

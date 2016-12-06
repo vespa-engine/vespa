@@ -28,8 +28,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 
@@ -65,14 +67,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 case PATCH: return handlePATCH(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
-        }
-        catch (NotFoundException e) {
+        } catch (NotFoundException | com.yahoo.vespa.hosted.provision.NotFoundException e) {
             return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
-        }
-        catch (com.yahoo.vespa.hosted.provision.NotFoundException e) {
-            return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
         catch (RuntimeException e) {
@@ -196,11 +193,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private Node createNode(Inspector inspector) {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
         Optional<String> ipAddress = optionalString(inspector.field("ipAddress"));
+        Set<String> ipAddresses = new HashSet<>();
+        ipAddress.ifPresent(ipAddresses::add);
+        inspector.field("ipAddresses").traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
 
         return nodeRepository.createNode(
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
-                ipAddress,
+                ipAddresses,
                 parentHostname,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
                 nodeTypeFromSlime(inspector.field(nodeTypeKey)));

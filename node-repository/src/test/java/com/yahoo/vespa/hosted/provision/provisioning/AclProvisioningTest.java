@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.createConfig;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -122,17 +123,17 @@ public class AclProvisioningTest {
     @Test
     public void resolves_hostnames_from_connection_spec() {
         setConfigServers("cfg1:1234,cfg2:1234,cfg3:1234");
-        nameResolver.addRecord("cfg1", "127.0.0.1");
-        nameResolver.addRecord("cfg2", "127.0.0.2");
-        nameResolver.addRecord("cfg3", "127.0.0.3");
+        nameResolver.addRecord("cfg1", "127.0.0.1")
+                .addRecord("cfg2", "127.0.0.2")
+                .addRecord("cfg3", "127.0.0.3");
 
         List<Node> readyNodes = tester.makeReadyNodes(1, "default", NodeType.tenant);
         List<Node> trustedNodes = tester.nodeRepository().getTrustedNodes(readyNodes.get(0));
 
         assertEquals(3, trustedNodes.size());
-        assertEquals("127.0.0.1", trustedNodes.get(0).ipAddress());
-        assertEquals("127.0.0.2", trustedNodes.get(1).ipAddress());
-        assertEquals("127.0.0.3", trustedNodes.get(2).ipAddress());
+        assertEquals(singleton("127.0.0.1"), trustedNodes.get(0).ipAddresses());
+        assertEquals(singleton("127.0.0.2"), trustedNodes.get(1).ipAddresses());
+        assertEquals(singleton("127.0.0.3"), trustedNodes.get(2).ipAddresses());
     }
 
     private List<Node> allocateNodes(int nodeCount) {
