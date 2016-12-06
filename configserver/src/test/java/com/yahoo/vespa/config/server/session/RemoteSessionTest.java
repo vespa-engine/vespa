@@ -233,7 +233,7 @@ public class RemoteSessionTest {
                 .curator(curator)
                 .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories));
         if (permanentApplicationPackage.isPresent())
-            registryBuilder.permanentApplicationPackage(permanentApplicationPackage.get()).build();
+            registryBuilder.permanentApplicationPackage(permanentApplicationPackage.get());
 
         return new RemoteSession(TenantName.from("default"), sessionId,
                                  registryBuilder.build(),
