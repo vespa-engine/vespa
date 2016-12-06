@@ -19,15 +19,14 @@ namespace spi {
  **/
 struct ProxyFactory : ConformanceTest::PersistenceFactory
 {
-    typedef storage::spi::PersistenceProvider                 Provider;
-    typedef storage::spi::ProviderProxy                       Client;
-    typedef document::DocumentTypeRepo                        Repo;
+    using Provider =  storage::spi::PersistenceProvider;
+    using Client =    storage::spi::ProviderProxy;
+    using Repo =      document::DocumentTypeRepo;
 
     ProxyFactory() {}
 
-    virtual Provider::UP
-    getPersistenceImplementation(const document::DocumentTypeRepo::SP &repo,
-                                 const document::DocumenttypesConfig &) {
+    Provider::UP
+    getPersistenceImplementation(const Repo::SP &repo, const Repo::DocumenttypesConfig &) {
         return Provider::UP(new Client("tcp/localhost:3456", *repo));
     }
 

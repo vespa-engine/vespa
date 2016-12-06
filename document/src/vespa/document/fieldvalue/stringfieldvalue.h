@@ -12,6 +12,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/fastos/dynamiclibrary.h>
 
 namespace document {
 class FixedTypeRepo;

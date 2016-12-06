@@ -15,7 +15,7 @@
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/config/print/fileconfigreader.h>
+#include <vespa/document/config/config-documenttypes.h>
 #include <fstream>
 #include <memory>
 #include <utility>
@@ -578,15 +578,6 @@ void DocumentTypeRepo::forEachDocumentType(
              it = _doc_types.begin(); it != _doc_types.end(); ++it) {
         c.call(*it->second->doc_type);
     }
-}
-
-DocumenttypesConfig readDocumenttypesConfig(const char *file_name) {
-    config::FileConfigReader<DocumenttypesConfig> reader(file_name);
-    return DocumenttypesConfig(*reader.read());
-}
-
-DocumenttypesConfig readDocumenttypesConfig(const std::string &file_name ) {
-    return readDocumenttypesConfig(file_name.c_str());
 }
 
 }  // namespace document

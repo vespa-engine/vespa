@@ -40,10 +40,9 @@ struct ProxyFactoryWrapper : ConformanceTest::PersistenceFactory
     };
 
     virtual Provider::UP
-    getPersistenceImplementation(const document::DocumentTypeRepo::SP &repo,
-                                 const document::DocumenttypesConfig &typesCfg) {
-        DummyProviderFactory::UP provider(new DummyProviderFactory(factory->getPersistenceImplementation(repo,
-                                                                                                         typesCfg)));
+    getPersistenceImplementation(const Repo::SP &repo,
+                                 const Repo::DocumenttypesConfig &typesCfg) override{
+        DummyProviderFactory::UP provider(new DummyProviderFactory(factory->getPersistenceImplementation(repo, typesCfg)));
         Server::UP server(new Server(0, 8, *repo, *provider));
         return Provider::UP(new Wrapper(std::move(provider), std::move(server), *repo));
     }

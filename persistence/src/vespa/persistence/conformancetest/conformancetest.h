@@ -78,7 +78,7 @@ struct ConformanceTest : public CppUnit::TestFixture {
         virtual ~PersistenceFactory() {}
         virtual PersistenceProvider::UP getPersistenceImplementation(
                 const document::DocumentTypeRepo::SP &repo,
-                const document::DocumenttypesConfig &typesCfg) = 0;
+                const document::DocumentTypeRepo::DocumenttypesConfig &typesCfg) = 0;
 
         virtual void
         clear(void)

@@ -13,10 +13,9 @@ namespace spi {
 
 struct DummyImplTest : public ConformanceTest {
     struct Factory : public PersistenceFactory {
-
+        using Repo = document::DocumentTypeRepo;
         PersistenceProvider::UP
-        getPersistenceImplementation(const document::DocumentTypeRepo::SP& repo,
-                                     const document::DocumenttypesConfig&) {
+        getPersistenceImplementation(const Repo::SP& repo, const Repo::DocumenttypesConfig&) {
             return PersistenceProvider::UP(new dummy::DummyPersistence(repo, 4));
         }
 
