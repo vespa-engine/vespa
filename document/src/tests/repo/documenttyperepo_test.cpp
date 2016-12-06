@@ -1,12 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for documenttyperepo.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("documenttyperepo_test");
-
+#include <vespa/document/base/testdocrepo.h>
 #include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -21,6 +17,7 @@ LOG_SETUP("documenttyperepo_test");
 #include <vespa/vespalib/util/exceptions.h>
 #include <set>
 #include <vespa/config/helper/configgetter.h>
+
 
 using config::AsciiConfigWriter;
 using std::set;

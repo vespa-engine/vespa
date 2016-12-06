@@ -1,11 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <vespa/document/config/config-documenttypes.h>
-#include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/storage/storageserver/documentapiconverter.h>
@@ -13,8 +10,6 @@
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/visitor.h>
-#include <vespa/vdslib/container/writabledocumentlist.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 using document::DataType;

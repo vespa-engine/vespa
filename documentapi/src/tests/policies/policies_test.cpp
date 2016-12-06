@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/config/config-documenttypes.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/messagebus/policies/andpolicy.h>
 #include <vespa/documentapi/messagebus/policies/documentrouteselectorpolicy.h>

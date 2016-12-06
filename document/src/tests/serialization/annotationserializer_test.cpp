@@ -1,17 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for annotation serialization.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("annotationserializer_test");
-
-#include <stdlib.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/annotationdeserializer.h>
