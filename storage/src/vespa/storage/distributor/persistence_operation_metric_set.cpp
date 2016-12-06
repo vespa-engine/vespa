@@ -85,7 +85,7 @@ PersistenceOperationMetricSet::updateFromResult(const api::ReturnCode& result)
         ++failures.busy;
     } else if (result.isBucketDisappearance()) {
         // Bucket not found/deleted codes imply that replicas are transiently
-        // inconsistent in our DB or across replicas.
+        // inconsistent in our DB or across replica nodes.
         ++failures.inconsistent_bucket;
     } else if (result.isNodeDownOrNetwork()) {
         ++failures.notconnected;

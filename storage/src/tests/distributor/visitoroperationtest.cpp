@@ -64,7 +64,7 @@ class VisitorOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testNoClientReplyBeforeAllStorageRepliesReceived);
     CPPUNIT_TEST(testSkipFailedSubBucketsWhenVisitingInconsistent);
     CPPUNIT_TEST(testQueueTimeoutIsFactorOfTotalTimeout);
-    CPPUNIT_TEST(metrics_updated_with_visitor_statistics);
+    CPPUNIT_TEST(metrics_are_updated_with_visitor_statistics_upon_replying);
     CPPUNIT_TEST(statistical_metrics_not_updated_on_wrong_distribution);
     CPPUNIT_TEST_SUITE_END();
 
@@ -111,7 +111,7 @@ protected:
     void testNoClientReplyBeforeAllStorageRepliesReceived();
     void testSkipFailedSubBucketsWhenVisitingInconsistent();
     void testQueueTimeoutIsFactorOfTotalTimeout();
-    void metrics_updated_with_visitor_statistics();
+    void metrics_are_updated_with_visitor_statistics_upon_replying();
     void statistical_metrics_not_updated_on_wrong_distribution();
 public:
     VisitorOperationTest()
@@ -1654,7 +1654,7 @@ VisitorOperationTest::do_visitor_roundtrip_with_statistics(
 }
 
 void
-VisitorOperationTest::metrics_updated_with_visitor_statistics()
+VisitorOperationTest::metrics_are_updated_with_visitor_statistics_upon_replying()
 {
     do_visitor_roundtrip_with_statistics(api::ReturnCode(api::ReturnCode::OK));
 
