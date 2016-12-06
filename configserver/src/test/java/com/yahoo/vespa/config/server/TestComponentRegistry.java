@@ -116,8 +116,8 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             return this;
         }
 
-        public Builder permanentApplicationPackage(Optional<PermanentApplicationPackage> permanentApplicationPackage) {
-            this.permanentApplicationPackage = permanentApplicationPackage;
+        public Builder permanentApplicationPackage(PermanentApplicationPackage permanentApplicationPackage) {
+            this.permanentApplicationPackage = Optional.ofNullable(permanentApplicationPackage);
             return this;
         }
 
