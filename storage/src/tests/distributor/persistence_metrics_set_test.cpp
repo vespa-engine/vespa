@@ -7,8 +7,7 @@
 namespace storage {
 namespace distributor {
 
-// TODO name this PersistenceMetricsSetTest instead?
-struct DistributorMetricsSetTest : CppUnit::TestFixture {
+struct PersistenceMetricsSetTest : CppUnit::TestFixture {
     void successful_return_codes_are_counted_as_ok();
     void wrong_distribution_failure_is_counted();
     void timeout_failure_is_counted();
@@ -21,7 +20,7 @@ struct DistributorMetricsSetTest : CppUnit::TestFixture {
     void inconsistent_bucket_is_counted();
     void non_special_cased_failure_codes_are_catchall_counted();
 
-    CPPUNIT_TEST_SUITE(DistributorMetricsSetTest);
+    CPPUNIT_TEST_SUITE(PersistenceMetricsSetTest);
     CPPUNIT_TEST(successful_return_codes_are_counted_as_ok);
     CPPUNIT_TEST(wrong_distribution_failure_is_counted);
     CPPUNIT_TEST(timeout_failure_is_counted);
@@ -41,33 +40,33 @@ struct DistributorMetricsSetTest : CppUnit::TestFixture {
     }
 };
 
-CPPUNIT_TEST_SUITE_REGISTRATION(DistributorMetricsSetTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(PersistenceMetricsSetTest);
 
-void DistributorMetricsSetTest::successful_return_codes_are_counted_as_ok() {
+void PersistenceMetricsSetTest::successful_return_codes_are_counted_as_ok() {
     PersistenceOperationMetricSet metrics("foo");
     metrics.updateFromResult(api::ReturnCode());
     CPPUNIT_ASSERT_EQUAL(int64_t(1), metrics.ok.getLongValue("count"));
 }
 
-void DistributorMetricsSetTest::wrong_distribution_failure_is_counted() {
+void PersistenceMetricsSetTest::wrong_distribution_failure_is_counted() {
     PersistenceOperationMetricSet metrics("foo");
     assert_failure_is_counted(metrics, api::ReturnCode::WRONG_DISTRIBUTION,
                               metrics.failures.wrongdistributor);
 }
 
-void DistributorMetricsSetTest::timeout_failure_is_counted() {
+void PersistenceMetricsSetTest::timeout_failure_is_counted() {
     PersistenceOperationMetricSet metrics("foo");
     assert_failure_is_counted(metrics, api::ReturnCode::TIMEOUT,
                               metrics.failures.timeout);
 }
 
-void DistributorMetricsSetTest::busy_failure_is_counted() {
+void PersistenceMetricsSetTest::busy_failure_is_counted() {
     PersistenceOperationMetricSet metrics("foo");
     assert_failure_is_counted(metrics, api::ReturnCode::BUSY,
                               metrics.failures.busy);
 }
 
-void DistributorMetricsSetTest::connection_failure_is_counted() {
+void PersistenceMetricsSetTest::connection_failure_is_counted() {
     PersistenceOperationMetricSet metrics("foo");
     // This is dirty enum value coercion, but this is how "parent protocol"
     // error codes are handled already.
@@ -77,13 +76,13 @@ void DistributorMetricsSetTest::connection_failure_is_counted() {
                               metrics.failures.notconnected);
 }
 
-void DistributorMetricsSetTest::inconsistent_bucket_is_counted() {
+void PersistenceMetricsSetTest::inconsistent_bucket_is_counted() {
     PersistenceOperationMetricSet metrics("foo");
     assert_failure_is_counted(metrics, api::ReturnCode::BUCKET_NOT_FOUND,
                               metrics.failures.inconsistent_bucket);
 }
 
-void DistributorMetricsSetTest::non_special_cased_failure_codes_are_catchall_counted() {
+void PersistenceMetricsSetTest::non_special_cased_failure_codes_are_catchall_counted() {
     PersistenceOperationMetricSet metrics("foo");
     assert_failure_is_counted(metrics, api::ReturnCode::REJECTED,
                               metrics.failures.storagefailure);
