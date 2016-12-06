@@ -73,7 +73,13 @@ public class DeployTester {
             this.curator = new MockCurator();
             this.testApp = new File(appPath);
             ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(modelFactories);
-            this.tenants = new Tenants(new TestComponentRegistry(curator, modelFactoryRegistry), Metrics.createTestMetrics());
+            final Metrics metrics = Metrics.createTestMetrics();
+            this.tenants = new Tenants(new TestComponentRegistry.Builder()
+                                               .curator(curator)
+                                               .modelFactoryRegistry(modelFactoryRegistry)
+                                               .metrics(metrics)
+                                               .build(),
+                                       metrics);
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e);

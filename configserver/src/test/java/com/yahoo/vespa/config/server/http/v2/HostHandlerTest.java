@@ -47,7 +47,7 @@ public class HostHandlerTest {
     private HostHandler createHostHandler() {
         final HostRegistry<TenantName> hostRegistry = new HostRegistry<>();
         hostRegistry.update(mytenant, Collections.singletonList(hostname));
-        TestComponentRegistry testComponentRegistry = new TestComponentRegistry();
+        TestComponentRegistry testComponentRegistry = new TestComponentRegistry.Builder().build();
         hostRegistries = testComponentRegistry.getHostRegistries();
         hostRegistries.createApplicationHostRegistry(mytenant).update(ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName()), Collections.singletonList(hostname));
         hostRegistries.getTenantHostRegistry().update(mytenant, Collections.singletonList(hostname));

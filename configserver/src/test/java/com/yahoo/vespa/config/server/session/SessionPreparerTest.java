@@ -67,7 +67,7 @@ public class SessionPreparerTest extends TestWithCurator {
 
     @Before
     public void setUp() throws Exception {
-        componentRegistry = new TestComponentRegistry(curator);
+        componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         fileDistributionFactory = (MockFileDistributionFactory)componentRegistry.getFileDistributionFactory();
         preparer = createPreparer();
     }

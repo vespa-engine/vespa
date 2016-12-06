@@ -151,7 +151,12 @@ public abstract class SessionActiveHandlerTestBase extends SessionHandlerTest {
         VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
         zkC.feedZKFileRegistries(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
         zkC.feedProvisionInfos(Collections.singletonMap(modelFactory.getVersion(), ProvisionInfo.withHosts(Collections.emptySet())));
-        RemoteSession session = new RemoteSession(TenantName.from("default"), sessionId, new TestComponentRegistry(curator, configCurator, new ModelFactoryRegistry(Collections.singletonList(modelFactory))), zkClient);
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .configCurator(configCurator)
+                .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
+                .build();
+        RemoteSession session = new RemoteSession(TenantName.from("default"), sessionId, componentRegistry, zkClient);
         remoteSessionRepo.addSession(session);
         return session;
     }

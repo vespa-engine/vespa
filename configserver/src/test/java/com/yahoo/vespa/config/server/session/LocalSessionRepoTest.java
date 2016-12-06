@@ -41,7 +41,7 @@ public class LocalSessionRepoTest extends TestWithCurator {
     }
 
     private void setupSessions(TenantName tenantName, boolean createInitialSessions) throws Exception {
-        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry(curator);
+        GlobalComponentRegistry globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         TenantFileSystemDirs tenantFileSystemDirs = TenantFileSystemDirs.createTestDirs(tenantName);
         if (createInitialSessions) {
             IOUtils.copyDirectory(testApp, new File(tenantFileSystemDirs.path(), "1"));

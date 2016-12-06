@@ -48,7 +48,7 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Before
     public void setupSessions() throws Exception {
-        globalComponentRegistry = new TestComponentRegistry(curator);
+        globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
         tenantListener.tenantsLoaded = false;
@@ -150,7 +150,7 @@ public class TenantsTestCase extends TestWithCurator {
     
     @Test
     public void testTenantWatching() throws Exception {
-        TestComponentRegistry reg = new TestComponentRegistry(curator);
+        TestComponentRegistry reg = new TestComponentRegistry.Builder().curator(curator).build();
         Tenants t = new Tenants(reg, Metrics.createTestMetrics());
         try {
             assertEquals(t.tenantsCopy().get(TenantName.defaultName()).getName(), TenantName.defaultName());

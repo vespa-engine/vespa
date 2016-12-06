@@ -229,7 +229,13 @@ public class RemoteSessionTest {
     private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories, Optional<PermanentApplicationPackage> permanentApplicationPackage) {
         zkc.writeStatus(Session.Status.NEW);
         zkc.writeApplicationId(new ApplicationId.Builder().applicationName("foo").instanceName("bim").build());
-        return new RemoteSession(TenantName.from("default"), sessionId, new TestComponentRegistry(curator, new ModelFactoryRegistry(modelFactories), permanentApplicationPackage), zkc);
+        return new RemoteSession(TenantName.from("default"), sessionId,
+                                 new TestComponentRegistry.Builder()
+                                         .curator(curator)
+                                         .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
+                                         .permanentApplicationPackage(permanentApplicationPackage)
+                                         .build(),
+                                 zkc);
     }
 
     private class MockModelFactory implements ModelFactory {

@@ -40,7 +40,7 @@ public final class PrepareParams {
     private final Set<Rotation> rotations;
     private final Optional<Version> dockerVespaImageVersion;
 
-    public PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
+    private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                          boolean dryRun, Optional<Version> vespaVersion, Set<Rotation> rotations,
                          Optional<Version> dockerVespaImageVersion) {
         this.timeoutBudget = timeoutBudget;
