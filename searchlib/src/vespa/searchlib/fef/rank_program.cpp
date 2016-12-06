@@ -157,6 +157,9 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
     }
     add_unboxing_executors(my_mdl);
     _match_data = my_mdl.createMatchData();
+    for (auto executor: _executors) {
+        executor->bind_match_data(*_match_data);
+    }
     compile();
 }
 
