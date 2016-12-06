@@ -96,7 +96,7 @@ public class DeployTester {
         LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new SilentDeployLogger(), new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
         session.prepare(new SilentDeployLogger(),
-                        new PrepareParams(new ConfigserverConfig(new ConfigserverConfig.Builder())).applicationId(id),
+                        new PrepareParams.Builder().applicationId(id).build(),
                         Optional.empty(),
                         tenant.getPath());
         session.createActivateTransaction().commit();

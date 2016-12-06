@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Parameters for prepare.
+ * Parameters for prepare. Immutable.
  *
  * @author lulf
  * @since 5.1.24
@@ -32,79 +32,102 @@ public final class PrepareParams {
     static final String ROTATIONS_PARAM_NAME = "rotations";
     static final String DOCKER_VESPA_IMAGE_VERSION_PARAM_NAME = "dockerVespaImageVersion";
 
-    private boolean ignoreValidationErrors = false;
-    private boolean dryRun = false;
-    private ApplicationId applicationId = ApplicationId.defaultId();
-    private TimeoutBudget timeoutBudget;
-    private Optional<Version> vespaVersion = Optional.empty();
-    private Set<Rotation> rotations;
-    private Optional<Version> dockerVespaImageVersion = Optional.empty();
+    private final ApplicationId applicationId;
+    private final TimeoutBudget timeoutBudget;
+    private final boolean ignoreValidationErrors;
+    private final boolean dryRun;
+    private final Optional<Version> vespaVersion;
+    private final Set<Rotation> rotations;
+    private final Optional<Version> dockerVespaImageVersion;
 
-    PrepareParams() {
-        this(new ConfigserverConfig(new ConfigserverConfig.Builder()));
-    }
-
-    public PrepareParams(ConfigserverConfig configserverConfig) {
-        timeoutBudget = new TimeoutBudget(Clock.systemUTC(), getBarrierTimeout(configserverConfig));
-    }
-
-    public PrepareParams applicationId(ApplicationId applicationId) {
-        this.applicationId = applicationId;
-        return this;
-    }
-
-    public PrepareParams ignoreValidationErrors(boolean ignoreValidationErrors) {
-        this.ignoreValidationErrors = ignoreValidationErrors;
-        return this;
-    }
-
-    public PrepareParams dryRun(boolean dryRun) {
-        this.dryRun = dryRun;
-        return this;
-    }
-
-    public PrepareParams timeoutBudget(TimeoutBudget timeoutBudget) {
+    public PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
+                         boolean dryRun, Optional<Version> vespaVersion, Set<Rotation> rotations,
+                         Optional<Version> dockerVespaImageVersion) {
         this.timeoutBudget = timeoutBudget;
-        return this;
+        this.applicationId = applicationId;
+        this.ignoreValidationErrors = ignoreValidationErrors;
+        this.dryRun = dryRun;
+        this.vespaVersion = vespaVersion;
+        this.rotations = rotations;
+        this.dockerVespaImageVersion = dockerVespaImageVersion;
     }
 
-    public PrepareParams vespaVersion(String vespaVersion) {
-        Optional<Version> version = Optional.empty();
-        if (vespaVersion != null && !vespaVersion.isEmpty()) {
-            version = Optional.of(Version.fromString(vespaVersion));
+    public static class Builder {
+        private boolean ignoreValidationErrors = false;
+        private boolean dryRun = false;
+        private ApplicationId applicationId = ApplicationId.defaultId();
+        private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(5));
+        private Optional<Version> vespaVersion = Optional.empty();
+        private Set<Rotation> rotations;
+        private Optional<Version> dockerVespaImageVersion = Optional.empty();
+
+        public Builder() { }
+
+        public Builder applicationId(ApplicationId applicationId) {
+            this.applicationId = applicationId;
+            return this;
         }
-        this.vespaVersion = version;
-        return this;
-    }
 
-    public PrepareParams rotations(String rotationsString) {
-        this.rotations = new LinkedHashSet<>();
-        if (rotationsString != null && !rotationsString.isEmpty()) {
-            String[] rotations = rotationsString.split(",");
-            for (String s : rotations) {
-                this.rotations.add(new Rotation(s));
+        public Builder ignoreValidationErrors(boolean ignoreValidationErrors) {
+            this.ignoreValidationErrors = ignoreValidationErrors;
+            return this;
+        }
+
+        public Builder dryRun(boolean dryRun) {
+            this.dryRun = dryRun;
+            return this;
+        }
+
+        public Builder timeoutBudget(TimeoutBudget timeoutBudget) {
+            this.timeoutBudget = timeoutBudget;
+            return this;
+        }
+
+        public Builder vespaVersion(String vespaVersion) {
+            Optional<Version> version = Optional.empty();
+            if (vespaVersion != null && !vespaVersion.isEmpty()) {
+                version = Optional.of(Version.fromString(vespaVersion));
             }
+            this.vespaVersion = version;
+            return this;
         }
-        return this;
-    }
 
-    public PrepareParams dockerVespaImageVersion(String dockerVespaImageVersion) {
-        Optional<Version> version = Optional.empty();
-        if (dockerVespaImageVersion != null && !dockerVespaImageVersion.isEmpty()) {
-            version = Optional.of(Version.fromString(dockerVespaImageVersion));
+        public Builder rotations(String rotationsString) {
+            this.rotations = new LinkedHashSet<>();
+            if (rotationsString != null && !rotationsString.isEmpty()) {
+                String[] rotations = rotationsString.split(",");
+                for (String s : rotations) {
+                    this.rotations.add(new Rotation(s));
+                }
+            }
+            return this;
         }
-        this.dockerVespaImageVersion = version;
-        return this;
+
+        public Builder dockerVespaImageVersion(String dockerVespaImageVersion) {
+            Optional<Version> version = Optional.empty();
+            if (dockerVespaImageVersion != null && !dockerVespaImageVersion.isEmpty()) {
+                version = Optional.of(Version.fromString(dockerVespaImageVersion));
+            }
+            this.dockerVespaImageVersion = version;
+            return this;
+        }
+
+        public PrepareParams build() {
+            return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
+                                     vespaVersion, rotations, dockerVespaImageVersion);
+        }
+
     }
 
     public static PrepareParams fromHttpRequest(HttpRequest request, TenantName tenant, ConfigserverConfig configserverConfig) {
-        return new PrepareParams(configserverConfig).ignoreValidationErrors(request.getBooleanProperty(IGNORE_VALIDATION_PARAM_NAME))
-                                  .dryRun(request.getBooleanProperty(DRY_RUN_PARAM_NAME))
-                                  .timeoutBudget(SessionHandler.getTimeoutBudget(request, getBarrierTimeout(configserverConfig)))
-                                  .applicationId(createApplicationId(request, tenant))
-                                  .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
-                                  .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
-                                  .dockerVespaImageVersion(request.getProperty(DOCKER_VESPA_IMAGE_VERSION_PARAM_NAME));
+        return new PrepareParams.Builder().ignoreValidationErrors(request.getBooleanProperty(IGNORE_VALIDATION_PARAM_NAME))
+                                          .dryRun(request.getBooleanProperty(DRY_RUN_PARAM_NAME))
+                                          .timeoutBudget(SessionHandler.getTimeoutBudget(request, getBarrierTimeout(configserverConfig)))
+                                          .applicationId(createApplicationId(request, tenant))
+                                          .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
+                                          .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
+                                          .dockerVespaImageVersion(request.getProperty(DOCKER_VESPA_IMAGE_VERSION_PARAM_NAME))
+                                          .build();
     }
 
     private static Duration getBarrierTimeout(ConfigserverConfig configserverConfig) {
