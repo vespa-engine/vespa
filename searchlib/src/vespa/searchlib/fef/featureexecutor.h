@@ -121,10 +121,7 @@ public:
     // Bind inputs and outputs directly to the underlying match data
     // to be able to hide the fact that input and output values are
     // stored in a match data object from the executor itself.
-    void bind_match_data(MatchData &md) {
-        _inputs.bind(md);
-        _outputs.bind(md);
-    }
+    virtual void bind_match_data(MatchData &md);
 
     /**
      * Add an input to this feature executor. All inputs must be added

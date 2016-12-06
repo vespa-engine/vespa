@@ -39,6 +39,7 @@ public:
     void outputs_done() override;
     bool isPure() override;
     void execute(MatchData &data) override;
+    virtual void bind_match_data(MatchData &md) override;
 };
 
 } // namespace fef
