@@ -35,7 +35,7 @@ public class TenantTest extends TestWithCurator {
     }
 
     protected Tenants createTenants() throws Exception {
-        return new Tenants(new TestComponentRegistry(curator), Metrics.createTestMetrics());
+        return new Tenants(new TestComponentRegistry.Builder().curator(curator).build(), Metrics.createTestMetrics());
     }
 
     protected Executor testExecutor() {

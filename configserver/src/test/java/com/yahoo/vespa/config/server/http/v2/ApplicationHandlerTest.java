@@ -239,9 +239,10 @@ public class ApplicationHandlerTest {
         tenant.getApplicationRepo().createPutApplicationTransaction(applicationId, sessionId).commit();
         ApplicationPackage app = FilesApplicationPackage.fromFile(testApp);
         tenant.getLocalSessionRepo().addSession(new SessionHandlerTest.MockSession(sessionId, app, applicationId));
-        tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId,
-                                                                   new TestComponentRegistry(new MockCurator(),
-                                                                                             new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())))), new MockSessionZKClient(app)));
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
+                .build();
+        tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app)));
     }
 
     static Tenants addApplication(ApplicationId applicationId, long sessionId) throws Exception {
@@ -254,7 +255,7 @@ public class ApplicationHandlerTest {
         Path sessionPath = tenantPath.append(Tenant.SESSIONS).append(String.valueOf(sessionId));
 
         MockCurator curator = new MockCurator();
-        GlobalComponentRegistry globalComponents = new TestComponentRegistry(curator);
+        GlobalComponentRegistry globalComponents = new TestComponentRegistry.Builder().curator(curator).build();
         
         Tenants tenants = new Tenants(globalComponents, Metrics.createTestMetrics()); // Creates the application path element in zk
         tenants.writeTenantPath(tenantName);
@@ -280,10 +281,14 @@ public class ApplicationHandlerTest {
         tenant.getLocalSessionRepo().addSession(new LocalSession(tenantName, sessionId, null, context));
         sessionClient.writeApplicationId(applicationId); // TODO: Instead, use ApplicationRepository to deploy the application
 
-        tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenantName, sessionId,
-                                                                   new TestComponentRegistry(curator,
-                                                                                             new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())))), 
-                                                                   sessionClient));
+        tenant.getRemoteSessionRepo().addSession(
+                new RemoteSession(tenantName, sessionId,
+                                  new TestComponentRegistry.Builder()
+                                          .curator(curator)
+                                          .modelFactoryRegistry(new ModelFactoryRegistry(
+                                                  Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
+                                          .build(),
+                                  sessionClient));
         return tenants;
     }
 
