@@ -25,76 +25,25 @@ public class MapTensor implements Tensor {
         this.cells = ImmutableMap.copyOf(cells);
     }
 
-    /**
-     * Creates a tensor from the string form returned by the {@link #toString} of this.
-     *
-     * @param s the tensor string
-     * @throws IllegalArgumentException if the string is not in the correct format
-     */
-    static MapTensor from(String s) {
-        s = s.trim();
-        try {
-            if (s.startsWith("tensor("))
-                return fromTypedTensor(s);
-            else if (s.startsWith("{"))
-                return fromCellString(typeFromCellString(s), s);
-            else
-                return fromNumber(Double.parseDouble(s));
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" + s + "'");
-        }
-    }
-
-    private static MapTensor fromTypedTensor(String s) {
-        int colonIndex = s.indexOf(':');
-        if (colonIndex < 0 || s.length() < colonIndex + 1)
-            throw new IllegalArgumentException("Expected tensorType:tensorValue, but got '" + s + "'");
-        String typeSpec = s.substring(0, colonIndex);
-        String valueSpec = s.substring(colonIndex +1 );
-        return fromCellString(TensorTypeParser.fromSpec(typeSpec), valueSpec);
-    }
-
-    /** Derive the tensor type from the first address string in the given tensor string */
-    private static TensorType typeFromCellString(String s) {
-        s = s.substring(1).trim(); // remove tensor start
-        int firstKeyOrEmptyTensorEnd = s.indexOf('}');
-        String addressBody = s.substring(0, firstKeyOrEmptyTensorEnd).trim();
-        if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
-
-        addressBody = addressBody.substring(1); // remove key start
-        if (addressBody.isEmpty()) return TensorType.empty; // Empty key
-
-        TensorType.Builder builder = new TensorType.Builder();
-        for (String elementString : addressBody.split(",")) {
-            String[] pair = elementString.split(":");
-            if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
-                                                   "got '" + elementString + "'");
-            builder.mapped(pair[0].trim());
-        }
-
-        return builder.build();
-    }
-
-    private static MapTensor fromCellString(TensorType type, String s) {
-        s = s.trim().substring(1).trim();
+    static MapTensor from(TensorType type, String tensorString) {
+        tensorString = tensorString.trim();
+        tensorString = tensorString.trim().substring(1).trim();
         ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
-        while (s.length() > 1) {
-            int keyEnd = s.indexOf('}');
-            TensorAddress address = addressFrom(type, s.substring(0, keyEnd+1));
-            s = s.substring(keyEnd + 1).trim();
-            if ( ! s.startsWith(":"))
-                throw new IllegalArgumentException("Expecting a ':' after " + address + ", got '" + s + "'");
-            int valueEnd = s.indexOf(',');
+        while (tensorString.length() > 1) {
+            int keyEnd = tensorString.indexOf('}');
+            TensorAddress address = addressFrom(type, tensorString.substring(0, keyEnd+1));
+            tensorString = tensorString.substring(keyEnd + 1).trim();
+            if ( ! tensorString.startsWith(":"))
+                throw new IllegalArgumentException("Expecting a ':' after " + address + ", got '" + tensorString+ "'");
+            int valueEnd = tensorString.indexOf(',');
             if (valueEnd < 0) { // last value
-                valueEnd = s.indexOf("}");
+                valueEnd = tensorString.indexOf("}");
                 if (valueEnd < 0)
                     throw new IllegalArgumentException("A tensor string must end by '}'");
             }
-            Double value = asDouble(address, s.substring(1, valueEnd).trim());
+            Double value = asDouble(address, tensorString.substring(1, valueEnd).trim());
             cells.put(address, value);
-            s = s.substring(valueEnd+1).trim();
+            tensorString = tensorString.substring(valueEnd+1).trim();
         }
 
         ImmutableMap<TensorAddress, Double> cellMap = cells.build();
@@ -121,12 +70,6 @@ public class MapTensor implements Tensor {
         return builder.build();
     }
 
-    private static MapTensor fromNumber(double number) {
-        ImmutableMap.Builder<TensorAddress, Double> singleCell = new ImmutableMap.Builder<>();
-        singleCell.put(TensorAddress.empty, number);
-        return new MapTensor(TensorType.empty, singleCell.build());
-    }
-    
     private static Double asDouble(TensorAddress address, String s) {
         try {
             return Double.valueOf(s);

@@ -28,56 +28,18 @@ public class IndexedTensor implements Tensor {
         this.firstDimension = firstDimension;
     }
 
-    /**
-     * Creates a tensor from the string form returned by the {@link #toString} of this.
-     *
-     * @param s the tensor string
-     * @throws IllegalArgumentException if the string is not in the correct format
-     */
-    public static IndexedTensor from(String s) {
-        s = s.trim();
+    static IndexedTensor from(TensorType type, String tensorString) {
+        tensorString = tensorString.trim();
         try {
-            if (s.startsWith("tensor("))
-                return fromTypedTensor(s);
-            else if (s.startsWith("{"))
-                return fromCellString(typeFromCellString(s), s);
+            if (tensorString.startsWith("{"))
+                return fromCellString(type, tensorString);
             else
-                return fromNumber(Double.parseDouble(s));
+                return fromNumber(Double.parseDouble(tensorString));
         }
         catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" + s + "'");
+            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" + 
+                                               tensorString + "'");
         }
-    }
-
-    private static IndexedTensor fromTypedTensor(String s) {
-        int colonIndex = s.indexOf(':');
-        if (colonIndex < 0 || s.length() < colonIndex + 1)
-            throw new IllegalArgumentException("Expected tensorType:tensorValue, but got '" + s + "'");
-        String typeSpec = s.substring(0, colonIndex);
-        String valueSpec = s.substring(colonIndex +1 );
-        return fromCellString(TensorTypeParser.fromSpec(typeSpec), valueSpec);
-    }
-
-    /** Derive the tensor type from the first address string in the given tensor string */
-    private static TensorType typeFromCellString(String s) {
-        s = s.substring(1).trim(); // remove tensor start
-        int firstKeyOrEmptyTensorEnd = s.indexOf('}');
-        String addressBody = s.substring(0, firstKeyOrEmptyTensorEnd).trim();
-        if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
-
-        addressBody = addressBody.substring(1); // remove key start
-        if (addressBody.isEmpty()) return TensorType.empty; // Empty key
-
-        TensorType.Builder builder = new TensorType.Builder();
-        for (String elementString : addressBody.split(",")) {
-            String[] pair = elementString.split(":");
-            if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
-                                                   "got '" + elementString + "'");
-            builder.mapped(pair[0].trim());
-        }
-
-        return builder.build();
     }
 
     private static IndexedTensor fromCellString(TensorType type, String s) {
@@ -252,6 +214,10 @@ public class IndexedTensor implements Tensor {
         }
     
         public IndexedTensor build() {
+            if (type.dimensions().isEmpty())
+                return new IndexedTensor(type, 
+                                         new SingletonIndexedDimension(firstDimension == null ? 0.0 : (Double)firstDimension.get(0)));
+
             List<TensorType.Dimension> dimensions = new ArrayList<>(type.dimensions());
             IndexedDimension firstDimension = buildRecursively(dimensions, this.firstDimension);
             return new IndexedTensor(type, firstDimension);
