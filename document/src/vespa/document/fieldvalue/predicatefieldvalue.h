@@ -4,19 +4,21 @@
 
 #include <memory>
 #include "fieldvalue.h"
-#include <vespa/vespalib/data/slime/slime.h>
 
-
+namespace vespalib {
+    class Slime;
+}
 namespace document {
 
 class PredicateFieldValue : public FieldValue {
-    vespalib::Slime::UP _slime;
+    std::unique_ptr<vespalib::Slime> _slime;
     bool _altered;
 
 public:
     PredicateFieldValue();
-    PredicateFieldValue(vespalib::Slime::UP s);
+    PredicateFieldValue(std::unique_ptr<vespalib::Slime> s);
     PredicateFieldValue(const PredicateFieldValue &rhs);
+    ~PredicateFieldValue();
 
     PredicateFieldValue &operator=(const PredicateFieldValue &rhs);
 

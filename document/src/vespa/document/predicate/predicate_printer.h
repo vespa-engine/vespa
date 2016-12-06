@@ -3,14 +3,17 @@
 #pragma once
 
 #include "predicate_slime_visitor.h"
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib { class Slime; }
+namespace vespalib {
+    class Slime;
+    class asciistream;
+}
 
 namespace document {
 
 class PredicatePrinter : PredicateSlimeVisitor {
-    vespalib::asciistream _out;
+    std::unique_ptr<vespalib::asciistream> _out;
     bool _negated;
 
     virtual void visitFeatureSet(const vespalib::slime::Inspector &i);
@@ -21,9 +24,10 @@ class PredicatePrinter : PredicateSlimeVisitor {
     virtual void visitTrue(const vespalib::slime::Inspector &i);
     virtual void visitFalse(const vespalib::slime::Inspector &i);
 
-    vespalib::string str() const { return _out.str(); }
+    vespalib::string str() const;
 
-    PredicatePrinter() : _out(), _negated(false) {}
+    PredicatePrinter();
+    ~PredicatePrinter();
 public:
     static vespalib::string print(const vespalib::Slime &slime);
 };
