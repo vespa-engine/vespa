@@ -37,6 +37,7 @@ struct Fixture
     Fixture &run() {
         md = mdl.createMatchData();
         for (const auto &executor : executors) {
+            executor->bind_match_data(*md);
             executor->execute(*md);
         }
         return *this;

@@ -101,6 +101,9 @@ private:
     Inputs  _inputs;
     Outputs _outputs;
 
+protected:
+    virtual void handle_bind_match_data(MatchData &md);
+
 public:
     /**
      * Create a feature executor that has not yet been bound to neither
@@ -121,10 +124,7 @@ public:
     // Bind inputs and outputs directly to the underlying match data
     // to be able to hide the fact that input and output values are
     // stored in a match data object from the executor itself.
-    void bind_match_data(MatchData &md) {
-        _inputs.bind(md);
-        _outputs.bind(md);
-    }
+    void bind_match_data(MatchData &md);
 
     /**
      * Add an input to this feature executor. All inputs must be added
@@ -164,6 +164,8 @@ public:
      * @return const view of output features
      **/
     const Outputs &outputs() const { return _outputs; }
+
+    Outputs &outputs() { return _outputs; }
 
     /**
      * Check if this feature executor is pure. A feature executor

@@ -50,5 +50,11 @@ FeatureOverrider::execute(MatchData &data)
     }
 }
 
+void
+FeatureOverrider::handle_bind_match_data(MatchData &md)
+{
+    _executor.bind_match_data(md);
+}
+
 } // namespace fef
 } // namespace search
