@@ -67,10 +67,10 @@ public class MultiDockerTest {
                                                              "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }");
 
             callOrderVerifier.assertInOrder(
-                    "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=null, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}",
-                    "updateNodeAttributes with HostName: host2, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=null, dockerImage=DockerImage { imageId=image2 }, vespaVersion='null'}",
+                    "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=image1 }, vespaVersion=''}",
+                    "updateNodeAttributes with HostName: host2, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=image2 }, vespaVersion=''}",
                     "markAsReady with HostName: host2",
-                    "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=null, dockerImage=DockerImage { imageId=image1 }, vespaVersion='null'}");
+                    "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=image1 }, vespaVersion=''}");
         }
     }
 
