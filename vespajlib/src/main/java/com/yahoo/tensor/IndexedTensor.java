@@ -294,7 +294,7 @@ public class IndexedTensor implements Tensor {
         /** Fill the given list with nulls if necessary to make sure it has a (possibly null) value at the given index */
         private void ensureCapacity(int index, List list) {
             while (list.size() <= index)
-                list.set(list.size(), null);
+                list.add(list.size(), null);
         }
     
     }

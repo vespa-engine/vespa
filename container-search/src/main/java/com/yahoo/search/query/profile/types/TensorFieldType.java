@@ -16,6 +16,8 @@ import java.util.Optional;
  */
 public class TensorFieldType extends FieldType {
 
+    // TODO: Require tensor type
+    
     private final Optional<TensorType> type;
 
     /** Creates a tensor field type with optional information about the kind of tensor this will hold */
@@ -41,7 +43,7 @@ public class TensorFieldType extends FieldType {
     @Override
     public Object convertFrom(Object o, QueryProfileRegistry registry) {
         if (o instanceof Tensor) return o;
-        if (o instanceof String) return Tensor.from((String)o);
+        if (o instanceof String) return type.isPresent() ? Tensor.from(type.get(), (String)o) : Tensor.from((String)o);
         return null;
     }
 
