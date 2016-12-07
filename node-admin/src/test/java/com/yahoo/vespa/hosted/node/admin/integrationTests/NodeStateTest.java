@@ -17,18 +17,18 @@ import static org.junit.Assert.assertThat;
 /**
  * Test NodeState transitions in NodeRepository
  *
- * @author valerijf
+ * @author freva
  */
 public class NodeStateTest {
     private static ContainerNodeSpec initialContainerNodeSpec = new ContainerNodeSpec.Builder()
             .hostname("host1")
-            .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+            .wantedDockerImage(new DockerImage("dockerImage"))
             .containerName(new ContainerName("container"))
             .nodeState(Node.State.active)
             .nodeType("tenant")
             .nodeFlavor("docker")
-            .wantedRestartGeneration(Optional.of(1L))
-            .currentRestartGeneration(Optional.of(1L))
+            .wantedRestartGeneration(1L)
+            .currentRestartGeneration(1L)
             .build();
 
     private void setup(DockerTester tester) throws InterruptedException {
@@ -51,18 +51,9 @@ public class NodeStateTest {
         try (DockerTester dockerTester = new DockerTester()) {
             setup(dockerTester);
             // Change node state to dirty
-            dockerTester.updateContainerNodeSpec(
-                    initialContainerNodeSpec.hostname,
-                    initialContainerNodeSpec.wantedDockerImage,
-                    initialContainerNodeSpec.containerName,
-                    Node.State.dirty,
-                    initialContainerNodeSpec.nodeType,
-                    initialContainerNodeSpec.nodeFlavor,
-                    initialContainerNodeSpec.wantedRestartGeneration,
-                    initialContainerNodeSpec.currentRestartGeneration,
-                    initialContainerNodeSpec.minCpuCores,
-                    initialContainerNodeSpec.minMainMemoryAvailableGb,
-                    initialContainerNodeSpec.minDiskAvailableGb);
+            dockerTester.updateContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
+                    .nodeState(Node.State.dirty)
+                    .build());
 
             // Wait until it is marked ready
             Optional<ContainerNodeSpec> containerNodeSpec;
@@ -88,21 +79,13 @@ public class NodeStateTest {
         try (DockerTester dockerTester = new DockerTester()) {
             setup(dockerTester);
 
-            Optional<DockerImage> newDockerImage = Optional.of(new DockerImage("newDockerImage"));
+            DockerImage newDockerImage = new DockerImage("newDockerImage");
 
             // Change node state to inactive and change the wanted docker image
-            dockerTester.updateContainerNodeSpec(
-                    initialContainerNodeSpec.hostname,
-                    newDockerImage,
-                    initialContainerNodeSpec.containerName,
-                    Node.State.inactive,
-                    initialContainerNodeSpec.nodeType,
-                    initialContainerNodeSpec.nodeFlavor,
-                    initialContainerNodeSpec.wantedRestartGeneration,
-                    initialContainerNodeSpec.currentRestartGeneration,
-                    initialContainerNodeSpec.minCpuCores,
-                    initialContainerNodeSpec.minMainMemoryAvailableGb,
-                    initialContainerNodeSpec.minDiskAvailableGb);
+            dockerTester.updateContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
+                    .wantedDockerImage(newDockerImage)
+                    .nodeState(Node.State.inactive)
+                    .build());
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrderWithAssertMessage("Node set to inactive, but no stop/delete call received",
@@ -111,18 +94,10 @@ public class NodeStateTest {
 
 
             // Change node state to active
-            dockerTester.updateContainerNodeSpec(
-                    initialContainerNodeSpec.hostname,
-                    newDockerImage,
-                    initialContainerNodeSpec.containerName,
-                    Node.State.active,
-                    initialContainerNodeSpec.nodeType,
-                    initialContainerNodeSpec.nodeFlavor,
-                    initialContainerNodeSpec.wantedRestartGeneration,
-                    initialContainerNodeSpec.currentRestartGeneration,
-                    initialContainerNodeSpec.minCpuCores,
-                    initialContainerNodeSpec.minMainMemoryAvailableGb,
-                    initialContainerNodeSpec.minDiskAvailableGb);
+            dockerTester.updateContainerNodeSpec(new ContainerNodeSpec.Builder(initialContainerNodeSpec)
+                    .wantedDockerImage(newDockerImage)
+                    .nodeState(Node.State.active)
+                    .build());
 
             // Check that the container is started again after the delete call
             callOrderVerifier.assertInOrderWithAssertMessage("Node not started again after being put to active state",
