@@ -9,10 +9,18 @@ namespace storage {
 using metrics::MetricSet;
 
 VisitorMetricSet::VisitorMetricSet(MetricSet* owner)
-    : MetricSet("visitor", "visitor", "", owner),
-      latency("latency", "", "Latency of visitor (in ms)", this),
-      failed("failed", "", "Number of visitors that failed or were aborted by the user", this)
-{ }
+    : PersistenceOperationMetricSet("visitor", owner),
+      buckets_per_visitor("buckets_per_visitor", "",
+                          "The number of sub buckets visited as part of a "
+                          "single client visitor command", this),
+      docs_per_visitor("docs_per_visitor", "",
+                       "The number of documents visited on content nodes as "
+                       "part of a single client visitor command", this),
+      bytes_per_visitor("bytes_per_visitor", "",
+                        "The number of bytes visited on content nodes as part "
+                        "of a single client visitor command", this)
+{
+}
 
 VisitorMetricSet::~VisitorMetricSet() { }
 
