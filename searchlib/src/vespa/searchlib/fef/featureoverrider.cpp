@@ -51,9 +51,8 @@ FeatureOverrider::execute(MatchData &data)
 }
 
 void
-FeatureOverrider::bind_match_data(MatchData &md)
+FeatureOverrider::handle_bind_match_data(MatchData &md)
 {
-    FeatureExecutor::bind_match_data(md);
     _executor.bind_match_data(md);
 }
 

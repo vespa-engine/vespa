@@ -101,6 +101,9 @@ private:
     Inputs  _inputs;
     Outputs _outputs;
 
+protected:
+    virtual void handle_bind_match_data(MatchData &md);
+
 public:
     /**
      * Create a feature executor that has not yet been bound to neither
@@ -121,7 +124,7 @@ public:
     // Bind inputs and outputs directly to the underlying match data
     // to be able to hide the fact that input and output values are
     // stored in a match data object from the executor itself.
-    virtual void bind_match_data(MatchData &md);
+    void bind_match_data(MatchData &md);
 
     /**
      * Add an input to this feature executor. All inputs must be added
