@@ -91,10 +91,15 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         private MockTenantListener tenantListener = new MockTenantListener();
         private Optional<PermanentApplicationPackage> permanentApplicationPackage = Optional.empty();
         private HostRegistries hostRegistries = new HostRegistries();
-        private FileDistributionFactory fileDistributionFactory = new MockFileDistributionFactory();
+        private Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
         private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
         private Optional<Provisioner> hostProvisioner = Optional.empty();
 
+
+        public Builder configServerConfig(ConfigserverConfig configserverConfig) {
+            this.configserverConfig = configserverConfig;
+            return this;
+        }
 
         public Builder curator(Curator curator) {
             this.curator = curator;
@@ -121,16 +126,26 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
             return this;
         }
 
+        public Builder provisioner(Provisioner provisioner) {
+            this.hostProvisioner = Optional.ofNullable(provisioner);
+            return this;
+        }
+
         public TestComponentRegistry build() {
             final PermanentApplicationPackage permApp = this.permanentApplicationPackage
                     .orElse(new PermanentApplicationPackage(configserverConfig));
+            FileDistributionFactory fileDistributionFactory = this.fileDistributionFactory
+                    .orElse(new MockFileDistributionFactory(curator));
+            HostProvisionerProvider hostProvisionerProvider = hostProvisioner.isPresent() ?
+                    HostProvisionerProvider.withProvisioner(hostProvisioner.get()) :
+                    HostProvisionerProvider.empty();
             SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
-                                                                  HostProvisionerProvider.empty(), permApp,
+                                                                  hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator, new Zone(configserverConfig));
             return new TestComponentRegistry(curator, configCurator.orElse(ConfigCurator.create(curator)),
                                              metrics, modelFactoryRegistry,
                                              permApp,
-                                             new MockFileDistributionFactory(),
+                                             fileDistributionFactory,
                                              new SuperModelGenerationCounter(curator),
                                              new ConfigServerDB(configserverConfig),
                                              hostRegistries, configserverConfig, sessionPreparer,

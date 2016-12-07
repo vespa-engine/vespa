@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionProvider;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
 import java.io.File;
@@ -16,8 +17,13 @@ public class MockFileDistributionFactory extends FileDistributionFactory {
 
     public final MockFileDistributionProvider mockFileDistributionProvider = new MockFileDistributionProvider();
 
-    public MockFileDistributionFactory() {
+    // Prevent instantiation without supplied curator instance
+    private MockFileDistributionFactory() {
         super(new MockCurator(), "");
+    }
+
+    public MockFileDistributionFactory(Curator curator) {
+        super(curator, "");
     }
 
     @Override
