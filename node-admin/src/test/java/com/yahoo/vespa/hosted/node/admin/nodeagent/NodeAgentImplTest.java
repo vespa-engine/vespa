@@ -383,7 +383,11 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).resume(any(String.class));
         // current Docker image and vespa version should be cleared
         verify(nodeRepository, times(1)).updateNodeAttributes(
-                any(String.class), eq(new NodeAttributes().withDockerImage(new DockerImage("")).withVespaVersion("")));
+                any(String.class), eq(new NodeAttributes()
+                        .withRestartGeneration(wantedRestartGeneration.orElse(0L))
+                        .withRebootGeneration(0L)
+                        .withDockerImage(new DockerImage(""))
+                        .withVespaVersion("")));
     }
 
     @Test
