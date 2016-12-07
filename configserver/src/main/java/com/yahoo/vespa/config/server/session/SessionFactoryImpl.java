@@ -70,7 +70,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     }
 
     @Override
-    public LocalSession createSession(File applicationFile, String applicationName, DeployLogger logger, TimeoutBudget timeoutBudget) {
+    public LocalSession createSession(File applicationFile, String applicationName, TimeoutBudget timeoutBudget) {
         return create(applicationFile, applicationName, nonExistingActiveSession, timeoutBudget);
     }
 

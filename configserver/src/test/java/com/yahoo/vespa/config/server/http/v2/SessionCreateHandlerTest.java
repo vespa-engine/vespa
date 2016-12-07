@@ -113,7 +113,6 @@ public class SessionCreateHandlerTest extends SessionCreateHandlerTestBase {
         }, AccessLog.voidAccessLog(), tenants, configserverConfig,
                                         new ApplicationRepository(testTenantBuilder.createTenants(),
                                                                   HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
-                                                                  configserverConfig,
                                                                   new MockCurator(),
                                                                   new LogServerLogGrabber(),
                                                                   new ApplicationConvergenceChecker()));
@@ -121,12 +120,12 @@ public class SessionCreateHandlerTest extends SessionCreateHandlerTestBase {
 
     @Override
     public HttpRequest post() throws FileNotFoundException {
-        return post(null, postHeaders, new HashMap<String, String>());
+        return post(null, postHeaders, new HashMap<>());
     }
 
     @Override
     public HttpRequest post(File file) throws FileNotFoundException {
-        return post(file, postHeaders, new HashMap<String, String>());
+        return post(file, postHeaders, new HashMap<>());
     }
 
     @Override
@@ -143,6 +142,6 @@ public class SessionCreateHandlerTest extends SessionCreateHandlerTestBase {
 
     @Override
     public HttpRequest post(Map<String, String> parameters) throws FileNotFoundException {
-        return post(null, new HashMap<String, String>(), parameters);
+        return post(null, new HashMap<>(), parameters);
     }
 }

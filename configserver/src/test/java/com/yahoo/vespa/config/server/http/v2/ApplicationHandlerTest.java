@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -102,7 +101,6 @@ public class ApplicationHandlerTest {
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
-                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                           new MockCurator(),
                                           logServerLogGrabber,
                                           convergeChecker));
@@ -117,7 +115,6 @@ public class ApplicationHandlerTest {
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
-                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                           new MockCurator(),
                                           new LogServerLogGrabber(),
                                           new ApplicationConvergenceChecker(stateApiFactory)));

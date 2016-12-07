@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -62,7 +61,6 @@ public class SessionContentHandlerTest extends SessionContentHandlerTestBase {
         }, AccessLog.voidAccessLog(), testTenantBuilder.createTenants(),
                                          new ApplicationRepository(testTenantBuilder.createTenants(),
                                                                    HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
-                                                                   new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                                    new MockCurator(),
                                                                    new LogServerLogGrabber(),
                                                                    new ApplicationConvergenceChecker()));

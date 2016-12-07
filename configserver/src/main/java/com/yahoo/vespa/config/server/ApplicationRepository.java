@@ -50,7 +50,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private final Tenants tenants;
     private final Optional<Provisioner> hostProvisioner;
-    private final ConfigserverConfig configserverConfig;
     private final Curator curator;
     private final LogServerLogGrabber logServerLogGrabber;
     private final ApplicationConvergenceChecker convergeChecker;
@@ -60,13 +59,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public ApplicationRepository(Tenants tenants,
                                  HostProvisionerProvider hostProvisionerProvider,
-                                 ConfigserverConfig configserverConfig,
                                  Curator curator,
                                  LogServerLogGrabber logServerLogGrabber,
                                  ApplicationConvergenceChecker applicationConvergenceChecker) {
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
-        this.configserverConfig = configserverConfig;
         this.curator = curator;
         this.logServerLogGrabber = logServerLogGrabber;
         this.convergeChecker = applicationConvergenceChecker;
@@ -93,7 +90,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return Optional.of(Deployment.unprepared(newSession,
                                                  tenant.getLocalSessionRepo(),
                                                  tenant.getPath(),
-                                                 configserverConfig,
                                                  hostProvisioner,
                                                  new ActivateLock(curator, tenant.getPath()),
                                                  timeout,

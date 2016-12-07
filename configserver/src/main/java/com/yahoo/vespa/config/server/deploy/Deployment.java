@@ -41,8 +41,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final LocalSessionRepo localSessionRepo;
     /** The path to the tenant, or null if not available (only used during prepare) */
     private final Path tenantPath;
-    /** The config server config, or null if not available (only used during prepare) */
-    private final ConfigserverConfig configserverConfig;
     private final Optional<Provisioner> hostProvisioner;
     private final ActivateLock activateLock;
     private final Duration timeout;
@@ -57,13 +55,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private boolean ignoreLockFailure = false;
     private boolean ignoreSessionStaleFailure = false;
 
-    private Deployment(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath, ConfigserverConfig configserverConfig,
+    private Deployment(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath,
                        Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
                        Duration timeout, Clock clock, boolean prepared, boolean validate) {
         this.session = session;
         this.localSessionRepo = localSessionRepo;
         this.tenantPath = tenantPath;
-        this.configserverConfig = configserverConfig;
         this.hostProvisioner = hostProvisioner;
         this.activateLock = activateLock;
         this.timeout = timeout;
@@ -72,17 +69,17 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         this.validate = validate;
     }
 
-    public static Deployment unprepared(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath, ConfigserverConfig configserverConfig,
+    public static Deployment unprepared(LocalSession session, LocalSessionRepo localSessionRepo, Path tenantPath,
                                         Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
                                         Duration timeout, Clock clock, boolean validate) {
-        return new Deployment(session, localSessionRepo, tenantPath, configserverConfig, hostProvisioner, activateLock,
+        return new Deployment(session, localSessionRepo, tenantPath, hostProvisioner, activateLock,
                               timeout, clock, false, validate);
     }
 
     public static Deployment prepared(LocalSession session, LocalSessionRepo localSessionRepo,
                                       Optional<Provisioner> hostProvisioner, ActivateLock activateLock,
                                       Duration timeout, Clock clock) {
-        return new Deployment(session, localSessionRepo, null, null, hostProvisioner, activateLock,
+        return new Deployment(session, localSessionRepo, null, hostProvisioner, activateLock,
                               timeout, clock, true, true);
     }
 
