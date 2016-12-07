@@ -34,8 +34,6 @@ class SparseBinaryFormat implements BinaryFormat {
     private static void encodeDimensions(GrowableByteBuffer buffer, List<TensorType.Dimension> sortedDimensions) {
         buffer.putInt1_4Bytes(sortedDimensions.size());
         for (TensorType.Dimension dimension : sortedDimensions) {
-            if ( ! (dimension instanceof TensorType.MappedDimension))
-                throw new UnsupportedOperationException("Serialization of indexed tensors is no not implemented");
             encodeString(buffer, dimension.name());
         }
     }
@@ -49,8 +47,9 @@ class SparseBinaryFormat implements BinaryFormat {
     }
 
     private static void encodeAddress(GrowableByteBuffer buffer, TensorAddress address) {
-        for (String label : address.labels())
+        for (String label : address.labels()) {
             encodeString(buffer, label);
+        }
     }
 
     private static void encodeString(GrowableByteBuffer buffer, String value) {
