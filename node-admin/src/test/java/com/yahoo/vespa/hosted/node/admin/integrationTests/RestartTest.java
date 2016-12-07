@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.net.UnknownHostException;
-import java.util.Optional;
 
 /**
  * Tests that different wanted and current restart generation leads to execution of restart command
@@ -48,13 +47,13 @@ public class RestartTest {
     private ContainerNodeSpec createContainerNodeSpec(long wantedRestartGeneration, long currentRestartGeneration) {
         return new ContainerNodeSpec.Builder()
                 .hostname("host1")
-                .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                .wantedDockerImage(new DockerImage("dockerImage"))
                 .containerName(new ContainerName("container"))
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(wantedRestartGeneration))
-                .currentRestartGeneration(Optional.of(currentRestartGeneration))
+                .wantedRestartGeneration(wantedRestartGeneration)
+                .currentRestartGeneration(currentRestartGeneration)
                 .build();
     }
 }

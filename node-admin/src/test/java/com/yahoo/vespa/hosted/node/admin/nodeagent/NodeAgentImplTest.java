@@ -47,10 +47,10 @@ import static org.mockito.Mockito.when;
  * @author bakksjo
  */
 public class NodeAgentImplTest {
-    private static final Optional<Double> MIN_CPU_CORES = Optional.of(1.0);
-    private static final Optional<Double> MIN_MAIN_MEMORY_AVAILABLE_GB = Optional.of(1.0);
-    private static final Optional<Double> MIN_DISK_AVAILABLE_GB = Optional.of(1.0);
-    private static final Optional<String> vespaVersion = Optional.of("7.8.9");
+    private static final double MIN_CPU_CORES = 1.0;
+    private static final double MIN_MAIN_MEMORY_AVAILABLE_GB = 1.0;
+    private static final double MIN_DISK_AVAILABLE_GB = 1.0;
+    private static final String vespaVersion = "7.8.9";
 
     private final String hostName = "hostname";
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
@@ -76,14 +76,14 @@ public class NodeAgentImplTest {
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.of(dockerImage))
+                .wantedDockerImage(dockerImage)
                 .containerName(containerName)
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(restartGeneration))
-                .currentRestartGeneration(Optional.of(restartGeneration))
-                .wantedRebootGeneration(Optional.of(rebootGeneration))
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
+                .wantedRebootGeneration(rebootGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
@@ -94,7 +94,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(false);
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
+        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
         nodeAgent.tick();
@@ -113,7 +113,7 @@ public class NodeAgentImplTest {
                         .withRestartGeneration(restartGeneration)
                         .withRebootGeneration(rebootGeneration)
                         .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion.get()));
+                        .withVespaVersion(vespaVersion));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -125,14 +125,14 @@ public class NodeAgentImplTest {
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.of(dockerImage))
+                .wantedDockerImage(dockerImage)
                 .containerName(containerName)
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(restartGeneration))
-                .currentRestartGeneration(Optional.of(restartGeneration))
-                .wantedRebootGeneration(Optional.of(rebootGeneration))
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
+                .wantedRebootGeneration(rebootGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
@@ -143,7 +143,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(true);
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
+        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
         when(maintainer.pathInNodeAdminFromPathInNode(any(ContainerName.class), any(String.class))).thenReturn(Files.createTempDirectory("foo"));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
@@ -160,7 +160,7 @@ public class NodeAgentImplTest {
                         .withRestartGeneration(restartGeneration)
                         .withRebootGeneration(rebootGeneration)
                         .withDockerImage(dockerImage)
-                        .withVespaVersion(vespaVersion.get()));
+                        .withVespaVersion(vespaVersion));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -173,13 +173,13 @@ public class NodeAgentImplTest {
         final long currentRestartGeneration = 1;
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.of(newDockerImage))
+                .wantedDockerImage(newDockerImage)
                 .containerName(containerName)
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(wantedRestartGeneration))
-                .currentRestartGeneration(Optional.of(currentRestartGeneration))
+                .wantedRestartGeneration(wantedRestartGeneration)
+                .currentRestartGeneration(currentRestartGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
@@ -208,13 +208,13 @@ public class NodeAgentImplTest {
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.of(dockerImage))
+                .wantedDockerImage(dockerImage)
                 .containerName(containerName)
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(wantedRestartGeneration))
-                .currentRestartGeneration(Optional.of(currentRestartGeneration))
+                .wantedRestartGeneration(wantedRestartGeneration)
+                .currentRestartGeneration(currentRestartGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
@@ -240,13 +240,12 @@ public class NodeAgentImplTest {
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.empty())
                 .containerName(containerName)
                 .nodeState(Node.State.failed)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(restartGeneration))
-                .currentRestartGeneration(Optional.of(restartGeneration))
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
@@ -276,14 +275,13 @@ public class NodeAgentImplTest {
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.empty())
                 .containerName(containerName)
                 .nodeState(Node.State.ready)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(restartGeneration))
-                .currentRestartGeneration(Optional.of(restartGeneration))
-                .wantedRebootGeneration(Optional.of(rebootGeneration))
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
+                .wantedRebootGeneration(rebootGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
@@ -314,14 +312,13 @@ public class NodeAgentImplTest {
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.empty())
                 .containerName(containerName)
                 .nodeState(Node.State.inactive)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(restartGeneration))
-                .currentRestartGeneration(Optional.of(restartGeneration))
-                .wantedRebootGeneration(Optional.of(rebootGeneration))
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
+                .wantedRebootGeneration(rebootGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
@@ -350,19 +347,22 @@ public class NodeAgentImplTest {
             throws Exception {
         final DockerImage dockerImage = new DockerImage("dockerImage");
         final ContainerName containerName = new ContainerName("container-name");
-        final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
+        final ContainerNodeSpec.Builder nodeSpecBuilder = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.of(dockerImage))
+                .wantedDockerImage(dockerImage)
                 .containerName(containerName)
                 .nodeState(nodeState)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(wantedRestartGeneration)
-                .currentRestartGeneration(wantedRestartGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
-                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
-                .build();
+                .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB);
+
+        wantedRestartGeneration.ifPresent(restartGeneration -> nodeSpecBuilder
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration));
+
+        final ContainerNodeSpec nodeSpec = nodeSpecBuilder.build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(
@@ -409,13 +409,13 @@ public class NodeAgentImplTest {
         final ContainerName containerName = new ContainerName("container-name");
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.of(wantedDockerImage))
+                .wantedDockerImage(wantedDockerImage)
                 .containerName(containerName)
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(restartGeneration))
-                .currentRestartGeneration(Optional.of(restartGeneration))
+                .wantedRestartGeneration(restartGeneration)
+                .currentRestartGeneration(restartGeneration)
                 .minCpuCores(MIN_CPU_CORES)
                 .minMainMemoryAvailableGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
@@ -426,7 +426,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, wantedDockerImage, containerName, true)));
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(wantedDockerImage))).thenReturn(false);
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(vespaVersion);
+        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
 
         verify(dockerOperations, never()).removeContainer(any(), any(), any());
 
@@ -482,8 +482,8 @@ public class NodeAgentImplTest {
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .owner(Optional.of(owner))
-                .membership(Optional.of(membership))
+                .owner(owner)
+                .membership(membership)
                 .build();
 
         long totalContainerCpuTime = (long) ((Map) cpu_stats.get("cpu_usage")).get("total_usage");

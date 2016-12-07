@@ -295,30 +295,30 @@ public class NodeAgentImpl implements NodeAgent {
             dockerOperations.stopServicesOnNode(containerName);
     }
 
-    private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
+    private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Container existingContainer) {
         final Node.State nodeState = nodeSpec.nodeState;
         if (nodeState == Node.State.dirty || nodeState == Node.State.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
-        if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
+        if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                                       + existingContainer.get() + " -> " + nodeSpec.wantedDockerImage.get());
+                                       + existingContainer + " -> " + nodeSpec.wantedDockerImage.get());
         }
-        if (!existingContainer.get().isRunning) {
+        if (!existingContainer.isRunning) {
             return Optional.of("Container no longer running");
         }
         return Optional.empty();
     }
 
     // Returns true if container is absent on return
-    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
+    private boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
             throws Exception {
         Optional<Container> existingContainer = dockerOperations.getContainer(hostname);
         if (!existingContainer.isPresent()) {
             return true;
         }
 
-        Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
+        Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer.get());
         if (removeReason.isPresent()) {
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
 
