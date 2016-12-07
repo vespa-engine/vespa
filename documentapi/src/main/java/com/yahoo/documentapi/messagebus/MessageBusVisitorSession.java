@@ -377,6 +377,12 @@ public class MessageBusVisitorSession implements VisitorSession {
         }
     }
 
+    private void updateStateUnlessAlreadyFailed(StateDescription newState) {
+        if (!state.failed()) {
+            state = newState;
+        } // else: don't override existing failure state
+    }
+
     /**
      * Attempt to transition to a new state. Depending on the current state,
      * some transitions may be disallowed, such as transitioning from ABORTED
@@ -391,25 +397,21 @@ public class MessageBusVisitorSession implements VisitorSession {
      */
     private StateDescription transitionTo(StateDescription newState) {
         log.log(LogLevel.DEBUG, sessionName + ": attempting transition to state " + newState);
-        if (newState.getState() == State.WORKING) {
-            assert(state.getState() == State.NOT_STARTED);
-            state = newState;
-        } else if (newState.getState() == State.COMPLETED) {
-            if (!state.failed()) {
+        switch (newState.getState()) {
+            case WORKING:
+                assert(state.getState() == State.NOT_STARTED);
                 state = newState;
-            } // else: don't override existing failure state
-        } else if (newState.getState() == State.ABORTED) {
-            state = newState;
-        } else if (newState.getState() == State.FAILED) {
-            if (state.getState() != State.FAILED) {
+                break;
+            case ABORTED:
                 state = newState;
-            } // else: don't override existing failure state
-        } else if (newState.getState() == State.TIMED_OUT) {
-            if (!state.failed()) {
-                state = newState;
-            } // else: don't override existing failure state
-        } else {
-            assert(false);
+                break;
+            case COMPLETED:
+            case FAILED:
+            case TIMED_OUT:
+                updateStateUnlessAlreadyFailed(newState);
+                break;
+            default:
+                assert(false);
         }
         log.log(LogLevel.DEBUG, "Session '" + sessionName + "' is now in state " +  state);
         return state;
