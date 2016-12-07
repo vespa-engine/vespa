@@ -162,6 +162,8 @@ public:
      **/
     const Outputs &outputs() const { return _outputs; }
 
+    Outputs &outputs() { return _outputs; }
+
     /**
      * Check if this feature executor is pure. A feature executor
      * claiming to be pure must satisfy the requirement that its
