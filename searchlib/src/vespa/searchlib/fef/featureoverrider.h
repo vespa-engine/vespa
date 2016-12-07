@@ -25,6 +25,7 @@ private:
     FeatureHandle       _handle;
     feature_t           _value;
 
+    virtual void handle_bind_match_data(MatchData &md) override;
 public:
     /**
      * Create a feature overrider that will override the given output
@@ -39,7 +40,6 @@ public:
     void outputs_done() override;
     bool isPure() override;
     void execute(MatchData &data) override;
-    virtual void handle_bind_match_data(MatchData &md) override;
 };
 
 } // namespace fef
