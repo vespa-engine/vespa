@@ -36,8 +36,7 @@ JaroWinklerDistanceExecutor::JaroWinklerDistanceExecutor(const search::fef::IQue
                                                          const JaroWinklerDistanceConfig &config) :
     search::fef::FeatureExecutor(),
     _config(config),
-    _termFieldHandles(),
-    _lenHandle(search::fef::IllegalHandle)
+    _termFieldHandles()
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         _termFieldHandles.push_back(util::getTermFieldHandle(env, i, config.fieldId));
@@ -62,7 +61,7 @@ JaroWinklerDistanceExecutor::execute(search::fef::MatchData &match)
     }
 
     // Assign the jaroWinkler distance to this executor's output.
-    *match.resolveFeature(outputs()[0]) = 1 - jaroWinklerProximity(pos, (uint32_t)*match.resolveFeature(_lenHandle));
+    outputs().set_number(0, 1 - jaroWinklerProximity(pos, (uint32_t)inputs().get_number(0)));
 }
 
 namespace {

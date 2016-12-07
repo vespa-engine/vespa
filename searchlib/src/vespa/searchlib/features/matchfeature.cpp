@@ -25,22 +25,22 @@ MatchExecutor::MatchExecutor(const MatchParams & params) :
 }
 
 void
-MatchExecutor::execute(MatchData & match)
+MatchExecutor::execute(MatchData &)
 {
     feature_t sum = 0.0f;
     feature_t totalWeight = 0.0f;
     for (uint32_t i = 0; i < _params.weights.size(); ++i) {
         feature_t weight = static_cast<feature_t>(_params.weights[i]);
-        feature_t matchScore = *match.resolveFeature(inputs()[i]);
+        feature_t matchScore = inputs().get_number(i);
         if (matchScore > 0.0f) {
             totalWeight += weight;
             sum += (weight * matchScore);
         }
-        *match.resolveFeature(outputs()[i + 2]) = weight;
+        outputs().set_number(i + 2, weight);
     }
 
-    *match.resolveFeature(outputs()[0]) = totalWeight > 0.0f ? sum / totalWeight : 0.0f;
-    *match.resolveFeature(outputs()[1]) = totalWeight;
+    outputs().set_number(0, totalWeight > 0.0f ? sum / totalWeight : 0.0f);
+    outputs().set_number(1, totalWeight);
 }
 
 

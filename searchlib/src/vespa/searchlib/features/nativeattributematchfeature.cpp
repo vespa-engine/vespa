@@ -72,16 +72,16 @@ NativeAttributeMatchExecutorMulti::execute(MatchData & match)
             score += calculateScore(_queryTermData[i], *tfmd);
         }
     }
-    *match.resolveFeature(outputs()[0]) = score / _divisor;
+    outputs().set_number(0, score / _divisor);
 }
 
 void
 NativeAttributeMatchExecutorSingle::execute(MatchData & match)
 {
     const TermFieldMatchData &tfmd = *match.resolveTermField(_queryTermData.tfh);
-    *match.resolveFeature(outputs()[0]) = (tfmd.getDocId() == match.getDocId())
-                                          ? calculateScore(_queryTermData, tfmd)
-                                          : 0;
+    outputs().set_number(0, (tfmd.getDocId() == match.getDocId())
+                         ? calculateScore(_queryTermData, tfmd)
+                         : 0);
 }
 
 

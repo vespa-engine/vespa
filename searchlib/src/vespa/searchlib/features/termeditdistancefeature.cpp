@@ -59,7 +59,6 @@ TermEditDistanceExecutor::TermEditDistanceExecutor(const search::fef::IQueryEnvi
     _config(config),
     _fieldHandles(),
     _termWeights(),
-    _lenHandle(search::fef::IllegalHandle),
     _prevRow(16),
     _thisRow(_prevRow.size())
 {
@@ -80,7 +79,7 @@ TermEditDistanceExecutor::execute(search::fef::MatchData &match)
     uint32_t numQueryTerms = _fieldHandles.size();
     uint32_t fieldBegin    = _config.fieldBegin;
     uint32_t fieldEnd      = std::min(_config.fieldEnd,
-                                      (uint32_t)*match.resolveFeature(_lenHandle));
+                                      (uint32_t)inputs().get_number(0));
 
     // _P_A_R_A_N_O_I_A_
     TedCell last;
@@ -158,10 +157,10 @@ TermEditDistanceExecutor::execute(search::fef::MatchData &match)
         // Retrieve the bottom-right value.
         last = _prevRow[numFieldTerms];
     }
-    *match.resolveFeature(outputs()[0]) = last.cost;
-    *match.resolveFeature(outputs()[1]) = last.numDel;
-    *match.resolveFeature(outputs()[2]) = last.numIns;
-    *match.resolveFeature(outputs()[3]) = last.numSub;
+    outputs().set_number(0, last.cost);
+    outputs().set_number(1, last.numDel);
+    outputs().set_number(2, last.numIns);
+    outputs().set_number(3, last.numSub);
 }
 
 void

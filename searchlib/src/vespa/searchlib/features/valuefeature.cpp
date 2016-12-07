@@ -18,17 +18,17 @@ ValueExecutor::ValueExecutor(const std::vector<feature_t> & values) :
 }
 
 void
-ValueExecutor::execute(search::fef::MatchData & data)
+ValueExecutor::execute(search::fef::MatchData &)
 {
     for (uint32_t i = 0; i < _values.size(); ++i) {
-        *data.resolveFeature(outputs()[i]) = _values[i];
+        outputs().set_number(i, _values[i]);
     }
 }
 
 void
-SingleZeroValueExecutor::execute(search::fef::MatchData & data)
+SingleZeroValueExecutor::execute(search::fef::MatchData &)
 {
-    *data.resolveFeature(outputs()[0]) = 0.0;
+    outputs().set_number(0, 0.0);
 }
 
 ValueBlueprint::ValueBlueprint() :

@@ -22,7 +22,7 @@ ItemRawScoreExecutor::execute(MatchData &data)
             output += tfmd->getRawScore();
         }
     }
-    *data.resolveFeature(outputs()[0]) = output;
+    outputs().set_number(0, output);
 }
 
 //-----------------------------------------------------------------------------
@@ -35,7 +35,7 @@ SimpleItemRawScoreExecutor::execute(MatchData &data)
     if (tfmd->getDocId() == data.getDocId()) {
         output = tfmd->getRawScore();
     }
-    *data.resolveFeature(outputs()[0]) = output;
+    outputs().set_number(0, output);
 }
 
 //-----------------------------------------------------------------------------

@@ -57,13 +57,13 @@ TermFieldMdExecutor::execute(MatchData & match)
         }
 
     }
-    *match.resolveFeature(outputs()[0]) = score;
-    *match.resolveFeature(outputs()[1]) = _terms.size();
-    *match.resolveFeature(outputs()[2]) = (termsmatched > 0 ? 1.0 : 0.0);
-    *match.resolveFeature(outputs()[3]) = termsmatched;
-    *match.resolveFeature(outputs()[4]) = weight;
-    *match.resolveFeature(outputs()[5]) = occs;
-    *match.resolveFeature(outputs()[6]) = maxTermWeight;
+    outputs().set_number(0, score);
+    outputs().set_number(1, _terms.size());
+    outputs().set_number(2, (termsmatched > 0 ? 1.0 : 0.0));
+    outputs().set_number(3, termsmatched);
+    outputs().set_number(4, weight);
+    outputs().set_number(5, occs);
+    outputs().set_number(6, maxTermWeight);
 }
 
 

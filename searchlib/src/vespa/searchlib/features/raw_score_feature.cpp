@@ -33,7 +33,7 @@ RawScoreExecutor::execute(MatchData &data)
             output += tfmd->getRawScore();
         }
     }
-    *data.resolveFeature(outputs()[0]) = output;
+    outputs().set_number(0, output);
 }
 
 //-----------------------------------------------------------------------------

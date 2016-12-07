@@ -36,7 +36,7 @@ MatchCountExecutor::execute(MatchData &match)
             output++;
         }
     }
-    *match.resolveFeature(outputs()[0]) = static_cast<feature_t>(output);
+    outputs().set_number(0, static_cast<feature_t>(output));
 }
 
 

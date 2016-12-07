@@ -33,7 +33,7 @@ NativeDotProductExecutor::execute(MatchData &data)
             output += (tfmd->getWeight() * (int32_t)_pairs[i].second.percent());
         }
     }
-    *data.resolveFeature(outputs()[0]) = output;
+    outputs().set_number(0, output);
 }
 
 //-----------------------------------------------------------------------------

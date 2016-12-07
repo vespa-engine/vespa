@@ -80,13 +80,13 @@ DistanceToPathExecutor::execute(search::fef::MatchData & match)
             trip += len;
         }
 
-        *match.resolveFeature(outputs()[0]) = static_cast<feature_t>(std::sqrt(static_cast<feature_t>(minSqDist)));
-        *match.resolveFeature(outputs()[1]) = static_cast<feature_t>(pos > -1 ? (trip > 0 ? pos / trip : 0) : 1);
-        *match.resolveFeature(outputs()[2]) = static_cast<feature_t>(product);
+        outputs().set_number(0, static_cast<feature_t>(std::sqrt(static_cast<feature_t>(minSqDist))));
+        outputs().set_number(1, static_cast<feature_t>(pos > -1 ? (trip > 0 ? pos / trip : 0) : 1));
+        outputs().set_number(2, static_cast<feature_t>(product));
     } else {
-        *match.resolveFeature(outputs()[0]) = DEFAULT_DISTANCE;
-        *match.resolveFeature(outputs()[1]) = 1;
-        *match.resolveFeature(outputs()[2]) = 0;
+        outputs().set_number(0, DEFAULT_DISTANCE);
+        outputs().set_number(1, 1);
+        outputs().set_number(2, 0);
     }
 }
 

@@ -47,14 +47,14 @@ ProximityExecutor::execute(search::fef::MatchData &match)
         }
     }
     // no match
-    *match.resolveFeature(outputs()[0]) = util::FEATURE_MAX; // out
-    *match.resolveFeature(outputs()[1]) = util::FEATURE_MAX; // posA
-    *match.resolveFeature(outputs()[2]) = util::FEATURE_MIN; // posB
+    outputs().set_number(0, util::FEATURE_MAX); // out
+    outputs().set_number(1, util::FEATURE_MAX); // posA
+    outputs().set_number(2, util::FEATURE_MIN); // posB
     return;
 }
 
 bool
-ProximityExecutor::findBest(search::fef::MatchData &match,
+ProximityExecutor::findBest(search::fef::MatchData &,
                             search::fef::TermFieldMatchData &matchA,
                             search::fef::TermFieldMatchData &matchB)
 {
@@ -97,9 +97,9 @@ ProximityExecutor::findBest(search::fef::MatchData &match,
     }
     if (optB != 0xFFFFFFFFu) {
         // Output proximity score.
-        *match.resolveFeature(outputs()[0]) = optB - optA;
-        *match.resolveFeature(outputs()[1]) = optA;
-        *match.resolveFeature(outputs()[2]) = optB;
+        outputs().set_number(0, optB - optA);
+        outputs().set_number(1, optA);
+        outputs().set_number(2, optB);
         return true;
     } else {
         return false;

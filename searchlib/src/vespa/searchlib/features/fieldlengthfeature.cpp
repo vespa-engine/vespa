@@ -54,7 +54,7 @@ FieldLengthExecutor::execute(MatchData &match)
         val = fef::FieldPositionsIterator::UNKNOWN_LENGTH;
     }
     feature_t value = val;
-    *match.resolveFeature(outputs()[0]) = value; // field length
+    outputs().set_number(0, value); // field length
 }
 
 FieldLengthBlueprint::FieldLengthBlueprint()

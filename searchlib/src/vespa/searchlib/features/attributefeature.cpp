@@ -195,21 +195,21 @@ SingleAttributeExecutor<T>::execute(search::fef::MatchData & match)
 {
     typename T::LoadedValueType v = _attribute.getFast(match.getDocId());
     // value
-    *match.resolveFeature(outputs()[0]) = __builtin_expect(attribute::isUndefined(v), false)
-                                          ? attribute::getUndefined<search::feature_t>()
-                                          : util::getAsFeature(v);
-    *match.resolveFeature(outputs()[1]) = 0.0f;  // weight
-    *match.resolveFeature(outputs()[2]) = 0.0f;  // contains
-    *match.resolveFeature(outputs()[3]) = 1.0f; // count
+    outputs().set_number(0, __builtin_expect(attribute::isUndefined(v), false)
+                         ? attribute::getUndefined<search::feature_t>()
+                         : util::getAsFeature(v));
+    outputs().set_number(1, 0.0f);  // weight
+    outputs().set_number(2, 0.0f);  // contains
+    outputs().set_number(3, 1.0f);  // count
 }
 
 void
 CountOnlyAttributeExecutor::execute(search::fef::MatchData & match)
 {
-    *match.resolveFeature(outputs()[0]) = 0.0f;  // value
-    *match.resolveFeature(outputs()[1]) = 0.0f;  // weight
-    *match.resolveFeature(outputs()[2]) = 0.0f;  // contains
-    *match.resolveFeature(outputs()[3]) = _attribute.getValueCount(match.getDocId()); // count
+    outputs().set_number(0, 0.0f);  // value
+    outputs().set_number(1, 0.0f);  // weight
+    outputs().set_number(2, 0.0f);  // contains
+    outputs().set_number(3, _attribute.getValueCount(match.getDocId())); // count
 }
 
 template <typename T>
@@ -233,10 +233,10 @@ AttributeExecutor<T>::execute(search::fef::MatchData & match)
     if (_idx < _buffer.size()) {
         value = considerUndefined(_buffer[_idx], _attrType);
     }
-    *match.resolveFeature(outputs()[0]) = value; // value
-    *match.resolveFeature(outputs()[1]) = 0.0f;  // weight
-    *match.resolveFeature(outputs()[2]) = 0.0f;  // contains
-    *match.resolveFeature(outputs()[3]) = _defaultCount; // count
+    outputs().set_number(0, value);         // value
+    outputs().set_number(1, 0.0f);          // weight
+    outputs().set_number(2, 0.0f);          // contains
+    outputs().set_number(3, _defaultCount); // count
 }
 
 
@@ -272,10 +272,10 @@ WeightedSetAttributeExecutor<BT, T>::execute(search::fef::MatchData & match)
     } else {
         count = _attribute->getValueCount(match.getDocId());
     }
-    *match.resolveFeature(outputs()[0]) = value;  // value
-    *match.resolveFeature(outputs()[1]) = weight; // weight
-    *match.resolveFeature(outputs()[2]) = contains; // contains
-    *match.resolveFeature(outputs()[3]) = count; // count
+    outputs().set_number(0, value);    // value
+    outputs().set_number(1, weight);   // weight
+    outputs().set_number(2, contains); // contains
+    outputs().set_number(3, count);    // count
 }
 
 

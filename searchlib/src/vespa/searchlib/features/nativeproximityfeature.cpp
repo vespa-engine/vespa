@@ -99,7 +99,7 @@ NativeProximityExecutor::execute(search::fef::MatchData & match)
     if (_totalFieldWeight > 0) {
         score /= _totalFieldWeight;
     }
-    *match.resolveFeature(outputs()[0]) = score;
+    outputs().set_number(0, score);
 }
 
 void

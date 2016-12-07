@@ -33,8 +33,8 @@ void SubqueriesExecutor::execute(MatchData &data) {
             msb |= tfmd->getSubqueries() >> 32;
         }
     }
-    *data.resolveFeature(outputs()[0]) = lsb;
-    *data.resolveFeature(outputs()[1]) = msb;
+    outputs().set_number(0, lsb);
+    outputs().set_number(1, msb);
 }
 
 //-----------------------------------------------------------------------------

@@ -36,9 +36,9 @@ ReverseProximityExecutor::execute(search::fef::MatchData &match)
 {
     // Cannot calculate proximity in this case
     if (_termA == search::fef::IllegalHandle || _termB == search::fef::IllegalHandle) {
-        *match.resolveFeature(outputs()[0]) = util::FEATURE_MAX; // out
-        *match.resolveFeature(outputs()[1]) = util::FEATURE_MIN; // posA
-        *match.resolveFeature(outputs()[2]) = util::FEATURE_MAX; // posB
+        outputs().set_number(0, util::FEATURE_MAX); // out
+        outputs().set_number(1, util::FEATURE_MIN); // posA
+        outputs().set_number(2, util::FEATURE_MAX); // posB
         return;
     }
 
@@ -63,9 +63,9 @@ ReverseProximityExecutor::execute(search::fef::MatchData &match)
     // _P_A_R_A_N_O_I_A_
     if (!itA.valid() || !itB.valid()) {
         //LOG(debug, "Initial guess is invalid.");
-        *match.resolveFeature(outputs()[0]) = util::FEATURE_MAX; // out
-        *match.resolveFeature(outputs()[1]) = util::FEATURE_MIN; // posA
-        *match.resolveFeature(outputs()[2]) = util::FEATURE_MAX; // posB
+        outputs().set_number(0, util::FEATURE_MAX); // out
+        outputs().set_number(1, util::FEATURE_MIN); // posA
+        outputs().set_number(2, util::FEATURE_MAX); // posB
         return;
     }
 
@@ -88,9 +88,9 @@ ReverseProximityExecutor::execute(search::fef::MatchData &match)
     }
 
     // Output proximity score.
-    *match.resolveFeature(outputs()[0]) = optA - optB;
-    *match.resolveFeature(outputs()[1]) = optA;
-    *match.resolveFeature(outputs()[2]) = optB;
+    outputs().set_number(0, optA - optB);
+    outputs().set_number(1, optA);
+    outputs().set_number(2, optB);
 }
 
 ReverseProximityBlueprint::ReverseProximityBlueprint() :

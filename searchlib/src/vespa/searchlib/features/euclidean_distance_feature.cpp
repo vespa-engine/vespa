@@ -48,7 +48,7 @@ void
 EuclideanDistanceExecutor<DataType>::execute(MatchData &match)
 {
     _attributeBuffer.fill(_attribute, match.getDocId());
-    *match.resolveFeature(outputs()[0]) = euclideanDistance(_attributeBuffer, _vector);
+    outputs().set_number(0, euclideanDistance(_attributeBuffer, _vector));
 }
 
 
