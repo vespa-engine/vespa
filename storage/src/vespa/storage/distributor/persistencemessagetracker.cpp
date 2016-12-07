@@ -21,11 +21,11 @@ PersistenceMessageTrackerImpl::PersistenceMessageTrackerImpl(
       _metric(metric),
       _reply(reply),
       _manager(link),
-      _success(true),
       _revertTimestamp(revertTimestamp),
-      _priority(reply->getPriority())
+      _requestTimer(link.getClock()),
+      _priority(reply->getPriority()),
+      _success(true)
 {
-    _creationTime.SetNow();
 }
 
 void
@@ -51,18 +51,8 @@ void
 PersistenceMessageTrackerImpl::updateMetrics()
 {
     const api::ReturnCode& result(_reply->getResult());
-    if (result.success()) {
-        ++_metric.ok;
-    } else if (result.getResult() == api::ReturnCode::TIMEOUT) {
-        ++_metric.failures.timeout;
-    } else if (result.isBusy()) {
-        ++_metric.failures.busy;
-    } else if (result.isNodeDownOrNetwork()) {
-        ++_metric.failures.notconnected;
-    } else {
-        ++_metric.failures.storagefailure;
-    }
-    _metric.latency.addValue(_creationTime.MilliSecsToNow());
+    _metric.updateFromResult(result);
+    _metric.latency.addValue(_requestTimer.getElapsedTimeAsDouble());
 }
 
 void

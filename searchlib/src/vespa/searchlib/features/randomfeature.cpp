@@ -28,8 +28,8 @@ RandomExecutor::execute(search::fef::MatchData & match)
     _matchRnd.srand48(_matchSeed + match.getDocId());
     feature_t matchRndScore = _matchRnd.lrand48() / (feature_t)0x80000000u; // 2^31
     //LOG(debug, "execute: %f", rndScore);
-    *match.resolveFeature(outputs()[0]) = rndScore;
-    *match.resolveFeature(outputs()[1]) = matchRndScore;
+    outputs().set_number(0, rndScore);
+    outputs().set_number(1, matchRndScore);
 }
 
 

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertThat;
 public class StatusResourceTest {
     @Test
     public void require_that_status_handler_responds_to_ping() throws IOException {
-        StatusResource handler = new StatusResource(null, null, null, null, null, null, null, new TestComponentRegistry());
+        StatusResource handler = new StatusResource(null, null, null, null, null, null, null, new TestComponentRegistry.Builder().build());
         assertNotNull(handler.getStatus().configserverConfig);
     }
 

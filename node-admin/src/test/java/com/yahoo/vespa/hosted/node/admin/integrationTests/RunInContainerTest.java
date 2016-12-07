@@ -112,13 +112,13 @@ public class RunInContainerTest {
         ComponentsProviderWithMocks.nodeRepositoryMock
                 .addContainerNodeSpec(new ContainerNodeSpec.Builder()
                                               .hostname("hostName")
-                                              .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                                              .wantedDockerImage(new DockerImage("dockerImage"))
                                               .containerName(new ContainerName("container"))
                                               .nodeState(Node.State.active)
                                               .nodeType("tenant")
                                               .nodeFlavor("docker")
-                                              .wantedRestartGeneration(Optional.of(1L))
-                                              .currentRestartGeneration(Optional.of(1L))
+                                              .wantedRestartGeneration(1L)
+                                              .currentRestartGeneration(1L)
                                               .build());
         ComponentsProviderWithMocks.orchestratorMock.setForceGroupSuspendResponse(Optional.of("Denied"));
         assertThat(doPutCall("suspend"), is(false));

@@ -31,11 +31,19 @@ public:
     };
 
     class Inputs {
-        SharedInputs *_inputs;
-        uint32_t      _offset;
-        uint32_t      _size;
+        SharedInputs    *_inputs;
+        uint32_t         _offset;
+        uint32_t         _size;
+        const MatchData *_md;
     public:
-        Inputs() : _inputs(nullptr), _offset(0), _size(0) {}
+        Inputs() : _inputs(nullptr), _offset(0), _size(0), _md(nullptr) {}
+        void bind(const MatchData &md) { _md = &md; }
+        feature_t get_number(size_t idx) const {
+            return *_md->resolveFeature((*this)[idx]);
+        }
+        vespalib::eval::Value::CREF get_object(size_t idx) const {
+            return *_md->resolve_object_feature((*this)[idx]);
+        }
         void bind(SharedInputs &inputs) {
             _inputs = &inputs;
             _offset = _inputs->size();
@@ -58,8 +66,16 @@ public:
     class Outputs {
         FeatureHandle _begin;
         FeatureHandle _end;
+        MatchData    *_md;
     public:
-        Outputs() : _begin(IllegalHandle), _end(IllegalHandle) {}
+        Outputs() : _begin(IllegalHandle), _end(IllegalHandle), _md(nullptr) {}
+        void bind(MatchData &md) { _md = &md; }
+        void set_number(size_t idx, feature_t value) {
+            *_md->resolveFeature((*this)[idx]) = value;
+        }
+        void set_object(size_t idx, vespalib::eval::Value::CREF value) {
+            *_md->resolve_object_feature((*this)[idx]) = value;
+        }
         void add(FeatureHandle handle) {
             if (_begin == IllegalHandle) {
                 _begin = handle;
@@ -85,6 +101,9 @@ private:
     Inputs  _inputs;
     Outputs _outputs;
 
+protected:
+    virtual void handle_bind_match_data(MatchData &md);
+
 public:
     /**
      * Create a feature executor that has not yet been bound to neither
@@ -101,6 +120,11 @@ public:
      * @param shared_inputs shared store for input feature handles
      **/
     void bind_shared_inputs(SharedInputs &shared_inputs) { _inputs.bind(shared_inputs); }
+
+    // Bind inputs and outputs directly to the underlying match data
+    // to be able to hide the fact that input and output values are
+    // stored in a match data object from the executor itself.
+    void bind_match_data(MatchData &md);
 
     /**
      * Add an input to this feature executor. All inputs must be added
@@ -140,6 +164,8 @@ public:
      * @return const view of output features
      **/
     const Outputs &outputs() const { return _outputs; }
+
+    Outputs &outputs() { return _outputs; }
 
     /**
      * Check if this feature executor is pure. A feature executor

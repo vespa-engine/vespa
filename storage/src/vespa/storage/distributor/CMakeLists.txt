@@ -4,6 +4,7 @@ vespa_add_library(storage_distributor
     distributor.cpp
     distributormetricsset.cpp
     visitormetricsset.cpp
+    persistence_operation_metric_set.cpp
     idealstatemetricsset.cpp
     operationowner.cpp
     distributorcomponent.cpp

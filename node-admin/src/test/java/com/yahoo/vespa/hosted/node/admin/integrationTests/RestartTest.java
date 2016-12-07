@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.net.UnknownHostException;
-import java.util.Optional;
 
 /**
  * Tests that different wanted and current restart generation leads to execution of restart command
@@ -34,7 +33,7 @@ public class RestartTest {
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
             callOrderVerifier.assertInOrder("createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                                            "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=null, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}");
+                                            "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion=''}");
 
             wantedRestartGeneration = 2;
             currentRestartGeneration = 1;
@@ -48,13 +47,13 @@ public class RestartTest {
     private ContainerNodeSpec createContainerNodeSpec(long wantedRestartGeneration, long currentRestartGeneration) {
         return new ContainerNodeSpec.Builder()
                 .hostname("host1")
-                .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                .wantedDockerImage(new DockerImage("dockerImage"))
                 .containerName(new ContainerName("container"))
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .wantedRestartGeneration(Optional.of(wantedRestartGeneration))
-                .currentRestartGeneration(Optional.of(currentRestartGeneration))
+                .wantedRestartGeneration(wantedRestartGeneration)
+                .currentRestartGeneration(currentRestartGeneration)
                 .build();
     }
 }

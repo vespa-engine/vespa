@@ -199,8 +199,9 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeSpec.hostname,
                 // Clear current Docker image and vespa version, as nothing is running on this node
                 new NodeAttributes()
+                        .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(0L))
+                        .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
                         .withDockerImage(new DockerImage(""))
-                        .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(null))
                         .withVespaVersion(""));
         nodeRepository.markAsReady(nodeSpec.hostname);
     }
@@ -208,12 +209,12 @@ public class NodeAgentImpl implements NodeAgent {
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) throws IOException {
         final Optional<String> containerVespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
         final NodeAttributes nodeAttributes = new NodeAttributes()
-                .withRestartGeneration(nodeSpec.wantedRestartGeneration.get())
+                .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(0L))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
-                .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(null))
-                .withDockerImage(nodeSpec.wantedDockerImage.get())
-                .withVespaVersion(containerVespaVersion.orElse(null));
+                .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
+                .withDockerImage(nodeSpec.wantedDockerImage.orElse(new DockerImage("")))
+                .withVespaVersion(containerVespaVersion.orElse(""));
 
         publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
     }
@@ -295,30 +296,30 @@ public class NodeAgentImpl implements NodeAgent {
             dockerOperations.stopServicesOnNode(containerName);
     }
 
-    private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
+    private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Container existingContainer) {
         final Node.State nodeState = nodeSpec.nodeState;
         if (nodeState == Node.State.dirty || nodeState == Node.State.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
-        if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
+        if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                                       + existingContainer.get() + " -> " + nodeSpec.wantedDockerImage.get());
+                                       + existingContainer + " -> " + nodeSpec.wantedDockerImage.get());
         }
-        if (!existingContainer.get().isRunning) {
+        if (!existingContainer.isRunning) {
             return Optional.of("Container no longer running");
         }
         return Optional.empty();
     }
 
     // Returns true if container is absent on return
-    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
+    private boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
             throws Exception {
         Optional<Container> existingContainer = dockerOperations.getContainer(hostname);
         if (!existingContainer.isPresent()) {
             return true;
         }
 
-        Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
+        Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer.get());
         if (removeReason.isPresent()) {
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
 
@@ -412,10 +413,11 @@ public class NodeAgentImpl implements NodeAgent {
 
         switch (nodeSpec.nodeState) {
             case ready:
-                removeContainerIfNeededUpdateContainerState(nodeSpec);
-                break;
             case reserved:
+            case parked:
+            case failed:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
+                updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case active:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
@@ -445,6 +447,7 @@ public class NodeAgentImpl implements NodeAgent {
             case inactive:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
+                updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case provisioned:
             case dirty:
@@ -453,10 +456,6 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 storageMaintainer.archiveNodeData(nodeSpec.containerName);
                 updateNodeRepoAndMarkNodeAsReady(nodeSpec);
-                break;
-            case parked:
-            case failed:
-                removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             default:
                 throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());

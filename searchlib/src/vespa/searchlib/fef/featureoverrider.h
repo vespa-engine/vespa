@@ -25,6 +25,7 @@ private:
     FeatureHandle       _handle;
     feature_t           _value;
 
+    virtual void handle_bind_match_data(MatchData &md) override;
 public:
     /**
      * Create a feature overrider that will override the given output

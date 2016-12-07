@@ -285,7 +285,7 @@ public:
             }
         }
         for (size_t i = 0; i < _outputs.size(); ++i) {
-            *data.resolveFeature(outputs()[i]) = _outputs[i].second->get();
+            outputs().set_number(i, _outputs[i].second->get());
         }
     }
 };

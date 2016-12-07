@@ -58,38 +58,38 @@ FieldMatchExecutor::execute(search::fef::MatchData & match)
 
     const fieldmatch::Metrics & result = _cmp.getFinalMetrics();
 
-    *match.resolveFeature(outputs()[0]) = runCmp ? result.getMatch() : 0; // score
-    *match.resolveFeature(outputs()[1]) = runCmp ? result.getProximity() : 0; // proximity
-    *match.resolveFeature(outputs()[2]) = runCmp ? result.getCompleteness() : simple.getCompleteness(); // completeness
-    *match.resolveFeature(outputs()[3]) = runCmp ? result.getQueryCompleteness() : simple.getQueryCompleteness(); // queryCompleteness
-    *match.resolveFeature(outputs()[4]) = result.getFieldCompleteness(); // fieldCompleteness
-    *match.resolveFeature(outputs()[5]) = runCmp ? result.getOrderness() : 0; // orderness
-    *match.resolveFeature(outputs()[6]) = result.getRelatedness(); // relatedness
-    *match.resolveFeature(outputs()[7]) = result.getEarliness(); // earliness
-    *match.resolveFeature(outputs()[8]) = result.getLongestSequenceRatio(); // longestSequenceRatio
-    *match.resolveFeature(outputs()[9]) = result.getSegmentProximity(); // segmentProximity
-    *match.resolveFeature(outputs()[10]) = runCmp ? result.getUnweightedProximity() : 0; // unweightedProximity
-    *match.resolveFeature(outputs()[11]) = runCmp ? result.getAbsoluteProximity() : 0; // absoluteProximity
-    *match.resolveFeature(outputs()[12]) = result.getOccurrence(); // occurrence
-    *match.resolveFeature(outputs()[13]) = result.getAbsoluteOccurrence(); // absoluteOccurence
-    *match.resolveFeature(outputs()[14]) = result.getWeightedOccurrence(); // weightedOccurence
-    *match.resolveFeature(outputs()[15]) = result.getWeightedAbsoluteOccurrence(); // weightedAbsoluteOccurence
-    *match.resolveFeature(outputs()[16]) = result.getSignificantOccurrence(); // significantOccurence
+    outputs().set_number(0, runCmp ? result.getMatch() : 0); // score
+    outputs().set_number(1, runCmp ? result.getProximity() : 0); // proximity
+    outputs().set_number(2, runCmp ? result.getCompleteness() : simple.getCompleteness()); // completeness
+    outputs().set_number(3, runCmp ? result.getQueryCompleteness() : simple.getQueryCompleteness()); // queryCompleteness
+    outputs().set_number(4, result.getFieldCompleteness()); // fieldCompleteness
+    outputs().set_number(5, runCmp ? result.getOrderness() : 0); // orderness
+    outputs().set_number(6, result.getRelatedness()); // relatedness
+    outputs().set_number(7, result.getEarliness()); // earliness
+    outputs().set_number(8, result.getLongestSequenceRatio()); // longestSequenceRatio
+    outputs().set_number(9, result.getSegmentProximity()); // segmentProximity
+    outputs().set_number(10, runCmp ? result.getUnweightedProximity() : 0); // unweightedProximity
+    outputs().set_number(11, runCmp ? result.getAbsoluteProximity() : 0); // absoluteProximity
+    outputs().set_number(12, result.getOccurrence()); // occurrence
+    outputs().set_number(13, result.getAbsoluteOccurrence()); // absoluteOccurence
+    outputs().set_number(14, result.getWeightedOccurrence()); // weightedOccurence
+    outputs().set_number(15, result.getWeightedAbsoluteOccurrence()); // weightedAbsoluteOccurence
+    outputs().set_number(16, result.getSignificantOccurrence()); // significantOccurence
 
-    *match.resolveFeature(outputs()[17]) = runCmp ? result.getWeight() : simple.getWeight(); // weight
-    *match.resolveFeature(outputs()[18]) = result.getSignificance(); // significance
-    *match.resolveFeature(outputs()[19]) = result.getImportance(); // importance
+    outputs().set_number(17, runCmp ? result.getWeight() : simple.getWeight()); // weight
+    outputs().set_number(18, result.getSignificance()); // significance
+    outputs().set_number(19, result.getImportance()); // importance
 
-    *match.resolveFeature(outputs()[20]) = result.getSegments(); // segments
-    *match.resolveFeature(outputs()[21]) = runCmp ? result.getMatches() : simple.getMatches(); // matches
-    *match.resolveFeature(outputs()[22]) = result.getOutOfOrder(); // outOfOrder
-    *match.resolveFeature(outputs()[23]) = result.getGaps(); // gaps
-    *match.resolveFeature(outputs()[24]) = result.getGapLength(); // gapLength
-    *match.resolveFeature(outputs()[25]) = runCmp ? result.getLongestSequence() : 0; // longestSequence
-    *match.resolveFeature(outputs()[26]) = runCmp ? result.getHead() : 0; // head
-    *match.resolveFeature(outputs()[27]) = runCmp ? result.getTail() : 0; // tail
-    *match.resolveFeature(outputs()[28]) = result.getSegmentDistance(); // segmentDistance
-    *match.resolveFeature(outputs()[29]) = simple.getDegradedMatches(); // degradedMatches
+    outputs().set_number(20, result.getSegments()); // segments
+    outputs().set_number(21, runCmp ? result.getMatches() : simple.getMatches()); // matches
+    outputs().set_number(22, result.getOutOfOrder()); // outOfOrder
+    outputs().set_number(23, result.getGaps()); // gaps
+    outputs().set_number(24, result.getGapLength()); // gapLength
+    outputs().set_number(25, runCmp ? result.getLongestSequence() : 0); // longestSequence
+    outputs().set_number(26, runCmp ? result.getHead() : 0); // head
+    outputs().set_number(27, runCmp ? result.getTail() : 0); // tail
+    outputs().set_number(28, result.getSegmentDistance()); // segmentDistance
+    outputs().set_number(29, simple.getDegradedMatches()); // degradedMatches
 }
 
 

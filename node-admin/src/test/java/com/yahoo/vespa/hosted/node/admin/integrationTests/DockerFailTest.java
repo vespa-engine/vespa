@@ -8,10 +8,8 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
-import java.util.Optional;
-
 /**
- * @author valerijf
+ * @author freva
  */
 public class DockerFailTest {
 
@@ -20,13 +18,13 @@ public class DockerFailTest {
         try (DockerTester dockerTester = new DockerTester()) {
             ContainerNodeSpec containerNodeSpec = new ContainerNodeSpec.Builder()
                     .hostname("hostName")
-                    .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                    .wantedDockerImage(new DockerImage("dockerImage"))
                     .containerName(new ContainerName("container"))
                     .nodeState(Node.State.active)
                     .nodeType("tenant")
                     .nodeFlavor("docker")
-                    .wantedRestartGeneration(Optional.of(1L))
-                    .currentRestartGeneration(Optional.of(1L))
+                    .wantedRestartGeneration(1L)
+                    .currentRestartGeneration(1L)
                     .build();
             dockerTester.addContainerNodeSpec(containerNodeSpec);
 

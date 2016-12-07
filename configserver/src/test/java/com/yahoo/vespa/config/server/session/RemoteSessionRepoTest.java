@@ -40,7 +40,9 @@ public class RemoteSessionRepoTest extends TestWithCurator {
         createSession(3l, false);
         curator.create(Path.fromString("/applications"));
         curator.create(Path.fromString("/sessions"));
-        Tenant tenant = TenantBuilder.create(new TestComponentRegistry(curator), TenantName.defaultName(), Path.createRoot()).build();
+        Tenant tenant = TenantBuilder.create(new TestComponentRegistry.Builder().curator(curator).build(),
+                                             TenantName.defaultName(),
+                                             Path.createRoot()).build();
         this.remoteSessionRepo = tenant.getRemoteSessionRepo();
     }
 
@@ -89,7 +91,9 @@ public class RemoteSessionRepoTest extends TestWithCurator {
     public void testBadApplicationRepoOnActivate() throws Exception {
         TenantApplications applicationRepo = new FailingTenantApplications();
         curator.framework().create().forPath("/mytenant");
-        Tenant tenant = TenantBuilder.create(new TestComponentRegistry(curator), TenantName.from("mytenant"), Path.fromString("mytenant"))
+        Tenant tenant = TenantBuilder.create(new TestComponentRegistry.Builder().curator(curator).build(),
+                                             TenantName.from("mytenant"),
+                                             Path.fromString("mytenant"))
                 .withApplicationRepo(applicationRepo)
                 .build();
         remoteSessionRepo = tenant.getRemoteSessionRepo();

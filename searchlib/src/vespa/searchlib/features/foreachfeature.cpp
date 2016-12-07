@@ -29,16 +29,16 @@ ForeachExecutor<CO, OP>::ForeachExecutor(const CO & condition, uint32_t numInput
 
 template <typename CO, typename OP>
 void
-ForeachExecutor<CO, OP>::execute(MatchData & match)
+ForeachExecutor<CO, OP>::execute(MatchData &)
 {
     _operation.reset();
     for (uint32_t i = 0; i < inputs().size(); ++i) {
-        feature_t val = *match.resolveFeature(inputs()[i]);
+        feature_t val = inputs().get_number(i);
         if (_condition.useValue(val)) {
             _operation.onValue(val);
         }
     }
-    *match.resolveFeature(outputs()[0]) = _operation.getResult();
+    outputs().set_number(0, _operation.getResult());
 }
 
 

@@ -64,14 +64,14 @@ public class RebootTest {
     private ContainerNodeSpec createContainerNodeSpec() {
         return new ContainerNodeSpec.Builder()
                 .hostname("host1")
-                .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                .wantedDockerImage(new DockerImage("dockerImage"))
                 .containerName(new ContainerName("container"))
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
-                .vespaVersion(Optional.of("6.50.0"))
-                .wantedRestartGeneration(Optional.of(1L))
-                .currentRestartGeneration(Optional.of(1L))
+                .vespaVersion("6.50.0")
+                .wantedRestartGeneration(1L)
+                .currentRestartGeneration(1L)
                 .build();
     }
 }

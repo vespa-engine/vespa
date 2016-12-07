@@ -104,7 +104,7 @@ public abstract class SessionPrepareHandlerTestBase extends SessionHandlerTest {
             zooKeeperClient = new MockSessionZKClient(curator, pathProvider.getSessionDirs().append(String.valueOf(ls.getSessionId())));
             if (ls.getStatus()!=null) zooKeeperClient.writeStatus(ls.getStatus());
             RemoteSession remSess = new RemoteSession(TenantName.from("default"), ls.getSessionId(),
-                    new TestComponentRegistry(),
+                    new TestComponentRegistry.Builder().curator(curator).build(),
                     zooKeeperClient);
             remoteRepo.addSession(remSess);
         }

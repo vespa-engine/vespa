@@ -39,9 +39,9 @@ import static org.mockito.Mockito.when;
  * @author bakksjo
  */
 public class NodeAdminImplTest {
-    private static final Optional<Double> MIN_CPU_CORES = Optional.of(1.0);
-    private static final Optional<Double> MIN_MAIN_MEMORY_AVAILABLE_GB = Optional.of(1.0);
-    private static final Optional<Double> MIN_DISK_AVAILABLE_GB = Optional.of(1.0);
+    private static final double MIN_CPU_CORES = 1.0;
+    private static final double MIN_MAIN_MEMORY_AVAILABLE_GB = 1.0;
+    private static final double MIN_DISK_AVAILABLE_GB = 1.0;
 
     // Trick to allow mocking of typed interface without casts/warnings.
     private interface NodeAgentFactory extends Function<String, NodeAgent> {}
@@ -66,7 +66,7 @@ public class NodeAdminImplTest {
         final Container existingContainer = new Container(hostName, dockerImage, containerName, isRunning);
         final ContainerNodeSpec nodeSpec = new ContainerNodeSpec.Builder()
                 .hostname(hostName)
-                .wantedDockerImage(Optional.of(dockerImage))
+                .wantedDockerImage(dockerImage)
                 .containerName(containerName)
                 .nodeState(Node.State.active)
                 .nodeType("tenant")

@@ -15,9 +15,9 @@ namespace search {
 namespace features {
 
 void
-FirstPhaseExecutor::execute(search::fef::MatchData & match)
+FirstPhaseExecutor::execute(search::fef::MatchData &)
 {
-    *match.resolveFeature(outputs()[0]) = *match.resolveFeature(inputs()[0]);
+    outputs().set_number(0, inputs().get_number(0));
 }
 
 

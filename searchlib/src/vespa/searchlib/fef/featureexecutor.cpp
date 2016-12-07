@@ -18,5 +18,18 @@ FeatureExecutor::isPure()
     return false;
 }
 
+void
+FeatureExecutor::handle_bind_match_data(MatchData &)
+{
+}
+
+void
+FeatureExecutor::bind_match_data(MatchData &md)
+{
+    _inputs.bind(md);
+    _outputs.bind(md);
+    handle_bind_match_data(md);
+}
+
 } // namespace fef
 } // namespace search

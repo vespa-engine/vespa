@@ -33,13 +33,13 @@ AgeExecutor::execute(search::fef::MatchData &data)
     if (_attribute != NULL) {
         _buf.fill(*_attribute, data.getDocId());
         int64_t docTime = _buf[0];
-        feature_t currTime = *data.resolveFeature(inputs()[0]);
+        feature_t currTime = inputs().get_number(0);
         age = currTime - docTime;
         if (age < 0) {
             age = 0;
         }
     }
-    *data.resolveFeature(outputs()[0]) = age;
+    outputs().set_number(0, age);
 }
 
 void

@@ -90,6 +90,7 @@ private:
     typedef std::map<uint64_t, api::CreateVisitorCommand::SP> SentMessagesMap;
 
     void sendReply(const api::ReturnCode& code, DistributorMessageSender& sender);
+    void updateReplyMetrics(const api::ReturnCode& result);
     void verifyDistributorsAreAvailable();
     void verifyVisitorDistributionBitCount(const document::BucketId&);
     void verifyDistributorIsNotDown(const lib::ClusterState&);

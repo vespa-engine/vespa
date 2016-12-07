@@ -14,7 +14,6 @@ import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.Tenants;
-import com.yahoo.vespa.curator.mock.MockCurator;
 
 import java.util.*;
 
@@ -30,7 +29,7 @@ public class TestTenantBuilder {
     private Map<TenantName, TenantBuilder> tenantMap = new HashMap<>();
 
     public TestTenantBuilder() throws Exception {
-        componentRegistry = new TestComponentRegistry(new MockCurator());
+        componentRegistry = new TestComponentRegistry.Builder().build();
     }
 
     public TenantBuilder createTenant(TenantName tenantName) {

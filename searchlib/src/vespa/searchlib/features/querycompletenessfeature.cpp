@@ -57,8 +57,8 @@ QueryCompletenessExecutor::execute(search::fef::MatchData &match)
             ++miss;
         }
     }
-    *match.resolveFeature(outputs()[0]) = hit;
-    *match.resolveFeature(outputs()[1]) = miss;
+    outputs().set_number(0, hit);
+    outputs().set_number(1, miss);
 }
 
 QueryCompletenessBlueprint::QueryCompletenessBlueprint() :
