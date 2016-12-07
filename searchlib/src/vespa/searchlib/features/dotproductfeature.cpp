@@ -48,7 +48,7 @@ DotProductExecutor<Vector, Buffer>::execute(MatchData & match)
             }
         }
     }
-    *match.resolveFeature(outputs()[0]) = val;
+    outputs().set_number(0, val);
 }
 
 }
@@ -78,7 +78,7 @@ DotProductExecutor<A>::execute(MatchData & match)
     const AT *values(NULL);
     size_t count = getAttributeValues(match.getDocId(), values);
     size_t commonRange = std::min(count, _vector.size());
-    *match.resolveFeature(outputs()[0]) = _multiplier->dotProduct(&_vector[0], reinterpret_cast<const typename A::BaseType *>(values), commonRange);
+    outputs().set_number(0, _multiplier->dotProduct(&_vector[0], reinterpret_cast<const typename A::BaseType *>(values), commonRange));
 }
 
 template <typename A>

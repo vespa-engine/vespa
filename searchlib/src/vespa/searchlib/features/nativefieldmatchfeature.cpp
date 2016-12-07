@@ -81,7 +81,7 @@ NativeFieldMatchExecutor::execute(search::fef::MatchData &match)
     if (_divisor > 0) {
         score /= _divisor;
     }
-    *match.resolveFeature(outputs()[0]) = score;
+    outputs().set_number(0, score);
 }
 
 

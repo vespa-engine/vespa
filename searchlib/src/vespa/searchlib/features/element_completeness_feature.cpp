@@ -68,10 +68,10 @@ ElementCompletenessExecutor::execute(search::fef::MatchData &data)
             best = state;
         }
     }
-    *data.resolveFeature(outputs()[0]) = best.completeness;
-    *data.resolveFeature(outputs()[1]) = best.fieldCompleteness;
-    *data.resolveFeature(outputs()[2]) = best.queryCompleteness;
-    *data.resolveFeature(outputs()[3]) = best.elementWeight;
+    outputs().set_number(0, best.completeness);
+    outputs().set_number(1, best.fieldCompleteness);
+    outputs().set_number(2, best.queryCompleteness);
+    outputs().set_number(3, best.elementWeight);
 }
 
 //-----------------------------------------------------------------------------

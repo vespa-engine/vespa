@@ -55,7 +55,6 @@ public:
     TermEditDistanceExecutor(const search::fef::IQueryEnvironment &env,
                              const TermEditDistanceConfig &config);
 
-    void inputs_done() override { _lenHandle = inputs()[0]; }
 
     /**
      *
@@ -96,7 +95,6 @@ private:
     const TermEditDistanceConfig             &_config;       // The config for this executor.
     std::vector<search::fef::TermFieldHandle> _fieldHandles; // The handles of all query terms.
     std::vector<feature_t>                    _termWeights;  // The weights of all query terms.
-    search::fef::FeatureHandle                _lenHandle;    // Handle to the length input feature.
     std::vector<TedCell>                      _prevRow;      // Optimized representation of the cost table.
     std::vector<TedCell>                      _thisRow;      //
 };

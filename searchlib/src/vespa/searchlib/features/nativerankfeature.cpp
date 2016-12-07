@@ -68,11 +68,11 @@ NativeRankExecutor::NativeRankExecutor(const NativeRankParams & params) :
 }
 
 void
-NativeRankExecutor::execute(search::fef::MatchData & match)
+NativeRankExecutor::execute(search::fef::MatchData &)
 {
-    *match.resolveFeature(outputs()[0]) = (*match.resolveFeature(inputs()[0]) * _params.fieldMatchWeight
-                    + *match.resolveFeature(inputs()[1]) * _params.proximityWeight
-                    + *match.resolveFeature(inputs()[2]) * _params.attributeMatchWeight) / _divisor;
+    outputs().set_number(0, (inputs().get_number(0) * _params.fieldMatchWeight
+                             + inputs().get_number(1) * _params.proximityWeight
+                             + inputs().get_number(2) * _params.attributeMatchWeight) / _divisor);
 }
 
 

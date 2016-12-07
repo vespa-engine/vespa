@@ -61,7 +61,7 @@ DebugAttributeWaitExecutor::execute(MatchData &data)
             FastOS_Thread::Sleep(rem);
         }
     }
-    *data.resolveFeature(outputs()[0]) = 1.0e-6 * time.MicroSecsToNow();
+    outputs().set_number(0, 1.0e-6 * time.MicroSecsToNow());
 }
 
 //-----------------------------------------------------------------------------

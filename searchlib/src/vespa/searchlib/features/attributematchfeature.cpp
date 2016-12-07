@@ -238,17 +238,17 @@ AttributeMatchExecutor<T>::execute(MatchData & match)
     _cmp.reset();
     _cmp.run(match);
 
-    *match.resolveFeature(outputs()[0]) = _cmp.getCompleteness();
-    *match.resolveFeature(outputs()[1]) = _cmp.getQueryCompleteness();
-    *match.resolveFeature(outputs()[2]) = _cmp.getFieldCompleteness();
-    *match.resolveFeature(outputs()[3]) = _cmp.getNormalizedWeight();
-    *match.resolveFeature(outputs()[4]) = _cmp.getNormalizedWeightedWeight();
-    *match.resolveFeature(outputs()[5]) = _cmp.getWeight();
-    *match.resolveFeature(outputs()[6]) = _cmp.getSignificance();
-    *match.resolveFeature(outputs()[7]) = _cmp.getImportance();
-    *match.resolveFeature(outputs()[8]) = static_cast<feature_t>(_cmp.getMatches());
-    *match.resolveFeature(outputs()[9]) = static_cast<feature_t>(_cmp.getTotalWeight());
-    *match.resolveFeature(outputs()[10]) = _cmp.getAverageWeight();
+    outputs().set_number(0, _cmp.getCompleteness());
+    outputs().set_number(1, _cmp.getQueryCompleteness());
+    outputs().set_number(2, _cmp.getFieldCompleteness());
+    outputs().set_number(3, _cmp.getNormalizedWeight());
+    outputs().set_number(4, _cmp.getNormalizedWeightedWeight());
+    outputs().set_number(5, _cmp.getWeight());
+    outputs().set_number(6, _cmp.getSignificance());
+    outputs().set_number(7, _cmp.getImportance());
+    outputs().set_number(8, static_cast<feature_t>(_cmp.getMatches()));
+    outputs().set_number(9, static_cast<feature_t>(_cmp.getTotalWeight()));
+    outputs().set_number(10, _cmp.getAverageWeight());
 }
 
 

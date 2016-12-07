@@ -37,10 +37,10 @@ TermDistanceExecutor::execute(MatchData & match)
 {
     TermDistanceCalculator::Result result;
     TermDistanceCalculator::run(_termA, _termB, match, result);
-    *match.resolveFeature(outputs()[0]) = result.forwardDist;
-    *match.resolveFeature(outputs()[1]) = result.forwardTermPos;
-    *match.resolveFeature(outputs()[2]) = result.reverseDist;
-    *match.resolveFeature(outputs()[3]) = result.reverseTermPos;
+    outputs().set_number(0, result.forwardDist);
+    outputs().set_number(1, result.forwardTermPos);
+    outputs().set_number(2, result.reverseDist);
+    outputs().set_number(3, result.reverseTermPos);
 }
 
 

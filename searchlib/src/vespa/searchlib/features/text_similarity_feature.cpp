@@ -119,11 +119,11 @@ TextSimilarityExecutor::execute(search::fef::MatchData &data)
         }
     }
     if (_queue.empty()) {
-        *data.resolveFeature(outputs()[0]) = 0.0;
-        *data.resolveFeature(outputs()[1]) = 0.0;
-        *data.resolveFeature(outputs()[2]) = 0.0;
-        *data.resolveFeature(outputs()[3]) = 0.0;
-        *data.resolveFeature(outputs()[4]) = 0.0;
+        outputs().set_number(0, 0.0);
+        outputs().set_number(1, 0.0);
+        outputs().set_number(2, 0.0);
+        outputs().set_number(3, 0.0);
+        outputs().set_number(4, 0.0);
         return;
     }
     const Item &first = _queue.front();

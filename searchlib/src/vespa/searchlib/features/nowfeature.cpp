@@ -20,8 +20,8 @@ NowExecutor::NowExecutor(int64_t timestamp) :
 }
 
 void
-NowExecutor::execute(search::fef::MatchData &data) {
-    *data.resolveFeature(outputs()[0]) = _timestamp;
+NowExecutor::execute(search::fef::MatchData &) {
+    outputs().set_number(0, _timestamp);
 }
 
 void

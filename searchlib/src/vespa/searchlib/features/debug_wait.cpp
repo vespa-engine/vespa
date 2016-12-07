@@ -30,7 +30,7 @@ DebugWaitExecutor::DebugWaitExecutor(const IQueryEnvironment &env, const DebugWa
 }
 
 void
-DebugWaitExecutor::execute(MatchData &data)
+DebugWaitExecutor::execute(MatchData &)
 {
     FastOS_Time time;
     time.SetNow();
@@ -45,7 +45,7 @@ DebugWaitExecutor::execute(MatchData &data)
             FastOS_Thread::Sleep(rem);
         }
     }
-    *data.resolveFeature(outputs()[0]) = 1.0e-6 * time.MicroSecsToNow();
+    outputs().set_number(0, 1.0e-6 * time.MicroSecsToNow());
 }
 
 //-----------------------------------------------------------------------------

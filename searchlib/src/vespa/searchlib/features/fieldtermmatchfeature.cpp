@@ -26,11 +26,11 @@ void
 FieldTermMatchExecutor::execute(search::fef::MatchData &match)
 {
     if (_fieldHandle == search::fef::IllegalHandle) {
-        *match.resolveFeature(outputs()[0]) = 1000000; // firstPosition
-        *match.resolveFeature(outputs()[1]) = 1000000; // lastPosition
-        *match.resolveFeature(outputs()[2]) = 0.0f; // occurrences
-        *match.resolveFeature(outputs()[3]) = 0.0f; // sum weight
-        *match.resolveFeature(outputs()[4]) = 0.0f; // avg exactness
+        outputs().set_number(0, 1000000); // firstPosition
+        outputs().set_number(1, 1000000); // lastPosition
+        outputs().set_number(2, 0.0f); // occurrences
+        outputs().set_number(3, 0.0f); // sum weight
+        outputs().set_number(4, 0.0f); // avg exactness
         return;
     }
 
@@ -57,11 +57,11 @@ FieldTermMatchExecutor::execute(search::fef::MatchData &match)
             occurrences = 1;
         }
     }
-    *match.resolveFeature(outputs()[0]) = firstPosition;
-    *match.resolveFeature(outputs()[1]) = lastPosition;
-    *match.resolveFeature(outputs()[2]) = occurrences;
-    *match.resolveFeature(outputs()[3]) = weight;
-    *match.resolveFeature(outputs()[4]) = (occurrences > 0) ? (sumExactness / occurrences) : 0;
+    outputs().set_number(0, firstPosition);
+    outputs().set_number(1, lastPosition);
+    outputs().set_number(2, occurrences);
+    outputs().set_number(3, weight);
+    outputs().set_number(4, (occurrences > 0) ? (sumExactness / occurrences) : 0);
 }
 
 FieldTermMatchBlueprint::FieldTermMatchBlueprint() :

@@ -86,12 +86,12 @@ CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const Compi
 }
 
 void
-CompiledRankingExpressionExecutor::execute(fef::MatchData &data)
+CompiledRankingExpressionExecutor::execute(fef::MatchData &)
 {
     for (size_t i = 0; i < _params.size(); ++i) {
-        _params[i] = *data.resolveFeature(inputs()[i]);
+        _params[i] = inputs().get_number(i);
     }
-    *data.resolveFeature(outputs()[0]) = _ranking_function(&_params[0]);
+    outputs().set_number(0, _ranking_function(&_params[0]));
 }
 
 //-----------------------------------------------------------------------------
@@ -108,12 +108,12 @@ InterpretedRankingExpressionExecutor::execute(fef::MatchData &data)
     _context.clear_params();
     for (size_t i = 0; i < _function.num_params(); ++i) {
         if (data.feature_is_object(inputs()[i])) {
-            _context.add_param(*data.resolve_object_feature(inputs()[i]));
+            _context.add_param(inputs().get_object(i));
         } else {
-            _context.add_param(*data.resolveFeature(inputs()[i]));
+            _context.add_param(inputs().get_number(i));
         }
     }
-    *data.resolve_object_feature(outputs()[0]) = _function.eval(_context);
+    outputs().set_object(0, _function.eval(_context));
 }
 
 //-----------------------------------------------------------------------------

@@ -35,7 +35,6 @@ public:
      */
     JaroWinklerDistanceExecutor(const search::fef::IQueryEnvironment &env,
                                 const JaroWinklerDistanceConfig &config);
-    void inputs_done() override { _lenHandle = inputs()[0]; }
     virtual void execute(search::fef::MatchData &data);
 
 private:
@@ -44,7 +43,6 @@ private:
 private:
     const JaroWinklerDistanceConfig          &_config;      // The config for this executor.
     std::vector<search::fef::TermFieldHandle> _termFieldHandles; // The handles of all query terms.
-    search::fef::FeatureHandle                _lenHandle;   // Handle to the length input feature.
 };
 
 /**

@@ -31,17 +31,17 @@ TermExecutor::TermExecutor(const search::fef::IQueryEnvironment &env,
 }
 
 void
-TermExecutor::execute(search::fef::MatchData &match)
+TermExecutor::execute(search::fef::MatchData &)
 {
     if (_termData == NULL) { // this query term is not present in the query
-        *match.resolveFeature(outputs()[0]) = 0.0f; // connectedness
-        *match.resolveFeature(outputs()[1]) = 0.0f; // significance (1 - frequency)
-        *match.resolveFeature(outputs()[2]) = 0.0f; // weight
+        outputs().set_number(0, 0.0f); // connectedness
+        outputs().set_number(1, 0.0f); // significance (1 - frequency)
+        outputs().set_number(2, 0.0f); // weight
         return;
     }
-    *match.resolveFeature(outputs()[0]) = _connectedness;
-    *match.resolveFeature(outputs()[1]) = _significance;
-    *match.resolveFeature(outputs()[2]) = (feature_t)_termData->getWeight().percent();
+    outputs().set_number(0, _connectedness);
+    outputs().set_number(1, _significance);
+    outputs().set_number(2, (feature_t)_termData->getWeight().percent());
 }
 
 TermBlueprint::TermBlueprint() :
