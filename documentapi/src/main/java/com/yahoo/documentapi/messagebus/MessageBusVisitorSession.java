@@ -73,6 +73,10 @@ public class MessageBusVisitorSession implements VisitorSession {
         void scheduleTask(Runnable event, long delay, TimeUnit unit);
     }
 
+    public interface Clock {
+        long monotonicNanoTime();
+    }
+
     public static class VisitingProgress {
         private final VisitorIterator iterator;
         private final ProgressToken token;
@@ -268,6 +272,13 @@ public class MessageBusVisitorSession implements VisitorSession {
         }
     }
 
+    public static class RealClock implements Clock {
+        @Override
+        public long monotonicNanoTime() {
+            return System.nanoTime();
+        }
+    }
+
     private static final Logger log = Logger.getLogger(MessageBusVisitorSession.class.getName());
 
     private static long sessionCounter = 0;
@@ -288,8 +299,10 @@ public class MessageBusVisitorSession implements VisitorSession {
     private final VisitorStatistics statistics;
     private final String sessionName = createSessionName();
     private final String dataDestination;
+    private final Clock clock;
     private StateDescription state;
     private long visitorCounter = 0;
+    private long startTimeNanos = 0;
     private boolean scheduledSendCreateVisitors = false;
     private boolean done = false;
     private boolean destroying = false; // For testing and sanity checking
@@ -309,6 +322,19 @@ public class MessageBusVisitorSession implements VisitorSession {
                                     RoutingTable routingTable)
             throws ParseException
     {
+        this(visitorParameters, taskExecutor, senderFactory,
+             receiverFactory, routingTable, new RealClock());
+    }
+
+    // TODO builder pattern
+    public MessageBusVisitorSession(VisitorParameters visitorParameters,
+                                    AsyncTaskExecutor taskExecutor,
+                                    SenderFactory senderFactory,
+                                    ReceiverFactory receiverFactory,
+                                    RoutingTable routingTable,
+                                    Clock clock)
+            throws ParseException
+    {
         this.params = visitorParameters; // TODO(vekterli): make copy? legacy impl does not copy
         initializeRoute(routingTable);
         this.sender = senderFactory.createSender(createReplyHandler(), this.params);
@@ -317,6 +343,7 @@ public class MessageBusVisitorSession implements VisitorSession {
         this.progress = createVisitingProgress(params);
         this.statistics = new VisitorStatistics();
         this.state = new StateDescription(State.NOT_STARTED);
+        this.clock = clock;
         initializeHandlers();
         trace = new Trace(visitorParameters.getTraceLevel());
         dataDestination = (params.getLocalDataHandler() == null
@@ -339,13 +366,14 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     public void start() {
         synchronized (progress.getToken()) {
+            this.startTimeNanos = clock.monotonicNanoTime();
             if (progress.getIterator().isDone()) {
                 log.log(LogLevel.DEBUG, sessionName + ": progress token indicates " +
                         "session is done before it could even start; no-op");
                 return;
             }
             transitionTo(new StateDescription(State.WORKING));
-            taskExecutor.submitTask(new SendCreateVisitorsTask());
+            taskExecutor.submitTask(new SendCreateVisitorsTask(sessionTimeoutMs()));
         }
     }
 
@@ -367,15 +395,19 @@ public class MessageBusVisitorSession implements VisitorSession {
             assert(state.getState() == State.NOT_STARTED);
             state = newState;
         } else if (newState.getState() == State.COMPLETED) {
-            if (state.getState() != State.ABORTED && state.getState() != State.FAILED) {
+            if (!state.failed()) {
                 state = newState;
-            } // else: don't override aborted state
+            } // else: don't override existing failure state
         } else if (newState.getState() == State.ABORTED) {
             state = newState;
         } else if (newState.getState() == State.FAILED) {
             if (state.getState() != State.FAILED) {
                 state = newState;
-            } // else: don't override failed state
+            } // else: don't override existing failure state
+        } else if (newState.getState() == State.TIMED_OUT) {
+            if (!state.failed()) {
+                state = newState;
+            } // else: don't override existing failure state
         } else {
             assert(false);
         }
@@ -384,29 +416,26 @@ public class MessageBusVisitorSession implements VisitorSession {
     }
 
     private ReplyHandler createReplyHandler() {
-        return new ReplyHandler() {
-            @Override
-            public void handleReply(Reply reply) {
-                // Generally, handleReply will run in the context of the
-                // underlying transport layer's processing thread(s), so we
-                // schedule our own reply handling task to avoid blocking it.
-                try {
-                    taskExecutor.submitTask(new HandleReplyTask(reply));
-                } catch (RejectedExecutionException e) {
-                     // We cannot reliably handle reply tasks failing to be submitted, since
-                     // the reply task performs all our internal state handling logic. As such,
-                     // we just immediately go into a failure destruction mode as soon as this
-                     // happens, in which we do not wait for any active messages to be replied
-                     // to.
-                    log.log(LogLevel.WARNING, "Visitor session '" + sessionName +
-                            "': failed to submit reply task to executor service! " +
-                            "Session cannot reliably continue; terminating it early.", e);
+        return (reply) -> {
+            // Generally, handleReply will run in the context of the
+            // underlying transport layer's processing thread(s), so we
+            // schedule our own reply handling task to avoid blocking it.
+            try {
+                taskExecutor.submitTask(new HandleReplyTask(reply));
+            } catch (RejectedExecutionException e) {
+                 // We cannot reliably handle reply tasks failing to be submitted, since
+                 // the reply task performs all our internal state handling logic. As such,
+                 // we just immediately go into a failure destruction mode as soon as this
+                 // happens, in which we do not wait for any active messages to be replied
+                 // to.
+                log.log(LogLevel.WARNING, "Visitor session '" + sessionName +
+                        "': failed to submit reply task to executor service! " +
+                        "Session cannot reliably continue; terminating it early.", e);
 
-                    synchronized (progress.getToken()) {
-                        transitionTo(new StateDescription(State.FAILED, "Failed to submit reply task to executor service: " + e.getMessage()));
-                        if (!done) {
-                            markSessionCompleted();
-                        }
+                synchronized (progress.getToken()) {
+                    transitionTo(new StateDescription(State.FAILED, "Failed to submit reply task to executor service: " + e.getMessage()));
+                    if (!done) {
+                        markSessionCompleted();
                     }
                 }
             }
@@ -414,19 +443,16 @@ public class MessageBusVisitorSession implements VisitorSession {
     }
 
     private MessageHandler createMessageHandler() {
-        return new MessageHandler() {
-            @Override
-            public void handleMessage(Message message) {
-                try {
-                    taskExecutor.submitTask(new HandleMessageTask(message));
-                } catch (RejectedExecutionException e) {
-                    Reply reply = ((DocumentMessage)message).createReply();
-                    message.swapState(reply);
-                    reply.addError(new Error(
-                            DocumentProtocol.ERROR_ABORTED,
-                            "Visitor session has been aborted"));
-                    receiver.reply(reply);
-                }
+        return (message) -> {
+            try {
+                taskExecutor.submitTask(new HandleMessageTask(message));
+            } catch (RejectedExecutionException e) {
+                Reply reply = ((DocumentMessage)message).createReply();
+                message.swapState(reply);
+                reply.addError(new Error(
+                        DocumentProtocol.ERROR_ABORTED,
+                        "Visitor session has been aborted"));
+                receiver.reply(reply);
             }
         };
     }
@@ -530,6 +556,12 @@ public class MessageBusVisitorSession implements VisitorSession {
         // All private methods in this task must be protected by a lock around
         // the progress token!
 
+        private final long messageTimeoutMs;
+
+        public SendCreateVisitorsTask(long messageTimeoutMs) {
+            this.messageTimeoutMs = messageTimeoutMs;
+        }
+
         private String getNextVisitorId() {
             StringBuilder sb = new StringBuilder();
             ++visitorCounter;
@@ -545,9 +577,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                     dataDestination);
 
             msg.getTrace().setLevel(params.getTraceLevel());
-            msg.setTimeRemaining(params.getTimeoutMs() != -1
-                                 ? params.getTimeoutMs()
-                                 : 5 * 60 * 1000);
+            msg.setTimeRemaining(messageTimeoutMs);
             msg.setBuckets(Arrays.asList(bucket.getSuperbucket(), bucket.getProgress()));
             msg.setDocumentSelection(params.getDocumentSelection());
             msg.setFromTimestamp(params.getFromTimestamp());
@@ -892,21 +922,42 @@ public class MessageBusVisitorSession implements VisitorSession {
                     || enoughHitsReceived());
     }
 
+    private long sessionTimeoutMs() {
+        return (params.getTimeoutMs() != -1) ? params.getTimeoutMs() : 5 * 60 * 1000;
+    }
+
+    private long elapsedTimeMs() {
+        return TimeUnit.NANOSECONDS.toMillis(clock.monotonicNanoTime() - startTimeNanos);
+    }
+
     /**
      * Schedule a new SendCreateVisitors task iff there are still buckets to
      * visit, the visiting has not failed fatally and we haven't already
      * scheduled such a task.
      */
     private void scheduleSendCreateVisitorsIfApplicable(long delay, TimeUnit unit) {
-        if (scheduledSendCreateVisitors
-                || !progress.getIterator().hasNext()
-                || state.failed()
-                || enoughHitsReceived())
-        {
+        final long elapsedMs = elapsedTimeMs();
+        final long timeoutMs = sessionTimeoutMs();
+        if (elapsedMs >= timeoutMs) {
+            transitionTo(new StateDescription(State.TIMED_OUT, String.format("Session timeout of %d ms expired", timeoutMs)));
+            if (visitingCompleted()) {
+                markSessionCompleted();
+            }
             return;
         }
-        taskExecutor.scheduleTask(new SendCreateVisitorsTask(), delay, unit);
+        if (!mayScheduleCreateVisitorsTask()) {
+            return;
+        }
+        final long messageTimeoutMs = timeoutMs - elapsedMs;
+        taskExecutor.scheduleTask(new SendCreateVisitorsTask(messageTimeoutMs), delay, unit);
         scheduledSendCreateVisitors = true;
+    }
+
+    private boolean mayScheduleCreateVisitorsTask() {
+        return ! (scheduledSendCreateVisitors
+                  || !progress.getIterator().hasNext()
+                  || state.failed()
+                  || enoughHitsReceived());
     }
 
     private void scheduleSendCreateVisitorsIfApplicable() {
