@@ -32,7 +32,6 @@ import static com.yahoo.tensor.TensorType.Dimension.Type.mapped;
  * A tensor consists of a set of <i>dimension</i> names and a set of <i>cells</i> containing scalar <i>values</i>.
  * Each cell is is identified by its <i>address</i>, which consists of a set of dimension-label pairs which defines
  * the location of that cell. Both dimensions and labels are string on the form of an identifier or integer.
- * Any dimension in an address may be assigned the special label "undefined", represented in string form as "-".
  * <p>
  * The size of the set of dimensions of a tensor is called its <i>order</i>.
  * <p>

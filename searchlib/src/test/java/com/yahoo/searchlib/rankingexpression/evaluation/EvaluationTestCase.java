@@ -191,7 +191,7 @@ public class EvaluationTestCase extends junit.framework.TestCase {
         // -- join composites
         assertEvaluates("{ }", "tensor0 * tensor0", "{}");
         assertEvaluates("tensor(x{},y{},z{}):{}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", 
-                        "{{x:-}:1}", "{}", "{{y:-,z:-}:1}"); // empty dimensions are preserved
+                        "{{x:a}:1}", "{}", "{{y:a,z:a}:1}");
         assertEvaluates("tensor(x{}):{}",
                         "tensor0 * tensor1", "{ {x:1}:3 }", "{ {x:2}:5 }");
         assertEvaluates("{ {x:1}:15 }",

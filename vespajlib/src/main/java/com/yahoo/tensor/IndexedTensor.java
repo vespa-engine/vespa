@@ -128,6 +128,8 @@ public class IndexedTensor implements Tensor {
 
     private void populateRecursively(ImmutableMap.Builder valueBuilder, IndexedDimension dimensionValues, 
                                      TensorAddress.Builder partialAddress, List<TensorType.Dimension> remainingDimensions) {
+        if (dimensionValues instanceof EmptyIndexedDimension)
+            return;
         if (remainingDimensions.size() == 1) {
             PrimitiveIndexedDimension primitiveValues = (PrimitiveIndexedDimension)dimensionValues;
             for (int i = 0; i < primitiveValues.values().size(); i++)
@@ -163,6 +165,8 @@ public class IndexedTensor implements Tensor {
     private static abstract class IndexedDimension {
     }
 
+    // TODO: Collapse these to one
+    
     /** An indexed dimension containing doubles */
     private static class PrimitiveIndexedDimension extends IndexedDimension {
         
@@ -202,6 +206,13 @@ public class IndexedTensor implements Tensor {
 
     }
 
+    /** An indexed dimension containing nothing */
+    private static class EmptyIndexedDimension extends IndexedDimension {
+
+        public double value() { throw new RuntimeException("Empty - no value"); }
+
+    }
+
     public static class Builder {
     
         private final TensorType type;
@@ -214,9 +225,11 @@ public class IndexedTensor implements Tensor {
         }
     
         public IndexedTensor build() {
-            if (type.dimensions().isEmpty())
+            if (firstDimension == null) // empty
+                return new IndexedTensor(type, new EmptyIndexedDimension());
+            if (type.dimensions().isEmpty()) // single number
                 return new IndexedTensor(type, 
-                                         new SingletonIndexedDimension(firstDimension == null ? 0.0 : (Double)firstDimension.get(0)));
+                                         new SingletonIndexedDimension((Double)firstDimension.get(0)));
 
             List<TensorType.Dimension> dimensions = new ArrayList<>(type.dimensions());
             IndexedDimension firstDimension = buildRecursively(dimensions, this.firstDimension);
