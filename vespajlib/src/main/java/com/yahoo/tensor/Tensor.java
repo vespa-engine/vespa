@@ -204,7 +204,6 @@ public interface Tensor {
     /** Returns true if the two given tensors are mathematically equivalent, that is whether both have the same content */
     static boolean equals(Tensor a, Tensor b) {
         if (a == b) return true;
-        if ( ! a.type().equals(b.type())) return false;
         if ( ! a.cells().equals(b.cells())) return false;
         return true;
     }

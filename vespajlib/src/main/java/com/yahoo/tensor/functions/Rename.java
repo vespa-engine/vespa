@@ -104,10 +104,11 @@ public class Rename extends PrimitiveTensorFunction {
     private String toVectorString(List<String> elements) {
         if (elements.size() == 1)
             return elements.get(0);
-        StringBuilder b = new StringBuilder("[");
+        StringBuilder b = new StringBuilder("(");
         for (String element : elements)
             b.append(element).append(", ");
         b.setLength(b.length() - 2);
+        b.append(")");
         return b.toString();
     }
 

@@ -27,7 +27,9 @@ public class MapTensor implements Tensor {
 
     static MapTensor from(TensorType type, String tensorString) {
         tensorString = tensorString.trim();
-        tensorString = tensorString.trim().substring(1).trim();
+        if ( ! tensorString.startsWith("{"))
+            throw new IllegalArgumentException("Expecting a tensor starting by {, got '" + tensorString+ "'");
+        tensorString = tensorString.substring(1).trim();
         ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
         while (tensorString.length() > 1) {
             int keyEnd = tensorString.indexOf('}');

@@ -89,148 +89,148 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{}", "tensor0", "{}");
 
         // tensor map
-        tester.assertEvaluates("{ {d1:l1}:1, {d1:l2}:2, {d1:l3 }:3 }",
-                              "map(tensor0, f(x) (log10(x)))", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
-        tester.assertEvaluates("{ {d1:l1}:4, {d1:l2}:9, {d1:l3 }:16 }",
-                              "map(tensor0, f(x) (x * x))", "{ {d1:l1}:2, {d1:l2}:3, {d1:l3}:4 }");
+        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:2, {d1:2 }:3 }",
+                              "map(tensor0, f(x) (log10(x)))", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
+        tester.assertEvaluates("{ {d1:0}:4, {d1:1}:9, {d1:2 }:16 }",
+                              "map(tensor0, f(x) (x * x))", "{ {d1:0}:2, {d1:1}:3, {d1:2}:4 }");
         // -- tensor map composites
-        tester.assertEvaluates("{ {d1:l1}:1, {d1:l2}:2, {d1:l3 }:3 }", 
-                               "log10(tensor0)", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
-        tester.assertEvaluates("{ {d1:l1}:-10, {d1:l2}:-100, {d1:l3 }:-1000 }",
-                               "- tensor0", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
-        tester.assertEvaluates("{ {d1:l1}:-10, {d1:l2}:0, {d1:l3 }:0 }",
-                               "min(tensor0, 0)", "{ {d1:l1}:-10, {d1:l2}:0, {d1:l3}:10 }");
-        tester.assertEvaluates("{ {d1:l1}:0, {d1:l2}:0, {d1:l3 }:10 }",
-                               "max(tensor0, 0)", "{ {d1:l1}:-10, {d1:l2}:0, {d1:l3}:10 }");
+        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:2, {d1:2 }:3 }", 
+                               "log10(tensor0)", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
+        tester.assertEvaluates("{ {d1:0}:-10, {d1:1}:-100, {d1:2 }:-1000 }",
+                               "- tensor0", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
+        tester.assertEvaluates("{ {d1:0}:-10, {d1:1}:0, {d1:2 }:0 }",
+                               "min(tensor0, 0)", "{ {d1:0}:-10, {d1:1}:0, {d1:2}:10 }");
+        tester.assertEvaluates("{ {d1:0}:0, {d1:1}:0, {d1:2 }:10 }",
+                               "max(tensor0, 0)", "{ {d1:0}:-10, {d1:1}:0, {d1:2}:10 }");
         // -- explicitly implemented functions (not foolproof tests as we don't bother testing float value equivalence)
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "abs(tensor0)",    "{ {x:1}:1, {x:2}:-2 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "acos(tensor0)",   "{ {x:1}:1, {x:2}:1 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "asin(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "atan(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "ceil(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "cos(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "cosh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "elu(tensor0)",    "{ {x:1}:1, {x:2}:2 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:1 }",     "exp(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "fabs(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "floor(tensor0)",  "{ {x:1}:1, {x:2}:2 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "isNan(tensor0)",  "{ {x:1}:1, {x:2}:2 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "log(tensor0)",    "{ {x:1}:1, {x:2}:1 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:1 }",     "log10(tensor0)",  "{ {x:1}:1, {x:2}:10 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:2 }",     "mod(tensor0, 3)", "{ {x:1}:3, {x:2}:8 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:8 }",     "pow(tensor0, 3)", "{ {x:1}:1, {x:2}:2 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "relu(tensor0)",   "{ {x:1}:1, {x:2}:2 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:2 }",     "round(tensor0)",  "{ {x:1}:1, {x:2}:1.8 }");
-        tester.assertEvaluates("{ {x:1}:0.5, {x:2}:0.5 }", "sigmoid(tensor0)","{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:-1 }",    "sign(tensor0)",   "{ {x:1}:3, {x:2}:-5 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "sin(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "sinh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:4 }",     "square(tensor0)", "{ {x:1}:1, {x:2}:2 }");
-        tester.assertEvaluates("{ {x:1}:1, {x:2}:3 }",     "sqrt(tensor0)",   "{ {x:1}:1, {x:2}:9 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "tan(tensor0)",    "{ {x:1}:0, {x:2}:0 }");
-        tester.assertEvaluates("{ {x:1}:0, {x:2}:0 }",     "tanh(tensor0)",   "{ {x:1}:0, {x:2}:0 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "abs(tensor0)",    "{ {x:0}:1, {x:1}:-2 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "acos(tensor0)",   "{ {x:0}:1, {x:1}:1 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "asin(tensor0)",   "{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "atan(tensor0)",   "{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "ceil(tensor0)",   "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:1 }",     "cos(tensor0)",    "{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:1 }",     "cosh(tensor0)",   "{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "elu(tensor0)",    "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:1 }",     "exp(tensor0)",    "{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "fabs(tensor0)",   "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "floor(tensor0)",  "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "isNan(tensor0)",  "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "log(tensor0)",    "{ {x:0}:1, {x:1}:1 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:1 }",     "log10(tensor0)",  "{ {x:0}:1, {x:1}:10 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:2 }",     "mod(tensor0, 3)", "{ {x:0}:3, {x:1}:8 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:8 }",     "pow(tensor0, 3)", "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "relu(tensor0)",   "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:2 }",     "round(tensor0)",  "{ {x:0}:1, {x:1}:1.8 }");
+        tester.assertEvaluates("{ {x:0}:0.5, {x:1}:0.5 }", "sigmoid(tensor0)","{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:-1 }",    "sign(tensor0)",   "{ {x:0}:3, {x:1}:-5 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "sin(tensor0)",    "{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "sinh(tensor0)",   "{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:4 }",     "square(tensor0)", "{ {x:0}:1, {x:1}:2 }");
+        tester.assertEvaluates("{ {x:0}:1, {x:1}:3 }",     "sqrt(tensor0)",   "{ {x:0}:1, {x:1}:9 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "tan(tensor0)",    "{ {x:0}:0, {x:1}:0 }");
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:0 }",     "tanh(tensor0)",   "{ {x:0}:0, {x:1}:0 }");
 
         // tensor reduce
         // -- reduce 2 dimensions
         tester.assertEvaluates("{ {}:4 }",
-                               "reduce(tensor0, avg, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+                               "reduce(tensor0, avg, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:4 }",
-                               "reduce(tensor0, count, x, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+                               "reduce(tensor0, count, x, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:105 }",
-                               "reduce(tensor0, prod, x, y)",  "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+                               "reduce(tensor0, prod, x, y)",  "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:16 }",
-                               "reduce(tensor0, sum, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+                               "reduce(tensor0, sum, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:7 }",
-                               "reduce(tensor0, max, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+                               "reduce(tensor0, max, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:1 }",
-                               "reduce(tensor0, min, x, y)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+                               "reduce(tensor0, min, x, y)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         // -- reduce 2 by specifying no arguments
         tester.assertEvaluates("{ {}:4 }",
-                               "reduce(tensor0, avg)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+                               "reduce(tensor0, avg)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         // -- reduce 1 dimension
-        tester.assertEvaluates("{ {y:1}:2, {y:2}:6 }",
-                               "reduce(tensor0, avg, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
-        tester.assertEvaluates("{ {y:1}:2, {y:2}:2 }",
-                               "reduce(tensor0, count, x)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
-        tester.assertEvaluates("{ {y:1}:3, {y:2}:35 }",
-                               "reduce(tensor0, prod, x)",  "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
-        tester.assertEvaluates("{ {y:1}:4, {y:2}:12 }",
-                               "reduce(tensor0, sum, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
-        tester.assertEvaluates("{ {y:1}:3, {y:2}:7 }",
-                               "reduce(tensor0, max, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
-        tester.assertEvaluates("{ {y:1}:1, {y:2}:5 }",
-                               "reduce(tensor0, min, x)",   "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        tester.assertEvaluates("{ {y:0}:2, {y:1}:6 }",
+                               "reduce(tensor0, avg, x)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {y:0}:2, {y:1}:2 }",
+                               "reduce(tensor0, count, x)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {y:0}:3, {y:1}:35 }",
+                               "reduce(tensor0, prod, x)",  "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {y:0}:4, {y:1}:12 }",
+                               "reduce(tensor0, sum, x)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {y:0}:3, {y:1}:7 }",
+                               "reduce(tensor0, max, x)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {y:0}:1, {y:1}:5 }",
+                               "reduce(tensor0, min, x)",   "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         // -- reduce composites
         tester.assertEvaluates("{ {}: 5   }", "sum(tensor0)", "5.0");
         tester.assertEvaluates("{ {}:-5   }", "sum(tensor0)", "-5.0");
-        tester.assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:l1}:5.5, {d1:l2}:7.0 }");
-        tester.assertEvaluates("{ {}: 0   }", "sum(tensor0)", "{ {d1:l1}:5.0, {d1:l2}:7.0, {d1:l3}:-12.0}");
-        tester.assertEvaluates("{ {y:1}:4, {y:2}:12.0 }",
-                               "sum(tensor0, x)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
-        tester.assertEvaluates("{ {x:1}:6, {x:2}:10.0 }",
-                               "sum(tensor0, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+        tester.assertEvaluates("{ {}:12.5 }", "sum(tensor0)", "{ {d1:0}:5.5, {d1:1}:7.0 }");
+        tester.assertEvaluates("{ {}: 0   }", "sum(tensor0)", "{ {d1:0}:5.0, {d1:1}:7.0, {d1:2}:-12.0}");
+        tester.assertEvaluates("{ {y:0}:4, {y:1}:12.0 }",
+                               "sum(tensor0, x)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {x:0}:6, {x:1}:10.0 }",
+                               "sum(tensor0, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:16 }",
-                               "sum(tensor0, x, y)", "{ {x:1,y:1}:1.0, {x:2,y:1}:3.0, {x:1,y:2}:5.0, {x:2,y:2}:7.0 }");
+                               "sum(tensor0, x, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
 
         // tensor join
-        tester.assertEvaluates("{ {x:1,y:1}:15, {x:2,y:1}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:15, {x:1,y:0}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         // -- join composites
         tester.assertEvaluates("{ }", "tensor0 * tensor0", "{}");
         tester.assertEvaluates("tensor(x{},y{},z{}):{}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )", 
-                               "{{x:a}:1}", "{}", "{{y:a,z:a}:1}");
+                               "{{x:0}:1}", "{}", "{{y:0,z:0}:1}");
         tester.assertEvaluates("tensor(x{}):{}",
-                               "tensor0 * tensor1", "{ {x:1}:3 }", "{ {x:2}:5 }");
-        tester.assertEvaluates("{ {x:1}:15 }",
-                               "tensor0 * tensor1", "{ {x:1}:3 }", "{ {x:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:15 }",
-                               "tensor0 * tensor1", "{ {x:1}:3 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:15, {x:2,y:1}:35 }",
-                               "tensor0 * tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:8, {x:2,y:1}:12 }",
-                               "tensor0 + tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:-2, {x:2,y:1}:2 }",
-                               "tensor0 - tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:5, {x:2,y:1}:4 }",
-                               "tensor0 / tensor1", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }");
-        tester.assertEvaluates("{ {x:1,y:1}:5, {x:2,y:1}:7 }",
-                               "max(tensor0, tensor1)", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:3, {x:2,y:1}:5 }",
-                               "min(tensor0, tensor1)", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1,z:1}:7, {x:1,y:1,z:2}:13, {x:2,y:1,z:1}:21, {x:2,y:1,z:2}:39, {x:1,y:2,z:1}:55 }",
-                               "tensor0 * tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:1,z:1}:7, {y:2,z:1}:11, {y:1,z:2}:13 }");
-        tester.assertEvaluates("{ {x:1,y:2,z:1}:35, {x:1,y:2,z:2}:65 }",
-                               "tensor0 * tensor1", "{ {x:1,y:1}:1, {x:2,y:1}:3, {x:1,y:2}:5 }", "{ {y:2,z:1}:7, {y:3,z:1}:11, {y:2,z:2}:13 }");
-        tester.assertEvaluates("{{x:1,y:1}:0.0}","tensor1 * tensor2 * tensor3", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:1,y:1}:1 }", "{ {x:1,y:1}:1 }");
-        tester.assertEvaluates("{ {d1:l1}:50, {d1:l2}:500, {d1:l3}:5000 }",
-                               "5 * tensor0", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
-        tester.assertEvaluates("{ {d1:l1}:13, {d1:l2}:103, {d1:l3}:1003 }",
-                               "tensor0 + 3","{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
-        tester.assertEvaluates("{ {d1:l1}:1, {d1:l2}:10, {d1:l3 }:100 }",
-                               "tensor0 / 10", "{ {d1:l1}:10, {d1:l2}:100, {d1:l3}:1000 }");
-        tester.assertEvaluates("{ {h:1}:1.5, {h:2}:1.5 }", "0.5 + tensor0", "{ {h:1}:1.0,{h:2}:1.0 }");
-        tester.assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:0 }",
-                               "atan2(tensor0, tensor1)", "{ {x:1}:0, {x:2}:0 }", "{ {y:1}:1 }");
-        tester.assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
-                               "tensor0 > tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
-                               "tensor0 < tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
-                               "tensor0 >= tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
-                               "tensor0 <= tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:5 }");
-        tester.assertEvaluates("{ {x:1,y:1}:0, {x:2,y:1}:1 }",
-                               "tensor0 == tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
-        tester.assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
-                               "tensor0 != tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
+                               "tensor0 * tensor1", "{ {x:0}:3 }", "tensor(x{}):{ {x:1}:5 }");
+        tester.assertEvaluates("{ {x:0}:15 }",
+                               "tensor0 * tensor1", "{ {x:0}:3 }", "{ {x:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:15 }",
+                               "tensor0 * tensor1", "{ {x:0}:3 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:15, {x:1,y:0}:35 }",
+                               "tensor0 * tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:8, {x:1,y:0}:12 }",
+                               "tensor0 + tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:-2, {x:1,y:0}:2 }",
+                               "tensor0 - tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:5, {x:1,y:0}:4 }",
+                               "tensor0 / tensor1", "{ {x:0}:15, {x:1}:12 }", "{ {y:0}:3 }");
+        tester.assertEvaluates("{ {x:0,y:0}:5, {x:1,y:0}:7 }",
+                               "max(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:3, {x:1,y:0}:5 }",
+                               "min(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0,z:0}:7, {x:0,y:0,z:1}:13, {x:1,y:0,z:0}:21, {x:1,y:0,z:1}:39, {x:0,y:1,z:0}:55 }",
+                               "tensor0 * tensor1", "{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5 }", "{ {y:0,z:0}:7, {y:1,z:0}:11, {y:0,z:1}:13 }");
+        tester.assertEvaluates("{ {x:0,y:1,z:0}:35, {x:0,y:1,z:1}:65 }",
+                               "tensor0 * tensor1", "tensor(x{},y{}):{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5 }", "tensor(y{},z{}):{ {y:1,z:0}:7, {y:2,z:0}:11, {y:1,z:1}:13 })");
+        tester.assertEvaluates("{{x:0,y:0}:0.0}","tensor1 * tensor2 * tensor3", "{ {x:0}:1 }", "{ {x:1,y:0}:1, {x:0,y:0}:1 }", "{ {x:0,y:0}:1 }");
+        tester.assertEvaluates("{ {d1:0}:50, {d1:1}:500, {d1:2}:5000 }",
+                               "5 * tensor0", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
+        tester.assertEvaluates("{ {d1:0}:13, {d1:1}:103, {d1:2}:1003 }",
+                               "tensor0 + 3","{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
+        tester.assertEvaluates("{ {d1:0}:1, {d1:1}:10, {d1:2 }:100 }",
+                               "tensor0 / 10", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
+        tester.assertEvaluates("{ {h:0}:1.5, {h:1}:1.5 }", "0.5 + tensor0", "{ {h:0}:1.0,{h:1}:1.0 }");
+        tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:0 }",
+                               "atan2(tensor0, tensor1)", "{ {x:0}:0, {x:1}:0 }", "{ {y:0}:1 }");
+        tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:1 }",
+                               "tensor0 > tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
+                               "tensor0 < tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:1 }",
+                               "tensor0 >= tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
+                               "tensor0 <= tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:1 }",
+                               "tensor0 == tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
+        tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
+                               "tensor0 != tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
         // TODO
         // argmax
         // argmin        
-        tester.assertEvaluates("{ {x:1,y:1}:1, {x:2,y:1}:0 }",
-                               "tensor0 != tensor1", "{ {x:1}:3, {x:2}:7 }", "{ {y:1}:7 }");
+        tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
+                               "tensor0 != tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
         
         // tensor rename
-        tester.assertEvaluates("{ {newX:1,y:2}:3 }", "rename(tensor0, x, newX)", "{ {x:1,y:2}:3.0 }");
-        tester.assertEvaluates("{ {x:2,y:1}:3 }", "rename(tensor0, (x, y), (y, x))", "{ {x:1,y:2}:3.0 }");
+        tester.assertEvaluates("{ {newX:0,y:0}:3 }", "rename(tensor0, x, newX)", "{ {x:0,y:0}:3.0 }");
+        tester.assertEvaluates("{  {x:0,y:0}:3, {x:1,y:0}:5 }", "rename(tensor0, (x, y), (y, x))", "{ {x:0,y:0}:3.0, {x:0,y:1}:5.0 }");
         
         // tensor generate - TODO
         // assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0, {x:2,y:2}:1, {x:1,y:2}:0 }", "tensor(x[2],y[2])(x==y)");
@@ -240,31 +240,30 @@ public class EvaluationTestCase {
         // random
         
         // composite functions
-        tester.assertEvaluates("{ {x:1}:0.25, {x:2}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:3 }");
-        tester.assertEvaluates("{ {x:1}:0.31622776601683794, {x:2}:0.9486832980505138 }", "l2_normalize(tensor0, x)", "{ {x:1}:1, {x:2}:3 }");
-        tester.assertEvaluates("{ {y:1}:81.0 }", "matmul(tensor0, tensor1, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }");
-        tester.assertEvaluates("{ {x:1}:0.5, {x:2}:0.5 }", "softmax(tensor0, x)", "{ {x:1}:1, {x:2}:1 }", "{ {y:1}:1 }");
-        tester.assertEvaluates("{ {x:1,y:1}:88.0 }", "xw_plus_b(tensor0, tensor1, tensor2, x)", "{ {x:1}:15, {x:2}:12 }", "{ {y:1}:3 }", "{ {x:1}:7 }");
+        tester.assertEvaluates("{ {x:0}:0.25, {x:1}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
+        tester.assertEvaluates("{ {x:0}:0.31622776601683794, {x:1}:0.9486832980505138 }", "l2_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
+        tester.assertEvaluates("{ {y:0}:81.0 }", "matmul(tensor0, tensor1, x)", "{ {x:0}:15, {x:1}:12 }", "{ {y:0}:3 }");
+        tester.assertEvaluates("{ {x:0}:0.5, {x:1}:0.5 }", "softmax(tensor0, x)", "{ {x:0}:1, {x:1}:1 }", "{ {y:0}:1 }");
+        tester.assertEvaluates("{ {x:0,y:0}:81.0, {x:1,y:0}:88.0 }", "xw_plus_b(tensor0, tensor1, tensor2, x)", "{ {x:0}:15, {x:1}:12 }", "{ {y:0}:3 }", "{ {x:0}:0, {x:1}:7 }");
 
         // expressions combining functions
         tester.assertEvaluates(String.valueOf(7.5 + 45 + 1.7),
-                               "sum( " +                              // model computation:
+                               "sum( " +               // model computation:
                                "      tensor0 * tensor1 * tensor2 " + // - feature combinations
                                "      * tensor3" +                    // - model weights application
                                ") + 1.7",
-                               "{ {x:1}:1, {x:2}:2 }", "{ {y:1}:3, {y:2}:4 }", "{ {z:1}:5 }",
-                               "{ {x:1,y:1,z:1}:0.5, {x:2,y:1,z:1}:1.5, {x:1,y:1,z:2}:4.5 }");
-        tester.assertEvaluates("1.0", "sum(tensor0 * tensor1 + 0.5)", "{ {x:1}:0, {x:2}:0 }", "{ {x:1}:1, {x:2}:1 }");
-        tester.assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                   "{ {x:1}:1, {x:2}:1 }");
+                               "{ {x:0}:1, {x:1}:2 }", "{ {y:0}:3, {y:1}:4 }", "{ {z:0}:5 }",
+                               "{ {x:0,y:0,z:0}:0.5, {x:1,y:0,z:0}:1.5, {x:0,y:0,z:1}:4.5 }");
+        tester.assertEvaluates("1.0", "sum(tensor0 * tensor1 + 0.5)", "{ {x:0}:0, {x:1}:0 }", "{ {x:0}:1, {x:1}:1 }");
+        tester.assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                   "{ {x:0}:1, {x:1}:1 }");
 
         // tensor result dimensions are given from argument dimensions, not the resulting values
-        tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2}:1 }");
-        tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:1}:1 }", "{ {x:2,y:1}:1, {x:3,y:2}:1 }");
+        tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
+        tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");
     }
 
     @Test
     public void testProgrammaticBuildingAndPrecedence() {
-        EvaluationTester tester = new EvaluationTester();
         RankingExpression standardPrecedence = new RankingExpression(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, new ArithmeticNode(constant(3), ArithmeticOperator.MULTIPLY, constant(4))));
         RankingExpression oppositePrecedence = new RankingExpression(new ArithmeticNode(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, constant(3)), ArithmeticOperator.MULTIPLY, constant(4)));
         assertEquals(14.0, standardPrecedence.evaluate(null).asDouble(), tolerance);

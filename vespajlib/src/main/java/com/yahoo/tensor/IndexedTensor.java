@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +110,8 @@ public class IndexedTensor implements Tensor {
             return Double.valueOf(s);
         }
         catch (NumberFormatException e) {
-            throw new IllegalArgumentException("At " + indexes + ": Expected a floating point number, got '" + s + "'");
+            throw new IllegalArgumentException("At " + Arrays.toString(indexes) + 
+                                               ": Expected a floating point number, got '" + s + "'");
         }
     }
 
@@ -120,7 +122,6 @@ public class IndexedTensor implements Tensor {
     public Map<TensorAddress, Double> cells() {
         if (firstDimension instanceof SingletonIndexedDimension)
             return Collections.singletonMap(TensorAddress.empty, ((SingletonIndexedDimension)firstDimension).value());
-        
         ImmutableMap.Builder<TensorAddress, Double> builder = new ImmutableMap.Builder<>();
         populateRecursively(builder, firstDimension, new TensorAddress.Builder(type), new ArrayList<>(type.dimensions()));
         return builder.build();
@@ -138,11 +139,12 @@ public class IndexedTensor implements Tensor {
         }
         else {
             NestedIndexedDimension values = (NestedIndexedDimension) dimensionValues;
-            TensorType.Dimension currentDimension = remainingDimensions.remove(0);
+            List<TensorType.Dimension> nestedRemainingDimensions = new ArrayList<>(remainingDimensions);
+            TensorType.Dimension currentDimension = nestedRemainingDimensions.remove(0);
             for (int i = 0; i < values.values().size(); i++) {
                 populateRecursively(valueBuilder, values.values().get(i), 
                                     partialAddress.copy().add(currentDimension.name(), String.valueOf(i)),
-                                    remainingDimensions);
+                                    nestedRemainingDimensions);
             }
         }
     }
@@ -239,20 +241,21 @@ public class IndexedTensor implements Tensor {
         private IndexedDimension buildRecursively(List<TensorType.Dimension> remainingDimensions, 
                                                   List currentDimensionValues) {
             if (remainingDimensions.size() == 1) { // last dimension
-                for (Object value : currentDimensionValues)
-                    if (value == null)
-                        throw new IllegalArgumentException("Missing a value in " + remainingDimensions.get(0) +
-                                                           " for tensor of type " + type);
+                for (int i = 0; i < currentDimensionValues.size(); i++)
+                    if (currentDimensionValues.get(i) == null)
+                        throw new IllegalArgumentException("Missing a value at index " + i + " in dimension " + 
+                                                           remainingDimensions.get(0) + " for tensor of type " + type);
                 return new PrimitiveIndexedDimension(currentDimensionValues);
             }
             else {
-                TensorType.Dimension currentDimension = remainingDimensions.remove(0);
+                List<TensorType.Dimension> nestedRemainingDimensions = new ArrayList<>(remainingDimensions);                
+                TensorType.Dimension currentDimension = nestedRemainingDimensions.remove(0);
                 ImmutableList.Builder values = new ImmutableList.Builder<>();
-                for (Object value : currentDimensionValues) {
-                    if (value == null)
-                        throw new IllegalArgumentException("Missing a value in " + currentDimension + 
-                                                           " for tensor of type " + type);
-                    values.add(buildRecursively(remainingDimensions, (List)value));
+                for (int i = 0; i < currentDimensionValues.size(); i++) {
+                    if (currentDimensionValues.get(i) == null)
+                        throw new IllegalArgumentException("Missing a value at index " + i + " in dimension " +
+                                                           currentDimension + " for tensor of type " + type);
+                    values.add(buildRecursively(nestedRemainingDimensions, (List)currentDimensionValues.get(i)));
                 }
                 return new NestedIndexedDimension(values.build());
             }

@@ -66,7 +66,7 @@ public class TensorType {
             b.add(thisDimension);
         for (Dimension otherDimension : other.dimensions) {
             Dimension thisDimension = b.dimensions.get(otherDimension.name());
-            b.addOrReplace(otherDimension.combineWith(Optional.ofNullable(thisDimension)));
+            b.set(otherDimension.combineWith(Optional.ofNullable(thisDimension)));
         }
         return b.build();
     }
@@ -129,6 +129,13 @@ public class TensorType {
         /** Returns a copy of this with the name set to the given name */
         public abstract Dimension withName(String name);
 
+        /** 
+         * Returns the dimension resulting from combining two dimensions having the same name but possibly different
+         * types. This works by degrading to the type making the fewer promises.
+         * [N] + [M] -> [max(N, M)]
+         * [N] + [] -> []
+         * [] + {} -> {}
+         */
         Dimension combineWith(Optional<Dimension> other) {
             if ( ! other.isPresent()) return this;
             if (this instanceof MappedDimension) return this;
@@ -256,48 +263,22 @@ public class TensorType {
     public static class Builder {
 
         private final Map<String, Dimension> dimensions = new LinkedHashMap<>();
-        private Dimension prevDimension = null;
 
+        /** Add a new dimension */
         private Builder add(Dimension dimension) {
             Objects.requireNonNull(dimension, "A dimension cannot be null");
-
-            if ( ! dimensions.isEmpty()) {
-                validateDimensionName(dimension);
-                validateDimensionType(dimension);
-            }
-
+            if (dimensions.containsKey(dimension.name()))
+                throw new IllegalArgumentException("Could not add dimension " + dimension + " as this dimension " +
+                                                   "is already present");
             dimensions.put(dimension.name(), dimension);
-            prevDimension = dimension;
             return this;
         }
 
-        private Builder addOrReplace(Dimension dimension) { // TODO: Not quite sure I like this solution
+        /** Add or replace a dimension */
+        private Builder set(Dimension dimension) {
             Objects.requireNonNull(dimension, "A dimension cannot be null");
-
-            if ( ! dimensions.isEmpty()) {
-                validateDimensionType(dimension);
-            }
-
             dimensions.put(dimension.name(), dimension);
-            prevDimension = dimension;
             return this;
-        }
-
-        private void validateDimensionName(Dimension newDimension) {
-            Dimension prevDimension = dimensions.get(newDimension.name());
-            if (prevDimension != null) {
-                throw new IllegalArgumentException("Expected all dimensions to have unique names, " +
-                                                   "but '" + prevDimension + "' and '" + newDimension + 
-                                                   "' have the same name");
-            }
-        }
-
-        private void validateDimensionType(Dimension newDimension) {
-            if (prevDimension.type() != newDimension.type()) {
-                throw new IllegalArgumentException("Expected all dimensions to have the same type, " +
-                                                   "but '" + prevDimension + "' does not have the same type as '" + 
-                                                   newDimension + "'");
-            }
         }
 
         public Builder indexedBound(String name, int size) {
@@ -317,7 +298,25 @@ public class TensorType {
         }
 
         public TensorType build() {
+            // TODO: Support that
+            if (containsMappedDimension(dimensions.values()) && containsIndexedDimension(dimensions.values()))
+                throw new IllegalArgumentException(dimensions.values() + " contains both indexed and mapped dimensions, " +
+                                                   "this is not supported yet");
             return new TensorType(dimensions.values());
+        }
+        
+        private boolean containsMappedDimension(Collection<Dimension> dimensions) {
+            for (Dimension dimension : dimensions)
+                if (dimension instanceof MappedDimension) return true;
+            return false;
+        }
+
+        private boolean containsIndexedDimension(Collection<Dimension> dimensions) {
+            for (Dimension dimension : dimensions) {
+                if (dimension instanceof IndexedUnboundDimension) return true;
+                if (dimension instanceof IndexedBoundDimension) return true;
+            }
+            return false;
         }
 
     }

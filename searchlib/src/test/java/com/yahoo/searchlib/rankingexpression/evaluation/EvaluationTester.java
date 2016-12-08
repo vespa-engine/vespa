@@ -29,10 +29,22 @@ public class EvaluationTester {
     }
 
     public RankingExpression assertEvaluates(String expectedTensor, String expressionString, String ... tensorArguments) {
+        assertEvaluates(expectedTensor, expressionString, false, tensorArguments);
+        return assertEvaluates(expectedTensor, expressionString, true, tensorArguments);
+    }
+
+    public RankingExpression assertEvaluates(String expectedTensor, String expressionString, boolean mappedTensors, 
+                                             String ... tensorArgumentStrings) {
         MapContext context = defaultContext.thawedCopy();
         int argumentIndex = 0;
-        for (String tensorArgument : tensorArguments)
-            context.put("tensor" + (argumentIndex++), new TensorValue(Tensor.from(typeFrom(tensorArgument), tensorArgument)));
+        for (String argumentString : tensorArgumentStrings) {
+            Tensor argument;
+            if (argumentString.startsWith("tensor(")) // explicitly decided type
+                argument = Tensor.from(argumentString);
+            else // use mappedTensors+dimensions in tensor to decide type
+                argument = Tensor.from(typeFrom(argumentString, mappedTensors), argumentString);
+            context.put("tensor" + (argumentIndex++), new TensorValue(argument));
+        }
         return assertEvaluates(new TensorValue(Tensor.from(expectedTensor)), expressionString, context);
     }
 
@@ -60,10 +72,17 @@ public class EvaluationTester {
     }
 
     /** Create a tensor type from a tensor string which may or may not contain type info */
-    private TensorType typeFrom(String argument) {
-        // Tensor already have logic for this ...
-        Tensor tensor = Tensor.from(argument);
-        return tensor.type();
+    private TensorType typeFrom(String argument, boolean mappedTensors) {
+        Tensor tensor = Tensor.from(argument); // Create tensor just to get the dimensions
+        if (mappedTensors) {
+            return tensor.type(); // implicit type is mapped by default
+        }
+        else { // convert to indexed
+            TensorType.Builder builder = new TensorType.Builder();
+            for (TensorType.Dimension dimension : tensor.type().dimensions())
+                builder.indexedUnbound(dimension.name());
+            return builder.build();
+        }
     }
 
 }
