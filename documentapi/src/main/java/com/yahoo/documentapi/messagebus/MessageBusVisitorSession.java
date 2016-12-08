@@ -326,7 +326,6 @@ public class MessageBusVisitorSession implements VisitorSession {
              receiverFactory, routingTable, new RealClock());
     }
 
-    // TODO builder pattern
     public MessageBusVisitorSession(VisitorParameters visitorParameters,
                                     AsyncTaskExecutor taskExecutor,
                                     SenderFactory senderFactory,
@@ -356,6 +355,17 @@ public class MessageBusVisitorSession implements VisitorSession {
         if (progress.getIterator().isDone()) {
             markSessionCompleted();
         }
+    }
+
+    public static MessageBusVisitorSession createForMessageBus(final MessageBus mbus,
+                                                               final ScheduledExecutorService scheduledExecutorService,
+                                                               final VisitorParameters params) throws ParseException {
+        final AsyncTaskExecutor executor = new ThreadAsyncTaskExecutor(scheduledExecutorService);
+        final MessageBusSenderFactory senderFactory = new MessageBusSenderFactory(mbus);
+        final MessageBusReceiverFactory receiverFactory = new MessageBusReceiverFactory(mbus);
+        final RoutingTable table = mbus.getRoutingTable(DocumentProtocol.NAME);
+
+        return new MessageBusVisitorSession(params, executor, senderFactory, receiverFactory, table);
     }
 
     private void validateSessionParameters() {
