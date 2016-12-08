@@ -232,7 +232,7 @@ public class ApplicationHandlerTest {
         Assert.assertTrue(provisioner.activated);
     }
 
-    static void addMockApplication(Tenant tenant, ApplicationId applicationId, long sessionId) throws Exception {
+    static void addMockApplication(Tenant tenant, ApplicationId applicationId, long sessionId) {
         tenant.getApplicationRepo().createPutApplicationTransaction(applicationId, sessionId).commit();
         ApplicationPackage app = FilesApplicationPackage.fromFile(testApp);
         tenant.getLocalSessionRepo().addSession(new SessionHandlerTest.MockSession(sessionId, app, applicationId));
@@ -293,10 +293,6 @@ public class ApplicationHandlerTest {
         String url = "http://myhost:14000/application/v2/tenant/" + mytenantName + "/application/default";
         deleteAndAssertResponse(mockHandler, url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
                                 method);
-    }
-
-    private void deleteAndAssertOKResponseMocked(ApplicationId applicationId) throws IOException {
-        deleteAndAssertOKResponseMocked(applicationId, true);
     }
 
     private void deleteAndAssertOKResponseMocked(ApplicationId applicationId, boolean fullAppIdInUrl) throws IOException {

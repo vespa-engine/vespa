@@ -166,12 +166,12 @@ public class SessionPrepareHandlerTest extends SessionPrepareHandlerTestBase {
     }
 
     @Override
-    public SessionHandler createHandler() throws Exception {
+    public SessionHandler createHandler() {
         return createHandler(addTestTenant());
     }
 
     @Override
-    public SessionHandler createHandler(RemoteSessionRepo remoteSessionRepo) throws Exception {
+    public SessionHandler createHandler(RemoteSessionRepo remoteSessionRepo) {
         return createHandler(addTenant(tenant, localRepo, remoteSessionRepo,
                 new SessionCreateHandlerTestBase.MockSessionFactory()));
     }

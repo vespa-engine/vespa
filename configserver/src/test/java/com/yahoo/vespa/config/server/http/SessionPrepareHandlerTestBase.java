@@ -179,7 +179,7 @@ public abstract class SessionPrepareHandlerTestBase extends SessionHandlerTest {
         assertThat(SessionHandlerTest.getRenderedString(response), not(containsString(string)));
     }
 
-    public abstract SessionHandler createHandler() throws Exception;
+    public abstract SessionHandler createHandler();
 
-    public abstract SessionHandler createHandler(RemoteSessionRepo remoteSessionRepo) throws Exception ;
+    public abstract SessionHandler createHandler(RemoteSessionRepo remoteSessionRepo);
 }

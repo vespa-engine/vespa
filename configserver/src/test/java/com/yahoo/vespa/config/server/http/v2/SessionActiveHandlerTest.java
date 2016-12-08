@@ -53,7 +53,6 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
         configCurator = ConfigCurator.create(curator);
         localRepo = new LocalSessionRepo(applicationRepo);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
-        tenantMessage = ",\"tenant\":\"" + tenant + "\"";
         pathProvider = new PathProvider(Path.createRoot());
         activatedMessage = " for tenant '" + tenant + "' activated.";
         hostProvisioner = new MockProvisioner();

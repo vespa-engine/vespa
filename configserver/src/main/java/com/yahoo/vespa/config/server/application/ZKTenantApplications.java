@@ -43,7 +43,7 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
     private final ReloadHandler reloadHandler;
     private final TenantName tenant;
 
-    private ZKTenantApplications(Curator curator, Path tenantRoot, ReloadHandler reloadHandler, TenantName tenant) throws Exception {
+    private ZKTenantApplications(Curator curator, Path tenantRoot, ReloadHandler reloadHandler, TenantName tenant) {
         this.curator = curator;
         this.tenantRoot = tenantRoot;
         this.reloadHandler = reloadHandler;

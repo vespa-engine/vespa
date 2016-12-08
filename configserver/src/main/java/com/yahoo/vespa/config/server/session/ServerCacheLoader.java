@@ -66,7 +66,7 @@ public class ServerCacheLoader {
      *
      * @param appPath the path to load config definitions from
      */
-    private void loadConfigDefinitionsFromPath(ServerCache cache, String appPath) throws InterruptedException {
+    private void loadConfigDefinitionsFromPath(ServerCache cache, String appPath) {
         if ( ! configCurator.exists(appPath)) return;
         for (String nodeName : configCurator.getChildren(appPath)) {
             String payload = configCurator.getData(appPath, nodeName);

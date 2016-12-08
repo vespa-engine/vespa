@@ -330,7 +330,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         }
     }
 
-    public void close() throws IOException {
+    public void close() {
         directoryCache.close();
         pathChildrenExecutor.shutdown();
     }

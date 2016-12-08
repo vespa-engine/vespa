@@ -361,7 +361,7 @@ public class ZooKeeperClient {
         configCurator.putData(rootPath.append(ZKApplicationPackage.allocatedHostsNode).append(version.toSerializedForm()).getAbsolute(), json);
     }
 
-    public void feedZKFileRegistries(Map<Version, FileRegistry> fileRegistryMap) throws IOException {
+    public void feedZKFileRegistries(Map<Version, FileRegistry> fileRegistryMap) {
         for (Map.Entry<Version, FileRegistry> versionFileRegistryEntry : fileRegistryMap.entrySet()) {
             feedZKFileRegistry(versionFileRegistryEntry.getKey(), versionFileRegistryEntry.getValue());
         }

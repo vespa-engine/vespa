@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.model;
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.RoutingConfig;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
@@ -34,7 +35,7 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
         this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(models));
     }
 
-    public ConfigPayload getConfig(ConfigKey<?> configKey) throws IOException {
+    public ConfigPayload getConfig(ConfigKey<?> configKey) {
         // TODO: Override not applied, but not really necessary here
         if (configKey.equals(new ConfigKey<>(LbServicesConfig.class, configKey.getConfigId())))  {
             LbServicesConfig.Builder builder = new LbServicesConfig.Builder();
@@ -45,7 +46,7 @@ public class SuperModel implements LbServicesConfig.Producer, RoutingConfig.Prod
             getConfig(builder);
             return ConfigPayload.fromInstance(new RoutingConfig(builder));
         } else {
-            throw new RuntimeException(configKey + " is not valid when asking for config from SuperModel");
+            throw new ConfigurationRuntimeException(configKey + " is not valid when asking for config from SuperModel");
         }
     }
 

@@ -8,8 +8,6 @@ import com.yahoo.vespa.config.GenerationCounter;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.Curator;
 
-import java.util.logging.Logger;
-
 /**
  * Distributed global generation counter for the super model.
  *
@@ -72,7 +70,6 @@ public class SuperModelGenerationCounter implements GenerationCounter {
 
         public static class IncrementOperation implements Transaction.Operation {
 
-            private static final Logger log = Logger.getLogger(IncrementOperation.class.getName());
             private final CuratorCounter counter;
 
             public IncrementOperation(CuratorCounter counter) {

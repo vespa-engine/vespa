@@ -28,7 +28,7 @@ public class TestTenantBuilder {
     private GlobalComponentRegistry componentRegistry;
     private Map<TenantName, TenantBuilder> tenantMap = new HashMap<>();
 
-    public TestTenantBuilder() throws Exception {
+    public TestTenantBuilder() {
         componentRegistry = new TestComponentRegistry.Builder().build();
     }
 

@@ -31,7 +31,6 @@ import com.yahoo.vespa.config.util.ConfigUtils;
  * @since 5.1
  */
 public class HttpConfigRequest implements GetConfigRequest, TenantRequest {
-    private static final String DEFAULT_TENANT = "default";
     private static final String HTTP_PROPERTY_NOCACHE = "noCache";
     private final ConfigKey<?> key;
     private final ApplicationId appId;

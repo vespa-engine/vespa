@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server;
 
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -51,12 +50,8 @@ public class SuperModelController {
     public ConfigResponse resolveConfig(GetConfigRequest request) {
         ConfigKey<?> configKey = request.getConfigKey();
         InnerCNode targetDef = getConfigDefinition(request.getConfigKey(), request.getDefContent());
-        try {
-            ConfigPayload payload = model.getConfig(configKey);
-            return responseFactory.createResponse(payload, targetDef, generation);
-        } catch (IOException e) {
-            throw new ConfigurationRuntimeException("Unable to resolve config", e);
-        }
+        ConfigPayload payload = model.getConfig(configKey);
+        return responseFactory.createResponse(payload, targetDef, generation);
     }
 
     private InnerCNode getConfigDefinition(ConfigKey<?> configKey, DefContent defContent) {
