@@ -118,7 +118,9 @@ RankProgram::resolve(const std::vector<vespalib::string> &names,
 {
     FeatureResolver result(names.size());
     for (size_t i = 0; i < names.size(); ++i) {
-        result.add(names[i], match_data().resolve_raw(handles[i]));
+        result.add(names[i],
+                   match_data().resolve_raw(handles[i]),
+                   match_data().feature_is_object(handles[i]));
     }
     return result;
 }
