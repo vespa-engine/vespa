@@ -628,22 +628,8 @@ public class FilesApplicationPackage implements ApplicationPackage {
         validateXML(Optional.empty());
     }
 
-    // TODO: Remove when no version older than 6.33 is used
-    @Override
-    public void validateXML(DeployLogger logger) throws IOException {
-        validateXML(Optional.empty());
-    }
-
     @Override
     public void validateXML(Optional<Version> vespaVersion) throws IOException {
-        ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, vespaVersion);
-        xmlFilesValidator.checkApplication();
-        ApplicationPackageXmlFilesValidator.checkIncludedDirs(this);
-    }
-
-    // TODO: Remove when no version older than 6.33 is used
-    @Override
-    public void validateXML(DeployLogger logger, Optional<Version> vespaVersion) throws IOException {
         ApplicationPackageXmlFilesValidator xmlFilesValidator = ApplicationPackageXmlFilesValidator.createDefaultXMLValidator(appDir, vespaVersion);
         xmlFilesValidator.checkApplication();
         ApplicationPackageXmlFilesValidator.checkIncludedDirs(this);

@@ -3,7 +3,6 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.Version;
 import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
@@ -24,21 +23,10 @@ public class ApplicationPackageXmlFilesValidator {
     private final AppSubDirs appDirs;
     private final Optional<Version> vespaVersion;
 
-    private static final FilenameFilter xmlFilter = new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String name) {
-            return name.endsWith(".xml");
-        }
-    };
+    private static final FilenameFilter xmlFilter = (dir, name) -> name.endsWith(".xml");
 
 
     public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, Optional<Version> vespaVersion) {
-        this.appDirs = appDirs;
-        this.vespaVersion = vespaVersion;
-    }
-
-    // TODO: Remove when no version older than 6.33 is used
-    public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, DeployLogger logger, Optional<Version> vespaVersion) {
         this.appDirs = appDirs;
         this.vespaVersion = vespaVersion;
     }
@@ -48,7 +36,7 @@ public class ApplicationPackageXmlFilesValidator {
     }
 
     public static ApplicationPackageXmlFilesValidator createTestXmlValidator(File appDir) {
-        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), Optional.<Version>empty());
+        return new ApplicationPackageXmlFilesValidator(new AppSubDirs(appDir), Optional.empty());
     }
 
     @SuppressWarnings("deprecation")
