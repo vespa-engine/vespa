@@ -26,22 +26,13 @@ import static org.junit.Assert.fail;
 public class HostedDeployTest {
     private static final String dockerRegistry = "foo.com:4443";
     private static final String dockerVespaBaseImage = "/vespa/ci";
-    private static final ConfigserverConfig config = new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                                    .configServerDBDir(Files.createTempDir()
-                                                                                                            .getAbsolutePath())
-                                                                                    .dockerRegistry(dockerRegistry)
-                                                                                    .dockerVespaBaseImage(dockerVespaBaseImage)
-                                                                                    .configServerDBDir(Files.createTempDir()
-                                                                                                            .getAbsolutePath())
-                                                                                    .hostedVespa(true)
-                                                                                    .multitenant(true));
 
     @Test
     public void testRedeploy() throws InterruptedException, IOException {
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", config);
+        DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
         tester.deployApp("myApp");
 
-        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();                
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
         assertTrue(deployment.isPresent());
         deployment.get().prepare();
         deployment.get().activate();
@@ -54,7 +45,7 @@ public class HostedDeployTest {
         List<ModelFactory> modelFactories = new ArrayList<>();
         modelFactories.add(DeployTester.createDefaultModelFactory(clock));
         modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0))); // older than default
-        DeployTester tester = new DeployTester("src/test/apps/validationOverride/", modelFactories, config);
+        DeployTester tester = new DeployTester("src/test/apps/validationOverride/", modelFactories, createConfigserverConfig());
         tester.deployApp("myApp");
 
         // Redeployment from local active works
@@ -74,7 +65,7 @@ public class HostedDeployTest {
             deployment.get().prepare();
             deployment.get().activate();
         }
-        
+
         // However, redeployment from the outside fails after this date
         {
             try {
@@ -91,7 +82,7 @@ public class HostedDeployTest {
     @Ignore //WIP
     public void testDeployWithDockerImage() throws InterruptedException, IOException {
         final String vespaVersion = "6.51.1";
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", config);
+        DeployTester tester = new DeployTester("src/test/apps/hosted/", createConfigserverConfig());
         ApplicationId applicationId = tester.deployApp("myApp", Optional.of(vespaVersion));
         assertProvisionInfo(vespaVersion, tester, applicationId);
 
@@ -107,6 +98,16 @@ public class HostedDeployTest {
         tester.getProvisionInfoFromDeployedApp(applicationId).getHosts().stream()
               .forEach(h -> assertEquals(dockerRegistry + dockerVespaBaseImage + ":" + vespaVersion,
                                          h.membership().get().cluster().dockerImage().get()));
+    }
+
+    private static ConfigserverConfig createConfigserverConfig() {
+        return new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                              .configServerDBDir(Files.createTempDir()
+                                                                      .getAbsolutePath())
+                                              .dockerRegistry(dockerRegistry)
+                                              .dockerVespaBaseImage(dockerVespaBaseImage)
+                                              .hostedVespa(true)
+                                              .multitenant(true));
     }
 
 }
