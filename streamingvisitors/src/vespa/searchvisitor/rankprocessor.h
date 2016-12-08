@@ -32,7 +32,7 @@ private:
     search::fef::RankProgram::UP         _rankProgram;
     double                               _score;
     search::fef::RankProgram::UP         _summaryProgram;
-    search::fef::FeatureHandle           _rankScoreHandle;
+    const search::feature_t             *_rankScorePtr;
     HitCollector::UP                     _hitCollector;
 
     void initQueryEnvironment();
