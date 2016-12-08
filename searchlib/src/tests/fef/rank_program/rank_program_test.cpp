@@ -13,6 +13,21 @@ using namespace search::fef;
 using namespace search::fef::test;
 using namespace search::features;
 
+size_t count_unique_features(const RankProgram &program) {
+    std::set<const NumberOrObject *> seen;
+    auto unboxed = program.get_all_features(true);
+    for (size_t i = 0; i < unboxed.num_features(); ++i) {
+        // fprintf(stderr, "seen feature (unboxed): %s\n", unboxed.name_of(i).c_str());
+        seen.insert(unboxed.resolve_raw(i));
+    }
+    auto maybe_boxed = program.get_all_features(false);
+    for (size_t i = 0; i < maybe_boxed.num_features(); ++i) {
+        // fprintf(stderr, "seen feature (maybe boxed): %s\n", maybe_boxed.name_of(i).c_str());
+        seen.insert(maybe_boxed.resolve_raw(i));
+    }
+    return seen.size();
+}
+
 struct ImpureValueExecutor : FeatureExecutor {
     double value;
     ImpureValueExecutor(double value_in) : value(value_in) {}
@@ -69,35 +84,26 @@ struct MySetup {
         return *this;
     }
     double get() {
-        std::vector<vespalib::string> names;
-        std::vector<FeatureHandle> handles;
-        program.get_seed_handles(names, handles);
-        EXPECT_EQUAL(1u, names.size());
-        EXPECT_EQUAL(names.size(), handles.size());
-        return *program.match_data().resolveFeature(handles[0]);
+        auto result = program.get_seeds();
+        EXPECT_EQUAL(1u, result.num_features());
+        return *result.resolve_number(0);
     }
     double get(const vespalib::string &feature) {
-        std::vector<vespalib::string> names;
-        std::vector<FeatureHandle> handles;
-        program.get_seed_handles(names, handles);
-        EXPECT_EQUAL(names.size(), handles.size());
-        for (size_t i = 0; i < names.size(); ++i) {
-            if (names[i] == feature) {
-                return *program.match_data().resolveFeature(handles[i]);
+        auto result = program.get_seeds();
+        for (size_t i = 0; i < result.num_features(); ++i) {
+            if (result.name_of(i) == feature) {
+                return *result.resolve_number(i);
             }
         }
         return 31212.0;
     }
     std::map<vespalib::string, double> all() {
-        std::map<vespalib::string, double> result;
-        std::vector<vespalib::string> names;
-        std::vector<FeatureHandle> handles;
-        program.get_seed_handles(names, handles);
-        EXPECT_EQUAL(names.size(), handles.size());
-        for (size_t i = 0; i < names.size(); ++i) {
-            result[names[i]] = *program.match_data().resolveFeature(handles[i]);
+        auto result = program.get_seeds();
+        std::map<vespalib::string, double> result_map;
+        for (size_t i = 0; i < result.num_features(); ++i) {
+            result_map[result.name_of(i)] = *result.resolve_number(i);
         }
-        return result;
+        return result_map;
     }
 };
 
@@ -136,7 +142,7 @@ TEST_F("require that a single program can calculate multiple output features", M
     f1.compile().run();
     EXPECT_EQUAL(5u, f1.program.num_executors());
     EXPECT_EQUAL(3u, f1.program.program_size());
-    EXPECT_EQUAL(5u, f1.program.match_data().getNumFeatures());
+    EXPECT_EQUAL(5u, count_unique_features(f1.program));
     auto result = f1.all();
     EXPECT_EQUAL(4u, result.size());
     EXPECT_EQUAL(1.0, result["value(1)"]);
@@ -150,7 +156,7 @@ TEST_F("require that a single executor can produce multiple features", MySetup()
     EXPECT_EQUAL(6.0, f1.compile().run().get());
     EXPECT_EQUAL(2u, f1.program.num_executors());
     EXPECT_EQUAL(0u, f1.program.program_size());
-    EXPECT_EQUAL(4u, f1.program.match_data().getNumFeatures());
+    EXPECT_EQUAL(4u, count_unique_features(f1.program));
 }
 
 TEST_F("require that feature values can be overridden", MySetup()) {
@@ -160,7 +166,7 @@ TEST_F("require that feature values can be overridden", MySetup()) {
     f1.compile().run();
     EXPECT_EQUAL(5u, f1.program.num_executors());
     EXPECT_EQUAL(3u, f1.program.program_size());
-    EXPECT_EQUAL(5u, f1.program.match_data().getNumFeatures());
+    EXPECT_EQUAL(5u, count_unique_features(f1.program));
     auto result = f1.all();
     EXPECT_EQUAL(4u, result.size());
     EXPECT_EQUAL(1.0, result["value(1)"]);
