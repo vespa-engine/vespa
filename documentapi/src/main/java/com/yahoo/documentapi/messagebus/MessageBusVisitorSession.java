@@ -424,7 +424,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 updateStateUnlessAlreadyFailed(newState);
                 break;
             default:
-                assert(false);
+                com.yahoo.protect.Process.logAndDie("Invalid target transition state: " + newState);
         }
         log.log(LogLevel.DEBUG, "Session '" + sessionName + "' is now in state " +  state);
         return state;
