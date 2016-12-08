@@ -15,7 +15,10 @@ import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vdslib.state.ClusterState;
 
 import java.util.Arrays;
-import java.util.concurrent.*;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 /**
@@ -281,9 +284,9 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     private static final Logger log = Logger.getLogger(MessageBusVisitorSession.class.getName());
 
-    private static long sessionCounter = 0;
-    private static synchronized long getNextSessionId() {
-        return ++sessionCounter;
+    private static AtomicLong sessionCounter = new AtomicLong(0);
+    private static long getNextSessionId() {
+        return sessionCounter.incrementAndGet();
     }
     private static String createSessionName() {
         StringBuilder sb = new StringBuilder();
