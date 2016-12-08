@@ -92,23 +92,6 @@ public class Application implements ModelResult {
     }
 
     /**
-     * The old style (deprecated) configs/ user overrides for this key
-     *
-     * @param key the key for the config to get user config for
-     * @return the user config value or null
-     */
-    private ConfigPayload getLegacyUserConfigs(ConfigCacheKey key) {
-        try {
-            if (logDebug()) {
-                debug("Looking up legacy user config for " + key);
-            }
-            return cache.getLegacyUserConfig(key.getKey().getName());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * Gets a config from ZK. Returns null if not found.
      */
     public ConfigResponse resolveConfig(GetConfigRequest req, ConfigResponseFactory responseFactory) {
@@ -143,17 +126,16 @@ public class Application implements ModelResult {
             throw new UnknownConfigDefinitionException("Unable to find config definition for '" + configKey.getNamespace() + "." + configKey.getName());
         }
         configKey = new ConfigKey<>(configDefinitionWrapper.getDefKey().getName(), configKey.getConfigId(), configDefinitionWrapper.getDefKey().getNamespace());
-        ConfigPayload override = getLegacyUserConfigs(cacheKey);
         ConfigPayload payload;
         try {
             if (logDebug()) {
-                debug("Resolving " + configKey + " with targetDef=" + def + ", override=" + override);
+                debug("Resolving " + configKey + " with targetDef=" + def);
             }
 
             payload = model.getConfig(
                     configKey,
                     def,
-                    override);
+                    null); // TODO Remove this argument when possible
         } catch (IOException e) {
             metricUpdater.incrementFailedRequests();
             throw new ConfigurationRuntimeException("Unable to resolve config", e);
