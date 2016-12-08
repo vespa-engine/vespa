@@ -81,6 +81,7 @@ public class NodeAgentImplTest {
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
+                .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration)
                 .wantedRebootGeneration(rebootGeneration)
@@ -94,8 +95,9 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(false);
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
+
+        nodeAgent.vespaVersion = nodeSpec.vespaVersion;
 
         nodeAgent.tick();
 
@@ -130,6 +132,7 @@ public class NodeAgentImplTest {
                 .nodeState(Node.State.active)
                 .nodeType("tenant")
                 .nodeFlavor("docker")
+                .vespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration)
                 .currentRestartGeneration(restartGeneration)
                 .wantedRebootGeneration(rebootGeneration)
@@ -138,9 +141,8 @@ public class NodeAgentImplTest {
                 .minDiskAvailableGb(MIN_DISK_AVAILABLE_GB)
                 .build();
 
-        Docker.ContainerStats containerStats = new ContainerStatsImpl(new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.empty());
-        when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(containerStats));
+        when(dockerOperations.getContainerStats(eq(containerName))).thenReturn(Optional.empty());
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(true);
         when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
@@ -252,8 +254,9 @@ public class NodeAgentImplTest {
                 .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.empty());
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
+
+        nodeAgent.vespaVersion = nodeSpec.vespaVersion;
 
         nodeAgent.tick();
 
@@ -288,8 +291,9 @@ public class NodeAgentImplTest {
                 .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.empty());
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
+
+        nodeAgent.vespaVersion = nodeSpec.vespaVersion;
 
         nodeAgent.tick();
 
@@ -325,8 +329,9 @@ public class NodeAgentImplTest {
                 .build();
 
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.empty());
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, dockerImage, containerName, true)));
+
+        nodeAgent.vespaVersion = nodeSpec.vespaVersion;
 
         nodeAgent.tick();
 
@@ -430,7 +435,6 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainer(eq(hostName))).thenReturn(Optional.of(new Container(hostName, wantedDockerImage, containerName, true)));
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(wantedDockerImage))).thenReturn(false);
-        when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
 
         verify(dockerOperations, never()).removeContainer(any(), any(), any());
 
@@ -439,6 +443,7 @@ public class NodeAgentImplTest {
                 .when(dockerOperations).resumeNode(eq(containerName));
 
         final InOrder inOrder = inOrder(orchestrator, dockerOperations, nodeRepository);
+        nodeAgent.vespaVersion = nodeSpec.vespaVersion;
 
         // 1st try
         try {

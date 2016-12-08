@@ -207,14 +207,13 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) throws IOException {
-        final Optional<String> containerVespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
         final NodeAttributes nodeAttributes = new NodeAttributes()
                 .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(0L))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
                 .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
                 .withDockerImage(nodeSpec.wantedDockerImage.orElse(new DockerImage("")))
-                .withVespaVersion(containerVespaVersion.orElse(""));
+                .withVespaVersion(vespaVersion.orElse(""));
 
         publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
     }
@@ -332,6 +331,7 @@ public class NodeAgentImpl implements NodeAgent {
             dockerOperations.removeContainer(nodeSpec, existingContainer.get(), orchestrator);
             metricReceiver.unsetMetricsForContainer(hostname);
             lastCpuMetric = new CpuUsageReporter();
+            vespaVersion = Optional.empty();
             return true;
         }
         return false;
