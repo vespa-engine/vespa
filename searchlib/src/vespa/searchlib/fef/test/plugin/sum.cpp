@@ -11,13 +11,13 @@ namespace fef {
 namespace test {
 
 void
-SumExecutor::execute(MatchData & data)
+SumExecutor::execute(MatchData &)
 {
     feature_t sum = 0.0f;
     for (uint32_t i = 0; i < inputs().size(); ++i) {
-        sum += *data.resolveFeature(inputs()[i]);
+        sum += inputs().get_number(i);
     }
-    *data.resolveFeature(outputs()[0]) = sum;
+    outputs().set_number(0, sum);
 }
 
 

@@ -32,6 +32,7 @@ using search::queryeval::SearchIterator;
 using search::fef::TermFieldHandle;
 using search::fef::MatchData;
 using search::fef::RankProgram;
+using search::fef::FeatureResolver;
 
 namespace {
 
@@ -85,12 +86,9 @@ private:
 };
 
 const double *get_score_feature(const RankProgram &rankProgram) {
-    std::vector<vespalib::string> featureNames;
-    std::vector<search::fef::FeatureHandle> featureHandles;
-    rankProgram.get_seed_handles(featureNames, featureHandles);
-    assert(featureNames.size() == 1);
-    assert(featureHandles.size() == 1);
-    return rankProgram.match_data().resolveFeature(featureHandles.front());
+    FeatureResolver resolver(rankProgram.get_seeds());
+    assert(resolver.num_features() == 1u);
+    return resolver.resolve_number(0);
 }
 
 } // namespace proton::matching::<unnamed>
