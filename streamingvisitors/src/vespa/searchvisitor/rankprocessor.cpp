@@ -202,13 +202,11 @@ FeatureSet::SP
 RankProcessor::calculateFeatureSet()
 {
     LOG(debug, "Calculate feature set");
-    std::vector<vespalib::string> names;
-    std::vector<FeatureHandle> handles;
     RankProgram &rankProgram = *(_summaryProgram.get() != nullptr ? _summaryProgram : _rankProgram);
-    rankProgram.get_seed_handles(names, handles);
-    LOG(debug, "Feature handles: numNames(%ld), numHandles(%ld)", names.size(), handles.size());
+    search::fef::FeatureResolver resolver(rankProgram.get_seeds());
+    LOG(debug, "Feature handles: numNames(%ld)", resolver.num_features());
     RankProgramWrapper wrapper(rankProgram);
-    FeatureSet::SP sf = _hitCollector->getFeatureSet(wrapper, names, handles);
+    FeatureSet::SP sf = _hitCollector->getFeatureSet(wrapper, resolver);
     LOG(debug, "Feature set: numFeatures(%u), numDocs(%u)", sf->numFeatures(), sf->numDocs());
     return sf;
 }

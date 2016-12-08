@@ -9,6 +9,8 @@
 #include <vespa/vsm/common/storagedocument.h>
 #include <vespa/vespalib/stllike/string.h>
 
+namespace search { namespace fef { class FeatureResolver; } }
+
 namespace storage {
 
 /**
@@ -132,12 +134,10 @@ public:
      *
      * @return features for all hits on the heap.
      * @param rankProgram the rank program used to calculate all features.
-     * @param names names of all features.
-     * @param handles handles of all features.
+     * @param resolver   feature resolver, gives feature names and values
      **/
     search::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
-                                         const std::vector<vespalib::string> & names,
-                                         const std::vector<search::fef::FeatureHandle> & handles);
+                                         const search::fef::FeatureResolver &resolver);
 
 };
 

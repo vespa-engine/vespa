@@ -5,6 +5,7 @@
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchvisitor/hitcollector.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vsm/common/storagedocument.h>
@@ -237,6 +238,13 @@ public:
         *_matchData.resolveFeature(2) = docid + 30;
         return _matchData;
     }
+
+    FeatureResolver get_resolver() {
+        FeatureResolver resolver(2);
+        resolver.add("foo", _matchData.resolve_raw(0), false);
+        resolver.add("bar", _matchData.resolve_raw(2), false);
+        return resolver;
+    }
 };
 
 void
@@ -250,15 +258,9 @@ HitCollectorTest::testFeatureSet()
     addHit(hc, 3, 40); // on heap
     addHit(hc, 4, 30); // on heap
 
-    std::vector<vespalib::string> names;
-    std::vector<FeatureHandle> handles;
-    names.push_back("foo");
-    names.push_back("bar");
-    handles.push_back(0);
-    handles.push_back(2);
-
     MyRankProgram rankProgram;
-    search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, names, handles);
+    FeatureResolver resolver(rankProgram.get_resolver());
+    search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver);
 
     EXPECT_EQUAL(sf->getNames().size(), 2u);
     EXPECT_EQUAL(sf->getNames()[0], "foo");
