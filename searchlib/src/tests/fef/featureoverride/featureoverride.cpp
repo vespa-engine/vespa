@@ -42,9 +42,6 @@ struct Fixture
         }
         return *this;
     }
-    feature_t resolveFeature(FeatureHandle handle) {
-        return *md->resolveFeature(handle);
-    }
     FeatureExecutor &createValueExecutor() {
         std::vector<feature_t> values;
         values.push_back(1.0);
@@ -62,9 +59,9 @@ TEST_F("test decorator - single override", Fixture)
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[0]), 1.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[1]), 50.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[2]), 3.0);
+    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQUAL(fe->outputs().get_number(1), 50.0);
+    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
 }
 
 TEST_F("test decorator - multiple overrides", Fixture)
@@ -76,9 +73,9 @@ TEST_F("test decorator - multiple overrides", Fixture)
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[0]), 50.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[1]), 2.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[2]), 100.0);
+    EXPECT_EQUAL(fe->outputs().get_number(0), 50.0);
+    EXPECT_EQUAL(fe->outputs().get_number(1), 2.0);
+    EXPECT_EQUAL(fe->outputs().get_number(2), 100.0);
 }
 
 TEST_F("test decorator - non-existing override", Fixture)
@@ -89,9 +86,9 @@ TEST_F("test decorator - non-existing override", Fixture)
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[0]), 1.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[1]), 2.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[2]), 3.0);
+    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQUAL(fe->outputs().get_number(1), 2.0);
+    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
 }
 
 TEST_F("test decorator - transitive override", Fixture)
@@ -112,12 +109,12 @@ TEST_F("test decorator - transitive override", Fixture)
     f.add(fe2, 3).run();
     EXPECT_EQUAL(fe2->outputs().size(), 3u);
 
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[0]), 1.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[1]), 50.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[2]), 3.0);
-    EXPECT_EQUAL(f.resolveFeature(fe2->outputs()[0]), 2.0);
-    EXPECT_EQUAL(f.resolveFeature(fe2->outputs()[1]), 100.0);
-    EXPECT_EQUAL(f.resolveFeature(fe2->outputs()[2]), 10.0);
+    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQUAL(fe->outputs().get_number(1), 50.0);
+    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
+    EXPECT_EQUAL(fe2->outputs().get_number(0), 2.0);
+    EXPECT_EQUAL(fe2->outputs().get_number(1), 100.0);
+    EXPECT_EQUAL(fe2->outputs().get_number(2), 10.0);
 }
 
 TEST("test overrides")

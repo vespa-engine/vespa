@@ -17,7 +17,7 @@ struct ImpureValueExecutor : FeatureExecutor {
     double value;
     ImpureValueExecutor(double value_in) : value(value_in) {}
     bool isPure() override { return false; }
-    void execute(search::fef::MatchData &md) override { *md.resolveFeature(outputs()[0]) = value; }
+    void execute(search::fef::MatchData &) override { outputs().set_number(0, value); }
 };
 
 struct ImpureValueBlueprint : Blueprint {

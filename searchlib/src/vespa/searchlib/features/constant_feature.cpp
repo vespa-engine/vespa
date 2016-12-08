@@ -27,8 +27,8 @@ public:
         : _value(value)
     {}
     virtual bool isPure() override { return true; }
-    virtual void execute(fef::MatchData &data) override {
-        *data.resolve_object_feature(outputs()[0]) = _value;
+    virtual void execute(fef::MatchData &) override {
+        outputs().set_object(0, _value);
     }
     static FeatureExecutor &create(const vespalib::eval::Value &value, vespalib::Stash &stash) {
         return stash.create<ConstantFeatureExecutor>(value);

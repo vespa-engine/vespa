@@ -76,6 +76,18 @@ public:
         void set_object(size_t idx, vespalib::eval::Value::CREF value) {
             *_md->resolve_object_feature((*this)[idx]) = value;
         }
+        feature_t *get_number_ptr(size_t idx) {
+            return _md->resolveFeature((*this)[idx]);
+        }
+        vespalib::eval::Value::CREF *get_object_ptr(size_t idx) {
+            return _md->resolve_object_feature((*this)[idx]);
+        }
+        feature_t get_number(size_t idx) const {
+            return *_md->resolveFeature((*this)[idx]);
+        }
+        vespalib::eval::Value::CREF get_object(size_t idx) const {
+            return *_md->resolve_object_feature((*this)[idx]);
+        }
         void add(FeatureHandle handle) {
             if (_begin == IllegalHandle) {
                 _begin = handle;
