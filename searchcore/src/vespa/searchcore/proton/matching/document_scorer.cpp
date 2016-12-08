@@ -4,7 +4,7 @@
 #include "document_scorer.h"
 
 using search::feature_t;
-using search::fef::FeatureHandle;
+using search::fef::FeatureResolver;
 using search::fef::RankProgram;
 using search::queryeval::SearchIterator;
 
@@ -16,12 +16,9 @@ namespace {
 const feature_t *
 extractScoreFeature(const RankProgram &rankProgram)
 {
-    std::vector<vespalib::string> featureNames;
-    std::vector<FeatureHandle> featureHandles;
-    rankProgram.get_seed_handles(featureNames, featureHandles);
-    assert(featureNames.size() == 1);
-    assert(featureHandles.size() == 1);
-    return rankProgram.match_data().resolveFeature(featureHandles.front());
+    FeatureResolver resolver(rankProgram.get_seeds());
+    assert(resolver.num_features() == 1u);
+    return resolver.resolve_number(0);
 }
 
 }

@@ -113,8 +113,11 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
             matchTools->dump_program();
 
     std::vector<vespalib::string> featureNames;
-    std::vector<search::fef::FeatureHandle> handles;
-    rankProgram->get_seed_handles(featureNames, handles);
+    FeatureResolver resolver(rankProgram->get_seeds());
+    featureNames.reserve(resolver.num_features());
+    for (size_t i = 0; i < resolver.num_features(); ++i) {
+        featureNames.emplace_back(resolver.name_of(i));
+    }
     FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
     FeatureSet &fs = *retval.get();
 
@@ -128,7 +131,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
             search::feature_t * f = fs.getFeaturesByIndex(
                     fs.addDocId(docId));
             for (uint32_t j = 0; j < featureNames.size(); ++j) {
-                f[j] = *rankProgram->match_data().resolveFeature(handles[j]);
+                f[j] = *resolver.resolve_number(j);
             }
         } else {
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. "
