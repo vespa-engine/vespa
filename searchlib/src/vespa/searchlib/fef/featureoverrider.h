@@ -22,7 +22,6 @@ private:
 
     FeatureExecutor &   _executor;
     uint32_t            _outputIdx;
-    FeatureHandle       _handle;
     feature_t           _value;
 
     virtual void handle_bind_match_data(MatchData &md) override;
