@@ -112,6 +112,17 @@ RankProgram::compile()
     }
 }
 
+FeatureResolver
+RankProgram::resolve(const std::vector<vespalib::string> &names,
+                     const std::vector<FeatureHandle> &handles) const
+{
+    FeatureResolver result(names.size());
+    for (size_t i = 0; i < names.size(); ++i) {
+        result.add(names[i], match_data().resolve_raw(handles[i]));
+    }
+    return result;
+}
+
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(resolver),
       _shared_inputs(),
@@ -238,6 +249,24 @@ RankProgram::get_all_feature_handles(std::vector<vespalib::string> &names_out,
     } else {
         extract_handles(_resolver->getFeatureMap(), _executors, RawHandleCollector(names_out, handles_out));
     }
+}
+
+FeatureResolver
+RankProgram::get_seeds(bool unbox_seeds) const
+{
+    std::vector<vespalib::string> names;
+    std::vector<FeatureHandle> handles;
+    get_seed_handles(names, handles, unbox_seeds);
+    return resolve(names, handles);
+}
+
+FeatureResolver
+RankProgram::get_all_features(bool unbox_seeds) const
+{
+    std::vector<vespalib::string> names;
+    std::vector<FeatureHandle> handles;
+    get_all_feature_handles(names, handles, unbox_seeds);
+    return resolve(names, handles);
 }
 
 } // namespace fef

@@ -7,6 +7,7 @@
 #include "properties.h"
 #include "matchdata.h"
 #include "matchdatalayout.h"
+#include "feature_resolver.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <memory.h>
@@ -47,6 +48,9 @@ private:
      * Prepare the final program and evaluate all constant features.
      **/
     void compile();
+
+    FeatureResolver resolve(const std::vector<vespalib::string> &names,
+                            const std::vector<FeatureHandle> &handles) const;
 
 public:
     typedef std::unique_ptr<RankProgram> UP;
@@ -110,6 +114,25 @@ public:
     void get_all_feature_handles(std::vector<vespalib::string> &names_out,
                                  std::vector<FeatureHandle> &handles_out,
                                  bool unbox_seeds = true) const;
+
+    /**
+     * Obtain the names and storage locations of all seed features for
+     * this rank program. Programs for ranking phases will only have a
+     * single seed while programs used for summary features or
+     * scraping will have multiple seeds.
+     *
+     * @params unbox_seeds make sure seeds values are numbers
+     **/
+    FeatureResolver get_seeds(bool unbox_seeds = true) const;
+
+    /**
+     * Obtain the names and storage locations of all features for this
+     * rank program. This method is intended for debugging and
+     * testing.
+     *
+     * @params unbox_seeds make sure seeds values are numbers
+     **/
+    FeatureResolver get_all_features(bool unbox_seeds = true) const;
 
     /**
      * Run this rank program on the current state of the internal
