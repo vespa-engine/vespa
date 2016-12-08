@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 
@@ -19,8 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServerCache {
 
     private final Map<ConfigDefinitionKey, ConfigDefinition> defs = new ConcurrentHashMap<>();
-    /* Legacy user configs from configs/ dir in application package (NB! Only name, not key) */
-    private final Map<String, ConfigPayload> legacyUserCfgs = new ConcurrentHashMap<>();
 
     // NOTE: The reason we do a double mapping here is to dedup configs that have the same md5.
     private final Map<ConfigCacheKey, String> md5Sums = new ConcurrentHashMap<>();
@@ -28,14 +25,6 @@ public class ServerCache {
 
     public void addDef(ConfigDefinitionKey key, ConfigDefinition def) {
         defs.put(key, def);
-    }
-
-    public void addLegacyUserConfig(String name, ConfigPayload config) {
-        legacyUserCfgs.put(name, config);
-    }
-
-    public ConfigPayload getLegacyUserConfig(String name) {
-        return legacyUserCfgs.get(name);
     }
 
     public void put(ConfigCacheKey key, ConfigResponse config, String configMd5) {
@@ -54,7 +43,6 @@ public class ServerCache {
         StringBuilder sb = new StringBuilder();
         sb.append("Cache\n");
         sb.append("defs:        ").append(defs.size()).append("\n");
-        sb.append("user cfgs:   ").append(legacyUserCfgs.size()).append("\n");
         sb.append("md5sums:     ").append(md5Sums.size()).append("\n");
         sb.append("md5ToConfig: ").append(md5ToConfig.size()).append("\n");
 
