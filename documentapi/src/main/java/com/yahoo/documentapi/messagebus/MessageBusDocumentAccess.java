@@ -87,12 +87,8 @@ public class MessageBusDocumentAccess extends DocumentAccess {
 
     @Override
     public MessageBusVisitorSession createVisitorSession(VisitorParameters params) throws ParseException, IllegalArgumentException {
-        MessageBusVisitorSession.AsyncTaskExecutor executor = new MessageBusVisitorSession.ThreadAsyncTaskExecutor(scheduledExecutorService);
-        MessageBusVisitorSession.MessageBusSenderFactory senderFactory = new MessageBusVisitorSession.MessageBusSenderFactory(bus.getMessageBus());
-        MessageBusVisitorSession.MessageBusReceiverFactory receiverFactory = new MessageBusVisitorSession.MessageBusReceiverFactory(bus.getMessageBus());
-        RoutingTable table = bus.getMessageBus().getRoutingTable(DocumentProtocol.NAME);
-
-        MessageBusVisitorSession session = new MessageBusVisitorSession(params, executor, senderFactory, receiverFactory, table);
+        MessageBusVisitorSession session = MessageBusVisitorSession.createForMessageBus(
+                bus.getMessageBus(), scheduledExecutorService, params);
         session.start();
         return session;
     }

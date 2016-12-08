@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
+// TODO replace explicit pre-mockito mock classes with proper mockito mocks wherever possible
 public class MessageBusVisitorSessionTestCase {
     private class MockSender implements MessageBusVisitorSession.Sender {
         private int maxPending = 1000;
@@ -393,11 +394,23 @@ public class MessageBusVisitorSessionTestCase {
         }
     }
 
+    private class MockClock implements MessageBusVisitorSession.Clock {
+        private long monotonicTime = 0;
+
+        @Override
+        public long monotonicNanoTime() { return monotonicTime; }
+
+        public void setMonotonicTime(long monotonicTime, TimeUnit unit) {
+            this.monotonicTime = unit.toNanos(monotonicTime);
+        }
+    }
+
     private MessageBusVisitorSession createVisitorSession(MockSender sender,
-                                                           MockReceiver receiver,
-                                                           MockAsyncTaskExecutor executor,
-                                                           VisitorParameters visitorParameters,
-                                                           RoutingTable routingTable)
+                                                          MockReceiver receiver,
+                                                          MockAsyncTaskExecutor executor,
+                                                          VisitorParameters visitorParameters,
+                                                          RoutingTable routingTable,
+                                                          MockClock clock)
     {
         if (routingTable == null) {
             routingTable = new RoutingTable(new RoutingTableSpec(DocumentProtocol.NAME));
@@ -408,18 +421,19 @@ public class MessageBusVisitorSessionTestCase {
                     executor,
                     new MockSenderFactory(sender),
                     new MockReceiverFactory(receiver),
-                    routingTable);
+                    routingTable,
+                    clock);
         } catch (ParseException e) {
             throw new IllegalArgumentException("Bad document selection", e);
         }
     }
 
     private MessageBusVisitorSession createVisitorSession(MockSender sender,
-                                                           MockReceiver receiver,
-                                                           MockAsyncTaskExecutor executor,
-                                                           VisitorParameters visitorParameters)
+                                                          MockReceiver receiver,
+                                                          MockAsyncTaskExecutor executor,
+                                                          VisitorParameters visitorParameters)
     {
-        return createVisitorSession(sender, receiver, executor, visitorParameters, null);
+        return createVisitorSession(sender, receiver, executor, visitorParameters, null, new MockClock());
     }
 
     VisitorParameters createVisitorParameters(String selection) {
@@ -551,6 +565,7 @@ public class MessageBusVisitorSessionTestCase {
         public MockControlHandler controlHandler;
         public MockDataHandler dataHandler;
         public MessageBusVisitorSession visitorSession;
+        public MockClock clock;
 
         public MockComponents(VisitorParameters visitorParameters) {
             this(visitorParameters, null);
@@ -563,9 +578,10 @@ public class MessageBusVisitorSessionTestCase {
             params = visitorParameters;
             controlHandler = new MockControlHandler();
             dataHandler = new MockDataHandler();
+            clock = new MockClock();
             params.setControlHandler(controlHandler);
             params.setLocalDataHandler(dataHandler);
-            visitorSession = createVisitorSession(sender, receiver, executor, params, routingTable);
+            visitorSession = createVisitorSession(sender, receiver, executor, params, routingTable, clock);
         }
 
         public MockComponents() {
@@ -584,7 +600,8 @@ public class MessageBusVisitorSessionTestCase {
             params = builder.params;
             controlHandler = builder.controlHandler;
             dataHandler = builder.dataHandler;
-            visitorSession = createVisitorSession(sender, receiver, executor, params, builder.routingTable);
+            clock = builder.clock;
+            visitorSession = createVisitorSession(sender, receiver, executor, params, builder.routingTable, clock);
         }
     }
 
@@ -596,6 +613,7 @@ public class MessageBusVisitorSessionTestCase {
         public MockControlHandler controlHandler = new MockControlHandler();
         public MockDataHandler dataHandler = new MockDataHandler();
         public RoutingTable routingTable = null;
+        public MockClock clock = new MockClock();
 
         public MockComponents createMockComponents() {
             return new MockComponents(this);
@@ -1062,15 +1080,12 @@ public class MessageBusVisitorSessionTestCase {
 
         mc.visitorSession.start();
         mc.executor.expectAndProcessTasks(1);
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.setLastBucket(ProgressToken.FINISHED_BUCKET);
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(11);
-                stats.setDocumentsReturned(22);
-                reply.setVisitorStatistics(stats);
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.setLastBucket(ProgressToken.FINISHED_BUCKET);
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(11);
+            stats.setDocumentsReturned(22);
+            reply.setVisitorStatistics(stats);
         });
         mc.executor.expectAndProcessTasks(1);
         assertEquals("onProgress : 0 active, 0 pending, 1 finished, 1 total\n" +
@@ -1248,13 +1263,10 @@ public class MessageBusVisitorSessionTestCase {
         mc.visitorSession.start();
         mc.controlHandler.resetMock();
         mc.executor.expectAndProcessTasks(1);
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_ABORTED,
-                        "bucket fell down a well"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_ABORTED,
+                    "bucket fell down a well"));
         });
         mc.executor.expectAndProcessTasks(1); // reply
         // Must have a 100ms delay
@@ -1281,13 +1293,10 @@ public class MessageBusVisitorSessionTestCase {
         mc.visitorSession.start();
         mc.controlHandler.resetMock();
         mc.executor.expectAndProcessTasks(1);
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node caught fire"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node caught fire"));
         });
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectNoTasks();
@@ -1310,26 +1319,20 @@ public class MessageBusVisitorSessionTestCase {
         mc.controlHandler.resetMock(); // clear messages
         mc.executor.expectAndProcessTasks(1);
         assertEquals(2, mc.sender.getMessageCount());
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node fell down a well"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node fell down a well"));
         });
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectNoTasks();
         assertEquals(1, mc.sender.getMessageCount()); // no resending
         assertFalse(mc.visitorSession.isDone()); // not done yet
 
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node got hit by a falling brick"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node got hit by a falling brick"));
         });
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectNoTasks();
@@ -1389,25 +1392,19 @@ public class MessageBusVisitorSessionTestCase {
     public void testMaxTotalHitsEarlyCompletion() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
         visitorParameters.setMaxTotalHits(10);
-        ReplyModifier replyModifier1 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(9);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-            }
+        ReplyModifier replyModifier1 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(9);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
         };
-        ReplyModifier replyModifier2 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(1);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-            }
+        ReplyModifier replyModifier2 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(1);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
         };
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
@@ -1416,25 +1413,19 @@ public class MessageBusVisitorSessionTestCase {
     public void testVisitingCompletedFromSufficientFirstPassHits() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
         visitorParameters.setMaxFirstPassHits(10);
-        ReplyModifier replyModifier1 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(9);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-            }
+        ReplyModifier replyModifier1 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(9);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
         };
-        ReplyModifier replyModifier2 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(1);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-            }
+        ReplyModifier replyModifier2 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(1);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
         };
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
@@ -1443,26 +1434,20 @@ public class MessageBusVisitorSessionTestCase {
     public void testVisitingCompletedFromSecondPassHits() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
         visitorParameters.setMaxTotalHits(10);
-        ReplyModifier replyModifier1 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setDocumentsReturned(5);
-                stats.setSecondPassDocumentsReturned(4);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-            }
+        ReplyModifier replyModifier1 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setDocumentsReturned(5);
+            stats.setSecondPassDocumentsReturned(4);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
         };
-        ReplyModifier replyModifier2 = new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                VisitorStatistics stats = new VisitorStatistics();
-                stats.setBucketsVisited(1);
-                stats.setSecondPassDocumentsReturned(1);
-                reply.setVisitorStatistics(stats);
-                reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-            }
+        ReplyModifier replyModifier2 = (reply) -> {
+            VisitorStatistics stats = new VisitorStatistics();
+            stats.setBucketsVisited(1);
+            stats.setSecondPassDocumentsReturned(1);
+            reply.setVisitorStatistics(stats);
+            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
         };
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
@@ -1564,31 +1549,23 @@ public class MessageBusVisitorSessionTestCase {
         // Have to do this multi-threaded for once since waitUntilDone/destroy
         // are both synchronous and will not return before session is complete,
         // either through success or failure.
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    boolean ok = session.waitUntilDone(20000);
-                    if (!session.isDone()) {
-                        throw new IllegalStateException("waitUntilDone returned, but session is not marked as done");
-                    }
-                    assertTrue(ok);
-                    session.destroy();
-                    barrier.await(20000, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    exceptionPropagator.setValue(e);
+        Thread t = new Thread(() -> {
+            try {
+                boolean ok = session.waitUntilDone(20000);
+                if (!session.isDone()) {
+                    throw new IllegalStateException("waitUntilDone returned, but session is not marked as done");
                 }
+                assertTrue(ok);
+                session.destroy();
+                barrier.await(20000, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                exceptionPropagator.setValue(e);
             }
         });
         t.start();
 
         try {
-            waitUntilTrue(20000, new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return controlHandler.isWaiting();
-                }
-            });
+            waitUntilTrue(20000, () -> controlHandler.isWaiting());
 
             // Reply to visitor, causing session to complete
             assertEquals("CreateVisitorMessage(buckets=[\n" +
@@ -1642,29 +1619,21 @@ public class MessageBusVisitorSessionTestCase {
         // NOTE: even though the MockControlHandler itself is not thread safe,
         // the control flow of the test should guarantee there is no concurrent
         // access to it.
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    session.destroy();
-                    if (!session.isDone()) {
-                        throw new IllegalStateException("Session is not marked as done after destroy()");
-                    }
-                    barrier.await(20000, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    exceptionPropagator.setValue(e);
+        Thread t = new Thread(() -> {
+            try {
+                session.destroy();
+                if (!session.isDone()) {
+                    throw new IllegalStateException("Session is not marked as done after destroy()");
                 }
+                barrier.await(20000, TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                exceptionPropagator.setValue(e);
             }
         });
         t.start();
 
         try {
-            waitUntilTrue(20000, new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return session.isDestroying();
-                }
-            });
+            waitUntilTrue(20000, () -> session.isDestroying());
 
             // Reply to visitor. Normally, the visitor would be resent, but
             // since destroy aborts the session, this won't happen and the
@@ -1872,12 +1841,7 @@ public class MessageBusVisitorSessionTestCase {
         // reply handling where we can reliably force an exception to
         // happen, send a bogus visitor reply with a null result bucket which
         // will trigger NPE when the progress token tries to access it.
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.setLastBucket(null);
-            }
-        });
+        replyToCreateVisitor(mc.sender, (reply) -> reply.setLastBucket(null));
         mc.executor.expectAndProcessTasks(1); // reply
         mc.executor.expectNoTasks();
         // Session shall now have failed (and completed)
@@ -2167,12 +2131,7 @@ public class MessageBusVisitorSessionTestCase {
 
         for (int i = 0; i < 2; ++i) {
             final int idx = i;
-            replyToCreateVisitor(mc.sender, new ReplyModifier() {
-                @Override
-                public void modify(CreateVisitorReply reply) {
-                    reply.getTrace().getRoot().addChild(traceNodes[idx]);
-                }
-            });
+            replyToCreateVisitor(mc.sender, (reply) -> reply.getTrace().getRoot().addChild(traceNodes[idx]));
         }
         mc.executor.expectAndProcessTasks(2);
         mc.executor.expectNoTasks();
@@ -2427,21 +2386,15 @@ public class MessageBusVisitorSessionTestCase {
         mc.controlHandler.resetMock(); // clear messages
         mc.executor.expectAndProcessTasks(1);
         assertEquals(2, mc.sender.getMessageCount());
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node fell down a well"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node fell down a well"));
         });
-        replyToCreateVisitor(mc.sender, new ReplyModifier() {
-            @Override
-            public void modify(CreateVisitorReply reply) {
-                reply.addError(new Error(
-                        DocumentProtocol.ERROR_INTERNAL_FAILURE,
-                        "node got hit by a falling brick"));
-            }
+        replyToCreateVisitor(mc.sender, (reply) -> {
+            reply.addError(new Error(
+                    DocumentProtocol.ERROR_INTERNAL_FAILURE,
+                    "node got hit by a falling brick"));
         });
 
         // Now 2 pending reply tasks, but 0 pending messages. Ergo, using
@@ -2495,6 +2448,86 @@ public class MessageBusVisitorSessionTestCase {
                 mc.receiver.repliesToString());
     }
 
+    private MockComponents createTimeoutMocksAtInitialTime(long timeoutMillis, long currentTimeMillis, int maxPending) {
+        MockComponentsBuilder builder = new MockComponentsBuilder();
+        builder.params.setTimeoutMs(timeoutMillis);
+        builder.params.setControlHandler(builder.controlHandler);
+        MockComponents mc = builder.createMockComponents();
+        mc.sender.setMaxPending(maxPending);
+        mc.clock.setMonotonicTime(currentTimeMillis, TimeUnit.MILLISECONDS); // Baseline time
+
+        mc.visitorSession.start();
+        mc.controlHandler.resetMock(); // clear messages
+        mc.executor.expectAndProcessTasks(1);
+        return mc;
+    }
+
+    @Test
+    public void visitor_command_timeout_set_to_remaining_session_timeout() {
+        MockComponents mc = createTimeoutMocksAtInitialTime(10_000, 10_000, 1);
+
+        // Superbucket 1 of 2
+        assertEquals("CreateVisitorMessage(buckets=[\n" +
+                        "BucketId(0x0400000000000000)\n" +
+                        "BucketId(0x0000000000000000)\n" +
+                        "]\n" +
+                        "time remaining=10000\n)",
+                replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET));
+
+        mc.clock.setMonotonicTime(14, TimeUnit.SECONDS); // 4 seconds elapsed from baseline
+        mc.executor.expectAndProcessTasks(1); // reply
+        mc.executor.expectAndProcessTasks(1); // send create visitors
+        // Superbucket 2 of 2
+        assertEquals("CreateVisitorMessage(buckets=[\n" +
+                        "BucketId(0x0400000000000001)\n" +
+                        "BucketId(0x0000000000000000)\n" +
+                        "]\n" +
+                        "time remaining=6000\n)",
+                replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET));
+    }
+
+    @Test
+    public void fail_session_with_timeout_if_timeout_has_elapsed() {
+        MockComponents mc = createTimeoutMocksAtInitialTime(4_000, 20_000, 1);
+
+        replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET); // Super bucket 1 of 2
+        mc.clock.setMonotonicTime(24_000, TimeUnit.MILLISECONDS); // 4 second timeout expired
+
+        // Reply task processing shall discover that timeout has expired
+        mc.executor.expectAndProcessTasks(1);
+        mc.executor.expectNoTasks(); // No further send tasks enqueued
+        assertTrue(mc.controlHandler.isDone());
+        assertEquals("onProgress : 0 active, 1 pending, 1 finished, 2 total\n" +
+                        "onVisitorStatistics : 0 buckets visited, 0 docs returned\n" +
+                        "onDone : TIMEOUT - 'Session timeout of 4000 ms expired'\n",
+                mc.controlHandler.toString());
+    }
+
+    @Test
+    public void timeout_with_pending_messages_does_not_close_session_until_all_replies_received() {
+        MockComponents mc = createTimeoutMocksAtInitialTime(5_000, 20_000, 2);
+
+        assertEquals(2, mc.sender.getMessageCount());
+
+        replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET); // Super bucket 1 of 2
+        mc.clock.setMonotonicTime(25_000, TimeUnit.MILLISECONDS);
+
+        mc.executor.expectAndProcessTasks(1);
+        mc.executor.expectNoTasks(); // No further send tasks enqueued
+        assertFalse(mc.controlHandler.isDone()); // Still pending messages, session _not_ yet done.
+
+        replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET); // Super bucket 2 of 2
+        mc.controlHandler.resetMock();
+        mc.executor.expectAndProcessTasks(1);
+        mc.executor.expectNoTasks(); // No further send tasks enqueued
+        assertTrue(mc.controlHandler.isDone()); // Now it's done.
+
+        assertEquals("onProgress : 0 active, 0 pending, 2 finished, 2 total\n" +
+                        "onVisitorStatistics : 0 buckets visited, 0 docs returned\n" +
+                        "onDone : TIMEOUT - 'Session timeout of 5000 ms expired'\n",
+                mc.controlHandler.toString());
+    }
+
     /**
      * TODOs:
      *   - parameter validation (max pending, ...)
@@ -2502,7 +2535,6 @@ public class MessageBusVisitorSessionTestCase {
      *   - [add percent finished to progress file; ticket 5360824]
      */
 
-    // TODO: what about session-wide timeouts?
     // TODO: consider refactoring locking granularity
     // TODO: figure out if we risk a re-run of the "too many tasks" issue
 }
