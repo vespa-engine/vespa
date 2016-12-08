@@ -2448,13 +2448,13 @@ public class MessageBusVisitorSessionTestCase {
                 mc.receiver.repliesToString());
     }
 
-    private MockComponents createTimeoutMocksAtInitialTime(long timeoutMs, long currentTimeMs, int maxPending) {
+    private MockComponents createTimeoutMocksAtInitialTime(long timeoutMillis, long currentTimeMillis, int maxPending) {
         MockComponentsBuilder builder = new MockComponentsBuilder();
-        builder.params.setTimeoutMs(timeoutMs);
+        builder.params.setTimeoutMs(timeoutMillis);
         builder.params.setControlHandler(builder.controlHandler);
         MockComponents mc = builder.createMockComponents();
         mc.sender.setMaxPending(maxPending);
-        mc.clock.setMonotonicTime(currentTimeMs, TimeUnit.MILLISECONDS); // Baseline time
+        mc.clock.setMonotonicTime(currentTimeMillis, TimeUnit.MILLISECONDS); // Baseline time
 
         mc.visitorSession.start();
         mc.controlHandler.resetMock(); // clear messages

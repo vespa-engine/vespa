@@ -386,7 +386,7 @@ public class MessageBusVisitorSession implements VisitorSession {
                 return;
             }
             transitionTo(new StateDescription(State.WORKING));
-            taskExecutor.submitTask(new SendCreateVisitorsTask(sessionTimeoutMs()));
+            taskExecutor.submitTask(new SendCreateVisitorsTask(sessionTimeoutMillis()));
         }
     }
 
@@ -937,11 +937,11 @@ public class MessageBusVisitorSession implements VisitorSession {
                     || enoughHitsReceived());
     }
 
-    private long sessionTimeoutMs() {
+    private long sessionTimeoutMillis() {
         return (params.getTimeoutMs() != -1) ? params.getTimeoutMs() : 5 * 60 * 1000;
     }
 
-    private long elapsedTimeMs() {
+    private long elapsedTimeMillis() {
         return TimeUnit.NANOSECONDS.toMillis(clock.monotonicNanoTime() - startTimeNanos);
     }
 
@@ -951,10 +951,10 @@ public class MessageBusVisitorSession implements VisitorSession {
      * scheduled such a task.
      */
     private void scheduleSendCreateVisitorsIfApplicable(long delay, TimeUnit unit) {
-        final long elapsedMs = elapsedTimeMs();
-        final long timeoutMs = sessionTimeoutMs();
-        if (elapsedMs >= timeoutMs) {
-            transitionTo(new StateDescription(State.TIMED_OUT, String.format("Session timeout of %d ms expired", timeoutMs)));
+        final long elapsedMillis = elapsedTimeMillis();
+        final long timeoutMillis = sessionTimeoutMillis();
+        if (elapsedMillis >= timeoutMillis) {
+            transitionTo(new StateDescription(State.TIMED_OUT, String.format("Session timeout of %d ms expired", timeoutMillis)));
             if (visitingCompleted()) {
                 markSessionCompleted();
             }
@@ -963,8 +963,8 @@ public class MessageBusVisitorSession implements VisitorSession {
         if (!mayScheduleCreateVisitorsTask()) {
             return;
         }
-        final long messageTimeoutMs = timeoutMs - elapsedMs;
-        taskExecutor.scheduleTask(new SendCreateVisitorsTask(messageTimeoutMs), delay, unit);
+        final long messageTimeoutMillis = timeoutMillis - elapsedMillis;
+        taskExecutor.scheduleTask(new SendCreateVisitorsTask(messageTimeoutMillis), delay, unit);
         scheduledSendCreateVisitors = true;
     }
 
