@@ -53,7 +53,6 @@ public abstract class SessionActiveHandlerTestBase extends SessionHandlerTest {
     protected PathProvider pathProvider;
     protected TenantApplications applicationRepo;
     protected String activatedMessage = " activated.";
-    protected String tenantMessage = "";
 
     @Test
     public void testThatPreviousSessionIsDeactivated() throws Exception {

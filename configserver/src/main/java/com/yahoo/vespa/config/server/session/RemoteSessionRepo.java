@@ -71,7 +71,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
                               Path sessionsPath,
                               TenantApplications applicationRepo,
                               MetricUpdater metricUpdater,
-                              ExecutorService executorService) throws Exception {
+                              ExecutorService executorService) {
         this.curator = curator;
         this.sessionsPath = sessionsPath;
         this.applicationRepo = applicationRepo;

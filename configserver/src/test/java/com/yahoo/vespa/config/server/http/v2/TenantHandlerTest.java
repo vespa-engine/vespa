@@ -47,7 +47,7 @@ public class TenantHandlerTest extends TenantTest {
         assertResponseEquals(response, "{\"message\":\"Tenant " + tenantName + " created.\"}");
     }
 
-    private HttpResponse putSync(HttpRequest testRequest) throws InterruptedException {
+    private HttpResponse putSync(HttpRequest testRequest) {
         return handler.handlePUT(testRequest);
     }
 
