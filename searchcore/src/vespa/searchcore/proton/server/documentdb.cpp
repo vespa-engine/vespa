@@ -1320,11 +1320,11 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
 }
 
 void
-updateAttributeMetrics(AttributeMetrics &metrics,
+updateAttributeMetrics(LegacyAttributeMetrics &metrics,
                        const TempAttributeMetrics &tmpMetrics)
 {
     for (const auto &kv : tmpMetrics._attrs) {
-        AttributeMetrics::List::Entry::LP entry = metrics.list.get(kv.first);
+        LegacyAttributeMetrics::List::Entry::LP entry = metrics.list.get(kv.first);
         if (entry.get()) {
             entry->memoryUsage.set(kv.second._memoryUsage);
             entry->bitVectors.set(kv.second._bitVectors);

@@ -5,18 +5,18 @@
 #include <string>
 
 namespace proton {
-class AttributeMetrics;
+class LegacyAttributeMetrics;
 class LegacyDocumentDBMetrics;
 
 struct MetricsWireService {
-    virtual void addAttribute(AttributeMetrics &subAttributes,
-                              AttributeMetrics *totalAttributes,
+    virtual void addAttribute(LegacyAttributeMetrics &subAttributes,
+                              LegacyAttributeMetrics *totalAttributes,
                               const std::string &name) = 0;
-    virtual void removeAttribute(AttributeMetrics &subAttributes,
-                                 AttributeMetrics *totalAttributes,
+    virtual void removeAttribute(LegacyAttributeMetrics &subAttributes,
+                                 LegacyAttributeMetrics *totalAttributes,
                                  const std::string &name) = 0;
-    virtual void cleanAttributes(AttributeMetrics &subAttributes,
-                                 AttributeMetrics *totalAttributes) = 0;
+    virtual void cleanAttributes(LegacyAttributeMetrics &subAttributes,
+                                 LegacyAttributeMetrics *totalAttributes) = 0;
     virtual void addRankProfile(LegacyDocumentDBMetrics &owner,
                                 const std::string &name,
                                 size_t numDocIdPartitions) = 0;
@@ -25,9 +25,9 @@ struct MetricsWireService {
 };
 
 struct DummyWireService : public MetricsWireService {
-    virtual void addAttribute(AttributeMetrics &, AttributeMetrics *, const std::string &) {}
-    virtual void removeAttribute(AttributeMetrics &, AttributeMetrics *, const std::string &) {}
-    virtual void cleanAttributes(AttributeMetrics &, AttributeMetrics *) {}
+    virtual void addAttribute(LegacyAttributeMetrics &, LegacyAttributeMetrics *, const std::string &) {}
+    virtual void removeAttribute(LegacyAttributeMetrics &, LegacyAttributeMetrics *, const std::string &) {}
+    virtual void cleanAttributes(LegacyAttributeMetrics &, LegacyAttributeMetrics *) {}
     virtual void addRankProfile(LegacyDocumentDBMetrics &, const std::string &, size_t) {}
     virtual void cleanRankProfiles(LegacyDocumentDBMetrics &) {}
 };

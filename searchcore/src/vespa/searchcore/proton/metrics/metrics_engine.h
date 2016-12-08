@@ -44,14 +44,14 @@ public:
     void removeExternalMetrics(metrics::Metric &child);
     void addDocumentDBMetrics(DocumentDBMetricsCollection &child);
     void removeDocumentDBMetrics(DocumentDBMetricsCollection &child);
-    virtual void addAttribute(AttributeMetrics &subAttributes,
-                              AttributeMetrics *totalAttributes,
+    virtual void addAttribute(LegacyAttributeMetrics &subAttributes,
+                              LegacyAttributeMetrics *totalAttributes,
                               const std::string &name);
-    virtual void removeAttribute(AttributeMetrics &subAttributes,
-                                 AttributeMetrics *totalAttributes,
+    virtual void removeAttribute(LegacyAttributeMetrics &subAttributes,
+                                 LegacyAttributeMetrics *totalAttributes,
                                  const std::string &name);
-    virtual void cleanAttributes(AttributeMetrics &subAttributes,
-                                 AttributeMetrics *totalAttributes);
+    virtual void cleanAttributes(LegacyAttributeMetrics &subAttributes,
+                                 LegacyAttributeMetrics *totalAttributes);
     virtual void addRankProfile(LegacyDocumentDBMetrics &owner,
                                 const std::string &name,
                                 size_t numDocIdPartitions);

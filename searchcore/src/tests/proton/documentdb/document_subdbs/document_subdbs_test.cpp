@@ -95,11 +95,11 @@ struct MyMetricsWireService : public MetricsWireService
 {
 	std::set<vespalib::string> _attributes;
 	MyMetricsWireService() : _attributes() {}
-	virtual void addAttribute(AttributeMetrics &, AttributeMetrics *, const std::string &name) {
+	virtual void addAttribute(LegacyAttributeMetrics &, LegacyAttributeMetrics *, const std::string &name) {
 		_attributes.insert(name);
 	}
-	virtual void removeAttribute(AttributeMetrics &, AttributeMetrics *, const std::string &) {}
-	virtual void cleanAttributes(AttributeMetrics &, AttributeMetrics *) {}
+	virtual void removeAttribute(LegacyAttributeMetrics &, LegacyAttributeMetrics *, const std::string &) {}
+	virtual void cleanAttributes(LegacyAttributeMetrics &, LegacyAttributeMetrics *) {}
 	virtual void addRankProfile(LegacyDocumentDBMetrics &, const std::string &, size_t) {}
 	virtual void cleanRankProfiles(LegacyDocumentDBMetrics &) {}
 };
@@ -170,7 +170,7 @@ struct MyFastAccessConfig
 struct MyFastAccessContext
 {
 	MyStoreOnlyContext _storeOnlyCtx;
-	AttributeMetrics _attributeMetrics;
+	LegacyAttributeMetrics _attributeMetrics;
 	MyMetricsWireService _wireService;
 	FastAccessContext _ctx;
 	MyFastAccessContext(IThreadingService &writeService,

@@ -7,9 +7,7 @@
 
 namespace proton {
 
-struct LegacyDocumentDBMetrics;
-
-struct AttributeMetrics : metrics::MetricSet {
+struct LegacyAttributeMetrics : metrics::MetricSet {
 
     // The metric set also owns the actual metrics for individual
     // attribute vectors. Another way to do this would be to let the
@@ -39,7 +37,7 @@ struct AttributeMetrics : metrics::MetricSet {
     metrics::LongValueMetric memoryUsage;
     metrics::LongValueMetric bitVectors;
 
-    AttributeMetrics(metrics::MetricSet *parent);
+    LegacyAttributeMetrics(metrics::MetricSet *parent);
 };
 
 } // namespace proton

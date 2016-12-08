@@ -1,7 +1,6 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchcore_proton_metrics STATIC
     SOURCES
-    attribute_metrics.cpp
     content_proton_metrics.cpp
     documentdb_job_trackers.cpp
     documentdb_tagged_metrics.cpp
@@ -11,6 +10,7 @@ vespa_add_library(searchcore_proton_metrics STATIC
     job_tracker.cpp
     job_tracked_flush_target.cpp
     job_tracked_flush_task.cpp
+    legacy_attribute_metrics.cpp
     legacy_documentdb_metrics.cpp
     legacy_proton_metrics.cpp
     metrics_engine.cpp
