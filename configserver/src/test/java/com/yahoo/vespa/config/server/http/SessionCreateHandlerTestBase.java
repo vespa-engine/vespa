@@ -186,7 +186,7 @@ public abstract class SessionCreateHandlerTestBase extends SessionHandlerTest {
         public String applicationName;
 
         @Override
-        public LocalSession createSession(File applicationDirectory, String applicationName, DeployLogger logger, TimeoutBudget timeoutBudget) {
+        public LocalSession createSession(File applicationDirectory, String applicationName, TimeoutBudget timeoutBudget) {
             createCalled = true;
             this.applicationName = applicationName;
             if (doThrow) {

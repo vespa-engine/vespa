@@ -192,7 +192,6 @@ public class SessionPrepareHandlerTest extends SessionPrepareHandlerTestBase {
         }, AccessLog.voidAccessLog(), builder.createTenants(), configserverConfig,
                                          new ApplicationRepository(builder.createTenants(),
                                                                    HostProvisionerProvider.withProvisioner(new SessionActiveHandlerTest.MockProvisioner()),
-                                                                   configserverConfig,
                                                                    new MockCurator(),
                                                                    new LogServerLogGrabber(),
                                                                    new ApplicationConvergenceChecker()));

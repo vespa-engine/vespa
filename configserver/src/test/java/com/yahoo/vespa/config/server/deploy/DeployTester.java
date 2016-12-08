@@ -1,6 +1,5 @@
 package com.yahoo.vespa.config.server.deploy;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostProvisioner;
@@ -99,7 +98,7 @@ public class DeployTester {
      */
     public ApplicationId deployApp(String appName) throws InterruptedException, IOException {
         final Tenant tenant = tenant();
-        LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new SilentDeployLogger(), new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
+        LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
         session.prepare(new SilentDeployLogger(),
                         new PrepareParams.Builder().applicationId(id).build(),
@@ -120,7 +119,6 @@ public class DeployTester {
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive(ApplicationId id) {
         ApplicationRepository applicationRepository = new ApplicationRepository(tenants,
                                                                                 HostProvisionerProvider.withProvisioner(createHostProvisioner()),
-                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                                                 curator,
                                                                                 new LogServerLogGrabber(),
                                                                                 new ApplicationConvergenceChecker());
