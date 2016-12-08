@@ -41,14 +41,11 @@ getIndexName(const vespalib::string & indexName, const vespalib::string & expand
     return indexName + "(" + expandedIndexName + ")";
 }
 
-FeatureHandle
-getFeatureHandle(const RankProgram &rankProgram) {
-    std::vector<vespalib::string> featureNames;
-    std::vector<FeatureHandle> featureHandles;
-    rankProgram.get_seed_handles(featureNames, featureHandles);
-    assert(featureNames.size() == 1);
-    assert(featureHandles.size() == 1);
-    return featureHandles.front();
+const search::feature_t *
+getFeaturePtr(const RankProgram &rankProgram) {
+    search::fef::FeatureResolver resolver(rankProgram.get_seeds());
+    assert(resolver.num_features() == 1u);
+    return resolver.resolve_number(0);
 }
 
 }
@@ -119,7 +116,7 @@ RankProcessor::init(bool forRanking, size_t wantedHitCount)
             _rankProgram = _rankSetup.create_second_phase_program();
         }
         setupRankProgram(*_rankProgram);
-        _rankScoreHandle = getFeatureHandle(*_rankProgram);
+        _rankScorePtr = getFeaturePtr(*_rankProgram);
         _summaryProgram = _rankSetup.create_summary_program();
         setupRankProgram(*_summaryProgram);
     } else {
@@ -144,7 +141,7 @@ RankProcessor::RankProcessor(RankManager::Snapshot::SP snapshot,
     _rankProgram(),
     _score(0.0),
     _summaryProgram(),
-    _rankScoreHandle(IllegalHandle),
+    _rankScorePtr(nullptr),
     _hitCollector()
 {
 }
@@ -165,9 +162,8 @@ void
 RankProcessor::runRankProgram(uint32_t docId)
 {
     _rankProgram->run(docId);
-    if (_rankScoreHandle != IllegalHandle) {
-        MatchData &matchData = _rankProgram->match_data();
-        _score = *(matchData.resolveFeature(_rankScoreHandle));
+    if (_rankScorePtr != nullptr) {
+        _score = *_rankScorePtr;
         if (std::isnan(_score) || std::isinf(_score)) {
             _score = -HUGE_VAL;
         }

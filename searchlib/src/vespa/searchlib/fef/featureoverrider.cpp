@@ -9,7 +9,6 @@ namespace fef {
 FeatureOverrider::FeatureOverrider(FeatureExecutor &executor, uint32_t outputIdx, feature_t value)
     : _executor(executor),
       _outputIdx(outputIdx),
-      _handle(IllegalHandle),
       _value(value)
 {
 }
@@ -26,9 +25,6 @@ FeatureOverrider::inputs_done()
 void
 FeatureOverrider::outputs_done()
 {
-    if (_outputIdx < outputs().size()) {
-        _handle = outputs()[_outputIdx];
-    }
     for (uint32_t i = 0; i < outputs().size(); ++i) {
         _executor.bindOutput(outputs()[i]);
     }
@@ -45,8 +41,8 @@ void
 FeatureOverrider::execute(MatchData &data)
 {
     _executor.execute(data);
-    if (_handle != IllegalHandle) {
-        *data.resolveFeature(_handle) = _value;
+    if (_outputIdx < outputs().size()) {
+        outputs().set_number(_outputIdx, _value);
     }
 }
 
