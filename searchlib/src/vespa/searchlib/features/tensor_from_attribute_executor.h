@@ -49,7 +49,7 @@ TensorFromAttributeExecutor<WeightedBufferType>::execute(fef::MatchData &data)
         builder.add_cell(_attrBuffer[i].weight());
     }
     _tensor = vespalib::eval::TensorValue::UP(new vespalib::eval::TensorValue(builder.build()));
-    *data.resolve_object_feature(outputs()[0]) = *_tensor;
+    outputs().set_object(0, *_tensor);
 }
 
 } // namespace features

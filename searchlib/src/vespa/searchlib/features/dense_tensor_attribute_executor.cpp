@@ -24,7 +24,7 @@ void
 DenseTensorAttributeExecutor::execute(fef::MatchData &data)
 {
     _attribute->getTensor(data.getDocId(), _tensorView);
-    *data.resolve_object_feature(outputs()[0]) = _tensor;
+    outputs().set_object(0, _tensor);
 }
 
 } // namespace features

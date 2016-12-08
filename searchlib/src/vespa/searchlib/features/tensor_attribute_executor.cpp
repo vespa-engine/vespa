@@ -26,7 +26,7 @@ TensorAttributeExecutor::execute(fef::MatchData &data)
     } else {
         _tensor = TensorValue(std::move(tensor));
     }
-    *data.resolve_object_feature(outputs()[0]) = _tensor;
+    outputs().set_object(0, _tensor);
 }
 
 } // namespace features

@@ -149,11 +149,11 @@ TextSimilarityExecutor::execute(search::fef::MatchData &data)
         }
     }
     state.calculateScore(_handles.size(), _total_term_weight,
-                         *data.resolveFeature(outputs()[0]),
-                         *data.resolveFeature(outputs()[1]),
-                         *data.resolveFeature(outputs()[2]),
-                         *data.resolveFeature(outputs()[3]),
-                         *data.resolveFeature(outputs()[4]));
+                         *outputs().get_number_ptr(0),
+                         *outputs().get_number_ptr(1),
+                         *outputs().get_number_ptr(2),
+                         *outputs().get_number_ptr(3),
+                         *outputs().get_number_ptr(4));
 }
 
 //-----------------------------------------------------------------------------
