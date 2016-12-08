@@ -1,13 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.google.common.io.Files;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.api.ModelFactory;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 import com.yahoo.test.ManualClock;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -16,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -24,21 +19,10 @@ import static org.junit.Assert.fail;
  * @author bratseth
  */
 public class HostedDeployTest {
-    private static final String dockerRegistry = "foo.com:4443";
-    private static final String dockerVespaBaseImage = "/vespa/ci";
-    private static final ConfigserverConfig config = new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                                                                    .configServerDBDir(Files.createTempDir()
-                                                                                                            .getAbsolutePath())
-                                                                                    .dockerRegistry(dockerRegistry)
-                                                                                    .dockerVespaBaseImage(dockerVespaBaseImage)
-                                                                                    .configServerDBDir(Files.createTempDir()
-                                                                                                            .getAbsolutePath())
-                                                                                    .hostedVespa(true)
-                                                                                    .multitenant(true));
 
     @Test
     public void testRedeploy() throws InterruptedException, IOException {
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", config);
+        DeployTester tester = new DeployTester("src/test/apps/hosted/");
         tester.deployApp("myApp");
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();                
@@ -54,7 +38,7 @@ public class HostedDeployTest {
         List<ModelFactory> modelFactories = new ArrayList<>();
         modelFactories.add(DeployTester.createDefaultModelFactory(clock));
         modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0))); // older than default
-        DeployTester tester = new DeployTester("src/test/apps/validationOverride/", modelFactories, config);
+        DeployTester tester = new DeployTester("src/test/apps/validationOverride/", modelFactories);
         tester.deployApp("myApp");
 
         // Redeployment from local active works
@@ -85,28 +69,6 @@ public class HostedDeployTest {
                 // success
             }
         }
-    }
-
-    @Test
-    @Ignore //WIP
-    public void testDeployWithDockerImage() throws InterruptedException, IOException {
-        final String vespaVersion = "6.51.1";
-        DeployTester tester = new DeployTester("src/test/apps/hosted/", config);
-        ApplicationId applicationId = tester.deployApp("myApp", Optional.of(vespaVersion));
-        assertProvisionInfo(vespaVersion, tester, applicationId);
-
-        System.out.println("Redeploy");
-        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
-        assertTrue(deployment.isPresent());
-        deployment.get().prepare();
-        deployment.get().activate();
-        //assertProvisionInfo(vespaVersion, tester, applicationId);
-    }
-
-    private void assertProvisionInfo(String vespaVersion, DeployTester tester, ApplicationId applicationId) {
-        tester.getProvisionInfoFromDeployedApp(applicationId).getHosts().stream()
-              .forEach(h -> assertEquals(dockerRegistry + dockerVespaBaseImage + ":" + vespaVersion,
-                                         h.membership().get().cluster().dockerImage().get()));
     }
 
 }
