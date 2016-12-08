@@ -19,7 +19,6 @@ class RankProgram;
 class FeatureResolver
 {
 private:
-    friend class RankProgram; // inner class with decoupled compilation
     std::vector<vespalib::string> _names;
     std::vector<const NumberOrObject *> _features;
     std::vector<bool> _is_object;
