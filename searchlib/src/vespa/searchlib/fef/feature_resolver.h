@@ -39,6 +39,7 @@ public:
     bool is_object(size_t i) const { return _is_object[i]; }
     const feature_t *resolve_number(size_t i) const { return &(_features[i]->as_number); }
     const vespalib::eval::Value::CREF *resolve_object(size_t i) const { return &(_features[i]->as_object); }
+    const NumberOrObject *resolve_raw(size_t i) const { return _features[i]; }
 };
 
 } // namespace fef
