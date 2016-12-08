@@ -25,7 +25,7 @@ StaticRankExecutor::execute(MatchData & data)
         staticRank.allocate(_attribute->getMaxValueCount());
         staticRank.fill(*_attribute, doc);
     }
-    *data.resolveFeature(outputs()[0]) = static_cast<feature_t>(staticRank[0]);
+    outputs().set_number(0, static_cast<feature_t>(staticRank[0]));
 }
 
 

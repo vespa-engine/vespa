@@ -17,9 +17,9 @@ ChainExecutor::ChainExecutor() :
 }
 
 void
-ChainExecutor::execute(MatchData & data)
+ChainExecutor::execute(MatchData &)
 {
-    *data.resolveFeature(outputs()[0]) = *data.resolveFeature(inputs()[0]);
+    outputs().set_number(0, inputs().get_number(0));
 }
 
 
