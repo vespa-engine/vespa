@@ -54,8 +54,7 @@ Java modules can be built on any environment having Java and Maven:
 
 ## Running Vespa on a local machine
 
-* OS X : See [node-admin/README_MAC.md](node-admin/README_MAC.md)
-* Linux : See [node-admin/README_LINUX.md](node-admin/README_LINUX.md)
+See [node-admin/README.md](node-admin/README.md)
 
 Code licensed under the Apache 2.0 license. See LICENSE file for terms.
 
