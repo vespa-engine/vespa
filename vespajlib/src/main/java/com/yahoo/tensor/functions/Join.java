@@ -76,11 +76,11 @@ public class Join extends PrimitiveTensorFunction {
     }
     
     private Tensor indexedVectorJoin(IndexedTensor a, IndexedTensor b, TensorType type) {
-        IndexedTensor.Builder builder = new IndexedTensor.Builder(type);
+        ImmutableList.Builder<Object> builder = new ImmutableList.Builder<>();
         int joinedLength = Math.min(a.length(0), b.length(0));
         for (int i = 0; i < joinedLength; i++)
-            builder.set(combinator.applyAsDouble(a.get(i), b.get(i)), i);
-        return builder.build();
+            builder.add(combinator.applyAsDouble(a.get(i), b.get(i)));
+        return new IndexedTensor(type, builder.build());
     }
 
     /** When both tensors have the same dimensions, at most one cell matches a cell in the other tensor */
