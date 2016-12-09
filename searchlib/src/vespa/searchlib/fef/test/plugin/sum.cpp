@@ -11,7 +11,7 @@ namespace fef {
 namespace test {
 
 void
-SumExecutor::execute(MatchData &)
+SumExecutor::execute(uint32_t)
 {
     feature_t sum = 0.0f;
     for (uint32_t i = 0; i < inputs().size(); ++i) {

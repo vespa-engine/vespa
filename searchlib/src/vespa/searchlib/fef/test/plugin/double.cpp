@@ -13,7 +13,7 @@ namespace fef {
 namespace test {
 
 void
-DoubleExecutor::execute(MatchData &)
+DoubleExecutor::execute(uint32_t)
 {
     assert(inputs().size() == _cnt);
     assert(outputs().size() == _cnt);

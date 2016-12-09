@@ -33,7 +33,7 @@ public:
      */
     ProximityExecutor(const search::fef::IQueryEnvironment &env,
                       const ProximityConfig &config);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     const ProximityConfig       &_config; // The proximity config.

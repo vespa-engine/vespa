@@ -28,7 +28,7 @@ public:
     FieldMatchExecutor(const search::fef::IQueryEnvironment & queryEnv,
                        const search::fef::FieldInfo & field,
                        const fieldmatch::Params & params);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

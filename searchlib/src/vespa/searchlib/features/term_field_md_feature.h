@@ -20,7 +20,7 @@ class TermFieldMdExecutor : public fef::FeatureExecutor {
     std::vector<Element> _terms;
     const fef::MatchData *_md;
 
-    virtual void execute(fef::MatchData &data);
+    virtual void execute(uint32_t docId);
     virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:

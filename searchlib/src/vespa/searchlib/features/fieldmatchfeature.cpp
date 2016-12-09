@@ -34,12 +34,12 @@ FieldMatchExecutor::FieldMatchExecutor(const IQueryEnvironment & queryEnv,
 }
 
 void
-FieldMatchExecutor::execute(search::fef::MatchData & match)
+FieldMatchExecutor::execute(uint32_t docId)
 {
-    //LOG(info, "execute for field '%s' and docId(%u)", _field.name().c_str(), match.getDocId());
+    //LOG(info, "execute for field '%s' and docId(%u)", _field.name().c_str(), docId);
 
     _splitter.update();
-    _cmp.reset(match.getDocId());
+    _cmp.reset(docId);
     //_cmp.setTracing(true);
 
     const fieldmatch::SimpleMetrics & simple = _cmp.getSimpleMetrics();

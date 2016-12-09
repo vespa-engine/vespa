@@ -176,7 +176,7 @@ struct State {
 
 
 void
-FlowCompletenessExecutor::execute(search::fef::MatchData &)
+FlowCompletenessExecutor::execute(uint32_t)
 {
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {

@@ -22,7 +22,7 @@ public:
      * Constructs an executor.
      */
     FreshnessExecutor(feature_t maxAge, feature_t scaleAge);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

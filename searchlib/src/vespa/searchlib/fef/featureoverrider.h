@@ -38,7 +38,7 @@ public:
     void inputs_done() override;
     void outputs_done() override;
     bool isPure() override;
-    void execute(MatchData &data) override;
+    void execute(uint32_t docId) override;
 };
 
 } // namespace fef

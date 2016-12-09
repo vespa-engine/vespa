@@ -35,7 +35,7 @@ public:
      */
     DistanceToPathExecutor(std::vector<Vector2> &path,
                            const search::attribute::IAttributeVector *pos);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 
     /**
      * Defines a default distance value to use if a proper one can not be determined.

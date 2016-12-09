@@ -20,7 +20,7 @@ FreshnessExecutor::FreshnessExecutor(feature_t maxAge, feature_t scaleAge) :
 }
 
 void
-FreshnessExecutor::execute(MatchData &)
+FreshnessExecutor::execute(uint32_t)
 {
     feature_t age = inputs().get_number(0);
     LOG(debug, "Age: %f  Maxage: %f res: %f\n", age, _maxAge, (age / _maxAge));

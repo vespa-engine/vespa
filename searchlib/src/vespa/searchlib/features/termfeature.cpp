@@ -31,7 +31,7 @@ TermExecutor::TermExecutor(const search::fef::IQueryEnvironment &env,
 }
 
 void
-TermExecutor::execute(search::fef::MatchData &)
+TermExecutor::execute(uint32_t)
 {
     if (_termData == NULL) { // this query term is not present in the query
         outputs().set_number(0, 0.0f); // connectedness

@@ -25,7 +25,7 @@ public:
         : _tensor(std::move(tensor))
     {}
     virtual bool isPure() override { return true; }
-    virtual void execute(fef::MatchData &) override {
+    virtual void execute(uint32_t) override {
         outputs().set_object(0, *_tensor);
     }
     static fef::FeatureExecutor &create(std::unique_ptr<vespalib::eval::Tensor> tensor, vespalib::Stash &stash) {

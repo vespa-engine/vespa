@@ -74,7 +74,7 @@ TermEditDistanceExecutor::TermEditDistanceExecutor(const search::fef::IQueryEnvi
 }
 
 void
-TermEditDistanceExecutor::execute(search::fef::MatchData &match)
+TermEditDistanceExecutor::execute(uint32_t docId)
 {
     // Determine the number of terms in the field.
     uint32_t numQueryTerms = _fieldHandles.size();
@@ -105,7 +105,7 @@ TermEditDistanceExecutor::execute(search::fef::MatchData &match)
             search::fef::TermFieldHandle handle = _fieldHandles[query - 1];
             if (handle != search::fef::IllegalHandle) {
                 const fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
-                if (tfmd.getDocId() == match.getDocId()) {
+                if (tfmd.getDocId() == docId) {
                     it = tfmd.getIterator(); // this is now valid
                     while (it.valid() && it.getPosition() < fieldBegin) {
                         it.next(); // forward to window

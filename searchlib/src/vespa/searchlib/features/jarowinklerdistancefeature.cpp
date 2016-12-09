@@ -45,7 +45,7 @@ JaroWinklerDistanceExecutor::JaroWinklerDistanceExecutor(const search::fef::IQue
 }
 
 void
-JaroWinklerDistanceExecutor::execute(search::fef::MatchData &match)
+JaroWinklerDistanceExecutor::execute(uint32_t docId)
 {
     // Build a list of field position iterators, one per query term.
     std::vector<search::fef::FieldPositionsIterator> pos;
@@ -54,7 +54,7 @@ JaroWinklerDistanceExecutor::execute(search::fef::MatchData &match)
         const search::fef::TermFieldHandle &handle = _termFieldHandles[term];
         if (handle != search::fef::IllegalHandle) {
             const search::fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
-            if (tfmd.getDocId() == match.getDocId()) {
+            if (tfmd.getDocId() == docId) {
                 it = tfmd.getIterator();
             }
         }

@@ -29,7 +29,7 @@ ForeachExecutor<CO, OP>::ForeachExecutor(const CO & condition, uint32_t numInput
 
 template <typename CO, typename OP>
 void
-ForeachExecutor<CO, OP>::execute(MatchData &)
+ForeachExecutor<CO, OP>::execute(uint32_t)
 {
     _operation.reset();
     for (uint32_t i = 0; i < inputs().size(); ++i) {

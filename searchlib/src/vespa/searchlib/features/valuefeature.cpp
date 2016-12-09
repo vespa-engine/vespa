@@ -18,7 +18,7 @@ ValueExecutor::ValueExecutor(const std::vector<feature_t> & values) :
 }
 
 void
-ValueExecutor::execute(search::fef::MatchData &)
+ValueExecutor::execute(uint32_t)
 {
     for (uint32_t i = 0; i < _values.size(); ++i) {
         outputs().set_number(i, _values[i]);
@@ -26,7 +26,7 @@ ValueExecutor::execute(search::fef::MatchData &)
 }
 
 void
-SingleZeroValueExecutor::execute(search::fef::MatchData &)
+SingleZeroValueExecutor::execute(uint32_t)
 {
     outputs().set_number(0, 0.0);
 }

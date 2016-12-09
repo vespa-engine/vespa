@@ -17,13 +17,12 @@ StaticRankExecutor::StaticRankExecutor(const search::attribute::IAttributeVector
 }
 
 void
-StaticRankExecutor::execute(MatchData & data)
+StaticRankExecutor::execute(uint32_t docId)
 {
-    uint32_t doc = data.getDocId();
     search::attribute::FloatContent staticRank;
     if (_attribute != NULL) {
         staticRank.allocate(_attribute->getMaxValueCount());
-        staticRank.fill(*_attribute, doc);
+        staticRank.fill(*_attribute, docId);
     }
     outputs().set_number(0, static_cast<feature_t>(staticRank[0]));
 }

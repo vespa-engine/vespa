@@ -72,9 +72,9 @@ DistanceExecutor::DistanceExecutor(const Location & location,
 }
 
 void
-DistanceExecutor::execute(MatchData & match)
+DistanceExecutor::execute(uint32_t docId)
 {
-    outputs().set_number(0, calculateDistance(match.getDocId()));
+    outputs().set_number(0, calculateDistance(docId));
 }
 
 const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);

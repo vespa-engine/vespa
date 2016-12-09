@@ -34,14 +34,14 @@ public:
     {
         _attrBuffer.allocate(_attribute->getMaxValueCount());
     }
-    virtual void execute(fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 };
 
 template <typename WeightedBufferType>
 void
-TensorFromAttributeExecutor<WeightedBufferType>::execute(fef::MatchData &data)
+TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
 {
-    _attrBuffer.fill(*_attribute, data.getDocId());
+    _attrBuffer.fill(*_attribute, docId);
     vespalib::tensor::DefaultTensor::builder builder;
     vespalib::tensor::TensorBuilder::Dimension dimensionEnum = builder.define_dimension(_dimension);
     for (size_t i = 0; i < _attrBuffer.size(); ++i) {

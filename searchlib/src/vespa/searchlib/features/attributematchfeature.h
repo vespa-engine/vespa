@@ -56,7 +56,7 @@ private:
     public:
         Computer(const search::fef::IQueryEnvironment & env,
                  AttributeMatchParams params);
-        void run(search::fef::MatchData & data);
+        void run(uint32_t docId);
         void reset();
         uint32_t getNumTerms() const { return _queryTerms.size(); }
         uint32_t getMatches() const { return _matches; }
@@ -85,7 +85,7 @@ public:
                            AttributeMatchParams params);
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

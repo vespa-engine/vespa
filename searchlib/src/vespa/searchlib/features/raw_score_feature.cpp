@@ -25,12 +25,12 @@ RawScoreExecutor::RawScoreExecutor(const search::fef::IQueryEnvironment &env, ui
 }
 
 void
-RawScoreExecutor::execute(MatchData &data)
+RawScoreExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == data.getDocId()) {
+        if (tfmd->getDocId() == docId) {
             output += tfmd->getRawScore();
         }
     }

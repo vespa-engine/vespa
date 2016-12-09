@@ -33,7 +33,7 @@ public:
      */
     ReverseProximityExecutor(const search::fef::IQueryEnvironment &env,
                              const ReverseProximityConfig &config);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     const ReverseProximityConfig &_config; // The proximity config.

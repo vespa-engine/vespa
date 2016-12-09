@@ -26,7 +26,7 @@ public:
      * Constructs a new executor.
      **/
     RandomExecutor(uint64_t seed, uint64_t matchSeed);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

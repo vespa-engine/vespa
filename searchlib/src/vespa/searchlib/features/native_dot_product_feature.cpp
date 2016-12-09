@@ -25,12 +25,12 @@ NativeDotProductExecutor::NativeDotProductExecutor(const search::fef::IQueryEnvi
 }
 
 void
-NativeDotProductExecutor::execute(MatchData &data)
+NativeDotProductExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _pairs.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_pairs[i].first);
-        if (tfmd->getDocId() == data.getDocId()) {
+        if (tfmd->getDocId() == docId) {
             output += (tfmd->getWeight() * (int32_t)_pairs[i].second.percent());
         }
     }

@@ -33,12 +33,12 @@ DistanceToPathExecutor::DistanceToPathExecutor(std::vector<Vector2> &path,
 }
 
 void
-DistanceToPathExecutor::execute(search::fef::MatchData & match)
+DistanceToPathExecutor::execute(uint32_t docId)
 {
     if (_path.size() > 1 && _pos != NULL) {
         double pos = -1, trip = 0, product = 0;
         double minSqDist = std::numeric_limits<double>::max();
-        _intBuf.fill(*_pos, match.getDocId());
+        _intBuf.fill(*_pos, docId);
 
         // For each line segment, do
         for (uint32_t seg = 1; seg < _path.size(); ++seg) {

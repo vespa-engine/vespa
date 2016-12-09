@@ -29,12 +29,12 @@ MatchesExecutor::MatchesExecutor(uint32_t fieldId,
 }
 
 void
-MatchesExecutor::execute(MatchData &match)
+MatchesExecutor::execute(uint32_t docId)
 {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == match.getDocId()) {
+        if (tfmd->getDocId() == docId) {
             output = 1;
             break;
         }

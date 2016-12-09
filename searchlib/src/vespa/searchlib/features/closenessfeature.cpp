@@ -20,7 +20,7 @@ ClosenessExecutor::ClosenessExecutor(feature_t maxDistance, feature_t scaleDista
 }
 
 void
-ClosenessExecutor::execute(MatchData &)
+ClosenessExecutor::execute(uint32_t)
 {
     feature_t distance = inputs().get_number(0);
     feature_t closeness = std::max(1 - (distance / _maxDistance), (feature_t)0);

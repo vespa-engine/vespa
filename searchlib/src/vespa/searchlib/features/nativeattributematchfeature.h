@@ -65,7 +65,7 @@ private:
 public:
     NativeAttributeMatchExecutorMulti(const Precomputed & setup) : _divisor(setup.second), _queryTermData(setup.first), _md(nullptr) { }
     // Inherit doc from FeatureExecutor.
-    virtual void execute(fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 class NativeAttributeMatchExecutorSingle : public NativeAttributeMatchExecutor
@@ -84,7 +84,7 @@ public:
         _queryTermData.scale /= setup.second;
     }
     // Inherit doc from FeatureExecutor.
-    virtual void execute(fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

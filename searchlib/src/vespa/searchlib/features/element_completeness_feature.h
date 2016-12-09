@@ -90,7 +90,7 @@ public:
     ElementCompletenessExecutor(const search::fef::IQueryEnvironment &env,
                                 const ElementCompletenessParams &params);
     virtual bool isPure() { return _terms.empty(); }
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 //-----------------------------------------------------------------------------

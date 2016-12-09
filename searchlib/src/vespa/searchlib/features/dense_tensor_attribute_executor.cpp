@@ -21,9 +21,9 @@ DenseTensorAttributeExecutor(const DenseTensorAttribute *attribute)
 }
 
 void
-DenseTensorAttributeExecutor::execute(fef::MatchData &data)
+DenseTensorAttributeExecutor::execute(uint32_t docId)
 {
-    _attribute->getTensor(data.getDocId(), _tensorView);
+    _attribute->getTensor(docId, _tensorView);
     outputs().set_object(0, _tensor);
 }
 

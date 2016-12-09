@@ -119,7 +119,7 @@ public:
     SingleAttributeExecutor(const T & attribute) : _attribute(attribute) { }
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
@@ -135,7 +135,7 @@ public:
     CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 /**
  * Implements the executor for fetching values from a single or array attribute vector
@@ -159,7 +159,7 @@ public:
     AttributeExecutor(const search::attribute::IAttributeVector * attribute, uint32_t idx);
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 
@@ -186,14 +186,14 @@ public:
     WeightedSetAttributeExecutor(const search::attribute::IAttributeVector * attribute, T key, bool useKey);
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 template <typename T>
 void
-SingleAttributeExecutor<T>::execute(search::fef::MatchData & match)
+SingleAttributeExecutor<T>::execute(uint32_t docId)
 {
-    typename T::LoadedValueType v = _attribute.getFast(match.getDocId());
+    typename T::LoadedValueType v = _attribute.getFast(docId);
     // value
     outputs().set_number(0, __builtin_expect(attribute::isUndefined(v), false)
                          ? attribute::getUndefined<search::feature_t>()
@@ -204,12 +204,12 @@ SingleAttributeExecutor<T>::execute(search::fef::MatchData & match)
 }
 
 void
-CountOnlyAttributeExecutor::execute(search::fef::MatchData & match)
+CountOnlyAttributeExecutor::execute(uint32_t docId)
 {
     outputs().set_number(0, 0.0f);  // value
     outputs().set_number(1, 0.0f);  // weight
     outputs().set_number(2, 0.0f);  // contains
-    outputs().set_number(3, _attribute.getValueCount(match.getDocId())); // count
+    outputs().set_number(3, _attribute.getValueCount(docId)); // count
 }
 
 template <typename T>
@@ -226,10 +226,10 @@ AttributeExecutor<T>::AttributeExecutor(const IAttributeVector * attribute, uint
 
 template <typename T>
 void
-AttributeExecutor<T>::execute(search::fef::MatchData & match)
+AttributeExecutor<T>::execute(uint32_t docId)
 {
     feature_t value = 0.0f;
-    _buffer.fill(*_attribute, match.getDocId());
+    _buffer.fill(*_attribute, docId);
     if (_idx < _buffer.size()) {
         value = considerUndefined(_buffer[_idx], _attrType);
     }
@@ -253,14 +253,14 @@ WeightedSetAttributeExecutor<BT, T>::WeightedSetAttributeExecutor(const IAttribu
 
 template <typename BT, typename T>
 void
-WeightedSetAttributeExecutor<BT, T>::execute(search::fef::MatchData & match)
+WeightedSetAttributeExecutor<BT, T>::execute(uint32_t docId)
 {
     feature_t value = 0.0f;
     feature_t weight = 0.0f;
     feature_t contains = 0.0f;
     feature_t count = 0.0f;
     if (_useKey) {
-        _buffer.fill(*_attribute, match.getDocId());
+        _buffer.fill(*_attribute, docId);
         for (uint32_t i = 0; i < _buffer.size(); ++i) {
             if (equals(_buffer[i].getValue(), _key)) {
                 value = considerUndefined(_key, _attrType);
@@ -270,7 +270,7 @@ WeightedSetAttributeExecutor<BT, T>::execute(search::fef::MatchData & match)
             }
         }
     } else {
-        count = _attribute->getValueCount(match.getDocId());
+        count = _attribute->getValueCount(docId);
     }
     outputs().set_number(0, value);    // value
     outputs().set_number(1, weight);   // weight

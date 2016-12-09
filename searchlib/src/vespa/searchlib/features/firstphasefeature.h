@@ -13,7 +13,7 @@ namespace features {
 class FirstPhaseExecutor : public search::fef::FeatureExecutor {
 public:
     virtual bool isPure() { return true; }
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

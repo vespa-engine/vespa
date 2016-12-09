@@ -33,7 +33,7 @@ ReverseProximityExecutor::ReverseProximityExecutor(const search::fef::IQueryEnvi
 }
 
 void
-ReverseProximityExecutor::execute(search::fef::MatchData &match)
+ReverseProximityExecutor::execute(uint32_t docId)
 {
     // Cannot calculate proximity in this case
     if (_termA == search::fef::IllegalHandle || _termB == search::fef::IllegalHandle) {
@@ -48,7 +48,7 @@ ReverseProximityExecutor::execute(search::fef::MatchData &match)
     search::fef::FieldPositionsIterator itA, itB;
     const fef::TermFieldMatchData &matchA = *_md->resolveTermField(_termA);
     const fef::TermFieldMatchData &matchB = *_md->resolveTermField(_termB);
-    if (matchA.getDocId() == match.getDocId() && matchB.getDocId() == match.getDocId()) {
+    if (matchA.getDocId() == docId && matchB.getDocId() == docId) {
         itA = matchA.getIterator();
         itB = matchB.getIterator();
         if (itA.valid() && itB.valid()) {

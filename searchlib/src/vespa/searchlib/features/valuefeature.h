@@ -19,7 +19,7 @@ private:
 public:
     ValueExecutor(const std::vector<feature_t> & values);
     virtual bool isPure() { return true; }
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
     const std::vector<feature_t> & getValues() const { return _values; }
 };
 
@@ -28,7 +28,7 @@ class SingleZeroValueExecutor : public search::fef::FeatureExecutor
 public:
     SingleZeroValueExecutor() : FeatureExecutor() {}
     virtual bool isPure() { return true; }
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

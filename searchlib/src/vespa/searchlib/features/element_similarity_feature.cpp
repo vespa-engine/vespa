@@ -239,13 +239,13 @@ public:
         }
     }
 
-    virtual void execute(fef::MatchData &data) {
+    virtual void execute(uint32_t docId) {
         for (auto &output: _outputs) {
             output.second->clear();
         }
         for (size_t i = 0; i < _terms.handles.size(); ++i) {
             const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms.handles[i]);
-            if (tfmd->getDocId() == data.getDocId()) {
+            if (tfmd->getDocId() == docId) {
                 _pos[i] = tfmd->begin();
                 _end[i] = tfmd->end();
                 if (_pos[i] != _end[i]) {

@@ -24,7 +24,7 @@ public:
     MatchesExecutor(uint32_t fieldId,
                     const search::fef::IQueryEnvironment &env,
                     uint32_t begin, uint32_t end);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 /**

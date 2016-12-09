@@ -26,7 +26,7 @@ struct ProxyExecutor : FeatureExecutor {
         : input_is_object(input_is_object_in), output_is_object(output_is_object_in),
           number_value(0.0), object_value() {}
     bool isPure() override { return true; }
-    void execute(search::fef::MatchData &) override {
+    void execute(uint32_t) override {
         double was_object = 0.0;
         if (input_is_object) {
             was_object = 1.0;

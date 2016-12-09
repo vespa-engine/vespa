@@ -31,7 +31,7 @@ private:
 public:
 
     EuclideanDistanceExecutor(const search::attribute::IAttributeVector &attribute, QueryVectorType vector);
-    virtual void execute(fef::MatchData &data) override;
+    virtual void execute(uint32_t docId) override;
 };
 
 

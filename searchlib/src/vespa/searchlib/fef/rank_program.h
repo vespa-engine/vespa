@@ -150,7 +150,7 @@ public:
         MatchData &md = match_data();
         md.setDocId(docid);
         for (FeatureExecutor *executor: _program) {
-            executor->execute(md);
+            executor->execute(docid);
         }
     }
 };

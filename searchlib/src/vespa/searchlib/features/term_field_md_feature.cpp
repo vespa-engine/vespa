@@ -33,7 +33,7 @@ TermFieldMdExecutor::TermFieldMdExecutor(const search::fef::IQueryEnvironment &e
 }
 
 void
-TermFieldMdExecutor::execute(MatchData & match)
+TermFieldMdExecutor::execute(uint32_t docId)
 {
     uint32_t termsmatched = 0;
     uint32_t occs = 0;
@@ -45,7 +45,7 @@ TermFieldMdExecutor::execute(MatchData & match)
         const TermFieldMatchData &tfmd = *_md->resolveTermField(_terms[i].first);
         int32_t termWeight = _terms[i].second.percent();
 
-        if (tfmd.getDocId() == match.getDocId()) {
+        if (tfmd.getDocId() == docId) {
             ++termsmatched;
             score += tfmd.getWeight();
             occs += (tfmd.end() - tfmd.begin());

@@ -17,11 +17,11 @@ const uint32_t TermDistanceCalculator::UNDEFINED_VALUE(1000000);
 
 void
 TermDistanceCalculator::run(const QueryTerm &termX, const QueryTerm &termY,
-                            const MatchData & match, Result & r)
+                            const MatchData & match, uint32_t docId, Result & r)
 {
     const TermFieldMatchData *tmdX = match.resolveTermField(termX.fieldHandle());
     const TermFieldMatchData *tmdY = match.resolveTermField(termY.fieldHandle());
-    if (tmdX->getDocId() != match.getDocId() || tmdY->getDocId() != match.getDocId()) {
+    if (tmdX->getDocId() != docId || tmdY->getDocId() != docId) {
         return;
     }
     findBest(tmdX, tmdY, termX.termData()->getPhraseLength(), r.forwardDist, r.forwardTermPos);

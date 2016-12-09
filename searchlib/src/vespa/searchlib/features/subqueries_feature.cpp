@@ -25,12 +25,12 @@ SubqueriesExecutor::SubqueriesExecutor(const IQueryEnvironment &env,
     }
 }
 
-void SubqueriesExecutor::execute(MatchData &data) {
+void SubqueriesExecutor::execute(uint32_t docId) {
     uint32_t lsb = 0;
     uint32_t msb = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == data.getDocId()) {
+        if (tfmd->getDocId() == docId) {
             lsb |= static_cast<uint32_t>(tfmd->getSubqueries());
             msb |= tfmd->getSubqueries() >> 32;
         }

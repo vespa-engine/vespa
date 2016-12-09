@@ -35,7 +35,7 @@ public:
      */
     JaroWinklerDistanceExecutor(const search::fef::IQueryEnvironment &env,
                                 const JaroWinklerDistanceConfig &config);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     feature_t jaroWinklerProximity(const std::vector<search::fef::FieldPositionsIterator> &termPos, uint32_t fieldLen);

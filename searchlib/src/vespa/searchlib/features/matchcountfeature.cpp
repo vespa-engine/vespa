@@ -28,12 +28,12 @@ MatchCountExecutor::MatchCountExecutor(uint32_t fieldId, const IQueryEnvironment
 }
 
 void
-MatchCountExecutor::execute(MatchData &match)
+MatchCountExecutor::execute(uint32_t docId)
 {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == match.getDocId()) {
+        if (tfmd->getDocId() == docId) {
             output++;
         }
     }

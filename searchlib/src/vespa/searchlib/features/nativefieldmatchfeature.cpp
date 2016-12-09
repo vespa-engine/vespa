@@ -19,14 +19,14 @@ namespace features {
 const uint32_t NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH(std::numeric_limits<uint32_t>::max());
 
 feature_t
-NativeFieldMatchExecutor::calculateScore(const MyQueryTerm &qt, MatchData &md)
+NativeFieldMatchExecutor::calculateScore(const MyQueryTerm &qt, uint32_t docId)
 {
     feature_t termScore = 0;
     for (size_t i = 0; i < qt.handles().size(); ++i) {
         TermFieldHandle tfh = qt.handles()[i];
         const TermFieldMatchData *tfmd = _md->resolveTermField(tfh);
         const NativeFieldMatchParam & param = _params.vector[tfmd->getFieldId()];
-        if (tfmd->getDocId() == md.getDocId()) { // do we have a hit
+        if (tfmd->getDocId() == docId) { // do we have a hit
             FieldPositionsIterator pos = tfmd->getIterator();
             if (pos.valid()) {
                 uint32_t fieldLength = getFieldLength(param, pos.getFieldLength());
@@ -73,11 +73,11 @@ NativeFieldMatchExecutor::NativeFieldMatchExecutor(const IQueryEnvironment & env
 }
 
 void
-NativeFieldMatchExecutor::execute(search::fef::MatchData &match)
+NativeFieldMatchExecutor::execute(uint32_t docId)
 {
     feature_t score = 0;
     for (size_t i = 0; i < _queryTerms.size(); ++i) {
-        score += calculateScore(_queryTerms[i], match);
+        score += calculateScore(_queryTerms[i], docId);
     }
     if (_divisor > 0) {
         score /= _divisor;
