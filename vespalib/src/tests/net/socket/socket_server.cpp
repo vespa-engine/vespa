@@ -53,7 +53,7 @@ int main(int, char **) {
         }
     }
     fprintf(stderr, "listening to %s\n", server->address().spec().c_str());
-    fprintf(stderr, "client command: env $(make ldl) ./socket_client %s %d\n",
+    fprintf(stderr, "client command: ./vespalib_socket_client_app %s %d\n",
             HostName::get().c_str(), server->address().port());
     fprintf(stderr, "use ^C (SIGINT) to exit\n");
     SignalHandler::INT.hook();
