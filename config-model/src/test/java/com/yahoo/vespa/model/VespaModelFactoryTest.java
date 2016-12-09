@@ -95,16 +95,19 @@ public class VespaModelFactoryTest {
         HostProvisioner provisionerToOverride = new HostProvisioner() {
             @Override
             public HostSpec allocateHost(String alias) {
-                return new HostSpec(hostName, ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.admin,
-                                                                                      new ClusterSpec.Id(routingClusterName),
-                                                                                      ClusterSpec.Group.from(0),
-                                                                                      Optional.empty()),
-                                                                     0));
+                return new HostSpec(hostName,
+                                    Collections.emptyList(),
+                                    ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.admin,
+                                                                            new ClusterSpec.Id(routingClusterName),
+                                                                            ClusterSpec.Group.from(0),
+                                                                            Optional.empty()),
+                                                           0));
             }
 
             @Override
             public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, int groups, ProvisionLogger logger) {
                 return Collections.singletonList(new HostSpec(hostName,
+                                                              Collections.emptyList(),
                                                               ClusterMembership.from(ClusterSpec.from(ClusterSpec.Type.container,
                                                                                                       new ClusterSpec.Id(routingClusterName),
                                                                                                       ClusterSpec.Group.from(0),

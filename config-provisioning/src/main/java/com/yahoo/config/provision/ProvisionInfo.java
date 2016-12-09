@@ -71,7 +71,7 @@ public class ProvisionInfo {
     private static HostSpec createHostSpec(Inspector object) {
         Optional<ClusterMembership> membership =
             object.field(hostSpecMembership).valid() ? Optional.of(readMembership(object)) : Optional.empty();
-        HostSpec h = new HostSpec(object.field(hostSpecHostName).asString(), Collections.<String>emptyList(), membership);
+        HostSpec h = new HostSpec(object.field(hostSpecHostName).asString(), Collections.emptyList(), Optional.empty(), membership);
         return h;
     }
 
