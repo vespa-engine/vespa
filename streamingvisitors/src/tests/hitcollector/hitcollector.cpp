@@ -228,21 +228,26 @@ class MyRankProgram : public HitCollector::IRankProgram
 {
 private:
     MatchData _matchData;
+    NumberOrObject _fooValue;
+    NumberOrObject _barValue;
 
 public:
-    MyRankProgram() : _matchData(MatchData::params().numFeatures(3)) {}
+    MyRankProgram()
+        : _matchData(MatchData::params().numFeatures(0)),
+          _fooValue(),
+          _barValue()
+    {}
     virtual const search::fef::MatchData &run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
         _matchData.setDocId(docid);
-        *_matchData.resolveFeature(0) = docid + 10;
-        *_matchData.resolveFeature(1) = docid + 20;
-        *_matchData.resolveFeature(2) = docid + 30;
+        _fooValue.as_number = docid + 10;
+        _barValue.as_number = docid + 30;
         return _matchData;
     }
 
     FeatureResolver get_resolver() {
         FeatureResolver resolver(2);
-        resolver.add("foo", _matchData.resolve_raw(0), false);
-        resolver.add("bar", _matchData.resolve_raw(2), false);
+        resolver.add("foo", &_fooValue, false);
+        resolver.add("bar", &_barValue, false);
         return resolver;
     }
 };
