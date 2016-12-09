@@ -3,20 +3,30 @@
 #pragma once
 
 #include "document_db_maintenance_config.h"
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/proton/matching/ranking_constants.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-summary.h>
-#include <vespa/config-summarymap.h>
 #include <vespa/config/retriever/configkeyset.h>
 #include <vespa/config/retriever/configsnapshot.h>
+
+namespace vespa {
+    namespace config {
+        namespace search {
+            namespace internal {
+                class InternalSummaryType;
+                class InternalSummarymapType;
+                class InternalRankProfilesType;
+                class InternalAttributesType;
+                class InternalIndexschemaType;
+            }
+            namespace summary { namespace internal { class InternalJuniperrcType; } }
+        }
+    }
+}
+
+namespace document { namespace internal { class InternalDocumenttypesType; } }
 
 namespace proton {
 
@@ -43,14 +53,21 @@ public:
     };
 
     using SP = std::shared_ptr<DocumentDBConfig>;
-    using IndexschemaConfigSP = std::shared_ptr<vespa::config::search::IndexschemaConfig>;
-    using AttributesConfigSP = std::shared_ptr<vespa::config::search::AttributesConfig>;
-    using RankProfilesConfigSP = std::shared_ptr<vespa::config::search::RankProfilesConfig>;
+    using IndexschemaConfig = const vespa::config::search::internal::InternalIndexschemaType;
+    using IndexschemaConfigSP = std::shared_ptr<IndexschemaConfig>;
+    using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
+    using AttributesConfigSP = std::shared_ptr<AttributesConfig>;
+    using RankProfilesConfig = const vespa::config::search::internal::InternalRankProfilesType;
+    using RankProfilesConfigSP = std::shared_ptr<RankProfilesConfig>;
     using RankingConstants = matching::RankingConstants;
-    using SummaryConfigSP = std::shared_ptr<vespa::config::search::SummaryConfig>;
-    using SummarymapConfigSP = std::shared_ptr<vespa::config::search::SummarymapConfig>;
-    using JuniperrcConfigSP = std::shared_ptr<vespa::config::search::summary::JuniperrcConfig>;
-    using DocumenttypesConfigSP = std::shared_ptr<document::DocumenttypesConfig>;
+    using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
+    using SummaryConfigSP = std::shared_ptr<SummaryConfig>;
+    using SummarymapConfig = const vespa::config::search::internal::InternalSummarymapType;
+    using SummarymapConfigSP = std::shared_ptr<SummarymapConfig>;
+    using JuniperrcConfig = const vespa::config::search::summary::internal::InternalJuniperrcType;
+    using JuniperrcConfigSP = std::shared_ptr<JuniperrcConfig>;
+    using DocumenttypesConfig = const document::internal::InternalDocumenttypesType;
+    using DocumenttypesConfigSP = std::shared_ptr<DocumenttypesConfig>;
     using MaintenanceConfigSP = DocumentDBMaintenanceConfig::SP;
 
 private:
@@ -99,6 +116,7 @@ public:
                      const config::ConfigSnapshot & extraConfig = config::ConfigSnapshot());
 
     DocumentDBConfig(const DocumentDBConfig &cfg);
+    ~DocumentDBConfig();
 
     const vespalib::string & getConfigId() const { return _configId; }
     void setConfigId(const vespalib::string &configId) { _configId = configId; }
@@ -107,75 +125,33 @@ public:
 
     int64_t getGeneration(void) const { return _generation; }
 
-    const vespa::config::search::RankProfilesConfig &
-    getRankProfilesConfig() const { return *_rankProfiles; }
-
+    const RankProfilesConfig &getRankProfilesConfig() const { return *_rankProfiles; }
     const RankingConstants &getRankingConstants() const { return *_rankingConstants; }
-
-    const vespa::config::search::IndexschemaConfig &
-    getIndexschemaConfig() const { return *_indexschema; }
-
-    const vespa::config::search::AttributesConfig &
-    getAttributesConfig() const { return *_attributes; }
-
-    const vespa::config::search::SummaryConfig &
-    getSummaryConfig() const { return *_summary; }
-
-    const vespa::config::search::SummarymapConfig &
-    getSummarymapConfig() const { return *_summarymap; }
-
-    const vespa::config::search::summary::JuniperrcConfig &
-    getJuniperrcConfig() const { return *_juniperrc; }
-
-    const document::DocumenttypesConfig &
-    getDocumenttypesConfig(void) const { return *_documenttypes; }
-
-    const RankProfilesConfigSP &
-    getRankProfilesConfigSP(void) const { return _rankProfiles; }
-
+    const IndexschemaConfig &getIndexschemaConfig() const { return *_indexschema; }
+    const AttributesConfig &getAttributesConfig() const { return *_attributes; }
+    const SummaryConfig &getSummaryConfig() const { return *_summary; }
+    const SummarymapConfig &getSummarymapConfig() const { return *_summarymap; }
+    const JuniperrcConfig &getJuniperrcConfig() const { return *_juniperrc; }
+    const DocumenttypesConfig &getDocumenttypesConfig() const { return *_documenttypes; }
+    const RankProfilesConfigSP &getRankProfilesConfigSP() const { return _rankProfiles; }
     const RankingConstants::SP &getRankingConstantsSP() const { return _rankingConstants; }
-
-    const IndexschemaConfigSP &
-    getIndexschemaConfigSP(void) const { return _indexschema; }
-
-    const AttributesConfigSP &
-    getAttributesConfigSP(void) const { return _attributes; }
-
-    const SummaryConfigSP &
-    getSummaryConfigSP(void) const { return _summary; }
-
-    const SummarymapConfigSP &
-    getSummarymapConfigSP(void) const { return _summarymap; }
-
-    const JuniperrcConfigSP &
-    getJuniperrcConfigSP(void) const { return _juniperrc; }
-
-    const DocumenttypesConfigSP &
-    getDocumenttypesConfigSP(void) const { return _documenttypes; }
-
-    const document::DocumentTypeRepo::SP &
-    getDocumentTypeRepoSP() const { return _repo; }
-
-    const document::DocumentType *
-    getDocumentType() const { return _repo->getDocumentType(getDocTypeName()); }
-
-    const search::index::Schema::SP &
-    getSchemaSP(void) const { return _schema; }
-
-    const MaintenanceConfigSP &
-    getMaintenanceConfigSP(void) const { return _maintenance; }
-
-    const search::TuneFileDocumentDB::SP &
-    getTuneFileDocumentDBSP(void) const { return _tuneFileDocumentDB; }
-
-    bool
-    operator==(const DocumentDBConfig &rhs) const;
+    const IndexschemaConfigSP &getIndexschemaConfigSP() const { return _indexschema; }
+    const AttributesConfigSP &getAttributesConfigSP() const { return _attributes; }
+    const SummaryConfigSP &getSummaryConfigSP() const { return _summary; }
+    const SummarymapConfigSP &getSummarymapConfigSP() const { return _summarymap; }
+    const JuniperrcConfigSP &getJuniperrcConfigSP() const { return _juniperrc; }
+    const DocumenttypesConfigSP &getDocumenttypesConfigSP() const { return _documenttypes; }
+    const document::DocumentTypeRepo::SP &getDocumentTypeRepoSP() const { return _repo; }
+    const document::DocumentType *getDocumentType() const { return _repo->getDocumentType(getDocTypeName()); }
+    const search::index::Schema::SP &getSchemaSP() const { return _schema; }
+    const MaintenanceConfigSP &getMaintenanceConfigSP() const { return _maintenance; }
+    const search::TuneFileDocumentDB::SP &getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
+    bool operator==(const DocumentDBConfig &rhs) const;
 
      /**
       * Compare this snapshot with the given one.
       */
-    ComparisonResult
-    compare(const DocumentDBConfig &rhs) const;
+    ComparisonResult compare(const DocumentDBConfig &rhs) const;
 
     bool valid(void) const;
 

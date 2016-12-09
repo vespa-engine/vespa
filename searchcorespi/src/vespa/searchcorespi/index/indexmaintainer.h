@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "iindexmanager.h"
 #include "activediskindexes.h"
 #include "fusionspec.h"
 #include "idiskindex.h"
@@ -11,9 +12,8 @@
 #include "imemoryindex.h"
 #include "warmupindexcollection.h"
 #include "ithreadingservice.h"
-#include <vespa/searchcorespi/index/iindexmanager.h>
-#include <vespa/searchcorespi/index/indexsearchable.h>
-#include <vespa/searchcorespi/index/indexcollection.h>
+#include "indexsearchable.h"
+#include "indexcollection.h"
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchcorespi/flush/flushstats.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>

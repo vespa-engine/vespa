@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.lid_space_compaction_handler");
-
 #include "lid_space_compaction_handler.h"
 #include "document_scan_iterator.h"
+#include "ifeedview.h"
+#include <vespa/searchcore/proton/docsummary/isummarymanager.h>
+#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 
 using document::BucketId;
 using document::Document;
@@ -40,8 +39,7 @@ LidSpaceCompactionHandler::createMoveOperation(const search::DocumentMetaData &d
     IFeedView::SP feedView = _subDb.getFeedView();
     const ISummaryManager::SP &summaryMan = _subDb.getSummaryManager();
     const uint32_t moveFromLid = document.lid;
-    Document::UP doc = summaryMan->getBackingStore().read(moveFromLid,
-            *feedView->getDocumentTypeRepo());
+    Document::UP doc = summaryMan->getBackingStore().read(moveFromLid, *feedView->getDocumentTypeRepo());
     MoveOperation::UP op(new MoveOperation(document.bucketId, document.timestamp,
                                            Document::SP(doc.release()),
                                            DbDocumentId(_subDb.getSubDbId(), moveFromLid),

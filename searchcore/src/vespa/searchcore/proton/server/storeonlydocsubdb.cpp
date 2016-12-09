@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.storeonlydocsubdb");
-
 #include "emptysearchview.h"
 #include "docstorevalidator.h"
 #include "document_subdb_initializer_result.h"
 #include "minimal_document_retriever.h"
 #include "storeonlydocsubdb.h"
-#include <vespa/searchcore/proton/common/eventlogger.h>
+#include "document_subdb_initializer.h"
+#include "reconfig_params.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
 #include <vespa/searchcore/proton/docsummary/summarymanagerinitializer.h>
@@ -19,14 +16,13 @@ LOG_SETUP(".proton.server.storeonlydocsubdb");
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcorespi/index/iindexmanager.h>
 #include <vespa/searchlib/attribute/configconverter.h>
-#include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
 #include <vespa/searchlib/util/fileheadertk.h>
-#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.storeonlydocsubdb");
 
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::core::ProtonConfig;
@@ -50,19 +46,16 @@ using proton::documentmetastore::LidReuseDelayer;
 using fastos::TimeStamp;
 using proton::initializer::InitializerTask;
 
-namespace proton
-{
+namespace proton {
 
-namespace
-{
+namespace {
 
 IIndexManager::SP nullIndexManager;
 IIndexWriter::SP nullIndexWriter;
 
 }
 
-StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg,
-                                     const Context &ctx)
+StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
     : DocSubDB(ctx._owner, ctx._tlSyncer),
       _docTypeName(cfg._docTypeName),
       _subName(cfg._subName),
@@ -361,6 +354,10 @@ StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig &configSnapshot)
     _iFeedView.set(StoreOnlyFeedView::SP(feedView.release()));
 }
 
+vespalib::string
+StoreOnlyDocSubDB::getSubDbName() const {
+    return vespalib::make_string("%s.%s", _owner.getName().c_str(), _subName.c_str());
+}
 
 void
 StoreOnlyDocSubDB::updateLidReuseDelayer(const DocumentDBConfig *

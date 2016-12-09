@@ -3,12 +3,9 @@
 
 #include "documentdbconfig.h"
 #include "idocumentsubdb.h"
-#include "ifeedview.h"
+#include "storeonlyfeedview.h"
 #include "summaryadapter.h"
 #include "tlssyncer.h"
-#include <memory>
-#include <vector>
-#include <vespa/searchcore/config/config-proton.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
@@ -19,24 +16,19 @@
 #include <vespa/searchcore/proton/matchengine/imatchhandler.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcore/proton/common/commit_time_tracker.h>
+#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/util/varholder.h>
 
-
-namespace proton
-{
+namespace proton {
 
 class MetricsWireService;
 class LegacyDocumentDBMetrics;
 class FeedHandler;
+class DocumentMetaStoreInitializerResult;
+namespace initializer { class InitializerTask; }
 
-namespace bucketdb
-{
-
-class IBucketDBHandlerInitializer;
-
-}
-
+namespace bucketdb { class IBucketDBHandlerInitializer; }
 namespace documentmetastore { class LidReuseDelayerConfig; }
 
 /**
@@ -59,7 +51,6 @@ public:
     void close() override { }
 };
 
-
 class StoreOnlyDocSubDB;
 
 /**
@@ -77,10 +68,9 @@ class StoreOnlySubDBFileHeaderContext : public search::common::FileHeaderContext
 
 public:
     StoreOnlySubDBFileHeaderContext(StoreOnlyDocSubDB &owner,
-                                     const search::common::FileHeaderContext &
-                                     parentFileHeaderContext,
-                                     const DocTypeName &docTypeName,
-                                     const vespalib::string &baseDir)
+                                    const search::common::FileHeaderContext & parentFileHeaderContext,
+                                    const DocTypeName &docTypeName,
+                                    const vespalib::string &baseDir)
         : search::common::FileHeaderContext(),
           _owner(owner),
           _parentFileHeaderContext(parentFileHeaderContext),
@@ -94,9 +84,7 @@ public:
             _subDB = baseDir;
     }
 
-    virtual void
-    addTags(vespalib::GenericHeader &header,
-            const vespalib::string &name) const;
+    void addTags(vespalib::GenericHeader &header, const vespalib::string &name) const override;
 };
 
 /**
@@ -132,8 +120,7 @@ public:
               _attributeGrowNumDocs(attributeGrowNumDocs),
               _subDbId(subDbId),
               _subDbType(subDbType)
-        {
-        }
+        { }
     };
 
     struct Context {
@@ -172,8 +159,7 @@ public:
               _metrics(metrics),
               _configLock(configLock),
               _hwInfo(hwInfo)
-        {
-        }
+        { }
     };
 
 
@@ -208,104 +194,65 @@ private:
     TlsSyncer                        _tlsSyncer;
     DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
 
-    virtual IFlushTarget::List
-    getFlushTargets();
+    IFlushTarget::List getFlushTargets() override;
 protected:
-    const uint32_t		  _subDbId;
-    const SubDbType               _subDbType;
+    const uint32_t                  _subDbId;
+    const SubDbType                 _subDbType;
     StoreOnlySubDBFileHeaderContext _fileHeaderContext;
     std::unique_ptr<documentmetastore::ILidReuseDelayer> _lidReuseDelayer;
     CommitTimeTracker               _commitTimeTracker;
 
-    initializer::InitializerTask::SP
-    createSummaryManagerInitializer(const vespa::config::search::core::
-                                    ProtonConfig::Summary protonSummaryCfg,
+    std::shared_ptr<initializer::InitializerTask>
+    createSummaryManagerInitializer(const ProtonConfig::Summary protonSummaryCfg,
                                     const search::TuneFileSummary &tuneFile,
                                     search::IBucketizer::SP bucketizer,
-                                    std::shared_ptr<SummaryManager::SP> result)
-        const;
+                                    std::shared_ptr<SummaryManager::SP> result) const;
 
-    void
-    setupSummaryManager(SummaryManager::SP summaryManager);
+    void setupSummaryManager(SummaryManager::SP summaryManager);
 
-    initializer::InitializerTask::SP
+    std::shared_ptr<initializer::InitializerTask>
     createDocumentMetaStoreInitializer(const search::TuneFileAttributes &tuneFile,
-                                       std::shared_ptr<DocumentMetaStoreInitializerResult::SP> result) const;
+                                       std::shared_ptr<std::shared_ptr<DocumentMetaStoreInitializerResult>> result) const;
 
-    void
-    setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP dmsResult);
-
-    void
-    initFeedView(const DocumentDBConfig &configSnapshot);
-
-    virtual IFlushTarget::List
-    getFlushTargetsInternal();
-
+    void setupDocumentMetaStore(std::shared_ptr<DocumentMetaStoreInitializerResult> dmsResult);
+    void initFeedView(const DocumentDBConfig &configSnapshot);
+    virtual IFlushTarget::List getFlushTargetsInternal();
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot);
-
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
-
-    vespalib::string getSubDbName() const {
-        return vespalib::make_string("%s.%s",
-                _owner.getName().c_str(), _subName.c_str());
-    }
-
-    void
-    updateLidReuseDelayer(const DocumentDBConfig *newConfigSnapshot);
+    vespalib::string getSubDbName() const;
+    void updateLidReuseDelayer(const DocumentDBConfig *newConfigSnapshot);
 
     using LidReuseDelayerConfig = documentmetastore::LidReuseDelayerConfig;
 
-    virtual void
-    updateLidReuseDelayer(const LidReuseDelayerConfig &config);
+    virtual void updateLidReuseDelayer(const LidReuseDelayerConfig &config);
 
 public:
-    StoreOnlyDocSubDB(const Config &cfg,
-                    const Context &ctx);
-
-    virtual
+    StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
     ~StoreOnlyDocSubDB();
 
-    virtual uint32_t getSubDbId() const { return _subDbId; }
+    uint32_t getSubDbId() const override { return _subDbId; }
+    vespalib::string getName() const override { return _subName; }
 
-    virtual vespalib::string getName() const { return _subName; }
-
-    virtual DocumentSubDbInitializer::UP
+    std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
-                      const search::index::Schema::SP &unionSchema,
-                      const vespa::config::search::core::
-                      ProtonConfig::Summary &protonSummaryCfg,
-                      const vespa::config::search::core::
-                      ProtonConfig::Index &indexCfg) const override;
+                      const Schema::SP &unionSchema,
+                      const ProtonConfig::Summary &protonSummaryCfg,
+                      const ProtonConfig::Index &indexCfg) const override;
 
-    virtual void setup(const DocumentSubDbInitializerResult &initResult)
-        override;
+    void setup(const DocumentSubDbInitializerResult &initResult) override;
+    void initViews(const DocumentDBConfig &configSnapshot, const std::shared_ptr<matching::SessionManager> &sessionManager) override;
 
-    virtual void
-    initViews(const DocumentDBConfig &configSnapshot,
-              const matching::SessionManager::SP &sessionManager);
-
-    virtual IReprocessingTask::List
+    IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot,
                 const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum,
-                const ReconfigParams params);
+                const ReconfigParams params) override;
 
-    virtual ISearchHandler::SP
-    getSearchView() const
-    {
-        return _iSearchView.get();
-    }
+    ISearchHandler::SP getSearchView() const override { return _iSearchView.get(); }
+    IFeedView::SP getFeedView() const override { return _iFeedView.get(); }
 
-    virtual IFeedView::SP
-    getFeedView() const
-    {
-        return _iFeedView.get();
-    }
-
-    virtual void
-    clearViews()
-    {
+    void clearViews() override {
         _iFeedView.clear();
         _iSearchView.clear();
     }
@@ -316,74 +263,26 @@ public:
      *
      * @return The summary manager.
      */
-    virtual const ISummaryManager::SP &
-    getSummaryManager() const
-    {
-        return _iSummaryMgr;
-    }
+    const ISummaryManager::SP &getSummaryManager() const override { return _iSummaryMgr; }
+    IAttributeManager::SP getAttributeManager() const override;
+    const std::shared_ptr<searchcorespi::IIndexManager> & getIndexManager() const override;
+    const ISummaryAdapter::SP & getSummaryAdapter() const override { return _summaryAdapter; }
+    const std::shared_ptr<IIndexWriter> & getIndexWriter() const override;
+    IDocumentMetaStoreContext & getDocumentMetaStoreContext() override { return *_metaStoreCtx; }
+    size_t getNumDocs() const override;
+    size_t getNumActiveDocs() const override;
+    bool hasDocument(const document::DocumentId &id) override;
+    void onReplayDone() override;
+    void onReprocessDone(SerialNum serialNum) override;
+    SerialNum getOldestFlushedSerial() override;
+    SerialNum getNewestFlushedSerial() override;
 
-    virtual proton::IAttributeManager::SP
-    getAttributeManager() const;
-
-    virtual const IIndexManager::SP &
-    getIndexManager() const;
-
-    virtual const ISummaryAdapter::SP &
-    getSummaryAdapter() const
-    {
-        return _summaryAdapter;
-    }
-
-    virtual const IIndexWriter::SP &
-    getIndexWriter() const;
-
-    virtual IDocumentMetaStoreContext &
-    getDocumentMetaStoreContext()
-    {
-        return *_metaStoreCtx;
-    }
-
-    virtual size_t
-    getNumDocs() const;
-
-    virtual size_t
-    getNumActiveDocs() const override;
-
-    virtual bool
-    hasDocument(const document::DocumentId &id);
-
-    virtual void
-    onReplayDone();
-
-    virtual void
-    onReprocessDone(SerialNum serialNum);
-
-    virtual SerialNum
-    getOldestFlushedSerial();
-
-    virtual SerialNum
-    getNewestFlushedSerial();
-
-    virtual void
-    wipeHistory(SerialNum wipeSerial,
-                const search::index::Schema &newHistorySchema,
-                const search::index::Schema &wipeSchema);
-
-    virtual void
-    setIndexSchema(const search::index::Schema::SP &schema,
-                   const search::index::Schema::SP &fusionSchema);
-
-    virtual search::SearchableStats
-    getSearchableStats() const;
-
-    virtual IDocumentRetriever::UP
-    getDocumentRetriever();
-
-    virtual matching::MatchingStats
-    getMatcherStats(const vespalib::string &rankProfile) const;
-
+    void wipeHistory(SerialNum wipeSerial, const Schema &newHistorySchema, const Schema &wipeSchema) override;
+    void setIndexSchema(const Schema::SP &schema, const Schema::SP &fusionSchema) override;
+    search::SearchableStats getSearchableStats() const override;
+    IDocumentRetriever::UP getDocumentRetriever() override;
+    matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
     void close() override;
 };
 
 } // namespace proton
-

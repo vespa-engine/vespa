@@ -441,7 +441,7 @@ public:
     // Implements IDocSubDB::IOwner
     void syncFeedView() override;
 
-    searchcorespi::IIndexManagerFactory::SP
+    std::shared_ptr<searchcorespi::IIndexManagerFactory>
     getIndexManagerFactory(const vespalib::stringref & name) const override;
 
     vespalib::string getName() const override { return _docTypeName.getName(); }

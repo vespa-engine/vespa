@@ -36,7 +36,7 @@ private:
     const uint32_t _readySubDbId;
     const uint32_t _remSubDbId;
     const uint32_t _notReadySubDbId;
-    typedef std::shared_ptr<std::vector<IDocumentRetriever::SP> > RetrieversSP;
+    typedef std::shared_ptr<std::vector<std::shared_ptr<IDocumentRetriever>> > RetrieversSP;
     vespalib::VarHolder<RetrieversSP> _retrievers;
     typedef std::vector<std::shared_ptr<IReprocessingTask>> ReprocessingTasks;
     ReprocessingRunner _reprocessingRunner;
@@ -71,7 +71,7 @@ public:
     void maintenanceSync(MaintenanceController &mc, ICommitable &commit);
 
     // Internally synchronized
-    std::shared_ptr<std::vector<IDocumentRetriever::SP> > getRetrievers() {
+    RetrieversSP getRetrievers() {
         return _retrievers.get();
     }
 

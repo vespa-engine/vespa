@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("config_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/linkedptr.h>
 #include <map>
@@ -11,6 +9,12 @@ LOG_SETUP("config_test");
 #include <vespa/searchcore/proton/server/protonconfigurer.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/config-summary.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 
 using namespace config;
 using namespace proton;

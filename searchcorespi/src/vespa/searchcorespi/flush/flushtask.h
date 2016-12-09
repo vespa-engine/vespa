@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/searchlib/common/serialnum.h>
 
 namespace searchcorespi {
@@ -12,8 +11,7 @@ class FlushTask : public vespalib::Executor::Task
 public:
     typedef std::unique_ptr<FlushTask> UP;
     
-    virtual search::SerialNum
-    getFlushSerial() const = 0;
+    virtual search::SerialNum getFlushSerial() const = 0;
 };
 
 } // namespace searchcorespi

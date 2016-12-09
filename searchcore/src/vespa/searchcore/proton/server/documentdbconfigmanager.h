@@ -28,24 +28,21 @@ private:
     config::ConfigKeySet _extraConfigKeys;
 
     search::index::Schema::SP
-    buildNewSchema(const vespa::config::search::AttributesConfig & newAttributesConfig,
-                   const vespa::config::search::SummaryConfig & newSummaryConfig,
-                   const vespa::config::search::IndexschemaConfig & newIndexschemaConfig);
+    buildNewSchema(const DocumentDBConfig::AttributesConfig & newAttributesConfig,
+                   const DocumentDBConfig::SummaryConfig & newSummaryConfig,
+                   const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig);
 
     search::index::Schema::SP
-    buildSchema(const vespa::config::search::AttributesConfig & newAttributesConfig,
-                const vespa::config::search::SummaryConfig & newSummaryConfig,
-                const vespa::config::search::IndexschemaConfig & newIndexschemaConfig);
+    buildSchema(const DocumentDBConfig::AttributesConfig & newAttributesConfig,
+                const DocumentDBConfig::SummaryConfig & newSummaryConfig,
+                const DocumentDBConfig::IndexschemaConfig & newIndexschemaConfig);
 public:
     DocumentDBConfigManager(const vespalib::string &configId,
                             const vespalib::string &docTypeName);
+    ~DocumentDBConfigManager();
     void update(const config::ConfigSnapshot & snapshot);
 
-    DocumentDBConfig::SP
-    getConfig() const {
-        vespalib::LockGuard lock(_pendingConfigLock);
-        return _pendingConfigSnapshot;
-    }
+    DocumentDBConfig::SP getConfig() const;
 
     void forwardConfig(const BootstrapConfig::SP & config);
     const config::ConfigKeySet createConfigKeySet(void) const;

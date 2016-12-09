@@ -1,14 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "documentdbconfigmanager.h"
-#include <vespa/log/log.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
-LOG_SETUP(".proton.server.documentdbconfigmanager");
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/vespalib/time/time_box.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".proton.server.documentdbconfigmanager");
 
 using namespace config;
 using namespace vespa::config::search::core;
@@ -283,7 +286,14 @@ DocumentDBConfigManager(const vespalib::string &configId,
       _ignoreForwardedConfig(true),
       _pendingConfigLock(),
       _extraConfigKeys()
-{
+{ }
+
+DocumentDBConfigManager::~DocumentDBConfigManager() { }
+
+DocumentDBConfig::SP
+DocumentDBConfigManager::getConfig() const {
+    vespalib::LockGuard lock(_pendingConfigLock);
+    return _pendingConfigSnapshot;
 }
 
 void

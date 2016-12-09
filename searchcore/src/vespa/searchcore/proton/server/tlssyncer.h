@@ -24,13 +24,13 @@ class TlsSyncer : public ITlsSyncer
     const IGetSerialNum &_getSerialNum;
     search::transactionlog::SyncProxy &_proxy;
 public:
-    virtual ~TlsSyncer(void) = default;
+    virtual ~TlsSyncer() = default;
 
     TlsSyncer(vespalib::ThreadExecutor &executor,
               const IGetSerialNum &getSerialNum,
               search::transactionlog::SyncProxy &proxy);
 
-    virtual void sync() override;
+    void sync() override;
 };
 
 }
