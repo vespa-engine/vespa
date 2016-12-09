@@ -65,9 +65,8 @@ struct UnboxingExecutor : FeatureExecutor {
         bindOutput(new_feature);
     }
     bool isPure() override { return true; }
-    void execute(search::fef::MatchData &md) override {
-        double number_value = md.resolve_object_feature(inputs()[0])->get().as_double();
-        *md.resolveFeature(outputs()[0]) = number_value;
+    void execute(search::fef::MatchData &) override {
+        outputs().set_number(0, inputs().get_object(0).get().as_double());
     }
 };
 
