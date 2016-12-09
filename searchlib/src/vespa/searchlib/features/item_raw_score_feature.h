@@ -14,9 +14,13 @@ public:
     typedef std::vector<fef::TermFieldHandle> HandleVector;
 private:
     HandleVector _handles;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     ItemRawScoreExecutor(HandleVector handles)
-        : FeatureExecutor(), _handles(handles) {}
+        : FeatureExecutor(), _handles(handles), _md(nullptr) {}
     virtual void execute(fef::MatchData &data);
 };
 
@@ -24,9 +28,13 @@ class SimpleItemRawScoreExecutor : public fef::FeatureExecutor
 {
 private:
     fef::TermFieldHandle _handle;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     SimpleItemRawScoreExecutor(fef::TermFieldHandle handle)
-        : FeatureExecutor(), _handle(handle) {}
+        : FeatureExecutor(), _handle(handle), _md(nullptr) {}
     virtual void execute(fef::MatchData &data);
 };
 

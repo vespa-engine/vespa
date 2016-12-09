@@ -15,7 +15,8 @@ ElementCompletenessExecutor::ElementCompletenessExecutor(const search::fef::IQue
     : _params(params),
       _terms(),
       _queue(),
-      _sumTermWeight(0)
+      _sumTermWeight(0),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         const search::fef::ITermData *termData = env.getTerm(i);
@@ -38,7 +39,7 @@ ElementCompletenessExecutor::execute(search::fef::MatchData &data)
 {
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        search::fef::TermFieldMatchData *tfmd = data.resolveTermField(_terms[i].termHandle);
+        const search::fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
         if (tfmd->getDocId() == data.getDocId()) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
@@ -72,6 +73,12 @@ ElementCompletenessExecutor::execute(search::fef::MatchData &data)
     outputs().set_number(1, best.fieldCompleteness);
     outputs().set_number(2, best.queryCompleteness);
     outputs().set_number(3, best.elementWeight);
+}
+
+void
+ElementCompletenessExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

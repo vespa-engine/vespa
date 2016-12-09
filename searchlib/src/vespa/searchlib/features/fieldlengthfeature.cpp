@@ -21,7 +21,8 @@ FieldLengthExecutor::
 FieldLengthExecutor(const IQueryEnvironment &env,
                     uint32_t fieldId)
     : FeatureExecutor(),
-      _fieldHandles()
+      _fieldHandles(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -40,7 +41,7 @@ FieldLengthExecutor::execute(MatchData &match)
              hi = _fieldHandles.begin(), hie = _fieldHandles.end();
          hi != hie; ++hi)
     {
-        TermFieldMatchData &tfmd = *match.resolveTermField(*hi);
+        const TermFieldMatchData &tfmd = *_md->resolveTermField(*hi);
         if (tfmd.getDocId() == match.getDocId()) {
             FieldPositionsIterator it = tfmd.getIterator();
             if (it.valid()) {
@@ -55,6 +56,12 @@ FieldLengthExecutor::execute(MatchData &match)
     }
     feature_t value = val;
     outputs().set_number(0, value); // field length
+}
+
+void
+FieldLengthExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
 }
 
 FieldLengthBlueprint::FieldLengthBlueprint()

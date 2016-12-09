@@ -15,6 +15,10 @@ class NativeDotProductExecutor : public search::fef::FeatureExecutor
 private:
     typedef std::pair<search::fef::TermFieldHandle,query::Weight> Pair;
     std::vector<Pair> _pairs;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     NativeDotProductExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId);
     virtual void execute(search::fef::MatchData &data);

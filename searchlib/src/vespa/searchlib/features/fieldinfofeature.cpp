@@ -24,7 +24,8 @@ IndexFieldInfoExecutor::IndexFieldInfoExecutor(feature_t type, feature_t isFilte
       _type(type),
       _isFilter(isFilter),
       _field(field),
-      _fieldHandle(fieldHandle)
+      _fieldHandle(fieldHandle),
+      _md(nullptr)
 {
     // empty
 }
@@ -35,7 +36,7 @@ IndexFieldInfoExecutor::execute(fef::MatchData &data)
     outputs().set_number(0, _type);
     outputs().set_number(1, _isFilter);
     outputs().set_number(2, 1.0f); // searched
-    fef::TermFieldMatchData *tfmd = data.resolveTermField(_fieldHandle);
+    const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
     if (tfmd->getDocId() == data.getDocId()) {
         outputs().set_number(3, 1.0f); // hit
     } else {
@@ -61,12 +62,19 @@ IndexFieldInfoExecutor::execute(fef::MatchData &data)
     }
 }
 
+void
+IndexFieldInfoExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
+}
+
 //-----------------------------------------------------------------------------
 
 AttrFieldInfoExecutor::AttrFieldInfoExecutor(feature_t type, uint32_t fieldHandle) :
     FeatureExecutor(),
     _type(type),
-    _fieldHandle(fieldHandle)
+    _fieldHandle(fieldHandle),
+    _md(nullptr)
 {
     // empty
 }
@@ -77,7 +85,7 @@ AttrFieldInfoExecutor::execute(fef::MatchData &data)
     outputs().set_number(0, _type);
     outputs().set_number(1, 0.0); // not filter
     outputs().set_number(2, 1.0f); // searched
-    fef::TermFieldMatchData *tfmd = data.resolveTermField(_fieldHandle);
+    const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
     if (tfmd->getDocId() == data.getDocId()) {
         outputs().set_number(3, 1.0f); // hit
         outputs().set_number(4, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // len
@@ -91,6 +99,12 @@ AttrFieldInfoExecutor::execute(fef::MatchData &data)
         outputs().set_number(6, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // last
         outputs().set_number(7, 0.0f);
     }
+}
+
+void
+AttrFieldInfoExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

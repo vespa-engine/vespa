@@ -13,7 +13,8 @@ namespace features {
 
 NativeDotProductExecutor::NativeDotProductExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId)
     : FeatureExecutor(),
-      _pairs()
+      _pairs(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -28,12 +29,18 @@ NativeDotProductExecutor::execute(MatchData &data)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _pairs.size(); ++i) {
-        const TermFieldMatchData *tfmd = data.resolveTermField(_pairs[i].first);
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_pairs[i].first);
         if (tfmd->getDocId() == data.getDocId()) {
             output += (tfmd->getWeight() * (int32_t)_pairs[i].second.percent());
         }
     }
     outputs().set_number(0, output);
+}
+
+void
+NativeDotProductExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

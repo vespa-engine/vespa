@@ -14,7 +14,9 @@ namespace features {
 SubqueriesExecutor::SubqueriesExecutor(const IQueryEnvironment &env,
                                        uint32_t fieldId)
     : FeatureExecutor(),
-      _handles() {
+      _handles(),
+      _md(nullptr)
+{
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
         if (handle != IllegalHandle) {
@@ -27,7 +29,7 @@ void SubqueriesExecutor::execute(MatchData &data) {
     uint32_t lsb = 0;
     uint32_t msb = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = data.resolveTermField(_handles[i]);
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
         if (tfmd->getDocId() == data.getDocId()) {
             lsb |= static_cast<uint32_t>(tfmd->getSubqueries());
             msb |= tfmd->getSubqueries() >> 32;
@@ -35,6 +37,12 @@ void SubqueriesExecutor::execute(MatchData &data) {
     }
     outputs().set_number(0, lsb);
     outputs().set_number(1, msb);
+}
+
+void
+SubqueriesExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

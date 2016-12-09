@@ -52,6 +52,7 @@ private:
     std::vector<MyQueryTerm>       _queryTerms;
     uint32_t                       _totalTermWeight;
     feature_t                      _divisor;
+    const fef::MatchData          *_md;
 
     VESPA_DLL_LOCAL feature_t calculateScore(const MyQueryTerm &qt, search::fef::MatchData &md);
 
@@ -73,6 +74,8 @@ private:
         size_t index = (occs * (table->size() - 1)) / (std::max(_params.minFieldLength, fieldLength));
         return table->get(index);
     }
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     NativeFieldMatchExecutor(const search::fef::IQueryEnvironment & env,

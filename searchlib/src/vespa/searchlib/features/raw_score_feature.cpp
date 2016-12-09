@@ -13,7 +13,8 @@ namespace features {
 
 RawScoreExecutor::RawScoreExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId)
     : FeatureExecutor(),
-      _handles()
+      _handles(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -28,12 +29,18 @@ RawScoreExecutor::execute(MatchData &data)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = data.resolveTermField(_handles[i]);
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
         if (tfmd->getDocId() == data.getDocId()) {
             output += tfmd->getRawScore();
         }
     }
     outputs().set_number(0, output);
+}
+
+void
+RawScoreExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

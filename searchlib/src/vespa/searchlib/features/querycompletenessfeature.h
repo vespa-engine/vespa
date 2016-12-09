@@ -38,6 +38,9 @@ public:
 private:
     const QueryCompletenessConfig            &_config;
     std::vector<search::fef::TermFieldHandle> _fieldHandles;
+    const fef::MatchData                     *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**

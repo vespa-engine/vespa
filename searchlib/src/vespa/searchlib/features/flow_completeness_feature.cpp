@@ -176,11 +176,11 @@ struct State {
 
 
 void
-FlowCompletenessExecutor::execute(search::fef::MatchData &data)
+FlowCompletenessExecutor::execute(search::fef::MatchData &)
 {
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        search::fef::TermFieldMatchData *tfmd = data.resolveTermField(_terms[i].termHandle);
+        const search::fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
         Item item(i, tfmd->begin(), tfmd->end());
         LOG(spam, "found tfmd item with %zu positions", (item.end - item.pos));
         if (item.pos != item.end) {
@@ -227,6 +227,12 @@ FlowCompletenessExecutor::execute(search::fef::MatchData &data)
     outputs().set_number(4, _params.fieldWeight);
     outputs().set_number(5, best.flow);
 
+}
+
+void
+FlowCompletenessExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

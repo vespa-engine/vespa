@@ -36,7 +36,8 @@ JaroWinklerDistanceExecutor::JaroWinklerDistanceExecutor(const search::fef::IQue
                                                          const JaroWinklerDistanceConfig &config) :
     search::fef::FeatureExecutor(),
     _config(config),
-    _termFieldHandles()
+    _termFieldHandles(),
+    _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         _termFieldHandles.push_back(util::getTermFieldHandle(env, i, config.fieldId));
@@ -52,7 +53,7 @@ JaroWinklerDistanceExecutor::execute(search::fef::MatchData &match)
         search::fef::FieldPositionsIterator it; // this is not vaild
         const search::fef::TermFieldHandle &handle = _termFieldHandles[term];
         if (handle != search::fef::IllegalHandle) {
-            search::fef::TermFieldMatchData &tfmd = *match.resolveTermField(handle);
+            const search::fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
             if (tfmd.getDocId() == match.getDocId()) {
                 it = tfmd.getIterator();
             }
@@ -62,6 +63,12 @@ JaroWinklerDistanceExecutor::execute(search::fef::MatchData &match)
 
     // Assign the jaroWinkler distance to this executor's output.
     outputs().set_number(0, 1 - jaroWinklerProximity(pos, (uint32_t)inputs().get_number(0)));
+}
+
+void
+JaroWinklerDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 namespace {

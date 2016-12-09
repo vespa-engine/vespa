@@ -15,6 +15,9 @@ namespace features {
 class FieldLengthExecutor : public search::fef::FeatureExecutor {
 private:
     std::vector<search::fef::TermFieldHandle> _fieldHandles;
+    const fef::MatchData             *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     /**

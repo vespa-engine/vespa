@@ -16,7 +16,8 @@ namespace features {
 
 MatchCountExecutor::MatchCountExecutor(uint32_t fieldId, const IQueryEnvironment &env)
     : FeatureExecutor(),
-      _handles()
+      _handles(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -31,7 +32,7 @@ MatchCountExecutor::execute(MatchData &match)
 {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = match.resolveTermField(_handles[i]);
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
         if (tfmd->getDocId() == match.getDocId()) {
             output++;
         }
@@ -39,6 +40,11 @@ MatchCountExecutor::execute(MatchData &match)
     outputs().set_number(0, static_cast<feature_t>(output));
 }
 
+void
+MatchCountExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
 
 MatchCountBlueprint::MatchCountBlueprint() :
     Blueprint("matchCount"),

@@ -209,6 +209,7 @@ private:
     PositionQueue           _position_queue;
     ElementQueue            _element_queue;
     std::vector<OutputSpec> _outputs;
+    const fef::MatchData *_md;
 
 public:
     ElementSimilarityExecutor(VectorizedQueryTerms &&terms, std::vector<OutputSpec> &&outputs_in)
@@ -217,9 +218,15 @@ public:
           _end(_terms.handles.size(), nullptr),
           _position_queue(CmpPosition(&_pos[0])),
           _element_queue(CmpElement(&_pos[0])),
-          _outputs(std::move(outputs_in)) {}
+          _outputs(std::move(outputs_in)),
+          _md(nullptr)
+    {}
 
     virtual bool isPure() { return _terms.handles.empty(); }
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override {
+        _md = &md;
+    }
 
     void requeue_term(uint16_t term, uint32_t element) {
         while (_pos[term] != _end[term] &&
@@ -237,7 +244,7 @@ public:
             output.second->clear();
         }
         for (size_t i = 0; i < _terms.handles.size(); ++i) {
-            fef::TermFieldMatchData *tfmd = data.resolveTermField(_terms.handles[i]);
+            const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms.handles[i]);
             if (tfmd->getDocId() == data.getDocId()) {
                 _pos[i] = tfmd->begin();
                 _end[i] = tfmd->end();

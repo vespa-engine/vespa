@@ -51,6 +51,7 @@ private:
         feature_t _normalizedWeightedWeight;
         int32_t   _weightSum; // sum of the weights for a weighted set attribute
         uint32_t  _valueCount; // the number of values for a non-weighted set attribute
+        const fef::MatchData *_md;
 
     public:
         Computer(const search::fef::IQueryEnvironment & env,
@@ -69,9 +70,12 @@ private:
         feature_t getWeight() const;
         feature_t getSignificance() const;
         feature_t getImportance() const { return (getWeight() + getSignificance()) * 0.5; }
+        void bind_match_data(fef::MatchData &md) { _md = &md; }
     };
 
     Computer _cmp;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     /**
