@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.http.v2.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -197,7 +199,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
-        Tenant tenant = tenants.checkThatTenantExists(applicationId.tenant());
+        final TenantName tenantName = applicationId.tenant();
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
         List<ApplicationId> applicationIds = listApplicationIds(tenant);
         if (!applicationIds.contains(applicationId)) {
             throw new IllegalArgumentException("No such application id: " + applicationId);

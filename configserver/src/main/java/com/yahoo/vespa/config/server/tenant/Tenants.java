@@ -345,17 +345,12 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
         }
     }
 
-    public void checkThatTenantDoesNotExist(TenantName tenant) {
-        if (tenantsCopy().containsKey(tenant)) {
-            throw new IllegalArgumentException("There already exists a tenant '" + tenant + "'");
-        }
+    public boolean checkThatTenantExists(TenantName tenant) {
+        return tenantsCopy().containsKey(tenant);
     }
 
-    public Tenant checkThatTenantExists(TenantName tenant) {
-        if ( ! tenantsCopy().containsKey(tenant)) {
-            throw new IllegalArgumentException("Tenant '" + tenant + "' was not found.");
-        }
-        return tenantsCopy().get(tenant);
+    public Tenant getTenant(TenantName tenantName) {
+        return tenantsCopy().get(tenantName);
     }
 
     private static int redeployProgress(Tenant tenant, int applicationsRedeployed, int totalNumberOfApplications) {

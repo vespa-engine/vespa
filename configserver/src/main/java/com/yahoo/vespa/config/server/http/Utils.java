@@ -43,35 +43,22 @@ public class Utils {
         return request.getUri().getScheme() + "://" + request.getHost() + ":" + request.getPort() + pathPrefix;
     }
 
-    // Wrapper for getting the right exception if it fails
-    public static Tenant checkThatTenantExists(Tenants tenants, TenantName tenantName) {
-        try {
-            return tenants.checkThatTenantExists(tenantName);
-        } catch (IllegalArgumentException e) {
-            throw new NotFoundException(e.getMessage());
-        }
+    public static void checkThatTenantExists(Tenants tenants, TenantName tenantName) {
+        if ( ! tenants.checkThatTenantExists(tenantName))
+            throw new NotFoundException("Tenant '" + tenantName + "' was not found.");
     }
 
-    // Wrapper for getting the right exception if it fails
-    public static void checkThatTenantDoesNotExist(Tenants tenants, TenantName tenant) {
-        try {
-            tenants.checkThatTenantDoesNotExist(tenant);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException(e.getMessage());
-        }
-    }
-
-    public static TenantName getTenantFromRequest(HttpRequest request) {
+    public static TenantName getTenantNameFromRequest(HttpRequest request) {
         BindingMatch<?> bm = getBindingMatch(request, "http://*/application/v2/tenant/*");
         return TenantName.from(bm.group(2));
     }
 
-    public static TenantName getTenantFromSessionRequest(HttpRequest request) {
+    public static TenantName getTenantNameFromSessionRequest(HttpRequest request) {
         BindingMatch<?> bm = getBindingMatch(request, "http://*/application/v2/tenant/*/session*");
         return TenantName.from(bm.group(2));
     }
 
-    public static TenantName getTenantFromApplicationsRequest(HttpRequest request) {
+    public static TenantName getTenantNameFromApplicationsRequest(HttpRequest request) {
         BindingMatch<?> bm = getBindingMatch(request, "http://*/application/v2/tenant/*/application*");
         return TenantName.from(bm.group(2));
     }

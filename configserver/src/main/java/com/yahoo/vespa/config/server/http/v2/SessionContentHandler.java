@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.inject.Inject;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
@@ -37,22 +38,27 @@ public class SessionContentHandler extends SessionHandler {
 
     @Override
     public HttpResponse handleGET(HttpRequest request) {
-        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromSessionRequest(request));
-        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+        LocalSession session = validateRequestAndGetSession(request);
         return contentHandler.get(SessionContentRequestV2.create(request, session));
     }
 
     @Override
     public HttpResponse handlePUT(HttpRequest request) {
-        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromSessionRequest(request));
-        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+        LocalSession session = validateRequestAndGetSession(request);
         return contentHandler.put(SessionContentRequestV2.create(request, session));
     }
 
     @Override
     public HttpResponse handleDELETE(HttpRequest request) {
-        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromSessionRequest(request));
-        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+        LocalSession session = validateRequestAndGetSession(request);
         return contentHandler.delete(SessionContentRequestV2.create(request, session));
     }
+
+    private LocalSession validateRequestAndGetSession(HttpRequest request) {
+        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
+        return applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+    }
+
 }

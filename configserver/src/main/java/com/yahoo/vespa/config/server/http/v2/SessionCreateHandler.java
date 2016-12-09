@@ -52,8 +52,9 @@ public class SessionCreateHandler extends SessionHandler {
     @Override
     protected HttpResponse handlePOST(HttpRequest request) {
         Slime deployLog = createDeployLog();
-        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromSessionRequest(request));
-        TenantName tenantName = tenant.getName();
+        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
         final SessionCreate sessionCreate = new SessionCreate(tenant.getSessionFactory(), tenant.getLocalSessionRepo(),
                 new SessionCreateResponseV2(tenant, deployLog, deployLog.get()));
         TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()));

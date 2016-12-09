@@ -13,7 +13,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -121,11 +120,8 @@ public class SessionPrepareHandler extends SessionHandler {
     }
 
     private Tenant getExistingTenant(HttpRequest request) {
-        TenantName tenant = Utils.getTenantFromSessionRequest(request);
-        try {
-            return tenants.checkThatTenantExists(tenant);
-        } catch (IllegalArgumentException e) {
-            throw new NotFoundException(e.getMessage());
-        }
+        TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        return tenants.getTenant(tenantName);
     }
 }

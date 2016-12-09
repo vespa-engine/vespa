@@ -43,8 +43,9 @@ public class SessionActiveHandler extends SessionActiveHandlerBase {
     @Override
     protected HttpResponse handlePUT(HttpRequest request) {
         TimeoutBudget timeoutBudget = getTimeoutBudget(request, SessionHandler.DEFAULT_ACTIVATE_TIMEOUT);
-        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromSessionRequest(request));
-        TenantName tenantName = tenant.getName();
+        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
         LocalSession localSession = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
         activate(request, tenant.getLocalSessionRepo(), tenant.getActivateLock(), timeoutBudget, localSession);
         return new SessionActiveResponse(localSession.getMetaData().getSlime(), tenantName, request, localSession, zone);

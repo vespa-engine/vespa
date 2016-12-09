@@ -51,8 +51,8 @@ public class TenantHandler extends HttpHandler {
      * @return tenant name
      */
     private TenantName getAndValidateTenantFromRequest(HttpRequest request) {
-        final TenantName tenantName = Utils.getTenantFromRequest(request);
-        Utils.checkThatTenantDoesNotExist(tenants, tenantName);
+        final TenantName tenantName = Utils.getTenantNameFromRequest(request);
+        checkThatTenantDoesNotExist(tenantName);
         validateTenantName(tenantName);
         return tenantName;
     }
@@ -65,14 +65,16 @@ public class TenantHandler extends HttpHandler {
 
     @Override
     protected HttpResponse handleGET(HttpRequest request) {
-        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromRequest(request));
-        return new TenantGetResponse(tenant.getName());
+        final TenantName tenantName = Utils.getTenantNameFromRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        return new TenantGetResponse(tenantName);
     }
 
     @Override
     protected HttpResponse handleDELETE(HttpRequest request) {
-        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromRequest(request));
-        final TenantName tenantName = tenant.getName();
+        final TenantName tenantName = Utils.getTenantNameFromRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         final List<ApplicationId> activeApplications = applicationRepo.listApplications();
         if (activeApplications.isEmpty()) {
@@ -86,6 +88,11 @@ public class TenantHandler extends HttpHandler {
                     activeApplications);
         }
         return new TenantDeleteResponse(tenantName);
+    }
+
+    private void checkThatTenantDoesNotExist(TenantName tenantName) {
+        if (tenants.checkThatTenantExists(tenantName))
+            throw new BadRequestException("There already exists a tenant '" + tenantName + "'");
     }
 
 }
