@@ -2,6 +2,7 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -63,29 +64,38 @@ public class Join extends PrimitiveTensorFunction {
         Tensor b = argumentB.evaluate(context);
         
         TensorType joinedType = a.type().combineWith(b.type());
-        Map<TensorAddress, Double> joinedCells;
-        if (joinedType.dimensions().size() == a.type().dimensions().size()
-            && joinedType.dimensions().size() == b.type().dimensions().size()) {
-            joinedCells = singleSpaceJoin(a, b, joinedType);
-        }
-        else {
-            joinedCells = generalJoin(a, b, joinedType);
-        }
-        return new MapTensor(joinedType, joinedCells);
+
+        // Choose join algorithm
+        if (a.type().equals(b.type()) && a.type().dimensions().size() == 1 && a.type().dimensions().get(0).isIndexed())
+            return indexedVectorJoin((IndexedTensor)a, (IndexedTensor)b, joinedType);
+        // TODO: Special case general indexed join or make the next two type sensitive in what they return
+        if (joinedType.dimensions().size() == a.type().dimensions().size() && joinedType.dimensions().size() == b.type().dimensions().size())
+            return singleSpaceJoin(a, b, joinedType);
+        else
+            return generalJoin(a, b, joinedType);
+    }
+    
+    private Tensor indexedVectorJoin(IndexedTensor a, IndexedTensor b, TensorType type) {
+        IndexedTensor.Builder builder = new IndexedTensor.Builder(type);
+        int joinedLength = Math.min(a.length(0), b.length(0));
+        for (int i = 0; i < joinedLength; i++)
+            builder.set(combinator.applyAsDouble(a.get(i), b.get(i)), i);
+        return builder.build();
     }
 
     /** When both tensors have the same dimensions, at most one cell matches a cell in the other tensor */
-    private Map<TensorAddress, Double> singleSpaceJoin(Tensor a, Tensor b, TensorType joinedType) {
+    private Tensor singleSpaceJoin(Tensor a, Tensor b, TensorType joinedType) {
         ImmutableMap.Builder<TensorAddress, Double> joinedCells = new ImmutableMap.Builder<>();
         for (Map.Entry<TensorAddress, Double> aCell : a.cells().entrySet()) {
             Double bCellValue = b.cells().get(aCell.getKey());
             if (bCellValue == null) continue; // no match
             joinedCells.put(aCell.getKey(), combinator.applyAsDouble(aCell.getValue(), bCellValue));
         }
-        return joinedCells.build();
+        return new MapTensor(joinedType, joinedCells.build());
     }
 
-    private Map<TensorAddress, Double> generalJoin(Tensor a, Tensor b, TensorType joinedType) {
+    /** Slow join which works for any two tensors */
+    private Tensor generalJoin(Tensor a, Tensor b, TensorType joinedType) {
         int[] aToIndexes = mapIndexes(a.type(), joinedType);
         int[] bToIndexes = mapIndexes(b.type(), joinedType);
         ImmutableMap.Builder<TensorAddress, Double> joinedCells = new ImmutableMap.Builder<>();
@@ -97,7 +107,7 @@ public class Join extends PrimitiveTensorFunction {
                 joinedCells.put(combinedAddress, combinator.applyAsDouble(aCell.getValue(), bCell.getValue()));
             }
         }
-        return joinedCells.build();
+        return new MapTensor(joinedType, joinedCells.build());
     }
 
     /**

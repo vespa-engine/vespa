@@ -29,6 +29,37 @@ public class IndexedTensor implements Tensor {
         this.firstDimension = firstDimension;
     }
 
+    /** 
+     * Returns the value at the given indexes
+     * 
+     * @param indexes the indexes into the dimensions of this. Must be one number per dimension of this
+     * @throws IndexOutOfBoundsException if any of the indexes are out of bound or a wrong number of indexes are given
+     */
+    public Double get(int ... indexes) {
+        IndexedDimension currentDimension = firstDimension;
+        for (int i = 0; i < indexes.length; i++) {
+            if (i == indexes.length -1)
+                return (Double)currentDimension.values().get(indexes[i]);
+            else
+                currentDimension = (IndexedDimension)currentDimension.values().get(indexes[i]);
+        }
+        return Double.NaN; // empty
+    }
+
+    /**
+     * Returns the lenght of this in the nth dimension
+     * 
+     * @throws IndexOutOfBoundsException if the index is larger than the number of dimensions in this tensor minus one
+     */
+    public int length(int dimension) {
+        if (firstDimension.values().isEmpty()) return 0; // empty tensor
+
+        IndexedDimension currentDimension = firstDimension;
+        while (dimension > 0)
+            currentDimension = (IndexedDimension)currentDimension.values().get(0); // get the first as all (should) have the same size
+        return currentDimension.values().size();
+    }
+    
     static IndexedTensor from(TensorType type, String tensorString) {
         tensorString = tensorString.trim();
         try {
@@ -128,7 +159,8 @@ public class IndexedTensor implements Tensor {
     private void populateRecursively(ImmutableMap.Builder<TensorAddress, Double> valueBuilder, IndexedDimension dimensionValues, 
                                      TensorAddress.Builder partialAddress, List<TensorType.Dimension> remainingDimensions) {
         if (remainingDimensions.size() == 0) {
-            return;
+            if ( ! dimensionValues.values().isEmpty()) // either empty or a single value
+                valueBuilder.put(TensorAddress.empty, (Double)dimensionValues.values().get(0));
         }
         else if (remainingDimensions.size() == 1) {
             for (int i = 0; i < dimensionValues.values().size(); i++)
@@ -190,6 +222,7 @@ public class IndexedTensor implements Tensor {
         }
     
         public IndexedTensor build() {
+            // TODO: Enforce that all values in all dimensions are equally large
             if (firstDimension == null) // empty
                 return new IndexedTensor(type, new IndexedDimension());
             if (type.dimensions().isEmpty()) // single number

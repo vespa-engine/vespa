@@ -61,6 +61,8 @@ public class TensorType {
      * If it is indexed in one and mapped in the other it will become mapped.
      */
     public TensorType combineWith(TensorType other) {
+        if (this.equals(other)) return this;
+
         TensorType.Builder b = new TensorType.Builder();
         for (Dimension thisDimension : dimensions)
             b.add(thisDimension);
@@ -129,10 +131,13 @@ public class TensorType {
         /** Returns a copy of this with the name set to the given name */
         public abstract Dimension withName(String name);
 
+        /** Returns true if this is an indexed bound or unboun type */
+        public boolean isIndexed() { return type() == Type.indexedBound || type() == Type.indexedUnbound; }
+
         /** 
          * Returns the dimension resulting from combining two dimensions having the same name but possibly different
          * types. This works by degrading to the type making the fewer promises.
-         * [N] + [M] = [max(N, M)]
+         * [N] + [M] = [min(N, M)]
          * [N] + [] = []
          * [] + {} = {}
          */
