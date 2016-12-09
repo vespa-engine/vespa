@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.filedistribution.fileacquirer;
 
+import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
 import com.yahoo.config.subscription.ConfigSubscriber;
-import com.yahoo.cloud.config.filedistribution.*;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.*;
 import com.yahoo.log.LogLevel;
