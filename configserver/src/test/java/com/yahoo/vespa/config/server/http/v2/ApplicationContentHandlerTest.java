@@ -58,7 +58,6 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         handler = new ApplicationHandler(command -> command.run(),
                                          AccessLog.voidAccessLog(),
                                          testTenantBuilder.createTenants(),
-                                         HostProvisionerProvider.empty(),
                                          Zone.defaultZone(),
                                          new ApplicationRepository(testTenantBuilder.createTenants(),
                                                                    HostProvisionerProvider.empty(),
