@@ -2,47 +2,65 @@
 
 ## Setup
 
-Set up Docker on your machine according to the instructions in README_LINUX or README_MAC, depending on your hardware.
+Set up Docker on your machine according to the instructions in [LINUX](README_LINUX.md) or [Mac](README_MAC.md), depending on your hardware.
 
 You should have the docker daemon running and the following environment variables set:
 ```
-DOCKER_HOST
-CONTAINER_CERT_PATH
 VESPA_HOME
+VESPA_WEB_SERVICE_PORT
 ```
 
-## Building
-
-Build Node Admin and include it (and other local modifications) in the Docker image ```vespa-local```:
+To add update `/etc/hosts` with the required hostnames for the local containers, run
 ```
-mvn clean package
-./build.sh
+sudo ./scripts/etc-hosts.sh
 ```
 
-## Running
+## Developing
 
-TODO: Outdated! Update this section with info on how to run everything locally.
+We will describe how you can build a Docker image for Vespa which will be used
+to set up a local Docker container with the Node Admin, and a local container
+with the Config Server.
 
-Start the container for the config server (TODO). Set the CONFIG_SERVER_ADDRESS
-variable to the hostname of the config server.
+Then, we'll show how you bring up this local zone. And finally, how you can
+deploy a local Vespa application to this zone.
 
-Start the container
+[RunVespaLocal.java](src/test/java/com/yahoo/vespa/hosted/node/admin/docker/RunVespaLocal.java) 
+implements all of the basic methods you need to get started.
+
+### Starting a Local Zone
+
+To start a local zone, simply run:
 ```
-docker run -t -i --privileged \
-        -p 4080:4080 \
-        -v $CONTAINER_CERT_PATH:/host/docker/certs \
-        -e "DOCKER_HOST=$DOCKER_HOST" \
-        -e "CONFIG_SERVER_ADDRESS=$CONFIG_SERVER_ADDRESS" \
-        vespa-local:latest
+    DockerImage vespaDockerBase = new DockerImage("docker-registry.ops.yahoo.com:4443/vespa/ci:6.53.134");
+    Path pathToContainerStorage = Paths.get("/home/docker/container-storage");
+    
+    RunVespaLocal runVespaLocal = new RunVespaLocal();
+    runVespaLocal.buildVespaLocalImage(vespaDockerBase);
+    runVespaLocal.startLocalZoneWithNodes(5);
+    runVespaLocal.startNodeAdminAsContainer(pathToContainerStorage);
 ```
 
-This will map the client certificate/key files to the path where Node Admin looks for them (as configured in
-services.xml), and enable Node Admin to talk to the docker daemon. You can invoke Node Admin's REST APIs on port 4080
-from both inside the container and the outside host.
+### Deploying a Local Application
+
+To deploy an application, check out `vespa/basic-search-for-docker` to `~`, and 
+package it with ```mvn package```, then deploy it with:
+
+```
+    Path pathToApp = Paths.get("/home/<username>/basic-search-for-docker/target/application.zip");
+    runVespaLocal.deployApplication(pathToApp);
+```
+
+You can delete application with
+
+```
+    runVespaLocal.deleteApplication();
+```
+
+
 
 ## Using
 
-Trigger the incredibly rich and complex node-admin REST API(s)
+Trigger the incredibly rich and complex `node-admin` REST API(s)
 ```
 curl localhost:4080/test/ping
 ```
@@ -64,49 +82,3 @@ View the log file (`-L` follows the symbolic link):
 docker cp -L <container id>:$VESPA_HOME/logs/jdisc_core/jdisc_core.log - | less
 ```
 
-## Developing
-
-We will describe how you can build a Docker image for Vespa which will be used
-to set up a local Docker container with the Node Admin, and a local container
-with the Config Server.
-
-Then, we'll show how you bring up this local zone. And finally, how you can
-deploy a local Vespa application to this zone.
-
-### Building Local Docker Image
-
-A Dockerfile exists in the module's root directory. This Dockerfile is not used
-in production or any pipelines, it is here for convenience so you can build
-images and experiment locally. See build.sh for how to build.
-
-The image created by the Dockerfile will be used to run Node Admin or a Config
-Server.
-
-### Starting a Local Zone
-
-To start a local zone, ensure your operating system ignores ```config-server```
-and ```node-admin``` for proxying. Then issue the following command:
-
-```
-scripts/zone.sh start
-```
-
-The Node Admin and Config Server now runs in the ```node-admin``` and
-```config-server``` Docker containers. These containers have their own IP
-addresses and hostnames (also ```node-admin``` and ```config-server```).
-
-### Deploying a Local Application
-
-To deploy an application, use ```scripts/app.sh```. Assuming you have checked
-out ```vespa/basic-search-for-docker``` to ```~```, and packaged it with ```mvn
-package```, you can deploy the application with:
-
-```
-scripts/app.sh deploy ~/vespa/basic-search-for-docker/target/application
-```
-
-You can undeploy it with
-
-```
-scripts/app.sh undeploy
-```

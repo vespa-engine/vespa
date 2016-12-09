@@ -16,11 +16,6 @@ import java.util.concurrent.ExecutionException;
  *   1. Install Docker Toolbox, and start it (Docker Quickstart Terminal) (you can close terminal window afterwards)
  *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.18.0.0/16 192.168.99.100
  *
- * GENERAL TIPS:
- *   For cleaning up your local docker machine (DON'T DO THIS ON PROD)
- *     docker stop $(docker ps -a -q)
- *     docker rm $(docker ps -a -q)
- *
  * @author freva
  */
 public class DockerTestUtils {
