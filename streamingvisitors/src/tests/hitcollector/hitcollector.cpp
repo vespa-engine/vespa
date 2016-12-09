@@ -5,6 +5,7 @@
 
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchvisitor/hitcollector.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vsm/common/storagedocument.h>
@@ -227,15 +228,27 @@ class MyRankProgram : public HitCollector::IRankProgram
 {
 private:
     MatchData _matchData;
+    NumberOrObject _fooValue;
+    NumberOrObject _barValue;
 
 public:
-    MyRankProgram() : _matchData(MatchData::params().numFeatures(3)) {}
+    MyRankProgram()
+        : _matchData(MatchData::params().numFeatures(0)),
+          _fooValue(),
+          _barValue()
+    {}
     virtual const search::fef::MatchData &run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
         _matchData.setDocId(docid);
-        *_matchData.resolveFeature(0) = docid + 10;
-        *_matchData.resolveFeature(1) = docid + 20;
-        *_matchData.resolveFeature(2) = docid + 30;
+        _fooValue.as_number = docid + 10;
+        _barValue.as_number = docid + 30;
         return _matchData;
+    }
+
+    FeatureResolver get_resolver() {
+        FeatureResolver resolver(2);
+        resolver.add("foo", &_fooValue, false);
+        resolver.add("bar", &_barValue, false);
+        return resolver;
     }
 };
 
@@ -250,15 +263,9 @@ HitCollectorTest::testFeatureSet()
     addHit(hc, 3, 40); // on heap
     addHit(hc, 4, 30); // on heap
 
-    std::vector<vespalib::string> names;
-    std::vector<FeatureHandle> handles;
-    names.push_back("foo");
-    names.push_back("bar");
-    handles.push_back(0);
-    handles.push_back(2);
-
     MyRankProgram rankProgram;
-    search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, names, handles);
+    FeatureResolver resolver(rankProgram.get_resolver());
+    search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver);
 
     EXPECT_EQUAL(sf->getNames().size(), 2u);
     EXPECT_EQUAL(sf->getNames()[0], "foo");

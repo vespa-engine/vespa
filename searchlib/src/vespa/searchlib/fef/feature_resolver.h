@@ -19,10 +19,10 @@ class RankProgram;
 class FeatureResolver
 {
 private:
-    friend class RankProgram; // inner class with decoupled compilation
     std::vector<vespalib::string> _names;
     std::vector<const NumberOrObject *> _features;
     std::vector<bool> _is_object;
+public:
     FeatureResolver(size_t size_hint) : _names(), _features(), _is_object() {
         _names.reserve(size_hint);
         _features.reserve(size_hint);
@@ -33,7 +33,6 @@ private:
         _features.push_back(feature);
         _is_object.push_back(is_object);
     }
-public:
     size_t num_features() const { return _names.size(); }
     const vespalib::string &name_of(size_t i) const { return _names[i]; }
     bool is_object(size_t i) const { return _is_object[i]; }

@@ -4,6 +4,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.hitcollector");
 #include "hitcollector.h"
+#include <vespa/searchlib/fef/feature_resolver.h>
 #include <stdexcept>
 
 using search::FeatureSet;
@@ -125,20 +126,24 @@ HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
 
 FeatureSet::SP
 HitCollector::getFeatureSet(IRankProgram &rankProgram,
-                            const std::vector<vespalib::string> & names,
-                            const std::vector<search::fef::FeatureHandle> & handles)
+                            const search::fef::FeatureResolver &resolver)
 {
-    if (names.empty() || _hits.empty()) {
+    if (resolver.num_features() == 0 || _hits.empty()) {
         return FeatureSet::SP(new FeatureSet());
     }
     sortByDocId();
+    std::vector<vespalib::string> names;
+    names.reserve(resolver.num_features());
+    for (size_t i = 0; i < resolver.num_features(); ++i) {
+        names.emplace_back(resolver.name_of(i));
+    }
     FeatureSet::SP retval = FeatureSet::SP(new FeatureSet(names, _hits.size()));
     for (HitVector::iterator it(_hits.begin()), mt(_hits.end()); it != mt; ++it) {
         const MatchData &matchData = rankProgram.run(it->getDocId(), it->getMatchData());
         uint32_t docId = matchData.getDocId();
         search::feature_t * f = retval->getFeaturesByIndex(retval->addDocId(docId));
         for (uint32_t j = 0; j < names.size(); ++j) {
-            f[j] = *matchData.resolveFeature(handles[j]);
+            f[j] = *resolver.resolve_number(j);
             LOG(debug, "getFeatureSet: lDocId(%u), '%s': %f", docId, names[j].c_str(), f[j]);
         }
     }
