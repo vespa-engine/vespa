@@ -18,7 +18,8 @@ namespace features {
 
 TermFieldMdExecutor::TermFieldMdExecutor(const search::fef::IQueryEnvironment &env,
                                          uint32_t fieldId)
-    : _terms()
+    : _terms(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         const search::fef::ITermData *td = env.getTerm(i);
@@ -41,7 +42,7 @@ TermFieldMdExecutor::execute(MatchData & match)
     feature_t maxTermWeight = 0;
 
     for (size_t i = 0; i < _terms.size(); ++i) {
-        const TermFieldMatchData &tfmd = *match.resolveTermField(_terms[i].first);
+        const TermFieldMatchData &tfmd = *_md->resolveTermField(_terms[i].first);
         int32_t termWeight = _terms[i].second.percent();
 
         if (tfmd.getDocId() == match.getDocId()) {
@@ -66,6 +67,11 @@ TermFieldMdExecutor::execute(MatchData & match)
     outputs().set_number(6, maxTermWeight);
 }
 
+void
+TermFieldMdExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
 
 TermFieldMdBlueprint::TermFieldMdBlueprint() :
     Blueprint("termFieldMd"),

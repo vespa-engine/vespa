@@ -18,7 +18,10 @@ class TermFieldMdExecutor : public fef::FeatureExecutor {
 
     typedef std::pair<search::fef::TermFieldHandle, query::Weight> Element;
     std::vector<Element> _terms;
+    const fef::MatchData *_md;
+
     virtual void execute(fef::MatchData &data);
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     TermFieldMdExecutor(const search::fef::IQueryEnvironment &env,

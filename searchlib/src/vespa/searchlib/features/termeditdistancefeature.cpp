@@ -60,7 +60,8 @@ TermEditDistanceExecutor::TermEditDistanceExecutor(const search::fef::IQueryEnvi
     _fieldHandles(),
     _termWeights(),
     _prevRow(16),
-    _thisRow(_prevRow.size())
+    _thisRow(_prevRow.size()),
+    _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         _fieldHandles.push_back(util::getTermFieldHandle(env, i, config.fieldId));
@@ -103,7 +104,7 @@ TermEditDistanceExecutor::execute(search::fef::MatchData &match)
             // Look for a match of this term.
             search::fef::TermFieldHandle handle = _fieldHandles[query - 1];
             if (handle != search::fef::IllegalHandle) {
-                search::fef::TermFieldMatchData &tfmd = *match.resolveTermField(handle);
+                const fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
                 if (tfmd.getDocId() == match.getDocId()) {
                     it = tfmd.getIterator(); // this is now valid
                     while (it.valid() && it.getPosition() < fieldBegin) {
@@ -161,6 +162,12 @@ TermEditDistanceExecutor::execute(search::fef::MatchData &match)
     outputs().set_number(1, last.numDel);
     outputs().set_number(2, last.numIns);
     outputs().set_number(3, last.numSub);
+}
+
+void
+TermEditDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 void

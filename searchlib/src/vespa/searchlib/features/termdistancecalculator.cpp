@@ -17,7 +17,7 @@ const uint32_t TermDistanceCalculator::UNDEFINED_VALUE(1000000);
 
 void
 TermDistanceCalculator::run(const QueryTerm &termX, const QueryTerm &termY,
-                            MatchData & match, Result & r)
+                            const MatchData & match, Result & r)
 {
     const TermFieldMatchData *tmdX = match.resolveTermField(termX.fieldHandle());
     const TermFieldMatchData *tmdY = match.resolveTermField(termY.fieldHandle());
