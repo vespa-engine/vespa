@@ -275,7 +275,7 @@ public class StateResource implements StateClient {
             throw new GiveUpLinkRetargetingException(e);
         }
         newUri.append("/service/").append(s.getIdentifier(linkPort));
-        newUri.append(link.getPath());
+        newUri.append(link.getRawPath());
     }
 
 }
