@@ -52,7 +52,8 @@ public final class ClusterSpec {
 
     @Override
     public String toString() {
-        return type + " " + id + (groupId.isPresent() ? " " + groupId.get() : "");
+        return String.join(" ", type.toString(),  id.toString(),
+                           groupId.map(Group::toString).orElse(""), dockerImage.orElse(""));
     }
 
     @Override
