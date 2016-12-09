@@ -96,7 +96,6 @@ public class ApplicationHandlerTest {
         return new ApplicationHandler(
                 Runnable::run,
                 AccessLog.voidAccessLog(),
-                tenants,
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
@@ -109,7 +108,6 @@ public class ApplicationHandlerTest {
         return new ApplicationHandler(
                 Runnable::run,
                 AccessLog.voidAccessLog(),
-                tenants,
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),

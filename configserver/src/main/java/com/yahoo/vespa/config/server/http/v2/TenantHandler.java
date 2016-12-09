@@ -35,13 +35,13 @@ public class TenantHandler extends HttpHandler {
 
     @Override
     protected HttpResponse handlePUT(HttpRequest request) {
-        TenantName tenant = getAndValidateTenantFromRequest(request);
+        TenantName tenantName = getAndValidateTenantFromRequest(request);
         try {
-            tenants.writeTenantPath(tenant);
+            tenants.writeTenantPath(tenantName);
         } catch (Exception e) {
             throw new InternalServerException(Exceptions.toMessageString(e));
         }
-        return new TenantCreateResponse(tenant);
+        return new TenantCreateResponse(tenantName);
     }
 
     /**
@@ -51,10 +51,10 @@ public class TenantHandler extends HttpHandler {
      * @return tenant name
      */
     private TenantName getAndValidateTenantFromRequest(HttpRequest request) {
-        TenantName tenant = Utils.getTenantFromRequest(request);
-        Utils.checkThatTenantDoesNotExist(tenants, tenant);
-        validateTenantName(tenant);
-        return tenant;
+        final TenantName tenantName = Utils.getTenantFromRequest(request);
+        Utils.checkThatTenantDoesNotExist(tenants, tenantName);
+        validateTenantName(tenantName);
+        return tenantName;
     }
 
     private void validateTenantName(TenantName tenant) {
@@ -65,14 +65,14 @@ public class TenantHandler extends HttpHandler {
 
     @Override
     protected HttpResponse handleGET(HttpRequest request) {
-        TenantName tenant = getExistingTenant(request);
-        return new TenantGetResponse(tenant);
+        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromRequest(request));
+        return new TenantGetResponse(tenant.getName());
     }
 
     @Override
     protected HttpResponse handleDELETE(HttpRequest request) {
-        TenantName tenantName = getExistingTenant(request);
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = Utils.checkThatTenantExists(tenants, Utils.getTenantFromRequest(request));
+        final TenantName tenantName = tenant.getName();
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         final List<ApplicationId> activeApplications = applicationRepo.listApplications();
         if (activeApplications.isEmpty()) {
@@ -88,9 +88,4 @@ public class TenantHandler extends HttpHandler {
         return new TenantDeleteResponse(tenantName);
     }
 
-    private TenantName getExistingTenant(HttpRequest request) {
-        TenantName tenant = Utils.getTenantFromRequest(request);
-        Utils.checkThatTenantExists(tenants, tenant);
-        return tenant;
-    }
 }

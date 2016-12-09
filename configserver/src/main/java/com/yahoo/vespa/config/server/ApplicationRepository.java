@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -193,6 +194,20 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public void restart(ApplicationId applicationId, HostFilter hostFilter) {
         if (hostProvisioner.isPresent())
             hostProvisioner.get().restart(applicationId, hostFilter);
+    }
+
+    public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
+        Tenant tenant = tenants.checkThatTenantExists(applicationId.tenant());
+        List<ApplicationId> applicationIds = listApplicationIds(tenant);
+        if (!applicationIds.contains(applicationId)) {
+            throw new IllegalArgumentException("No such application id: " + applicationId);
+        }
+        return tenant;
+    }
+
+    private List<ApplicationId> listApplicationIds(Tenant tenant) {
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
+        return applicationRepo.listApplications();
     }
 
 }

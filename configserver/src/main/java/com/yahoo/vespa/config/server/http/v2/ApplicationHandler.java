@@ -13,22 +13,18 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
-import com.yahoo.vespa.config.server.http.Utils;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -41,17 +37,15 @@ import java.util.concurrent.Executor;
 public class ApplicationHandler extends HttpHandler {
 
     private static final String REQUEST_PROPERTY_TIMEOUT = "timeout";
-    private final Tenants tenants;
 
     private final Zone zone;
     private final ApplicationRepository applicationRepository;
 
-    public ApplicationHandler(Executor executor, AccessLog accessLog,
-                              Tenants tenants,
+    public ApplicationHandler(Executor executor,
+                              AccessLog accessLog,
                               Zone zone,
                               ApplicationRepository applicationRepository) {
         super(executor, accessLog);
-        this.tenants = tenants;
         this.zone = zone;
         this.applicationRepository = applicationRepository;
     }
@@ -87,7 +81,7 @@ public class ApplicationHandler extends HttpHandler {
             }
         }
         if (isServiceConvergeListRequest(request)) {
-             return applicationRepository.listConfigConvergence(tenant, applicationId, request.getUri());
+            return applicationRepository.listConfigConvergence(tenant, applicationId, request.getUri());
         }
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(tenant, applicationId));
     }
@@ -137,12 +131,11 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private Tenant verifyTenantAndApplication(ApplicationId applicationId) {
-        Tenant tenant = Utils.checkThatTenantExists(tenants, applicationId.tenant());
-        List<ApplicationId> applicationIds = listApplicationIds(tenant);
-        if ( ! applicationIds.contains(applicationId)) {
-            throw new NotFoundException("No such application id: " + applicationId);
+        try {
+            return applicationRepository.verifyTenantAndApplication(applicationId);
+        } catch (IllegalArgumentException e) {
+            throw new NotFoundException(e.getMessage());
         }
-        return tenant;
     }
 
     private Duration durationFromRequestTimeout(HttpRequest request) {
@@ -151,12 +144,6 @@ public class ApplicationHandler extends HttpHandler {
             timeoutInSeconds = Long.parseLong(request.getProperty(REQUEST_PROPERTY_TIMEOUT));
         }
         return Duration.ofSeconds(timeoutInSeconds);
-    }
-
-
-    private List<ApplicationId> listApplicationIds(Tenant tenant) {
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        return applicationRepo.listApplications();
     }
 
     // Note: Update src/main/resources/configserver-app/services.xml if you do any changes to the bindings
@@ -186,7 +173,6 @@ public class ApplicationHandler extends HttpHandler {
         return getBindingMatch(request).groupCount() == 8 &&
                 request.getUri().getPath().contains("/serviceconverge/");
     }
-
 
     private static boolean isContentRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() > 7;

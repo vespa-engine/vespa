@@ -43,16 +43,21 @@ public class Utils {
         return request.getUri().getScheme() + "://" + request.getHost() + ":" + request.getPort() + pathPrefix;
     }
 
-    public static Tenant checkThatTenantExists(Tenants tenants, TenantName tenant) {
-        if (!tenants.tenantsCopy().containsKey(tenant)) {
-            throw new NotFoundException("Tenant '" + tenant + "' was not found.");
+    // Wrapper for getting the right exception if it fails
+    public static Tenant checkThatTenantExists(Tenants tenants, TenantName tenantName) {
+        try {
+            return tenants.checkThatTenantExists(tenantName);
+        } catch (IllegalArgumentException e) {
+            throw new NotFoundException(e.getMessage());
         }
-        return tenants.tenantsCopy().get(tenant);
     }
 
+    // Wrapper for getting the right exception if it fails
     public static void checkThatTenantDoesNotExist(Tenants tenants, TenantName tenant) {
-        if (tenants.tenantsCopy().containsKey(tenant)) {
-            throw new BadRequestException("There already exists a tenant '" + tenant + "'");
+        try {
+            tenants.checkThatTenantDoesNotExist(tenant);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException(e.getMessage());
         }
     }
 
