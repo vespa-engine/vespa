@@ -67,7 +67,7 @@ NativeAttributeMatchExecutorMulti::execute(MatchData & match)
 {
     feature_t score = 0;
     for (size_t i = 0; i < _queryTermData.size(); ++i) {
-        const TermFieldMatchData *tfmd = match.resolveTermField(_queryTermData[i].tfh);
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_queryTermData[i].tfh);
         if (tfmd->getDocId() == match.getDocId()) {
             score += calculateScore(_queryTermData[i], *tfmd);
         }
@@ -76,14 +76,25 @@ NativeAttributeMatchExecutorMulti::execute(MatchData & match)
 }
 
 void
+NativeAttributeMatchExecutorMulti::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
+
+void
 NativeAttributeMatchExecutorSingle::execute(MatchData & match)
 {
-    const TermFieldMatchData &tfmd = *match.resolveTermField(_queryTermData.tfh);
+    const TermFieldMatchData &tfmd = *_md->resolveTermField(_queryTermData.tfh);
     outputs().set_number(0, (tfmd.getDocId() == match.getDocId())
                          ? calculateScore(_queryTermData, tfmd)
                          : 0);
 }
 
+void
+NativeAttributeMatchExecutorSingle::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
 
 NativeAttributeMatchBlueprint::NativeAttributeMatchBlueprint() :
     Blueprint("nativeAttributeMatch"),

@@ -39,10 +39,11 @@ private:
     const ProximityConfig       &_config; // The proximity config.
     search::fef::TermFieldHandle _termA;  // Handle to the first query term.
     search::fef::TermFieldHandle _termB;  // Handle to the second query term.
+    const fef::MatchData        *_md;
 
-    bool findBest(search::fef::MatchData &match,
-                  search::fef::TermFieldMatchData &matchA,
-                  search::fef::TermFieldMatchData &matchB);
+    bool findBest(const fef::TermFieldMatchData &matchA,
+                  const fef::TermFieldMatchData &matchB);
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**

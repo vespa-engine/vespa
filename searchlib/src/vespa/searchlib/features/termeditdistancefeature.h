@@ -91,12 +91,15 @@ private:
      */
     void logRow(const std::vector<TedCell> &row, size_t numCols);
 
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 private:
     const TermEditDistanceConfig             &_config;       // The config for this executor.
     std::vector<search::fef::TermFieldHandle> _fieldHandles; // The handles of all query terms.
     std::vector<feature_t>                    _termWeights;  // The weights of all query terms.
     std::vector<TedCell>                      _prevRow;      // Optimized representation of the cost table.
     std::vector<TedCell>                      _thisRow;      //
+    const fef::MatchData                     *_md;
 };
 
 /**

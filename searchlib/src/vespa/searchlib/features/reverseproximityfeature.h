@@ -39,6 +39,9 @@ private:
     const ReverseProximityConfig &_config; // The proximity config.
     search::fef::TermFieldHandle  _termA;  // Handle to the first query term.
     search::fef::TermFieldHandle  _termB;  // Handle to the second query term.
+    const fef::MatchData         *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**

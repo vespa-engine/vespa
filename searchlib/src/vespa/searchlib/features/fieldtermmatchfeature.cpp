@@ -18,7 +18,8 @@ namespace features {
 FieldTermMatchExecutor::FieldTermMatchExecutor(const search::fef::IQueryEnvironment &env,
                                                uint32_t fieldId, uint32_t termId) :
     search::fef::FeatureExecutor(),
-    _fieldHandle(util::getTermFieldHandle(env, termId, fieldId))
+    _fieldHandle(util::getTermFieldHandle(env, termId, fieldId)),
+    _md(nullptr)
 {
 }
 
@@ -34,7 +35,7 @@ FieldTermMatchExecutor::execute(search::fef::MatchData &match)
         return;
     }
 
-    search::fef::TermFieldMatchData &tfmd = *match.resolveTermField(_fieldHandle);
+    const search::fef::TermFieldMatchData &tfmd = *_md->resolveTermField(_fieldHandle);
     uint32_t firstPosition = 1000000;
     uint32_t lastPosition = 1000000;
     uint32_t occurrences = 0;
@@ -63,6 +64,13 @@ FieldTermMatchExecutor::execute(search::fef::MatchData &match)
     outputs().set_number(3, weight);
     outputs().set_number(4, (occurrences > 0) ? (sumExactness / occurrences) : 0);
 }
+
+void
+FieldTermMatchExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
+}
+
 
 FieldTermMatchBlueprint::FieldTermMatchBlueprint() :
     search::fef::Blueprint("fieldTermMatch"),

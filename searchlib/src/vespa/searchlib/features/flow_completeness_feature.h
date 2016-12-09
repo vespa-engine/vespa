@@ -62,8 +62,11 @@ private:
     std::vector<Term>             _terms;
     vespalib::PriorityQueue<Item> _queue;
     int                           _sumTermWeight;
+    const fef::MatchData         *_md;
 
     static bool nextElement(Item &item);
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     FlowCompletenessExecutor(const search::fef::IQueryEnvironment &env,

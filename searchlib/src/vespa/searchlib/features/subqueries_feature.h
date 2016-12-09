@@ -10,6 +10,10 @@ namespace features {
 
 class SubqueriesExecutor : public search::fef::FeatureExecutor {
     std::vector<search::fef::TermFieldHandle> _handles;
+    const fef::MatchData                     *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     SubqueriesExecutor(const search::fef::IQueryEnvironment &env,
                        uint32_t fieldId);

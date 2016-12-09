@@ -27,6 +27,9 @@ public:
 
 private:
     search::fef::TermFieldHandle _fieldHandle;
+    const fef::MatchData        *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**

@@ -17,7 +17,8 @@ MatchesExecutor::MatchesExecutor(uint32_t fieldId,
                                  const search::fef::IQueryEnvironment &env,
                                  uint32_t begin, uint32_t end)
     : FeatureExecutor(),
-      _handles()
+      _handles(),
+      _md(nullptr)
 {
     for (uint32_t i = begin; i < end; ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -32,7 +33,7 @@ MatchesExecutor::execute(MatchData &match)
 {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = match.resolveTermField(_handles[i]);
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
         if (tfmd->getDocId() == match.getDocId()) {
             output = 1;
             break;
@@ -41,6 +42,11 @@ MatchesExecutor::execute(MatchData &match)
     outputs().set_number(0, static_cast<feature_t>(output));
 }
 
+void
+MatchesExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
 
 MatchesBlueprint::MatchesBlueprint() :
     Blueprint("matches"),

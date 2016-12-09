@@ -18,11 +18,11 @@ namespace search {
 namespace features {
 
 feature_t
-NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs, MatchData & match)
+NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs)
 {
     feature_t score = 0;
     for (size_t i = 0; i < fs.pairs.size(); ++i) {
-        score += calculateScoreForPair(fs.pairs[i], fs.fieldId, match);
+        score += calculateScoreForPair(fs.pairs[i], fs.fieldId);
     }
     score *= _params.vector[fs.fieldId].fieldWeight;
     if (fs.divisor > 0) {
@@ -32,13 +32,13 @@ NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs, MatchData
 }
 
 feature_t
-NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t fieldId, MatchData & match)
+NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t fieldId)
 {
     const NativeProximityParam & param = _params.vector[fieldId];
     TermDistanceCalculator::Result result;
     const QueryTerm & a = pair.first;
     const QueryTerm & b = pair.second;
-    TermDistanceCalculator::run(a, b, match, result);
+    TermDistanceCalculator::run(a, b, *_md, result);
     uint32_t forwardIdx = result.forwardDist > 0 ? result.forwardDist - 1 : 0;
     uint32_t reverseIdx = result.reverseDist > 0 ? result.reverseDist - 1 : 0;
     feature_t forwardScore = param.proximityTable->get(forwardIdx) * param.proximityImportance;
@@ -60,7 +60,8 @@ NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
     FeatureExecutor(),
     _params(params),
     _setups(),
-    _totalFieldWeight(0)
+    _totalFieldWeight(0),
+    _md(nullptr)
 {
     std::map<uint32_t, QueryTermVector> fields;
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
@@ -90,16 +91,22 @@ NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
 }
 
 void
-NativeProximityExecutor::execute(search::fef::MatchData & match)
+NativeProximityExecutor::execute(search::fef::MatchData &)
 {
     feature_t score = 0;
     for (size_t i = 0; i < _setups.size(); ++i) {
-        score += calculateScoreForField(_setups[i], match);
+        score += calculateScoreForField(_setups[i]);
     }
     if (_totalFieldWeight > 0) {
         score /= _totalFieldWeight;
     }
     outputs().set_number(0, score);
+}
+
+void
+NativeProximityExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 void

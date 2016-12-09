@@ -79,7 +79,8 @@ TextSimilarityExecutor::TextSimilarityExecutor(const search::fef::IQueryEnvironm
     : _handles(),
       _weights(),
       _total_term_weight(0),
-      _queue()
+      _queue(),
+      _md(nullptr)
 {
     std::vector<Term> terms;
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
@@ -110,7 +111,7 @@ void
 TextSimilarityExecutor::execute(search::fef::MatchData &data)
 {
     for (size_t i = 0; i < _handles.size(); ++i) {
-        search::fef::TermFieldMatchData *tfmd = data.resolveTermField(_handles[i]);
+        const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
         if (tfmd->getDocId() == data.getDocId()) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
@@ -154,6 +155,12 @@ TextSimilarityExecutor::execute(search::fef::MatchData &data)
                          *outputs().get_number_ptr(2),
                          *outputs().get_number_ptr(3),
                          *outputs().get_number_ptr(4));
+}
+
+void
+TextSimilarityExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

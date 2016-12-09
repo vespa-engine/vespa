@@ -42,7 +42,7 @@ QueryCompletenessExecutor::execute(search::fef::MatchData &match)
     for (std::vector<search::fef::TermFieldHandle>::iterator it = _fieldHandles.begin();
          it != _fieldHandles.end(); ++it)
     {
-        search::fef::TermFieldMatchData &tfmd = *match.resolveTermField(*it);
+        const fef::TermFieldMatchData &tfmd = *_md->resolveTermField(*it);
         if (tfmd.getDocId() == match.getDocId()) {
             search::fef::FieldPositionsIterator field = tfmd.getIterator();
             while (field.valid() && field.getPosition() < _config.fieldBegin) {
@@ -59,6 +59,12 @@ QueryCompletenessExecutor::execute(search::fef::MatchData &match)
     }
     outputs().set_number(0, hit);
     outputs().set_number(1, miss);
+}
+
+void
+QueryCompletenessExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 QueryCompletenessBlueprint::QueryCompletenessBlueprint() :

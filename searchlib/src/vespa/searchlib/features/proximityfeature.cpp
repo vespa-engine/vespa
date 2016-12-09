@@ -37,13 +37,13 @@ ProximityExecutor::execute(search::fef::MatchData &match)
     if (_termA != search::fef::IllegalHandle &&
         _termB != search::fef::IllegalHandle)
     {
-        search::fef::TermFieldMatchData &matchA = *match.resolveTermField(_termA);
-        search::fef::TermFieldMatchData &matchB = *match.resolveTermField(_termB);
+        const fef::TermFieldMatchData &matchA = *_md->resolveTermField(_termA);
+        const fef::TermFieldMatchData &matchB = *_md->resolveTermField(_termB);
 
         if (matchA.getDocId() == match.getDocId() &&
             matchB.getDocId() == match.getDocId())
         {
-            if (findBest(match, matchA, matchB)) return;
+            if (findBest(matchA, matchB)) return;
         }
     }
     // no match
@@ -53,10 +53,15 @@ ProximityExecutor::execute(search::fef::MatchData &match)
     return;
 }
 
+void
+ProximityExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
+}
+
 bool
-ProximityExecutor::findBest(search::fef::MatchData &,
-                            search::fef::TermFieldMatchData &matchA,
-                            search::fef::TermFieldMatchData &matchB)
+ProximityExecutor::findBest(const fef::TermFieldMatchData &matchA,
+                            const fef::TermFieldMatchData &matchB)
 {
     // Look for optimal positions for term A and B.
     uint32_t optA = 0, optB = 0xFFFFFFFFu;

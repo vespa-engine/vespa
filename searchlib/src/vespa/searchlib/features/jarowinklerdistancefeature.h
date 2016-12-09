@@ -43,6 +43,9 @@ private:
 private:
     const JaroWinklerDistanceConfig          &_config;      // The config for this executor.
     std::vector<search::fef::TermFieldHandle> _termFieldHandles; // The handles of all query terms.
+    const fef::MatchData                     *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**

@@ -58,8 +58,12 @@ class NativeAttributeMatchExecutorMulti : public NativeAttributeMatchExecutor
 private:
     feature_t                          _divisor;
     std::vector<CachedTermData>        _queryTermData;
+    const fef::MatchData              *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
-    NativeAttributeMatchExecutorMulti(const Precomputed & setup) : _divisor(setup.second), _queryTermData(setup.first) { }
+    NativeAttributeMatchExecutorMulti(const Precomputed & setup) : _divisor(setup.second), _queryTermData(setup.first), _md(nullptr) { }
     // Inherit doc from FeatureExecutor.
     virtual void execute(fef::MatchData & data);
 };
@@ -68,9 +72,14 @@ class NativeAttributeMatchExecutorSingle : public NativeAttributeMatchExecutor
 {
 private:
     CachedTermData _queryTermData;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     NativeAttributeMatchExecutorSingle(const Precomputed & setup) :
-        _queryTermData(setup.first[0])
+        _queryTermData(setup.first[0]),
+        _md(nullptr)
     {
         _queryTermData.scale /= setup.second;
     }

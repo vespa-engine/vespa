@@ -35,6 +35,9 @@ private:
     };
 
     vespalib::PriorityQueue<Item> _queue;
+    const fef::MatchData         *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     TextSimilarityExecutor(const search::fef::IQueryEnvironment &env, uint32_t field_id);

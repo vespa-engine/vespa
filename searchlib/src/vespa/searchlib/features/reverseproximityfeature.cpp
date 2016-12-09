@@ -27,7 +27,8 @@ ReverseProximityExecutor::ReverseProximityExecutor(const search::fef::IQueryEnvi
     search::fef::FeatureExecutor(),
     _config(config),
     _termA(util::getTermFieldHandle(env, _config.termA, _config.fieldId)),
-    _termB(util::getTermFieldHandle(env, _config.termB, _config.fieldId))
+    _termB(util::getTermFieldHandle(env, _config.termB, _config.fieldId)),
+    _md(nullptr)
 {
 }
 
@@ -45,8 +46,8 @@ ReverseProximityExecutor::execute(search::fef::MatchData &match)
     // Look for an initial pair to use as guess.
     uint32_t posA = 0, posB = 0;
     search::fef::FieldPositionsIterator itA, itB;
-    search::fef::TermFieldMatchData &matchA = *match.resolveTermField(_termA);
-    search::fef::TermFieldMatchData &matchB = *match.resolveTermField(_termB);
+    const fef::TermFieldMatchData &matchA = *_md->resolveTermField(_termA);
+    const fef::TermFieldMatchData &matchB = *_md->resolveTermField(_termB);
     if (matchA.getDocId() == match.getDocId() && matchB.getDocId() == match.getDocId()) {
         itA = matchA.getIterator();
         itB = matchB.getIterator();
@@ -91,6 +92,12 @@ ReverseProximityExecutor::execute(search::fef::MatchData &match)
     outputs().set_number(0, optA - optB);
     outputs().set_number(1, optA);
     outputs().set_number(2, optB);
+}
+
+void
+ReverseProximityExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 ReverseProximityBlueprint::ReverseProximityBlueprint() :

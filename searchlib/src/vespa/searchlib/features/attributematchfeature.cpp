@@ -56,7 +56,8 @@ AttributeMatchExecutor<T>::Computer::Computer(const IQueryEnvironment & env, Att
     _totalWeight(0),
     _normalizedWeightedWeight(0),
     _weightSum(0),
-    _valueCount(0)
+    _valueCount(0),
+    _md(nullptr)
 {
     _buffer.allocate(_params.attribute->getMaxValueCount());
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
@@ -100,7 +101,7 @@ AttributeMatchExecutor<T>::Computer::run(MatchData & match)
     for (size_t i = 0; i < _queryTerms.size(); ++i) {
         const ITermData * td = _queryTerms[i].termData();
         feature_t significance = _queryTerms[i].significance();
-        const TermFieldMatchData *tfmd = match.resolveTermField(_queryTerms[i].fieldHandle());
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_queryTerms[i].fieldHandle());
         if (tfmd->getDocId() == match.getDocId()) { // hit on this document
             _matches++;
             _matchedTermWeight += td->getWeight().percent();
@@ -251,6 +252,12 @@ AttributeMatchExecutor<T>::execute(MatchData & match)
     outputs().set_number(10, _cmp.getAverageWeight());
 }
 
+template <typename T>
+void
+AttributeMatchExecutor<T>::handle_bind_match_data(MatchData &md)
+{
+    _cmp.bind_match_data(md);
+}
 
 AttributeMatchBlueprint::AttributeMatchBlueprint() :
     Blueprint("attributeMatch"),

@@ -16,6 +16,9 @@ class MatchesExecutor : public search::fef::FeatureExecutor
 {
 private:
     std::vector<search::fef::TermFieldHandle> _handles;
+    const fef::MatchData                     *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     MatchesExecutor(uint32_t fieldId,

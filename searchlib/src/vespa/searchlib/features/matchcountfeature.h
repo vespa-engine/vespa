@@ -16,6 +16,9 @@ class MatchCountExecutor : public fef::FeatureExecutor
 {
 private:
     std::vector<fef::TermFieldHandle> _handles;
+    const fef::MatchData             *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     MatchCountExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);

@@ -24,7 +24,7 @@ NativeFieldMatchExecutor::calculateScore(const MyQueryTerm &qt, MatchData &md)
     feature_t termScore = 0;
     for (size_t i = 0; i < qt.handles().size(); ++i) {
         TermFieldHandle tfh = qt.handles()[i];
-        TermFieldMatchData *tfmd = md.resolveTermField(tfh);
+        const TermFieldMatchData *tfmd = _md->resolveTermField(tfh);
         const NativeFieldMatchParam & param = _params.vector[tfmd->getFieldId()];
         if (tfmd->getDocId() == md.getDocId()) { // do we have a hit
             FieldPositionsIterator pos = tfmd->getIterator();
@@ -47,7 +47,8 @@ NativeFieldMatchExecutor::NativeFieldMatchExecutor(const IQueryEnvironment & env
     _params(params),
     _queryTerms(),
     _totalTermWeight(0),
-    _divisor(0)
+    _divisor(0),
+    _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         MyQueryTerm qt(QueryTermFactory::create(env, i));
@@ -84,6 +85,11 @@ NativeFieldMatchExecutor::execute(search::fef::MatchData &match)
     outputs().set_number(0, score);
 }
 
+void
+NativeFieldMatchExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
+}
 
 NativeFieldMatchBlueprint::NativeFieldMatchBlueprint() :
     Blueprint("nativeFieldMatch"),

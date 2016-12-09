@@ -17,12 +17,18 @@ ItemRawScoreExecutor::execute(MatchData &data)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = data.resolveTermField(_handles[i]);
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
         if (tfmd->getDocId() == data.getDocId()) {
             output += tfmd->getRawScore();
         }
     }
     outputs().set_number(0, output);
+}
+
+void
+ItemRawScoreExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -31,11 +37,17 @@ void
 SimpleItemRawScoreExecutor::execute(MatchData &data)
 {
     feature_t output = 0.0;
-    const TermFieldMatchData *tfmd = data.resolveTermField(_handle);
+    const TermFieldMatchData *tfmd = _md->resolveTermField(_handle);
     if (tfmd->getDocId() == data.getDocId()) {
         output = tfmd->getRawScore();
     }
     outputs().set_number(0, output);
+}
+
+void
+SimpleItemRawScoreExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

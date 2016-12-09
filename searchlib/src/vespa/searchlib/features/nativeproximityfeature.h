@@ -60,9 +60,12 @@ private:
     const NativeProximityParams & _params;
     std::vector<FieldSetup>       _setups;
     uint32_t                      _totalFieldWeight;
+    const fef::MatchData         *_md;
 
-    feature_t calculateScoreForField(const FieldSetup & fs, search::fef::MatchData & match);
-    feature_t calculateScoreForPair(const TermPair & pair, uint32_t fieldId, search::fef::MatchData & match);
+    feature_t calculateScoreForField(const FieldSetup & fs);
+    feature_t calculateScoreForPair(const TermPair & pair, uint32_t fieldId);
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     NativeProximityExecutor(const search::fef::IQueryEnvironment & env,
