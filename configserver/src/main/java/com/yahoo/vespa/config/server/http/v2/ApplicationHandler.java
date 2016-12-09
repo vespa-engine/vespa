@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostFilter;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -23,7 +22,6 @@ import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -31,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 
 /**
@@ -46,18 +43,15 @@ public class ApplicationHandler extends HttpHandler {
     private static final String REQUEST_PROPERTY_TIMEOUT = "timeout";
     private final Tenants tenants;
 
-    private final Optional<Provisioner> hostProvisioner;
     private final Zone zone;
     private final ApplicationRepository applicationRepository;
 
     public ApplicationHandler(Executor executor, AccessLog accessLog,
                               Tenants tenants,
-                              HostProvisionerProvider hostProvisionerProvider,
                               Zone zone,
                               ApplicationRepository applicationRepository) {
         super(executor, accessLog);
         this.tenants = tenants;
-        this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
         this.zone = zone;
         this.applicationRepository = applicationRepository;
     }
@@ -103,22 +97,21 @@ public class ApplicationHandler extends HttpHandler {
         ApplicationId applicationId = getApplicationIdFromRequest(request);
         Tenant tenant = verifyTenantAndApplication(applicationId);
         if (request.getUri().getPath().endsWith("restart"))
-            return handlePostRestart(request, applicationId);
+            return restart(request, applicationId);
         if (request.getUri().getPath().endsWith("log"))
-            return handlePostLog(request, applicationId, tenant);
+            return grabLog(request, applicationId, tenant);
         throw new NotFoundException("Illegal POST request '" + request.getUri() + "': Must end by /restart or /log");
     }
 
-    private HttpResponse handlePostRestart(HttpRequest request, ApplicationId applicationId) {
+    private HttpResponse restart(HttpRequest request, ApplicationId applicationId) {
         if (getBindingMatch(request).groupCount() != 7)
             throw new NotFoundException("Illegal POST restart request '" + request.getUri() +
                                         "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );
-        if (hostProvisioner.isPresent())
-            hostProvisioner.get().restart(applicationId, hostFilterFrom(request));
+        applicationRepository.restart(applicationId, hostFilterFrom(request));
         return new JSONResponse(Response.Status.OK); // return empty
     }
 
-    private HttpResponse handlePostLog(HttpRequest request, ApplicationId applicationId, Tenant tenant) {
+    private HttpResponse grabLog(HttpRequest request, ApplicationId applicationId, Tenant tenant) {
         if (getBindingMatch(request).groupCount() != 7)
             throw new NotFoundException("Illegal POST log request '" + request.getUri() +
                     "': Must have 6 arguments but had " + ( getBindingMatch(request).groupCount()-1 ) );

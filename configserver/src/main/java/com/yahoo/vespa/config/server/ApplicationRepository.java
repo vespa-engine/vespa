@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
-
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -189,6 +188,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
         return session;
+    }
+
+    public void restart(ApplicationId applicationId, HostFilter hostFilter) {
+        if (hostProvisioner.isPresent())
+            hostProvisioner.get().restart(applicationId, hostFilter);
     }
 
 }
