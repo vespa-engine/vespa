@@ -297,6 +297,15 @@ public class TensorType {
             return add(dimension);
         }
 
+        public Builder dimension(String name, Dimension.Type type) {
+            switch (type) {
+                case mapped : mapped(name); break;
+                case indexedUnbound : indexedUnbound(name); break;
+                default : throw new IllegalArgumentException("This can not create a dimension of type " + type);
+            }
+            return this;
+        }
+
         public TensorType build() {
             // TODO: Support that
             if (containsMappedDimension(dimensions.values()) && containsIndexedDimension(dimensions.values()))

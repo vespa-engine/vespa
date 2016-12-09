@@ -13,13 +13,13 @@ public class TensorFunctionBenchmark {
 
     private final static Random random = new Random();
     
-    public double benchmark(int iterations, List<Tensor> modelVectors) {
-        Tensor queryVector = generateVectors(1, 300).get(0);
+    public double benchmark(int iterations, List<Tensor> modelVectors, TensorType.Dimension.Type dimensionType) {
+        Tensor queryVector = generateVectors(1, 300, dimensionType).get(0);
         dotProduct(queryVector, modelVectors, 10); // warmup
         long startTime = System.currentTimeMillis();
         dotProduct(queryVector, modelVectors, iterations);
         long totalTime = System.currentTimeMillis() - startTime;
-        return totalTime / iterations;
+        return (double)totalTime / (double)iterations;
     }
 
     private double dotProduct(Tensor tensor, List<Tensor> tensors, int iterations) {
@@ -38,13 +38,13 @@ public class TensorFunctionBenchmark {
                 largest = dotProduct;
             }
         }
-        System.out.println(largest);
         return largest;
     }
 
-    private static List<Tensor> generateVectors(int vectorCount, int vectorSize) {
+    private static List<Tensor> generateVectors(int vectorCount, int vectorSize, 
+                                                TensorType.Dimension.Type dimensionType) {
         List<Tensor> tensors = new ArrayList<>();
-        TensorType type = new TensorType.Builder().mapped("x").build();
+        TensorType type = new TensorType.Builder().dimension("x", dimensionType).build();
         for (int i = 0; i < vectorCount; i++) {
             MapTensor.Builder builder = new MapTensor.Builder(type);
             for (int j = 0; j < vectorSize; j++) {
@@ -55,9 +55,10 @@ public class TensorFunctionBenchmark {
         return tensors;
     }
 
-    private static List<Tensor> generateVectorsInOneTensor(int vectorCount, int vectorSize) {
+    private static List<Tensor> generateMatrix(int vectorCount, int vectorSize,
+                                               TensorType.Dimension.Type dimensionType) {
         List<Tensor> tensors = new ArrayList<>();
-        TensorType type = new TensorType.Builder().mapped("i").mapped("x").build();
+        TensorType type = new TensorType.Builder().dimension("i", dimensionType).dimension("x", dimensionType).build();
         MapTensor.Builder builder = new MapTensor.Builder(type);
         for (int i = 0; i < vectorCount; i++) {
             for (int j = 0; j < vectorSize; j++) {
@@ -71,18 +72,29 @@ public class TensorFunctionBenchmark {
         return tensors; // only one tensor in the list.
     }
 
+    
+
     public static void main(String[] args) {
+        double time;
+        
+        // ---------------- Mapped:
         // Was: 150 ms
         // After adding type: 300 ms
         // After sorting dimensions: 100 ms
         // After special-casing single space: 4 ms
-        double timeperJoin = new TensorFunctionBenchmark().benchmark(100, generateVectors(100, 300));
-
+        time = new TensorFunctionBenchmark().benchmark(1000, generateVectors(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped);
+        System.out.printf("Mapped vectors,  time per join: %1$8.3f ms\n", time);
         // This benchmark should be as fast as fast as the previous. Currently it is not by a factor of 600
-        double timePerJoinOneTensor = new TensorFunctionBenchmark().benchmark(20, generateVectorsInOneTensor(100, 300));
+        time = new TensorFunctionBenchmark().benchmark(20, generateMatrix(100, 300, TensorType.Dimension.Type.mapped), TensorType.Dimension.Type.mapped);
+        System.out.printf("Mapped matrix,   time per join: %1$8.3f ms\n", time);
 
-        System.out.println("Time per join: " + timeperJoin +  " ms");
-        System.out.println("Time per join, one tensor: " + timePerJoinOneTensor +  " ms");
+        // ---------------- Indexed:
+        // Was: 3 ms
+        time = new TensorFunctionBenchmark().benchmark(1000, generateVectors(100, 300, TensorType.Dimension.Type.indexedUnbound),TensorType.Dimension.Type.indexedUnbound);
+        System.out.printf("Indexed vectors, time per join: %1$8.3f ms\n", time);
+        // This benchmark should be as fast as fast as the previous. Currently it is not by a factor of 600
+        time = new TensorFunctionBenchmark().benchmark(20, generateMatrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound);
+        System.out.printf("Indexed matrix,  time per join: %1$8.3f ms\n", time);
     }
 
 }
