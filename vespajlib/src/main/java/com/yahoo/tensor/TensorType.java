@@ -132,9 +132,9 @@ public class TensorType {
         /** 
          * Returns the dimension resulting from combining two dimensions having the same name but possibly different
          * types. This works by degrading to the type making the fewer promises.
-         * [N] + [M] -> [max(N, M)]
-         * [N] + [] -> []
-         * [] + {} -> {}
+         * [N] + [M] = [max(N, M)]
+         * [N] + [] = []
+         * [] + {} = {}
          */
         Dimension combineWith(Optional<Dimension> other) {
             if ( ! other.isPresent()) return this;

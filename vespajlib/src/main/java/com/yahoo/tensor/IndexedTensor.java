@@ -127,7 +127,10 @@ public class IndexedTensor implements Tensor {
 
     private void populateRecursively(ImmutableMap.Builder<TensorAddress, Double> valueBuilder, IndexedDimension dimensionValues, 
                                      TensorAddress.Builder partialAddress, List<TensorType.Dimension> remainingDimensions) {
-        if (remainingDimensions.size() == 1) {
+        if (remainingDimensions.size() == 0) {
+            return;
+        }
+        else if (remainingDimensions.size() == 1) {
             for (int i = 0; i < dimensionValues.values().size(); i++)
                 valueBuilder.put(partialAddress.copy().add(remainingDimensions.get(0).name(), String.valueOf(i)).build(), 
                                  (Double)dimensionValues.values().get(i));
@@ -249,7 +252,7 @@ public class IndexedTensor implements Tensor {
                 }
                 else {
                     if (currentValues.get(indexes[dimensionIndex]) == null)
-                        currentValues.set(indexes[dimensionIndex], new ArrayList());
+                        currentValues.set(indexes[dimensionIndex], new ArrayList<>());
                     currentValues = (List<Object>)currentValues.get(indexes[dimensionIndex]);
                 }
             }
