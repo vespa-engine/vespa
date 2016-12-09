@@ -63,9 +63,6 @@ public class Application implements ModelResult {
      */
     public Long getApplicationGeneration() { return appGeneration; }
 
-    // TODO: Return ApplicationName
-    public String getName() { return app.application().value(); }
-
     /** Returns the application model, never null */
     @Override
     public Model getModel() { return model; }

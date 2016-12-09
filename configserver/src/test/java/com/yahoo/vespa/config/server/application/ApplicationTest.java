@@ -57,7 +57,7 @@ public class ApplicationTest {
         assertThat(app.getApplicationGeneration(), is(1337l));
         assertNotNull(app.getModel());
         assertThat(app.getCache(), is(cache));
-        assertThat(app.getName(), is("foobar"));
+        assertThat(app.getId().application().value(), is("foobar"));
         assertThat(app.getVespaVersion(), is(vespaVersion));
         assertThat(app.toString(), is("application 'foobar', generation 1337, vespa version 1.2.3"));
     }

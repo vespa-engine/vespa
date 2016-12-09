@@ -72,14 +72,14 @@ public class RemoteSessionTest {
         ApplicationSet applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
         assertThat(applicationSet.getApplicationGeneration(), is(3l));
-        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getName(), is("foo"));
+        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getId().application().value(), is("foo"));
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty()).getModel());
         session.deactivate();
 
         applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
         assertThat(applicationSet.getApplicationGeneration(), is(3l));
-        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getName(), is("foo"));
+        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getId().application().value(), is("foo"));
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty()).getModel());
     }
 
