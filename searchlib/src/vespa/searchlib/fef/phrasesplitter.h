@@ -86,11 +86,9 @@ public:
     static void copyTermFieldMatchData(TermFieldMatchData & dst, const TermFieldMatchData & src, uint32_t hitOffset);
 
     /**
-     * Update the underlying TermFieldMatchData objects based on the given MatchData object.
-     *
-     * @param matchData the MatchData object containing original TermFieldMatchData objects.
+     * Update the underlying TermFieldMatchData objects based on the bound MatchData object.
      **/
-    void update(const MatchData & matchData);
+    void update();
 
     /**
      * Inherit doc from IQueryEnvironment.
@@ -139,6 +137,8 @@ public:
      * Inherit doc from IQueryEnvironment.
      **/
     virtual const IIndexEnvironment & getIndexEnvironment() const { return _queryEnv.getIndexEnvironment(); }
+
+    void bind_match_data(const fef::MatchData &md) { _matchData = &md; }
 };
 
 } // namespace fef

@@ -38,8 +38,8 @@ FieldMatchExecutor::execute(search::fef::MatchData & match)
 {
     //LOG(info, "execute for field '%s' and docId(%u)", _field.name().c_str(), match.getDocId());
 
-    _splitter.update(match);
-    _cmp.reset(match);
+    _splitter.update();
+    _cmp.reset(match.getDocId());
     //_cmp.setTracing(true);
 
     const fieldmatch::SimpleMetrics & simple = _cmp.getSimpleMetrics();
@@ -92,6 +92,11 @@ FieldMatchExecutor::execute(search::fef::MatchData & match)
     outputs().set_number(29, simple.getDegradedMatches()); // degradedMatches
 }
 
+void
+FieldMatchExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _splitter.bind_match_data(md);
+}
 
 FieldMatchBlueprint::FieldMatchBlueprint() :
     Blueprint("fieldMatch"),
