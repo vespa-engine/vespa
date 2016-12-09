@@ -50,10 +50,10 @@ package it with ```mvn package```, then deploy it with:
     runVespaLocal.deployApplication(pathToApp);
 ```
 
-You can undeploy it with
+You can delete application with
 
 ```
-    runVespaLocal.undeployApplication();
+    runVespaLocal.deleteApplication();
 ```
 
 

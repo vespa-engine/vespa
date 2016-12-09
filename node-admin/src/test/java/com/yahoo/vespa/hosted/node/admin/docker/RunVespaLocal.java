@@ -136,7 +136,7 @@ public class RunVespaLocal {
         }
     }
 
-    void undeployApplication() {
+    void deleteApplication() {
         LocalZoneUtils.deleteApplication();
     }
 }
