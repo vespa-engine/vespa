@@ -133,6 +133,12 @@ public class StateVersionTrackerTest {
     }
 
     @Test
+    public void init_progress_change_not_counted_as_changed_state() {
+        assertFalse(stateChangedBetween("distributor:2 storage:2 .0.s:i .0.i:0.5",
+                                        "distributor:2 storage:2 .0.s:i .0.i:0.6"));
+    }
+
+    @Test
     public void lowest_observed_distribution_bit_is_initially_16() {
         final StateVersionTracker versionTracker = createWithMockedMetrics();
         assertThat(versionTracker.getLowestObservedDistributionBits(), equalTo(16));

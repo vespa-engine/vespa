@@ -299,10 +299,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
     }
 
+    private ClusterState latestCandidateClusterState() {
+        return stateVersionTracker.getLatestCandidateState().getClusterState();
+    }
+
     @Override
     public void handleNewNodeState(NodeInfo node, NodeState newState) {
         verifyInControllerThread();
-        stateChangeHandler.handleNewReportedNodeState(stateVersionTracker.getVersionedClusterState(), node, newState, this);
+        stateChangeHandler.handleNewReportedNodeState(latestCandidateClusterState(), node, newState, this);
     }
 
     @Override
