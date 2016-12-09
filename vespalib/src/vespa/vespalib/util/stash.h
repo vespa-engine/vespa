@@ -4,6 +4,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include "traits.h"
+#include "array.h"
 
 namespace vespalib {
 namespace stash {
@@ -26,6 +27,19 @@ struct DeleteMemory : public Cleanup {
 template<typename T> struct DestructObject : public Cleanup {
     explicit DestructObject(Cleanup *next_in) noexcept : Cleanup(next_in) {}
     virtual void cleanup() override { reinterpret_cast<T*>(this + 1)->~T(); }
+};
+
+// used as prefix for arrays to be destructed
+template<typename T> struct DestructArray : public Cleanup {
+    size_t size;
+    explicit DestructArray(Cleanup *next_in, size_t size_in) noexcept
+        : Cleanup(next_in), size(size_in) {}
+    virtual void cleanup() override {
+        T *array = reinterpret_cast<T*>(this + 1);
+        for (size_t i = size; i-- > 0;) {
+            array[i].~T();
+        }
+    }
 };
 
 struct Chunk {
@@ -71,8 +85,21 @@ private:
     bool is_small(size_t size) const { return (size < (_chunk_size / 4)); }
 
     template <typename T, typename ... Args>
-    T &create_nodelete(Args && ... args) {
-        return *(new (alloc(sizeof(T))) T(std::forward<Args>(args)...));
+    T *init_array(char *mem, size_t size, Args && ... args) {
+        T *array = reinterpret_cast<T*>(mem);
+        for (size_t i = 0; i < size; ++i) {
+            new (array + i) T(std::forward<Args>(args)...);
+        }
+        return array;
+    }
+
+    template <typename T>
+    T *copy_elements(char *mem, ConstArrayRef<T> src) {
+        T *array = reinterpret_cast<T*>(mem);
+        for (size_t i = 0; i < src.size(); ++i) {
+            new (array + i) T(src[i]);
+        }
+        return array;
     }
 
 public:
@@ -100,13 +127,37 @@ public:
     template <typename T, typename ... Args>
     T &create(Args && ... args) {
         if (can_skip_destruction<T>::value) {
-            return create_nodelete<T, Args...>(std::forward<Args>(args)...);
+            return *(new (alloc(sizeof(T))) T(std::forward<Args>(args)...));
         }
-        typedef stash::DestructObject<T> DeleteHook;
+        using DeleteHook = stash::DestructObject<T>;
         char *mem = alloc(sizeof(DeleteHook) + sizeof(T));
         T *ret = new (mem + sizeof(DeleteHook)) T(std::forward<Args>(args)...);
-        _cleanup = new (mem) stash::DestructObject<T>(_cleanup);
+        _cleanup = new (mem) DeleteHook(_cleanup);
         return *ret;
+    }
+
+    template <typename T, typename ... Args>
+    ArrayRef<T> create_array(size_t size, Args && ... args) {
+        if (can_skip_destruction<T>::value) {
+            return ArrayRef<T>(init_array<T, Args...>(alloc(size * sizeof(T)), size, std::forward<Args>(args)...), size);
+        }
+        using DeleteHook = stash::DestructArray<T>;
+        char *mem = alloc(sizeof(DeleteHook) + (size * sizeof(T)));
+        T *ret = init_array<T, Args...>(mem + sizeof(DeleteHook), size, std::forward<Args>(args)...);
+        _cleanup = new (mem) DeleteHook(_cleanup, size);
+        return ArrayRef<T>(ret, size);
+    }
+
+    template <typename T>
+    ArrayRef<T> copy_array(ConstArrayRef<T> src) {
+        if (can_skip_destruction<T>::value) {
+            return ArrayRef<T>(copy_elements<T>(alloc(src.size() * sizeof(T)), src), src.size());
+        }
+        using DeleteHook = stash::DestructArray<T>;
+        char *mem = alloc(sizeof(DeleteHook) + (src.size() * sizeof(T)));
+        T *ret = copy_elements<T>(mem + sizeof(DeleteHook), src);
+        _cleanup = new (mem) DeleteHook(_cleanup, src.size());
+        return ArrayRef<T>(ret, src.size());
     }
 };
 
