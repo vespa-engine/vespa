@@ -185,6 +185,7 @@
           <discPreInstallBundle>
             asm-debug-all-${asm-debug-all.version}.jar,
             javax.servlet-api-3.1.0.jar,
+            jetty-client-${jetty.version}.jar,
             jetty-continuation-${jetty.version}.jar,
             jetty-http-${jetty.version}.jar,
             jetty-io-${jetty.version}.jar,
