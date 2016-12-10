@@ -65,11 +65,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.glassfish.grizzly</groupId>
-      <artifactId>grizzly-websockets</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
@@ -195,11 +190,6 @@
             jetty-util-${jetty.version}.jar,
             org.apache.aries.spifly.dynamic.bundle-${aries.spifly.version}.jar,
             org.apache.aries.util-${aries.util.version}.jar,
-            websocket-api-${jetty.version}.jar,
-            websocket-client-${jetty.version}.jar,
-            websocket-common-${jetty.version}.jar,
-            websocket-server-${jetty.version}.jar,
-            websocket-servlet-${jetty.version}.jar,
             component-jar-with-dependencies.jar
           </discPreInstallBundle>
         </configuration>
