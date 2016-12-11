@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/config/subscription/configsubscription.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/config/print/configdatabuffer.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
