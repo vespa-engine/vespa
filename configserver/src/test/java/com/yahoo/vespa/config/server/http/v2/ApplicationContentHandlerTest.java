@@ -57,7 +57,6 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         testTenantBuilder.tenants().get(tenant2).getApplicationRepo().createPutApplicationTransaction(idTenant2, 3l).commit();
         handler = new ApplicationHandler(command -> command.run(),
                                          AccessLog.voidAccessLog(),
-                                         testTenantBuilder.createTenants(),
                                          Zone.defaultZone(),
                                          new ApplicationRepository(testTenantBuilder.createTenants(),
                                                                    HostProvisionerProvider.empty(),

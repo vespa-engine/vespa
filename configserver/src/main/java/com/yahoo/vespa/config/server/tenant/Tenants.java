@@ -19,7 +19,6 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.zookeeper.KeeperException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,6 +52,7 @@ import java.util.logging.Logger;
  * @author lulf
  * @since 5.1.26
  */
+//TODO Rename to TenantRepository
 public class Tenants implements ConnectionStateListener, PathChildrenCacheListener {
 
     private static final Logger log = Logger.getLogger(Tenants.class.getName());
@@ -343,6 +343,14 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
             tenant.redeployApplications(deployer);
             applicationsRedeployed += redeployProgress(tenant, applicationsRedeployed, totalNumberOfApplications);
         }
+    }
+
+    public boolean checkThatTenantExists(TenantName tenant) {
+        return tenantsCopy().containsKey(tenant);
+    }
+
+    public Tenant getTenant(TenantName tenantName) {
+        return tenantsCopy().get(tenantName);
     }
 
     private static int redeployProgress(Tenant tenant, int applicationsRedeployed, int totalNumberOfApplications) {

@@ -43,30 +43,22 @@ public class Utils {
         return request.getUri().getScheme() + "://" + request.getHost() + ":" + request.getPort() + pathPrefix;
     }
 
-    public static Tenant checkThatTenantExists(Tenants tenants, TenantName tenant) {
-        if (!tenants.tenantsCopy().containsKey(tenant)) {
-            throw new NotFoundException("Tenant '" + tenant + "' was not found.");
-        }
-        return tenants.tenantsCopy().get(tenant);
+    public static void checkThatTenantExists(Tenants tenants, TenantName tenantName) {
+        if ( ! tenants.checkThatTenantExists(tenantName))
+            throw new NotFoundException("Tenant '" + tenantName + "' was not found.");
     }
 
-    public static void checkThatTenantDoesNotExist(Tenants tenants, TenantName tenant) {
-        if (tenants.tenantsCopy().containsKey(tenant)) {
-            throw new BadRequestException("There already exists a tenant '" + tenant + "'");
-        }
-    }
-
-    public static TenantName getTenantFromRequest(HttpRequest request) {
+    public static TenantName getTenantNameFromRequest(HttpRequest request) {
         BindingMatch<?> bm = getBindingMatch(request, "http://*/application/v2/tenant/*");
         return TenantName.from(bm.group(2));
     }
 
-    public static TenantName getTenantFromSessionRequest(HttpRequest request) {
+    public static TenantName getTenantNameFromSessionRequest(HttpRequest request) {
         BindingMatch<?> bm = getBindingMatch(request, "http://*/application/v2/tenant/*/session*");
         return TenantName.from(bm.group(2));
     }
 
-    public static TenantName getTenantFromApplicationsRequest(HttpRequest request) {
+    public static TenantName getTenantNameFromApplicationsRequest(HttpRequest request) {
         BindingMatch<?> bm = getBindingMatch(request, "http://*/application/v2/tenant/*/application*");
         return TenantName.from(bm.group(2));
     }

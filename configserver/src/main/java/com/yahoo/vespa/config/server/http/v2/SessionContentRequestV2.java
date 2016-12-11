@@ -27,7 +27,7 @@ class SessionContentRequestV2 extends ContentRequest {
     }
 
     static ContentRequest create(HttpRequest request, LocalSession session) {
-        return new SessionContentRequestV2(request, session, Utils.getTenantFromSessionRequest(request));
+        return new SessionContentRequestV2(request, session, Utils.getTenantNameFromSessionRequest(request));
     }
 
     @Override

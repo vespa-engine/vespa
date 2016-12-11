@@ -37,7 +37,7 @@ public class ListApplicationsHandler extends HttpHandler {
 
     @Override
     public HttpResponse handleGET(HttpRequest request) {
-        TenantName tenantName = Utils.getTenantFromApplicationsRequest(request);
+        TenantName tenantName = Utils.getTenantNameFromApplicationsRequest(request);
         final String urlBase = Utils.getUrlBase(request, "/application/v2/tenant/" + tenantName + "/application/");
 
         List<ApplicationId> applicationIds = listApplicationIds(tenantName);
@@ -51,7 +51,8 @@ public class ListApplicationsHandler extends HttpHandler {
     }
 
     private List<ApplicationId> listApplicationIds(TenantName tenantName) {
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return applicationRepo.listApplications();
     }

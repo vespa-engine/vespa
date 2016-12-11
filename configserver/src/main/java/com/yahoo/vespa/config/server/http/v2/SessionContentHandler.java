@@ -6,16 +6,13 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.http.ContentHandler;
-import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.session.LocalSession;
-import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 
 import java.util.concurrent.Executor;
 
@@ -41,28 +38,27 @@ public class SessionContentHandler extends SessionHandler {
 
     @Override
     public HttpResponse handleGET(HttpRequest request) {
-        TenantName tenantName = Utils.getTenantFromSessionRequest(request);
-        log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+        LocalSession session = validateRequestAndGetSession(request);
         return contentHandler.get(SessionContentRequestV2.create(request, session));
     }
 
     @Override
     public HttpResponse handlePUT(HttpRequest request) {
-        TenantName tenantName = Utils.getTenantFromSessionRequest(request);
-        log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+        LocalSession session = validateRequestAndGetSession(request);
         return contentHandler.put(SessionContentRequestV2.create(request, session));
     }
 
     @Override
     public HttpResponse handleDELETE(HttpRequest request) {
-        TenantName tenantName = Utils.getTenantFromSessionRequest(request);
-        log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+        LocalSession session = validateRequestAndGetSession(request);
         return contentHandler.delete(SessionContentRequestV2.create(request, session));
     }
+
+    private LocalSession validateRequestAndGetSession(HttpRequest request) {
+        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
+        return applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
+    }
+
 }

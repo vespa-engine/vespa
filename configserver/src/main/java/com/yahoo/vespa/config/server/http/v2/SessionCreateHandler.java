@@ -9,7 +9,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.application.UriPattern;
-import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -25,7 +24,6 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.Executor;
-import java.util.logging.Logger;
 
 /**
  * A handler that is able to create a session from an application package,
@@ -36,7 +34,6 @@ import java.util.logging.Logger;
  * @since 5.1
  */
 public class SessionCreateHandler extends SessionHandler {
-    private static final Logger log = Logger.getLogger(SessionCreateHandler.class.getName());
     private final Tenants tenants;
     private static final String fromPattern = "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*";
     private final ConfigserverConfig configserverConfig;
@@ -55,9 +52,9 @@ public class SessionCreateHandler extends SessionHandler {
     @Override
     protected HttpResponse handlePOST(HttpRequest request) {
         Slime deployLog = createDeployLog();
-        TenantName tenantName = Utils.getTenantFromSessionRequest(request);
-        log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
+        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
         final SessionCreate sessionCreate = new SessionCreate(tenant.getSessionFactory(), tenant.getLocalSessionRepo(),
                 new SessionCreateResponseV2(tenant, deployLog, deployLog.get()));
         TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()));

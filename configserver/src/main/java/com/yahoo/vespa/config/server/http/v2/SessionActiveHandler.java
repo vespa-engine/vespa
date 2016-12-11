@@ -9,7 +9,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
@@ -44,9 +43,9 @@ public class SessionActiveHandler extends SessionActiveHandlerBase {
     @Override
     protected HttpResponse handlePUT(HttpRequest request) {
         TimeoutBudget timeoutBudget = getTimeoutBudget(request, SessionHandler.DEFAULT_ACTIVATE_TIMEOUT);
-        TenantName tenantName = Utils.getTenantFromSessionRequest(request);
-        log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
+        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
         LocalSession localSession = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
         activate(request, tenant.getLocalSessionRepo(), tenant.getActivateLock(), timeoutBudget, localSession);
         return new SessionActiveResponse(localSession.getMetaData().getSlime(), tenantName, request, localSession, zone);
