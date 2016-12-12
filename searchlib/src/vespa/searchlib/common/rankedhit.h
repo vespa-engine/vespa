@@ -5,9 +5,10 @@
 #pragma once
 
 #include "hitrank.h"
+#include <sys/types.h>
+#include <stdint.h>
 
-namespace search
-{
+namespace search {
 
 struct RankedHit {
     RankedHit() : _docId(0), _rankValue(0) { }

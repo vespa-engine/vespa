@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <map>
-#include <sstream>
 #include <vespa/log/log.h>
 LOG_SETUP("multilevelsort_test");
 
@@ -34,8 +31,7 @@ using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 
-class MultilevelSortTest : public vespalib::TestApp
-{
+class MultilevelSortTest {
 public:
     enum AttrType {
         INT8,
@@ -72,19 +68,16 @@ private:
     void fill(StringAttribute *attr, uint32_t size, const std::vector<std::string> &values);
     template<typename T, typename V>
     int compareTemplate(T *vector, uint32_t a, uint32_t b);
-    int compare(AttributeVector *vector, AttrType type,
-                uint32_t a, uint32_t b);
+    int compare(AttributeVector *vector, AttrType type, uint32_t a, uint32_t b);
     void sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
                       uint32_t unique, const std::vector<std::string> &strValues);
-    void testSortMethod(int method);
 public:
     MultilevelSortTest() : _sortMethod(0) { srand(time(NULL)); }
-    int Main();
+    void testSortMethod(int method);
 };
 
 template<typename T>
-void MultilevelSortTest::fill(IntegerAttribute *attr, uint32_t size,
-                              uint32_t unique)
+void MultilevelSortTest::fill(IntegerAttribute *attr, uint32_t size, uint32_t unique)
 {
     ASSERT_TRUE(attr->addDocs(size));
     std::vector<T> values;
@@ -106,8 +99,7 @@ void MultilevelSortTest::fill(IntegerAttribute *attr, uint32_t size,
 }
 
 template<typename T>
-void MultilevelSortTest::fill(FloatingPointAttribute *attr, uint32_t size,
-                              uint32_t unique)
+void MultilevelSortTest::fill(FloatingPointAttribute *attr, uint32_t size, uint32_t unique)
 {
     ASSERT_TRUE(attr->addDocs(size));
     std::vector<T> values;
@@ -130,8 +122,7 @@ void MultilevelSortTest::fill(FloatingPointAttribute *attr, uint32_t size,
 }
 
 void
-MultilevelSortTest::fill(StringAttribute *attr, uint32_t size,
-                         const std::vector<std::string> &values)
+MultilevelSortTest::fill(StringAttribute *attr, uint32_t size, const std::vector<std::string> &values)
 {
     ASSERT_TRUE(attr->addDocs(size));
     for (uint32_t i = 0; i < size; ++i) {
@@ -169,8 +160,7 @@ MultilevelSortTest::compareTemplate(T *vector, uint32_t a, uint32_t b)
 }
 
 int
-MultilevelSortTest::compare(AttributeVector *vector, AttrType type,
-                            uint32_t a, uint32_t b)
+MultilevelSortTest::compare(AttributeVector *vector, AttrType type, uint32_t a, uint32_t b)
 {
     if (type == INT8) {
         return compareTemplate<Int8, int8_t>(static_cast<Int8*>(vector), a, b);
@@ -337,18 +327,6 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
     delete [] buf;
 }
 
-int
-MultilevelSortTest::Main()
-{
-    TEST_INIT("multilevelsort_test");
-
-    testSortMethod(0);
-    testSortMethod(1);
-    testSortMethod(2);
-
-    TEST_DONE();
-}
-
 void MultilevelSortTest::testSortMethod(int method)
 {
     _sortMethod = method;
@@ -411,5 +389,34 @@ void MultilevelSortTest::testSortMethod(int method)
 
 }
 
+TEST("require that all sort methods behave the same")
+{
+    MultilevelSortTest test;
+    test.testSortMethod(0);
+    test.testSortMethod(1);
+    test.testSortMethod(2);
+}
 
-TEST_APPHOOK(MultilevelSortTest);
+TEST("test that [docid] translates to [lid][paritionid]") {
+    vespalib::Clock clock;
+    vespalib::Doom doom(clock, fastos::ClockSystem::now() + fastos::TimeStamp::SEC*10);
+    search::uca::UcaConverterFactory ucaFactory;
+    FastS_SortSpec fs(7, doom, ucaFactory);
+    RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
+    search::AttributeManager mgr;
+    search::AttributeContext ac(mgr);
+    fs.Init("[docid]", ac);
+    fs.initWithoutSorting(hits, 2);
+    constexpr uint8_t FIRST_ASC[6] = {0,0,0,91,0,7};
+    constexpr uint8_t SECOND_ASC[6] = {0,0,0,3,0,7};
+    constexpr uint8_t FIRST_DESC[6] = {0,0,0,91,0,7};
+    constexpr uint8_t SECOND_DESC[6] = {0,0,0,3,0,7};
+    auto sr1 = fs.getSortRef(0);
+    EXPECT_EQUAL(6u, sr1.second);
+    EXPECT_EQUAL(0, memcmp(FIRST_ASC, sr1.first, 6));
+    auto sr2 = fs.getSortRef(1);
+    EXPECT_EQUAL(6u, sr2.second);
+    EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 6));
+}
+
+TEST_MAIN() { TEST_RUN_ALL(); }
