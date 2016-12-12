@@ -3,11 +3,13 @@
 
 #include <vespa/searchlib/query/base.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace vsm
-{
+namespace vespalib {
+    class asciistream;
+}
+
+namespace vsm {
 
 /// Type to identify fields in documents.
 typedef unsigned int FieldIdT;

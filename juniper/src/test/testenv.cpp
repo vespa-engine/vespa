@@ -4,8 +4,6 @@
  */
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("");
 #include "testenv.h"
 #include <vespa/juniper/propreader.h>
 

@@ -9,9 +9,10 @@ vespa_add_library(searchlib_features OBJECT
     constant_feature.cpp
     debug_attribute_wait.cpp
     debug_wait.cpp
+    dense_tensor_attribute_executor.cpp
     distancefeature.cpp
     distancetopathfeature.cpp
-    dense_tensor_attribute_executor.cpp
+    documenttestutils.cpp
     dotproductfeature.cpp
     element_completeness_feature.cpp
     element_similarity_feature.cpp
@@ -57,7 +58,7 @@ vespa_add_library(searchlib_features OBJECT
     termfeature.cpp
     terminfofeature.cpp
     text_similarity_feature.cpp
-        documenttestutils.cpp
+    utils.cpp
     valuefeature.cpp
     weighted_set_parser.cpp
     DEPENDS

@@ -4,6 +4,10 @@
 #include <vespa/searchlib/expression/unaryfunctionnode.h>
 
 namespace search {
+    namespace attribute {
+        class IAttributeVector;
+        class IAttributeContext;
+    }
 namespace expression {
 
 class ArrayAtLookup : public UnaryFunctionNode

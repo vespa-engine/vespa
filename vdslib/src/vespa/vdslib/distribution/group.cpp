@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdslib/distribution/group.h>
+#include "group.h"
 
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <algorithm>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <ostream>
 
 namespace storage {
 namespace lib {
@@ -195,5 +195,12 @@ Group::getConfigHash(vespalib::asciistream& out) const
     out << ')';
 }
 
-} // lib
-} // storage
+vespalib::string
+Group::getDistributionConfigHash() const {
+    vespalib::asciistream ost;
+    getConfigHash(ost);
+    return ost.str();
+}
+
+}
+}

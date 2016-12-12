@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("objectdump_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/identifiable.h>
-#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/objects/visit.hpp>
 
 #define CID_Base 10000000
 #define CID_Foo  10000001
@@ -31,18 +29,18 @@ IMPLEMENT_IDENTIFIABLE(Baz, Base);
 struct Bar : public Base
 {
     DECLARE_IDENTIFIABLE(Bar);
-    bool        _bool;
-    int8_t      _int8;
-    uint8_t     _uint8;
-    int16_t     _int16;
-    uint16_t    _uint16;
-    int32_t     _int32;
-    uint32_t    _uint32;
-    int64_t     _int64;
-    uint64_t    _uint64;
-    float       _float;
-    double      _double;
-    std::string _string;
+    bool             _bool;
+    int8_t           _int8;
+    uint8_t          _uint8;
+    int16_t          _int16;
+    uint16_t         _uint16;
+    int32_t          _int32;
+    uint32_t         _uint32;
+    int64_t          _int64;
+    uint64_t         _uint64;
+    float            _float;
+    double           _double;
+    vespalib::string _string;
     Bar() : _bool(true), _int8(-1), _uint8(1), _int16(-2), _uint16(2),
             _int32(-4), _uint32(4), _int64(-8), _uint64(8),
             _float(2.5), _double(2.75), _string("bla bla") {}

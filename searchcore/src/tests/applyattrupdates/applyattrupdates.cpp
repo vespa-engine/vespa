@@ -1,27 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/config/config-documenttypes.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/doublefieldvalue.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
-#include <vespa/log/log.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <cmath>
+
+#include <vespa/log/log.h>
 
 LOG_SETUP("applyattrupdates_test");
 

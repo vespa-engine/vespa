@@ -1,17 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/visiting/visitor.h>
-
+#include "visitor.h"
+#include "visitormetrics.h"
 #include <vespa/log/log.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storage/persistence/messages.h>
-#include <vespa/storage/visiting/visitormetrics.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
-#include <ostream>
+#include <vespa/document/select/node.h>
 #include <sstream>
 #include <unordered_map>
 #include <cmath>

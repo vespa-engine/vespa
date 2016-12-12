@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
-#include <vespa/config/common/configcontext.h>
+#include <vespa/config/common/iconfigcontext.h>
+#include <vespa/config/configgen/configinstance.h>
 
 namespace config {
+
+class SourceSpec;
 
 /**
  * A ConfigUri is a single representation of a configId and its source. The
@@ -31,7 +33,7 @@ public:
      * Construct a config URI from a given config id.
      * @param configId The config id.
      */
-    ConfigUri(const vespalib::stringref &configId) : ConfigUri(vespalib::string(configId)) {}
+    ConfigUri(vespalib::stringref configId) : ConfigUri(vespalib::string(configId)) {}
 
     /**
      * Construct a config URI from a given config id.
@@ -97,9 +99,9 @@ public:
     bool empty() const { return _empty; }
 
 private:
-    vespalib::string _configId;
+    vespalib::string   _configId;
     IConfigContext::SP _context;
-    bool _empty;
+    bool               _empty;
 };
 
 } // namespace config

@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <iostream>
+#include "statbucketlistoperation.h"
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
+#include <sstream>
 
 namespace storage {
 namespace distributor {

@@ -187,12 +187,10 @@ DocumentSelectParserTest::createDocs()
         mval.put(document::IntFieldValue(7), document::StringFieldValue("c"));
         _doc.back()->setValue("mymap", mval);
 
-        MapFieldValue
-            amval(_doc.back()->getField("structarrmap").getDataType());
+        MapFieldValue amval(_doc.back()->getField("structarrmap").getDataType());
         amval.put(StringFieldValue("foo"), aval);
 
-        ArrayFieldValue
-            abval(_doc.back()->getField("structarray").getDataType());
+        ArrayFieldValue abval(_doc.back()->getField("structarray").getDataType());
         {
             StructFieldValue sval1(aval.getNestedType());
             sval1.set("key", 17);
@@ -277,8 +275,7 @@ DocumentSelectParserTest::createDocs()
 }
 
 namespace {
-void doVerifyParse(select::Node *node, const std::string &query,
-                   const char *expected) {
+void doVerifyParse(select::Node *node, const std::string &query, const char *expected) {
     std::string message("Query "+query+" failed to parse.");
     CPPUNIT_ASSERT_MESSAGE(message, node != 0);
     std::ostringstream actual;

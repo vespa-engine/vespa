@@ -16,6 +16,7 @@
 #include <vespa/vespalib/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/tensor/serialization/typed_binary_format.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 using search::feature_t;
 using namespace search::fef;

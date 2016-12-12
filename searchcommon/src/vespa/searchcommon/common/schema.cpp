@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+#include "schema.h"
 #include <fstream>
 #include <vespa/config/common/configparser.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/arraysize.h>
-#include "schema.h"
+#include <vespa/log/log.h>
 LOG_SETUP(".index.schema");
 
 using namespace config;
@@ -69,76 +68,10 @@ namespace index {
 
 const uint32_t Schema::UNKNOWN_FIELD_ID(std::numeric_limits<uint32_t>::max());
 
-Schema::DataType Schema::dataTypeFromName(const vespalib::stringref &name) {
-    if      (name == "UINT1")   { return UINT1; }
-    else if (name == "UINT2")   { return UINT2; }
-    else if (name == "UINT4")   { return UINT4; }
-    else if (name == "INT8")    { return INT8; }
-    else if (name == "INT16")   { return INT16; }
-    else if (name == "INT32")   { return INT32; }
-    else if (name == "INT64")   { return INT64; }
-    else if (name == "FLOAT")   { return FLOAT; }
-    else if (name == "DOUBLE")  { return DOUBLE; }
-    else if (name == "STRING")  { return STRING; }
-    else if (name == "RAW")     { return RAW; }
-    else if (name == "BOOLEANTREE") { return BOOLEANTREE; }
-    else if (name == "TENSOR") { return TENSOR; }
-    else {
-        throw InvalidConfigException("Illegal enum value '" + name + "'");
-    }
-}
-
-const char *datatype_str[] = { "UINT1",
-                               "UINT2",
-                               "UINT4",
-                               "INT8",
-                               "INT16",
-                               "INT32",
-                               "INT64",
-                               "FLOAT",
-                               "DOUBLE",
-                               "STRING",
-                               "RAW",
-                               "FEATURE_NOTUSED",
-                               "BOOLEANTREE",
-                               "TENSOR" };
-
-vespalib::string Schema::getTypeName(DataType type) {
-    if (type > vespalib::arraysize(datatype_str)) {
-        vespalib::asciistream ost;
-        ost << "UNKNOWN(" << type << ")";
-        return ost.str();
-    }
-    return datatype_str[type];
-}
-
-Schema::CollectionType Schema::collectionTypeFromName(
-        const vespalib::stringref &name) {
-    if (name == "SINGLE") { return SINGLE; }
-    else if (name == "ARRAY") { return ARRAY; }
-    else if (name == "WEIGHTEDSET") { return WEIGHTEDSET; }
-    else {
-        throw InvalidConfigException("Illegal enum value '" + name + "'");
-    }
-}
-
-const char *collectiontype_str[] = { "SINGLE",
-                                     "ARRAY",
-                                     "WEIGHTEDSET" };
-
-vespalib::string Schema::getTypeName(CollectionType type) {
-    if (type > vespalib::arraysize(collectiontype_str)) {
-        vespalib::asciistream ost;
-        ost << "UNKNOWN(" << type << ")";
-        return ost.str();
-    }
-    return collectiontype_str[type];
-}
-
 Schema::Field::Field(const vespalib::stringref &n, DataType dt)
     : _name(n),
       _dataType(dt),
-      _collectionType(SINGLE),
+      _collectionType(schema::SINGLE),
       _timestamp(0)
 {
 }
@@ -155,10 +88,10 @@ Schema::Field::Field(const vespalib::stringref &n,
 // XXX: Resource leak if exception is thrown.
 Schema::Field::Field(const std::vector<vespalib::string> & lines)
     : _name(ConfigParser::parse<vespalib::string>("name", lines)),
-      _dataType(dataTypeFromName(ConfigParser::parse<vespalib::string>(
+      _dataType(schema::dataTypeFromName(ConfigParser::parse<vespalib::string>(
                               "datatype", lines))),
       _collectionType(
-              collectionTypeFromName(ConfigParser::parse<vespalib::string>(
+              schema::collectionTypeFromName(ConfigParser::parse<vespalib::string>(
                               "collectiontype", lines))),
       _timestamp(ConfigParser::parse<int64_t>("timestamp", lines, 0))
 {

@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include "stringfieldvalue.h"
+#include "literalfieldvalue.hpp"
 
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/serialization/annotationserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/document/serialization/util.h>
 #include <vespa/document/serialization/annotationdeserializer.h>
 #include <vespa/document/repo/fixedtyperepo.h>

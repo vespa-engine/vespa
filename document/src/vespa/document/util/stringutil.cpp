@@ -8,9 +8,8 @@
  *
  */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/util/stringutil.h>
-#include <vespa/vespalib/util/exception.h>
+#include "stringutil.h"
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <iomanip>

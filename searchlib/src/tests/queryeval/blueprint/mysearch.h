@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/objects/visit.hpp>
 
 namespace search {
 namespace queryeval {
@@ -16,12 +16,12 @@ public:
     typedef search::fef::MatchData               MatchData;
 
 private:
-    std::string _tag;
-    bool        _isLeaf;
-    bool        _isStrict;
-    MyChildren  _children;
-    TFMDA       _match;
-    MatchData  *_md;
+    vespalib::string _tag;
+    bool             _isLeaf;
+    bool             _isStrict;
+    MyChildren       _children;
+    TFMDA            _match;
+    MatchData       *_md;
 
     std::vector<uint32_t> _handles;
 

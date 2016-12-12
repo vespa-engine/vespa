@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
+#include "componentregisterimpl.h"
 #include <vespa/storageframework/storageframework.h>
+#include <vespa/metrics/metricmanager.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace storage {
 namespace framework {
@@ -19,8 +20,9 @@ ComponentRegisterImpl::ComponentRegisterImpl()
       _threadPool(0),
       _upgradeFlag(NO_UPGRADE_SPECIAL_HANDLING_ACTIVE),
       _shutdownListener(0)
-{
-}
+{ }
+
+ComponentRegisterImpl::~ComponentRegisterImpl() { }
 
 void
 ComponentRegisterImpl::registerComponent(ManagedComponent& mc)
@@ -139,12 +141,12 @@ ComponentRegisterImpl::registerMetric(metrics::Metric& m)
 }
 
 namespace {
-    struct MetricHookWrapper : public metrics::MetricManager::UpdateHook {
+    struct MetricHookWrapper : public metrics::UpdateHook {
         MetricUpdateHook& _hook;
 
         MetricHookWrapper(vespalib::stringref name,
                           MetricUpdateHook& hook)
-            : metrics::MetricManager::UpdateHook(name.c_str()),
+            : metrics::UpdateHook(name.c_str()),
               _hook(hook)
         {
         }
@@ -159,8 +161,7 @@ ComponentRegisterImpl::registerUpdateHook(vespalib::stringref name,
                                           SecondTime period)
 {
     vespalib::LockGuard lock(_componentLock);
-    metrics::MetricManager::UpdateHook::LP hookPtr(
-            new MetricHookWrapper(name, hook));
+    metrics::UpdateHook::LP hookPtr(new MetricHookWrapper(name, hook));
     _hooks.push_back(hookPtr);
     _metricManager->addMetricUpdateHook(*hookPtr, period.getTime());
 }

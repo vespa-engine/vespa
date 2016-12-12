@@ -17,12 +17,19 @@
  */
 #pragma once
 
-#include <vespa/metrics/metricmanager.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/storageframework/generic/component/managedcomponent.h>
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/status/statusreportermap.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/metrics/metricset.h>
+
+namespace metrics {
+
+    class MetricManager;
+    class UpdateHook;
+
+}
 
 namespace storage {
 namespace framework {
@@ -41,7 +48,7 @@ class ComponentRegisterImpl : public virtual ComponentRegister,
     std::vector<ManagedComponent*> _components;
 
     metrics::MetricSet _topMetricSet;
-    std::vector<metrics::MetricManager::UpdateHook::LP> _hooks;
+    std::vector<vespalib::LinkedPtr<metrics::UpdateHook>> _hooks;
     metrics::MetricManager* _metricManager;
     MemoryManagerInterface* _memoryManager;
     Clock* _clock;
@@ -53,6 +60,7 @@ public:
     typedef std::unique_ptr<ComponentRegisterImpl> UP;
 
     ComponentRegisterImpl();
+    ~ComponentRegisterImpl();
 
     bool hasMetricManager() const { return (_metricManager != 0); }
     metrics::MetricManager& getMetricManager() {
@@ -76,7 +84,7 @@ public:
     void registerUpdateHook(vespalib::stringref name,
                             MetricUpdateHook& hook,
                             SecondTime period);
-    metrics::MetricLockGuard getMetricManagerLock() override;
+    vespalib::MonitorGuard getMetricManagerLock() override;
     void registerShutdownListener(ShutdownListener&);
 
 };

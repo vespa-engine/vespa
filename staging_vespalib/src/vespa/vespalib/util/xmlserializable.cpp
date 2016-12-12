@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/xmlserializable.h>
-
-#include <sstream>
+#include <vespa/vespalib/util/xmlserializable.hpp>
 #include <vector>
 #include <vespa/vespalib/encoding/base64.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vespalib {
 namespace xml {
@@ -70,7 +67,7 @@ namespace {
     }
 
     const std::string xmlAttributeEscape(const std::string& s) {
-        std::ostringstream ost;
+        vespalib::asciistream ost;
         for (uint32_t i=0, n=s.size(); i<n; ++i) {
             if (s[i] == '"' || s[i] == '\n'
                 || escapedXmlChars[static_cast<uint8_t>(s[i])])
@@ -378,6 +375,21 @@ XmlAttribute::XmlAttribute(const XmlAttribute& attribute)
 {
 }
 
+XmlAttribute::XmlAttribute(const std::string& name, const char * value, uint32_t flags)
+        : _name(name),
+          _value(),
+          _next()
+{
+    vespalib::asciistream ost;
+    if (flags & HEX) ost << vespalib::hex << "0x";
+    ost << value;
+    _value = ost.str();
+    if (!isLegalName(name)) {
+        throw vespalib::IllegalArgumentException("Name '" + name + "' contains "
+                "illegal XML characters and cannot be used as attribute name");
+    }
+}
+
 XmlEndTag::XmlEndTag()
 {
 }
@@ -437,6 +449,22 @@ XmlSerializable::toXml(const std::string& indent) const
     printXml(xos);
     return ost.str();
 }
+using CharP = char *;
+using ConstCharP = const char *;
+
+template XmlAttribute::XmlAttribute(const std::string &, const std::string &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const vespalib::string &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const vespalib::stringref &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const CharP &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const ConstCharP &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const bool &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const int16_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const int32_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const int64_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const uint16_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const uint32_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const uint64_t &, unsigned int);
+template XmlAttribute::XmlAttribute(const std::string &, const double &, unsigned int);
 
 } // xml
 } // vespalib

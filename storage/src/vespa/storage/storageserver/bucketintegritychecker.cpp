@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/storageserver/bucketintegritychecker.h>
+#include "bucketintegritychecker.h"
 
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/storageutil/log.h>
@@ -9,6 +8,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config/config.h>
+#include <vespa/storage/bucketdb/lockablemap.hpp>
 
 LOG_SETUP(".bucketintegritychecker");
 

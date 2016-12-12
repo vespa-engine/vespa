@@ -75,6 +75,7 @@ using storage::spi::Timestamp;
 using vespalib::make_string;
 using vespalib::string;
 using namespace document::config_builder;
+using namespace search::index;
 
 using namespace proton;
 
@@ -175,17 +176,17 @@ BasicType
 convertDataType(Schema::DataType t)
 {
     switch (t) {
-    case Schema::INT32:
+    case schema::INT32:
         return BasicType::INT32;
-    case Schema::INT64:
+    case schema::INT64:
         return BasicType::INT64;
-    case Schema::FLOAT:
+    case schema::FLOAT:
         return BasicType::FLOAT;
-    case Schema::DOUBLE:
+    case schema::DOUBLE:
         return BasicType::DOUBLE;
-    case Schema::STRING:
+    case schema::STRING:
         return BasicType::STRING;
-    case Schema::BOOLEANTREE:
+    case schema::BOOLEANTREE:
         return BasicType::PREDICATE;
     default:
         throw std::runtime_error(make_string("Data type %u not handled", (uint32_t)t));
@@ -196,11 +197,11 @@ CollectionType
 convertCollectionType(Schema::CollectionType ct)
 {
     switch (ct) {
-    case Schema::SINGLE:
+    case schema::SINGLE:
         return CollectionType::SINGLE;
-    case Schema::ARRAY:
+    case schema::ARRAY:
         return CollectionType::ARRAY;
-    case Schema::WEIGHTEDSET:
+    case schema::WEIGHTEDSET:
         return CollectionType::WSET;
     default:
         throw std::runtime_error(make_string("Collection type %u not handled", (uint32_t)ct));
@@ -246,7 +247,7 @@ struct Fixture {
     void addAttribute(const char *name, U val,
                       Schema::DataType t, Schema::CollectionType ct) {
         T *attr = addAttribute<T>(name, t, ct);
-        if (ct == Schema::SINGLE) {
+        if (ct == schema::SINGLE) {
             attr->update(lid, val);
         } else {
             attr->append(lid, val + 1, dyn_weight);
@@ -275,43 +276,43 @@ struct Fixture {
         Result putRes(meta_store.get().put(gid, bucket_id, timestamp, inspect.getLid()));
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());
-        Schema::CollectionType ct = Schema::SINGLE;
+        schema::CollectionType ct = schema::SINGLE;
         addAttribute<IntegerAttribute>(
-                dyn_field_i, dyn_value_i, Schema::INT32, ct);
+                dyn_field_i, dyn_value_i, schema::INT32, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_field_d, dyn_value_d, Schema::DOUBLE, ct);
+                dyn_field_d, dyn_value_d, schema::DOUBLE, ct);
         addAttribute<StringAttribute>(
-                dyn_field_s, dyn_value_s, Schema::STRING, ct);
+                dyn_field_s, dyn_value_s, schema::STRING, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_field_n, Schema::FLOAT, ct);
+                dyn_field_n, schema::FLOAT, ct);
         addAttribute<IntegerAttribute>(
-                dyn_field_nai, Schema::INT32, ct);
+                dyn_field_nai, schema::INT32, ct);
         addAttribute<StringAttribute>(
-                dyn_field_nas, Schema::STRING, ct);
+                dyn_field_nas, schema::STRING, ct);
         addAttribute<IntegerAttribute>(
-                zcurve_field, dynamic_zcurve_value, Schema::INT64, ct);
+                zcurve_field, dynamic_zcurve_value, schema::INT64, ct);
         PredicateAttribute *attr = addAttribute<PredicateAttribute>(
-                dyn_field_p, Schema::BOOLEANTREE, ct);
+                dyn_field_p, schema::BOOLEANTREE, ct);
         attr->getIndex().indexEmptyDocument(lid);
         attr->commit();
-        ct = Schema::ARRAY;
+        ct = schema::ARRAY;
         addAttribute<IntegerAttribute>(
-                dyn_arr_field_i, dyn_value_i, Schema::INT32, ct);
+                dyn_arr_field_i, dyn_value_i, schema::INT32, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_arr_field_d, dyn_value_d, Schema::DOUBLE, ct);
+                dyn_arr_field_d, dyn_value_d, schema::DOUBLE, ct);
         addAttribute<StringAttribute>(
-                dyn_arr_field_s, dyn_value_s, Schema::STRING, ct);
+                dyn_arr_field_s, dyn_value_s, schema::STRING, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_arr_field_n, Schema::FLOAT, ct);
-        ct = Schema::WEIGHTEDSET;
+                dyn_arr_field_n, schema::FLOAT, ct);
+        ct = schema::WEIGHTEDSET;
         addAttribute<IntegerAttribute>(
-                dyn_wset_field_i, dyn_value_i, Schema::INT32, ct);
+                dyn_wset_field_i, dyn_value_i, schema::INT32, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_wset_field_d, dyn_value_d, Schema::DOUBLE, ct);
+                dyn_wset_field_d, dyn_value_d, schema::DOUBLE, ct);
         addAttribute<StringAttribute>(
-                dyn_wset_field_s, dyn_value_s, Schema::STRING, ct);
+                dyn_wset_field_s, dyn_value_s, schema::STRING, ct);
         addAttribute<FloatingPointAttribute>(
-                dyn_wset_field_n, Schema::FLOAT, ct);
+                dyn_wset_field_n, schema::FLOAT, ct);
     }
 };
 
@@ -405,7 +406,7 @@ TEST_F("require that attributes are patched into stored document", Fixture) {
 }
 
 TEST_F("require that attributes are patched into stored document unless also index field", Fixture) {
-    f.schema.addIndexField(Schema::IndexField(dyn_field_s, Schema::STRING));
+    f.schema.addIndexField(Schema::IndexField(dyn_field_s, schema::STRING));
     DocumentMetaData meta_data = f.retriever.getDocumentMetaData(doc_id);
     Document::UP doc = f.retriever.getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());

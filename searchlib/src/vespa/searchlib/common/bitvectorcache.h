@@ -4,6 +4,7 @@
 #include <vespa/searchlib/common/condensedbitvectors.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/fastos/dynamiclibrary.h>
 
 namespace search {
 

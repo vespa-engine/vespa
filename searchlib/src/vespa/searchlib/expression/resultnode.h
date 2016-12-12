@@ -4,6 +4,7 @@
 #include <vespa/searchlib/expression/expressionnode.h>
 #include <vespa/searchlib/expression/serializer.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/buffer.h>
 
 namespace search {
 namespace expression {

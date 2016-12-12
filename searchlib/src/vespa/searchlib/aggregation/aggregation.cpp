@@ -3,7 +3,7 @@
 #include "expressioncountaggregationresult.h"
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <stdexcept>
-#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/xxhash/xxhash.h>
 
 namespace search {

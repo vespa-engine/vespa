@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.attribute.document_field_retriever");
 #include "document_field_retriever.h"
-
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.attribute.document_field_retriever");
 
 using search::DocumentIdT;
 using document::ArrayFieldValue;
@@ -19,7 +19,7 @@ using document::Field;
 using document::FieldValue;
 using document::TensorFieldValue;
 using document::WeightedSetFieldValue;
-using search::index::Schema;
+using namespace search::index;
 using search::attribute::AttributeContent;
 using search::attribute::IAttributeVector;
 using search::attribute::WeightedType;
@@ -38,7 +38,7 @@ setValue(DocumentIdT lid,
          const IAttributeVector &attr)
 {
     switch (field.getCollectionType()) {
-    case Schema::SINGLE:
+    case schema::SINGLE:
     {
         if ( ! attr.isUndefined(lid) ) {
             AttributeContent<T> content;
@@ -49,7 +49,7 @@ setValue(DocumentIdT lid,
         }
         break;
     }
-    case Schema::ARRAY:
+    case schema::ARRAY:
     {
         AttributeContent<T> content;
         content.fill(attr, lid);
@@ -69,7 +69,7 @@ setValue(DocumentIdT lid,
         doc.setValue(f, *fv);
         break;
     }
-    case Schema::WEIGHTEDSET:
+    case schema::WEIGHTEDSET:
     {
         AttributeContent<WeightedType<T> > content;
         content.fill(attr, lid);
@@ -107,34 +107,34 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
                                  bool isIndexField)
 {
     switch (field.getDataType()) {
-    case Schema::UINT1:
-    case Schema::UINT2:
-    case Schema::UINT4:
-    case Schema::INT8:
-    case Schema::INT16:
-    case Schema::INT32:
-    case Schema::INT64:
+    case schema::UINT1:
+    case schema::UINT2:
+    case schema::UINT4:
+    case schema::INT8:
+    case schema::INT16:
+    case schema::INT32:
+    case schema::INT64:
         setValue<IAttributeVector::largeint_t>(
                 lid, doc, field, attr);
         break;
-    case Schema::FLOAT:
-    case Schema::DOUBLE:
+    case schema::FLOAT:
+    case schema::DOUBLE:
         setValue<double>(lid, doc, field, attr);
         break;
-    case Schema::STRING:
+    case schema::STRING:
         // If it is a stringfield we also need to check if
         // it is an index field. In that case we shall
         // keep the original in order to preserve annotations.
         if (isIndexField) {
             break;
         }
-    case Schema::RAW:
+    case schema::RAW:
         setValue<const char *>(lid, doc, field, attr);
         break;
-    case Schema::BOOLEANTREE:
+    case schema::BOOLEANTREE:
         // Predicate attribute doesn't store documents, it only indexes them.
         break;
-    case Schema::TENSOR:
+    case schema::TENSOR:
         // Tensor attribute is not authorative.  Partial updates must update
         // document store.
         break;

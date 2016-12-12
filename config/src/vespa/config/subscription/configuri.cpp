@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "configuri.h"
+#include "configinstancespec.h"
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config/helper/legacy.h>
-#include <vespa/config/subscription/sourcespec.h>
 
 namespace {
 bool checkEmpty(const vespalib::string & configId) {

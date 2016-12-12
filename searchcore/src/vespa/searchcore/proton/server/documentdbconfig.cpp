@@ -1,7 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "documentdbconfig.h"
+#include <vespa/config-summary.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/document/config/config-documenttypes.h>
 
 using namespace config;
 using namespace vespa::config::search::summary;
@@ -29,8 +35,7 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       _tuneFileDocumentDBChanged(false),
       _schemaChanged(false),
       _maintenanceChanged(false)
-{
-}
+{ }
 
 DocumentDBConfig::DocumentDBConfig(
                int64_t generation,
@@ -66,8 +71,7 @@ DocumentDBConfig::DocumentDBConfig(
       _maintenance(maintenance),
       _extraConfigs(extraConfigs),
       _orig()
-{
-}
+{ }
 
 
 DocumentDBConfig::
@@ -89,8 +93,9 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _maintenance(cfg._maintenance),
       _extraConfigs(cfg._extraConfigs),
       _orig(cfg._orig)
-{
-}
+{ }
+
+DocumentDBConfig::~DocumentDBConfig() { }
 
 bool
 DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const

@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdslib/container/mutabledocumentlist.h>
 
-#include <vespa/log/log.h>
+#include "mutabledocumentlist.h"
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using vespalib::nbostream;
-
-LOG_SETUP(".vdslib.container.mutabledocumentlist");
 
 namespace vdslib {
 MutableDocumentList::MutableDocumentList(const document::DocumentTypeRepo::SP & repo, char* buffer, uint32_t bufferSize, bool keepexisting)

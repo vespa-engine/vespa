@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "hitsaggregationresult.h"
 #include <vespa/vespalib/objects/visit.h>
 #include "fs4hit.h"
@@ -8,6 +7,9 @@
 #include <algorithm>
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vespalib/objects/objectoperation.h>
+#include <vespa/vespalib/objects/identifiable.hpp>
+
+
 
 namespace search {
 namespace aggregation {
@@ -15,6 +17,7 @@ namespace aggregation {
 using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
+using HitCP = vespalib::IdentifiablePtr<Hit>;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, HitList, ResultNode);
 
@@ -83,12 +86,12 @@ HitList::onSerialize(Serializer & os) const
 {
     os << (uint32_t)(_fs4hits.size() + _vdshits.size());
     for (uint32_t i(0); i < _fs4hits.size(); i++) {
-        Hit::CP hit(const_cast<FS4Hit *>(&_fs4hits[i]));
+        HitCP hit(const_cast<FS4Hit *>(&_fs4hits[i]));
         os << hit;
         hit.release();
     }
     for (uint32_t i(0); i < _vdshits.size(); i++) {
-        Hit::CP hit(const_cast<VdsHit *>(&_vdshits[i]));
+        HitCP hit(const_cast<VdsHit *>(&_vdshits[i]));
         os << hit;
         hit.release();
     }
@@ -102,7 +105,7 @@ HitList::onDeserialize(Deserializer & is)
 
     is >> count;
     for (uint32_t i(0); i < count; i++) {
-        Hit::CP hit;
+        HitCP hit;
         is >> hit;
         if (hit->inherits(FS4Hit::classId)) {
             _fs4hits.push_back(static_cast<const FS4Hit &>(*hit));

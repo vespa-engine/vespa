@@ -22,8 +22,11 @@
 #include <vespa/storage/bucketmover/run.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/storageframework/storageframework.h>
-#include <vespa/config-stor-distribution.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storage/common/servicelayercomponent.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/config/config.h>
 
 namespace storage {
 
@@ -47,7 +50,7 @@ class BucketMover : public StorageLink,
     std::list<RunStatistics> _history;
     vespalib::Monitor _wait;
     config::ConfigFetcher _configFetcher;
-    vespa::config::content::StorDistributionConfig::DiskDistribution _diskDistribution;
+    lib::Distribution::DiskDistribution _diskDistribution;
     uint32_t _maxSleepTime;
     framework::Thread::UP _thread;
 

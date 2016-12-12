@@ -41,8 +41,7 @@
 
 LOG_SETUP("dictionary_test");
 
-namespace search
-{
+namespace search {
 
 using namespace btree;
 using namespace datastore;
@@ -54,8 +53,7 @@ using diskindex::CheckPointFile;
 using vespalib::GenerationHandler;
 using test::InitRangeVerifier;
 
-namespace memoryindex
-{
+namespace memoryindex {
 
 typedef Dictionary::PostingList PostingList;
 typedef PostingList::Iterator PostingItr;
@@ -602,12 +600,10 @@ struct Fixture
 {
     Schema _schema;
     Fixture() : _schema() {
-        _schema.addIndexField(Schema::IndexField("f0", Schema::STRING));
-        _schema.addIndexField(Schema::IndexField("f1", Schema::STRING));
-        _schema.addIndexField(Schema::IndexField("f2", Schema::STRING,
-                                                 Schema::ARRAY));
-        _schema.addIndexField(Schema::IndexField("f3", Schema::STRING,
-                                                 Schema::WEIGHTEDSET));
+        _schema.addIndexField(Schema::IndexField("f0", schema::STRING));
+        _schema.addIndexField(Schema::IndexField("f1", schema::STRING));
+        _schema.addIndexField(Schema::IndexField("f2", schema::STRING, schema::ARRAY));
+        _schema.addIndexField(Schema::IndexField("f3", schema::STRING, schema::WEIGHTEDSET));
     }
     const Schema & getSchema() const { return _schema; }
 };
@@ -1167,14 +1163,9 @@ public:
     UriFixture()
         : _schema()
     {
-        _schema.addUriIndexFields(Schema::IndexField("iu",
-                                                     Schema::STRING));
-        _schema.addUriIndexFields(Schema::IndexField("iau",
-                                                     Schema::STRING,
-                                                     Schema::ARRAY));
-        _schema.addUriIndexFields(Schema::IndexField("iwu",
-                                                     Schema::STRING,
-                                                     Schema::WEIGHTEDSET));
+        _schema.addUriIndexFields(Schema::IndexField("iu", schema::STRING));
+        _schema.addUriIndexFields(Schema::IndexField("iau", schema::STRING, schema::ARRAY));
+        _schema.addUriIndexFields(Schema::IndexField("iwu", schema::STRING, schema::WEIGHTEDSET));
     }
     const Schema & getSchema() const { return _schema; }
 };
@@ -1380,7 +1371,7 @@ public:
     SingleFieldFixture()
         : _schema()
     {
-        _schema.addIndexField(Schema::IndexField("i", Schema::STRING));
+        _schema.addIndexField(Schema::IndexField("i", schema::STRING));
     }
     const Schema & getSchema() const { return _schema; }
 };

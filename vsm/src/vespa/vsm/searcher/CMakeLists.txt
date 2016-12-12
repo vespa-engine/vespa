@@ -15,4 +15,7 @@ vespa_add_library(vsm_vsmsearcher OBJECT
     utf8suffixstringfieldsearcher.cpp
     utf8exactstringfieldsearcher.cpp
     DEPENDS
+    vsm_vconfig
+    AFTER
+    vsm_vconfig
 )

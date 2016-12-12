@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
-
-#include <vespa/log/log.h>
+#include "deadlockdetector.h"
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vdslib/state/nodetype.h>
-//#include <vespalib/util/htmlutils.h>
 #include <vespa/storage/bucketmover/htmltable.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".deadlock.detector");
 
 namespace storage {

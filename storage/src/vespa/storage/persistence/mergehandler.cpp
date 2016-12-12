@@ -1,12 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/persistence/mergehandler.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
-#include <vespa/log/log.h>
+#include "mergehandler.h"
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/storage/common/bucketoperationlogger.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".persistence.mergehandler");
 
@@ -613,7 +614,7 @@ MergeHandler::applyDiffLocally(
 
     FlushGuard flushGuard(_spi, bucket, context);
 
-    document::DocumentTypeRepo::SP repo(_env._component.getTypeRepo());
+    std::shared_ptr<document::DocumentTypeRepo> repo(_env._component.getTypeRepo());
     assert(repo.get() != nullptr);
 
     uint32_t existingCount = entries.size();

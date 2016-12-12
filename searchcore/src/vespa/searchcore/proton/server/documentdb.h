@@ -37,6 +37,7 @@
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include "disk_mem_usage_forwarder.h"
+#include <vespa/metrics/updatehook.h>
 
 using vespa::config::search::core::ProtonConfig;
 
@@ -72,12 +73,12 @@ class DocumentDB : public IDocumentDBConfigOwner,
                    public search::transactionlog::SyncProxy
 {
 private:
-    class MetricsUpdateHook : public metrics::MetricManager::UpdateHook {
+    class MetricsUpdateHook : public metrics::UpdateHook {
         DocumentDBMetricsCollection _metrics;
         DocumentDB &_db;
     public:
         MetricsUpdateHook(DocumentDB &s, const std::string &doc_type, size_t maxNumThreads)
-            : metrics::MetricManager::UpdateHook("documentdb-hook"),
+            : metrics::UpdateHook("documentdb-hook"),
               _metrics(doc_type, maxNumThreads),
               _db(s) {}
         void updateMetrics(const MetricLockGuard & ) override { _db.updateMetrics(_metrics); }
@@ -316,7 +317,7 @@ public:
      *
      * @return metrics update hook
      **/
-    metrics::MetricManager::UpdateHook & getMetricsUpdateHook(void) {
+    metrics::UpdateHook & getMetricsUpdateHook(void) {
         return _metricsHook;
     }
 
@@ -440,7 +441,7 @@ public:
     // Implements IDocSubDB::IOwner
     void syncFeedView() override;
 
-    searchcorespi::IIndexManagerFactory::SP
+    std::shared_ptr<searchcorespi::IIndexManagerFactory>
     getIndexManagerFactory(const vespalib::stringref & name) const override;
 
     vespalib::string getName() const override { return _docTypeName.getName(); }

@@ -5,6 +5,7 @@
 #include "btreenode.h"
 #include "btreenodeallocator.h"
 #include "btreetraits.h"
+#include <vespa/fastos/dynamiclibrary.h>
 
 namespace search {
 namespace btree {

@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".result");
 #include "result.h"
 
 namespace mbus {
@@ -11,36 +9,31 @@ Result::Handover::Handover(bool a, const Error &e, Message *m)
     : _accepted(a),
       _error(e),
       _msg(m)
-{
-}
+{ }
 
 Result::Result()
     : _accepted(true),
       _error(),
       _msg()
-{
-}
+{ }
 
 Result::Result(const Error &err, Message::UP msg)
     : _accepted(false),
       _error(err),
       _msg(std::move(msg))
-{
-}
+{ }
 
 Result::Result(Result &&rhs)
     : _accepted(rhs._accepted),
       _error(rhs._error),
       _msg(std::move(rhs._msg))
-{
-}
+{ }
 
 Result::Result(const Handover &rhs)
     : _accepted(rhs._accepted),
       _error(rhs._error),
       _msg(rhs._msg)
-{
-}
+{ }
 
 bool
 Result::isAccepted() const

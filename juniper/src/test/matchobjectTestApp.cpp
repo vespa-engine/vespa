@@ -17,9 +17,7 @@
  * </pre>
  ****************************************************************************/
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
-LOG_SETUP("matchobjectTest");
 #include "matchobjectTest.h"
 #include "testenv.h"
 

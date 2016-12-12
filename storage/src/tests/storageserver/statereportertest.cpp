@@ -7,6 +7,7 @@
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
 #include <vespa/storage/storageserver/statereporter.h>
+#include <vespa/metrics/metricmanager.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>

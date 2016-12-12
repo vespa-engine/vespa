@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.feedhandler");
 #include "feedhandler.h"
 #include "feedstates.h"
 #include "replaypacketdispatcher.h"
 #include "tlcproxy.h"
+#include "ddbstate.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/documentreply.h>
 #include <vespa/documentapi/messagebus/messages/feedreply.h>
@@ -19,7 +17,9 @@ LOG_SETUP(".proton.server.feedhandler");
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandler.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
-#include "ddbstate.h"
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.feedhandler");
 
 using document::BucketId;
 using document::Document;

@@ -5,7 +5,6 @@
 #include <vespa/searchcore/proton/server/feedhandler.h>
 #include <vespa/searchcore/proton/server/feedstate.h>
 #include <vespa/searchcore/proton/server/ireplaypackethandler.h>
-#include <vespa/documentapi/messagebus/documentprotocol.h>
 
 namespace proton {
 

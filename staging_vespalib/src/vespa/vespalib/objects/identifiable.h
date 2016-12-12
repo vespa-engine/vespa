@@ -28,8 +28,6 @@
 #include "objectvisitor.h"
 
 #include <vespa/vespalib/util/memory.h>
-#include <vespa/vespalib/util/linkedptr.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 
 #define IDENTIFIABLE_CLASSID(cclass) CID_##cclass
 #define IDENTIFIABLE_CLASSID_NS(ns, cclass) CID_##ns##_##cclass
@@ -124,8 +122,7 @@
   virtual vespalib::Deserializer & onDeserialize(vespalib::Deserializer & is);
 
 
-namespace vespalib
-{
+namespace vespalib {
 
 class ObjectPredicate;
 class ObjectOperation;
@@ -233,12 +230,12 @@ public:
      * Given the unique registered id of a class it will look up the object describing it.
      * @return object describing the class.
      */
-    static const RuntimeClass * classFromId(unsigned id)         { return _register->classFromId(id); }
+    static const RuntimeClass * classFromId(unsigned id);
     /**
      * Given the unique registered name of a class it will look up the object describing it.
      * @return object describing the class.
      */
-    static const RuntimeClass * classFromName(const char * name) { return _register->classFromName(name); }
+    static const RuntimeClass * classFromName(const char * name);
     /**
      * Here you can provide an optional classloader.
      */
@@ -402,164 +399,7 @@ private:
     virtual Serializer & onSerialize(Serializer & os) const;
     virtual Deserializer & onDeserialize(Deserializer & is);
 
-    class Register {
-    public:
-        Register();
-        ~Register();
-        bool append(RuntimeClass * c);
-        bool erase(RuntimeClass * c);
-        const RuntimeClass * classFromId(unsigned id) const;
-        const RuntimeClass * classFromName(const char * name) const;
-        const char * id2Name(unsigned id) const;
-        unsigned name2Id(const char * name) const;
-        bool empty() const { return _listById.empty(); }
-    private:
-        struct GetId   { uint32_t operator() (const RuntimeClass * f) const { return f->id(); } };
-        struct HashId  { size_t operator() (const RuntimeClass * f) const { return f->id(); } };
-        struct EqualId { bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return a->id() == b->id(); } };
-        struct GetName   { const char * operator() (const RuntimeClass * f) const { return f->name(); } };
-        struct HashName  { size_t operator() (const RuntimeClass * f) const { return hashValue(f->name()); } };
-        struct EqualName { bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return strcmp(a->name(), b->name()) == 0; } };
-        typedef hash_set<RuntimeClass *, HashId, EqualId> IdList;
-        typedef hash_set<RuntimeClass *, HashName, EqualName> NameList;
-        IdList   _listById;
-        NameList _listByName;
-    };
-    static Register * _register;
     static ILoader  * _classLoader;
-};
-
-template <typename T>
-Serializer & Identifiable::serialize(const T & v, Serializer & os) {
-    uint32_t sz(v.size());
-    os.put(sizeField, sz);
-    for(size_t i(0); i < sz; i++) {
-        v[i].serialize(os);
-    }
-    return os;
-}
-
-template <typename T>
-Deserializer & Identifiable::deserialize(T & v, Deserializer & is) {
-    uint32_t sz(0);
-    is.get(sizeField, sz);
-    v.resize(sz);
-    for(size_t i(0); i < sz; i++) {
-        v[i].deserialize(is);
-    }
-    return is;
-}
-
-template <typename T>
-class IdentifiablePtr : public CloneablePtr<T>
-{
-public:
-    IdentifiablePtr(const T &t) : CloneablePtr<T>(t.clone()) {}
-    IdentifiablePtr(T * p=NULL) : CloneablePtr<T>(p) { }
-    int cmp(const IdentifiablePtr<T> &rhs) const {
-        const T *a = this->get();
-        const T *b = rhs.get();
-        if (a == 0) {
-            return (b == 0) ? 0 : -1;
-        }
-        return (b == 0) ? 1 : a->cmp(*b);
-    }
-    bool operator  < (const IdentifiablePtr<T> &rhs) const { return (cmp(rhs) < 0); }
-    bool operator  > (const IdentifiablePtr<T> &rhs) const { return (cmp(rhs) > 0); }
-    bool operator == (const IdentifiablePtr<T> &rhs) const { return (cmp(rhs) == 0); }
-    bool operator != (const IdentifiablePtr<T> &rhs) const { return (cmp(rhs) != 0); }
-    Serializer & serialize(Serializer & os) const {
-        if (this->get()) {
-            os.put(Identifiable::hasObjectField, uint8_t(1)) << *this->get();
-        } else {
-            os.put(Identifiable::hasObjectField, uint8_t(0));
-        }
-        return os;
-    }
-    Deserializer & deserialize(Deserializer & is) {
-        uint8_t hasObject;
-        is.get(Identifiable::hasObjectField, hasObject);
-        if (hasObject) {
-            this->reset(static_cast<T *>(Identifiable::create(is).release()));
-        }
-        return is;
-    }
-    friend Serializer & operator << (Serializer & os, const IdentifiablePtr<T> & agg) { return agg.serialize(os); }
-    friend Deserializer & operator >> (Deserializer & is, IdentifiablePtr<T> & agg)   { return agg.deserialize(is); }
-};
-
-template <typename T>
-class IdentifiableSharedPtr : public std::shared_ptr<T>
-{
-public:
-    IdentifiableSharedPtr(const T &t) : std::shared_ptr<T>(t.clone()) {}
-    IdentifiableSharedPtr(T * p=NULL) : std::shared_ptr<T>(p) { }
-    int cmp(const IdentifiableSharedPtr<T> &rhs) const {
-        const T *a = this->get();
-        const T *b = rhs.get();
-        if (a == 0) {
-            return (b == 0) ? 0 : -1;
-        }
-        return (b == 0) ? 1 : a->cmp(*b);
-    }
-    bool operator < (const IdentifiableSharedPtr<T> &rhs) const {
-        return (cmp(rhs) < 0);
-    }
-    Serializer & serialize(Serializer & os) const {
-        if (this->get()) {
-            os.put(Identifiable::hasObjectField, uint8_t(1)) << *this->get();
-        } else {
-            os.put(Identifiable::hasObjectField, uint8_t(0));
-        }
-        return os;
-    }
-    Deserializer & deserialize(Deserializer & is) {
-        uint8_t hasObject;
-        is.get(Identifiable::hasObjectField, hasObject);
-        if (hasObject) {
-            reset(static_cast<T *>(Identifiable::create(is).release()));
-        }
-        return is;
-    }
-    friend Serializer & operator << (Serializer & os, const IdentifiableSharedPtr<T> & agg) { return agg.serialize(os); }
-    friend Deserializer & operator >> (Deserializer & is, IdentifiableSharedPtr<T> & agg)   { return agg.deserialize(is); }
-};
-
-template <typename T>
-class IdentifiableLinkedPtr : public LinkedPtr<T>
-{
-public:
-    IdentifiableLinkedPtr(const T &t) : LinkedPtr<T>(t.clone()) {}
-    IdentifiableLinkedPtr(T * p=NULL) : LinkedPtr<T>(p) { }
-    int cmp(const IdentifiableLinkedPtr<T> &rhs) const {
-        const T *a = this->get();
-        const T *b = rhs.get();
-        if (a == 0) {
-            return (b == 0) ? 0 : -1;
-        }
-        return (b == 0) ? 1 : a->cmp(*b);
-    }
-    bool operator < (const IdentifiableLinkedPtr<T> &rhs) const {
-        return (cmp(rhs) < 0);
-    }
-    Serializer & serialize(Serializer & os) const {
-        if (this->get()) {
-            os.put(Identifiable::hasObjectField, uint8_t(1)) << *this->get();
-        } else {
-            os.put(Identifiable::hasObjectField, uint8_t(0));
-        }
-        return os;
-    }
-    Deserializer & deserialize(Deserializer & is) {
-        uint8_t hasObject;
-        is.get(Identifiable::hasObjectField, hasObject);
-        if (hasObject) {
-            this->reset(static_cast<T *>(Identifiable::create(is).release()));
-        }
-        return is;
-    }
-    friend Serializer & operator << (Serializer & os, const IdentifiableLinkedPtr<T> & agg) { return agg.serialize(os); }
-    friend Deserializer & operator >> (Deserializer & is, IdentifiableLinkedPtr<T> & agg)   { return agg.deserialize(is); }
 };
 
 }

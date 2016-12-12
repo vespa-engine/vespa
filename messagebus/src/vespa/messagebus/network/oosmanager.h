@@ -3,7 +3,7 @@
 
 #include <vespa/fnet/fnet.h>
 #include <set>
-#include <vespa/slobrok/sbmirror.h>
+#include <vespa/slobrok/imirrorapi.h>
 #include <string>
 #include <vespa/vespalib/util/sync.h>
 #include "oosclient.h"
@@ -22,15 +22,15 @@ public:
     /**
      * Convenience typedefs.
      */
-    typedef slobrok::api::MirrorAPI      MirrorAPI;
-    typedef MirrorAPI::SpecList          SpecList;
+    typedef slobrok::api::IMirrorAPI     IMirrorAPI;
+    typedef IMirrorAPI::SpecList          SpecList;
     typedef std::vector<OOSClient::SP>   ClientList;
     typedef std::set<string>             StringSet;
     typedef std::shared_ptr<StringSet> OOSSet;
 
 private:
-    FRT_Supervisor &_orb;
-    MirrorAPI      &_mirror;
+    FRT_Supervisor  &_orb;
+    IMirrorAPI      &_mirror;
     bool            _disabled;
     bool            _ready;
     vespalib::Lock  _lock;
@@ -64,7 +64,7 @@ public:
      * @param servicePattern The service pattern for oos servers.
      */
     OOSManager(FRT_Supervisor &orb,
-               slobrok::api::MirrorAPI &mirror,
+               IMirrorAPI &mirror,
                const string &servicePattern);
 
     /**

@@ -3,6 +3,19 @@
 
 #include <vespa/searchcore/proton/server/idocumentsubdb.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
+#include <vespa/searchcore/proton/docsummary/isummarymanager.h>
+#include <vespa/searchcorespi/index/iindexmanager.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
+#include <vespa/searchcore/proton/server/document_subdb_initializer.h>
+#include <vespa/searchcore/proton/server/isummaryadapter.h>
+#include <vespa/searchcore/proton/index/i_index_writer.h>
+#include <vespa/searchcore/proton/server/ifeedview.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
+#include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
+#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
+#include <vespa/searchcore/proton/server/reconfig_params.h>
+
+
 
 namespace proton {
 
@@ -10,6 +23,7 @@ namespace test {
 
 struct DummyDocumentSubDb : public IDocumentSubDB
 {
+    using IIndexManager = searchcorespi::IIndexManager;
     uint32_t                 _subDbId;
     DocumentMetaStoreContext _metaStoreCtx;
     ISummaryManager::SP      _summaryManager;
@@ -18,8 +32,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     IIndexWriter::SP         _indexWriter;
     std::unique_ptr<ExecutorThreadingService> _writeService;
 
-    DummyDocumentSubDb(std::shared_ptr<BucketDBOwner> bucketDB,
-                       uint32_t subDbId)
+    DummyDocumentSubDb(std::shared_ptr<BucketDBOwner> bucketDB, uint32_t subDbId)
         : _subDbId(subDbId),
           _metaStoreCtx(bucketDB),
           _summaryManager(),

@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".testdocrepo");
-
 #include "testdocrepo.h"
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/configbuilder.h>
+#include <vespa/config/print/fileconfigreader.h>
 
 using document::config_builder::Struct;
 using document::config_builder::Wset;
@@ -69,6 +66,15 @@ DocumenttypesConfig TestDocRepo::getDefaultConfig() {
 const DataType*
 TestDocRepo::getDocumentType(const vespalib::string &t) const {
     return _repo->getDocumentType(t);
+}
+
+DocumenttypesConfig readDocumenttypesConfig(const char *file_name) {
+    config::FileConfigReader<DocumenttypesConfig> reader(file_name);
+    return DocumenttypesConfig(*reader.read());
+}
+
+DocumenttypesConfig readDocumenttypesConfig(const std::string &file_name ) {
+    return readDocumenttypesConfig(file_name.c_str());
 }
 
 }  // namespace document

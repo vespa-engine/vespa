@@ -1,15 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/memfilepersistence/mapper/memfile_v1_serializer.h>
-#include <vespa/memfilepersistence/mapper/memfile_v1_verifier.h>
+
+#include "memfile_v1_serializer.h"
+#include "memfile_v1_verifier.h"
+
+#include "memfilemapper.h"
+#include "locationreadplanner.h"
+#include "uniqueslotgenerator.h"
+#include "simplememfileiobuffer.h"
 #include <vespa/memfilepersistence/common/exceptions.h>
-#include <vespa/memfilepersistence/mapper/memfilemapper.h>
-#include <vespa/memfilepersistence/mapper/locationreadplanner.h>
-#include <vespa/memfilepersistence/mapper/uniqueslotgenerator.h>
-#include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
 #include <vespa/vespalib/util/crc.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".persistence.memfilev1");
 

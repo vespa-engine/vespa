@@ -2,9 +2,13 @@
 
 #pragma once
 
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/serialization/util.h>
+#include <vector>
+
+namespace vespalib {
+    class nbostream;
+}
 
 namespace document {
 class AlternateSpanList;
@@ -16,8 +20,7 @@ class SimpleSpanList;
 
 class AnnotationDeserializer {
 public:
-    AnnotationDeserializer(const FixedTypeRepo &repo, vespalib::nbostream &stream,
-                           uint16_t version);
+    AnnotationDeserializer(const FixedTypeRepo &repo, vespalib::nbostream &stream, uint16_t version);
 
     std::unique_ptr<SpanTree> readSpanTree();
     std::unique_ptr<SpanNode> readSpanNode();

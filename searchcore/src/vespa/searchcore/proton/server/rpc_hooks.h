@@ -18,7 +18,7 @@ namespace proton {
 class Proton;
 class DocsumByRPC;
 
-class RPCHooksBase : public FRT_Invokable, public vespalib::noncopyable
+class RPCHooksBase : public FRT_Invokable
 {
 private:
     class Session {
@@ -101,6 +101,8 @@ public:
             my_oos_name.append("/feed-destination");
         }
     };
+    RPCHooksBase(const RPCHooksBase &) = delete;
+    RPCHooksBase & operator = (const RPCHooksBase &) = delete;
     RPCHooksBase(Params &params);
     virtual ~RPCHooksBase();
     void close();

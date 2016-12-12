@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.fast_access_doc_subdb");
-
 #include "attributeadapterfactory.h"
 #include "emptysearchview.h"
 #include "fast_access_doc_subdb.h"
 #include "fast_access_document_retriever.h"
+#include "document_subdb_initializer.h"
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
@@ -20,6 +17,8 @@ LOG_SETUP(".proton.server.fast_access_doc_subdb");
 #include <vespa/searchcore/proton/reprocessing/document_reprocessing_handler.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.server.fast_access_doc_subdb");
 
 using proton::matching::SessionManager;
 using search::AttributeGuard;
@@ -40,12 +39,9 @@ struct AttributeGuardComp
 
     AttributeGuardComp(const vespalib::string &n)
         : name(n)
-    {
-    }
+    { }
 
-    bool
-    operator()(const AttributeGuard &rhs) const
-    {
+    bool operator()(const AttributeGuard &rhs) const {
         return name == rhs->getName();
     };
 };
@@ -193,8 +189,7 @@ FastAccessDocSubDB::createReprocessingTask(IReprocessingInitializer &initializer
             docIdLimit));
 }
 
-FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg,
-                                       const Context &ctx)
+FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg, const Context &ctx)
     : Parent(cfg._storeOnlyCfg, ctx._storeOnlyCtx),
       _hasAttributes(cfg._hasAttributes),
       _fastAccessAttributesOnly(cfg._fastAccessAttributesOnly),
@@ -205,8 +200,9 @@ FastAccessDocSubDB::FastAccessDocSubDB(const Config &cfg,
       _addMetrics(cfg._addMetrics),
       _metricsWireService(ctx._metricsWireService),
       _docIdLimit(0)
-{
-}
+{ }
+
+FastAccessDocSubDB::~FastAccessDocSubDB() { }
 
 DocumentSubDbInitializer::UP
 FastAccessDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot,

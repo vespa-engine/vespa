@@ -47,6 +47,7 @@ LOG_SETUP("vespadocumentserializer_test");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/document/base/exceptions.h>
 
 using document::DocumenttypesConfig;
 using vespalib::File;

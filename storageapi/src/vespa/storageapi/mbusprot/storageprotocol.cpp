@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageapi/mbusprot/storageprotocol.h>
+#include "storageprotocol.h"
+#include "protocolserialization.h"
+#include "serializationhelper.h"
+#include "storagecommand.h"
+#include "storagereply.h"
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/document/util/stringutil.h>
 
 #include <vespa/log/log.h>
-#include <vespa/storageapi/mbusprot/protocolserialization.h>
-#include <vespa/storageapi/mbusprot/serializationhelper.h>
-#include <vespa/storageapi/mbusprot/storagecommand.h>
-#include <vespa/storageapi/mbusprot/storagereply.h>
-#include <vespa/vespalib/util/exceptions.h>
-
 LOG_SETUP(".storage.api.mbusprot.protocol");
 
 namespace storage {

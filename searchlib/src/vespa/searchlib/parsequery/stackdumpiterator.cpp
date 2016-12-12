@@ -10,7 +10,7 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/nbo.h>
 
 using search::query::PredicateQueryTerm;
 
@@ -56,7 +56,7 @@ vespalib::string SimpleQueryStackDumpIterator::readString(const char *&p) {
 
 uint64_t SimpleQueryStackDumpIterator::readUint64(const char *&p) {
     if (p + sizeof(uint64_t) > _bufEnd) throw false;
-    uint64_t l = vespalib::nbostream::n2h(*(const uint64_t *)p);
+    uint64_t l = vespalib::nbo::n2h(*(const uint64_t *)p);
     p += sizeof(uint64_t);
     return l;
 }
@@ -177,7 +177,7 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
         if (p + 8 > _bufEnd) return false;
         _generatedTerm.clear();
-        _generatedTerm << vespalib::nbostream::n2h(*(const uint64_t *)p);
+        _generatedTerm << vespalib::nbo::n2h(*(const uint64_t *)p);
         _currTerm = _generatedTerm.c_str();
         _currTermLen = _generatedTerm.size();
         p += 8;
@@ -269,9 +269,9 @@ SimpleQueryStackDumpIterator::next()
         if (_currType == ParseItem::ITEM_WAND) {
             p += vespalib::compress::Integer::decompressPositive(tmp, p); // targetNumHits
             _currArg1 = tmp;
-            _currArg2 = vespalib::nbostream::n2h(*reinterpret_cast<const double *>(p)); // scoreThreshold
+            _currArg2 = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); // scoreThreshold
             p += sizeof(double);
-            _currArg3 = vespalib::nbostream::n2h(*reinterpret_cast<const double *>(p)); // thresholdBoostFactor
+            _currArg3 = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); // thresholdBoostFactor
             p += sizeof(double);
         } else {
             _currArg1 = 0;

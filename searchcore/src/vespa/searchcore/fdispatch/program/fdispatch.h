@@ -9,6 +9,8 @@
 #include <vespa/searchlib/engine/transportserver.h>
 #include <vespa/searchcore/config/config-fdispatchrc.h>
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/vespalib/util/random.h>
 

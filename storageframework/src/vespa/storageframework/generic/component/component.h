@@ -71,7 +71,7 @@
 #include <vespa/storageframework/generic/thread/runnable.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/storageframework/generic/clock/clock.h>
-#include <vespa/metrics/metricmanager.h>
+#include <vespa/vespalib/util/sync.h>
 #include <atomic>
 
 namespace storage {
@@ -162,7 +162,7 @@ public:
      * If you need to modify the metric sets that have been registered, you need
      * to hold the metric manager lock while you do it.
      */
-    metrics::MetricLockGuard getMetricManagerLock();
+    vespalib::MonitorGuard getMetricManagerLock();
 
     /** Get the name of the component. Must be a unique name. */
     const vespalib::string& getName() const { return _name; }

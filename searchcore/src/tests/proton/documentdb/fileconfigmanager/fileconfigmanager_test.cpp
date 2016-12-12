@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("fileconfigmanager_test");
 
 #include "config-mycfg.h"
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
@@ -9,6 +6,13 @@ LOG_SETUP("fileconfigmanager_test");
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
+#include <vespa/config-summary.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
+
 
 using namespace config;
 using namespace document;
@@ -38,12 +42,12 @@ Schema::SP
 getSchema(int step)
 {
     Schema::SP schema(new Schema);
-    schema->addIndexField(Schema::IndexField("foo1", Schema::STRING));
+    schema->addIndexField(Schema::IndexField("foo1", schema::STRING));
     if (step < 2) {
-        schema->addIndexField(Schema::IndexField("foo2", Schema::STRING));
+        schema->addIndexField(Schema::IndexField("foo2", schema::STRING));
     }
     if (step < 1) {
-        schema->addIndexField(Schema::IndexField("foo3", Schema::STRING));
+        schema->addIndexField(Schema::IndexField("foo3", schema::STRING));
     }
     return schema;
 }
@@ -76,7 +80,7 @@ Schema
 makeHistorySchema()
 {
     Schema hs;
-    hs.addIndexField(Schema::IndexField("history", Schema::STRING));
+    hs.addIndexField(Schema::IndexField("history", schema::STRING));
     return hs;
 }
 

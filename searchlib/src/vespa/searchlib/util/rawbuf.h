@@ -5,6 +5,9 @@
 #pragma once
 
 #include <vespa/searchlib/common/hitrank.h>
+#include <stdint.h>
+#include <assert.h>
+#include <sys/types.h>
 
 class FastOS_FileInterface;
 

@@ -7,6 +7,7 @@
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/config-messagetyperouteselectorpolicy.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configfetcher.h>

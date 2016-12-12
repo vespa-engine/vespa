@@ -1,19 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.searchabledocsubdb");
-
 #include "searchabledocsubdb.h"
 #include "fast_access_document_retriever.h"
+#include "document_subdb_initializer.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
-#include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/tensor/default_tensor_engine.h>
@@ -36,13 +31,10 @@ using vespalib::IllegalStateException;
 using vespalib::ThreadStackExecutorBase;
 using namespace searchcorespi;
 
-
 namespace proton {
 
-SearchableDocSubDB::SearchableDocSubDB(const Config &cfg,
-                                       const Context &ctx)
-    : FastAccessDocSubDB(cfg._fastUpdCfg,
-                         ctx._fastUpdCtx),
+SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
+    : FastAccessDocSubDB(cfg._fastUpdCfg, ctx._fastUpdCtx),
       IIndexManager::Reconfigurer(),
       _indexMgr(),
       _indexWriter(),
@@ -55,8 +47,7 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg,
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _numSearcherThreads(cfg._numSearcherThreads),
       _warmupExecutor(ctx._warmupExecutor)
-{
-}
+{ }
 
 SearchableDocSubDB::~SearchableDocSubDB()
 {

@@ -13,7 +13,6 @@
 #include "searchcontext.h"
 #include "summaryadapter.h"
 #include "tlcproxy.h"
-#include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/schemautil.h>

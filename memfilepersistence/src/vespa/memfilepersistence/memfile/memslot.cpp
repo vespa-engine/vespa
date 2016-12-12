@@ -26,8 +26,7 @@ MemSlot::MemSlot(const MemSlot& other)
       _gid(other._gid),
       _flags(other._flags),
       _checksum(other._checksum)
-{
-}
+{ }
 
 MemSlot::MemSlot(const GlobalId& gid, Timestamp time,
                  DataLocation header, DataLocation body,
@@ -38,12 +37,9 @@ MemSlot::MemSlot(const GlobalId& gid, Timestamp time,
       _gid(gid),
       _flags(flags),
       _checksum(checksum)
-{
-}
+{ }
 
-MemSlot::~MemSlot()
-{
-}
+MemSlot::~MemSlot() { }
 
 MemSlot::MemoryUsage
 MemSlot::getCacheSize() const
@@ -128,6 +124,20 @@ MemSlot::MemoryUsage::toString() const
        << ")";
     return ss.str();
 }
+
+std::string
+MemSlot::toString(bool verbose) const {
+    std::ostringstream ost;
+    print(ost, verbose, "");
+    return ost.str();
+}
+
+std::ostream&
+operator<<(std::ostream& out, const MemSlot& slot) {
+    slot.print(out, false, "");
+    return out;
+}
+
 
 } // memfile
 } // storage

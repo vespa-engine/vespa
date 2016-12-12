@@ -1,14 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Unit tests for factoryregistry.
-
-#include <vespa/log/log.h>
-LOG_SETUP("factoryregistry_test");
-#include <vespa/fastos/fastos.h>
 
 #include <vespa/searchcorespi/plugin/factoryregistry.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using vespalib::string;
 using namespace searchcorespi;

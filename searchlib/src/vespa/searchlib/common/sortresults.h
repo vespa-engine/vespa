@@ -6,7 +6,6 @@
 
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vespa/searchlib/common/sortspec.h>
-#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <algorithm>
 #include <vector>
 #include <vespa/vespalib/util/array.h>
@@ -15,6 +14,12 @@
 #define PREFETCH 64
 #define INSERT_SORT_LEVEL 80
 
+namespace search {
+    namespace attribute {
+        class IAttributeContext;
+        class IAttributeVector;
+    }
+}
 /**
  * Sort the given array of results.
  *
@@ -22,8 +27,7 @@
  * @param n the number of hits
  * @param ntop the number of hits needed in correct order
  **/
-void FastS_SortResults(search::RankedHit a[],
-                       unsigned int n, unsigned int ntop);
+void FastS_SortResults(search::RankedHit a[], unsigned int n, unsigned int ntop);
 
 //-----------------------------------------------------------------------------
 
@@ -45,8 +49,7 @@ struct FastS_IResultSorter {
      * @param n the number of hits
      * @param ntop the number of hits needed in correct order
      **/
-    virtual void sortResults(search::RankedHit a[], uint32_t n,
-                             uint32_t ntop) = 0;
+    virtual void sortResults(search::RankedHit a[], uint32_t n, uint32_t ntop) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -58,10 +61,8 @@ private:
 
 public:
     static FastS_DefaultResultSorter *instance() { return &__instance; }
-    virtual bool completeSort() const { return false; }
-    virtual void sortResults(search::RankedHit a[], uint32_t n,
-                             uint32_t ntop)
-    {
+    bool completeSort() const override { return false; }
+    void sortResults(search::RankedHit a[], uint32_t n, uint32_t ntop) override {
         return FastS_SortResults(a, n, ntop);
     }
 };
@@ -75,8 +76,8 @@ private:
 
 public:
     static FastS_DocIdResultSorter *Instance() { return &__instance; }
-    virtual bool completeSort() const { return true; }
-    virtual void sortResults(search::RankedHit[], uint32_t, uint32_t) {
+    bool completeSort() const override { return true; }
+    void sortResults(search::RankedHit[], uint32_t, uint32_t) override {
         // already sorted on docid
     }
 };
@@ -103,8 +104,7 @@ public:
             : _type(type),
               _vector(vector),
               _converter(converter)
-        {
-        }
+        { }
         uint32_t                 _type;
         const search::attribute::IAttributeVector *_vector;
         const search::common::BlobConverter *_converter;
@@ -122,6 +122,7 @@ private:
     typedef vespalib::Array<uint8_t> BinarySortData;
     typedef vespalib::Array<SortData> SortDataArray;
     using ConverterFactory = search::common::ConverterFactory;
+    uint16_t                 _partitionId;
     vespalib::Doom           _doom;
     const ConverterFactory & _ucaFactory;
     int                      _method;
@@ -137,16 +138,16 @@ private:
 public:
     FastS_SortSpec(const FastS_SortSpec &) = delete;
     FastS_SortSpec & operator = (const FastS_SortSpec &) = delete;
-    FastS_SortSpec(const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method=2);
-    virtual ~FastS_SortSpec();
+    FastS_SortSpec(uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory, int method=2);
+    ~FastS_SortSpec();
 
     std::pair<const char *, size_t> getSortRef(size_t i) const {
         return std::pair<const char *, size_t>((const char*)(&_binarySortData[0] + _sortDataArray[i]._idx),
                                                _sortDataArray[i]._len);
     }
     bool Init(const vespalib::string & sortSpec, search::attribute::IAttributeContext & vecMan);
-    virtual bool completeSort() const { return true; }
-    virtual void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn);
+    bool completeSort() const override { return true; }
+    void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;
     uint32_t getSortDataSize(uint32_t offset, uint32_t n);
     void copySortData(uint32_t offset, uint32_t n, uint32_t *idx, char *buf);
     void freeSortData();

@@ -1,26 +1,35 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "iroutablefactory.h"
-#include "routablerepository.h"
-#include "routingpolicyrepository.h"
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/messagebus/systemstate/systemstate.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/iprotocol.h>
 #include <vespa/messagebus/reply.h>
 #include <vespa/messagebus/routing/routingcontext.h>
 
+namespace vespalib {
+    class VersionSpecification;
+}
+namespace document {
+    class DocumentTypeRepo;
+    class ByteBuffer;
+}
+
 namespace documentapi {
 
 class LoadTypeSet;
+class RoutingPolicyRepository;
+class RoutableRepository;
+class SystemState;
+class IRoutingPolicyFactory;
+class IRoutableFactory;
 
 class DocumentProtocol : public mbus::IProtocol {
 private:
-    RoutingPolicyRepository _routingPolicyRepository;
-    RoutableRepository      _routableRepository;
-    SystemState::UP         _systemState;
-    document::DocumentTypeRepo::SP _repo;
+    std::unique_ptr<RoutingPolicyRepository>    _routingPolicyRepository;
+    std::unique_ptr<RoutableRepository>         _routableRepository;
+    std::unique_ptr<SystemState>                _systemState;
+    std::shared_ptr<document::DocumentTypeRepo> _repo;
 
 public:
     /**
@@ -190,8 +199,9 @@ public:
      * @param configId The id to use when subscribing to config.
      */
     DocumentProtocol(const LoadTypeSet& loadTypes,
-                     document::DocumentTypeRepo::SP repo,
+                     std::shared_ptr<document::DocumentTypeRepo> repo,
                      const string &configId = "");
+    ~DocumentProtocol();
 
     /**
      * Adds a new routable factory to this protocol. This method is thread-safe, and may be invoked on a
@@ -202,7 +212,7 @@ public:
      * @param factory The factory to add.
      * @return This, to allow chaining.
      */
-    DocumentProtocol &putRoutingPolicyFactory(const string &name, IRoutingPolicyFactory::SP factory);
+    DocumentProtocol &putRoutingPolicyFactory(const string &name, std::shared_ptr<IRoutingPolicyFactory> factory);
 
     /**
      * Adds a new routable factory to this protocol. This method is thread-safe, and may be invoked on a
@@ -215,7 +225,7 @@ public:
      * @param version The version for which this factory can be used.
      * @return This, to allow chaining.
      */
-    DocumentProtocol &putRoutableFactory(uint32_t type, IRoutableFactory::SP factory,
+    DocumentProtocol &putRoutableFactory(uint32_t type, std::shared_ptr<IRoutableFactory> factory,
                                          const vespalib::VersionSpecification &version);
 
     /**
@@ -227,7 +237,7 @@ public:
      * @param versions The versions for which this factory can be used.
      * @return This, to allow chaining.
      */
-    DocumentProtocol &putRoutableFactory(uint32_t type, IRoutableFactory::SP factory,
+    DocumentProtocol &putRoutableFactory(uint32_t type, std::shared_ptr<IRoutableFactory> factory,
                                          const std::vector<vespalib::VersionSpecification> &versions);
 
     /**

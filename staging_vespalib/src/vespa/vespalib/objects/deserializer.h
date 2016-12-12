@@ -6,8 +6,7 @@
 #include <vector>
 #include <stdint.h>
 
-namespace vespalib
-{
+namespace vespalib {
 
 class Identifiable;
 
@@ -57,25 +56,9 @@ public:
     Deserializer & operator >> (double & value)   { return get(_unspecifiedField, value); }
     Deserializer & operator >> (string & value)   { return get(_unspecifiedField, value); }
     template <typename T>
-    Deserializer & operator >> (vespalib::Array<T> & v) {
-        uint32_t sz;
-        get(_sizeField, sz);
-        v.resize(sz);
-        for(size_t i(0); i < sz; i++) {
-            (*this) >> v[i];
-        }
-        return *this;
-    }
+    Deserializer & operator >> (vespalib::Array<T> & v);
     template <typename T>
-    Deserializer & operator >> (std::vector<T> & v) {
-        uint32_t sz;
-        get(_sizeField, sz);
-        v.resize(sz);
-        for(size_t i(0); i < sz; i++) {
-            (*this) >> v[i];
-        }
-        return *this;
-    }
+    Deserializer & operator >> (std::vector<T> & v);
 
 };
 

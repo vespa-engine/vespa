@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".search.util.jsonwriter");
-
 #include "jsonwriter.h"
-#include <iostream>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <cmath>
 
 namespace vespalib {
@@ -261,9 +257,9 @@ JSONWriter::appendJSON(const vespalib::stringref & json)
 
 JSONStringer::JSONStringer() :
     JSONWriter(),
-    _oss()
+    _oss(std::make_unique<asciistream>())
 {
-    setOutputStream(_oss);
+    setOutputStream(*_oss);
 }
 
 JSONStringer &
@@ -271,8 +267,15 @@ JSONStringer::clear()
 {
     JSONWriter::clear();
     // clear the string stream as well
-    _oss.clear();
+    _oss->clear();
     return *this;
+}
+
+JSONStringer::~JSONStringer() { }
+
+stringref
+JSONStringer::toString() const {
+    return _oss->str();
 }
 
 }

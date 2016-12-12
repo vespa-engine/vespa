@@ -3,9 +3,10 @@
 #pragma once
 
 #include <vespa/vespalib/net/metrics_producer.h>
-#include "metricmanager.h"
 
 namespace metrics {
+
+class MetricManager;
 
 /**
  * This is an adapter class that implements the metrics producer

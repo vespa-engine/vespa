@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.aggregation.grouping");
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/hitsaggregationresult.h>
 #include <stdexcept>
@@ -9,6 +7,10 @@ LOG_SETUP(".searchlib.aggregation.grouping");
 #include <vespa/vespalib/objects/objectpredicate.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/deserializer.hpp>
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.aggregation.grouping");
 
 using namespace search::expression;
 using vespalib::FieldBase;

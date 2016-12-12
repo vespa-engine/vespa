@@ -2,6 +2,7 @@
 #pragma once
 
 #include "valuemetricvalues.h"
+#include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
 
 namespace metrics {

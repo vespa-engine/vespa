@@ -2,8 +2,9 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/hexdump.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <iostream>
+#include <ostream>
 
 using vespalib::nbostream;
 using ExpBuffer = std::vector<uint8_t>;

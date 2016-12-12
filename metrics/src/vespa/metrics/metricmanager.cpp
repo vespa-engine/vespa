@@ -1,25 +1,34 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/metrics/metricmanager.h>
-
+#include "metricmanager.h"
+#include "countmetric.h"
+#include "valuemetric.h"
+#include "metricset.h"
+#include "summetric.h"
+#include "jsonwriter.h"
+#include "textwriter.h"
+#include "xmlwriter.h"
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/metrics/countmetric.h>
-#include <vespa/metrics/valuemetric.h>
-#include <vespa/metrics/metricset.h>
-#include <vespa/metrics/summetric.h>
-#include <vespa/metrics/jsonwriter.h>
-#include <vespa/metrics/textwriter.h>
-#include <vespa/metrics/xmlwriter.h>
+
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <vespa/log/log.h>
-#include <stack>
 
 LOG_SETUP(".metrics.manager");
 
 namespace metrics {
 
 typedef MetricsmanagerConfig Config;
+
+void
+MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {
+    if (!g.monitors(_waiter)) {
+        throw vespalib::IllegalArgumentException(
+                "Given lock does not lock the metric lock.", VESPA_STRLOC);
+    }
+}
 
 void
 MetricManager::ConsumerSpec::print(std::ostream& out, bool verbose,

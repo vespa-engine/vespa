@@ -6,8 +6,7 @@
 #include <vector>
 #include <stdint.h>
 
-namespace vespalib
-{
+namespace vespalib {
 
 class Identifiable;
 
@@ -43,23 +42,9 @@ public:
     Serializer & operator << (double value)   { return put(_unspecifiedField, value); }
     Serializer & operator << (const stringref & value) { return put(_unspecifiedField, value); }
     template <typename T>
-    Serializer & operator << (const vespalib::Array<T> & v) {
-        uint32_t sz(v.size());
-        put(_sizeField, sz);
-        for(size_t i(0); i < sz; i++) {
-            (*this) << v[i];
-        }
-        return *this;
-    }
+    Serializer & operator << (const vespalib::Array<T> & v);
     template <typename T>
-    Serializer & operator << (const std::vector<T> & v) {
-        uint32_t sz(v.size());
-        put(_sizeField, sz);
-        for(size_t i(0); i < sz; i++) {
-            (*this) << v[i];
-        }
-        return *this;
-    }
+    Serializer & operator << (const std::vector<T> & v);
 };
 
 }

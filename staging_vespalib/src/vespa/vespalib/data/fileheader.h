@@ -5,9 +5,10 @@
 #include "databuffer.h"
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vespalib {
+
+class asciistream;
 
 /**
  * This exception can be thrown when serializing or deserializing header content.
@@ -58,6 +59,7 @@ public:
         Tag(const vespalib::string &name, int64_t val);
         Tag(const vespalib::string &name, uint64_t val);
         Tag(const vespalib::string &name, const vespalib::string &val);
+        ~Tag();
 
         size_t           read(DataBuffer &buf);
         size_t           write(DataBuffer &buf) const;

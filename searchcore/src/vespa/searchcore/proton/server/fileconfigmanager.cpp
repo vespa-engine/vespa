@@ -1,18 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "fileconfigmanager.h"
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/config/print/fileconfigsnapshotreader.h>
 #include <vespa/config/print/fileconfigsnapshotwriter.h>
-#include <vespa/config/print/configformatter.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/log/log.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <utime.h>
+#include <vespa/config-summarymap.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 #include <fstream>
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fileconfigmanager");
 
 using document::DocumentTypeRepo;

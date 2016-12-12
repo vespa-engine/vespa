@@ -3,8 +3,6 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("postinglistbm");
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/util/rand48.h>
@@ -19,7 +17,7 @@ using search::ResultSet;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
 using search::queryeval::SearchIterator;
-using search::index::Schema;
+using namespace search::index;
 using namespace search::fakedata;
 
 // needed to resolve external symbol from httpd.h on AIX
@@ -374,8 +372,8 @@ PostingListBM::Main(void)
             do {
                 Schema schema;
                 Schema::IndexField indexField("field0",
-                        Schema::STRING,
-                        Schema::SINGLE);
+                        schema::STRING,
+                        schema::SINGLE);
                 schema.addIndexField(indexField);
                 std::unique_ptr<FPFactory> ff(getFPFactory(optArg, schema));
                 if (ff.get() == NULL) {

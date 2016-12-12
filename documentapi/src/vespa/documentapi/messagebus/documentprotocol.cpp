@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".documentprotocol");
 
 #include "routablefactories50.h"
 #include "routablefactories51.h"
@@ -15,6 +12,10 @@ LOG_SETUP(".documentprotocol");
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/vespalib/component/versionspecification.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include "routablerepository.h"
+#include "routingpolicyrepository.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".documentprotocol");
 
 using document::DocumentTypeRepo;
 
@@ -25,8 +26,8 @@ const mbus::string DocumentProtocol::NAME = "document";
 DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
                                    DocumentTypeRepo::SP repo,
                                    const string &configId) :
-    _routingPolicyRepository(),
-    _routableRepository(loadTypes),
+    _routingPolicyRepository(new RoutingPolicyRepository()),
+    _routableRepository(new RoutableRepository(loadTypes)),
     _systemState(SystemState::newInstance("")),
     _repo(repo)
 {
@@ -108,23 +109,25 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::RemoveDocumentMessageFactory()), from52);
 }
 
+DocumentProtocol::~DocumentProtocol() { }
+
 mbus::IRoutingPolicy::UP
 DocumentProtocol::createPolicy(const mbus::string &name, const mbus::string &param) const
 {
-    return _routingPolicyRepository.createPolicy(name, param);
+    return _routingPolicyRepository->createPolicy(name, param);
 }
 
 DocumentProtocol &
 DocumentProtocol::putRoutingPolicyFactory(const string &name, IRoutingPolicyFactory::SP factory)
 {
-    _routingPolicyRepository.putFactory(name, factory);
+    _routingPolicyRepository->putFactory(name, factory);
     return *this;
 }
 
 mbus::Blob
 DocumentProtocol::encode(const vespalib::Version &version, const mbus::Routable &routable) const
 {
-    mbus::Blob blob(_routableRepository.encode(version, routable));
+    mbus::Blob blob(_routableRepository->encode(version, routable));
         // When valgrind reports errors of uninitialized data being written to
         // the network, it is useful to be able to see the serialized data to
         // try to identify what bits are uninitialized.
@@ -144,7 +147,7 @@ mbus::Routable::UP
 DocumentProtocol::decode(const vespalib::Version &version, mbus::BlobRef data) const
 {
     try {
-        return _routableRepository.decode(version, data);
+        return _routableRepository->decode(version, data);
     } catch (vespalib::Exception &e) {
         LOG(warning, "%s", e.getMessage().c_str());
         return mbus::Routable::UP();
@@ -154,14 +157,14 @@ DocumentProtocol::decode(const vespalib::Version &version, mbus::BlobRef data) c
 uint32_t
 DocumentProtocol::getRoutableTypes(const vespalib::Version &version, std::vector<uint32_t> &out) const
 {
-    return _routableRepository.getRoutableTypes(version, out);
+    return _routableRepository->getRoutableTypes(version, out);
 }
 
 DocumentProtocol &
 DocumentProtocol::putRoutableFactory(uint32_t type, IRoutableFactory::SP factory,
                                      const vespalib::VersionSpecification &version)
 {
-    _routableRepository.putFactory(version, type, factory);
+    _routableRepository->putFactory(version, type, factory);
     return *this;
 }
 

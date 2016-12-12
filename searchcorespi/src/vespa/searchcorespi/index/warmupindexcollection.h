@@ -9,6 +9,8 @@
 
 namespace searchcorespi {
 
+class FieldTermMap;
+
 class IWarmupDone {
 public:
     virtual ~IWarmupDone() { }
@@ -108,9 +110,7 @@ private:
     IWarmupDone                    & _warmupDone;
     fastos::TimeStamp                _warmupEndTime;
     vespalib::Lock                   _lock;
-    typedef vespalib::hash_set<vespalib::string> TermMap;
-    typedef vespalib::hash_map<uint32_t, TermMap> FieldTermMap;
-    FieldTermMap                     _handledTerms;
+    std::unique_ptr<FieldTermMap>    _handledTerms;
 };
 
 }  // namespace searchcorespi

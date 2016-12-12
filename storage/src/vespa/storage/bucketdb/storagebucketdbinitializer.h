@@ -48,16 +48,17 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vdslib/state/nodestate.h>
+#include <vespa/config/subscription/configuri.h>
 
 namespace storage {
+
+class BucketReadState;
 
 class StorageBucketDBInitializer : public StorageLink,
                                    public framework::HtmlStatusReporter,
                                    private framework::Runnable
 {
     typedef uint16_t Disk;
-    typedef vespalib::hash_set<document::BucketId,
-                               document::BucketId::hash> BucketSet;
     typedef vespalib::hash_map<api::StorageMessage::Id, Disk> IdDiskMap;
 
     struct Config {
@@ -126,21 +127,13 @@ class StorageBucketDBInitializer : public StorageLink,
               _gottenInitProgress(false), _doneListing(false),
               _doneInitializing(false) {}
     };
-    struct BucketReadState {
-        typedef vespalib::LinkedPtr<BucketReadState> LP;
 
-        BucketSet _pending;
-        document::BucketId _databaseIterator;
-        bool _done;
-
-        BucketReadState() : _done(false) {}
-    };
 
     Config _config;
     System _system;
     Metrics _metrics;
     GlobalState _state;
-    std::vector<BucketReadState::LP> _readState;
+    std::vector<vespalib::LinkedPtr<BucketReadState>> _readState;
 
 public:
     StorageBucketDBInitializer(const config::ConfigUri&,

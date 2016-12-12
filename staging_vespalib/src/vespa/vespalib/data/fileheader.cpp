@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+#include "fileheader.h"
+#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".fileheader");
-
-#include "fileheader.h"
 
 namespace vespalib {
 
@@ -133,6 +133,8 @@ GenericHeader::Tag::Tag(const vespalib::string &name, const vespalib::string &va
 {
     // empty
 }
+
+GenericHeader::Tag::~Tag() { }
 
 size_t
 GenericHeader::Tag::getSize() const

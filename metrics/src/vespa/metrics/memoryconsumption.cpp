@@ -1,12 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "memoryconsumption.h"
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <sstream>
 
 namespace metrics {
 
-MemoryConsumption::MemoryConsumption() {
+struct SeenStrings : public vespalib::hash_set<const void*> { };
+struct SnapShotUsage : public std::vector<std::pair<std::string, uint32_t> > { };
+
+MemoryConsumption::MemoryConsumption()
+    : _seenStrings(std::make_unique<SeenStrings>()),
+      _snapShotUsage(std::make_unique<SnapShotUsage>())
+{
     memset(&_consumerCount, 0, reinterpret_cast<size_t>(&_seenStrings) - reinterpret_cast<size_t>(&_consumerCount));
-    _seenStrings.resize(1000);
+    _seenStrings->resize(1000);
 }
 
 MemoryConsumption::~MemoryConsumption() { }
@@ -15,17 +22,17 @@ uint32_t
 MemoryConsumption::getStringMemoryUsage(const std::string& s, uint32_t& uniqueCount) {
     ++_totalStringCount;
     const char* internalString = s.c_str();
-    if (_seenStrings.find(internalString) != _seenStrings.end()) {
+    if (_seenStrings->find(internalString) != _seenStrings->end()) {
         return 0;
     }
     ++uniqueCount;
-    _seenStrings.insert(internalString);
+    _seenStrings->insert(internalString);
     return s.capacity();
 }
 
 void
 MemoryConsumption::addSnapShotUsage(const std::string& name, uint32_t usage) {
-    _snapShotUsage.push_back(std::pair<std::string, uint32_t>(name, usage));
+    _snapShotUsage->push_back(std::pair<std::string, uint32_t>(name, usage));
 }
 
 uint32_t
@@ -80,7 +87,7 @@ MemoryConsumption::print(std::ostream& out, bool verbose,
         << newl << "Sum metric parent path: " << bval(_sumMetricParentPath)
         << newl << "Load metric count: " << _loadMetricCount
         << newl << "Load metric meta: " << bval(_loadMetricMeta)
-        << newl << "Unique string count: " << _seenStrings.size()
+        << newl << "Unique string count: " << _seenStrings->size()
         << newl << "Strings stored: " << _totalStringCount
         << newl << "Unique consumer ids: " << _consumerIdUnique
         << newl << "Unique cons metric ids: " << _consumerMetricIdsUnique
@@ -91,9 +98,8 @@ MemoryConsumption::print(std::ostream& out, bool verbose,
         << newl << "Unique metric tags: " << _metricTagsUnique
         << newl << "Unique sum metric paths: " << _sumMetricParentPathUnique
         << newl << "Unique name hash strings: " << _nameHashUnique;
-    for (uint32_t i=0; i<_snapShotUsage.size(); ++i) {
-        out << newl << "Snapshot " << _snapShotUsage[i].first << ": "
-            << bval(_snapShotUsage[i].second);
+    for (const auto & entry : *_snapShotUsage) {
+        out << newl << "Snapshot " << entry.first << ": " << bval(entry.second);
     }
     out << "\n" << indent << ")";
 }

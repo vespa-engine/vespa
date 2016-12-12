@@ -234,6 +234,3 @@ public:
 };
 
 } // namespace vespalib
-
-#include <vespa/vespalib/util/exceptions.h>
-

@@ -1,20 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * Creation date: 2000-05-15
- *
- * Implementation of ParseItem
- *
- *   Copyright (C) 1997-2003 Fast Search & Transfer ASA
- *   Copyright (C) 2003 Overture Services Norway AS
- *               ALL RIGHTS RESERVED
- */
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("");
 
 #include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/nbo.h>
 
 namespace search {
 
@@ -143,9 +130,9 @@ ParseItem::AppendBuffer(RawBuf *buf) const
         }
         if (Type() == ITEM_WAND) {
             buf->appendCompressedPositiveNumber(_arg1); // targetNumHits
-            double nboVal = vespalib::nbostream::n2h(_arg2);
+            double nboVal = vespalib::nbo::n2h(_arg2);
             buf->append(&nboVal, sizeof(nboVal)); // scoreThreshold
-            nboVal = vespalib::nbostream::n2h(_arg3);
+            nboVal = vespalib::nbo::n2h(_arg3);
             buf->append(&nboVal, sizeof(nboVal)); // thresholdBoostFactor
         }
         break;

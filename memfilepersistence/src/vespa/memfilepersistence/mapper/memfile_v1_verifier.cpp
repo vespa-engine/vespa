@@ -1,10 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/memfilepersistence/mapper/memfile_v1_verifier.h>
+
+#include "memfile_v1_verifier.h"
+#include "memfilemapper.h"
+#include "simplememfileiobuffer.h"
+#include "buffer.h"
 #include <vespa/memfilepersistence/memfile/memfile.h>
-#include <vespa/memfilepersistence/mapper/memfilemapper.h>
-#include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
-#include <vespa/memfilepersistence/mapper/buffer.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".persistence.memfilev1.verifier");
@@ -21,8 +22,7 @@ void alignUp(uint32_t& value, uint32_t offset = 0, uint32_t block = 512) {
 }
 
 struct TimestampSlotOrder
-    : public std::binary_function<MetaSlot*,
-                                  MetaSlot*, bool>
+    : public std::binary_function<MetaSlot*, MetaSlot*, bool>
 {
     bool operator()(const MetaSlot* slot1,
                     const MetaSlot* slot2) const

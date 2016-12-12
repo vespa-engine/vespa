@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/common/statusmetricconsumer.h>
+#include "statusmetricconsumer.h"
 
 #include <boost/assign.hpp>
 #include <boost/lexical_cast.hpp>
@@ -13,6 +12,7 @@
 #include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/stllike/asciistream.h>
     // For setlocale to print . separated numbers
 #include <locale.h>
 #include <stdio.h>

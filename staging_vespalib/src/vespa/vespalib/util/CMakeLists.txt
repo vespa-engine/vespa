@@ -7,6 +7,7 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     crc.cpp
     doom.cpp
     growablebytebuffer.cpp
+    jsonexception.cpp
     jsonstream.cpp
     jsonwriter.cpp
     librarypool.cpp

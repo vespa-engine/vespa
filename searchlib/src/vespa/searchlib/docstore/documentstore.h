@@ -4,9 +4,17 @@
 
 #include "idocumentstore.h"
 #include "idatastore.h"
-#include "visitcache.h"
 
 namespace search {
+
+namespace docstore {
+    class VisitCache;
+    class BackingStore;
+    class Cache;
+}
+using docstore::VisitCache;
+using docstore::BackingStore;
+using docstore::Cache;
 
 /**
  * Simple document store that contains serialized Document instances.
@@ -155,96 +163,13 @@ public:
     getFileChunkStats() const override;
 
 private:
+    bool useCache() const;
+
     template <class> class WrapVisitor;
     class WrapVisitorProgress;
-    class Value {
-    public:
-        using Alloc = vespalib::alloc::Alloc;
-        typedef std::unique_ptr<Value> UP;
-        Value() : _compressedSize(0), _uncompressedSize(0), _compression(document::CompressionConfig::NONE) { }
-
-        Value(Value && rhs) :
-            _compressedSize(rhs._compressedSize),
-            _uncompressedSize(rhs._uncompressedSize),
-            _compression(rhs._compression),
-            _buf(std::move(rhs._buf))
-        { }
-
-        Value(const Value & rhs) :
-            _compressedSize(rhs._compressedSize),
-            _uncompressedSize(rhs._uncompressedSize),
-            _compression(rhs._compression),
-            _buf(Alloc::alloc(rhs.size()))
-        {
-            memcpy(get(), rhs.get(), size());
-        }
-        Value & operator = (Value && rhs) {
-            _buf = std::move(rhs._buf);
-            _compressedSize = rhs._compressedSize;
-            _uncompressedSize = rhs._uncompressedSize;
-            _compression = rhs._compression;
-            return *this;
-        }
-        void setCompression(document::CompressionConfig::Type comp, size_t uncompressedSize) {
-            _compression = comp;
-            _uncompressedSize = uncompressedSize;
-        }
-        document::CompressionConfig::Type getCompression() const { return _compression; }
-        size_t getUncompressedSize() const { return _uncompressedSize; }
-
-        /**
-         * Compress buffer into temporary buffer and copy temporary buffer to
-         * value along with compression config.
-         */
-        void set(vespalib::DataBuffer && buf, ssize_t len, const document::CompressionConfig &compression);
-
-        /**
-         * Decompress value into temporary buffer and deserialize document from
-         * the temporary buffer.
-         */
-        document::Document::UP deserializeDocument(const document::DocumentTypeRepo &repo);
-
-        size_t size() const { return _compressedSize; }
-        bool empty() const { return size() == 0; }
-        operator const void * () const { return _buf.get(); }
-        const void * get() const { return _buf.get(); }
-        void * get() { return _buf.get(); }
-
-    private:
-        size_t _compressedSize;
-        size_t _uncompressedSize;
-        document::CompressionConfig::Type _compression;
-        Alloc  _buf;
-    };
-    class BackingStore {
-    public:
-        BackingStore(IDataStore & store, const document::CompressionConfig & compression) :
-            _backingStore(store),
-            _compression(compression)
-        { }
-        bool read(DocumentIdT key, Value & value) const;
-        void visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const;
-        void write(DocumentIdT, const Value &) { }
-        void erase(DocumentIdT ) { }
- 
-        const document::CompressionConfig & getCompression(void) const { return _compression; }
-    private:
-        IDataStore & _backingStore;
-        const document::CompressionConfig _compression;
-    };
-    bool useCache() const { return (_cache->capacityBytes() != 0) && (_cache->capacity() != 0); }
-    using CacheParams = vespalib::CacheParam<
-                            vespalib::LruParam<DocumentIdT, Value>,
-                            BackingStore,
-                            vespalib::zero<DocumentIdT>,
-                            vespalib::size<Value>
-                        >;
-    using Cache = vespalib::cache<CacheParams>;
-    using VisitCache = docstore::VisitCache;
-
     Config                         _config;
     IDataStore &                   _backingStore;
-    BackingStore                   _store;
+    std::unique_ptr<BackingStore>  _store;
     std::shared_ptr<Cache>         _cache;
     std::shared_ptr<VisitCache>    _visitCache;
     mutable volatile uint64_t      _uncached_lookups;

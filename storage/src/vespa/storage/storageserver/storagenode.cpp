@@ -28,6 +28,7 @@
 #include <vespa/storage/visiting/messagebusvisitormessagesession.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/metrics/metricmanager.h>
 #include <fstream>
 #include <sstream>
 

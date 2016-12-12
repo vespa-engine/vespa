@@ -77,18 +77,18 @@ struct MyConfig
         for (auto attr : attrs) {
             if (attr == "tensor") {
                 _mgr->addAttribute(attr, test::AttributeUtils::getTensorConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, Schema::TENSOR));
+                _schema.addAttributeField(Schema::AttributeField(attr, schema::TENSOR));
             } else if (attr == "predicate") {
                 _mgr->addAttribute(attr, test::AttributeUtils::getPredicateConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, Schema::BOOLEANTREE));
+                _schema.addAttributeField(Schema::AttributeField(attr, schema::BOOLEANTREE));
             } else {
                 _mgr->addAttribute(attr, test::AttributeUtils::getStringConfig(), 1);
-                _schema.addAttributeField(Schema::AttributeField(attr, Schema::STRING));
+                _schema.addAttributeField(Schema::AttributeField(attr, schema::STRING));
             }
         }
     }
     void addIndexField(const vespalib::string &name) {
-        _schema.addIndexField(Schema::IndexField(name, Schema::STRING));
+        _schema.addIndexField(Schema::IndexField(name, schema::STRING));
     }
 };
 

@@ -1,14 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-
-LOG_SETUP(".test.dummyimpl");
+#include <vespa/config-stor-distribution.h>
 
 namespace storage {
 namespace spi {
@@ -156,11 +153,9 @@ ClusterStateTest::testNodeInitializing()
 
 namespace {
 
-lib::Distribution::DistributionConfig getCfg(uint16_t redundancy,
-                                             uint16_t readyCopies)
+lib::Distribution::DistributionConfig getCfg(uint16_t redundancy, uint16_t readyCopies)
 {
-    lib::Distribution::DistributionConfig config(
-            lib::Distribution::getDefaultDistributionConfig(redundancy, 100));
+    lib::Distribution::DistributionConfigBuilder config(lib::Distribution::getDefaultDistributionConfig(redundancy, 100).get());
     config.readyCopies = readyCopies;
     return config;
 }

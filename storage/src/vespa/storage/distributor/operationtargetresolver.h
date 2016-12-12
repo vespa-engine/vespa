@@ -35,10 +35,7 @@ public:
         return !(operator==(o));
     }
 
-    void print(vespalib::asciistream& out, const PrintProperties&) const {
-        out << "OperationTarget(" << _bucket << ", " << _node
-            << (_newCopy ? ", new copy" : ", existing copy") << ")";
-    }
+    void print(vespalib::asciistream& out, const PrintProperties&) const override;
 };
 
 class OperationTargetList : public std::vector<OperationTarget> {

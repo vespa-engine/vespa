@@ -2,13 +2,13 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include "bitvector.h"
 #include "allocatedbitvector.h"
 #include "growablebitvector.h"
 #include "partialbitvector.h"
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;

@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -19,6 +18,7 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/statecheckers.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/config-stor-distribution.h>
 
 using namespace std::literals::string_literals;
 

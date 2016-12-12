@@ -2,17 +2,13 @@
 #include <vespa/fastos/fastos.h>
 #include "compare.h"
 
-#include <iomanip>
-#include <vespa/log/log.h>
-#include <sstream>
+#include <ostream>
 #include <vespa/document/datatype/datatype.h>
 #include "valuenode.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/util/stringutil.h>
 #include "compare.h"
 #include "visitor.h"
-
-LOG_SETUP(".document.select.compare");
 
 namespace document {
 namespace select {

@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
 #include <vespa/searchlib/expression/floatresultnode.h>
 #include <vespa/searchlib/expression/stringresultnode.h>
@@ -8,14 +7,14 @@
 #include <vespa/searchlib/expression/nullresultnode.h>
 #include <vespa/searchlib/expression/positiveinfinityresultnode.h>
 #include <cmath>
-#include <vespa/log/log.h>
-
-LOG_SETUP(".searchlib.documentexpressions");
+#include <vespa/vespalib/objects/visit.hpp>
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/deserializer.hpp>
 
 namespace search {
 namespace expression {
 
-using vespalib::nbostream;
+using vespalib::nbo;
 using vespalib::Serializer;
 using vespalib::Deserializer;
 using vespalib::make_string;
@@ -325,7 +324,7 @@ int64_t RawResultNode::onGetInteger(size_t index) const
     } nbo;
     nbo._int64 = 0;
     memcpy(nbo._bytes, &_value[0], std::min(sizeof(nbo._bytes), _value.size()));
-    return nbostream::n2h(nbo._int64);
+    return nbo::n2h(nbo._int64);
 }
 
 double  RawResultNode::onGetFloat(size_t index) const
@@ -337,7 +336,7 @@ double  RawResultNode::onGetFloat(size_t index) const
     } nbo;
     nbo._double = 0;
     memcpy(nbo._bytes, &_value[0], std::min(sizeof(nbo._bytes), _value.size()));
-    return nbostream::n2h(nbo._double);
+    return nbo::n2h(nbo._double);
 }
 
 Serializer & RawResultNode::onSerialize(Serializer & os) const

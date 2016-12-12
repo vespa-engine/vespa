@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/expression/unaryfunctionnode.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace search {
 namespace expression {

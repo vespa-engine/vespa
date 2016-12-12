@@ -13,39 +13,34 @@ LOG_SETUP(".index.doctypebuilder");
 using namespace document;
 using namespace search::index;
 
-namespace search
-{
-
-namespace index
-{
-
-namespace
-{
+namespace search {
+namespace index {
+namespace {
 
 const DataType *convert(Schema::DataType type) {
     switch (type) {
-    case Schema::UINT1:
-    case Schema::UINT2:
-    case Schema::UINT4:
-    case Schema::INT8:
+    case schema::UINT1:
+    case schema::UINT2:
+    case schema::UINT4:
+    case schema::INT8:
         return DataType::BYTE;
-    case Schema::INT16:
+    case schema::INT16:
         return DataType::SHORT;
-    case Schema::INT32:
+    case schema::INT32:
         return DataType::INT;
-    case Schema::INT64:
+    case schema::INT64:
         return DataType::LONG;
-    case Schema::FLOAT:
+    case schema::FLOAT:
         return DataType::FLOAT;
-    case Schema::DOUBLE:
+    case schema::DOUBLE:
         return DataType::DOUBLE;
-    case Schema::STRING:
+    case schema::STRING:
         return DataType::STRING;
-    case Schema::RAW:
+    case schema::RAW:
         return DataType::RAW;
-    case Schema::BOOLEANTREE:
+    case schema::BOOLEANTREE:
         return DataType::PREDICATE;
-    case Schema::TENSOR:
+    case schema::TENSOR:
         return DataType::TENSOR;
     default:
         break;
@@ -100,7 +95,7 @@ DocTypeBuilder::UriField::valid(const Schema &schema,
     if (fieldId == Schema::UNKNOWN_FIELD_ID)
         return false;
     const Schema::IndexField &field = schema.getIndexField(fieldId);
-    if (field.getDataType() != Schema::STRING)
+    if (field.getDataType() != schema::STRING)
         return false;
     if (field.getCollectionType() != collectionType)
         return false;
@@ -221,7 +216,7 @@ DocTypeBuilder::SchemaIndexFields::setup(const Schema &schema)
             continue;
         const Schema::IndexField &field = schema.getIndexField(fieldId);
         switch (field.getDataType()) {
-        case Schema::STRING:
+        case schema::STRING:
             _textFields.push_back(fieldId);
             break;
         default:
@@ -242,9 +237,9 @@ using namespace document::config_builder;
 TypeOrId makeCollection(TypeOrId datatype,
                         Schema::CollectionType collection_type) {
     switch (collection_type) {
-    case Schema::ARRAY:
+    case schema::ARRAY:
         return Array(datatype);
-    case Schema::WEIGHTEDSET:
+    case schema::WEIGHTEDSET:
         // TODO: consider using array of struct<primitive,int32> to keep order
         return Wset(datatype);
     default:
@@ -282,7 +277,7 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
             _schema.getIndexField(_iFields._textFields[i]);
 
         // only handles string fields for now
-        assert(field.getDataType() == Schema::STRING);
+        assert(field.getDataType() == schema::STRING);
         header_struct.addField(field.getName(), type_cache.getType(
                         DataType::T_STRING, field.getCollectionType()));
         header_struct.sstruct.field.back().id = field_id++;
@@ -295,7 +290,7 @@ document::DocumenttypesConfig DocTypeBuilder::makeConfig() const {
             _schema.getIndexField(_iFields._uriFields[i]._all);
 
         // only handles string fields for now
-        assert(field.getDataType() == Schema::STRING);
+        assert(field.getDataType() == schema::STRING);
         header_struct.addField(field.getName(), type_cache.getType(
                         uri_type, field.getCollectionType()));
         header_struct.sstruct.field.back().id = field_id++;

@@ -14,10 +14,14 @@
 #include <map>
 #include <vector>
 #include <vespa/vespalib/objects/floatingpointtype.h>
-#include <vespa/config-stor-distribution.h>
 #include <vespa/vdslib/distribution/redundancygroupdistribution.h>
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+
+namespace vespalib {
+
+class asciistream;
+
+}
 
 namespace storage {
 namespace lib {
@@ -99,12 +103,7 @@ public:
      * that is critical for distribution. Use to match up two different group
      * instances in order to verify if they would generate the same distribution
      */
-    vespalib::string getDistributionConfigHash() const {
-        vespalib::asciistream ost;
-        getConfigHash(ost);
-        return ost.str();
-    }
-
+    vespalib::string getDistributionConfigHash() const;
 };
 
 } // lib

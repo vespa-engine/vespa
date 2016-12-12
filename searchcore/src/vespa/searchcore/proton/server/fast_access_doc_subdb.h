@@ -38,8 +38,7 @@ public:
           _hasAttributes(hasAttributes),
           _addMetrics(addMetrics),
           _fastAccessAttributesOnly(fastAccessAttributesOnly)
-        {
-        }
+        { }
     };
 
     struct Context
@@ -56,8 +55,7 @@ public:
           _subAttributeMetrics(subAttributeMetrics),
           _totalAttributeMetrics(totalAttributeMetrics),
           _metricsWireService(metricsWireService)
-        {
-        }
+        { }
     };
 
 private:
@@ -71,80 +69,60 @@ private:
     AttributeMetrics             &_subAttributeMetrics;
     AttributeMetrics             *_totalAttributeMetrics;
 
-    initializer::InitializerTask::SP
+    std::shared_ptr<initializer::InitializerTask>
     createAttributeManagerInitializer(const DocumentDBConfig &configSnapshot,
                                       SerialNum configSerialNum,
-                                      initializer::InitializerTask::SP documentMetaStoreInitTask,
+                                      std::shared_ptr<initializer::InitializerTask> documentMetaStoreInitTask,
                                       DocumentMetaStore::SP documentMetaStore,
                                       std::shared_ptr<AttributeManager::SP> attrMgrResult) const;
 
     void setupAttributeManager(AttributeManager::SP attrMgrResult);
-
-    void initFeedView(const IAttributeWriter::SP &writer,
-                      const DocumentDBConfig &configSnapshot);
-
+    void initFeedView(const IAttributeWriter::SP &writer, const DocumentDBConfig &configSnapshot);
 
 protected:
     typedef StoreOnlyDocSubDB Parent;
-    typedef vespa::config::search::core::ProtonConfig ProtonConfig;
 
     const bool           _addMetrics;
     MetricsWireService  &_metricsWireService;
     DocIdLimit           _docIdLimit;
 
-    AttributeCollectionSpec::UP createAttributeSpec(const AttributesConfig &attrCfg,
-                                                    SerialNum serialNum) const;
-
+    AttributeCollectionSpec::UP createAttributeSpec(const AttributesConfig &attrCfg, SerialNum serialNum) const;
     AttributeManager::SP getAndResetInitAttributeManager();
-
     virtual IFlushTarget::List getFlushTargetsInternal();
-
-    void reconfigureAttributeMetrics(const proton::IAttributeManager &newMgr,
-                                     const proton::IAttributeManager &oldMgr);
+    void reconfigureAttributeMetrics(const IAttributeManager &newMgr, const IAttributeManager &oldMgr);
 
     IReprocessingTask::UP
     createReprocessingTask(IReprocessingInitializer &initializer,
                            const document::DocumentTypeRepo::SP &docTypeRepo) const;
 
 public:
-    FastAccessDocSubDB(const Config &cfg,
-                       const Context &ctx);
+    FastAccessDocSubDB(const Config &cfg, const Context &ctx);
 
-    virtual ~FastAccessDocSubDB() {}
+    ~FastAccessDocSubDB();
 
-    virtual DocumentSubDbInitializer::UP
+    virtual std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
-                      const search::index::Schema::SP &unionSchema,
-                      const vespa::config::search::core::ProtonConfig::Summary &protonSummaryCfg,
-                      const vespa::config::search::core::ProtonConfig::Index &indexCfg) const override;
+                      const Schema::SP &unionSchema,
+                      const ProtonConfig::Summary &protonSummaryCfg,
+                      const ProtonConfig::Index &indexCfg) const override;
 
-    virtual void setup(const DocumentSubDbInitializerResult &initResult) override;
+    void setup(const DocumentSubDbInitializerResult &initResult) override;
 
-    virtual void initViews(const DocumentDBConfig &configSnapshot,
-                           const proton::matching::SessionManager::SP &sessionManager);
+    void initViews(const DocumentDBConfig &configSnapshot,
+                   const matching::SessionManager::SP &sessionManager) override;
 
-    virtual IReprocessingTask::List applyConfig(const DocumentDBConfig &newConfigSnapshot,
-                                                const DocumentDBConfig &oldConfigSnapshot,
-                                                SerialNum serialNum,
-                                                const ReconfigParams params);
+    IReprocessingTask::List applyConfig(const DocumentDBConfig &newConfigSnapshot,
+                                        const DocumentDBConfig &oldConfigSnapshot,
+                                        SerialNum serialNum,
+                                        const ReconfigParams params) override;
 
-    virtual proton::IAttributeManager::SP getAttributeManager() const;
-
-    virtual IDocumentRetriever::UP getDocumentRetriever();
-
-    virtual void
-    onReplayDone();
-
-    virtual void
-    onReprocessDone(SerialNum serialNum);
-
-    virtual SerialNum
-    getOldestFlushedSerial();
-
-    virtual SerialNum
-    getNewestFlushedSerial();
+    proton::IAttributeManager::SP getAttributeManager() const override;
+    IDocumentRetriever::UP getDocumentRetriever() override;
+    void onReplayDone() override;
+    void onReprocessDone(SerialNum serialNum) override;
+    SerialNum getOldestFlushedSerial() override;
+    SerialNum getNewestFlushedSerial() override;
 };
 
 } // namespace proton
-

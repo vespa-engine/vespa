@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <ctype.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/config-stor-distribution.h>
 
 namespace storage {
 
@@ -32,9 +31,8 @@ DistributorTestUtil::setupDistributor(int redundancy,
                                       uint32_t earlyReturn,
                                       bool requirePrimaryToBeWritten)
 {
-    lib::Distribution::DistributionConfig config(
-            lib::Distribution::getDefaultDistributionConfig(
-                redundancy, nodeCount));
+    lib::Distribution::DistributionConfigBuilder config(
+            lib::Distribution::getDefaultDistributionConfig(redundancy, nodeCount).get());
     config.redundancy = redundancy;
     config.initialRedundancy = earlyReturn;
     config.ensurePrimaryPersisted = requirePrimaryToBeWritten;

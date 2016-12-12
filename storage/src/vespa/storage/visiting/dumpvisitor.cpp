@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/visiting/dumpvisitor.h>
+#include "dumpvisitor.h"
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/log/log.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/vdslib/container/mutabledocumentlist.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-
+#include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.dumpvisitor");
 
 namespace storage {

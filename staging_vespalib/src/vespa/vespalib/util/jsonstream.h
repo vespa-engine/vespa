@@ -8,27 +8,9 @@
  * having to resort to template specialization.
  */
 
-#include <stack>
-#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 
 namespace vespalib {
-
-class JsonStreamException : public Exception {
-    vespalib::string _reason;
-public:
-    JsonStreamException(vespalib::stringref reason,
-                        vespalib::stringref history,
-                        vespalib::stringref location, int skipStack = 0)
-        : Exception(reason + (history.empty() ? "" : "\nHistory:\n" + history), 
-                    location, skipStack + 1),
-          _reason(reason)
-    {
-    }
-    stringref getReason() const { return _reason; }
-    VESPA_DEFINE_EXCEPTION_SPINE(JsonStreamException);
-    virtual ~JsonStreamException() throw () { }
-};
 
 // Inherit to refer to types without namespace prefix in header file.
 struct JsonStreamTypes {

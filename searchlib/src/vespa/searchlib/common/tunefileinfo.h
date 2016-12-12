@@ -2,19 +2,16 @@
 
 #pragma once
 
-#include <stdexcept>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <sys/mman.h>
 #include <linux/mman.h>
+#include <fcntl.h>
 
-namespace search
-{
+namespace search {
 
 class TuneFileSeqRead
 {
 public:
-    enum TuneControl
-    {
+    enum TuneControl {
         NORMAL,
         DIRECTIO
     };
@@ -24,33 +21,13 @@ private:
     TuneControl _tuneControl;
 
 public:
-    TuneFileSeqRead(void)
-        : _tuneControl(NORMAL)
-    {
-    }
-
-    void
-    setWantNormal(void)
-    {
-        _tuneControl = NORMAL;
-    }
-
-    void
-    setWantDirectIO(void)
-    {
-        _tuneControl = DIRECTIO;
-    }
-
-    bool
-    getWantDirectIO(void) const
-    {
-        return _tuneControl == DIRECTIO;
-    }
+    TuneFileSeqRead() : _tuneControl(NORMAL) { }
+    void setWantNormal() { _tuneControl = NORMAL; }
+    void setWantDirectIO() { _tuneControl = DIRECTIO; }
+    bool getWantDirectIO() const { return _tuneControl == DIRECTIO; }
 
     template <typename Config>
-    void
-    setFromConfig(const enum Config::Io &config)
-    {
+    void setFromConfig(const enum Config::Io &config) {
         switch (config) {
         case Config::NORMAL:
             _tuneControl = NORMAL;
@@ -64,15 +41,11 @@ public:
         }
     }
 
-    bool
-    operator==(const TuneFileSeqRead &rhs) const
-    {
+    bool operator==(const TuneFileSeqRead &rhs) const {
         return _tuneControl == rhs._tuneControl;
     }
 
-    bool
-    operator!=(const TuneFileSeqRead &rhs) const
-    {
+    bool operator!=(const TuneFileSeqRead &rhs) const {
         return _tuneControl != rhs._tuneControl;
     }
 };
@@ -81,8 +54,7 @@ public:
 class TuneFileSeqWrite
 {
 public:
-    enum TuneControl
-    {
+    enum TuneControl {
         NORMAL,
         OSYNC,
         DIRECTIO
@@ -93,45 +65,15 @@ private:
     TuneControl _tuneControl;
 
 public:
-    TuneFileSeqWrite(void)
-        : _tuneControl(NORMAL)
-    {
-    }
-
-    void
-    setWantNormal(void)
-    {
-        _tuneControl = NORMAL;
-    }
-
-    void
-    setWantSyncWrites(void)
-    {
-        _tuneControl = OSYNC;
-    }
-
-    void
-    setWantDirectIO(void)
-    {
-        _tuneControl = DIRECTIO;
-    }
-
-    bool
-    getWantDirectIO(void) const
-    {
-        return _tuneControl == DIRECTIO;
-    }
-
-    bool
-    getWantSyncWrites(void) const
-    {
-        return _tuneControl == OSYNC;
-    }
+    TuneFileSeqWrite() : _tuneControl(NORMAL) { }
+    void setWantNormal() { _tuneControl = NORMAL; }
+    void setWantSyncWrites() { _tuneControl = OSYNC; }
+    void setWantDirectIO() { _tuneControl = DIRECTIO; }
+    bool getWantDirectIO() const { return _tuneControl == DIRECTIO; }
+    bool getWantSyncWrites() const { return _tuneControl == OSYNC; }
 
     template <typename Config>
-    void
-    setFromConfig(const enum Config::Io &config)
-    {
+    void setFromConfig(const enum Config::Io &config) {
         switch (config) {
         case Config::NORMAL:
             _tuneControl = NORMAL;
@@ -148,17 +90,8 @@ public:
         }
     }
 
-    bool
-    operator==(const TuneFileSeqWrite &rhs) const
-    {
-        return _tuneControl == rhs._tuneControl;
-    }
-
-    bool
-    operator!=(const TuneFileSeqWrite &rhs) const
-    {
-        return _tuneControl != rhs._tuneControl;
-    }
+    bool operator==(const TuneFileSeqWrite &rhs) const { return _tuneControl == rhs._tuneControl; }
+    bool operator!=(const TuneFileSeqWrite &rhs) const { return _tuneControl != rhs._tuneControl; }
 };
 
 
@@ -175,8 +108,7 @@ public:
         : _tuneControl(NORMAL),
           _mmapFlags(0),
           _advise(0)
-    {
-    }
+    { }
 
     void setMemoryMapFlags(int flags) { _mmapFlags = flags; }
     void setAdvise(int advise)        { _advise = advise; }
@@ -190,8 +122,7 @@ public:
 
     template <typename TuneControlConfig, typename MMapConfig>
     void
-    setFromConfig(const enum TuneControlConfig::Io & tuneControlConfig, const MMapConfig & mmapFlags)
-    {
+    setFromConfig(const enum TuneControlConfig::Io & tuneControlConfig, const MMapConfig & mmapFlags) {
         switch ( tuneControlConfig) {
         case TuneControlConfig::NORMAL:   _tuneControl = NORMAL; break;
         case TuneControlConfig::DIRECTIO: _tuneControl = DIRECTIO; break;
@@ -212,13 +143,11 @@ public:
         }
     }
 
-    bool
-    operator==(const TuneFileRandRead &rhs) const {
+    bool operator==(const TuneFileRandRead &rhs) const {
         return (_tuneControl == rhs._tuneControl) && (_mmapFlags == rhs._mmapFlags);
     }
 
-    bool
-    operator!=(const TuneFileRandRead &rhs) const {
+    bool operator!=(const TuneFileRandRead &rhs) const {
         return (_tuneControl != rhs._tuneControl) && (_mmapFlags == rhs._mmapFlags);
     }
 };
@@ -234,34 +163,18 @@ public:
     TuneFileSeqRead _read;
     TuneFileSeqWrite _write;
 
-    TuneFileIndexing(void)
-        : _read(),
-          _write()
-    {
+    TuneFileIndexing(void) : _read(), _write() {}
+
+    TuneFileIndexing(const TuneFileSeqRead &r, const TuneFileSeqWrite &w) : _read(r), _write(w) { }
+
+    bool operator==(const TuneFileIndexing &rhs) const {
+        return _read == rhs._read && _write == rhs._write;
     }
 
-    TuneFileIndexing(const TuneFileSeqRead &r,
-                     const TuneFileSeqWrite &w)
-        : _read(r),
-          _write(w)
-    {
-    }
-
-    bool
-    operator==(const TuneFileIndexing &rhs) const
-    {
-        return _read == rhs._read &&
-              _write == rhs._write;
-    }
-
-    bool
-    operator!=(const TuneFileIndexing &rhs) const
-    {
-        return _read != rhs._read ||
-              _write != rhs._write;
+    bool operator!=(const TuneFileIndexing &rhs) const {
+        return _read != rhs._read || _write != rhs._write;
     }
 };
-
 
 /**
  * Controls file access for indexed fields and dictionary during
@@ -272,27 +185,10 @@ class TuneFileSearch
 public:
     TuneFileRandRead _read;
 
-    TuneFileSearch(void)
-        : _read()
-    {
-    }
-
-    TuneFileSearch(const TuneFileRandRead &r)
-        : _read(r)
-    {
-    }
-
-    bool
-    operator==(const TuneFileSearch &rhs) const
-    {
-        return _read == rhs._read;
-    }
-
-    bool
-    operator!=(const TuneFileSearch &rhs) const
-    {
-        return _read != rhs._read;
-    }
+    TuneFileSearch() : _read() { }
+    TuneFileSearch(const TuneFileRandRead &r) : _read(r) { }
+    bool operator==(const TuneFileSearch &rhs) const { return _read == rhs._read; }
+    bool operator!=(const TuneFileSearch &rhs) const { return _read != rhs._read; }
 };
 
 
@@ -304,26 +200,16 @@ class TuneFileIndexManager
 {
 public:
     TuneFileIndexing _indexing;
-    TuneFileSearch _search;
+    TuneFileSearch   _search;
 
-    TuneFileIndexManager(void)
-        : _indexing(),
-          _search()
-    {
+    TuneFileIndexManager() : _indexing(), _search() { }
+
+    bool operator==(const TuneFileIndexManager &rhs) const {
+        return _indexing == rhs._indexing && _search == rhs._search;
     }
 
-    bool
-    operator==(const TuneFileIndexManager &rhs) const
-    {
-        return _indexing == rhs._indexing &&
-                 _search == rhs._search;
-    }
-
-    bool
-    operator!=(const TuneFileIndexManager &rhs) const
-    {
-        return _indexing != rhs._indexing ||
-                 _search != rhs._search;
+    bool operator!=(const TuneFileIndexManager &rhs) const {
+        return _indexing != rhs._indexing || _search != rhs._search;
     }
 };
 
@@ -336,20 +222,13 @@ class TuneFileAttributes
 public:
     TuneFileSeqWrite _write;
 
-    TuneFileAttributes(void)
-        : _write()
-    {
-    }
+    TuneFileAttributes(void) : _write() { }
 
-    bool
-    operator==(const TuneFileAttributes &rhs) const
-    {
+    bool operator==(const TuneFileAttributes &rhs) const {
         return _write == rhs._write;
     }
 
-    bool
-    operator!=(const TuneFileAttributes &rhs) const
-    {
+    bool operator!=(const TuneFileAttributes &rhs) const {
         return _write != rhs._write;
     }
 };
@@ -365,24 +244,15 @@ public:
     TuneFileSeqWrite _write;
     TuneFileRandRead _randRead;
 
-    TuneFileSummary(void)
-        : _seqRead(),
-          _write(),
-          _randRead()
-    {
-    }
+    TuneFileSummary(void) : _seqRead(), _write(), _randRead() { }
 
-    bool
-    operator==(const TuneFileSummary &rhs) const
-    {
+    bool operator==(const TuneFileSummary &rhs) const {
         return _seqRead == rhs._seqRead &&
                  _write == rhs._write &&
               _randRead == rhs._randRead;
     }
 
-    bool
-    operator!=(const TuneFileSummary &rhs) const
-    {
+    bool operator!=(const TuneFileSummary &rhs) const {
         return _seqRead != rhs._seqRead ||
                  _write != rhs._write ||
               _randRead != rhs._randRead;
@@ -402,30 +272,19 @@ public:
     TuneFileAttributes _attr;
     TuneFileSummary _summary;
 
-    TuneFileDocumentDB(void)
-        : _index(),
-          _attr(),
-          _summary()
-    {
-    }
+    TuneFileDocumentDB() : _index(), _attr(), _summary() { }
 
-    bool
-    operator==(const TuneFileDocumentDB &rhs) const
-    {
+    bool operator==(const TuneFileDocumentDB &rhs) const {
         return _index == rhs._index &&
                 _attr == rhs._attr &&
              _summary == rhs._summary;
     }
 
-    bool
-    operator!=(const TuneFileDocumentDB &rhs) const
-    {
+    bool operator!=(const TuneFileDocumentDB &rhs) const {
         return _index != rhs._index ||
                 _attr != rhs._attr ||
              _summary != rhs._summary;
     }
 };
 
-
-} // namespace search
-
+}

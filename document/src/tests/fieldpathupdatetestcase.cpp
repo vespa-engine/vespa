@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/select/node.h>
@@ -12,6 +11,7 @@
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <fstream>
 #include <sstream>
 

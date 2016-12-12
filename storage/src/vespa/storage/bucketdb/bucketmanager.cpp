@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/bucketdb/bucketmanager.h>
-
+#include "bucketmanager.h"
+#include "distribution_hash_normalizer.h"
+#include "minimumusedbitstracker.h"
+#include "lockablemap.hpp"
 #include <iomanip>
-#include <vespa/log/log.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -13,8 +13,6 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/nodetype.h>
-#include <vespa/storage/bucketdb/minimumusedbitstracker.h>
-#include <vespa/storage/bucketdb/distribution_hash_normalizer.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storageframework/storageframework.h>
@@ -23,6 +21,7 @@
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <vespa/config/config.h>
 #include <unordered_map>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".storage.bucketdb.manager");
 

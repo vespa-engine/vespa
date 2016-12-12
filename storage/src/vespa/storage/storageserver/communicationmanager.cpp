@@ -1,20 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/storageserver/communicationmanager.h>
-
-#include <vespa/log/log.h>
-#include <queue>
+#include "communicationmanager.h"
+#include "storagemetricsset.h"
+#include "documentapiconverter.h"
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/sourcesessionparams.h>
-#include <vespa/storage/storageserver/documentapiconverter.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storageframework/storageframework.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".communication.manager");
 
@@ -24,15 +22,12 @@ PriorityQueue::PriorityQueue() :
     _queue(),
     _queueMonitor(),
     _msgCounter(0)
-{
-}
+{ }
 
 PriorityQueue::~PriorityQueue()
-{
-}
+{ }
 
-bool PriorityQueue::getNext(std::shared_ptr<api::StorageMessage>& msg,
-            int timeout)
+bool PriorityQueue::getNext(std::shared_ptr<api::StorageMessage>& msg, int timeout)
 {
     vespalib::MonitorGuard sync(_queueMonitor);
     bool first = true;

@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <tests/common/teststorageapp.h>
-
-#include <vespa/log/log.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
 #include <vespa/storage/config/config-stor-server.h>
+#include <vespa/config-stor-distribution.h>
+#include <vespa/config-load-type.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
 #include <vespa/config-fleetcontroller.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/io/fileutil.h>
-
+#include <vespa/config/config.h>
+#include <vespa/log/log.h>
 LOG_SETUP(".test.servicelayerapp");
 
 using storage::framework::defaultimplementation::ComponentRegisterImpl;

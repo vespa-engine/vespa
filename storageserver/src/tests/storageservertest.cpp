@@ -1,22 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/storage/storageserver/servicelayernode.h>
 #include <vespa/storage/storageserver/distributornode.h>
 
 #include <vespa/document/base/testdocman.h>
-#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <fstream>
-#include <vespa/log/log.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
 #include <vespa/messagebus/staticthrottlepolicy.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
@@ -24,10 +20,10 @@
 #include <tests/testhelper.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/dummystoragelink.h>
-
+#include <vespa/slobrok/sbmirror.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/memfileservicelayerprocess.h>
-
+#include <vespa/log/log.h>
 LOG_SETUP(".storageservertest");
 
 namespace storage {

@@ -17,7 +17,7 @@ namespace {
 
 struct DummyFactory : Factory {
     PersistenceProvider::UP getPersistenceImplementation(const Repo::SP& repo,
-                                                         const document::DocumenttypesConfig &) {
+                                                         const Repo::DocumenttypesConfig &) {
         return PersistenceProvider::UP(new dummy::DummyPersistence(repo, 4));
     }
 

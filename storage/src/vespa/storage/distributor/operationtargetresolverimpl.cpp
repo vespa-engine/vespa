@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/distributor/operationtargetresolverimpl.h>
+#include "operationtargetresolverimpl.h"
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/printable.hpp>
+#include <sstream>
 
 namespace storage {
 namespace distributor {
@@ -134,6 +137,11 @@ BucketInstanceList::createTargets()
         result.push_back(OperationTarget(bi._bucket, bi._node, !bi._exist));
     }
     return result;
+}
+
+void
+BucketInstanceList::print(vespalib::asciistream& out, const PrintProperties& p) const {
+    vespalib::print(_instances, out, p);
 }
 
 namespace {

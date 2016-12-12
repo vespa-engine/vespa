@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchcorespi.index.indexwriteutilities");
-
 #include "indexwriteutilities.h"
 #include "indexdisklayout.h"
 #include "indexreadutilities.h"
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchcorespi.index.indexwriteutilities");
+
 
 using search::FixedSourceSelector;
 using search::TuneFileAttributes;

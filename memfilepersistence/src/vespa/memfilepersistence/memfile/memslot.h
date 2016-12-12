@@ -174,17 +174,10 @@ public:
     void print(std::ostream& out, bool verbose,
                const std::string& indent) const;
 
-    std::string toString(bool verbose = false) const {
-        std::ostringstream ost;
-        print(ost, verbose, "");
-        return ost.str();
-    }
+    std::string toString(bool verbose = false) const;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const MemSlot& slot) {
-    slot.print(out, false, "");
-    return out;
-}
+std::ostream& operator<<(std::ostream& out, const MemSlot& slot);
 
 } // memfile
 } // storage

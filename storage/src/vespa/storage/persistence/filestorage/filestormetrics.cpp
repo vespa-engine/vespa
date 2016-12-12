@@ -2,6 +2,7 @@
 #include "filestormetrics.h"
 #include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
+#include <sstream>
 
 namespace storage {
 

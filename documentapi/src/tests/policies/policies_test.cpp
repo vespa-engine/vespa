@@ -1,13 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("policies_test");
 
-#include <vespa/document/config/config-documenttypes.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/messagebus/policies/andpolicy.h>
 #include <vespa/documentapi/messagebus/policies/documentrouteselectorpolicy.h>
@@ -29,6 +25,8 @@ LOG_SETUP("policies_test");
 #include <vespa/vdslib/container/mutabledocumentlist.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include "testframe.h"
+#include <vespa/log/log.h>
+LOG_SETUP("policies_test");
 
 using document::DataType;
 using document::Document;
@@ -906,8 +904,8 @@ Test::testDocumentRouteSelectorIgnore()
 namespace {
     string getDefaultDistributionConfig(
                     uint16_t redundancy = 2, uint16_t nodeCount = 10,
-                    vespa::config::content::StorDistributionConfig::DiskDistribution distr
-                            = vespa::config::content::StorDistributionConfig::MODULO_BID)
+                    storage::lib::Distribution::DiskDistribution distr
+                            = storage::lib::Distribution::MODULO_BID)
     {
         std::ostringstream ost;
         ost << "raw:redundancy " << redundancy << "\n"
@@ -920,7 +918,7 @@ namespace {
             ost << "group[0].nodes[" << i << "].index " << i << "\n";
         }
         ost << "disk_distribution "
-            << vespa::config::content::StorDistributionConfig::getDiskDistributionName(distr)
+            << storage::lib::Distribution::getDiskDistributionName(distr)
             << "\n";
         return ost.str();
     }

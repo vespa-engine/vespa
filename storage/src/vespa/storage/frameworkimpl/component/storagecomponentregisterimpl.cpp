@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
+#include "storagecomponentregisterimpl.h"
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 
@@ -19,8 +19,7 @@ StorageComponentRegisterImpl::StorageComponentRegisterImpl()
 }
 
 void
-StorageComponentRegisterImpl::registerStorageComponent(
-        StorageComponent& smc)
+StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
 {
     vespalib::LockGuard lock(_componentLock);
     _components.push_back(&smc);
@@ -67,8 +66,7 @@ StorageComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
 }
 
 void
-StorageComponentRegisterImpl::setDocumentTypeRepo(
-        document::DocumentTypeRepo::SP repo)
+StorageComponentRegisterImpl::setDocumentTypeRepo(document::DocumentTypeRepo::SP repo)
 {
     vespalib::LockGuard lock(_componentLock);
     _docTypeRepo = repo;
@@ -78,8 +76,7 @@ StorageComponentRegisterImpl::setDocumentTypeRepo(
 }
 
 void
-StorageComponentRegisterImpl::setLoadTypes(
-        documentapi::LoadTypeSet::SP loadTypes)
+StorageComponentRegisterImpl::setLoadTypes(documentapi::LoadTypeSet::SP loadTypes)
 {
     vespalib::LockGuard lock(_componentLock);
     _loadTypes = loadTypes;
@@ -99,8 +96,7 @@ StorageComponentRegisterImpl::setPriorityConfig(const PriorityConfig& config)
 }
 
 void
-StorageComponentRegisterImpl::setBucketIdFactory(
-        const document::BucketIdFactory& factory)
+StorageComponentRegisterImpl::setBucketIdFactory(const document::BucketIdFactory& factory)
 {
     vespalib::LockGuard lock(_componentLock);
     _bucketIdFactory = factory;
@@ -110,8 +106,7 @@ StorageComponentRegisterImpl::setBucketIdFactory(
 }
 
 void
-StorageComponentRegisterImpl::setDistribution(
-        lib::Distribution::SP distribution)
+StorageComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution)
 {
     vespalib::LockGuard lock(_componentLock);
     _distribution = distribution;

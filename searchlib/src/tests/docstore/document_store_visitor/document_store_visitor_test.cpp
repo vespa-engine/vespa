@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("document_store_visitor_test");
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/docstore/documentstore.h>
@@ -12,6 +9,10 @@ LOG_SETUP("document_store_visitor_test");
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("document_store_visitor_test");
 
 using namespace search;
 

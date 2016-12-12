@@ -3,6 +3,8 @@
 
 #include <vespa/metrics/metrics.h>
 #include <vespa/memfilepersistence/mapper/serializationmetrics.h>
+#include <vespa/vespalib/util/sync.h>
+#include <list>
 
 namespace storage {
 

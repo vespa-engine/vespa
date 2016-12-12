@@ -45,7 +45,7 @@ MemFilePersistenceMetrics::~MemFilePersistenceMetrics() { }
 
 MemFilePersistenceThreadMetrics*
 MemFilePersistenceMetrics::addThreadMetrics() {
-    metrics::MetricLockGuard metricLock(_component.getMetricManagerLock());
+    vespalib::MonitorGuard metricLock(_component.getMetricManagerLock());
     vespalib::LockGuard guard(_threadMetricsLock);
 
     if (!_sumMetric.get()) {

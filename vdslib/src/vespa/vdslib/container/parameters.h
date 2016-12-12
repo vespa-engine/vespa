@@ -16,8 +16,11 @@
 
 #include <vespa/document/util/serializable.h>
 #include <vespa/document/util/xmlserializable.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+
+namespace vespalib {
+    class asciistream;
+}
 
 namespace vdslib {
 
@@ -40,15 +43,12 @@ private:
     ParametersMap _parameters;
 
     void onSerialize(document::ByteBuffer& buffer) const;
-    void onDeserialize(const document::DocumentTypeRepo &repo,
-                       document::ByteBuffer& buffer);
+    void onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer);
     void printXml(document::XmlOutputStream& xos) const;
 
 public:
-    Parameters() : _parameters() {}
-    Parameters(const document::DocumentTypeRepo &repo,
-               document::ByteBuffer& buffer)
-        : _parameters() { deserialize(repo, buffer); }
+    Parameters();
+    Parameters(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer);
     virtual ~Parameters();
 
     bool operator==(const Parameters &other) const;
@@ -78,11 +78,7 @@ public:
      * @param t The value to save. Will be converted to a string.
      */
     template<typename T>
-    void set(const KeyT & id, const T& t) {
-        vespalib::asciistream ost;
-        ost << t;
-        _parameters[id] = ost.str();
-    }
+    void set(const KeyT & id, T t);
 
     /**
      * Get the value identified by the id given, as the same type as the default
@@ -94,14 +90,7 @@ public:
      *         the default itself if value did not exist.
      */
     template<typename T>
-    T get(const KeyT & id, const T& def) const {
-        vespalib::stringref ref;
-        if (!get(id, ref)) return def;
-        vespalib::asciistream ist(ref);
-        T t;
-        ist >> t;
-        return t;
-    }
+    T get(const KeyT & id, T def) const;
 
     std::string toString() const;
 };

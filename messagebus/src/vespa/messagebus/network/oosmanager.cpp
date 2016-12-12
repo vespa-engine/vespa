@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".oosmanager");
-
 #include <algorithm>
 #include <vespa/fnet/frt/frt.h>
 #include "oosmanager.h"
@@ -63,7 +60,7 @@ OOSManager::PerformTask()
 }
 
 OOSManager::OOSManager(FRT_Supervisor &orb,
-                       slobrok::api::MirrorAPI &mirror,
+                       IMirrorAPI &mirror,
                        const string &servicePattern)
     : FNET_Task(orb.GetScheduler()),
       _orb(orb),

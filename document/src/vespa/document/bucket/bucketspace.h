@@ -3,9 +3,12 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <cstdint>
 #include <functional>
+
+namespace vespalib {
+    class asciistream;
+}
 
 namespace document {
 

@@ -23,5 +23,8 @@ public:
     const DataType* getDocumentType(const vespalib::string &name) const;
 };
 
+DocumenttypesConfig readDocumenttypesConfig(const char *file_name);
+DocumenttypesConfig readDocumenttypesConfig(const std::string& file_name);
+
 }  // namespace document
 

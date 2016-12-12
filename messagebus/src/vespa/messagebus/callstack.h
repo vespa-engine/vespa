@@ -39,7 +39,8 @@ public:
     /**
      * Create a new empty CallStack.
      **/
-    CallStack() : _stack() { }
+    CallStack();
+    ~CallStack();
 
     /**
      * Swap the content of this and the argument stack.

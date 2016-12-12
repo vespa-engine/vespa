@@ -2,15 +2,9 @@
 
 /* $Id$*/
 
-#include <vespa/fastos/fastos.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <vespa/document/config/config-documenttypes.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <iostream>
-#include <set>
-#include <sstream>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/document/update/fieldupdate.h>
 #include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/removevalueupdate.h>

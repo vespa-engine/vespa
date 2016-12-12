@@ -4,7 +4,7 @@
 
 #include <map>
 #include <set>
-#include <vespa/document/document.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/datatypes.h>
 #include <vespa/searchlib/index/doctypebuilder.h>
 #include <limits>

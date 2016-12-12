@@ -555,6 +555,14 @@ BucketDBUpdater::getReportContentType(const framework::HttpUrlPath&) const
     return "text/xml";
 }
 
+namespace {
+
+const vespalib::string ALL = "all";
+const vespalib::string BUCKETDB = "bucketdb";
+const vespalib::string BUCKETDB_UPDATER = "Bucket Database Updater";
+
+}
+
 bool
 BucketDBUpdater::reportStatus(std::ostream& out,
                               const framework::HttpUrlPath& path) const
@@ -565,8 +573,8 @@ BucketDBUpdater::reportStatus(std::ostream& out,
     // directly from XmlStatusReporter due to data races when BucketDBUpdater
     // gets status requests directly.
     xos << XmlTag("status")
-        << XmlAttribute("id", "bucketdb")
-        << XmlAttribute("name", "Bucket Database Updater");
+        << XmlAttribute("id", BUCKETDB)
+        << XmlAttribute("name", BUCKETDB_UPDATER);
     reportXmlStatus(xos, path);
     xos << XmlEndTag();
     return true;
@@ -601,7 +609,7 @@ BucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
         xos << XmlTag("storagenode")
             << XmlAttribute("index", iter->second.targetNode);
         if (iter->second.bucket.getRawId() == 0) {
-            xos << XmlAttribute("bucket", "all");
+            xos << XmlAttribute("bucket", ALL);
         } else {
             xos << XmlAttribute("bucket", iter->second.bucket.getId(),
                                 XmlAttribute::HEX);

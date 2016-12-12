@@ -1,22 +1,35 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
-
-#include <iomanip>
-#include <vespa/log/log.h>
-#include <vespa/storage/bucketdb/config-stor-bucket-init.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
+#include "storagebucketdbinitializer.h"
+#include "lockablemap.hpp"
+#include "config-stor-bucket-init.h"
+#include "bucketdb/storbucketdb.h"
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/config.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+#include <iomanip>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".storage.bucketdb.initializer");
 
 namespace storage {
+
+using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
+
+struct BucketReadState {
+    typedef vespalib::LinkedPtr<BucketReadState> LP;
+
+    BucketSet _pending;
+    document::BucketId _databaseIterator;
+    bool _done;
+
+    BucketReadState() : _done(false) {}
+};
+
 
 StorageBucketDBInitializer::Config::Config(const config::ConfigUri & configUri)
     : _listPriority(0),

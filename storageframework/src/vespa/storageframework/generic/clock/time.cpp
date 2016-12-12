@@ -1,12 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageframework/generic/clock/time.h>
-
+#include "time.hpp"
+#include "clock.h"
 #include <iomanip>
-#include <sstream>
-#include <vespa/storageframework/generic/clock/clock.h>
-#include <sys/time.h>
 #include <vector>
 
 namespace storage {
@@ -82,6 +78,13 @@ getRawMicroTime(const Clock& clock)
 {
     return clock.getTimeInMicros().getTime();
 }
+
+template std::ostream& operator<< <MicroSecTime, 1>(std::ostream&, const Time<MicroSecTime, 1> &);
+template std::ostream& operator<< <MilliSecTime, 1000>(std::ostream&, const Time<MilliSecTime, 1000> &);
+template std::ostream& operator<< <SecondTime, 1000000>(std::ostream&, const Time<SecondTime, 1000000> &);
+
+template vespalib::asciistream& operator<< <MicroSecTime, 1>(vespalib::asciistream &, const Time<MicroSecTime, 1> &);
+template vespalib::asciistream& operator<< <MilliSecTime, 1000>(vespalib::asciistream &, const Time<MilliSecTime, 1000> &);
 
 } // framework
 } // storage

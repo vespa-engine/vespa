@@ -20,15 +20,13 @@ struct AttributeUsageFilterConfig
     AttributeUsageFilterConfig()
         : _enumStoreLimit(1.0),
           _multiValueLimit(1.0)
-    {
-    }
+    { }
 
     AttributeUsageFilterConfig(double enumStoreLimit_in,
                                double multiValueLimit_in)
         : _enumStoreLimit(enumStoreLimit_in),
           _multiValueLimit(multiValueLimit_in)
-    {
-    }
+    { }
 
     bool operator==(const AttributeUsageFilterConfig &rhs) const {
         return ((_enumStoreLimit == rhs._enumStoreLimit) &&

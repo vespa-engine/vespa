@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for providerproxy.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("providerproxy_test");
-
 #include "dummy_provider_factory.h"
 #include "mockprovider.h"
 #include <vespa/document/bucket/bucketid.h>
@@ -23,6 +19,7 @@ LOG_SETUP("providerproxy_test");
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/config-stor-distribution.h>
 
 using document::BucketId;
 using document::DataType;

@@ -1,11 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
+#include <vespa/document/util/stringutil.h>
+#include <sstream>
 
 namespace document {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(LiteralFieldValueB, FieldValue);
+
+LiteralFieldValueB::LiteralFieldValueB() :
+    FieldValue(),
+    _value(),
+    _backing(),
+    _altered(true)
+{
+    _value = _backing;
+}
+
+LiteralFieldValueB::~LiteralFieldValueB() { }
 
 LiteralFieldValueB::LiteralFieldValueB(const LiteralFieldValueB& other)
     : FieldValue(other),

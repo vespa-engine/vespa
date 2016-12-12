@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exception.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
-
-LOG_SETUP(".tickingthreadtest");
 
 namespace storage {
 namespace framework {

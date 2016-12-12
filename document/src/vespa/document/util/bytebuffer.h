@@ -14,36 +14,14 @@
  */
 #pragma once
 
-#include <vespa/fastos/types.h>
+#include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/referencecounter.h>
-#include <vespa/document/util/stringutil.h>
-#include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/util/linkedptr.h>
-#include <memory>
 
 namespace document {
-
-class BufferOutOfBoundsException : public vespalib::IoException {
-    static vespalib::string createMessage(size_t pos, size_t len);
-public:
-    BufferOutOfBoundsException(size_t pos, size_t len,
-                               const vespalib::string& location = "");
-
-    VESPA_DEFINE_EXCEPTION_SPINE(BufferOutOfBoundsException)
-};
-
-class InputOutOfRangeException : public vespalib::IoException {
-public:
-    InputOutOfRangeException(const vespalib::string& msg,
-                             const vespalib::string& location = "");
-
-    VESPA_DEFINE_EXCEPTION_SPINE(InputOutOfRangeException)
-};
 
 class ByteBuffer
 {
 public:
-    typedef vespalib::LinkedPtr<ByteBuffer> LP;
     typedef std::unique_ptr<ByteBuffer> UP;
     /**
      * Creates a byte buffer with no underlying buffer.
@@ -243,8 +221,7 @@ public:
     void putDoubleLongNetwork(T val) {
         //TODO: Change this if we move to big-endian hardware
         if (__builtin_expect(getRemaining() < (int)sizeof(T), 0)) {
-            throw BufferOutOfBoundsException(getRemaining(), sizeof(T),
-                    VESPA_STRLOC);
+            throwOutOfBounds(sizeof(T), getRemaining());
         }
         unsigned char* data = reinterpret_cast<unsigned char*>(&val);
         for (int i=sizeof(T)-1; i>=0; --i) {
@@ -256,8 +233,7 @@ public:
     void getDoubleLongNetwork(T &val) {
         //TODO: Change this if we move to big-endian hardware
         if (__builtin_expect(getRemaining() < (int)sizeof(T), 0)) {
-            throw BufferOutOfBoundsException(getRemaining(), sizeof(T),
-                    VESPA_STRLOC);
+            throwOutOfBounds(sizeof(T), getRemaining());
         }
 
         unsigned char* data = reinterpret_cast<unsigned char*>(&val);

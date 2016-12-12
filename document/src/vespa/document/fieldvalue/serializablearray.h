@@ -16,18 +16,15 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/document/util/compressionconfig.h>
 #include <vespa/document/util/compressor.h>
 #include <vespa/document/util/serializable.h>
-#include <map>
-#include <set>
-#include <stdio.h>
 #include <vector>
 #include <vespa/vespalib/objects/cloneable.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/fastos/dynamiclibrary.h>
 
 namespace document
 {
@@ -107,7 +104,6 @@ private:
 
 public:
     static Statistics& getStatistics() { return _stats; }
-    typedef vespalib::LinkedPtr<SerializableArray> LP;
     typedef vespalib::CloneablePtr<SerializableArray> CP;
     typedef std::unique_ptr<SerializableArray> UP;
 

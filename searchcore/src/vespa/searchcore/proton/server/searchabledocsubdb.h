@@ -48,12 +48,10 @@ public:
         const FastAccessDocSubDB::Config _fastUpdCfg;
         const size_t _numSearcherThreads;
 
-        Config(const FastAccessDocSubDB::Config &fastUpdCfg,
-               size_t numSearcherThreads)
+        Config(const FastAccessDocSubDB::Config &fastUpdCfg, size_t numSearcherThreads)
             : _fastUpdCfg(fastUpdCfg),
               _numSearcherThreads(numSearcherThreads)
-        {
-        }
+        { }
     };
 
     struct Context {
@@ -70,8 +68,7 @@ public:
               _queryLimiter(queryLimiter),
               _clock(clock),
               _warmupExecutor(warmupExecutor)
-        {
-        }
+        { }
     };
 
 private:
@@ -89,49 +86,34 @@ private:
     vespalib::ThreadExecutor                   &_warmupExecutor;
 
     // Note: lifetime of indexManager must be handled by caller.
-    initializer::InitializerTask::SP
+    std::shared_ptr<initializer::InitializerTask>
     createIndexManagerInitializer(const DocumentDBConfig &configSnapshot,
                                   const search::index::Schema::SP &unionSchema,
                                   const vespa::config::search::core::ProtonConfig::Index &indexCfg,
                                   std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const;
 
     void setupIndexManager(searchcorespi::IIndexManager::SP indexManager);
-
-    void
-    initFeedView(const IAttributeWriter::SP &attrWriter,
-                 const DocumentDBConfig &configSnapshot);
-
-    void
-    reconfigureMatchingMetrics(const vespa::config::search::RankProfilesConfig &config);
+    void initFeedView(const IAttributeWriter::SP &attrWriter, const DocumentDBConfig &configSnapshot);
+    void reconfigureMatchingMetrics(const vespa::config::search::RankProfilesConfig &config);
 
     /**
      * Implements IndexManagerReconfigurer API.
      */
-    virtual bool
-    reconfigure(vespalib::Closure0<bool>::UP closure);
-
-    void
-    reconfigureIndexSearchable();
-
-    void
-    syncViews();
-
+    bool reconfigure(vespalib::Closure0<bool>::UP closure) override;
+    void reconfigureIndexSearchable();
+    void syncViews();
 protected:
-    virtual IFlushTarget::List
-    getFlushTargetsInternal();
+    IFlushTarget::List getFlushTargetsInternal();
 
     using Parent::updateLidReuseDelayer;
 
-    virtual void
-    updateLidReuseDelayer(const LidReuseDelayerConfig &config) override;
+    void updateLidReuseDelayer(const LidReuseDelayerConfig &config) override;
 public:
-    SearchableDocSubDB(const Config &cfg,
-                       const Context &ctx);
+    SearchableDocSubDB(const Config &cfg, const Context &ctx);
 
-    virtual
     ~SearchableDocSubDB();
 
-    virtual DocumentSubDbInitializer::UP
+    std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
                       const search::index::Schema::SP &unionSchema,

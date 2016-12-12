@@ -2,9 +2,6 @@
 #pragma once
 
 #include "flushstats.h"
-#include <string>
-#include <vespa/searchlib/common/serialnum.h>
-#include <vespa/vespalib/util/executor.h>
 #include "flushtask.h"
 
 namespace searchcorespi {
@@ -79,8 +76,7 @@ public:
         : _name(name),
           _type(Type::OTHER),
           _component(Component::OTHER)
-    {
-    }
+    { }
 
     /**
      * Constructs a new instance of this class.
@@ -95,8 +91,7 @@ public:
         : _name(name),
           _type(type),
           _component(component)
-    {
-    }
+    { }
 
     /**
      * Virtual destructor required for inheritance.

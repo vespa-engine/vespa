@@ -103,3 +103,14 @@ operator>>(nbostream &in, DocIdAndFeatures &features)
 } // namespace index
 
 } // namespace search
+
+#include <vespa/vespalib/objects/nbostream.hpp>
+
+namespace vespalib {
+    using search::index::WordDocElementFeatures;
+    using search::index::WordDocElementWordPosFeatures;
+    template nbostream& nbostream::saveVector<WordDocElementFeatures>(const std::vector<WordDocElementFeatures> &);
+    template nbostream& nbostream::restoreVector<WordDocElementFeatures>(std::vector<WordDocElementFeatures> &);
+    template nbostream& nbostream::saveVector<WordDocElementWordPosFeatures>(const std::vector<WordDocElementWordPosFeatures> &);
+    template nbostream& nbostream::restoreVector<WordDocElementWordPosFeatures>(std::vector<WordDocElementWordPosFeatures> &);
+}

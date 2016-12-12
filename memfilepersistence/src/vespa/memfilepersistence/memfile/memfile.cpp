@@ -4,7 +4,6 @@
 #include <vespa/memfilepersistence/memfile/memfile.h>
 
 #include <ext/algorithm>
-#include <vespa/log/log.h>
 #include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
@@ -13,6 +12,10 @@
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/memfilepersistence/common/environment.h>
 #include <iomanip>
+#include <vespa/document/util/stringutil.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".persistence.memfile.memfile");
 
 namespace {
 
@@ -24,8 +27,6 @@ std::vector<A> toVector(A entry) {
 };
 
 }
-
-LOG_SETUP(".persistence.memfile.memfile");
 
 #define FAIL_INCONSISTENT(msg, slot) \
 { \

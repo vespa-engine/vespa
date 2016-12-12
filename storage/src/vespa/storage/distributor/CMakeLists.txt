@@ -20,6 +20,7 @@ vespa_add_library(storage_distributor
     pendingclusterstate.cpp
     nodeinfo.cpp
     sentmessagemap.cpp
+    operationtargetresolver.cpp
     operationtargetresolverimpl.cpp
     throttlingoperationstarter.cpp
     blockingoperationstarter.cpp

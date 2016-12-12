@@ -1,16 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".document.addvalueupdate");
-
+#include "addvalueupdate.h"
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
-#include <vespa/document/update/addvalueupdate.h>
 #include <vespa/document/util/serializable.h>
+#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 using vespalib::IllegalArgumentException;

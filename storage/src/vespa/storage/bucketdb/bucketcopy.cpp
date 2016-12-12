@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/bucketdb/bucketcopy.h>
+#include "bucketcopy.h"
+#include <sstream>
 
 namespace storage {
 
@@ -15,6 +15,13 @@ BucketCopy::print(std::ostream& out, bool /*verbose*/, const std::string&) const
         << ",trusted=" << (trusted() ? "true" : "false")
         << ",active=" << (active() ? "true" : "false")
         << ")";
+}
+
+std::string
+BucketCopy::toString() const {
+    std::ostringstream ost;
+    print(ost, true, "");
+    return ost.str();
 }
 
 }

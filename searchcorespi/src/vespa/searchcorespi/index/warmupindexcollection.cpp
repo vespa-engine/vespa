@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchcorespi.index.warmupindexcollection");
@@ -20,6 +21,12 @@ using vespalib::makeClosure;
 using index::IDiskIndex;
 using fastos::TimeStamp;
 using fastos::ClockSystem;
+using TermMap = vespalib::hash_set<vespalib::string>;
+
+class FieldTermMap : public vespalib::hash_map<uint32_t, TermMap>
+{
+
+};
 
 WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
                                              ISearchableIndexCollection::SP prev,
@@ -34,7 +41,7 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
     _executor(executor),
     _warmupDone(warmupDone),
     _warmupEndTime(ClockSystem::now() + TimeStamp::Seconds(warmupConfig.getDuration())),
-    _handledTerms()
+    _handledTerms(std::make_unique<FieldTermMap>())
 {
     if (next->valid()) {
         setCurrentIndex(next->getCurrentIndex());
@@ -126,7 +133,7 @@ WarmupIndexCollection::handledBefore(uint32_t fieldId, const Node &term)
     if (sb != NULL) {
         const vespalib::string & s = sb->getTerm();
         vespalib::LockGuard guard(_lock);
-        TermMap::insert_result found = _handledTerms[fieldId].insert(s);
+        TermMap::insert_result found = (*_handledTerms)[fieldId].insert(s);
         return ! found.second;
     }
     return true;

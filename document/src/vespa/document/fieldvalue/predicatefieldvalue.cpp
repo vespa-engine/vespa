@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".predicatefieldvalue");
-#include <vespa/fastos/fastos.h>
-
 #include "predicatefieldvalue.h"
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_printer.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using vespalib::Slime;
 using vespalib::slime::SlimeInserter;
@@ -33,6 +30,8 @@ PredicateFieldValue::PredicateFieldValue(const PredicateFieldValue &rhs)
 {
     inject(rhs._slime->get(), SlimeInserter(*_slime));
 }
+
+PredicateFieldValue::~PredicateFieldValue() { }
 
 FieldValue &PredicateFieldValue::assign(const FieldValue &rhs) {
     if (rhs.inherits(PredicateFieldValue::classId)) {

@@ -10,7 +10,7 @@
 #include "floatbucketresultnode.h"
 #include "stringbucketresultnode.h"
 #include "rawbucketresultnode.h"
-#include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 
 namespace search {

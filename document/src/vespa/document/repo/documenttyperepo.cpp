@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".documenttyperepo");
-
 #include "documenttyperepo.h"
 
 #include <vespa/document/datatype/annotationreferencedatatype.h>
@@ -19,10 +15,13 @@ LOG_SETUP(".documenttyperepo");
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/config/print/fileconfigreader.h>
+#include <vespa/document/config/config-documenttypes.h>
 #include <fstream>
 #include <memory>
 #include <utility>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".documenttyperepo");
 
 using std::unique_ptr;
 using std::fstream;
@@ -579,15 +578,6 @@ void DocumentTypeRepo::forEachDocumentType(
              it = _doc_types.begin(); it != _doc_types.end(); ++it) {
         c.call(*it->second->doc_type);
     }
-}
-
-DocumenttypesConfig readDocumenttypesConfig(const char *file_name) {
-    config::FileConfigReader<DocumenttypesConfig> reader(file_name);
-    return DocumenttypesConfig(*reader.read());
-}
-
-DocumenttypesConfig readDocumenttypesConfig(const std::string &file_name ) {
-    return readDocumenttypesConfig(file_name.c_str());
 }
 
 }  // namespace document

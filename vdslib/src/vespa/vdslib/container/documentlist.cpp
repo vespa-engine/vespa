@@ -1,8 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdslib/container/documentlist.h>
+#include "documentlist.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <iostream>
+#include <sstream>
+#include <vespa/document/util/stringutil.h>
+#include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".vdslib.container.documentlist");
@@ -422,7 +424,7 @@ DocumentList::checkConsistency(bool do_memset)
                     i, curEnd, prevStart);
                 std::ostringstream oss;
                 print(oss, true, "");
-                std::cerr << "Dumping DocumentList: " << oss.str() << "\n";
+                fprintf(stderr, "%s\n", oss.str().c_str());
                 assert(!"DocumentList has overlapping blocks!");
             }
             if (curEnd < prevStart) {
@@ -469,7 +471,7 @@ DocumentList::print(std::ostream& out, bool verbose,
                 entry.print(out, indent + "         ");
                 if (entry.headerPos + entry.headerLen > _bufferSize ||
                     entry.bodyPos + entry.bodyLen > _bufferSize) {
-                    std::cerr << " Invalid entry. Aborting print.)";
+                    fprintf(stderr, " Invalid entry. Aborting print.\n");
                     return;
                 }
             }

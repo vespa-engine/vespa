@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/storage/bucketdb/bucketcopy.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace distributor {
@@ -27,11 +26,7 @@ struct MergeMetaData {
     }
 };
 
-inline vespalib::asciistream& operator<<(vespalib::asciistream& out,
-                                         const MergeMetaData& e)
-{
-    return out << "MergeMetaData(" << e._nodeIndex << ")";
-}
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const MergeMetaData& e);
 
 } // distributor
 } // storage

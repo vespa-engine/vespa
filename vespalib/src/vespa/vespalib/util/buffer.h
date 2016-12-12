@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/types.h>
+#include <sys/types.h>
 
 namespace vespalib {
 
@@ -11,7 +11,7 @@ namespace vespalib {
 class BufferRef
 {
 public:
-    BufferRef() : _buf(NULL), _sz(0) { }
+    BufferRef() : _buf(nullptr), _sz(0) { }
     BufferRef(void * buf, size_t sz) : _buf(buf), _sz(sz) { }
     const char * c_str() const { return static_cast<const char *>(_buf); }
     char * str()               { return static_cast<char *>(_buf); }
@@ -32,7 +32,7 @@ private:
 class ConstBufferRef
 {
 public:
-    ConstBufferRef() : _buf(NULL), _sz(0) { }
+    ConstBufferRef() : _buf(nullptr), _sz(0) { }
     ConstBufferRef(const void * buf, size_t sz) : _buf(buf), _sz(sz) { }
     ConstBufferRef(const BufferRef & rhs) : _buf(rhs.data()), _sz(rhs.size()) { }
     const char * c_str() const { return static_cast<const char *>(_buf); }

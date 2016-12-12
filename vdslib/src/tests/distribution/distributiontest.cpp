@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/idealnodecalculator.h>
 #include <vespa/config/helper/configfetcher.h>
@@ -17,6 +16,7 @@
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/config-stor-distribution.h>
 
 namespace storage {
 namespace lib {
@@ -313,7 +313,6 @@ namespace {
     struct Test {
         const NodeType* _nodeType;
         std::string _state;
-        Distribution::DistributionConfig _distributionConfig;
         std::unique_ptr<Distribution> _distribution;
         uint32_t _bucketsToTest;
         const char* _upStates;
@@ -322,9 +321,7 @@ namespace {
         Test()
             : _nodeType(&NodeType::STORAGE),
               _state("distributor:10 storage:10"),
-              _distributionConfig(
-                    Distribution::getDefaultDistributionConfig(3, 10)),
-              _distribution(new Distribution(_distributionConfig)),
+              _distribution(new Distribution(Distribution::getDefaultDistributionConfig(3, 10))),
               _bucketsToTest(100),
               _upStates("uir"),
               _redundancy(2)
@@ -580,8 +577,7 @@ DistributionTest::testDiskCapacityWeights()
 void
 DistributionTest::testDiskSkewLocal()
 {
-    Distribution distr(Distribution::getDefaultDistributionConfig(
-                2, 3, vespa::config::content::StorDistributionConfig::MODULO_INDEX));
+    Distribution distr(Distribution::getDefaultDistributionConfig(2, 3, Distribution::MODULO_INDEX));
     std::vector<float> diskDist(100);
     NodeState nodeState;
     nodeState.setDiskCount(100);
@@ -597,17 +593,13 @@ DistributionTest::testDiskSkewLocal()
 
 }
 
-
-
 void
 DistributionTest::testDiskSkewGlobal()
 {
     uint16_t num_disks = 10;
     uint16_t num_nodes = 10;
-    Distribution distr(Distribution::getDefaultDistributionConfig(
-                2, num_nodes, vespa::config::content::StorDistributionConfig::MODULO_INDEX));
-    std::vector<std::vector<float> > diskDist(
-            num_nodes, std::vector<float>(num_disks));
+    Distribution distr(Distribution::getDefaultDistributionConfig(2, num_nodes, Distribution::MODULO_INDEX));
+    std::vector<std::vector<float> > diskDist(num_nodes, std::vector<float>(num_disks));
     NodeState nodeState;
     nodeState.setDiskCount(num_disks);
     for(uint16_t idx=0; idx < num_nodes; idx++) {
@@ -640,8 +632,7 @@ DistributionTest::testDiskIntersection()
     uint16_t num_disks = 8;
     uint16_t num_nodes = 20;
     float max = 0;
-    Distribution distr(Distribution::getDefaultDistributionConfig(
-                2, num_nodes, vespa::config::content::StorDistributionConfig::MODULO_INDEX));
+    Distribution distr(Distribution::getDefaultDistributionConfig(2, num_nodes, Distribution::MODULO_INDEX));
 
     NodeState nodeState;
     nodeState.setDiskCount(num_disks);

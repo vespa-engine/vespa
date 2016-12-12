@@ -1,16 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/update/assignfieldpathupdate.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <boost/numeric/conversion/cast.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".document.update.fieldpathupdate");
 
 using vespalib::nbostream;
-
-LOG_SETUP(".document.update.fieldpathupdate");
 
 namespace document {
 
@@ -23,8 +24,7 @@ AssignFieldPathUpdate::AssignFieldPathUpdate()
       _expression(),
       _removeIfZero(false),
       _createMissingPath(false)
-{
-}
+{ }
 
 
 AssignFieldPathUpdate::AssignFieldPathUpdate(

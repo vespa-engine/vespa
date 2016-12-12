@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/numericdatatype.h>
 #include <vespa/document/datatype/primitivedatatype.h>
@@ -174,7 +173,6 @@ DataType::operator<(const DataType& other) const
 FieldPath::UP
 DataType::buildFieldPath(const vespalib::stringref  & remainFieldName) const
 {
-//    LOG(debug, "remainFieldName = %s, dataType=%s", remainFieldName.c_str(), getClass().name());
     if ( !remainFieldName.empty() ) {
         return onBuildFieldPath(remainFieldName);
     }

@@ -2,8 +2,6 @@
 /* $Id$ */
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.config");
 #include "config.h"
 #include "IJuniperProperties.h"
 #include "rpinterface.h"

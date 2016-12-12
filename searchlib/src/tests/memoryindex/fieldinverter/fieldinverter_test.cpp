@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* -*- mode: C++; coding: utf-8; -*- */
-
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("fieldinverter_test");
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/memoryindex/fieldinverter.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -12,20 +8,18 @@ LOG_SETUP("fieldinverter_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/repo/fixedtyperepo.h>
 
-namespace search
-{
+namespace search {
 
 
 using document::Document;
 using index::DocBuilder;
 using index::Schema;
+using namespace index;
 
-namespace memoryindex
-{
+namespace memoryindex {
 
 
-namespace
-{
+namespace {
 
 
 Document::UP
@@ -117,12 +111,10 @@ struct Fixture
     makeSchema()
     {
         Schema schema;
-        schema.addIndexField(Schema::IndexField("f0", Schema::STRING));
-        schema.addIndexField(Schema::IndexField("f1", Schema::STRING));
-        schema.addIndexField(Schema::IndexField("f2", Schema::STRING,
-                                                Schema::ARRAY));
-        schema.addIndexField(Schema::IndexField("f3", Schema::STRING,
-                                                Schema::WEIGHTEDSET));
+        schema.addIndexField(Schema::IndexField("f0", schema::STRING));
+        schema.addIndexField(Schema::IndexField("f1", schema::STRING));
+        schema.addIndexField(Schema::IndexField("f2", schema::STRING, schema::ARRAY));
+        schema.addIndexField(Schema::IndexField("f3", schema::STRING, schema::WEIGHTEDSET));
         return schema;
     }
 

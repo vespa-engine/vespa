@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/distributor/distributor_host_info_reporter.h>
 #include <vespa/storage/distributor/latency_statistics_provider.h>
@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/jsonstream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <tests/common/hostreporter/util.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace distributor {

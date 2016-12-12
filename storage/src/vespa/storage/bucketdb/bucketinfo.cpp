@@ -1,13 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/bucketdb/bucketinfo.h>
+#include "bucketinfo.h"
 #include <vespa/storage/storageutil/utils.h>
 
 namespace storage {
 
 BucketInfo::BucketInfo()
     : _lastGarbageCollection(0)
-{
+{ }
+
+BucketInfo::~BucketInfo() { }
+
+std::string
+BucketInfo::toString() const {
+    std::ostringstream ost;
+    print(ost, true, "");
+    return ost.str();
 }
 
 bool

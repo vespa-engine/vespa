@@ -50,6 +50,7 @@
 #include <vespa/metrics/metricsnapshot.h>
 #include <vespa/metrics/namehash.h>
 #include <vespa/metrics/valuemetric.h>
+#include <vespa/metrics/updatehook.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/sync.h>
 #include <map>
@@ -64,21 +65,6 @@ typedef vespalib::MonitorGuard MetricLockGuard;
 class MetricManager : private document::Runnable
 {
 public:
-    class UpdateHook {
-        const char* _name;
-        time_t _nextCall;
-        uint32_t _period;
-        friend class MetricManager;
-
-    public:
-        typedef vespalib::LinkedPtr<UpdateHook> LP;
-        using MetricLockGuard = metrics::MetricLockGuard;
-
-        UpdateHook(const char* name) : _name(name), _nextCall(0), _period(0) {}
-        virtual ~UpdateHook() {}
-        virtual void updateMetrics(const MetricLockGuard & guard) = 0;
-        const char* getName() const { return _name; }
-    };
 
     struct Timer {
         virtual ~Timer() {}
@@ -306,15 +292,8 @@ private:
     void handleMetricsAltered(const MetricLockGuard & guard);
 
     typedef std::pair<uint32_t, std::string> SnapSpec;
-    static std::vector<SnapSpec> createSnapshotPeriods(
-            const MetricsmanagerConfig& config);
-    void assertMetricLockLocked(const MetricLockGuard& g) const {
-        if (!g.monitors(_waiter)) {
-            throw vespalib::IllegalArgumentException(
-                    "Given lock does not lock the metric lock.", VESPA_STRLOC);
-        }
-    }
-
+    static std::vector<SnapSpec> createSnapshotPeriods( const MetricsmanagerConfig& config);
+    void assertMetricLockLocked(const MetricLockGuard& g) const;
 };
 
 } // metrics

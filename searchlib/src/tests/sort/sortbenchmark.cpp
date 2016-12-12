@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/vespalib/util/array.h>
-#include <vector>
-
-LOG_SETUP("sort_test");
+#include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/stllike/string.h>
 
 using vespalib::Array;
 using vespalib::ConstBufferRef;

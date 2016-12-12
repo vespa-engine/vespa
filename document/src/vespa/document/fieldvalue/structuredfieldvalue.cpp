@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/fieldvalue/structuredfieldvalue.h>
-
+#include <vespa/document/fieldvalue/structuredfieldvalue.hpp>
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
-#include <vespa/log/log.h>
+#include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.structured");
 
 namespace document {
@@ -172,5 +171,17 @@ StructuredFieldValue::onIterateNested(
         return status;
     }
 }
+
+using ConstCharP = const char *;
+template void StructuredFieldValue::set(const vespalib::stringref & field, int32_t value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, int64_t value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, double value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, ConstCharP value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, vespalib::stringref value);
+template void StructuredFieldValue::set(const vespalib::stringref & field, vespalib::string value);
+
+template std::unique_ptr<MapFieldValue> StructuredFieldValue::getAs<MapFieldValue>(const Field &field) const;
+template std::unique_ptr<ArrayFieldValue> StructuredFieldValue::getAs<ArrayFieldValue>(const Field &field) const;
+template std::unique_ptr<WeightedSetFieldValue> StructuredFieldValue::getAs<WeightedSetFieldValue>(const Field &field) const;
 
 } // document

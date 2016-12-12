@@ -13,15 +13,15 @@
 
 #pragma once
 
-#include <vespa/metrics/loadmetric.h>
-#include <string>
+#include <vespa/metrics/loadtype.h>
 #include <vespa/vespalib/util/linkedptr.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/documentapi/messagebus/priority.h>
 
-namespace documentapi {
+namespace vespalib {
+    class asciistream;
+}
 
-class LoadTypeSet;
+namespace documentapi {
 
 // Inherit metrics loadtype so it is easy to use load types in load metrics.
 class LoadType : public metrics::LoadType {
@@ -39,5 +39,4 @@ private:
     void print(vespalib::asciistream & os) const;
 };
 
-} // documentapi
-
+}

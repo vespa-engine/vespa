@@ -9,11 +9,10 @@
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/memfilepersistence/mapper/versionserializer.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
-namespace storage
-{
-namespace memfile
-{
+namespace storage {
+namespace memfile {
 
 namespace util {
 

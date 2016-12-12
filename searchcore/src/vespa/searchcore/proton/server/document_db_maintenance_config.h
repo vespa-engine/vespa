@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vector>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
+#include <vespa/fastos/timestamp.h>
 
 namespace proton {
 

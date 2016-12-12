@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/attribute/numericbase.h>
-#include <vespa/searchlib/attribute/multivalue.h>
-#include <vespa/searchlib/attribute/loadednumericvalue.h>
-#include <vespa/searchlib/attribute/changevector.h>
+#include "numericbase.h"
+#include "multivalue.h"
+#include "loadednumericvalue.h"
+#include "changevector.h"
 
 namespace search {
 
@@ -30,8 +30,8 @@ public:
         return AttributeVector::remove(_changes, doc, NumericChangeData<largeint_t>(v), weight);
     }
     bool apply(DocId doc, const ArithmeticValueUpdate & op);
-    virtual bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust);
-    virtual uint32_t clearDoc(DocId doc);
+    bool applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust) override;
+    uint32_t clearDoc(DocId doc) override;
 protected:
     IntegerAttribute(const vespalib::string & name, const Config & c);
     typedef ChangeTemplate<NumericChangeData<largeint_t> > Change;
@@ -39,11 +39,11 @@ protected:
     ChangeVector _changes;
 
 private:
-    virtual const char * getString(DocId doc, char * s, size_t sz) const { largeint_t v = getInt(doc); snprintf(s, sz, "%" PRId64, v); return s; }
-    virtual uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, const char ** v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const;
-    virtual uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const;
+    const char * getString(DocId doc, char * s, size_t sz) const override;
+    uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
+    uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;
+    uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override;
     virtual largeint_t getIntFromEnum(EnumHandle e) const = 0;
 };
 
@@ -61,11 +61,7 @@ public:
     typedef T BaseType;
     typedef T LoadedValueType;
     typedef SequentialReadModifyWriteInterface<LoadedNumericValueT> LoadedVector;
-    virtual uint32_t getRawValues(DocId doc, const multivalue::Value<T> * & values) const {
-        (void) doc;
-        (void) values;
-        throw std::runtime_error(getNativeClassName() + "::getRawValues() not implemented.");
-    }
+    virtual uint32_t getRawValues(DocId doc, const multivalue::Value<T> * & values) const;
 
 protected:
     IntegerAttributeTemplate(const vespalib::string & name) :
@@ -75,7 +71,9 @@ protected:
     IntegerAttributeTemplate(const vespalib::string & name, const Config & c) :
         IntegerAttribute(name, c),
         _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
-    { assert(c.basicType() == BasicType::fromType(T())); }
+    {
+        assert(c.basicType() == BasicType::fromType(T()));
+    }
     IntegerAttributeTemplate(const vespalib::string & name,
                              const Config & c,
                              const BasicType &realType)
@@ -92,45 +90,12 @@ protected:
     virtual bool isUndefined(DocId doc) const { return get(doc) == defaultValue(); }
     Change _defaultValue;
 private:
-    virtual bool findEnum(const char *value, EnumHandle &e) const {
-        vespalib::asciistream iss(value);
-        int64_t ivalue = 0;
-        try {
-            iss >> ivalue;
-        } catch (const vespalib::IllegalArgumentException &) {
-        }
-        return findEnum(ivalue, e);
-    }
+    bool findEnum(const char *value, EnumHandle &e) const override;
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
-    virtual largeint_t getIntFromEnum(EnumHandle e) const {
-        T v(getFromEnum(e));
-        if (attribute::isUndefined<T>(v)) {
-            return attribute::getUndefined<largeint_t>();
-        }
-        return v;
-    }
-    virtual long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const {
-        (void) bc;
-        if (available >= long(sizeof(T))) {
-            T origValue(get(doc));
-            vespalib::serializeForSort< vespalib::convertForSort<T, true> >(origValue, serTo);
-        } else {
-            return -1;
-        }
-        return sizeof(T);
-    }
-    virtual long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const {
-        (void) bc;
-        if (available >= long(sizeof(T))) {
-            T origValue(get(doc));
-            vespalib::serializeForSort< vespalib::convertForSort<T, false> >(origValue, serTo);
-        } else {
-            return -1;
-        }
-        return sizeof(T);
-    }
+    largeint_t getIntFromEnum(EnumHandle e) const override;
+    long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
+    long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 };
 
 }
-

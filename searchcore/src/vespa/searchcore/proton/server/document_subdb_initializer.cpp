@@ -1,24 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "document_subdb_initializer.h"
 #include "idocumentsubdb.h"
 #include <future>
 #include <vespa/searchlib/common/lambdatask.h>
+#include <vespa/searchcorespi/index/i_thread_service.h>
 
 using search::makeLambdaTask;
 
 namespace proton {
 
-DocumentSubDbInitializer::DocumentSubDbInitializer(IDocumentSubDB &subDB,
-                                                   searchcorespi::index::IThreadService &master)
+DocumentSubDbInitializer::DocumentSubDbInitializer(IDocumentSubDB &subDB, searchcorespi::index::IThreadService &master)
     : InitTask(),
       _result(),
       _documentMetaStoreInitTask(),
       _subDB(subDB),
       _master(master)
-{
-}
+{ }
 
 void
 DocumentSubDbInitializer::

@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-
 #include "termasstring.h"
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/query/tree/queryvisitor.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <typeinfo>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".termasstring");
 

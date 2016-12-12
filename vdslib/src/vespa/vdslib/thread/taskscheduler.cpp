@@ -1,12 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/vdslib/thread/taskscheduler.h>
-
-#include <iostream>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-LOG_SETUP(".task.scheduler");
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace vdslib {
 
@@ -146,7 +142,7 @@ TaskScheduler::waitForTaskCounterOfAtLeast(uint64_t taskCounter,
     uint64_t endTime = currentTime + timeout;
     while (_taskCounter < taskCounter) {
         if (endTime <= currentTime) {
-            std::ostringstream ost;
+            vespalib::asciistream ost;
             ost << "Task scheduler not reached task counter of " << taskCounter
                 << " within timeout of " << timeout << " ms. Current task"
                 << " counter is " << _taskCounter;
@@ -165,7 +161,7 @@ TaskScheduler::waitUntilNoTasksRemaining(uint64_t timeout) const
     uint64_t endTime = currentTime + timeout;
     while (_tasks.size() > 0 || _currentRunningTasks.size() > 0) {
         if (endTime <= currentTime) {
-            std::ostringstream ost;
+            vespalib::asciistream ost;
             ost << "Task scheduler still have tasks scheduled after timeout"
                 << " of " << timeout << " ms. There are " << _tasks.size()
                 << " entries in tasks map and " << _currentRunningTasks.size()

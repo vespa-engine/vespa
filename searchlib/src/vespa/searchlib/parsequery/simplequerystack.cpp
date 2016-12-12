@@ -11,7 +11,7 @@
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/nbo.h>
 #include <vespa/searchlib/parsequery/simplequerystack.h>
 
 LOG_SETUP(".search.simplequerystack");
@@ -257,7 +257,7 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             break;
 
         case search::ParseItem::ITEM_PURE_WEIGHTED_LONG:
-            tmp = vespalib::nbostream::n2h(*reinterpret_cast<const uint64_t *>(p));
+            tmp = vespalib::nbo::n2h(*reinterpret_cast<const uint64_t *>(p));
             p += sizeof(uint64_t);
             result.append(make_vespa_string("%c/%lu", _G_ItemName[type], tmp));
             break;
@@ -275,9 +275,9 @@ SimpleQueryStack::StackbufToString(const vespalib::stringref &theBuf)
             if (type == search::ParseItem::ITEM_WAND) {
                 p += vespalib::compress::Integer::decompressPositive(tmp, p);
                 uint32_t targetNumHits = tmp;
-                double scoreThreshold = vespalib::nbostream::n2h(*reinterpret_cast<const double *>(p)); 
+                double scoreThreshold = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); 
                 p += sizeof(double);
-                double thresholdBoostFactor = vespalib::nbostream::n2h(*reinterpret_cast<const double *>(p)); // thresholdBoostFactor
+                double thresholdBoostFactor = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); // thresholdBoostFactor
                 p += sizeof(double);
                 result.append(make_vespa_string("%c/%d/%d:%.*s(%u,%f,%f)~", _G_ItemName[type], arity, idxRefLen,
                                                 idxRefLen, idxRef, targetNumHits, scoreThreshold, thresholdBoostFactor));
@@ -341,7 +341,7 @@ SimpleQueryStack::ReadString(const char *&p)
 uint64_t
 SimpleQueryStack::ReadUint64(const char *&p)
 {
-    uint64_t l = static_cast<uint64_t>(vespalib::nbostream::n2h(*(const uint64_t *)p));
+    uint64_t l = static_cast<uint64_t>(vespalib::nbo::n2h(*(const uint64_t *)p));
     p += sizeof(uint64_t);
     return l;
 }

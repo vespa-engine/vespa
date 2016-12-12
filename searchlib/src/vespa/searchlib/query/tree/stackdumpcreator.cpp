@@ -1,15 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".stackdumpcreator");
-
 #include "stackdumpcreator.h"
 
 #include "intermediatenodes.h"
 #include "queryvisitor.h"
 #include "termnodes.h"
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/util/rawbuf.h>
@@ -61,7 +57,7 @@ class QueryNodeConverter : public QueryVisitor {
 
     void appendDouble(double i) {
         _buf.preAlloc(sizeof(double));
-        double nboVal = vespalib::nbostream::n2h(i);
+        double nboVal = vespalib::nbo::n2h(i);
         _buf.append(&nboVal, sizeof(double));
     }
     void append(const vespalib::string &s) { appendString(s); }

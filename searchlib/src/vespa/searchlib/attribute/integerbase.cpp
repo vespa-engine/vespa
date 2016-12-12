@@ -1,13 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include "integerbase.h"
+#include "integerbase.hpp"
+#include "attributevector.hpp"
 #include <vespa/searchlib/common/sort.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.integerbase");
 
 namespace search {
 
@@ -50,7 +46,12 @@ uint32_t IntegerAttribute::get(DocId doc, WeightedConstChar * v, uint32_t sz) co
     (void) sz;
     return 0;
 }
-
+const char *
+IntegerAttribute::getString(DocId doc, char * s, size_t sz) const {
+    largeint_t v = getInt(doc);
+    snprintf(s, sz, "%" PRId64, v);
+    return s;
+}
 uint32_t IntegerAttribute::get(DocId doc, vespalib::string * s, uint32_t sz) const
 {
     largeint_t * v = new largeint_t[sz];
@@ -86,5 +87,10 @@ bool IntegerAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
     }
     return retval;
 }
+
+template class IntegerAttributeTemplate<int8_t>;
+template class IntegerAttributeTemplate<int16_t>;
+template class IntegerAttributeTemplate<int32_t>;
+template class IntegerAttributeTemplate<int64_t>;
 
 }

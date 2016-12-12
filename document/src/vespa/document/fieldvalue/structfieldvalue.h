@@ -9,7 +9,6 @@
 
     // Not strictly needed to include exceptions.h, but to avoid clients needing
     // to to catch FieldNotFoundException
-#include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/fieldvalue/structuredfieldvalue.h>
 #include <vespa/document/util/compressionconfig.h>

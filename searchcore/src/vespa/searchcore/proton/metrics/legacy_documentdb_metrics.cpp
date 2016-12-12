@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.metrics.legacy_documentdb_metrics");
 #include "legacy_documentdb_metrics.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using vespalib::asciistream;
 using vespalib::make_string;
@@ -19,23 +17,17 @@ LegacyDocumentDBMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
       memoryUsage("memoryusage", "", "Memory usage for memory indexes", this),
       docsInMemory("docsinmemory", "", "Number of documents in memory", this),
       diskUsage("diskusage", "", "Disk usage for disk indexes", this)
-{
-}
+{ }
 
 LegacyDocumentDBMetrics::DocstoreMetrics::DocstoreMetrics(MetricSet *parent)
     : MetricSet("docstore", "", "Document store metrics", parent),
       memoryUsage("memoryusage", "", "Memory usage for docstore", this),
-      cacheLookups("cachelookups", "", "Number of lookups in summary cache",
-                   this),
+      cacheLookups("cachelookups", "", "Number of lookups in summary cache", this),
       hits(0),
-      cacheHitRate("cachehitrate", "", "Rate of cache hits in summary cache",
-                   this),
-      cacheElements("cacheelements", "", "Number of elements in summary cache",
-                    this),
-      cacheMemoryUsed("cachememoryused", "", "Memory used by summary cache",
-                      this)
-{
-}
+      cacheHitRate("cachehitrate", "", "Rate of cache hits in summary cache", this),
+      cacheElements("cacheelements", "", "Number of elements in summary cache", this),
+      cacheMemoryUsed("cachememoryused", "", "Memory used by summary cache", this)
+{ }
 
 void
 LegacyDocumentDBMetrics::MatchingMetrics::update(const MatchingStats &stats)
@@ -54,13 +46,11 @@ LegacyDocumentDBMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
     : MetricSet("matching", "", "Matching metrics", parent),
       docsMatched("docsmatched", "", "Number of documents matched", this),
       docsRanked("docsranked", "", "Number of documents ranked (first phase)", this),
-      docsReRanked("docsreranked", "",
-                   "Number of documents re-ranked (second phase)", this),
+      docsReRanked("docsreranked", "", "Number of documents re-ranked (second phase)", this),
       queries("queries", "", "Number of queries executed", this),
       queryCollateralTime("querycollateraltime", "", "Average time spent setting up and tearing down queries", this),
       queryLatency("querylatency", "", "Average latency when matching a query", this)
-{
-}
+{ }
 
 LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics(
         const std::string &name, size_t numDocIdPartitions, MetricSet *parent)
@@ -81,12 +71,10 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::Do
     MetricSet(name, "", "DocId Partition profile metrics", parent),
     docsMatched("docsmatched", "", "Number of documents matched", this),
     docsRanked("docsranked", "", "Number of documents ranked (first phase)", this),
-    docsReRanked("docsreranked", "",
-                 "Number of documents re-ranked (second phase)", this),
+    docsReRanked("docsreranked", "", "Number of documents re-ranked (second phase)", this),
     active_time("activetime", "", "Time spent doing actual work", this),
     wait_time("waittime", "", "Time spent waiting for other external threads and resources", this)
-{
-}
+{ }
 
 void
 LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::update(const MatchingStats::Partition &stats)
@@ -104,8 +92,7 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
     queries.inc(stats.queries());
     limited_queries.inc(stats.limited_queries());
     matchTime.addValueBatch(stats.matchTimeAvg(), stats.matchTimeCount());
-    groupingTime.addValueBatch(stats.groupingTimeAvg(),
-                               stats.groupingTimeCount());
+    groupingTime.addValueBatch(stats.groupingTimeAvg(), stats.groupingTimeCount());
     rerankTime.addValueBatch(stats.rerankTimeAvg(), stats.rerankTimeCount());
     if (stats.getNumPartitions() > 0) {
         if (stats.getNumPartitions() <= partitions.size()) {
@@ -116,8 +103,7 @@ LegacyDocumentDBMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
             }
         } else {
             vespalib::string msg(make_string("Num partitions used '%ld' is larger than number of partitions '%ld' configured.",
-                                             stats.getNumPartitions(),
-                                             partitions.size()));
+                                             stats.getNumPartitions(), partitions.size()));
             throw vespalib::IllegalStateException(msg, VESPA_STRLOC);
         }
     }
@@ -138,13 +124,11 @@ DocumentMetaStoreMetrics(MetricSet *parent)
 {
 }
 
-LegacyDocumentDBMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name,
-                                              MetricSet *parent)
+LegacyDocumentDBMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name, MetricSet *parent)
     : MetricSet(name, "", "Sub database metrics", parent),
       attributes(this),
       docMetaStore(this)
-{
-}
+{ }
 
 LegacyDocumentDBMetrics::LegacyDocumentDBMetrics(const std::string &docTypeName, size_t maxNumThreads)
     : MetricSet(make_string("%s", docTypeName.c_str()), "", "Document DB Metrics", 0),
@@ -159,20 +143,13 @@ LegacyDocumentDBMetrics::LegacyDocumentDBMetrics(const std::string &docTypeName,
       ready("ready", this),
       notReady("notready", this),
       removed("removed", this),
-      memoryUsage("memoryusage", "", "Memory usage for this Document DB",
-                  this),
-      numDocs("numdocs", "",
-              "Number of ready/indexed documents in this Document DB (aka number of documents in the 'ready' sub db)", this),
-      numActiveDocs("numactivedocs", "",
-                    "Number of active/searchable documents in this Document DB (aka number of active/searchable documents in the 'ready' sub db)", this),
-      numIndexedDocs("numindexeddocs", "",
-                     "Number of ready/indexed documents in this Document DB (aka number of documents in the 'ready' sub db)", this),
-      numStoredDocs("numstoreddocs", "",
-                    "Total number of documents stored in this Document DB (aka number of documents in the 'ready' and 'notready' sub dbs)", this),
-      numRemovedDocs("numremoveddocs", "",
-                    "Number of removed documents in this Document DB (aka number of documents in the 'removed' sub db)", this),
-      numBadConfigs("numBadConfigs", "",
-                    "Number of bad configs for this Document DB", this),
+      memoryUsage("memoryusage", "", "Memory usage for this Document DB", this),
+      numDocs("numdocs", "", "Number of ready/indexed documents in this Document DB (aka number of documents in the 'ready' sub db)", this),
+      numActiveDocs("numactivedocs", "", "Number of active/searchable documents in this Document DB (aka number of active/searchable documents in the 'ready' sub db)", this),
+      numIndexedDocs("numindexeddocs", "", "Number of ready/indexed documents in this Document DB (aka number of documents in the 'ready' sub db)", this),
+      numStoredDocs("numstoreddocs", "", "Total number of documents stored in this Document DB (aka number of documents in the 'ready' and 'notready' sub dbs)", this),
+      numRemovedDocs("numremoveddocs", "", "Number of removed documents in this Document DB (aka number of documents in the 'removed' sub db)", this),
+      numBadConfigs("numBadConfigs", "", "Number of bad configs for this Document DB", this),
       _maxNumThreads(maxNumThreads)
 {
     memoryUsage.addMetricToSum(index.memoryUsage);

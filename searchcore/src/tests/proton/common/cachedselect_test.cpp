@@ -58,6 +58,7 @@ using search::SingleValueNumericPostingAttribute;
 using search::IntegerAttribute;
 using search::IntegerAttributeTemplate;
 using search::attribute::IAttributeContext;
+using namespace search::index;
 
 typedef Node::UP NodeUP;
 typedef IntegerAttributeTemplate<int32_t> IATint32;
@@ -69,18 +70,15 @@ extern template class SingleValueNumericPostingAttribute<IntPostingAttribute>;
 
 typedef SingleValueNumericPostingAttribute<IntEnumAttribute> SvIntAttr;
 
-namespace
-{
+namespace {
 
 void
 makeSchema(Schema &s)
 {
-    s.addIndexField(Schema::IndexField("ia", Schema::STRING));
-    s.addAttributeField(Schema::AttributeField("aa", Schema::INT32));
-    s.addAttributeField(Schema::AttributeField("aaa", Schema::INT32,
-                                               Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("aaw", Schema::INT32,
-                                               Schema::WEIGHTEDSET));
+    s.addIndexField(Schema::IndexField("ia", schema::STRING));
+    s.addAttributeField(Schema::AttributeField("aa", schema::INT32));
+    s.addAttributeField(Schema::AttributeField("aaa", schema::INT32, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("aaw", schema::INT32, schema::WEIGHTEDSET));
 }
 
 const int32_t doc_type_id = 787121340;

@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageapi/buckets/bucketinfo.h>
+#include "bucketinfo.h"
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace api {
@@ -92,9 +92,7 @@ BucketInfo::print(vespalib::asciistream& out, const PrintProperties&) const
 {
     out << "BucketInfo(";
     if (valid()) {
-        std::ostringstream ost;
-        ost << std::hex << _checksum;
-        out << "crc 0x" << ost.str()
+        out << "crc 0x" << vespalib::hex << _checksum << vespalib::dec
             << ", docCount " << _docCount
             << ", totDocSize " << _totDocSize;
         if (_totDocSize != _usedFileSize) {

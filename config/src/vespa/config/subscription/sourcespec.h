@@ -9,8 +9,6 @@
 #include <vespa/config/common/compressiontype.h>
 #include <vespa/config/set/configsetsourcefactory.h>
 #include <vespa/config/configgen/configinstance.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <map>
 
 namespace config {
 
@@ -232,19 +230,6 @@ public:
     SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const;
 private:
     BuilderMapSP _builderMap;
-};
-
-/**
- * A ConfigInstanceSpec serves a config from a config instance that does not change.
- */
-class ConfigInstanceSpec : public SourceSpec
-{
-public:
-    ConfigInstanceSpec(const ConfigInstance & instance);
-    SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const;
-private:
-    const ConfigKey _key;
-    vespalib::asciistream _buffer;
 };
 
 }

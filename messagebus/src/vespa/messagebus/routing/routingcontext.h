@@ -3,8 +3,7 @@
 
 #include <vespa/messagebus/context.h>
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/slobrok/sbmirror.h>
-#include <string>
+#include <vespa/slobrok/imirrorapi.h>
 #include <set>
 #include "hop.h"
 #include "policydirective.h"

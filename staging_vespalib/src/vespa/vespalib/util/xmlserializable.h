@@ -29,13 +29,9 @@
 
 #pragma once
 
-#include <ostream>
+#include <iosfwd>
 #include <list>
 #include <memory>
-#include <sstream>
-#include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/objects/cloneable.h>
-#include <vespa/vespalib/objects/identifiable.h>
 
 namespace vespalib {
 namespace xml {
@@ -93,30 +89,13 @@ public:
     XmlAttribute(const XmlAttribute&);
     /** Add any value that can be written to an ostringstream. */
     template<typename T>
-    XmlAttribute(const std::string& name, const T& value,
-                 uint32_t flags = NONE);
+    XmlAttribute(const std::string& name, const T& value, uint32_t flags = NONE);
+    XmlAttribute(const std::string& name, const char * value, uint32_t flags = NONE);
     ~XmlAttribute();
 
     const std::string& getName() const { return _name; }
     const std::string& getValue() const { return _value; }
 };
-
-template<typename T>
-XmlAttribute::XmlAttribute(const std::string& name, const T& value,
-                           uint32_t flags)
-    : _name(name),
-      _value(),
-      _next()
-{
-    std::ostringstream ost;
-    if (flags & HEX) ost << std::hex << "0x";
-    ost << value;
-    _value = ost.str();
-    if (!isLegalName(name)) {
-        throw vespalib::IllegalArgumentException("Name '" + name + "' contains "
-                "illegal XML characters and cannot be used as attribute name");
-    }
-}
 
 
 /**

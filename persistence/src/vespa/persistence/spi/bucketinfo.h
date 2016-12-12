@@ -7,7 +7,10 @@
 #pragma once
 
 #include <persistence/spi/types.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+
+namespace vespalib {
+    class asciistream;
+}
 
 namespace storage {
 namespace spi {

@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
+#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/select/orderingselector.h>
 #include <vespa/document/select/parser.h>
@@ -13,6 +11,8 @@
 #include <vespa/storage/distributor/bucketownership.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>
 #include <vespa/storage/distributor/visitormetricsset.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/log/log.h>
 
 namespace storage {
 
@@ -658,7 +658,7 @@ void
 VisitorOperation::attemptToParseOrderingSelector()
 {
     std::unique_ptr<document::select::Node> docSelection;
-    document::DocumentTypeRepo::SP repo(_owner.getTypeRepo());
+    std::shared_ptr<document::DocumentTypeRepo> repo(_owner.getTypeRepo());
     document::select::Parser parser(
             *repo, _owner.getBucketIdFactory());
     docSelection = parser.parse(_msg->getDocumentSelection());

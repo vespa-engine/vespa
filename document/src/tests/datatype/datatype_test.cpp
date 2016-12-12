@@ -1,15 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for datatype.
 
-#include <vespa/log/log.h>
-LOG_SETUP("datatype_test");
-#include <vespa/fastos/fastos.h>
-
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using namespace document;
 

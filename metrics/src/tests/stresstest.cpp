@@ -3,6 +3,7 @@
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/loadmetric.hpp>
 #include <vespa/metrics/summetric.hpp>
+#include <vespa/metrics/metricmanager.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 
 #include <vespa/log/log.h>

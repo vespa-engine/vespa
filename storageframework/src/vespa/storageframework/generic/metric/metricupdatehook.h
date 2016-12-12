@@ -7,14 +7,15 @@
  */
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/metrics/metricmanager.h>
+namespace vespalib {
+    class MonitorGuard;
+}
 
 namespace storage {
 namespace framework {
 
 struct MetricUpdateHook {
-    typedef metrics::MetricManager::UpdateHook::MetricLockGuard MetricLockGuard;
+    using MetricLockGuard = vespalib::MonitorGuard;
     virtual ~MetricUpdateHook() {}
 
     virtual void updateMetrics(const MetricLockGuard &) = 0;

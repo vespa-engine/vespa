@@ -1,27 +1,26 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/fieldvalue/document.h>
+#include "document.h"
 
 #include <memory>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
-#include <fstream>
 
 #include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
-#include <vespa/log/log.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/document/util/serializableexceptions.h>
+#include <vespa/document/base/exceptions.h>
+#include <sstream>
 
 using vespalib::nbostream;
 using vespalib::make_string;
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 
-LOG_SETUP(".document.fieldvalue.document");
 
 namespace document {
 namespace {

@@ -4,6 +4,7 @@
 #include "rawresultnode.h"
 #include "resultvector.h"
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace search {
 namespace expression {

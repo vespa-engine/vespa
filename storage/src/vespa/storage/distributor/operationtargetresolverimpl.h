@@ -73,9 +73,7 @@ public:
 
     OperationTargetList createTargets();
 
-    void print(vespalib::asciistream& out, const PrintProperties& p) const override {
-        vespalib::print(_instances, out, p);
-    }
+    void print(vespalib::asciistream& out, const PrintProperties& p) const override;
 };
 
 class OperationTargetResolverImpl : public OperationTargetResolver {

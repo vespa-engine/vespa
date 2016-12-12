@@ -125,7 +125,7 @@ const uint32_t disk_id[] = { 1, 2, 21, 42 };
 Schema getSchema() {
     Schema schema;
     schema.addIndexField(
-            Schema::IndexField(field_name, Schema::STRING));
+            Schema::IndexField(field_name, search::index::schema::STRING));
     return schema;
 }
 

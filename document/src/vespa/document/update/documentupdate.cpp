@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/datatype.h>
@@ -10,7 +9,10 @@
 #include <vespa/document/update/documentupdateflags.h>
 #include <vespa/document/update/fieldupdate.h>
 #include <vespa/document/update/valueupdate.h>
+#include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/document/util/bufferexceptions.h>
+#include <vespa/document/base/exceptions.h>
 
 using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;

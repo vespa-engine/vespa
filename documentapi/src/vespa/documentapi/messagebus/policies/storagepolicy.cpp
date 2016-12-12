@@ -1,17 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/documentapi/messagebus/policies/storagepolicy.h>
-#include <vespa/log/log.h>
-#include <algorithm>
+
+#include "storagepolicy.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/routing/ihopdirective.h>
-#include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
-#include <vespa/vespalib/util/random.h>
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/config-stor-distribution.h>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".storagepolicy");
 
@@ -34,6 +30,18 @@ StoragePolicy::StoragePolicy(const string& param)
     }
 }
 
+namespace {
+    class CallBack : public config::IFetcherCallback<storage::lib::Distribution::DistributionConfig>
+    {
+    public:
+        CallBack(StoragePolicy & policy) : _policy(policy) { }
+        void configure(std::unique_ptr<storage::lib::Distribution::DistributionConfig> config) override {
+            _policy.configure(std::move(config));
+        }
+    private:
+        StoragePolicy & _policy;
+    };
+}
 string StoragePolicy::init()
 {
     string error = ExternSlobrokPolicy::init();
@@ -52,7 +60,8 @@ string StoragePolicy::init()
     } else {
         _configFetcher.reset(new config::ConfigFetcher(uri.getContext()));
     }
-    _configFetcher->subscribe<vespa::config::content::StorDistributionConfig>(uri.getConfigId(), this);
+    _callBack = std::make_unique<CallBack>(*this);
+    _configFetcher->subscribe<vespa::config::content::StorDistributionConfig>(uri.getConfigId(), static_cast<CallBack *>(_callBack.get()));
     _configFetcher->start();
     return "";
 }

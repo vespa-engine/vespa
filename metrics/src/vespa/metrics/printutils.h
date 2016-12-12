@@ -12,6 +12,7 @@
 
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/metrics/metricmanager.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace metrics {
 namespace printutils {

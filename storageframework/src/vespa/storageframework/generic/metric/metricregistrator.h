@@ -11,7 +11,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/metrics/metricmanager.h>
+#include <vespa/vespalib/util/sync.h>
 
 namespace storage {
 namespace framework {
@@ -23,7 +23,7 @@ struct MetricRegistrator {
     virtual void registerUpdateHook(vespalib::stringref name,
                                     MetricUpdateHook& hook,
                                     SecondTime period) = 0;
-    virtual metrics::MetricLockGuard getMetricManagerLock() = 0;
+    virtual vespalib::MonitorGuard getMetricManagerLock() = 0;
 };
 
 } // framework

@@ -20,6 +20,8 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/fieldbase.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/document/util/serializableexceptions.h>
+#include <sstream>
 
 using vespalib::FieldBase;
 using vespalib::nbostream;

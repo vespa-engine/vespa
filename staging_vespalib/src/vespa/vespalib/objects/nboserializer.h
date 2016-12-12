@@ -3,9 +3,11 @@
 
 #include <vespa/vespalib/objects/serializer.h>
 #include <vespa/vespalib/objects/deserializer.h>
-#include <vespa/vespalib/objects/nbostream.h>
 
 namespace vespalib {
+
+class nbostream;
+
 class NBOSerializer : public Serializer, public Deserializer {
 public:
     NBOSerializer(nbostream &stream) : _stream(stream) { }
@@ -27,7 +29,7 @@ public:
     virtual NBOSerializer &get(const IFieldBase &field, float &value);
     virtual NBOSerializer &get(const IFieldBase &field, string &value);
 
-    const char *peek() const { return _stream.peek(); }
+    const char *peek() const;
 
     const nbostream &getStream() const { return _stream; }
     nbostream &getStream() { return _stream; }

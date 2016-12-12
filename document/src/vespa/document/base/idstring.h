@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
-#include <memory>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/objects/cloneable.h>

@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".diskindex.diskindex");
 #include "diskindex.h"
 #include "disktermblueprint.h"
 #include <vespa/searchlib/index/schemautil.h>
@@ -12,9 +10,12 @@ LOG_SETUP(".diskindex.diskindex");
 #include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include "pagedict4randread.h"
 #include "fileheader.h"
 #include "bitvectorkeyscope.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".diskindex.diskindex");
 
 using namespace search::index;
 using namespace search::query;

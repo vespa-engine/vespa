@@ -2,8 +2,6 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/searchsummary/docsummary/rankfeaturesdfw.h>
 #include <vespa/searchsummary/docsummary/summaryfeaturesdfw.h>
@@ -12,9 +10,7 @@
 #include <vespa/searchsummary/docsummary/positionsdfw.h>
 #include <vespa/searchsummary/docsummary/juniperdfw.h>
 #include <vespa/vespalib/util/vstringfmt.h>
-
-LOG_SETUP(".searchlib.docsummary.docsumconfig");
-
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace search {
 namespace docsummary {

@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <vespa/messagebus/routing/routingnode.h>
-#include <vespa/slobrok/sbmirror.h>
+#include <vespa/slobrok/imirrorapi.h>
 #include "inetworkowner.h"
 
 namespace mbus {

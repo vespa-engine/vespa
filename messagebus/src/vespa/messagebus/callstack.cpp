@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".callstack");
 #include "callstack.h"
 #include "message.h"
 #include "reply.h"
@@ -22,6 +20,8 @@ CallStack::discard()
     }
 }
 
+CallStack::CallStack() : _stack() { }
+CallStack::~CallStack() { }
 void
 CallStack::swap(CallStack &dst)
 {
@@ -42,7 +42,7 @@ CallStack::push(IReplyHandler &replyHandler, Context ctx,
 IReplyHandler &
 CallStack::pop(Reply &reply)
 {
-    LOG_ASSERT(!_stack.empty());
+    assert(!_stack.empty());
     const Frame &frame = _stack.back();
     IReplyHandler *handler = frame.replyHandler;
     reply.setContext(frame.ctx);

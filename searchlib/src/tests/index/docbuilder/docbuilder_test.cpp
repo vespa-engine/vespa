@@ -46,54 +46,38 @@ void
 Test::testBuilder()
 {
     Schema s;
-    s.addIndexField(Schema::IndexField("ia", Schema::STRING));
-    s.addIndexField(Schema::IndexField("ib", Schema::STRING, Schema::ARRAY));
-    s.addIndexField(Schema::IndexField("ic", Schema::STRING, Schema::WEIGHTEDSET));
-    s.addUriIndexFields(Schema::IndexField("iu", Schema::STRING));
-    s.addUriIndexFields(Schema::IndexField("iau",
-                                Schema::STRING,
-                                Schema::ARRAY));
-    s.addUriIndexFields(Schema::IndexField("iwu",
-                                Schema::STRING,
-                                Schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("aa", Schema::INT32));
-    s.addAttributeField(Schema::AttributeField("ab", Schema::FLOAT));
-    s.addAttributeField(Schema::AttributeField("ac", Schema::STRING));
-    s.addAttributeField(Schema::AttributeField("ad", Schema::INT32, Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("ae", Schema::FLOAT, Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("af", Schema::STRING, Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("ag", Schema::INT32, Schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("ah", Schema::FLOAT, Schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("ai", Schema::STRING, Schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("asp1",
-                                Schema::INT32));
-    s.addAttributeField(Schema::AttributeField("asp2",
-                                Schema::INT64));
-    s.addAttributeField(Schema::AttributeField("aap1",
-                                Schema::INT32,
-                                Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("aap2",
-                                Schema::INT64,
-                                Schema::ARRAY));
-    s.addAttributeField(Schema::AttributeField("awp1",
-                                Schema::INT32,
-                                Schema::WEIGHTEDSET));
-    s.addAttributeField(Schema::AttributeField("awp2",
-                                Schema::INT64,
-                                Schema::WEIGHTEDSET));
+    s.addIndexField(Schema::IndexField("ia", schema::STRING));
+    s.addIndexField(Schema::IndexField("ib", schema::STRING, schema::ARRAY));
+    s.addIndexField(Schema::IndexField("ic", schema::STRING, schema::WEIGHTEDSET));
+    s.addUriIndexFields(Schema::IndexField("iu", schema::STRING));
+    s.addUriIndexFields(Schema::IndexField("iau", schema::STRING, schema::ARRAY));
+    s.addUriIndexFields(Schema::IndexField("iwu", schema::STRING, schema::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("aa", schema::INT32));
+    s.addAttributeField(Schema::AttributeField("ab", schema::FLOAT));
+    s.addAttributeField(Schema::AttributeField("ac", schema::STRING));
+    s.addAttributeField(Schema::AttributeField("ad", schema::INT32, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("ae", schema::FLOAT, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("af", schema::STRING, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("ag", schema::INT32, schema::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("ah", schema::FLOAT, schema::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("ai", schema::STRING, schema::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("asp1", schema::INT32));
+    s.addAttributeField(Schema::AttributeField("asp2", schema::INT64));
+    s.addAttributeField(Schema::AttributeField("aap1", schema::INT32, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("aap2", schema::INT64, schema::ARRAY));
+    s.addAttributeField(Schema::AttributeField("awp1", schema::INT32, schema::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("awp2", schema::INT64, schema::WEIGHTEDSET));
 
-    s.addSummaryField(Schema::SummaryField("sa", Schema::INT8));
-    s.addSummaryField(Schema::SummaryField("sb", Schema::INT16));
-    s.addSummaryField(Schema::SummaryField("sc", Schema::INT32));
-    s.addSummaryField(Schema::SummaryField("sd", Schema::INT64));
-    s.addSummaryField(Schema::SummaryField("se", Schema::FLOAT));
-    s.addSummaryField(Schema::SummaryField("sf", Schema::DOUBLE));
-    s.addSummaryField(Schema::SummaryField("sg", Schema::STRING));
-    s.addSummaryField(Schema::SummaryField("sh", Schema::RAW));
-    s.addSummaryField(Schema::SummaryField("si", Schema::RAW,
-                              Schema::ARRAY));
-    s.addSummaryField(Schema::SummaryField("sj", Schema::RAW,
-                              Schema::WEIGHTEDSET));
+    s.addSummaryField(Schema::SummaryField("sa", schema::INT8));
+    s.addSummaryField(Schema::SummaryField("sb", schema::INT16));
+    s.addSummaryField(Schema::SummaryField("sc", schema::INT32));
+    s.addSummaryField(Schema::SummaryField("sd", schema::INT64));
+    s.addSummaryField(Schema::SummaryField("se", schema::FLOAT));
+    s.addSummaryField(Schema::SummaryField("sf", schema::DOUBLE));
+    s.addSummaryField(Schema::SummaryField("sg", schema::STRING));
+    s.addSummaryField(Schema::SummaryField("sh", schema::RAW));
+    s.addSummaryField(Schema::SummaryField("si", schema::RAW, schema::ARRAY));
+    s.addSummaryField(Schema::SummaryField("sj", schema::RAW, schema::WEIGHTEDSET));
 
     DocBuilder b(s);
     Document::UP doc;

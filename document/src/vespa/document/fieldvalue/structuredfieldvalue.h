@@ -149,9 +149,9 @@ public:
     void setValue(const vespalib::stringref & fieldName, const FieldValue& value)
         { setFieldValue(getField(fieldName), value); }
     template<typename PrimitiveType>
-    void set(const Field& field, const PrimitiveType& value);
+    void set(const Field& field, PrimitiveType value);
     template<typename PrimitiveType>
-    void set(const vespalib::stringref & fieldName, const PrimitiveType& value);
+    void set(const vespalib::stringref & fieldName, PrimitiveType value);
 
     size_t getSetFieldCount() const {
         size_t count = 0;
@@ -172,34 +172,8 @@ public:
     }
 
     template <typename T>
-    std::unique_ptr<T> getAs(const Field &field) const {
-        FieldValue::UP val = getValue(field);
-        T *t = Identifiable::cast<T *>(val.get());
-        if (val.get() && !t) {
-            throw vespalib::IllegalStateException("Field " + field.toString()
-                    + " has unexpected type.", VESPA_STRLOC);
-        }
-        val.release();
-        return std::unique_ptr<T>(t);
-    }
+    std::unique_ptr<T> getAs(const Field &field) const;
 };
-
-template<typename PrimitiveType>
-void
-StructuredFieldValue::set(const Field& field, const PrimitiveType& value)
-{
-    FieldValue::UP fval(field.getDataType().createFieldValue());
-    *fval = value;
-    setFieldValue(field, std::move(fval));
-}
-
-template<typename PrimitiveType>
-void
-StructuredFieldValue::set(const vespalib::stringref & fieldName,
-                          const PrimitiveType& value)
-{
-    set(getField(fieldName), value);
-}
 
 } // document
 

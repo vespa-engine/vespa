@@ -465,7 +465,7 @@ Distributor_Test::testMetricUpdateHookUpdatesPendingMaintenanceMetrics()
 
     // Force trigger update hook
     vespalib::Monitor l;
-    _distributor->_metricUpdateHook.updateMetrics(metrics::MetricLockGuard(l));
+    _distributor->_metricUpdateHook.updateMetrics(vespalib::MonitorGuard(l));
     // Metrics should now be updated to the last complete working state
     {
         const IdealStateMetricSet& metrics(getIdealStateManager().getMetrics());

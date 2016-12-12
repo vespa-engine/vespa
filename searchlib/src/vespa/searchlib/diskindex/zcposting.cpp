@@ -1468,3 +1468,10 @@ ZcPostingSeqWrite::flushWordNoSkip(void)
 } // namespace diskindex
 
 } // namespace search
+
+#include <vespa/vespalib/objects/nbostream.hpp>
+namespace vespalib {
+    using UInt32Pair = std::pair<uint32_t, uint32_t>;
+    template nbostream &nbostream::saveVector<UInt32Pair>(const std::vector<UInt32Pair> &);
+    template nbostream &nbostream::restoreVector<UInt32Pair>(std::vector<UInt32Pair> &);
+}

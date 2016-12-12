@@ -1,11 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdslib/container/parameters.h>
-
-#include <sstream>
+#include "parameters.hpp"
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/objects/hexdump.h>
 
 using namespace vdslib;
+
+Parameters::Parameters() : _parameters() { }
+
+Parameters::Parameters(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer)
+    : _parameters()
+{
+    deserialize(repo, buffer);
+}
 
 Parameters::~Parameters()
 {
@@ -31,8 +38,7 @@ void Parameters::onSerialize(document::ByteBuffer& buffer) const
     }
 }
 
-void Parameters::onDeserialize(const document::DocumentTypeRepo &repo,
-                               document::ByteBuffer& buffer)
+void Parameters::onDeserialize(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer)
 {
     (void) repo;
     _parameters.clear();
@@ -150,3 +156,16 @@ std::string Parameters::toString() const
     }
     return ret;
 }
+
+template void vdslib::Parameters::set(const vespalib::stringref &, int32_t);
+template void vdslib::Parameters::set(const vespalib::stringref &, int64_t);
+template void vdslib::Parameters::set(const vespalib::stringref &, uint64_t);
+template void vdslib::Parameters::set(const vespalib::stringref &, double);
+template void vdslib::Parameters::set(const vespalib::stringref &, const char *);
+template void vdslib::Parameters::set(const vespalib::stringref &, vespalib::string);
+template void vdslib::Parameters::set(const vespalib::stringref &, std::string);
+template int32_t vdslib::Parameters::get(const vespalib::stringref &, int32_t) const;
+template int64_t vdslib::Parameters::get(const vespalib::stringref &, int64_t) const;
+template uint64_t vdslib::Parameters::get(const vespalib::stringref &, uint64_t) const;
+template double vdslib::Parameters::get(const vespalib::stringref &, double) const;
+template std::string vdslib::Parameters::get(const vespalib::stringref &, std::string) const;

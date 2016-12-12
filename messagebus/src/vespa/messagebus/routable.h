@@ -46,7 +46,7 @@ public:
     /**
      * Required for inheritance.
      */
-    virtual ~Routable() { /* empty */ }
+    virtual ~Routable();
 
     /**
      * Discards this routable. Invoking this prevents the auto-generation of

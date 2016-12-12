@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/xmlwriter.h>
 #include <vespa/metrics/jsonwriter.h>
@@ -9,9 +7,10 @@
 #include <vespa/metrics/printutils.h>
 #include <vespa/metrics/state_api_adapter.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
-
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <fstream>
 #include <sstream>
+#include <vespa/log/log.h>
 
 LOG_SETUP(".test.metricmanager");
 
@@ -1141,13 +1140,13 @@ MetricManagerTest::textOutputSupportsDimensions()
 }
 
 namespace {
-    struct MyUpdateHook : public MetricManager::UpdateHook {
+    struct MyUpdateHook : public UpdateHook {
         std::ostringstream& _output;
         FakeTimer& _timer;
 
         MyUpdateHook(std::ostringstream& output, const char* name,
                      FakeTimer& timer)
-            : MetricManager::UpdateHook(name), _output(output), _timer(timer) {}
+            : UpdateHook(name), _output(output), _timer(timer) {}
 
         void updateMetrics(const MetricLockGuard & ) override {
             _output << _timer.getTime() << ": " << getName() << " called\n";
