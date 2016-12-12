@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -24,11 +25,15 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -256,7 +261,7 @@ public class SerializationTest {
     @Test
     public void serialize_parentHostname() {
         final String parentHostname = "parent.yahoo.com";
-        Node node = Node.create("myId", "127.0.0.1", "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
+        Node node = Node.create("myId", singleton("127.0.0.1"), "myHostname", Optional.of(parentHostname), nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant);
 
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
         assertEquals(parentHostname, deserializedNode.parentHostname().get());
@@ -268,7 +273,7 @@ public class SerializationTest {
         nameResolver.addRecord("node1.yahoo.tld", "127.0.0.1");
         byte[] nodeWithoutIp = createNodeJson("node1.yahoo.tld");
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithoutIp);
-        assertEquals("127.0.0.1", deserializedNode.ipAddress());
+        assertEquals(singleton("127.0.0.1"), deserializedNode.ipAddresses());
     }
 
     @Test
@@ -276,9 +281,8 @@ public class SerializationTest {
         byte[] nodeWithoutIp = createNodeJson("node2.yahoo.tld");
         try {
             nodeSerializer.fromJson(State.provisioned, nodeWithoutIp);
-            assertTrue("Expected exception to be thrown", false);
-        } catch (RuntimeException ignored) {
-        }
+            fail("Expected exception to be thrown");
+        } catch (RuntimeException ignored) {}
     }
 
     @Test
@@ -286,24 +290,36 @@ public class SerializationTest {
         nameResolver.failIfInvoked();
         byte[] nodeWithIp = createNodeJson("node3.yahoo.tld", "127.0.0.3");
         Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithIp);
-        assertEquals("127.0.0.3", deserializedNode.ipAddress());
+        assertEquals(singleton("127.0.0.3"), deserializedNode.ipAddresses());
     }
 
-    private byte[] createNodeJson(String hostname, String ipAddress) {
+    @Test
+    public void serializes_multiple_ip_addresses() throws Exception {
+        nameResolver.failIfInvoked();
+        byte[] nodeWithMultipleIps = createNodeJson("node4.yahoo.tld", "127.0.0.4", "::4");
+        Node deserializedNode = nodeSerializer.fromJson(State.provisioned, nodeWithMultipleIps);
+        assertEquals(ImmutableSet.of("127.0.0.4", "::4"), deserializedNode.ipAddresses());
+    }
+
+    private byte[] createNodeJson(String hostname, String... ipAddress) {
+        String ipAddressJsonPart = "";
+        if (ipAddress.length > 0) {
+                ipAddressJsonPart = "\"ipAddresses\":[" +
+                        Arrays.stream(ipAddress)
+                                .map(ip -> "\"" + ip + "\"")
+                                .collect(Collectors.joining(",")) +
+                        "],";
+        }
         return ("{\"hostname\":\"" + hostname + "\"," +
-                (ipAddress.isEmpty() ? "" : "\"ipAddress\":\"" + ipAddress + "\",") +
+                ipAddressJsonPart +
                 "\"openStackId\":\"myId\"," +
                 "\"flavor\":\"default\",\"rebootGeneration\":0," +
                 "\"currentRebootGeneration\":0,\"failCount\":0,\"history\":[],\"type\":\"tenant\"}")
                 .getBytes(StandardCharsets.UTF_8);
     }
 
-    private byte[] createNodeJson(String hostname) {
-        return createNodeJson(hostname, "");
-    }
-
     private Node createNode() {
-        return Node.create("myId", "127.0.0.1", "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        return Node.create("myId", singleton("127.0.0.1"), "myHostname", Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
     }
 
 }
