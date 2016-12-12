@@ -65,7 +65,7 @@ public class ContentSearchClusterTest {
 
     @Test
     public void requireThatOnlyMemoryLimitCanBeSet() throws Exception {
-        assertProtonResourceLimits(0.9, 0.77,
+        assertProtonResourceLimits(0.8, 0.77,
                 new ContentClusterBuilder().protonMemoryLimit(0.77).getXml());
     }
 
