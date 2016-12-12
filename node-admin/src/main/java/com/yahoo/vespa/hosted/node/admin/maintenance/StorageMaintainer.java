@@ -118,7 +118,6 @@ public class StorageMaintainer {
 
     public void cleanNodeAdmin() {
         Maintainer.deleteOldAppData(NODE_ADMIN_LOGGER);
-        Maintainer.cleanHome(NODE_ADMIN_LOGGER);
         Maintainer.cleanCoreDumps(NODE_ADMIN_LOGGER);
 
         File nodeAdminJDiskLogsPath = maintainer.pathInNodeAdminFromPathInNode(new ContainerName("node-admin"),

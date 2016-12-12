@@ -32,7 +32,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -79,7 +78,6 @@ public class Maintainer {
                 .withCommands(Help.class,
                         DeleteOldAppDataArguments.class,
                         CleanCoreDumpsArguments.class,
-                        CleanHomeArguments.class,
                         ArchiveApplicationData.class,
                         HandleCoreDumpsForContainer.class);
 
