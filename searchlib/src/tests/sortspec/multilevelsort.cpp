@@ -405,12 +405,12 @@ TEST("test that [docid] translates to [lid][paritionid]") {
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
     search::AttributeManager mgr;
     search::AttributeContext ac(mgr);
-    asc.Init("[docid]", ac);
+    EXPECT_TRUE(asc.Init("+[docid]", ac));
     asc.initWithoutSorting(hits, 2);
     constexpr uint8_t FIRST_ASC[6] = {0,0,0,91,0,7};
     constexpr uint8_t SECOND_ASC[6] = {0,0,0,3,0,7};
-    constexpr uint8_t FIRST_DESC[6] = {0,0,0,91,0,7};
-    constexpr uint8_t SECOND_DESC[6] = {0,0,0,3,0,7};
+    constexpr uint8_t FIRST_DESC[6] = {255,255,255,255-91,255,255-7};
+    constexpr uint8_t SECOND_DESC[6] = {255,255,255,255-3,255,255-7};
     auto sr1 = asc.getSortRef(0);
     EXPECT_EQUAL(6u, sr1.second);
     EXPECT_EQUAL(0, memcmp(FIRST_ASC, sr1.first, 6));
@@ -419,12 +419,12 @@ TEST("test that [docid] translates to [lid][paritionid]") {
     EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 6));
 
     FastS_SortSpec desc(7, doom, ucaFactory);
-    asc.Init("-[docid]", ac);
-    asc.initWithoutSorting(hits, 2);
-    sr1 = asc.getSortRef(0);
+    desc.Init("-[docid]", ac);
+    desc.initWithoutSorting(hits, 2);
+    sr1 = desc.getSortRef(0);
     EXPECT_EQUAL(6u, sr1.second);
     EXPECT_EQUAL(0, memcmp(FIRST_DESC, sr1.first, 6));
-    sr2 = asc.getSortRef(1);
+    sr2 = desc.getSortRef(1);
     EXPECT_EQUAL(6u, sr2.second);
     EXPECT_EQUAL(0, memcmp(SECOND_DESC, sr2.first, 6));
 }
