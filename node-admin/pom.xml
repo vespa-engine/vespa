@@ -100,6 +100,13 @@
             <artifactId>airline</artifactId>
             <version>0.7</version>
         </dependency>
+
+        <!-- JSON parser for Maintenance JVM -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.6.2</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -126,7 +133,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
-
                     <finalName>node-admin-maintenance</finalName>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>

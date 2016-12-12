@@ -421,6 +421,7 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             case active:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
+                storageMaintainer.handleCoreDumpsForContainer(nodeSpec, environment);
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());

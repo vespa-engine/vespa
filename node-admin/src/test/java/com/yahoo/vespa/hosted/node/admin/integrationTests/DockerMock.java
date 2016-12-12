@@ -70,7 +70,7 @@ public class DockerMock implements Docker {
 
     @Override
     public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
-        return null;
+        return Optional.empty();
     }
 
     @Override

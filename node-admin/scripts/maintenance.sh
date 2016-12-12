@@ -2,7 +2,7 @@
 
 
 if [ -z "$CLASSPATH" ]; then
-    CLASSPATH=/home/y/lib/jars/node-admin-maintenance-jar-with-dependencies.jar:/home/y/lib/jars/docker-api-jar-with-dependencies.jar:/home/y/lib/jars/vespalog.jar
+    CLASSPATH=/home/y/lib/jars/node-admin-maintenance-jar-with-dependencies.jar:/home/y/lib/jars/docker-api-jar-with-dependencies.jar:/home/y/lib/jars/vespalog.jar:/home/y/lib/jars/vespajlib.jar
 fi
 
 java \

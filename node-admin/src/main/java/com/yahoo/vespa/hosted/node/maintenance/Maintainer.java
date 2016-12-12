@@ -1,16 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.maintenance;
 
+import com.google.gson.Gson;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogSetup;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
+import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import io.airlift.airline.Arguments;
 import io.airlift.airline.Cli;
 import io.airlift.airline.Command;
 import io.airlift.airline.Help;
+import io.airlift.airline.Option;
 import io.airlift.airline.ParseArgumentsUnexpectedException;
 import io.airlift.airline.ParseOptionMissingException;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,8 +31,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -39,11 +49,20 @@ public class Maintainer {
     private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = ROOT.resolve(RELATIVE_APPLICATION_STORAGE_PATH);
     private static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
+    private static final Maintainer maintainer = new Maintainer();
+    private static final CoredumpHandler COREDUMP_HANDLER =
+            new CoredumpHandler(HttpClientBuilder.create().build(), new CoreCollector(maintainer));
+    private static final Gson gson = new Gson();
+
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
-    public static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
-    public static final String JOB_ARCHIVE_APP_DATA = "archive-app-data";
-    public static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
+    private static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
+    private static final String JOB_ARCHIVE_APP_DATA = "archive-app-data";
+    private static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
+    private static final String JOB_CLEAN_HOME = "clean-home";
+    private static final String JOB_HANDLE_CORE_DUMPS = "handle-core-dumps";
+
+    private static Optional<String> kernelVersion = Optional.empty();
 
     static {
         filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -59,7 +78,8 @@ public class Maintainer {
                 .withCommands(Help.class,
                         DeleteOldAppDataArguments.class,
                         CleanCoreDumpsArguments.class,
-                        ArchiveApplicationData.class);
+                        ArchiveApplicationData.class,
+                        HandleCoreDumpsForContainer.class);
 
         Cli<Runnable> gitParser = builder.build();
         try {
@@ -82,6 +102,32 @@ public class Maintainer {
         executeMaintainer(logger, JOB_ARCHIVE_APP_DATA, containerName.asString());
     }
 
+    public static void handleCoreDumpsForContainer(PrefixLogger logger, ContainerNodeSpec nodeSpec, Environment environment) {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("hostname", nodeSpec.hostname);
+        attributes.put("parent_hostname", HostName.getLocalhost());
+        attributes.put("region", environment.getRegion());
+        attributes.put("environment", environment.getEnvironment());
+        attributes.put("flavor", nodeSpec.nodeFlavor);
+        try {
+            attributes.put("kernel_version", getKernelVersion());
+        } catch (Throwable ignored) {
+            attributes.put("kernel_version", "unknown");
+        }
+
+        if (nodeSpec.wantedDockerImage.isPresent()) attributes.put("docker_image", nodeSpec.wantedDockerImage.get().asString());
+        if (nodeSpec.vespaVersion.isPresent()) attributes.put("vespa_version", nodeSpec.vespaVersion.get());
+        if (nodeSpec.owner.isPresent()) {
+            attributes.put("tenant", nodeSpec.owner.get().tenant);
+            attributes.put("application", nodeSpec.owner.get().application);
+            attributes.put("instance", nodeSpec.owner.get().instance);
+        }
+
+        executeMaintainer(logger, JOB_HANDLE_CORE_DUMPS,
+                "--container", nodeSpec.containerName.asString(),
+                "--attributes", gson.toJson(attributes));
+    }
+
     private static void executeMaintainer(PrefixLogger logger, String... params) {
         String[] baseArguments = {"sudo", "/home/y/libexec/vespa/node-admin/maintenance.sh"};
         String[] args = concatenateArrays(baseArguments, params);
@@ -90,15 +136,22 @@ public class Maintainer {
         env.put("VESPA_SERVICE_NAME", "maintainer");
 
         try {
-            Process process = processBuilder.start();
-            String output = IOUtils.readAll(new InputStreamReader(process.getInputStream()));
-            String errors = IOUtils.readAll(new InputStreamReader(process.getErrorStream()));
+            ProcessResult result = maintainer.exec(args);
 
-            if (! output.isEmpty()) logger.info(output);
-            if (! errors.isEmpty()) logger.error(errors);
-        } catch (IOException e) {
+            if (! result.getOutput().isEmpty()) logger.info(result.getOutput());
+            if (! result.getErrors().isEmpty()) logger.error(result.getErrors());
+        } catch (IOException | InterruptedException e) {
             logger.warning("Failed to execute command " + Arrays.toString(args), e);
         }
+    }
+
+    public ProcessResult exec(String... args) throws IOException, InterruptedException {
+        ProcessBuilder processBuilder = new ProcessBuilder(args);
+        Process process = processBuilder.start();
+        String output = IOUtils.readAll(new InputStreamReader(process.getInputStream()));
+        String errors = IOUtils.readAll(new InputStreamReader(process.getErrorStream()));
+
+        return new ProcessResult(process.waitFor(), output, errors);
     }
 
     public static String[] concatenateArrays(String[] ar1, String... ar2) {
@@ -123,10 +176,10 @@ public class Maintainer {
     public static class CleanCoreDumpsArguments implements Runnable {
         @Override
         public void run() {
-            File coreDumpsDir = new File("/home/y/var/crash");
+            Path doneCoredumps = maintainer.pathInNodeAdminToDoneCoredumps();
 
-            if (coreDumpsDir.exists()) {
-                DeleteOldAppData.deleteFilesExceptNMostRecent(coreDumpsDir.getAbsolutePath(), 1);
+            if (doneCoredumps.toFile().exists()) {
+                COREDUMP_HANDLER.removeOldCoredumps(doneCoredumps);
             }
         }
     }
@@ -174,6 +227,44 @@ public class Maintainer {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Command(name = JOB_HANDLE_CORE_DUMPS, description = "Finds container's coredumps, collects metadata and reports them")
+    public static class HandleCoreDumpsForContainer implements Runnable {
+        @Option(name = "--container", description = "Name of the container")
+        public String container;
+
+        @Option(name = "--attributes", description = "Comma separated key=value pairs")
+        public String attributes;
+
+        @Override
+        public void run() {
+            Logger logger = Logger.getLogger(HandleCoreDumpsForContainer.class.getName());
+
+            if (container == null) {
+                throw new IllegalArgumentException("<container> is required");
+            }
+
+            try {
+                Map<String, Object> attributesMap = (Map<String, Object>) gson.fromJson(attributes, Map.class);
+
+                Path path = maintainer.pathInNodeAdminFromPathInNode(new ContainerName(container), "/home/y/var/crash");
+                Path doneCoredumps = maintainer.pathInNodeAdminToDoneCoredumps();
+
+                COREDUMP_HANDLER.removeJavaCoredumps(path);
+                COREDUMP_HANDLER.processAndReportCoredumps(path, doneCoredumps, attributesMap);
+            } catch (Throwable e) {
+                logger.log(Level.WARNING, "Could not process coredumps", e);
+            }
+        }
+    }
+
+
+    /**
+     * Absolute path in node admin to directory with processed and reported core dumps
+     */
+    private Path pathInNodeAdminToDoneCoredumps() {
+        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve("processed-coredumps");
+    }
 
     /**
      * Absolute path in node admin container to the node cleanup directory.
@@ -215,5 +306,18 @@ public class Maintainer {
         return APPLICATION_STORAGE_PATH_FOR_HOST
                 .resolve(containerName.asString())
                 .resolve(ROOT.relativize(pathInNode));
+    }
+
+    public static String getKernelVersion() throws IOException, InterruptedException {
+        if (! kernelVersion.isPresent()) {
+            ProcessResult result = maintainer.exec("uname", "-r");
+            if (result.isSuccess()) {
+                kernelVersion = Optional.of(result.getOutput().trim());
+            } else {
+                throw new RuntimeException("Failed to get kernel version\n" + result);
+            }
+        }
+
+        return kernelVersion.get();
     }
 }
