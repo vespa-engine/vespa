@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
@@ -18,7 +19,6 @@ import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.NotFoundException;
-import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.http.v2.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -143,7 +143,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         return true;
     }
-    
+
     public String grabLog(Tenant tenant, ApplicationId applicationId) {
         Application application = getApplication(tenant, applicationId);
         return logServerLogGrabber.grabLog(application);
@@ -179,6 +179,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty());
     }
 
+    // TODO: Don't use the NotFoundException here
     public LocalSession getLocalSession(Tenant tenant, long sessionId) {
         LocalSession session = tenant.getLocalSessionRepo().getSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
@@ -186,6 +187,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session;
     }
 
+    // TODO: Don't use the NotFoundException here
     public RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
         RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
@@ -199,14 +201,39 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
-        final TenantName tenantName = applicationId.tenant();
-        Utils.checkThatTenantExists(tenants, tenantName);
+        TenantName tenantName = applicationId.tenant();
+        if (!tenants.checkThatTenantExists(tenantName)) {
+            throw new IllegalArgumentException("Tenant " + tenantName + " was not found.");
+        }
         Tenant tenant = tenants.getTenant(tenantName);
         List<ApplicationId> applicationIds = listApplicationIds(tenant);
         if (!applicationIds.contains(applicationId)) {
             throw new IllegalArgumentException("No such application id: " + applicationId);
         }
         return tenant;
+    }
+
+    public ApplicationId activate(Tenant tenant,
+                                  long sessionId,
+                                  TimeoutBudget timeoutBudget,
+                                  boolean ignoreLockFailure,
+                                  boolean ignoreSessionStaleFailure) {
+        LocalSession localSession = getLocalSession(tenant, sessionId);
+        LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
+        ActivateLock activateLock = tenant.getActivateLock();
+        // TODO: Get rid of the activateLock and localSessionRepo arguments in deployFromPreparedSession
+        Deployment deployment = deployFromPreparedSession(localSession,
+                                                          activateLock,
+                                                          localSessionRepo,
+                                                          timeoutBudget.timeLeft());
+        deployment.setIgnoreLockFailure(ignoreLockFailure);
+        deployment.setIgnoreSessionStaleFailure(ignoreSessionStaleFailure);
+        deployment.activate();
+        return localSession.getApplicationId();
+    }
+
+    public ApplicationMetaData getMetadataFromSession(Tenant tenant, long sessionId) {
+        return getLocalSession(tenant, sessionId).getMetaData();
     }
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
