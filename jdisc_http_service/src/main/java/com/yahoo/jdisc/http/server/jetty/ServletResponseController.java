@@ -99,11 +99,10 @@ public class ServletResponseController {
 
 
     public void trySendError(Throwable t) {
-        String reasonPhrase = getReasonPhrase(t, developerMode);
-        int statusCode = getStatusCode(t);
-
         final boolean responseWasCommitted;
         try {
+            String reasonPhrase = getReasonPhrase(t, developerMode);
+            int statusCode = getStatusCode(t);
             synchronized (monitor) {
                 responseWasCommitted = responseCommitted;
                 if (!responseCommitted) {
