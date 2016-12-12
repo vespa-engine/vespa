@@ -183,7 +183,7 @@ public class ServletOutputStreamWriter {
                 lastOperationWasFlush = false;
 
                 if (contentPart.buf == CLOSE_STREAM_BUFFER) {
-                    contentPart.handler.completed();
+                    callCompletionHandlerWhenDone(contentPart.handler, outputStream::close);
                     setFinished(Optional.empty());
                     return;
                 } else {
@@ -230,7 +230,7 @@ public class ServletOutputStreamWriter {
     }
 
     private void writeBufferToOutputStream(ResponseContentPart contentPart) throws Throwable {
-        try {
+        callCompletionHandlerWhenDone(contentPart.handler, () -> {
             ByteBuffer buffer = contentPart.buf;
             final int bytesToSend = buffer.remaining();
             try {
@@ -246,15 +246,20 @@ public class ServletOutputStreamWriter {
                 metricReporter.failedWrite();
                 throw throwable;
             }
-            contentPart.handler.completed(); //Might throw an exception, handling in the enclosing scope.
-        } catch (Throwable e) {
-            runCompletionHandler_logOnExceptions(() -> contentPart.handler.failed(e));
-            throw e;
-        }
+        });
     }
 
-    private void runCompletionHandler_logOnExceptions(Runnable runnable) {
-        assert !Thread.holdsLock(monitor);
+    private static void callCompletionHandlerWhenDone(CompletionHandler handler, IORunnable runnable) throws Exception {
+        try {
+            runnable.run();
+        } catch (Throwable e) {
+            runCompletionHandler_logOnExceptions(() -> handler.failed(e));
+            throw e;
+        }
+        handler.completed(); //Might throw an exception, handling in the enclosing scope.
+    }
+
+    private static void runCompletionHandler_logOnExceptions(Runnable runnable) {
         try {
             runnable.run();
         } catch (Throwable e) {
@@ -320,4 +325,8 @@ public class ServletOutputStreamWriter {
         }
     }
 
+    @FunctionalInterface
+    private interface IORunnable {
+        void run() throws IOException;
+    }
 }
