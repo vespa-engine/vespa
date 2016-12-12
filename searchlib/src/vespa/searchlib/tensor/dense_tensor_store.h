@@ -9,7 +9,7 @@ namespace vespalib { namespace tensor { class MutableDenseTensorView; }}
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 /**
  * Class for storing dense tensors with known bounds in memory, used
@@ -61,7 +61,7 @@ private:
     template <class TensorType>
     TensorStore::EntryRef
     setDenseTensor(const TensorType &tensor);
-    std::pair<void *, RefType> allocRawBuffer(size_t numCells);
+    datastore::Handle<char> allocRawBuffer(size_t numCells);
     size_t alignedSize(size_t numCells) const {
         return RefType::align(numCells * _cellSize + unboundDimSizesSize());
     }
@@ -75,8 +75,7 @@ public:
     size_t getNumCells(const void *buffer) const;
     uint32_t getCellSize() const { return _cellSize; }
     const void *getRawBuffer(RefType ref) const;
-    std::pair<void *, RefType>
-    allocRawBuffer(size_t numCells, const std::vector<uint32_t> &unboundDimSizes);
+    datastore::Handle<char> allocRawBuffer(size_t numCells, const std::vector<uint32_t> &unboundDimSizes);
     virtual void holdTensor(EntryRef ref) override;
     virtual EntryRef move(EntryRef ref) override;
     std::unique_ptr<Tensor> getTensor(EntryRef ref) const;
@@ -85,6 +84,6 @@ public:
 };
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

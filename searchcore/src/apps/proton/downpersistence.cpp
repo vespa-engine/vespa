@@ -1,19 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".downpersistence");
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/searchlib/util/statefile.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include "downpersistence.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".downpersistence");
 
-namespace storage
-{
+namespace storage {
 
-namespace spi
-{
+namespace spi {
 
-namespace
-{
+namespace {
 
 Result errorResult(Result::FATAL_ERROR, "Node is down");
 

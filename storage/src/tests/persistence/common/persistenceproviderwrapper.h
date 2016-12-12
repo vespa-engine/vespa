@@ -97,7 +97,7 @@ public:
 
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const;
 
-    spi::Result put(const spi::Bucket&, spi::Timestamp, const document::Document::SP&, spi::Context&);
+    spi::Result put(const spi::Bucket&, spi::Timestamp, const spi::DocumentSP&, spi::Context&);
 
     spi::RemoveResult remove(const spi::Bucket&,
                              spi::Timestamp,
@@ -111,7 +111,7 @@ public:
 
     spi::UpdateResult update(const spi::Bucket&,
                              spi::Timestamp,
-                             const document::DocumentUpdate::SP&,
+                             const spi::DocumentUpdateSP&,
                              spi::Context&);
 
     spi::GetResult get(const spi::Bucket&,

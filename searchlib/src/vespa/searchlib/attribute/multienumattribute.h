@@ -13,7 +13,7 @@ namespace search {
  * to store unique values and a multi value mapping to store enum indices for each document.
  *
  * B: EnumAttribute<BaseClass>
- * M: MultiValueType (MultiValueMapping template argument)
+ * M: MultiValueType
  */
 template <typename B, typename M>
 class MultiValueEnumAttribute : public MultiValueAttribute<B, M>
@@ -36,7 +36,6 @@ protected:
     typedef typename MultiValueAttribute<B, M>::MultiValueType WeightedIndex;
     typedef typename MultiValueAttribute<B, M>::ValueVector    WeightedIndexVector;
     using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
-    typedef typename MultiValueAttribute<B, M>::Histogram      Histogram;
     typedef typename MultiValueAttribute<B, M>::DocumentValues DocIndices;
     typedef AttributeVector::ReaderBase     ReaderBase;
     typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;

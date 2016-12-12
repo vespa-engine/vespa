@@ -13,29 +13,41 @@ namespace search {
 namespace features {
 
 void
-ItemRawScoreExecutor::execute(MatchData &data)
+ItemRawScoreExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = data.resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == data.getDocId()) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
+        if (tfmd->getDocId() == docId) {
             output += tfmd->getRawScore();
         }
     }
-    *data.resolveFeature(outputs()[0]) = output;
+    outputs().set_number(0, output);
+}
+
+void
+ItemRawScoreExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
 
 void
-SimpleItemRawScoreExecutor::execute(MatchData &data)
+SimpleItemRawScoreExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
-    const TermFieldMatchData *tfmd = data.resolveTermField(_handle);
-    if (tfmd->getDocId() == data.getDocId()) {
+    const TermFieldMatchData *tfmd = _md->resolveTermField(_handle);
+    if (tfmd->getDocId() == docId) {
         output = tfmd->getRawScore();
     }
-    *data.resolveFeature(outputs()[0]) = output;
+    outputs().set_number(0, output);
+}
+
+void
+SimpleItemRawScoreExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -49,16 +61,16 @@ ItemRawScoreBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-ItemRawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
+FeatureExecutor &
+ItemRawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
     HandleVector handles = resolve(queryEnv, _label);
     if (handles.size() == 1) {
-        return FeatureExecutor::LP(new SimpleItemRawScoreExecutor(handles[0]));
+        return stash.create<SimpleItemRawScoreExecutor>(handles[0]);
     } else if (handles.size() == 0) {
-        return FeatureExecutor::LP(new SingleZeroValueExecutor());
+        return stash.create<SingleZeroValueExecutor>();
     } else {        
-        return FeatureExecutor::LP(new ItemRawScoreExecutor(handles));
+        return stash.create<ItemRawScoreExecutor>(handles);
     }
 }
 

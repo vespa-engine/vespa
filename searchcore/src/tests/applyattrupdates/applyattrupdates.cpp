@@ -15,6 +15,7 @@
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/removevalueupdate.h>
+#include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/log/log.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
 #include <vespa/searchlib/attribute/attributefactory.h>

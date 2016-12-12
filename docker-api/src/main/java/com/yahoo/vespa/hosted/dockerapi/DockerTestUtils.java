@@ -16,11 +16,6 @@ import java.util.concurrent.ExecutionException;
  *   1. Install Docker Toolbox, and start it (Docker Quickstart Terminal) (you can close terminal window afterwards)
  *   2. For network test, we need to make docker containers visible for Mac: sudo route add 172.18.0.0/16 192.168.99.100
  *
- * GENERAL TIPS:
- *   For cleaning up your local docker machine (DON'T DO THIS ON PROD)
- *     docker stop $(docker ps -a -q)
- *     docker rm $(docker ps -a -q)
- *
  * @author freva
  */
 public class DockerTestUtils {
@@ -69,7 +64,9 @@ public class DockerTestUtils {
     public static void createDockerTestNetworkIfNeeded(DockerImpl docker) {
         if (! docker.dockerClient.listNetworksCmd().withNameFilter(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
-        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config().withSubnet("172.18.0.0/16"));
+        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
+                .withSubnet("172.18.0.0/16")
+                .withGateway("172.18.0.1"));
         docker.dockerClient.createNetworkCmd()
                 .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
     }

@@ -24,19 +24,9 @@ namespace {
 CellsRef
 getCellsRef(const eval::Value &value)
 {
-    assert(value.is_tensor());
-    const Tensor *tensor = dynamic_cast<const Tensor *>(value.as_tensor());
-    assert(tensor);
-    const DenseTensorView *denseTensorView = dynamic_cast<const DenseTensorView *>(tensor);
-    if (denseTensorView) {
-        return denseTensorView->cells();
-    } else {
-        // TODO: Make DenseTensor inherit DenseTensorView
-        const DenseTensor *denseTensor = dynamic_cast<const DenseTensor *>(tensor);
-        assert(denseTensor);
-        return CellsRef(&denseTensor->cells()[0],
-                        denseTensor->cells().size());
-    }
+    const Tensor *tensor = static_cast<const Tensor *>(value.as_tensor());
+    const DenseTensorView *denseTensor = static_cast<const DenseTensorView *>(tensor);
+    return denseTensor->cellsRef();
 }
 
 }

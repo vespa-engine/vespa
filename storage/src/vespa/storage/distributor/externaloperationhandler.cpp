@@ -39,11 +39,11 @@ namespace distributor {
 
 ExternalOperationHandler::ExternalOperationHandler(
         Distributor& owner,
+        ManagedBucketSpace& bucketSpace,
         const MaintenanceOperationGenerator& gen,
         DistributorComponentRegister& compReg)
-    : DistributorComponent(owner, compReg, "Distributor manager"),
-      _visitorMetrics(getLoadTypes()->getMetricLoadTypes(),
-                      *&VisitorMetricSet(NULL)),
+    : ManagedBucketSpaceComponent(owner, bucketSpace, compReg,
+                                  "External operation handler"),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached() // At epoch
 {
@@ -262,7 +262,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
                                 *this,
                                 cmd,
                                 visitorConfig,
-                                &_visitorMetrics[cmd->getLoadType()]));
+                                getMetrics().visits[cmd->getLoadType()]));
     return true;
 }
 

@@ -150,7 +150,8 @@ public class JRTConfigRequester implements RequestWaiter {
                 final long now = System.currentTimeMillis();
                 if (noApplicationWarned < (now - delayBetweenWarnings)) {
                     log.log(LogLevel.WARNING, "Request callback failed: " + ErrorCode.getName(jrtReq.errorCode()) +
-                            ". Connection spec: " + connection.getAddress());
+                            ". Connection spec: " + connection.getAddress() +
+                            ", error message: " + jrtReq.errorMessage());
                     noApplicationWarned = now;
                 }
                 break;

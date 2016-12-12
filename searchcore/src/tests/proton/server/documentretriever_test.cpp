@@ -2,9 +2,6 @@
 // Unit tests for documentretriever.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("documentretriever_test");
-
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>
@@ -39,6 +36,7 @@ LOG_SETUP("documentretriever_test");
 #include <vespa/vespalib/util/stringfmt.h>
 
 using document::ArrayFieldValue;
+using document::FieldValue;
 using document::BucketId;
 using document::DataType;
 using document::Document;

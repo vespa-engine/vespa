@@ -69,9 +69,9 @@ public class RestApiTest {
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                                    ("[" + asNodeJson("host8.yahoo.com", "default") + "," +
-                                           asNodeJson("host9.yahoo.com", "large-variant") + "," +
-                                           asHostJson("parent2.yahoo.com", "large-variant") + "," +
-                                           asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com") + "]").
+                                          asNodeJson("host9.yahoo.com", "large-variant") + "," +
+                                          asHostJson("parent2.yahoo.com", "large-variant") + "," +
+                                          asDockerNodeJson("host11.yahoo.com", "parent.host.yahoo.com") + "]").
                                    getBytes(StandardCharsets.UTF_8),
                                    Request.Method.POST),
                         "{\"message\":\"Added 4 nodes to the provisioned state\"}");
@@ -164,9 +164,32 @@ public class RestApiTest {
     @Test
     public void post_with_invalid_method_override_in_header_gives_sane_error_message() throws Exception  {
         Request req = new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                                  Utf8.toBytes("{\"currentRestartGeneration\": 1}"), Request.Method.POST);
+                Utf8.toBytes("{\"currentRestartGeneration\": 1}"), Request.Method.POST);
         req.getHeaders().add("X-HTTP-Method-Override", "GET");
         assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Illegal X-HTTP-Method-Override header for POST request. Accepts 'PATCH' but got 'GET'\"}");
+    }
+
+    @Test
+    public void post_node_with_ip_address() throws Exception {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson("ipv4-host.yahoo.com", "127.0.0.1", "default") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[" + asNodeJson("ipv6-host.yahoo.com", "::1", "default") + "]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+    }
+
+    @Test
+    public void post_node_with_invalid_ip_address() throws Exception {
+        Request req = new Request("http://localhost:8080/nodes/v2/node",
+                ("[" + asNodeJson("host-with-ip.yahoo.com", "foo", "default") + "]").
+                        getBytes(StandardCharsets.UTF_8),
+                Request.Method.POST);
+        assertResponse(req, 400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"A node must have a valid IP address: 'foo' is not an IP string literal.\"}");
     }
 
     @Test
@@ -211,7 +234,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void acl_request() throws Exception {
+    public void acl_request_by_tenant_node() throws Exception {
         String hostname = "foo.yahoo.com";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                         ("[" + asNodeJson(hostname, "default") + "]").
@@ -221,8 +244,7 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved foo.yahoo.com to ready\"}");
-        Pattern responsePattern = Pattern.compile("\\{\"hostname\":\"foo.yahoo.com\",\"ipAddress\":\".+?\"," +
-                "\"trustedNodes\":\\[" +
+        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
                 "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
                 "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
                 "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
@@ -231,7 +253,26 @@ public class RestApiTest {
     }
 
     @Test
+    public void acl_request_by_config_server() throws Exception {
+        Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
+                "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
+                "\\{\"hostname\":\"cfg3\",\"ipAddress\":\".+?\"}" +
+                "]}");
+        assertResponseMatches(new Request("http://localhost:8080/nodes/v2/acl/cfg1"), responsePattern);
+    }
+
+    @Test
     public void test_invalid_requests() throws Exception {
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/node-does-not-exist",
+                                   new byte[0], Request.Method.GET),
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'node-does-not-exist'\"}");
+
+        // Attempt to fail and ready an allocated node without going through dirty
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/node-does-not-exist",
+                                   new byte[0], Request.Method.PUT),
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not move node-does-not-exist to failed: Node not found\"}");
+
         // Attempt to fail and ready an allocated node without going through dirty
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
@@ -336,8 +377,13 @@ public class RestApiTest {
                 "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"docker\"}";
     }
 
+    private String asNodeJson(String hostname, String ipAddress, String flavor) {
+        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"" + flavor + "\"" +
+                (ipAddress.isEmpty() ? "" : ", \"ipAddress\":\"" + ipAddress + "\"") + "}";
+    }
+
     private String asNodeJson(String hostname, String flavor) {
-        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\",\"flavor\":\"" + flavor + "\"}";
+        return asNodeJson(hostname, "", flavor);
     }
 
     private String asHostJson(String hostname, String flavor) {
@@ -359,14 +405,15 @@ public class RestApiTest {
     }
 
     private void assertResponseContains(Request request, String responseSnippet) throws IOException {
-        assertTrue("Response contains " + responseSnippet,
-                   container.handleRequest(request).getBodyAsString().contains(responseSnippet));
+        String response = container.handleRequest(request).getBodyAsString();
+        assertTrue(String.format("Expected response to contain: %s\nResponse: %s", responseSnippet, response),
+                response.contains(responseSnippet));
     }
 
     private void assertResponseMatches(Request request, Pattern pattern) throws IOException {
-        // System.out.println(container.handleRequest(request).getBodyAsString());
-        assertTrue("Response matches " + pattern.toString(),
-                   pattern.matcher(container.handleRequest(request).getBodyAsString()).matches());
+        String response = container.handleRequest(request).getBodyAsString();
+        assertTrue(String.format("Expected response to match pattern: %s\nResponse: %s", pattern.toString(), response),
+                   pattern.matcher(response).matches());
     }
 
     private void assertFile(Request request, String responseFile) throws IOException {

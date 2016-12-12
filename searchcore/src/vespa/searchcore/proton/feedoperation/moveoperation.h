@@ -8,18 +8,19 @@ namespace proton {
 class MoveOperation : public DocumentOperation
 {
 private:
-    document::Document::SP _doc;
+    using DocumentSP = std::shared_ptr<document::Document>;
+    DocumentSP _doc;
 public:
     typedef std::unique_ptr<MoveOperation> UP;
 
     MoveOperation();
     MoveOperation(const document::BucketId &bucketId,
                   const storage::spi::Timestamp &timestamp,
-                  const document::Document::SP &doc,
+                  const DocumentSP &doc,
                   DbDocumentId sourceDbdId,
                   uint32_t targetSubDbId);
-    virtual ~MoveOperation() {}
-    const document::Document::SP &getDocument() const { return _doc; }
+    virtual ~MoveOperation();
+    const DocumentSP &getDocument() const { return _doc; }
     DbDocumentId getSourceDbdId() const { return getPrevDbDocumentId(); }
     DbDocumentId getTargetDbdId() const { return getDbDocumentId(); }
     void setTargetLid(search::DocumentIdT lid) {

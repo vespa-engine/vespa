@@ -29,6 +29,7 @@ public:
     void setSpanNode(const SpanNode &node) { _node = &node; }
     template <typename T>
     void setFieldValue(std::unique_ptr<T> value) { _value.reset(value.release()); }
+    bool operator==(const Annotation &a2) const;
 
     const SpanNode *getSpanNode() const { return _node; }
     const AnnotationType &getType() const { return *_type; }
@@ -37,14 +38,6 @@ public:
     const FieldValue *getFieldValue() const { return _value.get(); }
     vespalib::string toString() const;
 };
-
-inline bool operator==(const Annotation &a1, const Annotation &a2) {
-    return (a1.getType() == a2.getType() &&
-            !(!!a1.getFieldValue() ^ !!a2.getFieldValue()) &&
-            (!a1.getFieldValue() ||
-             (*a1.getFieldValue() == *a2.getFieldValue()))
-            );
-}
 
 std::ostream & operator << (std::ostream & os, const Annotation & span);
 

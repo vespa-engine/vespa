@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
@@ -17,7 +16,8 @@ import static org.junit.Assert.assertTrue;
  * B, D, A => true
  * B, F, D, A => false,
  * C, B => false
- * @author valerijf
+ *
+ * @author freva
  */
 public class CallOrderVerifier {
     private static final int waitForCallOrderTimeout = 60000; //ms

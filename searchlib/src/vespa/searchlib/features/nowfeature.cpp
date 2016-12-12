@@ -20,8 +20,8 @@ NowExecutor::NowExecutor(int64_t timestamp) :
 }
 
 void
-NowExecutor::execute(search::fef::MatchData &data) {
-    *data.resolveFeature(outputs()[0]) = _timestamp;
+NowExecutor::execute(uint32_t) {
+    outputs().set_number(0, _timestamp);
 }
 
 void
@@ -45,8 +45,8 @@ NowBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new NowBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-NowBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+NowBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     int64_t timestamp;
     const fef::Property &prop = env.getProperties().lookup(fef::queryproperties::now::SystemTime::NAME);
@@ -57,7 +57,7 @@ NowBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
         now.SetNow();
         timestamp = (int64_t)now.Secs();
     }
-    return search::fef::FeatureExecutor::LP(new NowExecutor(timestamp));
+    return stash.create<NowExecutor>(timestamp);
 }
 
 }}

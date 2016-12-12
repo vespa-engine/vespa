@@ -15,55 +15,47 @@ class MetricPersistenceProvider : public PersistenceProvider,
                                   public metrics::MetricSet
 {
     struct ResultMetrics : public metrics::MetricSet {
-        typedef vespalib::LinkedPtr<ResultMetrics> LP;
-        std::vector<vespalib::LinkedPtr<metrics::LongAverageMetric> > _metric;
+        std::vector<std::unique_ptr<metrics::DoubleAverageMetric> > _metric;
 
         ResultMetrics(const char* opName);
+        ~ResultMetrics();
     };
     PersistenceProvider* _next;
-    std::vector<ResultMetrics::LP> _functionMetrics;
+    std::vector<std::unique_ptr<ResultMetrics>> _functionMetrics;
 
 public:
     typedef std::unique_ptr<MetricPersistenceProvider> UP;
 
     MetricPersistenceProvider(PersistenceProvider&);
+    ~MetricPersistenceProvider();
 
     void setNextProvider(PersistenceProvider& p) { _next = &p; }
 
     // Implementation of the PersistenceProvider API
-    virtual Result initialize();
-    virtual PartitionStateListResult getPartitionStates() const;
-    virtual BucketIdListResult listBuckets(PartitionId) const;
-    virtual Result setClusterState(const ClusterState&);
-    virtual Result setActiveState(const Bucket&, BucketInfo::ActiveState);
-    virtual BucketInfoResult getBucketInfo(const Bucket&) const;
-    virtual Result put(const Bucket&, Timestamp, const Document::SP&, Context&);
-    virtual RemoveResult remove(const Bucket&, Timestamp,
-                                const DocumentId&, Context&);
-    virtual RemoveResult removeIfFound(const Bucket&, Timestamp,
-                                       const DocumentId&, Context&);
-    virtual Result removeEntry(const Bucket&, Timestamp, Context&);
-    virtual UpdateResult update(const Bucket&, Timestamp,
-                                const DocumentUpdate::SP&, Context&);
-    virtual Result flush(const Bucket&, Context&);
-    virtual GetResult get(const Bucket&, const document::FieldSet&,
-                          const DocumentId&, Context&) const;
-    virtual CreateIteratorResult createIterator(
-            const Bucket&, const document::FieldSet&, const Selection&,
-            IncludedVersions, Context&);
-    virtual IterateResult iterate(IteratorId, uint64_t maxByteSize,
-                                  Context&) const;
-    virtual Result destroyIterator(IteratorId, Context&);
-    virtual Result createBucket(const Bucket&, Context&);
-    virtual Result deleteBucket(const Bucket&, Context&);
-    virtual BucketIdListResult getModifiedBuckets() const;
-    virtual Result maintain(const Bucket&,
-                            MaintenanceLevel level);
-    virtual Result split(const Bucket& source, const Bucket& target1,
-                         const Bucket& target2, Context&);
-    virtual Result join(const Bucket& source1, const Bucket& source2,
-                        const Bucket& target, Context&);
-    virtual Result move(const Bucket&, PartitionId target, Context&);
+    Result initialize() override;
+    PartitionStateListResult getPartitionStates() const override;
+    BucketIdListResult listBuckets(PartitionId) const override;
+    Result setClusterState(const ClusterState&) override;
+    Result setActiveState(const Bucket&, BucketInfo::ActiveState) override;
+    BucketInfoResult getBucketInfo(const Bucket&) const override;
+    Result put(const Bucket&, Timestamp, const DocumentSP&, Context&) override;
+    RemoveResult remove(const Bucket&, Timestamp, const DocumentId&, Context&) override;
+    RemoveResult removeIfFound(const Bucket&, Timestamp, const DocumentId&, Context&) override;
+    Result removeEntry(const Bucket&, Timestamp, Context&) override;
+    UpdateResult update(const Bucket&, Timestamp, const DocumentUpdateSP&, Context&) override;
+    Result flush(const Bucket&, Context&) override;
+    GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;
+    CreateIteratorResult createIterator(const Bucket&, const document::FieldSet&, const Selection&,
+                                        IncludedVersions, Context&) override;
+    IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
+    Result destroyIterator(IteratorId, Context&) override;
+    Result createBucket(const Bucket&, Context&) override;
+    Result deleteBucket(const Bucket&, Context&) override;
+    BucketIdListResult getModifiedBuckets() const override;
+    Result maintain(const Bucket&, MaintenanceLevel level) override;
+    Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
+    Result join(const Bucket& source1, const Bucket& source2, const Bucket& target, Context&) override;
+    Result move(const Bucket&, PartitionId target, Context&) override;
 
 private:
     void defineResultMetrics(int index, const char* name);

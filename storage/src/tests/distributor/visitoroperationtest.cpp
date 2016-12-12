@@ -64,6 +64,8 @@ class VisitorOperationTest : public CppUnit::TestFixture,
     CPPUNIT_TEST(testNoClientReplyBeforeAllStorageRepliesReceived);
     CPPUNIT_TEST(testSkipFailedSubBucketsWhenVisitingInconsistent);
     CPPUNIT_TEST(testQueueTimeoutIsFactorOfTotalTimeout);
+    CPPUNIT_TEST(metrics_are_updated_with_visitor_statistics_upon_replying);
+    CPPUNIT_TEST(statistical_metrics_not_updated_on_wrong_distribution);
     CPPUNIT_TEST_SUITE_END();
 
 protected:
@@ -109,6 +111,8 @@ protected:
     void testNoClientReplyBeforeAllStorageRepliesReceived();
     void testSkipFailedSubBucketsWhenVisitingInconsistent();
     void testQueueTimeoutIsFactorOfTotalTimeout();
+    void metrics_are_updated_with_visitor_statistics_upon_replying();
+    void statistical_metrics_not_updated_on_wrong_distribution();
 public:
     VisitorOperationTest()
         : defaultConfig(framework::MilliSecTime(0),
@@ -188,15 +192,34 @@ private:
         return ost.str();
     }
 
+    VisitorMetricSet& defaultVisitorMetrics() {
+        return getDistributor().getMetrics().visits[documentapi::LoadType::DEFAULT];
+    }
+
+    std::unique_ptr<VisitorOperation> createOpWithConfig(
+            api::CreateVisitorCommand::SP msg,
+            const VisitorOperation::Config& config)
+    {
+        return std::make_unique<VisitorOperation>(
+                getExternalOperationHandler(),
+                msg,
+                config,
+                getDistributor().getMetrics().visits[msg->getLoadType()]);
+    }
+
+    std::unique_ptr<VisitorOperation> createOpWithDefaultConfig(
+            api::CreateVisitorCommand::SP msg)
+    {
+        return createOpWithConfig(std::move(msg), defaultConfig);
+    }
+
     /**
-       Starts a visitor where we expect no createVisitorCommands to be sent
-       to storage, either due to error or due to no data actually stored.
-    */
+     * Starts a visitor where we expect no createVisitorCommands to be sent
+     * to storage, either due to error or due to no data actually stored.
+     */
     std::string runEmptyVisitor(api::CreateVisitorCommand::SP msg) {
-        VisitorOperation op(getExternalOperationHandler(),
-                            msg,
-                           defaultConfig);
-        op.start(_sender, framework::MilliSecTime(0));
+        auto op = createOpWithDefaultConfig(std::move(msg));
+        op->start(_sender, framework::MilliSecTime(0));
         return _sender.getLastReply();
     }
 
@@ -218,6 +241,8 @@ private:
 
     std::unique_ptr<VisitorOperation> startOperationWith2StorageNodeVisitors(
             bool inconsistent);
+
+    void do_visitor_roundtrip_with_statistics(const api::ReturnCode& result);
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(VisitorOperationTest);
@@ -260,11 +285,9 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     msg->setTimeout(1234);
     msg->getTrace().setLevel(7);
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        msg,
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(std::move(msg));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
@@ -288,12 +311,14 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     CPPUNIT_ASSERT_EQUAL(uint32_t(1234), cvc->getTimeout());
     CPPUNIT_ASSERT_EQUAL(uint32_t(7), cvc->getTrace().getLevel());
 
-    sendReply(op);
+    sendReply(*op);
 
     CPPUNIT_ASSERT_EQUAL(std::string("CreateVisitorReply("
                                      "last=BucketId(0x000000007fffffff)) "
                                      "ReturnCode(NONE)"),
                          _sender.getLastReply());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().
+                                     ok.getLongValue("count"));
 }
 
 void
@@ -316,14 +341,14 @@ VisitorOperationTest::testShutdown()
     msg->addBucketToBeVisited(id);
     msg->addBucketToBeVisited(nullId);
 
-    VisitorOperation op(getExternalOperationHandler(), msg, defaultConfig);
+    auto op = createOpWithDefaultConfig(std::move(msg));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
 
-    op.onClose(_sender); // This will fail the visitor
+    op->onClose(_sender); // This will fail the visitor
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -381,19 +406,17 @@ VisitorOperationTest::testNoResendAfterTimeoutPassed()
     _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
-    VisitorOperation op(
-            getExternalOperationHandler(),
-            createVisitorCommand("lowtimeoutbusy", id, nullId, 8, 20),
-            defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("lowtimeoutbusy", id, nullId, 8, 20));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
 
     getClock().addMilliSecondsToTime(22);
 
-    sendReply(op, -1, api::ReturnCode::BUSY);
+    sendReply(*op, -1, api::ReturnCode::BUSY);
 
     CPPUNIT_ASSERT_EQUAL(
             std::string(
@@ -465,25 +488,25 @@ VisitorOperationTest::testUserSingleBucket()
 
     addNodesToBucketDB(id, "0=1/1/1/t");
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("userSingleBucket",
-                                userid,
-                                nullId,
-                                8,
-                                500,
-                                false,
-                                false,
-                                "dumpvisitor",
-                                document::OrderingSpecification::ASCENDING,
-                                "true"),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+        createVisitorCommand(
+            "userSingleBucket",
+            userid,
+            nullId,
+            8,
+            500,
+            false,
+            false,
+            "dumpvisitor",
+            document::OrderingSpecification::ASCENDING,
+            "true"));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL_MSG(_sender.getLastReply(),
                              std::string("Visitor Create => 0"),
                              _sender.getCommands(true));
-    sendReply(op);
+    sendReply(*op);
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
                         "ReturnCode(NONE)"),
@@ -495,22 +518,21 @@ VisitorOperationTest::runVisitor(document::BucketId id,
                                                document::BucketId lastId,
                                                uint32_t maxBuckets)
 {
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("inconsistentSplit",
-                                id,
-                                lastId,
-                                maxBuckets,
-                                500,
-                                false,
-                                false,
-                                "dumpvisitor",
-                                document::OrderingSpecification::ASCENDING,
-                                "true"),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("inconsistentSplit",
+                id,
+                lastId,
+                maxBuckets,
+                500,
+                false,
+                false,
+                "dumpvisitor",
+                document::OrderingSpecification::ASCENDING,
+                "true"));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
-    sendReply(op);
+    sendReply(*op);
 
     std::pair<std::string, std::string> retVal =
         std::make_pair(serializeVisitorCommand(), _sender.getLastReply());
@@ -577,25 +599,24 @@ VisitorOperationTest::testBucketRemovedWhileVisitorPending()
 
     addNodesToBucketDB(id, "0=1/1/1/t");
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("removefrombucketdb",
-                                id,
-                                nullId),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("removefrombucketdb", id, nullId));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
 
     removeFromBucketDB(id);
 
-    sendReply(op, -1, api::ReturnCode::NOT_CONNECTED);
+    sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
                         "ReturnCode(BUCKET_NOT_FOUND)"),
             _sender.getLastReply());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
+                                     inconsistent_bucket.getLongValue("count"));
 }
 
 void
@@ -605,17 +626,16 @@ VisitorOperationTest::testEmptyBucketsVisitedWhenVisitingRemoves()
     document::BucketId id(uint64_t(0x400000000000007b));
     addNodesToBucketDB(id, "0=0/0/0/1/2/t");
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("emptybucket",
-                                id,
-                                nullId,
-                                8,
-                                500,
-                                false,
-                                true),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("emptybucket",
+                id,
+                nullId,
+                8,
+                500,
+                false,
+                true));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     // Since visitRemoves is true, the empty bucket will be visited
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
@@ -630,18 +650,15 @@ VisitorOperationTest::testResendToOtherStorageNodeOnFailure()
 
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("emptyinconsistent",
-                                id,
-                                nullId),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("emptyinconsistent", id, nullId));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
 
-    sendReply(op, -1, api::ReturnCode::NOT_CONNECTED);
+    sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
     CPPUNIT_ASSERT_EQUAL(""s, _sender.getReplies());
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 1"),
@@ -661,24 +678,23 @@ VisitorOperationTest::testTimeoutOnlyAfterReplyFromAllStorageNodes()
     addNodesToBucketDB(document::BucketId(17, 0x00001), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 0x10001), "1=1/1/1/t");
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("timeout2bucketson2nodes",
-                                document::BucketId(16, 1),
-                                nullId,
-                                8),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("timeout2bucketson2nodes",
+                document::BucketId(16, 1),
+                nullId,
+                8));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL("Visitor Create => 0,Visitor Create => 1"s,
                          _sender.getCommands(true));
 
     getClock().addMilliSecondsToTime(501);
 
-    sendReply(op, 0);
+    sendReply(*op, 0);
     CPPUNIT_ASSERT_EQUAL(""s, _sender.getReplies()); // No reply yet.
 
-    sendReply(op, 1, api::ReturnCode::BUSY);
+    sendReply(*op, 1, api::ReturnCode::BUSY);
 
     CPPUNIT_ASSERT_EQUAL(
             "CreateVisitorReply(last=BucketId(0x4400000000000001)) "
@@ -701,29 +717,30 @@ VisitorOperationTest::testTimeoutDoesNotOverrideCriticalError()
     addNodesToBucketDB(document::BucketId(17, 0x00001), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 0x10001), "1=1/1/1/t");
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("timeout2bucketson2nodes",
-                                document::BucketId(16, 1),
-                                nullId,
-                                8,
-                                500), // ms timeout
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("timeout2bucketson2nodes",
+                document::BucketId(16, 1),
+                nullId,
+                8,
+                500)); // ms timeout
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
     CPPUNIT_ASSERT_EQUAL("Visitor Create => 0,Visitor Create => 1"s,
                          _sender.getCommands(true));
 
     getClock().addMilliSecondsToTime(501);
     // Technically has timed out at this point, but should still report the
     // critical failure.
-    sendReply(op, 0, api::ReturnCode::INTERNAL_FAILURE);
+    sendReply(*op, 0, api::ReturnCode::INTERNAL_FAILURE);
     CPPUNIT_ASSERT_EQUAL(""s, _sender.getReplies());
-    sendReply(op, 1, api::ReturnCode::BUSY);
+    sendReply(*op, 1, api::ReturnCode::BUSY);
 
     CPPUNIT_ASSERT_EQUAL(
             "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
             "ReturnCode(INTERNAL_FAILURE, [from content node 0] )"s,
             _sender.getLastReply());
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
+                                     storagefailure.getLongValue("count"));
 }
 
 void
@@ -736,6 +753,8 @@ VisitorOperationTest::testWrongDistribution()
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
                         "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)"),
             runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
+    CPPUNIT_ASSERT_EQUAL(int64_t(1), defaultVisitorMetrics().failures.
+                                     wrongdistributor.getLongValue("count"));
 }
 
 void
@@ -786,20 +805,19 @@ VisitorOperationTest::testBucketHighBitCount()
                         "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)"),
             runEmptyVisitor(createVisitorCommand("buckethigbit", id, nullId)));
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("buckethighbitcount",
-                                id,
-                                nullId,
-                                8,
-                                500,
-                                false,
-                                false,
-                                "dumpvisitor",
-                                document::OrderingSpecification::ASCENDING,
-                                "true"),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("buckethighbitcount",
+                id,
+                nullId,
+                8,
+                500,
+                false,
+                false,
+                "dumpvisitor",
+                document::OrderingSpecification::ASCENDING,
+                "true"));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
@@ -818,20 +836,19 @@ VisitorOperationTest::testBucketLowBitCount()
                         "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)"),
             runEmptyVisitor(createVisitorCommand("bucketlowbit", id, nullId)));
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("buckethighbitcount",
-                                id,
-                                nullId,
-                                8,
-                                500,
-                                false,
-                                false,
-                                "dumpvisitor",
-                                document::OrderingSpecification::ASCENDING,
-                                "true"),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("buckethighbitcount",
+                id,
+                nullId,
+                8,
+                500,
+                false,
+                false,
+                "dumpvisitor",
+                document::OrderingSpecification::ASCENDING,
+                "true"));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
                         "ReturnCode(WRONG_DISTRIBUTION, distributor:1 storage:1)"),
@@ -851,17 +868,11 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNode()
 
     document::BucketId id(16, 1);
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("multiplebuckets",
-                                id,
-                                nullId,
-                                31),
-                        VisitorOperation::Config(
-                                framework::MilliSecTime(0),
-                                1,
-                                4));
+    auto op = createOpWithConfig(
+            createVisitorCommand("multiplebuckets", id, nullId, 31),
+            VisitorOperation::Config(framework::MilliSecTime(0), 1, 4));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 0,"
                                      "Visitor Create => 0,Visitor Create => 0"),
@@ -897,7 +908,7 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNode()
             serializeVisitorCommand(3));
 
     for (uint32_t i = 0; i < 4; ++i) {
-        sendReply(op, i);
+        sendReply(*op, i);
     }
 
     CPPUNIT_ASSERT_EQUAL(
@@ -909,22 +920,22 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNode()
 
     uint32_t minBucketsPerVisitor = 1;
     uint32_t maxVisitorsPerNode = 4;
-    VisitorOperation op2(getExternalOperationHandler(),
-                        createVisitorCommand("multiplebuckets",
-                                id,
-                                document::BucketId(0x54000000000f0001),
-                                31),
-                        VisitorOperation::Config(
-                                framework::MilliSecTime(0),
-                                minBucketsPerVisitor,
-                                maxVisitorsPerNode));
+    auto op2 = createOpWithConfig(
+            createVisitorCommand("multiplebuckets",
+                id,
+                document::BucketId(0x54000000000f0001),
+                31),
+            VisitorOperation::Config(
+                framework::MilliSecTime(0),
+                minBucketsPerVisitor,
+                maxVisitorsPerNode));
 
-    op2.start(_sender, framework::MilliSecTime(0));
+    op2->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
 
-    sendReply(op2);
+    sendReply(*op2);
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
@@ -947,24 +958,21 @@ VisitorOperationTest::testParallelVisitorsResendOnlyFailing()
 
     uint32_t minBucketsPerVisitor = 5;
     uint32_t maxVisitorsPerNode = 4;
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("multiplebuckets",
-                                id,
-                                nullId,
-                                31),
-                        VisitorOperation::Config(
-                                framework::MilliSecTime(0),
-                                minBucketsPerVisitor,
-                                maxVisitorsPerNode));
+    auto op = createOpWithConfig(
+            createVisitorCommand("multiplebuckets", id, nullId, 31),
+            VisitorOperation::Config(
+                framework::MilliSecTime(0),
+                minBucketsPerVisitor,
+                maxVisitorsPerNode));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 0,"
                                      "Visitor Create => 0,Visitor Create => 0"),
                          _sender.getCommands(true));
 
     for (uint32_t i = 0; i < 2; ++i) {
-        sendReply(op, i, api::ReturnCode::NOT_CONNECTED);
+        sendReply(*op, i, api::ReturnCode::NOT_CONNECTED);
     }
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 0,"
@@ -973,7 +981,7 @@ VisitorOperationTest::testParallelVisitorsResendOnlyFailing()
                          _sender.getCommands(true));
 
     for (uint32_t i = 2; i < 6; ++i) {
-        sendReply(op, i);
+        sendReply(*op, i);
     }
 
     CPPUNIT_ASSERT_EQUAL(
@@ -995,16 +1003,11 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNodeOneSuperBucket()
 
     document::BucketId id(16, 0x2b6a);
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("multiplebucketsonesuper",
-                                id,
-                                nullId),
-                        VisitorOperation::Config(
-                                framework::MilliSecTime(0),
-                                5,
-                                4));
+    auto op = createOpWithConfig(
+            createVisitorCommand("multiplebucketsonesuper", id, nullId),
+            VisitorOperation::Config(framework::MilliSecTime(0), 5, 4));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
@@ -1017,7 +1020,7 @@ VisitorOperationTest::testParallelVisitorsToOneStorageNodeOneSuperBucket()
                         "BucketId(0x8c000003e3362b6a) BucketId(0x8c000007e3362b6a) ]"),
             serializeVisitorCommand(0));
 
-    sendReply(op);
+    sendReply(*op);
     
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
@@ -1076,24 +1079,21 @@ VisitorOperationTest::testInconsistencyHandling()
                                                nullId)));
     _sender.clear();
 
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("multiplebucketsonesuper",
-                                id,
-                                nullId,
-                                8,
-                                500,
-                                true),
-                        VisitorOperation::Config(
-                                framework::MilliSecTime(0),
-                                5,
-                                4));
+    auto op = createOpWithConfig(
+            createVisitorCommand("multiplebucketsonesuper",
+                id,
+                nullId,
+                8,
+                500,
+                true),
+            VisitorOperation::Config(framework::MilliSecTime(0), 5, 4));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 1"),
                          _sender.getCommands(true));
 
-    sendReply(op);
+    sendReply(*op);
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
@@ -1114,14 +1114,10 @@ VisitorOperationTest::testVisitIdealNode()
     }
 
     document::BucketId id(16, 1);
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("multinode",
-                                id,
-                                nullId,
-                                8),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("multinode", id, nullId, 8));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
@@ -1134,7 +1130,7 @@ VisitorOperationTest::testVisitIdealNode()
                         "BucketId(0x54000000000c0001) BucketId(0x54000000001c0001) ]"),
             serializeVisitorCommand(0));
 
-    sendReply(op);
+    sendReply(*op);
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x54000000001c0001)) "
@@ -1155,19 +1151,15 @@ VisitorOperationTest::testNoResendingOnCriticalFailure()
     }
 
     document::BucketId id(16, 1);
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("multinodefailurecritical",
-                                id,
-                                nullId,
-                                8),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("multinodefailurecritical", id, nullId, 8));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
 
-    sendReply(op, -1, api::ReturnCode::ILLEGAL_PARAMETERS);
+    sendReply(*op, -1, api::ReturnCode::ILLEGAL_PARAMETERS);
 
     CPPUNIT_ASSERT_EQUAL(
             "CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -1188,29 +1180,28 @@ VisitorOperationTest::testFailureOnAllNodes()
     }
 
     document::BucketId id(16, 1);
-    VisitorOperation op(getExternalOperationHandler(),
-                        createVisitorCommand("multinodefailurecritical",
-                                id,
-                                nullId,
-                                8),
-                        defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("multinodefailurecritical", id, nullId, 8));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
 
-    sendReply(op, -1, api::ReturnCode::NOT_CONNECTED);
+    sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
 
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0,Visitor Create => 1"),
                          _sender.getCommands(true));
 
-    sendReply(op, -1, api::ReturnCode::NOT_CONNECTED);
+    sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
 
     CPPUNIT_ASSERT_EQUAL(
             std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
                         "ReturnCode(BUCKET_NOT_FOUND)"),
             _sender.getLastReply());
+    // TODO it'd be much more accurate to increase the "notconnected" metric
+    // here, but our metrics are currently based on the reply sent back to the
+    // client, not the ones sent from the content nodes to the distributor.
 }
 
 
@@ -1439,22 +1430,21 @@ VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket)
     while (true) {
         _sender.clear();
 
-        VisitorOperation op(getExternalOperationHandler(),
-                            createVisitorCommand(
-                                    "uservisitororder",
-                                    startBucket,
-                                    buckets.size() ? buckets[buckets.size() - 1] :
-                                    nullId,
-                                    1,
-                                    500,
-                                    false,
-                                    false,
-                                    "dumpvisitor",
-                                    document::OrderingSpecification::DESCENDING,
-                                    "id.order(6,2)<= 20"),
-                            defaultConfig);
+        auto op = createOpWithDefaultConfig(
+                createVisitorCommand(
+                    "uservisitororder",
+                    startBucket,
+                    buckets.size() ? buckets[buckets.size() - 1] :
+                    nullId,
+                    1,
+                    500,
+                    false,
+                    false,
+                    "dumpvisitor",
+                    document::OrderingSpecification::DESCENDING,
+                    "id.order(6,2)<= 20"));
 
-        op.start(_sender, framework::MilliSecTime(0));
+        op->start(_sender, framework::MilliSecTime(0));
 
         CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                              _sender.getCommands(true));
@@ -1469,7 +1459,7 @@ VisitorOperationTest::doOrderedVisitor(document::BucketId startBucket)
             }
         }
 
-        sendReply(op);
+        sendReply(*op);
 
         CPPUNIT_ASSERT_EQUAL(1, (int)_sender.replies.size());
 
@@ -1560,16 +1550,14 @@ VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent)
                        "1=1/1/1/t");
 
     document::BucketId id(16, 1);
-    auto op = std::make_unique<VisitorOperation>(
-            getExternalOperationHandler(),
+    auto op = createOpWithDefaultConfig(
             createVisitorCommand(
-                    "multinodefailurecritical",
-                    id,
-                    nullId,
-                    8,
-                    500,
-                    inconsistent),
-            defaultConfig);
+                "multinodefailurecritical",
+                id,
+                nullId,
+                8,
+                500,
+                inconsistent));
 
     op->start(_sender, framework::MilliSecTime(0));
 
@@ -1628,17 +1616,72 @@ VisitorOperationTest::testQueueTimeoutIsFactorOfTotalTimeout()
     _distributor->enableClusterState(ClusterState("distributor:1 storage:2"));
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
-    VisitorOperation op(
-            getExternalOperationHandler(),
-            createVisitorCommand("foo", id, nullId, 8, 10000),
-            defaultConfig);
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("foo", id, nullId, 8, 10000));
 
-    op.start(_sender, framework::MilliSecTime(0));
+    op->start(_sender, framework::MilliSecTime(0));
     CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
                          _sender.getCommands(true));
 
     auto& cmd(dynamic_cast<CreateVisitorCommand&>(*_sender.commands[0]));
     CPPUNIT_ASSERT_EQUAL(uint32_t(5000), cmd.getQueueTimeout());
+}
+
+void
+VisitorOperationTest::do_visitor_roundtrip_with_statistics(
+        const api::ReturnCode& result)
+{
+    document::BucketId id(0x400000000000007bULL);
+    _distributor->enableClusterState(ClusterState("distributor:1 storage:1"));
+    addNodesToBucketDB(id, "0=1/1/1/t");
+
+    auto op = createOpWithDefaultConfig(
+            createVisitorCommand("metricstats", id, nullId));
+
+    op->start(_sender, framework::MilliSecTime(0));
+    CPPUNIT_ASSERT_EQUAL(std::string("Visitor Create => 0"),
+                         _sender.getCommands(true));
+    auto& cmd(dynamic_cast<CreateVisitorCommand&>(*_sender.commands[0]));
+    auto reply = cmd.makeReply();
+    vdslib::VisitorStatistics stats;
+    stats.setBucketsVisited(50);
+    stats.setDocumentsVisited(100);
+    stats.setBytesVisited(2000);
+    static_cast<CreateVisitorReply&>(*reply).setVisitorStatistics(stats);
+    reply->setResult(result);
+
+    op->receive(_sender, api::StorageReply::SP(std::move(reply)));
+}
+
+void
+VisitorOperationTest::metrics_are_updated_with_visitor_statistics_upon_replying()
+{
+    do_visitor_roundtrip_with_statistics(api::ReturnCode(api::ReturnCode::OK));
+
+    CPPUNIT_ASSERT_EQUAL(int64_t(50), defaultVisitorMetrics().buckets_per_visitor.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(100), defaultVisitorMetrics().docs_per_visitor.getLast());
+    CPPUNIT_ASSERT_EQUAL(int64_t(2000), defaultVisitorMetrics().bytes_per_visitor.getLast());
+}
+
+void
+VisitorOperationTest::statistical_metrics_not_updated_on_wrong_distribution()
+{
+    setupDistributor(1, 100, "distributor:100 storage:2");
+
+    document::BucketId id(uint64_t(0x400000000000127b));
+    CPPUNIT_ASSERT_EQUAL(
+            std::string("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+                        "ReturnCode(WRONG_DISTRIBUTION, distributor:100 storage:2)"),
+            runEmptyVisitor(createVisitorCommand("wrongdist", id, nullId)));
+
+    // Note that we're testing the number of _times_ the metric has been
+    // updated, not the value with which it's been updated (which would be zero
+    // even in the case we actually did update the statistical metrics).
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().buckets_per_visitor.getCount());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().docs_per_visitor.getCount());
+    CPPUNIT_ASSERT_EQUAL(int64_t(0), defaultVisitorMetrics().bytes_per_visitor.getCount());
+    // Fascinating that count is also a double...
+    CPPUNIT_ASSERT_EQUAL(0.0, defaultVisitorMetrics().latency.getCount());
 }
 
 } // distributor

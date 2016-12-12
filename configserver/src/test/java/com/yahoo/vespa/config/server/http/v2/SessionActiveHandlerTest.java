@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.*;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
@@ -54,7 +53,6 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
         configCurator = ConfigCurator.create(curator);
         localRepo = new LocalSessionRepo(applicationRepo);
         pathPrefix = "/application/v2/tenant/" + tenant + "/session/";
-        tenantMessage = ",\"tenant\":\"" + tenant + "\"";
         pathProvider = new PathProvider(Path.createRoot());
         activatedMessage = " for tenant '" + tenant + "' activated.";
         hostProvisioner = new MockProvisioner();
@@ -167,7 +165,6 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
                 Zone.defaultZone(),
                 new ApplicationRepository(testTenantBuilder.createTenants(),
                                           HostProvisionerProvider.withProvisioner(hostProvisioner),
-                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                           curator,
                                           new LogServerLogGrabber(),
                                           new ApplicationConvergenceChecker()));

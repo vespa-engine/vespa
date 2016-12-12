@@ -29,6 +29,9 @@ public class HostResource implements Comparable<HostResource> {
 
     private int allocatedPorts = 0;
 
+    // Empty for self-hosted Vespa.
+    private Optional<String> flavor = Optional.empty();
+
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
      *
@@ -223,6 +226,11 @@ public class HostResource implements Comparable<HostResource> {
                 .map(service -> service.getServiceInfo())
                 .collect(Collectors.toSet()));
     }
+
+    public void setFlavor(Optional<String> flavor) { this.flavor = flavor; }
+
+    /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
+    public Optional<String> getFlavor() { return flavor; }
 
     @Override
     public String toString() {

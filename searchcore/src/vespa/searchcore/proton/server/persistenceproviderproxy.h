@@ -61,7 +61,7 @@ public:
 
     virtual Result put(const Bucket &bucket,
                        Timestamp timestamp,
-                       const document::Document::SP& doc,
+                       const storage::spi::DocumentSP& doc,
                        Context& context) {
         return _pp.put(bucket, timestamp, doc, context);
     }
@@ -82,7 +82,7 @@ public:
 
     virtual UpdateResult update(const Bucket &bucket,
                                 Timestamp timestamp,
-                                const document::DocumentUpdate::SP& docUpd,
+                                const storage::spi::DocumentUpdateSP& docUpd,
                                 Context& context) {
         return _pp.update(bucket, timestamp, docUpd, context);
     }

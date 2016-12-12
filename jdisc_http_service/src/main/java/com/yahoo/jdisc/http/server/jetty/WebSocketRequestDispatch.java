@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
+
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.17.0
@@ -90,6 +92,7 @@ class WebSocketRequestDispatch extends WebSocketAdapter {
         this.metricCtx = metricCtx;
     }
 
+    @SuppressWarnings("try")
     public WebSocketRequestDispatch dispatch(final ServletUpgradeRequest servletRequest,
                                              final ServletUpgradeResponse servletResponse) {
         final HttpRequest jdiscRequest = WebSocketRequestFactory.newJDiscRequest(container, servletRequest);
@@ -314,11 +317,6 @@ class WebSocketRequestDispatch extends WebSocketAdapter {
             }
         });
     }
-
-    private static final CompletionHandler NOOP_COMPLETION_HANDLER = new CompletionHandler() {
-        @Override public void completed() {}
-        @Override public void failed(final Throwable t) {}
-    };
 
     private class GatedResponseHandler implements ResponseHandler {
 

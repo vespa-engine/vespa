@@ -25,19 +25,18 @@ public:
         : _tensor(std::move(tensor))
     {}
     virtual bool isPure() override { return true; }
-    virtual void execute(fef::MatchData &data) override {
-        *data.resolve_object_feature(outputs()[0]) = *_tensor;
+    virtual void execute(uint32_t) override {
+        outputs().set_object(0, *_tensor);
     }
-    static fef::FeatureExecutor::LP create(std::unique_ptr<vespalib::eval::Tensor> tensor) {
-        return FeatureExecutor::LP(new ConstantTensorExecutor
-                                   (std::make_unique<vespalib::eval::TensorValue>(std::move(tensor))));
+    static fef::FeatureExecutor &create(std::unique_ptr<vespalib::eval::Tensor> tensor, vespalib::Stash &stash) {
+        return stash.create<ConstantTensorExecutor>(std::make_unique<vespalib::eval::TensorValue>(std::move(tensor)));
     }
-    static fef::FeatureExecutor::LP createEmpty(const vespalib::eval::ValueType &valueType) {
+    static fef::FeatureExecutor &createEmpty(const vespalib::eval::ValueType &valueType, vespalib::Stash &stash) {
         return create(vespalib::tensor::DefaultTensorEngine::ref()
-                      .create(vespalib::eval::TensorSpec(valueType.to_spec())));
+                      .create(vespalib::eval::TensorSpec(valueType.to_spec())), stash);
     }
-    static fef::FeatureExecutor::LP createEmpty() {
-        return createEmpty(vespalib::eval::ValueType::double_type());
+    static fef::FeatureExecutor &createEmpty(vespalib::Stash &stash) {
+        return createEmpty(vespalib::eval::ValueType::double_type(), stash);
     }
 };
 

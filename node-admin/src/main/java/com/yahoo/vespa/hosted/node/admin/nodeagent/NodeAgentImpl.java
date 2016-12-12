@@ -53,7 +53,6 @@ public class NodeAgentImpl implements NodeAgent {
     private final PrefixLogger logger;
 
     private DockerImage imageBeingDownloaded = null;
-
     private final String hostname;
 
     private final NodeRepository nodeRepository;
@@ -85,6 +84,7 @@ public class NodeAgentImpl implements NodeAgent {
     private NodeAttributes lastAttributesSet = null;
     ContainerNodeSpec lastNodeSpec = null;
     CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
+    Optional<String> vespaVersion = Optional.empty();
 
     public NodeAgentImpl(
             final String hostName,
@@ -199,21 +199,21 @@ public class NodeAgentImpl implements NodeAgent {
                 nodeSpec.hostname,
                 // Clear current Docker image and vespa version, as nothing is running on this node
                 new NodeAttributes()
+                        .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(null))
+                        .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
                         .withDockerImage(new DockerImage(""))
-                        .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(null))
                         .withVespaVersion(""));
         nodeRepository.markAsReady(nodeSpec.hostname);
     }
 
     private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) throws IOException {
-        final Optional<String> containerVespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
         final NodeAttributes nodeAttributes = new NodeAttributes()
-                .withRestartGeneration(nodeSpec.wantedRestartGeneration.get())
+                .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(null))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
                 // want the two to be equal in node repo
-                .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(null))
-                .withDockerImage(nodeSpec.wantedDockerImage.get())
-                .withVespaVersion(containerVespaVersion.orElse(null));
+                .withRebootGeneration(nodeSpec.wantedRebootGeneration.orElse(0L))
+                .withDockerImage(nodeSpec.wantedDockerImage.orElse(new DockerImage("")))
+                .withVespaVersion(vespaVersion.orElse(""));
 
         publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
     }
@@ -232,6 +232,9 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainerIfNeeded(final ContainerNodeSpec nodeSpec) {
         if (dockerOperations.startContainerIfNeeded(nodeSpec)) {
+            vespaVersion = dockerOperations.getVespaVersion(nodeSpec.containerName);
+            metricReceiver.unsetMetricsForContainer(hostname);
+
             configureContainerMetrics(nodeSpec);
             addDebugMessage("startContainerIfNeeded: containerState " + containerState + " -> " +
                             RUNNING_HOWEVER_RESUME_SCRIPT_NOT_RUN);
@@ -292,30 +295,30 @@ public class NodeAgentImpl implements NodeAgent {
             dockerOperations.stopServicesOnNode(containerName);
     }
 
-    private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Optional<Container> existingContainer) {
+    private Optional<String> shouldRemoveContainer(ContainerNodeSpec nodeSpec, Container existingContainer) {
         final Node.State nodeState = nodeSpec.nodeState;
         if (nodeState == Node.State.dirty || nodeState == Node.State.provisioned) {
             return Optional.of("Node in state " + nodeState + ", container should no longer be running");
         }
-        if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.get().image)) {
+        if (nodeSpec.wantedDockerImage.isPresent() && !nodeSpec.wantedDockerImage.get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                                       + existingContainer.get() + " -> " + nodeSpec.wantedDockerImage.get());
+                                       + existingContainer + " -> " + nodeSpec.wantedDockerImage.get());
         }
-        if (!existingContainer.get().isRunning) {
+        if (!existingContainer.isRunning) {
             return Optional.of("Container no longer running");
         }
         return Optional.empty();
     }
 
     // Returns true if container is absent on return
-    public boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
+    private boolean removeContainerIfNeeded(ContainerNodeSpec nodeSpec, String hostname, Orchestrator orchestrator)
             throws Exception {
         Optional<Container> existingContainer = dockerOperations.getContainer(hostname);
         if (!existingContainer.isPresent()) {
             return true;
         }
 
-        Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer);
+        Optional<String> removeReason = shouldRemoveContainer(nodeSpec, existingContainer.get());
         if (removeReason.isPresent()) {
             logger.info("Will remove container " + existingContainer.get() + ": " + removeReason.get());
 
@@ -326,6 +329,9 @@ public class NodeAgentImpl implements NodeAgent {
                 stopServices(containerName);
             }
             dockerOperations.removeContainer(nodeSpec, existingContainer.get(), orchestrator);
+            metricReceiver.unsetMetricsForContainer(hostname);
+            lastCpuMetric = new CpuUsageReporter();
+            vespaVersion = Optional.empty();
             return true;
         }
         return false;
@@ -400,11 +406,6 @@ public class NodeAgentImpl implements NodeAgent {
 
         synchronized (monitor) {
             if (!nodeSpec.equals(lastNodeSpec)) {
-                // If we transition from active, to not active state, unset the current metrics
-                if (lastNodeSpec != null && lastNodeSpec.nodeState == Node.State.active && nodeSpec.nodeState != Node.State.active) {
-                    metricReceiver.unsetMetricsForContainer(hostname);
-                    lastCpuMetric = new CpuUsageReporter();
-                }
                 addDebugMessage("Loading new node spec: " + nodeSpec.toString());
                 lastNodeSpec = nodeSpec;
             }
@@ -412,10 +413,11 @@ public class NodeAgentImpl implements NodeAgent {
 
         switch (nodeSpec.nodeState) {
             case ready:
-                removeContainerIfNeededUpdateContainerState(nodeSpec);
-                break;
             case reserved:
+            case parked:
+            case failed:
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
+                updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case active:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
@@ -446,6 +448,7 @@ public class NodeAgentImpl implements NodeAgent {
             case inactive:
                 storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
+                updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case provisioned:
             case dirty:
@@ -454,10 +457,6 @@ public class NodeAgentImpl implements NodeAgent {
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
                 storageMaintainer.archiveNodeData(nodeSpec.containerName);
                 updateNodeRepoAndMarkNodeAsReady(nodeSpec);
-                break;
-            case parked:
-            case failed:
-                removeContainerIfNeededUpdateContainerState(nodeSpec);
                 break;
             default:
                 throw new RuntimeException("UNKNOWN STATE " + nodeSpec.nodeState.name());
@@ -495,7 +494,7 @@ public class NodeAgentImpl implements NodeAgent {
                     .add("clusterid", nodeSpec.membership.get().clusterId);
         }
 
-        if (nodeSpec.vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", nodeSpec.vespaVersion.get());
+        if (vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", vespaVersion.get());
 
         Dimensions dimensions = dimensionsBuilder.build();
         long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
@@ -588,10 +587,6 @@ public class NodeAgentImpl implements NodeAgent {
             long deltaSystemUsage = currentSystemUsage - totalSystemUsage;
             double cpuUsagePct = (deltaSystemUsage == 0 || totalSystemUsage == 0) ?
                     0 : 100.0 * (currentContainerUsage - totalContainerUsage) / deltaSystemUsage;
-
-            logger.info("Previous container usage: " + totalContainerUsage + ", previous system usage: " +
-                    totalSystemUsage + " | Current container usage: " + currentContainerUsage +
-                    ", current system usage: " + currentSystemUsage + " -> CPU usage: " + cpuUsagePct);
 
             totalContainerUsage = currentContainerUsage;
             totalSystemUsage = currentSystemUsage;

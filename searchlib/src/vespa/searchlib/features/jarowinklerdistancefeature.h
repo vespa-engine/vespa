@@ -35,8 +35,7 @@ public:
      */
     JaroWinklerDistanceExecutor(const search::fef::IQueryEnvironment &env,
                                 const JaroWinklerDistanceConfig &config);
-    void inputs_done() override { _lenHandle = inputs()[0]; }
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     feature_t jaroWinklerProximity(const std::vector<search::fef::FieldPositionsIterator> &termPos, uint32_t fieldLen);
@@ -44,7 +43,9 @@ private:
 private:
     const JaroWinklerDistanceConfig          &_config;      // The config for this executor.
     std::vector<search::fef::TermFieldHandle> _termFieldHandles; // The handles of all query terms.
-    search::fef::FeatureHandle                _lenHandle;   // Handle to the length input feature.
+    const fef::MatchData                     *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**
@@ -74,7 +75,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 private:
     JaroWinklerDistanceConfig _config; // The config for this blueprint.

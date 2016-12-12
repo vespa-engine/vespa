@@ -36,14 +36,14 @@ QueryCompletenessExecutor::QueryCompletenessExecutor(const search::fef::IQueryEn
 }
 
 void
-QueryCompletenessExecutor::execute(search::fef::MatchData &match)
+QueryCompletenessExecutor::execute(uint32_t docId)
 {
     uint32_t hit = 0, miss = 0;
     for (std::vector<search::fef::TermFieldHandle>::iterator it = _fieldHandles.begin();
          it != _fieldHandles.end(); ++it)
     {
-        search::fef::TermFieldMatchData &tfmd = *match.resolveTermField(*it);
-        if (tfmd.getDocId() == match.getDocId()) {
+        const fef::TermFieldMatchData &tfmd = *_md->resolveTermField(*it);
+        if (tfmd.getDocId() == docId) {
             search::fef::FieldPositionsIterator field = tfmd.getIterator();
             while (field.valid() && field.getPosition() < _config.fieldBegin) {
                 field.next();
@@ -57,8 +57,14 @@ QueryCompletenessExecutor::execute(search::fef::MatchData &match)
             ++miss;
         }
     }
-    *match.resolveFeature(outputs()[0]) = hit;
-    *match.resolveFeature(outputs()[1]) = miss;
+    outputs().set_number(0, hit);
+    outputs().set_number(1, miss);
+}
+
+void
+QueryCompletenessExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 QueryCompletenessBlueprint::QueryCompletenessBlueprint() :
@@ -103,10 +109,10 @@ QueryCompletenessBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new QueryCompletenessBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-QueryCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+QueryCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new QueryCompletenessExecutor(env, _config));
+    return stash.create<QueryCompletenessExecutor>(env, _config);
 }
 
 }}

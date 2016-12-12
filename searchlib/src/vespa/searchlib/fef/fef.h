@@ -49,7 +49,6 @@
 #include "ranksetup.h"
 #include "simpletermdata.h"
 #include "simpletermfielddata.h"
-#include "sumexecutor.h"
 #include "symmetrictable.h"
 #include "table.h"
 #include "tablemanager.h"

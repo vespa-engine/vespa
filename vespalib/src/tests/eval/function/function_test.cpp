@@ -787,16 +787,20 @@ TEST("require that outer let bindings are hidden within a lambda") {
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor reduce can be parsed") {
+    EXPECT_EQUAL("reduce(x,sum,a,b)", Function::parse({"x"}, "reduce(x,sum,a,b)").dump());
     EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, "reduce(x,sum,a,b,c)").dump());
     EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, " reduce ( x , sum , a , b , c ) ").dump());
-    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce(x,sum)").dump());
-    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce( x , sum )").dump());
     EXPECT_EQUAL("reduce(x,avg)", Function::parse({"x"}, "reduce(x,avg)").dump());
+    EXPECT_EQUAL("reduce(x,avg)", Function::parse({"x"}, "reduce( x , avg )").dump());
     EXPECT_EQUAL("reduce(x,count)", Function::parse({"x"}, "reduce(x,count)").dump());
     EXPECT_EQUAL("reduce(x,prod)", Function::parse({"x"}, "reduce(x,prod)").dump());
-    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce(x,sum)").dump());
     EXPECT_EQUAL("reduce(x,min)", Function::parse({"x"}, "reduce(x,min)").dump());
     EXPECT_EQUAL("reduce(x,max)", Function::parse({"x"}, "reduce(x,max)").dump());
+}
+
+TEST("require that tensor reduce is mapped to tensor sum for all dimensions/single dimension") {
+    EXPECT_EQUAL("sum(x)", Function::parse({"x"}, "reduce(x,sum)").dump());
+    EXPECT_EQUAL("sum(x,d)", Function::parse({"x"}, "reduce(x,sum,d)").dump());
 }
 
 TEST("require that tensor reduce with unknown aggregator fails") {
@@ -853,6 +857,13 @@ TEST("require that tensor lambda requires appropriate tensor type") {
 
 TEST("require that tensor lambda can only use dimension names") {
     verify_error("tensor(x[10],y[10])(x==z)", "[tensor(x[10],y[10])(x==z]...[unknown symbol: 'z']...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that tensor concat can be parsed") {
+    EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, "concat(a,b,d)").dump());
+    EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, " concat ( a , b , d ) ").dump());
 }
 
 //-----------------------------------------------------------------------------

@@ -100,10 +100,6 @@ public class Maintainer {
         executeMaintainer(logger, JOB_DELETE_OLD_APP_DATA);
     }
 
-    public static void cleanHome(PrefixLogger logger) {
-        executeMaintainer(logger, JOB_CLEAN_HOME);
-    }
-
     public static void archiveAppData(PrefixLogger logger, ContainerName containerName) {
         executeMaintainer(logger, JOB_ARCHIVE_APP_DATA, containerName.asString());
     }
@@ -186,24 +182,6 @@ public class Maintainer {
 
             if (doneCoredumps.toFile().exists()) {
                 COREDUMP_HANDLER.removeOldCoredumps(doneCoredumps);
-            }
-        }
-    }
-
-    @Command(name = JOB_CLEAN_HOME, description = "Clean home directories for large files")
-    public static class CleanHomeArguments implements Runnable {
-        @Override
-        public void run() {
-            List<String> exceptions = Arrays.asList("docker", "y", "yahoo");
-            File homeDir = new File("/home/");
-            long MB = 1 << 20;
-
-            if (homeDir.exists() && homeDir.isDirectory()) {
-                for (File file : homeDir.listFiles()) {
-                    if (! exceptions.contains(file.getName())) {
-                        DeleteOldAppData.deleteFilesLargerThan(file, 100*MB);
-                    }
-                }
             }
         }
     }

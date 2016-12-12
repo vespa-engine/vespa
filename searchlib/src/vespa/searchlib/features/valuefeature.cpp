@@ -18,17 +18,17 @@ ValueExecutor::ValueExecutor(const std::vector<feature_t> & values) :
 }
 
 void
-ValueExecutor::execute(search::fef::MatchData & data)
+ValueExecutor::execute(uint32_t)
 {
     for (uint32_t i = 0; i < _values.size(); ++i) {
-        *data.resolveFeature(outputs()[i]) = _values[i];
+        outputs().set_number(i, _values[i]);
     }
 }
 
 void
-SingleZeroValueExecutor::execute(search::fef::MatchData & data)
+SingleZeroValueExecutor::execute(uint32_t)
 {
-    *data.resolveFeature(outputs()[0]) = 0.0;
+    outputs().set_number(0, 0.0);
 }
 
 ValueBlueprint::ValueBlueprint() :
@@ -60,6 +60,14 @@ ValueBlueprint::setup(const search::fef::IIndexEnvironment &,
     }
     return true;
 }
+
+search::fef::FeatureExecutor &
+ValueBlueprint::createExecutor(const search::fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<ValueExecutor>(_values);
+}
+
 
 } // namespace features
 } // namespace search

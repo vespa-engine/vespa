@@ -13,7 +13,8 @@ namespace features {
 
 NativeDotProductExecutor::NativeDotProductExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId)
     : FeatureExecutor(),
-      _pairs()
+      _pairs(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -24,16 +25,22 @@ NativeDotProductExecutor::NativeDotProductExecutor(const search::fef::IQueryEnvi
 }
 
 void
-NativeDotProductExecutor::execute(MatchData &data)
+NativeDotProductExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _pairs.size(); ++i) {
-        const TermFieldMatchData *tfmd = data.resolveTermField(_pairs[i].first);
-        if (tfmd->getDocId() == data.getDocId()) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_pairs[i].first);
+        if (tfmd->getDocId() == docId) {
             output += (tfmd->getWeight() * (int32_t)_pairs[i].second.percent());
         }
     }
-    *data.resolveFeature(outputs()[0]) = output;
+    outputs().set_number(0, output);
+}
+
+void
+NativeDotProductExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -47,10 +54,10 @@ NativeDotProductBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-NativeDotProductBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
+FeatureExecutor &
+NativeDotProductBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new NativeDotProductExecutor(queryEnv, _field->id()));
+    return stash.create<NativeDotProductExecutor>(queryEnv, _field->id());
 }
 
 } // namespace features

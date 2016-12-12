@@ -22,9 +22,11 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -109,9 +111,11 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private List<HostSpec> asSortedHosts(List<Node> nodes) {
         nodes.sort(Comparator.comparingInt((Node node) -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
-        for (Node node : nodes)
+        for (Node node : nodes) {
             hosts.add(new HostSpec(node.hostname(),
-                                   node.allocation().orElseThrow(IllegalStateException::new).membership()));
+                                   node.allocation().orElseThrow(IllegalStateException::new).membership(),
+                                   node.flavor().canonicalName()));
+        }
         return hosts;
     }
 

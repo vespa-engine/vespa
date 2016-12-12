@@ -42,7 +42,7 @@ public:
     void addInheritedField(const Field& field);
 
         // Implementation of StructuredDataType
-    virtual FieldValue::UP createFieldValue() const;
+    virtual std::unique_ptr<FieldValue> createFieldValue() const;
     virtual void print(std::ostream&, bool verbose, const std::string& indent) const;
     virtual uint32_t getFieldCount() const { return _idFieldMap.size(); }
 

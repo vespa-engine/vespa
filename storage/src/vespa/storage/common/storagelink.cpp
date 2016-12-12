@@ -13,8 +13,9 @@ LOG_SETUP(".application.link");
 
 using std::shared_ptr;
 using std::ostringstream;
-using namespace storage;
 using namespace storage::api;
+
+namespace storage {
 
 StorageLink::~StorageLink()
 {
@@ -304,3 +305,11 @@ StorageLink::stateToString(State state)
         return 0;
     }
 }
+
+std::ostream& operator<<(std::ostream& out, StorageLink& link) {
+    link.printChain(out);
+    return out;
+}
+
+}
+

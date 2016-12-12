@@ -29,8 +29,12 @@ public class SessionStateWatcher implements NodeCacheListener {
     private final MetricUpdater metrics;
     private final Executor executor;
 
-    public SessionStateWatcher(Curator.FileCache fileCache, ReloadHandler reloadHandler, RemoteSession session, MetricUpdater metrics) throws Exception {
-        executor = Executors.newSingleThreadExecutor(ThreadFactoryFactory.getThreadFactory(SessionStateWatcher.class.getName() + "-" + session));
+    public SessionStateWatcher(Curator.FileCache fileCache,
+                               ReloadHandler reloadHandler,
+                               RemoteSession session,
+                               MetricUpdater metrics) {
+        executor = Executors.newSingleThreadExecutor(
+                ThreadFactoryFactory.getThreadFactory(SessionStateWatcher.class.getName() + "-" + session));
         this.fileCache = fileCache;
         this.reloadHandler = reloadHandler;
         this.session = session;

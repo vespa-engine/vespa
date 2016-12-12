@@ -37,7 +37,7 @@ JaroWinklerDistanceExecutor::JaroWinklerDistanceExecutor(const search::fef::IQue
     search::fef::FeatureExecutor(),
     _config(config),
     _termFieldHandles(),
-    _lenHandle(search::fef::IllegalHandle)
+    _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         _termFieldHandles.push_back(util::getTermFieldHandle(env, i, config.fieldId));
@@ -45,7 +45,7 @@ JaroWinklerDistanceExecutor::JaroWinklerDistanceExecutor(const search::fef::IQue
 }
 
 void
-JaroWinklerDistanceExecutor::execute(search::fef::MatchData &match)
+JaroWinklerDistanceExecutor::execute(uint32_t docId)
 {
     // Build a list of field position iterators, one per query term.
     std::vector<search::fef::FieldPositionsIterator> pos;
@@ -53,8 +53,8 @@ JaroWinklerDistanceExecutor::execute(search::fef::MatchData &match)
         search::fef::FieldPositionsIterator it; // this is not vaild
         const search::fef::TermFieldHandle &handle = _termFieldHandles[term];
         if (handle != search::fef::IllegalHandle) {
-            search::fef::TermFieldMatchData &tfmd = *match.resolveTermField(handle);
-            if (tfmd.getDocId() == match.getDocId()) {
+            const search::fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
+            if (tfmd.getDocId() == docId) {
                 it = tfmd.getIterator();
             }
         }
@@ -62,7 +62,13 @@ JaroWinklerDistanceExecutor::execute(search::fef::MatchData &match)
     }
 
     // Assign the jaroWinkler distance to this executor's output.
-    *match.resolveFeature(outputs()[0]) = 1 - jaroWinklerProximity(pos, (uint32_t)*match.resolveFeature(_lenHandle));
+    outputs().set_number(0, 1 - jaroWinklerProximity(pos, (uint32_t)inputs().get_number(0)));
+}
+
+void
+JaroWinklerDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 namespace {
@@ -175,10 +181,10 @@ JaroWinklerDistanceBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new JaroWinklerDistanceBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-JaroWinklerDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+JaroWinklerDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new JaroWinklerDistanceExecutor(env, _config));
+    return stash.create<JaroWinklerDistanceExecutor>(env, _config);
 }
 
 }}

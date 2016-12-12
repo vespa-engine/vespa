@@ -11,9 +11,9 @@ LOG_SETUP("tensorattribute_test");
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/io/fileutil.h>
 
-using search::attribute::TensorAttribute;
-using search::attribute::DenseTensorAttribute;
-using search::attribute::GenericTensorAttribute;
+using search::tensor::TensorAttribute;
+using search::tensor::DenseTensorAttribute;
+using search::tensor::GenericTensorAttribute;
 using search::AttributeGuard;
 using search::AttributeVector;
 using vespalib::eval::ValueType;

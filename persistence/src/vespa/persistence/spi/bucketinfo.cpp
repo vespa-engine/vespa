@@ -46,11 +46,11 @@ BucketInfo::operator==(const BucketInfo& o) const
             && _active == o._active);
 }
 
-void
-BucketInfo::print(std::ostream& out) const
-{
+vespalib::string
+BucketInfo::toString() const {
+    vespalib::asciistream out;
     out << "BucketInfo(";
-    out << "crc 0x" << std::hex << _checksum << std::dec
+    out << "crc 0x" << vespalib::hex << _checksum << vespalib::dec
         << ", documentCount " << _documentCount;
     if (_documentSize != 0) {
         out << ", documentSize " << _documentSize;
@@ -62,13 +62,15 @@ BucketInfo::print(std::ostream& out) const
     out << ", ready "  << (_ready ? "true" : "false")
         << ", active " << (_active ? "true" : "false");
     out << ")";
+    return out.str();
 }
 
-std::string
-BucketInfo::toString() const {
-    std::ostringstream ost;
-    print(ost);
-    return ost.str();
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const BucketInfo& info) {
+    return out << info.toString();
+}
+
+std::ostream& operator<<(std::ostream& out, const BucketInfo& info) {
+    return out << info.toString();
 }
 
 } // spi

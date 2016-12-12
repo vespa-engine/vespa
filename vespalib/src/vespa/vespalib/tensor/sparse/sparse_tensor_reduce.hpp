@@ -45,7 +45,7 @@ reduce(const SparseTensor &tensor,
     if (dimensions.empty()) {
         return reduceAll(tensor, func);
     }
-    DirectTensorBuilder<SparseTensor> builder(tensor.type().remove_dimensions(dimensions));
+    DirectTensorBuilder<SparseTensor> builder(tensor.type().reduce(dimensions));
     if (builder.type().dimensions().empty()) {
         return reduceAll(tensor, builder, func);
     }

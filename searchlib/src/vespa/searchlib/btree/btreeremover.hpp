@@ -61,8 +61,8 @@ steal(InternalNodeType *pNode,
         if (leftVictim->getFrozen()) {
             NodeTypeRefPair thawed =
                 allocator.thawNode(leftVictimRef, leftVictim);
-            leftVictimRef = thawed.first;
-            leftVictim = thawed.second;
+            leftVictimRef = thawed.ref;
+            leftVictim = thawed.data;
         }
         uint32_t oldLeftValid = leftVictim->validSlots();
         sNode->stealSomeFromLeftNode(leftVictim, allocator);
@@ -77,8 +77,8 @@ steal(InternalNodeType *pNode,
         if (rightVictim->getFrozen()) {
            NodeTypeRefPair thawed =
                allocator.thawNode(rightVictimRef, rightVictim);
-           rightVictimRef = thawed.first;
-           rightVictim = thawed.second;
+           rightVictimRef = thawed.ref;
+           rightVictim = thawed.data;
         }
         sNode->stealSomeFromRightNode(rightVictim, allocator);
         pNode->update(idx, sNode->getLastKey(), sNodeRef);
@@ -132,7 +132,7 @@ remove(BTreeNode::Ref &root,
     }
     uint32_t level = 0;
     uint32_t levels = itr.getPathSize();
-    InternalNodeType *node;
+    InternalNodeType *node = nullptr;
     for (; level < levels; ++level) {
         typename Iterator::PathElement &pe = itr.getPath(level);
         node = pe.getWNode();

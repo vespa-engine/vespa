@@ -17,7 +17,8 @@ MatchesExecutor::MatchesExecutor(uint32_t fieldId,
                                  const search::fef::IQueryEnvironment &env,
                                  uint32_t begin, uint32_t end)
     : FeatureExecutor(),
-      _handles()
+      _handles(),
+      _md(nullptr)
 {
     for (uint32_t i = begin; i < end; ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -28,19 +29,24 @@ MatchesExecutor::MatchesExecutor(uint32_t fieldId,
 }
 
 void
-MatchesExecutor::execute(MatchData &match)
+MatchesExecutor::execute(uint32_t docId)
 {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = match.resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == match.getDocId()) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
+        if (tfmd->getDocId() == docId) {
             output = 1;
             break;
         }
     }
-    *match.resolveFeature(outputs()[0]) = static_cast<feature_t>(output);
+    outputs().set_number(0, static_cast<feature_t>(output));
 }
 
+void
+MatchesExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
 
 MatchesBlueprint::MatchesBlueprint() :
     Blueprint("matches"),
@@ -73,16 +79,16 @@ MatchesBlueprint::createInstance() const
     return Blueprint::UP(new MatchesBlueprint());
 }
 
-FeatureExecutor::LP
-MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
+FeatureExecutor &
+MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     if (_field == 0) {
-        return search::fef::FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     }
     if (_termIdx != std::numeric_limits<uint32_t>::max()) {
-        return FeatureExecutor::LP(new MatchesExecutor(_field->id(), queryEnv, _termIdx, _termIdx + 1));
+        return stash.create<MatchesExecutor>(_field->id(), queryEnv, _termIdx, _termIdx + 1);
     } else {
-        return FeatureExecutor::LP(new MatchesExecutor(_field->id(), queryEnv, 0, queryEnv.getNumTerms()));
+        return stash.create<MatchesExecutor>(_field->id(), queryEnv, 0, queryEnv.getNumTerms());
     }
 }
 

@@ -22,14 +22,14 @@ RandomExecutor::RandomExecutor(uint64_t seed, uint64_t matchSeed) :
 }
 
 void
-RandomExecutor::execute(search::fef::MatchData & match)
+RandomExecutor::execute(uint32_t docId)
 {
     feature_t rndScore = _rnd.lrand48() / (feature_t)0x80000000u; // 2^31
-    _matchRnd.srand48(_matchSeed + match.getDocId());
+    _matchRnd.srand48(_matchSeed + docId);
     feature_t matchRndScore = _matchRnd.lrand48() / (feature_t)0x80000000u; // 2^31
     //LOG(debug, "execute: %f", rndScore);
-    *match.resolveFeature(outputs()[0]) = rndScore;
-    *match.resolveFeature(outputs()[1]) = matchRndScore;
+    outputs().set_number(0, rndScore);
+    outputs().set_number(1, matchRndScore);
 }
 
 
@@ -66,8 +66,8 @@ RandomBlueprint::setup(const search::fef::IIndexEnvironment & env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-RandomBlueprint::createExecutor(const search::fef::IQueryEnvironment & env) const
+search::fef::FeatureExecutor &
+RandomBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     uint64_t seed = _seed;
     if (seed == 0) {
@@ -79,7 +79,7 @@ RandomBlueprint::createExecutor(const search::fef::IQueryEnvironment & env) cons
     uint64_t matchSeed = util::strToNum<uint64_t>
         (env.getProperties().lookup(getName(), "match", "seed").get("1024")); // default seed
 
-    return search::fef::FeatureExecutor::LP(new RandomExecutor(seed, matchSeed));
+    return stash.create<RandomExecutor>(seed, matchSeed);
 }
 
 

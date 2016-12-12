@@ -12,7 +12,7 @@ namespace attribute {
 /**
  * Class for mapping from from document id to an array of values.
  */
-template <typename EntryT, typename RefT = datastore::EntryRefT<17> >
+template <typename EntryT, typename RefT = datastore::EntryRefT<19> >
 class MultiValueMapping2 : public MultiValueMapping2Base
 {
 public:
@@ -25,9 +25,7 @@ private:
 
     ArrayStore _store;
 public:
-    MultiValueMapping2(uint32_t maxSmallArraySize,
-                       const GrowStrategy &gs = GrowStrategy());
-    MultiValueMapping2(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters,
+    MultiValueMapping2(const datastore::ArrayStoreConfig &storeCfg,
                        const GrowStrategy &gs = GrowStrategy());
     virtual ~MultiValueMapping2();
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
@@ -41,18 +39,19 @@ public:
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
     void trimHoldLists(generation_t firstUsed) { _store.trimHoldLists(firstUsed); }
-    template <class Reader>
-    void prepareLoadFromMultiValue(Reader &) { }
+    void prepareLoadFromMultiValue() { _store.setInitializing(true); }
 
-    virtual void compactWorst() override;
+    void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
-    AddressSpace getAddressSpaceUsage() const;
+    virtual void compactWorst(bool compactMemory, bool compactAddressSpace) override;
+
+    virtual AddressSpace getAddressSpaceUsage() const override;
     virtual MemoryUsage getArrayStoreMemoryUsage() const override;
 
-    // Mockups to temporarily silence code written for old multivalue mapping
-    bool enoughCapacity(const Histogram &) { return true; }
-    void performCompaction(Histogram &) { }
-    void reset(uint32_t, const Histogram &) { }
+    static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
+                                                                  size_t hugePageSize,
+                                                                  size_t smallPageSize,
+                                                                  size_t minNumArraysForNewBuffer);
 };
 
 } // namespace search::attribute

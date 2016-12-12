@@ -51,6 +51,21 @@ Session::inSync() const
     return _inSync;
 }
 
+bool
+Session::visit(FastOS_FileInterface & file, DomainPart & dp) {
+    Packet packet;
+    bool more(false);
+    if (dp.isClosed()) {
+        more = dp.visit(file, _range, packet);
+    } else {
+        more = dp.visit(_range, packet);
+    }
+    if (packet.getHandle().size() > 0) {
+        send(packet);
+    }
+    return more;
+}
+
 void
 Session::visit()
 {
@@ -62,17 +77,7 @@ Session::visit()
         Fast_BufferedFile file;
         file.EnableDirectIO();
         for(bool more(true); ok() && more && (_range.from() < _range.to()); ) {
-            LOG(debug, "[%d] : Visiting the interval %" PRIu64 " - %" PRIu64 " in subpart", _id, _range.from(), _range.to());
-            Packet packet;
-            if (dp->isClosed()) {
-                more = dp->visit(file, _range, packet);
-            } else {
-                more = dp->visit(_range, packet);
-            }
-            if (packet.getHandle().size() > 0) {
-                LOG(debug, "[%d] : Sending the interval %" PRIu64 " - %" PRIu64 ". Packet : [%" PRIu64 ", %" PRIu64 "]", _id, _range.from(), _range.to(), packet.range().from(), packet.range().to());
-                send(packet);
-            }
+            more = visit(file, *dp);
         }
         // Nothing more in this DomainPart, force switch to next one.
         if (_range.from() < dp->range().to()) {

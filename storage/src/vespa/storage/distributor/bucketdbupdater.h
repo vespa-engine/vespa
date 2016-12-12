@@ -14,6 +14,7 @@
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storage/distributor/distributormessagesender.h>
 #include <vespa/storage/distributor/pendingclusterstate.h>
+#include <vespa/storage/distributor/managed_bucket_space_component.h>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 
@@ -29,7 +30,10 @@ class BucketDBUpdater : public framework::StatusReporter,
                         public api::MessageHandler
 {
 public:
+    // TODO take in BucketSpaceRepo instead, this class needs access to all
+    // bucket spaces.
     BucketDBUpdater(Distributor& owner,
+                    ManagedBucketSpace& bucketSpace,
                     DistributorMessageSender& sender,
                     DistributorComponentRegister& compReg);
     ~BucketDBUpdater();
@@ -63,7 +67,7 @@ public:
     virtual void print(std::ostream& out, bool verbose,
                        const std::string& indent) const;
 
-    DistributorComponent& getDistributorComponent() { return _distributorComponent; }
+    DistributorComponent& getDistributorComponent() { return _bucketSpaceComponent; }
 
     /**
      * Returns whether the current PendingClusterState indicates that there has
@@ -77,7 +81,7 @@ public:
     }
 
 private:
-    DistributorComponent _distributorComponent;
+    ManagedBucketSpaceComponent _bucketSpaceComponent;
     class MergeReplyGuard {
     public:
         MergeReplyGuard(BucketDBUpdater& updater,

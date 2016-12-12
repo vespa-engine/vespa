@@ -13,9 +13,9 @@ struct Object {
     int check1;
     int check2;
     int check3;
-    bool &destructed;
+    size_t &destructed;
     char bloat[fill_size];
-    explicit Object(bool &dref)
+    explicit Object(size_t &dref)
         : alive(true), check1(0x1111), check2(0x2222), check3(0x5555),
           destructed(dref), bloat()
     {
@@ -32,7 +32,7 @@ struct Object {
         check1 = 0;
         check2 = 0;
         check3 = 0;
-        destructed = true;
+        ++destructed;
     }
 };
 
@@ -40,19 +40,19 @@ typedef Object<8>     SmallObject;
 typedef Object<10000> LargeObject;
 
 struct Small : SmallObject {
-    Small(bool &dref) : SmallObject(dref) {}
+    Small(size_t &dref) : SmallObject(dref) {}
 };
 
 struct Large : LargeObject {
-    Large(bool &dref) : LargeObject(dref) {}
+    Large(size_t &dref) : LargeObject(dref) {}
 };
 
 struct Small_NoDelete : SmallObject {
-    Small_NoDelete(bool &dref) : SmallObject(dref) {}
+    Small_NoDelete(size_t &dref) : SmallObject(dref) {}
 };
 
 struct Large_NoDelete : LargeObject {
-    Large_NoDelete(bool &dref) : LargeObject(dref) {}
+    Large_NoDelete(size_t &dref) : LargeObject(dref) {}
 };
 
 VESPA_CAN_SKIP_DESTRUCTION(Small_NoDelete);
@@ -91,6 +91,7 @@ size_t char_ptr_size() { return sizeof(char*); }
 size_t chunk_header_size() { return sizeof(stash::Chunk); }
 size_t dtor_hook_size() { return sizeof(stash::DestructObject<Small>); }
 size_t free_hook_size() { return sizeof(stash::DeleteMemory); }
+size_t array_dtor_hook_size() { return sizeof(stash::DestructArray<Small>); }
 
 //-----------------------------------------------------------------------------
 
@@ -99,6 +100,7 @@ TEST("require that base types have expected size") {
     EXPECT_EQUAL(16u, chunk_header_size());
     EXPECT_EQUAL(16u, dtor_hook_size());
     EXPECT_EQUAL(16u, free_hook_size());
+    EXPECT_EQUAL(24u, array_dtor_hook_size());
 }
 
 TEST("require that raw memory can be allocated inside the stash") {
@@ -153,7 +155,7 @@ TEST("require that valid empty memory may be allocated") {
 }
 
 TEST("require that small object creation and destruction works") {
-    bool destructed = false;
+    size_t destructed = 0;
     {
         Stash stash;
         stash.create<Small>(destructed);
@@ -164,7 +166,7 @@ TEST("require that small object creation and destruction works") {
 }
 
 TEST("require that large object creation and destruction works") {
-    bool destructed = false;
+    size_t destructed = 0;
     {
         Stash stash;
         stash.create<Large>(destructed);
@@ -176,7 +178,7 @@ TEST("require that large object creation and destruction works") {
 }
 
 TEST("require that small objects can skip destruction") {
-    bool destructed = false;
+    size_t destructed = 0;
     {
         Stash stash;
         stash.create<Small_NoDelete>(destructed);
@@ -186,7 +188,7 @@ TEST("require that small objects can skip destruction") {
 }
 
 TEST("require that large objects can skip destruction") {
-    bool destructed = false;
+    size_t destructed = 0;
     {
         Stash stash;
         stash.create<Large_NoDelete>(destructed);
@@ -257,7 +259,7 @@ TEST("require that minimal chunk size is 4096") {
 }
 
 TEST("require that a stash can be moved by construction") {
-    bool destructed = false;
+    size_t destructed = 0;
     {
         Stash outer_stash;
         outer_stash.create<Small>(destructed);
@@ -273,7 +275,7 @@ TEST("require that a stash can be moved by construction") {
 }
 
 TEST("require that a stash can be moved by assignment") {
-    bool destructed = false;
+    size_t destructed = 0;
     {
         Stash outer_stash;
         outer_stash.create<Small>(destructed);
@@ -298,7 +300,7 @@ TEST("require that an empty stash can be cleared") {
 }
 
 TEST("require that a stash retains memory when cleared") {
-    bool destructed = false;
+    size_t destructed = 0;
     {
         Stash stash;
         stash.create<Small>(destructed);
@@ -325,6 +327,92 @@ TEST("require that a stash only retains a single chunk when cleared") {
     EXPECT_EQUAL(100 * 512 + count * chunk_header_size(), stash.count_used());
     stash.clear();
     EXPECT_EQUAL(sum({chunk_header_size()}), stash.count_used());    
+}
+
+TEST("require that array constructor parameters are passed correctly") {
+    Stash stash;
+    {
+        ArrayRef<Pair> pair_array_nodelete = stash.create_array<Pair>(3);
+        ArrayRef<PairD> pair_array = stash.create_array<PairD>(3);
+        ASSERT_EQUAL(pair_array_nodelete.size(), 3u);
+        ASSERT_EQUAL(pair_array.size(), 3u);
+        for (size_t i = 0; i < 3; ++i) {
+            ASSERT_EQUAL(pair_array_nodelete[i].a, 42);
+            ASSERT_EQUAL(pair_array_nodelete[i].b, 4.2);
+            ASSERT_EQUAL(pair_array[i].a, 42);
+            ASSERT_EQUAL(pair_array[i].b, 4.2);
+        }
+    }
+    {
+        ArrayRef<Pair> pair_array_nodelete = stash.create_array<Pair>(3,50,100.5);
+        ArrayRef<PairD> pair_array = stash.create_array<PairD>(3,50,100.5);
+        ASSERT_EQUAL(pair_array_nodelete.size(), 3u);
+        ASSERT_EQUAL(pair_array.size(), 3u);
+        for (size_t i = 0; i < 3; ++i) {
+            ASSERT_EQUAL(pair_array_nodelete[i].a, 50);
+            ASSERT_EQUAL(pair_array_nodelete[i].b, 100.5);
+            ASSERT_EQUAL(pair_array[i].a, 50);
+            ASSERT_EQUAL(pair_array[i].b, 100.5);
+        }
+    }
+}
+
+TEST("require that arrays can be copied into the stash") {    
+    Stash stash;
+    std::vector<Pair> pair_vector({Pair(1,1.5),Pair(2,2.5),Pair(3,3.5)});
+    std::vector<PairD> paird_vector({PairD(1,1.5),PairD(2,2.5),PairD(3,3.5)});
+    ArrayRef<Pair> pair_array_nodelete = stash.copy_array<Pair>(ConstArrayRef<Pair>(pair_vector));
+    ArrayRef<PairD> pair_array = stash.copy_array<PairD>(ConstArrayRef<PairD>(paird_vector));
+    ASSERT_EQUAL(pair_array_nodelete.size(), 3u);
+    ASSERT_EQUAL(pair_array.size(), 3u);
+    for (size_t i = 0; i < 3; ++i) {
+        ASSERT_EQUAL(pair_array_nodelete[i].a, i + 1);
+        ASSERT_EQUAL(pair_array_nodelete[i].b, i + 1.5);
+        ASSERT_EQUAL(pair_array[i].a, i + 1);
+        ASSERT_EQUAL(pair_array[i].b, i + 1.5);
+    }
+}
+
+TEST("require that created arrays are destructed (or not) correctly") {
+    size_t destruct = 0;
+    size_t destruct_nodelete = 0;
+    {
+        Stash stash;
+        stash.create_array<Small>(5,destruct);
+        EXPECT_EQUAL(sum({chunk_header_size(), array_dtor_hook_size(), 5 * sizeof(Small)}), stash.count_used());
+        stash.create_array<Small_NoDelete>(7,destruct_nodelete);
+        EXPECT_EQUAL(sum({chunk_header_size(), array_dtor_hook_size(), 5 * sizeof(Small), 7 * sizeof(Small_NoDelete)}), stash.count_used());
+        EXPECT_EQUAL(0, destruct);
+        EXPECT_EQUAL(0, destruct_nodelete);
+    }
+    EXPECT_EQUAL(5, destruct);
+    EXPECT_EQUAL(0, destruct_nodelete);
+}
+
+TEST("require that copied arrays are destructed (or not) correctly") {
+    size_t destruct = 0;
+    size_t destruct_nodelete = 0;
+    size_t collateral_destruct = 0;
+    size_t collateral_destruct_nodelete = 0;
+    {
+        std::vector<Small> small_vector(5, Small(destruct));
+        std::vector<Small_NoDelete> small_nodelete_vector(7, Small_NoDelete(destruct_nodelete));
+        collateral_destruct = destruct;
+        collateral_destruct_nodelete = destruct_nodelete;
+        {
+            Stash stash;
+            stash.copy_array<Small>(ConstArrayRef<Small>(small_vector));
+            EXPECT_EQUAL(sum({chunk_header_size(), array_dtor_hook_size(), 5 * sizeof(Small)}), stash.count_used());
+            stash.copy_array<Small_NoDelete>(ConstArrayRef<Small_NoDelete>(small_nodelete_vector));
+            EXPECT_EQUAL(sum({chunk_header_size(), array_dtor_hook_size(), 5 * sizeof(Small), 7 * sizeof(Small_NoDelete)}), stash.count_used());
+            EXPECT_EQUAL(collateral_destruct, destruct);
+            EXPECT_EQUAL(collateral_destruct_nodelete, destruct_nodelete);
+        }
+        EXPECT_EQUAL(collateral_destruct + 5, destruct);
+        EXPECT_EQUAL(collateral_destruct_nodelete, destruct_nodelete);
+    }
+    EXPECT_EQUAL(collateral_destruct + 5 + 5, destruct);
+    EXPECT_EQUAL(collateral_destruct_nodelete + 7, destruct_nodelete);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

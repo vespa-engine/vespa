@@ -4,7 +4,7 @@
 #include "dense_tensor_attribute_executor.h"
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 
-using search::attribute::DenseTensorAttribute;
+using search::tensor::DenseTensorAttribute;
 using vespalib::eval::Tensor;
 using vespalib::eval::TensorValue;
 using vespalib::tensor::MutableDenseTensorView;
@@ -15,19 +15,16 @@ namespace features {
 DenseTensorAttributeExecutor::
 DenseTensorAttributeExecutor(const DenseTensorAttribute *attribute)
     : _attribute(attribute),
-      _tensorView(),
-      _tensor(std::unique_ptr<Tensor>())
+      _tensorView(_attribute->getConfig().tensorType()),
+      _tensor(_tensorView)
 {
-    std::unique_ptr<MutableDenseTensorView> tensorView = std::make_unique<MutableDenseTensorView>(_attribute->getConfig().tensorType());
-    _tensorView = tensorView.get();
-    _tensor = TensorValue(std::move(tensorView));
 }
 
 void
-DenseTensorAttributeExecutor::execute(fef::MatchData &data)
+DenseTensorAttributeExecutor::execute(uint32_t docId)
 {
-    _attribute->getTensor(data.getDocId(), *_tensorView);
-    *data.resolve_object_feature(outputs()[0]) = _tensor;
+    _attribute->getTensor(docId, _tensorView);
+    outputs().set_object(0, _tensor);
 }
 
 } // namespace features

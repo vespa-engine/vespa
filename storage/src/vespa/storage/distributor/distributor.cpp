@@ -9,6 +9,7 @@
 #include <vespa/storage/distributor/throttlingoperationstarter.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/ownership_transfer_safe_time_point_calculator.h>
+#include <vespa/storage/distributor/managed_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 
@@ -63,26 +64,28 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       framework::StatusReporter("distributor", "Distributor"),
       _compReg(compReg),
       _component(compReg, "distributor"),
+      _bucketSpaceRepo(std::make_unique<ManagedBucketSpaceRepo>()),
       _metrics(new DistributorMetricSet(
    	       _component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
       _pendingMessageTracker(compReg),
-      _bucketDBUpdater(*this, *this, compReg),
+      _bucketDBUpdater(*this, getDefaultBucketSpace(), *this, compReg),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
-      _idealStateManager(*this, compReg,
+      _idealStateManager(*this, getDefaultBucketSpace(), compReg,
                          manageActiveBucketCopies),
-      _externalOperationHandler(*this, _idealStateManager, compReg),
+      _externalOperationHandler(*this, getDefaultBucketSpace(),
+                                _idealStateManager, compReg),
       _threadPool(threadPool),
       _initializingIsUp(true),
       _doneInitializeHandler(doneInitHandler),
       _doneInitializing(false),
       _messageSender(messageSender),
       _bucketPriorityDb(new SimpleBucketPriorityDatabase()),
-      _scanner(new SimpleMaintenanceScanner(*_bucketPriorityDb,
-                                            _idealStateManager,
-                                            getBucketDatabase())),
+      _scanner(new SimpleMaintenanceScanner(
+            *_bucketPriorityDb, _idealStateManager,
+            getDefaultBucketSpace().getBucketDatabase())),
       _throttlingStarter(new ThrottlingOperationStarter(
             _maintenanceOperationOwner)),
       _blockingStarter(new BlockingOperationStarter(_pendingMessageTracker,
@@ -111,6 +114,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _distributorStatusDelegate.registerStatusPage();
     _bucketDBStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
+    _bucketSpaceRepo->setDefaultDistribution(_component.getDistribution());
 };
 
 Distributor::~Distributor()
@@ -135,6 +139,14 @@ const PendingMessageTracker&
 Distributor::getPendingMessageTracker() const
 {
     return _pendingMessageTracker;
+}
+
+ManagedBucketSpace& Distributor::getDefaultBucketSpace() noexcept {
+    return _bucketSpaceRepo->getDefaultSpace();
+}
+
+const ManagedBucketSpace& Distributor::getDefaultBucketSpace() const noexcept {
+    return _bucketSpaceRepo->getDefaultSpace();
 }
 
 BucketOwnership
@@ -409,7 +421,8 @@ Distributor::leaveRecoveryMode()
 {
     if (isInRecoveryMode()) {
         LOG(debug, "Leaving recovery mode");
-        _metrics->recoveryModeTime.addValue(_recoveryTimeStarted);
+        _metrics->recoveryModeTime.addValue(
+                _recoveryTimeStarted.getElapsedTimeAsDouble());
     }
     _schedulingMode = MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
 }
@@ -424,6 +437,7 @@ Distributor::storageDistributionChanged()
             "Distribution changed to %s, must refetch bucket information",
             _component.getDistribution()->toString().c_str());
 
+        // FIXME this is not thread safe
         _nextDistribution = _component.getDistribution();
     } else {
         LOG(debug,
@@ -517,6 +531,8 @@ Distributor::checkBucketForSplit(const BucketDatabase::Entry& e,
 const lib::Distribution&
 Distributor::getDistribution() const
 {
+    // FIXME having _distribution be mutable for this is smelly. Is this only
+    // in place for the sake of tests?
     if (!_distribution.get()) {
         _distribution = _component.getDistribution();
     }
@@ -529,9 +545,17 @@ Distributor::enableNextDistribution()
 {
     if (_nextDistribution.get()) {
         _distribution = _nextDistribution;
+        propagateDefaultDistribution(_distribution);
         _nextDistribution = std::shared_ptr<lib::Distribution>();
         _bucketDBUpdater.storageDistributionChanged(getDistribution());
     }
+}
+
+void
+Distributor::propagateDefaultDistribution(
+        std::shared_ptr<lib::Distribution> distribution)
+{
+    _bucketSpaceRepo->setDefaultDistribution(std::move(distribution));
 }
 
 void

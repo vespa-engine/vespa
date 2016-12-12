@@ -101,6 +101,41 @@ public:
     private:
         uint32_t _precision;
     };
+    class StateSaver {
+    public:
+        // Don't generate move/copy constructors as this class is only intended to
+        // live on a single stack frame
+        StateSaver(StateSaver&&) = delete;
+        StateSaver& operator=(StateSaver&&) = delete;
+        StateSaver(const StateSaver&) = delete;
+        StateSaver& operator=(const StateSaver&) = delete;
+
+        explicit StateSaver(asciistream& as) noexcept :
+                _as(as),
+                _base(as._base),
+                _floatSpec(as._floatSpec),
+                _floatModifier(as._floatModifier),
+                _width(as._width),
+                _fill(as._fill),
+                _precision(as._precision) {}
+        ~StateSaver() noexcept {
+            _as._base = _base;
+            _as._floatSpec = _floatSpec;
+            _as._floatModifier = _floatModifier;
+            _as._width = _width;
+            _as._fill = _fill;
+            _as._precision = _precision;
+        }
+    private:
+        asciistream&    _as;
+        Base            _base;
+        FloatSpec       _floatSpec;
+        FloatModifier   _floatModifier;
+        uint32_t        _width;
+        char            _fill;
+        uint8_t         _precision;
+    };
+
     asciistream & operator << (Width v)      { _width = v.getWidth(); return *this; }
     asciistream & operator >> (Width v)      { _width = v.getWidth(); return *this; }
     asciistream & operator << (Fill v)       { _fill = v.getFill(); return *this; }
@@ -112,6 +147,9 @@ public:
     static asciistream createFromDevice(const vespalib::stringref & fileName);
     string getline(char delim='\n');
     std::vector<string> getlines(char delim='\n');
+    char getFill() const noexcept { return _fill; }
+    size_t getWidth() const noexcept { return static_cast<size_t>(_width); } // match input type of setw
+    Base getBase() const noexcept { return _base; }
 private:
     template <typename T>
     void printFixed(T v) __attribute__((noinline));

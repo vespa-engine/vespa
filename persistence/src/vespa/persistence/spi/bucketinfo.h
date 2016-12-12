@@ -7,6 +7,7 @@
 #pragma once
 
 #include <persistence/spi/types.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 namespace spi {
@@ -35,9 +36,8 @@ public:
                ActiveState active = NOT_ACTIVE);
 
     bool operator==(const BucketInfo& o) const;
-    void print(std::ostream& out) const;
 
-    std::string toString() const;
+    vespalib::string toString() const;
 
     /**
      * Get the checksum of the bucket. An empty bucket should have checksum of
@@ -99,10 +99,8 @@ private:
     ActiveState _active;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const BucketInfo& info) {
-    info.print(out);
-    return out;
-}
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const BucketInfo& info);
+std::ostream& operator<<(std::ostream& out, const BucketInfo& info);
 
 } // spi
 } // storage

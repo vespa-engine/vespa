@@ -71,11 +71,11 @@ public:
              const search::fef::FieldInfo &fieldInfo, const Params &params);
 
     /**
-     * Resets this object according to the given match data object.
+     * Resets this object according to the given document id
      *
-     * @param match The match data object containing match information for this field.
+     * @param docid The local document id to be evaluated
      */
-    void reset(const search::fef::MatchData & match);
+    void reset(uint32_t docId);
 
     /**
      * Runs this computer using the environment, match and parameters given to the constructor.
@@ -132,16 +132,6 @@ public:
      */
     const search::fef::IQueryEnvironment &getQueryEnvironment() const {
         return _splitter;
-    }
-
-    /**
-     * Returns the match data of this. This contains information about how the query was matched to the current
-     * document.
-     *
-     * @return The match data.
-     */
-    const search::fef::MatchData &getMatchData() const {
-        return *_match;
     }
 
     /**
@@ -366,7 +356,6 @@ private:
     feature_t                                  _totalTermSignificance;
 
     // per docid
-    const search::fef::MatchData             * _match;
     uint32_t                                   _fieldLength;
     Metrics                                    _currentMetrics; // The metrics of the currently explored segmentation.
     Metrics                                    _finalMetrics;   // The final metrics, null during and before metric computation.

@@ -4,27 +4,29 @@
 #include "tensor_attribute_executor.h"
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 
+using vespalib::eval::TensorValue;
+
 namespace search {
 namespace features {
 
 TensorAttributeExecutor::
-TensorAttributeExecutor(const search::attribute::TensorAttribute *attribute)
+TensorAttributeExecutor(const search::tensor::TensorAttribute *attribute)
     : _attribute(attribute),
-      _tensor(),
-      _emptyTensor(std::make_unique<vespalib::eval::TensorValue>(attribute->getEmptyTensor()))
+      _emptyTensor(attribute->getEmptyTensor()),
+      _tensor(*_emptyTensor)
 {
 }
 
 void
-TensorAttributeExecutor::execute(fef::MatchData &data)
+TensorAttributeExecutor::execute(uint32_t docId)
 {
-    auto tensor = _attribute->getTensor(data.getDocId());
+    auto tensor = _attribute->getTensor(docId);
     if (!tensor) {
-        *data.resolve_object_feature(outputs()[0]) = *_emptyTensor;
-        return;
+        _tensor = TensorValue(*_emptyTensor);
+    } else {
+        _tensor = TensorValue(std::move(tensor));
     }
-    _tensor = std::make_unique<vespalib::eval::TensorValue>(std::move(tensor));
-    *data.resolve_object_feature(outputs()[0]) = *_tensor;
+    outputs().set_object(0, _tensor);
 }
 
 } // namespace features

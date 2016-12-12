@@ -65,9 +65,8 @@ struct UnboxingExecutor : FeatureExecutor {
         bindOutput(new_feature);
     }
     bool isPure() override { return true; }
-    void execute(search::fef::MatchData &md) override {
-        double number_value = md.resolve_object_feature(inputs()[0])->get().as_double();
-        *md.resolveFeature(outputs()[0]) = number_value;
+    void execute(uint32_t) override {
+        outputs().set_number(0, inputs().get_object(0).get().as_double());
     }
 };
 
@@ -82,7 +81,7 @@ RankProgram::add_unboxing_executors(MatchDataLayout &my_mdl)
         if (specs[seed.executor].output_types[seed.output]) {
             FeatureHandle old_handle = _executors[seed.executor]->outputs()[seed.output];
             FeatureHandle new_handle = my_mdl.allocFeature(false);
-            _executors.emplace_back(new UnboxingExecutor(_shared_inputs, old_handle, new_handle));
+            _executors.emplace_back(&_stash.create<UnboxingExecutor>(_shared_inputs, old_handle, new_handle));
             _unboxed_seeds[seed_entry.first] = std::make_pair(old_handle, new_handle);
         }
     }
@@ -101,7 +100,7 @@ RankProgram::compile()
             is_const &= is_calculated[inputs[in_idx]];
         }
         if (is_const) {
-            executor.execute(md);
+            executor.execute(1);
             const auto &outputs = executor.outputs();
             for (size_t out_idx = 0; out_idx < outputs.size(); ++out_idx) {
                 is_calculated[outputs[out_idx]] = true;
@@ -112,10 +111,24 @@ RankProgram::compile()
     }
 }
 
+FeatureResolver
+RankProgram::resolve(const std::vector<vespalib::string> &names,
+                     const std::vector<FeatureHandle> &handles) const
+{
+    FeatureResolver result(names.size());
+    for (size_t i = 0; i < names.size(); ++i) {
+        result.add(names[i],
+                   match_data().resolve_raw(handles[i]),
+                   match_data().feature_is_object(handles[i]));
+    }
+    return result;
+}
+
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(resolver),
       _shared_inputs(),
       _program(),
+      _stash(),
       _executors(),
       _unboxed_seeds()
 {
@@ -135,12 +148,12 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
     const auto &specs = _resolver->getExecutorSpecs();
     _executors.reserve(specs.size());
     for (uint32_t i = 0; i < specs.size(); ++i) {
-        FeatureExecutor::UP executor(specs[i].blueprint->createExecutor(queryEnv).release());
+        FeatureExecutor *executor = &(specs[i].blueprint->createExecutor(queryEnv, _stash));
         assert(executor);
         executor->bind_shared_inputs(_shared_inputs);
         for (; (override < override_end) && (override->ref.executor == i); ++override) {
-            FeatureExecutor::LP tmp(executor.release());
-            executor.reset(new FeatureOverrider(tmp, override->ref.output, override->value));
+            FeatureExecutor *tmp = executor;
+            executor = &(_stash.create<FeatureOverrider>(*tmp, override->ref.output, override->value));
             executor->bind_shared_inputs(_shared_inputs);
         }
         for (auto ref: specs[i].inputs) {
@@ -152,10 +165,13 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
             executor->bindOutput(my_mdl.allocFeature(specs[i].output_types[out_idx]));
         }
         executor->outputs_done();
-        _executors.push_back(std::move(executor));
+        _executors.push_back(executor);
     }
     add_unboxing_executors(my_mdl);
     _match_data = my_mdl.createMatchData();
+    for (auto executor: _executors) {
+        executor->bind_match_data(*_match_data);
+    }
     compile();
 }
 
@@ -163,7 +179,7 @@ namespace {
 
 template <typename Each>
 void extract_handles(const BlueprintResolver::FeatureMap &features,
-                     const std::vector<FeatureExecutor::UP> &executors,
+                     const std::vector<FeatureExecutor *> &executors,
                      const Each &each)
 {
     each.reserve(features.size());
@@ -234,6 +250,24 @@ RankProgram::get_all_feature_handles(std::vector<vespalib::string> &names_out,
     } else {
         extract_handles(_resolver->getFeatureMap(), _executors, RawHandleCollector(names_out, handles_out));
     }
+}
+
+FeatureResolver
+RankProgram::get_seeds(bool unbox_seeds) const
+{
+    std::vector<vespalib::string> names;
+    std::vector<FeatureHandle> handles;
+    get_seed_handles(names, handles, unbox_seeds);
+    return resolve(names, handles);
+}
+
+FeatureResolver
+RankProgram::get_all_features(bool unbox_seeds) const
+{
+    std::vector<vespalib::string> names;
+    std::vector<FeatureHandle> handles;
+    get_all_feature_handles(names, handles, unbox_seeds);
+    return resolve(names, handles);
 }
 
 } // namespace fef

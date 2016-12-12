@@ -38,23 +38,16 @@ public class NodeAclResponse extends HttpResponse {
 
     private void toSlime(String hostname, Cursor object) {
         Node node = nodeRepository.getNode(hostname)
-                .orElseThrow(() -> new IllegalArgumentException("No node with hostname '" + hostname + "'"));
-
-        if ( ! node.ipAddress().isPresent()) return; // empty response
-        toSlime(node, nodeRepository.getTrustedNodes(node), object);
-    }
-
-    private void toSlime(Node node, List<Node> trustedNodes, Cursor object) {
-        object.setString("hostname", node.hostname());
-        object.setString("ipAddress", node.ipAddress().get());
-        toSlime(trustedNodes, object.setArray("trustedNodes"));
+                .orElseGet(() -> nodeRepository.getConfigNode(hostname)
+                        .orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'")));
+        toSlime(nodeRepository.getTrustedNodes(node), object.setArray("trustedNodes"));
     }
 
     private void toSlime(List<Node> trustedNodes, Cursor array) {
         trustedNodes.forEach(node -> {
             Cursor object = array.addObject();
             object.setString("hostname", node.hostname());
-            object.setString("ipAddress", node.ipAddress().get());
+            object.setString("ipAddress", node.ipAddress());
         });
     }
 

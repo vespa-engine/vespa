@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * TODO: What is this and why
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">Håkon Humberset</a>
+ * @author Håkon Humberset
  */
 public abstract class StructuredDataType extends DataType {
 

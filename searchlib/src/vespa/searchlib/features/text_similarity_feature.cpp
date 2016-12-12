@@ -79,7 +79,8 @@ TextSimilarityExecutor::TextSimilarityExecutor(const search::fef::IQueryEnvironm
     : _handles(),
       _weights(),
       _total_term_weight(0),
-      _queue()
+      _queue(),
+      _md(nullptr)
 {
     std::vector<Term> terms;
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
@@ -107,11 +108,11 @@ TextSimilarityExecutor::TextSimilarityExecutor(const search::fef::IQueryEnvironm
 }
 
 void
-TextSimilarityExecutor::execute(search::fef::MatchData &data)
+TextSimilarityExecutor::execute(uint32_t docId)
 {
     for (size_t i = 0; i < _handles.size(); ++i) {
-        search::fef::TermFieldMatchData *tfmd = data.resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == data.getDocId()) {
+        const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
+        if (tfmd->getDocId() == docId) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
                 _queue.push(item);
@@ -119,11 +120,11 @@ TextSimilarityExecutor::execute(search::fef::MatchData &data)
         }
     }
     if (_queue.empty()) {
-        *data.resolveFeature(outputs()[0]) = 0.0;
-        *data.resolveFeature(outputs()[1]) = 0.0;
-        *data.resolveFeature(outputs()[2]) = 0.0;
-        *data.resolveFeature(outputs()[3]) = 0.0;
-        *data.resolveFeature(outputs()[4]) = 0.0;
+        outputs().set_number(0, 0.0);
+        outputs().set_number(1, 0.0);
+        outputs().set_number(2, 0.0);
+        outputs().set_number(3, 0.0);
+        outputs().set_number(4, 0.0);
         return;
     }
     const Item &first = _queue.front();
@@ -149,11 +150,17 @@ TextSimilarityExecutor::execute(search::fef::MatchData &data)
         }
     }
     state.calculateScore(_handles.size(), _total_term_weight,
-                         *data.resolveFeature(outputs()[0]),
-                         *data.resolveFeature(outputs()[1]),
-                         *data.resolveFeature(outputs()[2]),
-                         *data.resolveFeature(outputs()[3]),
-                         *data.resolveFeature(outputs()[4]));
+                         *outputs().get_number_ptr(0),
+                         *outputs().get_number_ptr(1),
+                         *outputs().get_number_ptr(2),
+                         *outputs().get_number_ptr(3),
+                         *outputs().get_number_ptr(4));
+}
+
+void
+TextSimilarityExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -208,10 +215,10 @@ TextSimilarityBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-TextSimilarityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+TextSimilarityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new TextSimilarityExecutor(env, _field_id));
+    return stash.create<TextSimilarityExecutor>(env, _field_id);
 }
 
 //-----------------------------------------------------------------------------

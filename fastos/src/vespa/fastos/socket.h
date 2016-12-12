@@ -299,8 +299,6 @@ public:
      * This includes:
      *  SO_KEEPALIVE = 1
      *  SO_LINGER = 0
-     *  SO_SNDBUF >= 32768
-     *  SO_SNDLOWAT >= 16384
      *
      * @return Boolean success/failure
      */

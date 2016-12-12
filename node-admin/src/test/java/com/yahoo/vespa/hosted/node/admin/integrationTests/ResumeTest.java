@@ -30,13 +30,13 @@ public class ResumeTest {
 
             dockerTester.addContainerNodeSpec(new ContainerNodeSpec.Builder()
                                                       .hostname("host1")
-                                                      .wantedDockerImage(Optional.of(new DockerImage("dockerImage")))
+                                                      .wantedDockerImage(new DockerImage("dockerImage"))
                                                       .containerName(new ContainerName("container"))
                                                       .nodeState(Node.State.active)
                                                       .nodeType("tenant")
                                                       .nodeFlavor("docker")
-                                                      .wantedRestartGeneration(Optional.of(1L))
-                                                      .currentRestartGeneration(Optional.of(1L))
+                                                      .wantedRestartGeneration(1L)
+                                                      .currentRestartGeneration(1L)
                                                       .build());
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
@@ -48,7 +48,7 @@ public class ResumeTest {
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
             callOrderVerifier.assertInOrder("createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                                            "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=null, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion='null'}");
+                                            "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion=''}");
 
             // Force orchestrator to reject the suspend
             orchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));

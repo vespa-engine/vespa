@@ -13,7 +13,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.application.TenantApplications;
@@ -57,10 +56,10 @@ public class SessionPrepareHandler extends SessionHandler {
 
     @Override
     protected HttpResponse handlePUT(HttpRequest request) {
-        TenantName tenantName = Utils.getTenantFromSessionRequest(request);
-        Tenant tenantContext = Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = getExistingTenant(request);
+        TenantName tenantName = tenant.getName();
         long sessionId = getSessionIdV2(request);
-        LocalSession session = applicationRepository.getLocalSession(tenantContext, getSessionIdV2(request));
+        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
             throw new IllegalArgumentException("Session is active: " + sessionId);
         }
@@ -73,11 +72,11 @@ public class SessionPrepareHandler extends SessionHandler {
         DeployLogger logger = createLogger(rawDeployLog, verbose, appId);
         ConfigChangeActions actions = session.prepare(logger, 
                                                       prepParams, 
-                                                      getCurrentActiveApplicationSet(tenantContext, appId), 
-                                                      tenantContext.getPath());
+                                                      getCurrentActiveApplicationSet(tenant, appId),
+                                                      tenant.getPath());
         logConfigChangeActions(actions, logger);
         log.log(LogLevel.INFO, Tenants.logPre(appId) + "Session " + sessionId + " prepared successfully. ");
-        return new SessionPrepareResponse(rawDeployLog, tenantContext, request, session, actions);
+        return new SessionPrepareResponse(rawDeployLog, tenant, request, session, actions);
     }
 
     private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
@@ -95,9 +94,7 @@ public class SessionPrepareHandler extends SessionHandler {
 
     @Override
     protected HttpResponse handleGET(HttpRequest request) {
-        TenantName tenantName = Utils.getTenantFromSessionRequest(request);
-        log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = getExistingTenant(request);
         long sessionId = getSessionIdV2(request);
         RemoteSession session = applicationRepository.getRemoteSession(tenant, getSessionIdV2(request));
         if (Session.Status.ACTIVATE.equals(session.getStatus()))
@@ -120,5 +117,11 @@ public class SessionPrepareHandler extends SessionHandler {
             // Do nothing if we have no currently active session
         }
         return currentActiveApplicationSet;
+    }
+
+    private Tenant getExistingTenant(HttpRequest request) {
+        TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        return tenants.getTenant(tenantName);
     }
 }

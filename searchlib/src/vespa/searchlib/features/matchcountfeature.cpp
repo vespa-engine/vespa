@@ -16,7 +16,8 @@ namespace features {
 
 MatchCountExecutor::MatchCountExecutor(uint32_t fieldId, const IQueryEnvironment &env)
     : FeatureExecutor(),
-      _handles()
+      _handles(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -27,18 +28,23 @@ MatchCountExecutor::MatchCountExecutor(uint32_t fieldId, const IQueryEnvironment
 }
 
 void
-MatchCountExecutor::execute(MatchData &match)
+MatchCountExecutor::execute(uint32_t docId)
 {
     size_t output = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = match.resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == match.getDocId()) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
+        if (tfmd->getDocId() == docId) {
             output++;
         }
     }
-    *match.resolveFeature(outputs()[0]) = static_cast<feature_t>(output);
+    outputs().set_number(0, static_cast<feature_t>(output));
 }
 
+void
+MatchCountExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
 
 MatchCountBlueprint::MatchCountBlueprint() :
     Blueprint("matchCount"),
@@ -65,13 +71,13 @@ MatchCountBlueprint::createInstance() const
     return Blueprint::UP(new MatchCountBlueprint());
 }
 
-FeatureExecutor::LP
-MatchCountBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
+FeatureExecutor &
+MatchCountBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     if (_field == nullptr) {
-        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     }
-    return FeatureExecutor::LP(new MatchCountExecutor(_field->id(), queryEnv));
+    return stash.create<MatchCountExecutor>(_field->id(), queryEnv);
 }
 
 } // namespace features

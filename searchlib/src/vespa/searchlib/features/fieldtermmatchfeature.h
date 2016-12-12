@@ -23,10 +23,13 @@ public:
      */
     FieldTermMatchExecutor(const search::fef::IQueryEnvironment &env,
                            uint32_t fieldId, uint32_t termId);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     search::fef::TermFieldHandle _fieldHandle;
+    const fef::MatchData        *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**
@@ -47,7 +50,7 @@ public:
     virtual search::fef::Blueprint::UP createInstance() const;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     // Inherit doc from Blueprint.
     virtual search::fef::ParameterDescriptions getDescriptions() const {

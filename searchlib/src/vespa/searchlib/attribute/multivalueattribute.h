@@ -2,7 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multivaluemapping.h>
+#include "multi_value_mapping2.h"
+#include <vespa/vespalib/stllike/string.h>
+#include "attributevector.h"
 
 namespace search {
 
@@ -10,7 +12,7 @@ namespace search {
  * Implementation of multi value attribute using an underlying multi value mapping
  *
  * B: Base class
- * M: MultiValueType (MultiValueMapping template argument)
+ * M: MultiValueType
  */
 template <typename B, typename M>
 class MultiValueAttribute : public B
@@ -21,9 +23,8 @@ protected:
     typedef typename B::ChangeVector                      ChangeVector;
     typedef typename B::ChangeVector::const_iterator            ChangeVectorIterator;
 
-    typedef typename M::Value                             MultiValueType;
-    typedef MultiValueMappingT<MultiValueType, typename M::Index>   MultiValueMapping;
-    typedef typename MultiValueMappingBaseBase::Histogram Histogram;
+    using MultiValueType = M;
+    using MultiValueMapping = attribute::MultiValueMapping2<MultiValueType>;
     typedef typename MultiValueType::ValueType            ValueType;
     typedef std::vector<MultiValueType>                   ValueVector;
     using MultiValueArrayRef = vespalib::ConstArrayRef<MultiValueType>;
@@ -57,7 +58,7 @@ public:
 
     virtual bool addDoc(DocId & doc);
     virtual uint32_t getValueCount(DocId doc) const;
-    virtual const MultiValueMappingBaseBase *getMultiValueBase() const override {
+    virtual const attribute::MultiValueMapping2Base *getMultiValueBase() const override {
         return &getMultiValueMapping();
     }
 

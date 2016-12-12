@@ -52,7 +52,8 @@ public final class ClusterSpec {
 
     @Override
     public String toString() {
-        return type + " " + id + (groupId.isPresent() ? " " + groupId.get() : "");
+        return String.join(" ", type.toString(),  id.toString(),
+                           groupId.map(Group::toString).orElse(""), dockerImage.orElse(""));
     }
 
     @Override
@@ -77,19 +78,6 @@ public final class ClusterSpec {
         ClusterSpec other = (ClusterSpec)o;
         if ( ! other.type.equals(this.type)) return false;
         if ( ! other.id.equals(this.id)) return false;
-        return true;
-    }
-
-    // TODO: Remove when no version older than 6.41 is used
-    /** Returns whether this is equal, disregarding the group value */
-    @Deprecated
-    public boolean equalsIgnoringGroup(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof ClusterSpec)) return false;
-        ClusterSpec other = (ClusterSpec)o;
-        if ( ! other.type.equals(this.type)) return false;
-        if ( ! other.id.equals(this.id)) return false;
-        if ( ! other.dockerImage.equals(this.dockerImage)) return false;
         return true;
     }
 

@@ -114,9 +114,6 @@ struct StorageServerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST_IGNORED(testShutdownDistributorDuringDiskLoad);
     CPPUNIT_TEST_IGNORED(testShutdownAfterDiskFailure_Stress);
 
-    // Disabled test for new core... TODO
-    CPPUNIT_TEST_DISABLED(testSplitJoinSplitThroughDistributor_Stress);
-
     CPPUNIT_TEST_DISABLED(testPriorityAndQueueSneakingWhileSplitJoinStressTest);
 
     // Doesn't work in new framework. Will investigate as soon as there's time
@@ -173,8 +170,6 @@ namespace {
         virtual StorageNode& getNode() { return _process.getNode(); }
         virtual StorageNodeContext& getContext()
             { return _process.getContext(); }
-        BucketDatabase& getBucketDatabase()
-            { return _process.getDistributorContext().getComponentRegister().getBucketDatabase(); }
     };
 
     struct Storage : public Node {
@@ -598,129 +593,6 @@ StorageServerTest::testShutdownAfterDiskFailure_Stress()
 
     CPPUNIT_ASSERT_EQUAL(0u, loadGiver._unexpectedErrors);
     unlink("permissions");
-}
-
-void
-StorageServerTest::testSplitJoinSplitThroughDistributor_Stress()
-{
-        // Setup system with storage and distributor
-    distConfig->getConfig("stor-distributormanager")
-            .set("splitcount", "10");
-    distConfig->getConfig("stor-distributormanager")
-            .set("joincount", "5");
-    distConfig->getConfig("stor-server")
-            .set("switch_new_meta_data_flow", "true");
-    storConfig->getConfig("stor-filestor")
-            .set("revert_time_period", "1");
-    storConfig->getConfig("stor-filestor")
-            .set("keep_remove_time_period", "1");
-    storConfig->getConfig("stor-integritychecker")
-            .set("mincycletime", "0");
-    Distributor distServer(*distConfig);
-    Storage storServer(*storConfig);
-    DummyStorageLink dummyLink;
-    dummyLink.addOnTopOfChain(*distServer.getChain());
-    DummyStorageLink sdummyLink;
-    sdummyLink.addOnTopOfChain(*storServer.getChain());
-
-    api::SetSystemStateCommand::SP scmd(new api::SetSystemStateCommand(
-                lib::ClusterState("version:3 distributor:1 storage:1")));
-    for (uint32_t i=0; i<500; ++i) {
-        if (storServer.getStateUpdater().getReportedNodeState()->getState()
-                == lib::State::UP) break;
-        FastOS_Thread::Sleep(10);
-    }
-    CPPUNIT_ASSERT(
-            storServer.getStateUpdater().getReportedNodeState()->getState()
-                    == lib::State::UP);
-    distServer.getChain()->sendDown(scmd);
-    storServer.getChain()->sendDown(scmd);
-    dummyLink.waitForMessages(1, 15);
-    dummyLink.reset();
-    sdummyLink.waitForMessages(1, 15);
-    sdummyLink.reset();
-    for (uint32_t i=0; i<500; ++i) {
-        if (distServer.getStateUpdater().getReportedNodeState()->getState()
-                == lib::State::UP
-            && distServer.getStateUpdater().getSystemState()->getVersion() == 3)
-        {
-            break;
-        }
-        FastOS_Thread::Sleep(10);
-    }
-    CPPUNIT_ASSERT_EQUAL(lib::State::UP,
-            distServer.getStateUpdater().getReportedNodeState()->getState());
-    CPPUNIT_ASSERT_EQUAL(3u,
-            storServer.getStateUpdater().getSystemState()->getVersion());
-    CPPUNIT_ASSERT_EQUAL(3u,
-            distServer.getStateUpdater().getSystemState()->getVersion());
-        // Feed 50 documents
-    document::BucketId bucket(16, 0);
-    for (uint32_t i=0; i<50; ++i) {
-        document::Document::SP doc(
-                docMan->createRandomDocumentAtLocation(0, i, 1024));
-        api::PutCommand::SP cmd(new api::PutCommand(bucket, doc, 1000 + i));
-        distServer.getChain()->sendDown(cmd);
-    }
-    dummyLink.waitForMessages(50, 15);
-    for (uint32_t i=0; i<50; ++i) {
-        CPPUNIT_ASSERT_EQUAL(api::MessageType::PUT_REPLY,
-                             dummyLink.getReplies()[i]->getType());
-        api::PutReply& reply(
-                dynamic_cast<api::PutReply&>(*dummyLink.getReplies()[i]));
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::OK),
-                             reply.getResult());
-    }
-    dummyLink.reset();
-        // Wait until system has split to 7 buckets
-    BucketDatabase& db(distServer.getBucketDatabase());
-    for (size_t i(0); (i < 6000) && (7ul != db.size()); i++) {
-        FastOS_Thread::Sleep(10);
-    }
-    CPPUNIT_ASSERT_EQUAL_MSG(db.toString(), size_t(7), db.size());
-
-        // Remove 40 first documents
-    for (uint32_t i=0; i<40; ++i) {
-        document::Document::SP doc(
-                docMan->createRandomDocumentAtLocation(0, i, 1024));
-        api::RemoveCommand::SP cmd(new api::RemoveCommand(
-                    bucket, doc->getId(), 2000 + i));
-        distServer.getChain()->sendDown(cmd);
-    }
-    dummyLink.waitForMessages(40, 15);
-    for (uint32_t i=0; i<40; ++i) {
-        CPPUNIT_ASSERT_EQUAL(api::MessageType::REMOVE_REPLY,
-                             dummyLink.getReplies()[i]->getType());
-        api::RemoveReply& reply(
-                dynamic_cast<api::RemoveReply&>(*dummyLink.getReplies()[i]));
-        CPPUNIT_ASSERT_EQUAL(api::ReturnCode(api::ReturnCode::OK),
-                             reply.getResult());
-    }
-    dummyLink.reset();
-    /*
-    framework::defaultimplementation::RealClock clock;
-    framework::MilliSecTime endTime = clock.getTimeInMillis()
-                                    + framework::MilliSecTime(100 * 1000);
-
-     Join dont happen anymore, as we dont join due to meta entries, used file
-     * size. Need to wait long enough for data to be compacted away if so.
-
-    // Wait until we have joined the 10 documents back to 3 buckets
-    while (db.size() != 3ul) {
-//        std::cerr << db.toString(true);
-
-        if (clock.getTimeInMillis() > endTime) {
-            CPPUNIT_ASSERT_EQUAL_MSG(
-                    "Failed to join buckets within timeout of 60 seconds"
-                    + db.toString(true), 3ul, db.size());
-        }
-
-//        FastOS_Thread::Sleep(1000);
-    }
-    CPPUNIT_ASSERT(db.get(document::BucketId(0x8800000000000000)).valid());
-    CPPUNIT_ASSERT(db.get(document::BucketId(0x8800000200000000)).valid());
-    CPPUNIT_ASSERT(db.get(document::BucketId(0x8400000100000000)).valid());
-    */
 }
 
 namespace {

@@ -7,7 +7,7 @@
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 /**
  * Attribute vector class used to store tensors for all documents in memory.
@@ -26,6 +26,6 @@ public:
 };
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

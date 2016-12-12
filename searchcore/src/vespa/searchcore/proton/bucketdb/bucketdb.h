@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/persistence/spi/result.h>
 #include "bucketstate.h"
+#include <map>
 
 namespace proton
 {

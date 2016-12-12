@@ -56,7 +56,8 @@ AttributeMatchExecutor<T>::Computer::Computer(const IQueryEnvironment & env, Att
     _totalWeight(0),
     _normalizedWeightedWeight(0),
     _weightSum(0),
-    _valueCount(0)
+    _valueCount(0),
+    _md(nullptr)
 {
     _buffer.allocate(_params.attribute->getMaxValueCount());
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
@@ -95,13 +96,13 @@ AttributeMatchExecutor<T>::Computer::reset()
 
 template <typename T>
 void
-AttributeMatchExecutor<T>::Computer::run(MatchData & match)
+AttributeMatchExecutor<T>::Computer::run(uint32_t docId)
 {
     for (size_t i = 0; i < _queryTerms.size(); ++i) {
         const ITermData * td = _queryTerms[i].termData();
         feature_t significance = _queryTerms[i].significance();
-        const TermFieldMatchData *tfmd = match.resolveTermField(_queryTerms[i].fieldHandle());
-        if (tfmd->getDocId() == match.getDocId()) { // hit on this document
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_queryTerms[i].fieldHandle());
+        if (tfmd->getDocId() == docId) { // hit on this document
             _matches++;
             _matchedTermWeight += td->getWeight().percent();
             _matchedTermSignificance += significance;
@@ -114,12 +115,12 @@ AttributeMatchExecutor<T>::Computer::run(MatchData & match)
         }
     }
     if (_params.weightedSet) {
-        _buffer.fill(*_params.attribute, match.getDocId());
+        _buffer.fill(*_params.attribute, docId);
         for (uint32_t i = 0; i < _buffer.size(); ++i) {
             _weightSum += _buffer[i].getWeight();
         }
     } else {
-        _valueCount = _params.attribute->getValueCount(match.getDocId());
+        _valueCount = _params.attribute->getValueCount(docId);
     }
 
     LOG(debug, "attributeMatch(%s)::Computer::run(): matches(%u), totalWeight(%d), normalizedWeightedWeight(%f), "
@@ -232,25 +233,31 @@ AttributeMatchExecutor<T>::AttributeMatchExecutor(const IQueryEnvironment & env,
 
 template <typename T>
 void
-AttributeMatchExecutor<T>::execute(MatchData & match)
+AttributeMatchExecutor<T>::execute(uint32_t docId)
 {
     //LOG(debug, "Execute for field '%s':", _params.attrInfo->name().c_str());
     _cmp.reset();
-    _cmp.run(match);
+    _cmp.run(docId);
 
-    *match.resolveFeature(outputs()[0]) = _cmp.getCompleteness();
-    *match.resolveFeature(outputs()[1]) = _cmp.getQueryCompleteness();
-    *match.resolveFeature(outputs()[2]) = _cmp.getFieldCompleteness();
-    *match.resolveFeature(outputs()[3]) = _cmp.getNormalizedWeight();
-    *match.resolveFeature(outputs()[4]) = _cmp.getNormalizedWeightedWeight();
-    *match.resolveFeature(outputs()[5]) = _cmp.getWeight();
-    *match.resolveFeature(outputs()[6]) = _cmp.getSignificance();
-    *match.resolveFeature(outputs()[7]) = _cmp.getImportance();
-    *match.resolveFeature(outputs()[8]) = static_cast<feature_t>(_cmp.getMatches());
-    *match.resolveFeature(outputs()[9]) = static_cast<feature_t>(_cmp.getTotalWeight());
-    *match.resolveFeature(outputs()[10]) = _cmp.getAverageWeight();
+    outputs().set_number(0, _cmp.getCompleteness());
+    outputs().set_number(1, _cmp.getQueryCompleteness());
+    outputs().set_number(2, _cmp.getFieldCompleteness());
+    outputs().set_number(3, _cmp.getNormalizedWeight());
+    outputs().set_number(4, _cmp.getNormalizedWeightedWeight());
+    outputs().set_number(5, _cmp.getWeight());
+    outputs().set_number(6, _cmp.getSignificance());
+    outputs().set_number(7, _cmp.getImportance());
+    outputs().set_number(8, static_cast<feature_t>(_cmp.getMatches()));
+    outputs().set_number(9, static_cast<feature_t>(_cmp.getTotalWeight()));
+    outputs().set_number(10, _cmp.getAverageWeight());
 }
 
+template <typename T>
+void
+AttributeMatchExecutor<T>::handle_bind_match_data(MatchData &md)
+{
+    _cmp.bind_match_data(md);
+}
 
 AttributeMatchBlueprint::AttributeMatchBlueprint() :
     Blueprint("attributeMatch"),
@@ -320,13 +327,25 @@ AttributeMatchBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_params.attrInfo->name());
     if (attribute == NULL) {
         LOG(error, "The attribute vector '%s' was not found in the attribute manager.", _params.attrInfo->name().c_str());
-        return FeatureExecutor::LP(NULL);
+        std::vector<feature_t> values;
+        values.push_back(0.0); // completeness
+        values.push_back(0.0); // queryCompleteness
+        values.push_back(0.0); // fieldCompleteness
+        values.push_back(0.0); // normalizedWeight
+        values.push_back(0.0); // normalizedWeightedWeight
+        values.push_back(0.0); // weight
+        values.push_back(0.0); // significance
+        values.push_back(0.0); // importance
+        values.push_back(0.0); // matches
+        values.push_back(0.0); // totalWeight
+        values.push_back(0.0); // averageWeight
+        return stash.create<ValueExecutor>(values);
     }
 
     AttributeMatchParams amp = _params;
@@ -334,14 +353,11 @@ AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
     amp.weightedSet = attribute->getCollectionType() == attribute::CollectionType::WSET;
 
     if (attribute->isStringType()) {
-        return FeatureExecutor::LP
-            (new AttributeMatchExecutor<WeightedConstCharContent>(env, amp));
+        return stash.create<AttributeMatchExecutor<WeightedConstCharContent>>(env, amp);
     } else if (attribute->isIntegerType()) {
-        return FeatureExecutor::LP
-            (new AttributeMatchExecutor<WeightedIntegerContent>(env, amp));
+        return stash.create<AttributeMatchExecutor<WeightedIntegerContent>>(env, amp);
     } else { // FLOAT
-        return FeatureExecutor::LP
-            (new AttributeMatchExecutor<WeightedFloatContent>(env, amp));
+        return stash.create<AttributeMatchExecutor<WeightedFloatContent>>(env, amp);
     }
 }
 

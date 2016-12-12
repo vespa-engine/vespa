@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -97,12 +96,9 @@ public class ApplicationHandlerTest {
         return new ApplicationHandler(
                 Runnable::run,
                 AccessLog.voidAccessLog(),
-                tenants,
-                HostProvisionerProvider.withProvisioner(provisioner),
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
-                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                           new MockCurator(),
                                           logServerLogGrabber,
                                           convergeChecker));
@@ -112,12 +108,9 @@ public class ApplicationHandlerTest {
         return new ApplicationHandler(
                 Runnable::run,
                 AccessLog.voidAccessLog(),
-                tenants,
-                HostProvisionerProvider.withProvisioner(provisioner),
                 Zone.defaultZone(),
                 new ApplicationRepository(tenants,
                                           HostProvisionerProvider.withProvisioner(provisioner),
-                                          new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                           new MockCurator(),
                                           new LogServerLogGrabber(),
                                           new ApplicationConvergenceChecker(stateApiFactory)));
@@ -235,13 +228,14 @@ public class ApplicationHandlerTest {
         Assert.assertTrue(provisioner.activated);
     }
 
-    static void addMockApplication(Tenant tenant, ApplicationId applicationId, long sessionId) throws Exception {
+    static void addMockApplication(Tenant tenant, ApplicationId applicationId, long sessionId) {
         tenant.getApplicationRepo().createPutApplicationTransaction(applicationId, sessionId).commit();
         ApplicationPackage app = FilesApplicationPackage.fromFile(testApp);
         tenant.getLocalSessionRepo().addSession(new SessionHandlerTest.MockSession(sessionId, app, applicationId));
-        tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId,
-                                                                   new TestComponentRegistry(new MockCurator(),
-                                                                                             new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())))), new MockSessionZKClient(app)));
+        TestComponentRegistry componentRegistry = new TestComponentRegistry.Builder()
+                .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
+                .build();
+        tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenant.getName(), sessionId, componentRegistry, new MockSessionZKClient(app)));
     }
 
     static Tenants addApplication(ApplicationId applicationId, long sessionId) throws Exception {
@@ -254,7 +248,7 @@ public class ApplicationHandlerTest {
         Path sessionPath = tenantPath.append(Tenant.SESSIONS).append(String.valueOf(sessionId));
 
         MockCurator curator = new MockCurator();
-        GlobalComponentRegistry globalComponents = new TestComponentRegistry(curator);
+        GlobalComponentRegistry globalComponents = new TestComponentRegistry.Builder().curator(curator).build();
         
         Tenants tenants = new Tenants(globalComponents, Metrics.createTestMetrics()); // Creates the application path element in zk
         tenants.writeTenantPath(tenantName);
@@ -280,10 +274,14 @@ public class ApplicationHandlerTest {
         tenant.getLocalSessionRepo().addSession(new LocalSession(tenantName, sessionId, null, context));
         sessionClient.writeApplicationId(applicationId); // TODO: Instead, use ApplicationRepository to deploy the application
 
-        tenant.getRemoteSessionRepo().addSession(new RemoteSession(tenantName, sessionId,
-                                                                   new TestComponentRegistry(curator,
-                                                                                             new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())))), 
-                                                                   sessionClient));
+        tenant.getRemoteSessionRepo().addSession(
+                new RemoteSession(tenantName, sessionId,
+                                  new TestComponentRegistry.Builder()
+                                          .curator(curator)
+                                          .modelFactoryRegistry(new ModelFactoryRegistry(
+                                                  Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))))
+                                          .build(),
+                                  sessionClient));
         return tenants;
     }
 
@@ -291,10 +289,6 @@ public class ApplicationHandlerTest {
         String url = "http://myhost:14000/application/v2/tenant/" + mytenantName + "/application/default";
         deleteAndAssertResponse(mockHandler, url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
                                 method);
-    }
-
-    private void deleteAndAssertOKResponseMocked(ApplicationId applicationId) throws IOException {
-        deleteAndAssertOKResponseMocked(applicationId, true);
     }
 
     private void deleteAndAssertOKResponseMocked(ApplicationId applicationId, boolean fullAppIdInUrl) throws IOException {

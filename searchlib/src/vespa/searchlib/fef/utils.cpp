@@ -7,45 +7,32 @@
 namespace search {
 namespace fef {
 
-namespace {
-
-FeatureHandle
-getSingleFeatureHandle(const RankProgram &rankProgram)
-{
-    std::vector<vespalib::string> featureNames;
-    std::vector<FeatureHandle> featureHandles;
-    rankProgram.get_seed_handles(featureNames, featureHandles, false);
-    assert(featureNames.size() == 1);
-    assert(featureHandles.size() == 1);
-    return featureHandles.front();
-}
-
-}
-
 const feature_t *
 Utils::getScoreFeature(const RankProgram &rankProgram)
 {
-    return rankProgram.match_data().resolveFeature(getSingleFeatureHandle(rankProgram));
+    FeatureResolver resolver(rankProgram.get_seeds(false));
+    assert(resolver.num_features() == 1u);
+    return resolver.resolve_number(0);
 }
 
 const vespalib::eval::Value::CREF *
 Utils::getObjectFeature(const RankProgram &rankProgram)
 {
-    return rankProgram.match_data().resolve_object_feature(getSingleFeatureHandle(rankProgram));
+    FeatureResolver resolver(rankProgram.get_seeds(false));
+    assert(resolver.num_features() == 1u);
+    return resolver.resolve_object(0);
 }
 
 namespace {
 
 std::map<vespalib::string, feature_t>
-resolveFeatures(const MatchData &matchData,
-                const std::vector<vespalib::string> &featureNames,
-                const std::vector<FeatureHandle> &featureHandles)
+resolveFeatures(const FeatureResolver &resolver)
 {
-    assert(featureNames.size() == featureHandles.size());
     std::map<vespalib::string, feature_t> result;
-    for (size_t i = 0; i < featureNames.size(); ++i) {
-        const vespalib::string &name = featureNames[i];
-        feature_t value = *(matchData.resolveFeature(featureHandles[i]));
+    size_t numFeatures = resolver.num_features();
+    for (size_t i = 0; i < numFeatures; ++i) {
+        const vespalib::string &name = resolver.name_of(i);
+        feature_t value = *(resolver.resolve_number(i));
         result.insert(std::make_pair(name, value));
     }
     return result;
@@ -56,19 +43,15 @@ resolveFeatures(const MatchData &matchData,
 std::map<vespalib::string, feature_t>
 Utils::getSeedFeatures(const RankProgram &rankProgram)
 {
-    std::vector<vespalib::string> featureNames;
-    std::vector<FeatureHandle> featureHandles;
-    rankProgram.get_seed_handles(featureNames, featureHandles);
-    return resolveFeatures(rankProgram.match_data(), featureNames, featureHandles);
+    FeatureResolver resolver(rankProgram.get_seeds());
+    return resolveFeatures(resolver);
 }
 
 std::map<vespalib::string, feature_t>
 Utils::getAllFeatures(const RankProgram &rankProgram)
 {
-    std::vector<vespalib::string> featureNames;
-    std::vector<FeatureHandle> featureHandles;
-    rankProgram.get_all_feature_handles(featureNames, featureHandles);
-    return resolveFeatures(rankProgram.match_data(), featureNames, featureHandles);
+    FeatureResolver resolver(rankProgram.get_all_features());
+    return resolveFeatures(resolver);
 }
 
 } // namespace fef

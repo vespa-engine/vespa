@@ -14,7 +14,9 @@ namespace features {
 SubqueriesExecutor::SubqueriesExecutor(const IQueryEnvironment &env,
                                        uint32_t fieldId)
     : FeatureExecutor(),
-      _handles() {
+      _handles(),
+      _md(nullptr)
+{
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
         if (handle != IllegalHandle) {
@@ -23,18 +25,24 @@ SubqueriesExecutor::SubqueriesExecutor(const IQueryEnvironment &env,
     }
 }
 
-void SubqueriesExecutor::execute(MatchData &data) {
+void SubqueriesExecutor::execute(uint32_t docId) {
     uint32_t lsb = 0;
     uint32_t msb = 0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = data.resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == data.getDocId()) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
+        if (tfmd->getDocId() == docId) {
             lsb |= static_cast<uint32_t>(tfmd->getSubqueries());
             msb |= tfmd->getSubqueries() >> 32;
         }
     }
-    *data.resolveFeature(outputs()[0]) = lsb;
-    *data.resolveFeature(outputs()[1]) = msb;
+    outputs().set_number(0, lsb);
+    outputs().set_number(1, msb);
+}
+
+void
+SubqueriesExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -49,9 +57,9 @@ bool SubqueriesBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-SubqueriesBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const {
-    return FeatureExecutor::LP(new SubqueriesExecutor(queryEnv, _field->id()));
+FeatureExecutor &
+SubqueriesBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const {
+    return stash.create<SubqueriesExecutor>(queryEnv, _field->id());
 }
 
 } // namespace features

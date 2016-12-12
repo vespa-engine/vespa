@@ -32,7 +32,7 @@ MessageTracker::MessageTracker(FileStorThreadMetrics::Op& metric,
 MessageTracker::~MessageTracker()
 {
     if (_reply.get() && _reply->getResult().success()) {
-        _metric.latency.addValue(_timer);
+        _metric.latency.addValue(_timer.getElapsedTimeAsDouble());
     }
 }
 

@@ -47,6 +47,7 @@
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vdslib/state/nodestate.h>
 
 namespace storage {
 

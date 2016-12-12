@@ -2,18 +2,26 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.tensor.functions.ConstantTensor;
+import com.yahoo.tensor.functions.Generate;
+import com.yahoo.tensor.functions.Join;
+import com.yahoo.tensor.functions.L1Normalize;
+import com.yahoo.tensor.functions.L2Normalize;
+import com.yahoo.tensor.functions.Matmul;
+import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.tensor.functions.Rename;
+import com.yahoo.tensor.functions.Softmax;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
-import java.util.function.DoubleFunction;
 import java.util.function.DoubleUnaryOperator;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 /**
  * A multidimensional array which can be used in computations.
@@ -37,140 +45,99 @@ import java.util.function.UnaryOperator;
 @Beta
 public interface Tensor {
 
-    /**
-     * Returns the immutable set of dimensions of this tensor.
-     * The size of this set is the tensor's <i>order</i>.
-     */
-    Set<String> dimensions();
+    TensorType type();
 
     /** Returns an immutable map of the cells of this */
     Map<TensorAddress, Double> cells();
 
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
-    
-    // ----------------- Level 0 functions
-    
-    default Tensor map(Tensor tensor, DoubleUnaryOperator mapper) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
 
-    default Tensor reduce(Tensor tensor, String dimension, 
-                          DoubleBinaryOperator reductor, Optional<DoubleBinaryOperator> postTransformation) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    default Tensor join(Tensor tensorA, Tensor tensorB, DoubleBinaryOperator combinator) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    // ----------------- Old stuff
-    /**
-     * Returns the <i>sparse tensor product</i> of this tensor and the argument tensor.
-     * This is the all-to-all combinations of cells in the argument tenors, except the combinations
-     * which have conflicting labels for the same dimension. The value of each combination is the product
-     * of the values of the two input cells. The dimensions of the tensor product is the set union of the
-     * dimensions of the argument tensors.
-     * <p>
-     * If there are no overlapping dimensions this is the regular tensor product.
-     * If the two tensors have exactly the same dimensions this is the Hadamard product.
-     * <p>
-     * The sparse tensor product is associative and commutative.
+    /** 
+     * Returns the value of this as a double if it has no dimensions and one value
      *
-     * @param argument the tensor to multiply by this
-     * @return the resulting tensor.
+     * @throws IllegalStateException if this does not have zero dimensions and one value
      */
-    default Tensor multiply(Tensor argument) {
-        return new TensorProduct(this, argument).result();
+    default double asDouble() {
+        if (type().dimensions().size() > 0)
+            throw new IllegalStateException("This tensor is not dimensionless. Dimensions: " + type().dimensions().size());
+        if (cells().size() != 1)
+            throw new IllegalStateException("This tensor does not have a single value, it has " + cells().size());
+        return cells().values().iterator().next();
+    }
+    
+    // ----------------- Primitive tensor functions
+    
+    default Tensor map(DoubleUnaryOperator mapper) {
+        return new com.yahoo.tensor.functions.Map(new ConstantTensor(this), mapper).evaluate();
     }
 
-    /**
-     * Returns the <i>match product</i> of two tensors.
-     * This returns a tensor which contains the <i>matching</i> cells in the two tensors, with their
-     * values multiplied.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     * <p>
-     * The dimensions of the resulting tensor is the set intersection of the two argument tensors.
-     * <p>
-     * If the two tensors have exactly the same dimensions, this is the Hadamard product.
-     */
-    default Tensor match(Tensor argument) {
-        return new MatchProduct(this, argument).result();
+    /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
+    default Tensor reduce(Reduce.Aggregator aggregator, String ... dimensions) {
+        return new Reduce(new ConstantTensor(this), aggregator, Arrays.asList(dimensions)).evaluate();
+    }
+    /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
+    default Tensor reduce(Reduce.Aggregator aggregator, List<String> dimensions) {
+        return new Reduce(new ConstantTensor(this), aggregator, dimensions).evaluate();
     }
 
-    /**
-     * Returns a tensor which contains the cells of both argument tensors, where the value for
-     * any <i>matching</i> cell is the min of the two possible values.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     */
-    default Tensor min(Tensor argument) {
-        return new TensorMin(this, argument).result();
+    default Tensor join(Tensor argument, DoubleBinaryOperator combinator) {
+        return new Join(new ConstantTensor(this), new ConstantTensor(argument), combinator).evaluate();
     }
 
-    /**
-     * Returns a tensor which contains the cells of both argument tensors, where the value for
-     * any <i>matching</i> cell is the max of the two possible values.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     */
-    default Tensor max(Tensor argument) {
-        return new TensorMax(this, argument).result();
+    default Tensor rename(String fromDimension, String toDimension) {
+        return new Rename(new ConstantTensor(this), Collections.singletonList(fromDimension), 
+                                                    Collections.singletonList(toDimension)).evaluate();
     }
 
-    /**
-     * Returns a tensor which contains the cells of both argument tensors, where the value for
-     * any <i>matching</i> cell is the sum of the two possible values.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     */
-    default Tensor add(Tensor argument) {
-        return new TensorSum(this, argument).result();
+    default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
+        return new Rename(new ConstantTensor(this), fromDimensions, toDimensions).evaluate();
+    }
+    
+    static Tensor from(TensorType type, Function<List<Integer>, Double> valueSupplier) {
+        return new Generate(type, valueSupplier).evaluate();
+    }
+    
+    // ----------------- Composite tensor functions which have a defined primitive mapping
+    
+    default Tensor l1Normalize(String dimension) {
+        return new L1Normalize(new ConstantTensor(this), dimension).evaluate();
     }
 
-    /**
-     * Returns a tensor which contains the cells of both argument tensors, where the value for
-     * any <i>matching</i> cell is the difference of the two possible values.
-     * <p>
-     * Two cells are matching if they have the same labels for all dimensions shared between the two argument tensors,
-     * and have the value undefined for any non-shared dimension.
-     */
-    default Tensor subtract(Tensor argument) {
-        return new TensorDifference(this, argument).result();
+    default Tensor l2Normalize(String dimension) {
+        return new L2Normalize(new ConstantTensor(this), dimension).evaluate();
     }
 
-    /**
-     * Returns a tensor with the same cells as this and the given function is applied to all its cell values.
-     *
-     * @param function the function to apply to all cells
-     * @return the tensor with the function applied to all the cells of this
-     */
-    default Tensor apply(UnaryOperator<Double> function) {
-        return new TensorFunction(this, function).result();
+    default Tensor matmul(Tensor argument, String dimension) {
+        return new Matmul(new ConstantTensor(this), new ConstantTensor(argument), dimension).evaluate();
     }
 
-    /**
-     * Returns a tensor with the given dimension removed and cells which contains the sum of the values
-     * in the removed dimension.
-     */
-    default Tensor sum(String dimension) {
-        return new TensorDimensionSum(dimension, this).result();
+    default Tensor softmax(String dimension) {
+        return new Softmax(new ConstantTensor(this), dimension).evaluate();
     }
 
-    /**
-     * Returns the sum of all the cells of this tensor.
-     */
-    default double sum() {
-        double sum = 0;
-        for (Map.Entry<TensorAddress, Double> cell : cells().entrySet())
-            sum += cell.getValue();
-        return sum;
-    }
+    // ----------------- Composite tensor functions mapped to primitives here on the fly
+
+    default Tensor multiply(Tensor argument) { return join(argument, (a, b) -> (a * b )); }
+    default Tensor add(Tensor argument) { return join(argument, (a, b) -> (a + b )); }
+    default Tensor divide(Tensor argument) { return join(argument, (a, b) -> (a / b )); }
+    default Tensor subtract(Tensor argument) { return join(argument, (a, b) -> (a - b )); }
+    default Tensor max(Tensor argument) { return join(argument, (a, b) -> (a > b ? a : b )); }
+    default Tensor min(Tensor argument) { return join(argument, (a, b) -> (a < b ? a : b )); }
+    default Tensor atan2(Tensor argument) { return join(argument, Math::atan2); }
+    default Tensor larger(Tensor argument) { return join(argument, (a, b) -> ( a > b ? 1.0 : 0.0)); }
+    default Tensor largerOrEqual(Tensor argument) { return join(argument, (a, b) -> ( a >= b ? 1.0 : 0.0)); }
+    default Tensor smaller(Tensor argument) { return join(argument, (a, b) -> ( a < b ? 1.0 : 0.0)); }
+    default Tensor smallerOrEqual(Tensor argument) { return join(argument, (a, b) -> ( a <= b ? 1.0 : 0.0)); }
+    default Tensor equal(Tensor argument) { return join(argument, (a, b) -> ( a == b ? 1.0 : 0.0)); }
+    default Tensor notEqual(Tensor argument) { return join(argument, (a, b) -> ( a != b ? 1.0 : 0.0)); }
+
+    default Tensor avg(List<String> dimensions) { return reduce(Reduce.Aggregator.avg, dimensions); }
+    default Tensor count(List<String> dimensions) { return reduce(Reduce.Aggregator.count, dimensions); }
+    default Tensor max(List<String> dimensions) { return reduce(Reduce.Aggregator.max, dimensions); }
+    default Tensor min(List<String> dimensions) { return reduce(Reduce.Aggregator.min, dimensions); }
+    default Tensor prod(List<String> dimensions) { return reduce(Reduce.Aggregator.prod, dimensions); }
+    default Tensor sum(List<String> dimensions) { return reduce(Reduce.Aggregator.sum, dimensions); }
 
     /**
      * Returns true if the given tensor is mathematically equal to this:
@@ -182,7 +149,7 @@ public interface Tensor {
     /** Returns true if the two given tensors are mathematically equivalent, that is whether both have the same content */
     static boolean equals(Tensor a, Tensor b) {
         if (a == b) return true;
-        if ( ! a.dimensions().equals(b.dimensions())) return false;
+        if ( ! a.type().equals(b.type())) return false;
         if ( ! a.cells().equals(b.cells())) return false;
         return true;
     }
@@ -226,41 +193,25 @@ public interface Tensor {
      * @return the tensor on the standard string format
      */
     static String toStandardString(Tensor tensor) {
-        Set<String> emptyDimensions = emptyDimensions(tensor);
-        if (emptyDimensions.size() > 0) // explicitly list empty dimensions
-            return "( " + unitTensorWithDimensions(emptyDimensions) + " * " + contentToString(tensor) + " )";
+        if (tensor.cells().isEmpty() && ! tensor.type().dimensions().isEmpty()) // explicitly output type TODO: Always do that
+            return tensor.type() + ":" + contentToString(tensor);
         else
             return contentToString(tensor);
     }
 
     static String contentToString(Tensor tensor) {
-        List<Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
-        Collections.sort(cellEntries, Map.Entry.<TensorAddress, Double>comparingByKey());
+        List<java.util.Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
+        Collections.sort(cellEntries, java.util.Map.Entry.<TensorAddress, Double>comparingByKey());
 
         StringBuilder b = new StringBuilder("{");
-        for (Map.Entry<TensorAddress, Double> cell : cellEntries) {
-            b.append(cell.getKey()).append(":").append(cell.getValue());
+        for (java.util.Map.Entry<TensorAddress, Double> cell : cellEntries) {
+            b.append(cell.getKey().toString(tensor.type())).append(":").append(cell.getValue());
             b.append(",");
         }
         if (b.length() > 1)
             b.setLength(b.length() - 1);
         b.append("}");
         return b.toString();
-    }
-
-    /**
-     * Returns the dimensions of this which have no values.
-     * This is a possibly empty subset of the dimensions of this tensor.
-     */
-    static Set<String> emptyDimensions(Tensor tensor) {
-        Set<String> emptyDimensions = new HashSet<>(tensor.dimensions());
-        for (TensorAddress address : tensor.cells().keySet())
-            emptyDimensions.removeAll(address.dimensions());
-        return emptyDimensions;
-    }
-
-    static String unitTensorWithDimensions(Set<String> dimensions) {
-        return new MapTensor(Collections.singletonMap(TensorAddress.emptyWithDimensions(dimensions), 1.0)).toString();
     }
 
 }

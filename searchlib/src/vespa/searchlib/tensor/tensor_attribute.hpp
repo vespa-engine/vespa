@@ -4,7 +4,7 @@
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 template <typename RefType>
 void
@@ -28,6 +28,6 @@ TensorAttribute::doCompactWorst()
     updateStat(true);
 }
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

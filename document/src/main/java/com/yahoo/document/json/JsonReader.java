@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
+import com.yahoo.collections.Pair;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
@@ -34,6 +35,7 @@ import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.tensor.MapTensorBuilder;
+import com.yahoo.tensor.TensorType;
 import org.apache.commons.codec.binary.Base64;
 
 import java.io.IOException;
@@ -572,8 +574,7 @@ public class JsonReader {
         }
     }
 
-    private void fillWeightedSet(DataType valueType,
-            @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
+    private void fillWeightedSet(DataType valueType, @SuppressWarnings("rawtypes") WeightedSet weightedSet) {
         int initNesting = buffer.nesting();
         expectObjectStart(buffer.currentToken());
         buffer.next();
@@ -583,53 +584,69 @@ public class JsonReader {
     private void fillTensor(TensorFieldValue tensorFieldValue) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
-        MapTensorBuilder tensorBuilder = new MapTensorBuilder();
+        MapTensorBuilder tensorBuilder = null;
+        // read tensor cell fields and ignore everything else
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
-            if (TENSOR_DIMENSIONS.equals(buffer.currentName())) {
-                readTensorDimensions(tensorBuilder);
-            } else if (TENSOR_CELLS.equals(buffer.currentName())) {
-                readTensorCells(tensorBuilder);
-            }
+            if (TENSOR_CELLS.equals(buffer.currentName()))
+                tensorBuilder = readTensorCells(tensorBuilder);
         }
         expectObjectEnd(buffer.currentToken());
+        if (tensorBuilder == null) // no cells + no type: empty tensor type
+            tensorBuilder = new MapTensorBuilder(TensorType.empty);
         tensorFieldValue.assign(tensorBuilder.build());
     }
 
-    private void readTensorDimensions(MapTensorBuilder tensorBuilder) {
+    private MapTensorBuilder readTensorCells(MapTensorBuilder tensorBuilder) {
         expectArrayStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
-            if (buffer.currentToken().isScalarValue()) {
-                String dimension = buffer.currentText();
-                tensorBuilder.dimension(dimension);
-            }
+            tensorBuilder = readTensorCell(tensorBuilder);
         }
         expectCompositeEnd(buffer.currentToken());
+        return tensorBuilder;
     }
 
-    private void readTensorCells(MapTensorBuilder tensorBuilder) {
-        expectArrayStart(buffer.currentToken());
-        int initNesting = buffer.nesting();
-        for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
-            readTensorCell(tensorBuilder.cell());
-        }
-        expectCompositeEnd(buffer.currentToken());
-    }
-
-    private void readTensorCell(MapTensorBuilder.CellBuilder cellBuilder) {
+    private MapTensorBuilder readTensorCell(MapTensorBuilder tensorBuilder) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         double cellValue = 0.0;
+        MapTensorBuilder.CellBuilder cellBuilder = null;
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             String currentName = buffer.currentName();
             if (TENSOR_ADDRESS.equals(currentName)) {
-                readTensorAddress(cellBuilder);
+                if (tensorBuilder != null) {
+                    cellBuilder = tensorBuilder.cell();
+                    readTensorAddress(cellBuilder);
+                }
+                else { // gnarly temporary path to create a type on the fly TODO; Remove when we always have a type
+                    expectObjectStart(buffer.currentToken());
+                    int initNesting2 = buffer.nesting();
+                    List<Pair<String,String>> entries = new ArrayList<>();
+                    for (buffer.next(); buffer.nesting() >= initNesting2; buffer.next()) {
+                        String dimension = buffer.currentName();
+                        String label = buffer.currentText();
+                        entries.add(new Pair<>(dimension, label));
+                    }
+                    TensorType.Builder typeBuilder = new TensorType.Builder();
+                    for (Pair<String,String> entry : entries)
+                        typeBuilder.mapped(entry.getFirst());
+                    tensorBuilder = new MapTensorBuilder(typeBuilder.build());
+                    cellBuilder = tensorBuilder.cell();
+                    for (Pair<String,String> entry : entries)
+                        cellBuilder.label(entry.getFirst(), entry.getSecond());
+                    expectObjectEnd(buffer.currentToken());
+                }
             } else if (TENSOR_VALUE.equals(currentName)) {
                 cellValue = Double.valueOf(buffer.currentText());
             }
         }
         expectObjectEnd(buffer.currentToken());
+        if (tensorBuilder == null) { // no content TODO; This will go away with the above
+            tensorBuilder = new MapTensorBuilder(TensorType.empty);
+            cellBuilder = tensorBuilder.cell();
+        }
         cellBuilder.value(cellValue);
+        return tensorBuilder;
     }
 
     private void readTensorAddress(MapTensorBuilder.CellBuilder cellBuilder) {
@@ -667,12 +684,7 @@ public class JsonReader {
         buffer.bufferObject(current, parser);
     }
 
-    private boolean jsonTokenIsBooleanOrString(JsonToken jsonToken) {
-        return jsonToken == JsonToken.VALUE_STRING || jsonToken == JsonToken.VALUE_TRUE || jsonToken == JsonToken.VALUE_FALSE;
-    }
-
     Optional<DocumentParseInfo> parseDocument() {
-        Optional<Boolean> create = Optional.empty();
         // we should now be at the start of a feed operation or at the end of the feed
         JsonToken token = nextToken();
         if (token == JsonToken.END_ARRAY) {
@@ -686,7 +698,7 @@ public class JsonReader {
             try {
                 token = nextToken();
                 if ((token == JsonToken.VALUE_TRUE || token == JsonToken.VALUE_FALSE) &&
-                        CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
+                     CREATE_IF_NON_EXISTENT.equals(parser.getCurrentName())) {
                     documentParseInfo.create = Optional.of(token == JsonToken.VALUE_TRUE);
                     continue;
                 }

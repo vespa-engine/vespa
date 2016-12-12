@@ -13,7 +13,7 @@ using document::Field;
 using document::FieldValue;
 using document::FieldUpdate;
 using document::ValueUpdate;
-namespace attribute { class TensorAttribute; }
+namespace tensor { class TensorAttribute; }
 
 VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
 
@@ -42,7 +42,7 @@ private:
     static void removeValue(StringAttribute & vec, uint32_t lid, const FieldValue & val);
     static void updateValue(StringAttribute & vec, uint32_t lid, const FieldValue & val);
     static void updateValue(PredicateAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void updateValue(attribute::TensorAttribute & vec, uint32_t lid, const FieldValue & val);
+    static void updateValue(tensor::TensorAttribute & vec, uint32_t lid, const FieldValue & val);
 };
 
 }

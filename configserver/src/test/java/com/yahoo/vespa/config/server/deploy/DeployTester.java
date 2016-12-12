@@ -1,5 +1,6 @@
 package com.yahoo.vespa.config.server.deploy;
 
+import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -18,6 +19,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.ProvisionInfo;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Version;
@@ -41,7 +43,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -69,11 +70,24 @@ public class DeployTester {
     }
 
     public DeployTester(String appPath, List<ModelFactory> modelFactories) {
+        this(appPath, modelFactories, new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                                                     .configServerDBDir(Files.createTempDir()
+                                                                                             .getAbsolutePath())));
+    }
+
+    public DeployTester(String appPath, ConfigserverConfig configserverConfig) {
+        this(appPath,
+             Collections.singletonList(createDefaultModelFactory(Clock.systemUTC())),
+             configserverConfig);
+    }
+
+    public DeployTester(String appPath, List<ModelFactory> modelFactories, ConfigserverConfig configserverConfig) {
+        Metrics metrics = Metrics.createTestMetrics();
+        this.curator = new MockCurator();
+        TestComponentRegistry componentRegistry = createComponentRegistry(curator, metrics, modelFactories, configserverConfig);
         try {
-            this.curator = new MockCurator();
             this.testApp = new File(appPath);
-            ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(modelFactories);
-            this.tenants = new Tenants(new TestComponentRegistry(curator, modelFactoryRegistry), Metrics.createTestMetrics());
+            this.tenants = new Tenants(componentRegistry, metrics);
         }
         catch (Exception e) {
             throw new IllegalArgumentException(e);
@@ -91,12 +105,23 @@ public class DeployTester {
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String appName) throws InterruptedException, IOException {
+    public ApplicationId deployApp(String appName){
+        return deployApp(appName, Optional.empty());
+    }
+
+    /**
+     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
+     */
+    public ApplicationId deployApp(String appName, Optional<String> dockerVespaImageVersion)  {
         final Tenant tenant = tenant();
-        LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new SilentDeployLogger(), new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
+        LocalSession session = tenant.getSessionFactory().createSession(testApp, appName, new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(60)));
         ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
+        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder()
+                .applicationId(id);
+        if (dockerVespaImageVersion.isPresent())
+            paramsBuilder.dockerVespaImageVersion(dockerVespaImageVersion.get());
         session.prepare(new SilentDeployLogger(),
-                        new PrepareParams(new ConfigserverConfig(new ConfigserverConfig.Builder())).applicationId(id),
+                        paramsBuilder.build(),
                         Optional.empty(),
                         tenant.getPath());
         session.createActivateTransaction().commit();
@@ -104,7 +129,14 @@ public class DeployTester {
         this.id = id;
         return id;
     }
-    
+
+    public ProvisionInfo getProvisionInfoFromDeployedApp(ApplicationId applicationId) {
+        final Tenant tenant = tenant();
+        LocalSession session = tenant.getLocalSessionRepo().getSession(tenant.getApplicationRepo()
+                                                                             .getSessionIdForApplication(applicationId));
+        return session.getProvisionInfo();
+    }
+
     public ApplicationId applicationId() { return id; }
 
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive() {
@@ -114,7 +146,6 @@ public class DeployTester {
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive(ApplicationId id) {
         ApplicationRepository applicationRepository = new ApplicationRepository(tenants,
                                                                                 HostProvisionerProvider.withProvisioner(createHostProvisioner()),
-                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()),
                                                                                 curator,
                                                                                 new LogServerLogGrabber(),
                                                                                 new ApplicationConvergenceChecker());
@@ -123,7 +154,23 @@ public class DeployTester {
     }
 
     private Provisioner createHostProvisioner() {
-        return new ProvisionerAdapter(new InMemoryProvisioner(true, "host0", "host1", "host2"));
+        return new ProvisionerAdapter(new InMemoryProvisioner(true, "host0", "host1", "host2", "host3", "host4", "host5"));
+    }
+
+    private TestComponentRegistry createComponentRegistry(Curator curator, Metrics metrics,
+                                                          List<ModelFactory> modelFactories,
+                                                          ConfigserverConfig configserverConfig) {
+        TestComponentRegistry.Builder builder = new TestComponentRegistry.Builder();
+
+        if (configserverConfig.hostedVespa()) {
+            builder.provisioner(createHostProvisioner());
+        }
+
+        builder.configServerConfig(configserverConfig)
+               .curator(curator)
+               .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories))
+               .metrics(metrics);
+        return builder.build();
     }
 
     private static class ProvisionerAdapter implements Provisioner {

@@ -78,12 +78,12 @@ private:
     PersistenceOperationMetricSet& _metric;
     std::shared_ptr<api::BucketInfoReply> _reply;
     DistributorComponent& _manager;
-    FastOS_Time _creationTime;
-    bool _success;
     api::Timestamp _revertTimestamp;
     std::vector<std::pair<document::BucketId, uint16_t> > _revertNodes;
     mbus::TraceNode _trace;
+    framework::MilliSecTimer _requestTimer;
     uint8_t _priority;
+    bool _success;
 
     bool canSendReplyEarly() const;
     void addBucketInfoFromReply(uint16_t node,

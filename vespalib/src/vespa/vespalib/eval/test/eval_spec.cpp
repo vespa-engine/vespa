@@ -135,6 +135,8 @@ EvalSpec::add_tensor_operation_cases() {
     add_rule({"a", -1.0, 1.0}, "rename(a,(x,y),(y,x))", [](double){ return my_error_value; });
     add_expression({}, "tensor(x[10])(x)");
     add_expression({}, "tensor(x[10],y[10])(x==y)");
+    add_expression({"a","b"}, "concat(a,b,x)");
+    add_expression({"a","b"}, "concat(a,b,y)");
 }
 
 void

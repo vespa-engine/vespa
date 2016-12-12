@@ -17,15 +17,14 @@ StaticRankExecutor::StaticRankExecutor(const search::attribute::IAttributeVector
 }
 
 void
-StaticRankExecutor::execute(MatchData & data)
+StaticRankExecutor::execute(uint32_t docId)
 {
-    uint32_t doc = data.getDocId();
     search::attribute::FloatContent staticRank;
     if (_attribute != NULL) {
         staticRank.allocate(_attribute->getMaxValueCount());
-        staticRank.fill(*_attribute, doc);
+        staticRank.fill(*_attribute, docId);
     }
-    *data.resolveFeature(outputs()[0]) = static_cast<feature_t>(staticRank[0]);
+    outputs().set_number(0, static_cast<feature_t>(staticRank[0]));
 }
 
 
@@ -47,11 +46,11 @@ StaticRankBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVecto
     return true;
 }
 
-FeatureExecutor::LP
-StaticRankBlueprint::createExecutor(const IQueryEnvironment & queryEnv) const
+FeatureExecutor &
+StaticRankBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
     const search::attribute::IAttributeVector * av = queryEnv.getAttributeContext().getAttribute(_attributeName);
-    return FeatureExecutor::LP(new StaticRankExecutor(av));
+    return stash.create<StaticRankExecutor>(av);
 }
 
 } // namespace test

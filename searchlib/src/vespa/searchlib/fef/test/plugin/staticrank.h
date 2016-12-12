@@ -18,7 +18,7 @@ private:
 
 public:
     StaticRankExecutor(const search::attribute::IAttributeVector * attribute);
-    virtual void execute(MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 
@@ -32,7 +32,7 @@ public:
     virtual void visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const {}
     virtual Blueprint::UP createInstance() const { return Blueprint::UP(new StaticRankBlueprint()); }
     virtual bool setup(const IIndexEnvironment & indexEnv, const StringVector & params);
-    virtual FeatureExecutor::LP createExecutor(const IQueryEnvironment & queryEnv) const;
+    virtual FeatureExecutor &createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const override;
 };
 
 } // namespace test

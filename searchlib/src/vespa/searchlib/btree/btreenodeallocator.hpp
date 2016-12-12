@@ -50,9 +50,9 @@ allocInternalNode(uint8_t level)
 {
     if (_internalHoldUntilFreeze.empty()) {
         InternalNodeTypeRefPair nodeRef = _nodeStore.allocInternalNode();
-        assert(nodeRef.first.valid());
-        _internalToFreeze.push_back(nodeRef.first);
-        nodeRef.second->setLevel(level);
+        assert(nodeRef.ref.valid());
+        _internalToFreeze.push_back(nodeRef.ref);
+        nodeRef.data->setLevel(level);
         return nodeRef;
     }
     BTreeNode::Ref nodeRef = _internalHoldUntilFreeze.back();
@@ -60,7 +60,7 @@ allocInternalNode(uint8_t level)
     InternalNodeType *node = mapInternalRef(nodeRef);
     assert(!node->getFrozen());
     node->setLevel(level);
-    return std::make_pair(nodeRef, node);
+    return InternalNodeTypeRefPair(nodeRef, node);
 }
 
 
@@ -73,14 +73,14 @@ allocLeafNode(void)
 {
     if (_leafHoldUntilFreeze.empty()) {
         LeafNodeTypeRefPair nodeRef = _nodeStore.allocLeafNode();
-        _leafToFreeze.push_back(nodeRef.first);
+        _leafToFreeze.push_back(nodeRef.ref);
         return nodeRef;
     }
     BTreeNode::Ref nodeRef = _leafHoldUntilFreeze.back();
     _leafHoldUntilFreeze.pop_back();
     LeafNodeType *node = mapLeafRef(nodeRef);
     assert(!node->getFrozen());
-    return std::make_pair(nodeRef, node);
+    return LeafNodeTypeRefPair(nodeRef, node);
 }
 
 
@@ -95,10 +95,10 @@ thawNode(BTreeNode::Ref nodeRef, InternalNodeType *node)
     if (_internalHoldUntilFreeze.empty()) {
         InternalNodeTypeRefPair retNodeRef =
             _nodeStore.allocInternalNodeCopy(*node);
-        assert(retNodeRef.second->getFrozen());
-        retNodeRef.second->unFreeze();
-        assert(retNodeRef.first.valid());
-        _internalToFreeze.push_back(retNodeRef.first);
+        assert(retNodeRef.data->getFrozen());
+        retNodeRef.data->unFreeze();
+        assert(retNodeRef.ref.valid());
+        _internalToFreeze.push_back(retNodeRef.ref);
         holdNode(nodeRef, node);
         return retNodeRef;
     }
@@ -110,7 +110,7 @@ thawNode(BTreeNode::Ref nodeRef, InternalNodeType *node)
     assert(retNode->getFrozen());
     retNode->unFreeze();
     holdNode(nodeRef, node);
-    return std::make_pair(retNodeRef, retNode);
+    return InternalNodeTypeRefPair(retNodeRef, retNode);
 }
 
 
@@ -124,9 +124,9 @@ thawNode(BTreeNode::Ref nodeRef, LeafNodeType *node)
     if (_leafHoldUntilFreeze.empty()) {
         LeafNodeTypeRefPair retNodeRef =
             _nodeStore.allocLeafNodeCopy(*node);
-        assert(retNodeRef.second->getFrozen());
-        retNodeRef.second->unFreeze();
-        _leafToFreeze.push_back(retNodeRef.first);
+        assert(retNodeRef.data->getFrozen());
+        retNodeRef.data->unFreeze();
+        _leafToFreeze.push_back(retNodeRef.ref);
         holdNode(nodeRef, node);
         return retNodeRef;
     }
@@ -138,7 +138,7 @@ thawNode(BTreeNode::Ref nodeRef, LeafNodeType *node)
     assert(retNode->getFrozen());
     retNode->unFreeze();
     holdNode(nodeRef, node);
-    return std::make_pair(retNodeRef, retNode);
+    return LeafNodeTypeRefPair(retNodeRef, retNode);
 }
 
 template <typename KeyT, typename DataT, typename AggrT,
@@ -148,9 +148,9 @@ BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 thawNode(BTreeNode::Ref node)
 {
     if (isLeafRef(node))
-        return thawNode(node, mapLeafRef(node)).first;
+        return thawNode(node, mapLeafRef(node)).ref;
     else
-        return thawNode(node, mapInternalRef(node)).first;
+        return thawNode(node, mapInternalRef(node)).ref;
 }
 
 
@@ -300,8 +300,8 @@ moveInternalNode(const InternalNodeType *node)
 {
     InternalNodeTypeRefPair iPair;
     iPair = _nodeStore.allocNewInternalNodeCopy(*node);
-    assert(iPair.first.valid());
-    _internalToFreeze.push_back(iPair.first);
+    assert(iPair.ref.valid());
+    _internalToFreeze.push_back(iPair.ref);
     return iPair;
 }
 
@@ -315,7 +315,7 @@ moveLeafNode(const LeafNodeType *node)
 {
     LeafNodeTypeRefPair lPair;
     lPair = _nodeStore.allocNewLeafNodeCopy(*node);
-    _leafToFreeze.push_back(lPair.first);
+    _leafToFreeze.push_back(lPair.ref);
     return lPair;
 }
 

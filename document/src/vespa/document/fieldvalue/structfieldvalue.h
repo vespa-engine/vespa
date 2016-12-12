@@ -30,6 +30,7 @@ public:
     class Chunks {
     public:
         Chunks() : _sz(0) { }
+        ~Chunks();
         SerializableArray & operator [] (size_t i) { return *_chunks[i]; }
         const SerializableArray & operator [] (size_t i) const { return *_chunks[i]; }
         void push_back(SerializableArray::UP item) {
@@ -67,6 +68,7 @@ public:
     typedef std::unique_ptr<StructFieldValue> UP;
     typedef vespalib::LinkedPtr<StructFieldValue> LP;
     StructFieldValue(const DataType &type);
+    ~StructFieldValue();
     void swap(StructFieldValue & rhs);
 
     void setRepo(const DocumentTypeRepo & repo) { _repo = & repo; }

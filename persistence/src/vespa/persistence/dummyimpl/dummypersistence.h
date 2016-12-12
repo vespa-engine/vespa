@@ -10,19 +10,16 @@
 
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/base/globalid.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace document {
-
-class FieldSet;
-
-namespace select {
-
-class Node;
-
-}
+    class FieldSet;
+    namespace select {
+        class Node;
+    }
 }
 
 namespace storage {
@@ -37,8 +34,7 @@ struct BucketEntry
     BucketEntry(const DocEntry::LP& e, const GlobalId& g)
         : entry(e),
           gid(g)
-    {
-    }
+    { }
 };
 
 struct BucketContent {
@@ -64,8 +60,7 @@ struct BucketContent {
           _inUse(false),
           _outdatedInfo(true),
           _active(false)
-    {
-    }
+    { }
 
     uint32_t computeEntryChecksum(const BucketEntry&) const;
     BucketChecksum updateRollingChecksum(uint32_t entryChecksum);
@@ -160,7 +155,7 @@ public:
 
     BucketInfoResult getBucketInfo(const Bucket&) const;
 
-    Result put(const Bucket&, Timestamp, const Document::SP&, Context&);
+    Result put(const Bucket&, Timestamp, const DocumentSP&, Context&);
     GetResult get(const Bucket&,
                   const document::FieldSet& fieldSet,
                   const DocumentId&,
@@ -242,7 +237,7 @@ private:
 
     bool _simulateMaintainFailure;
 
-    document::select::Node::UP parseDocumentSelection(
+    std::unique_ptr<document::select::Node> parseDocumentSelection(
             const string& documentSelection,
             bool allowLeaf);
 

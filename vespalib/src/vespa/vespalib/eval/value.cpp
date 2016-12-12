@@ -23,29 +23,29 @@ Value::apply(const BinaryOperation &, const Value &, Stash &stash) const
 bool
 TensorValue::equal(const Value &rhs) const
 {
-    return (rhs.is_tensor() && _value->engine().equal(*_value, *rhs.as_tensor()));
+    return (rhs.is_tensor() && _tensor->engine().equal(*_tensor, *rhs.as_tensor()));
 }
 
 const Value &
 TensorValue::apply(const UnaryOperation &op, Stash &stash) const
 {
-    return _value->engine().map(op, *_value, stash);
+    return _tensor->engine().map(op, *_tensor, stash);
 }
 
 const Value &
 TensorValue::apply(const BinaryOperation &op, const Value &rhs, Stash &stash) const
 {
     const Tensor *other = rhs.as_tensor();
-    if ((other == nullptr) || (&other->engine() != &_value->engine())) {
+    if ((other == nullptr) || (&other->engine() != &_tensor->engine())) {
         return stash.create<ErrorValue>();
     }
-    return _value->engine().apply(op, *_value, *other, stash);
+    return _tensor->engine().apply(op, *_tensor, *other, stash);
 }
 
 ValueType
 TensorValue::type() const
 {
-    return _value->engine().type_of(*_value);
+    return _tensor->engine().type_of(*_tensor);
 }
 
 } // namespace vespalib::eval

@@ -31,7 +31,7 @@ private:
 public:
 
     EuclideanDistanceExecutor(const search::attribute::IAttributeVector &attribute, QueryVectorType vector);
-    virtual void execute(fef::MatchData &data) override;
+    virtual void execute(uint32_t docId) override;
 };
 
 
@@ -66,7 +66,7 @@ public:
                        const fef::ParameterList &params) override;
 
     // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment &env) const override;
+    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 };
 

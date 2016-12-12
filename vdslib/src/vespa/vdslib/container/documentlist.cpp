@@ -495,4 +495,9 @@ DocumentList::print(std::ostream& out, bool verbose,
     out << ")";
 }
 
+std::ostream& operator<<(std::ostream& out, const DocumentList::MetaEntry& e) {
+    e.print(out);
+    return out;
+}
+
 } // namespace vdslib

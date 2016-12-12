@@ -33,12 +33,15 @@ public:
      */
     ReverseProximityExecutor(const search::fef::IQueryEnvironment &env,
                              const ReverseProximityConfig &config);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     const ReverseProximityConfig &_config; // The proximity config.
     search::fef::TermFieldHandle  _termA;  // Handle to the first query term.
     search::fef::TermFieldHandle  _termB;  // Handle to the second query term.
+    const fef::MatchData         *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**
@@ -68,7 +71,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 private:
     ReverseProximityConfig _config;

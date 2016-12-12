@@ -11,7 +11,7 @@ namespace vespalib { namespace tensor { class Tensor; } }
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 /**
  * Attribute vector class used to store tensors for all documents in memory.
@@ -20,7 +20,7 @@ class TensorAttribute : public NotImplementedAttribute
 {
 protected:
     using RefType = TensorStore::EntryRef;
-    using RefVector = RcuVectorBase<RefType>;
+    using RefVector = attribute::RcuVectorBase<RefType>;
 
     RefVector _refVector; // docId -> ref in data store for serialized tensor
     TensorStore &_tensorStore; // data store for serialized tensors
@@ -53,6 +53,6 @@ public:
 };
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

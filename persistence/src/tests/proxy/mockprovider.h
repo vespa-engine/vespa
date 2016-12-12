@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/document/fieldvalue/document.h>
 
 namespace storage {
 namespace spi {
@@ -56,7 +57,7 @@ struct MockProvider : PersistenceProvider {
                                            BucketInfo::ACTIVE));
     }
 
-    virtual Result put(const Bucket &, Timestamp, const Document::SP&, Context&) {
+    virtual Result put(const Bucket &, Timestamp, const DocumentSP&, Context&) {
         last_called = PUT;
         return Result();
     }
@@ -80,7 +81,7 @@ struct MockProvider : PersistenceProvider {
     }
 
     virtual UpdateResult update(const Bucket &, Timestamp timestamp,
-                                const DocumentUpdate::SP&, Context&) {
+                                const DocumentUpdateSP&, Context&) {
         last_called = UPDATE;
         return UpdateResult(Timestamp(timestamp - 10));
     }

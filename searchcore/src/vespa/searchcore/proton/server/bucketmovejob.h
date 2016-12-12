@@ -12,6 +12,7 @@
 #include "ibucketstatechangedhandler.h"
 #include "i_disk_mem_usage_listener.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <set>
 
 namespace proton
 {

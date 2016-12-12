@@ -68,11 +68,11 @@ NativeRankExecutor::NativeRankExecutor(const NativeRankParams & params) :
 }
 
 void
-NativeRankExecutor::execute(search::fef::MatchData & match)
+NativeRankExecutor::execute(uint32_t)
 {
-    *match.resolveFeature(outputs()[0]) = (*match.resolveFeature(inputs()[0]) * _params.fieldMatchWeight
-                    + *match.resolveFeature(inputs()[1]) * _params.proximityWeight
-                    + *match.resolveFeature(inputs()[2]) * _params.attributeMatchWeight) / _divisor;
+    outputs().set_number(0, (inputs().get_number(0) * _params.fieldMatchWeight
+                             + inputs().get_number(1) * _params.proximityWeight
+                             + inputs().get_number(2) * _params.attributeMatchWeight) / _divisor);
 }
 
 
@@ -151,13 +151,13 @@ NativeRankBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-NativeRankBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+NativeRankBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
     if (_params.proximityWeight + _params.fieldMatchWeight + _params.attributeMatchWeight > 0) {
-        return FeatureExecutor::LP(new NativeRankExecutor(_params));
+        return stash.create<NativeRankExecutor>(_params);
     } else {
-        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     }
 }
 

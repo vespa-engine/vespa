@@ -23,7 +23,7 @@ private:
 
 public:
     ForeachExecutor(const CO & condition, uint32_t numInputs);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 
@@ -138,7 +138,7 @@ private:
         ILLEGAL
     };
     struct ExecutorCreatorBase {
-        virtual search::fef::FeatureExecutor::LP create(uint32_t numInputs) const = 0;
+        virtual search::fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const = 0;
         virtual ~ExecutorCreatorBase() {}
     };
 
@@ -176,7 +176,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment & env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 

@@ -19,7 +19,7 @@ struct FakeClock : public framework::Clock {
     enum Mode {
         FAKE_ABSOLUTE, // Time is always equal to supplied absolute time
         FAKE_ABSOLUTE_CYCLE // Time is equal to absolute time + counter that
-                            // increase for each request so you never get same
+                            // increases for each request so you never get same
                             // timestamp twice.
     };
 
@@ -63,16 +63,21 @@ public:
         _absoluteTime += framework::MicroSecTime(nr * uint64_t(1000000));
     }
 
-    virtual framework::MicroSecTime getTimeInMicros() const {
+    framework::MicroSecTime getTimeInMicros() const override {
         vespalib::LockGuard guard(_lock);
         if (_mode == FAKE_ABSOLUTE) return _absoluteTime;
         return _absoluteTime + framework::MicroSecTime(1000000 * _cycleCount++);
     }
-    virtual framework::MilliSecTime getTimeInMillis() const {
+    framework::MilliSecTime getTimeInMillis() const override {
         return getTimeInMicros().getMillis();
     }
-    virtual framework::SecondTime getTimeInSeconds() const {
+    framework::SecondTime getTimeInSeconds() const override {
         return getTimeInMicros().getSeconds();
+    }
+    framework::MonotonicTimePoint getMonotonicTime() const override {
+        // For simplicity, assume fake monotonic time follows fake wall clock.
+        return MonotonicTimePoint(std::chrono::microseconds(
+                getTimeInMicros().getTime()));
     }
 };
 

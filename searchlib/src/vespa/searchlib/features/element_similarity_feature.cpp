@@ -209,6 +209,7 @@ private:
     PositionQueue           _position_queue;
     ElementQueue            _element_queue;
     std::vector<OutputSpec> _outputs;
+    const fef::MatchData *_md;
 
 public:
     ElementSimilarityExecutor(VectorizedQueryTerms &&terms, std::vector<OutputSpec> &&outputs_in)
@@ -217,9 +218,15 @@ public:
           _end(_terms.handles.size(), nullptr),
           _position_queue(CmpPosition(&_pos[0])),
           _element_queue(CmpElement(&_pos[0])),
-          _outputs(std::move(outputs_in)) {}
+          _outputs(std::move(outputs_in)),
+          _md(nullptr)
+    {}
 
     virtual bool isPure() { return _terms.handles.empty(); }
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override {
+        _md = &md;
+    }
 
     void requeue_term(uint16_t term, uint32_t element) {
         while (_pos[term] != _end[term] &&
@@ -232,13 +239,13 @@ public:
         }
     }
 
-    virtual void execute(fef::MatchData &data) {
+    virtual void execute(uint32_t docId) {
         for (auto &output: _outputs) {
             output.second->clear();
         }
         for (size_t i = 0; i < _terms.handles.size(); ++i) {
-            fef::TermFieldMatchData *tfmd = data.resolveTermField(_terms.handles[i]);
-            if (tfmd->getDocId() == data.getDocId()) {
+            const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms.handles[i]);
+            if (tfmd->getDocId() == docId) {
                 _pos[i] = tfmd->begin();
                 _end[i] = tfmd->end();
                 if (_pos[i] != _end[i]) {
@@ -285,7 +292,7 @@ public:
             }
         }
         for (size_t i = 0; i < _outputs.size(); ++i) {
-            *data.resolveFeature(outputs()[i]) = _outputs[i].second->get();
+            outputs().set_number(i, _outputs[i].second->get());
         }
     }
 };
@@ -400,15 +407,15 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env,
     return true;
 }
 
-fef::FeatureExecutor::LP
-ElementSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env) const
+fef::FeatureExecutor &
+ElementSimilarityBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     std::vector<OutputSpec> output_specs;
     for (const auto &output: _outputs) {
         output_specs.emplace_back(output->compile_token->get().get_function<5>(),
                                   output->aggregator_factory->create());
     }
-    return fef::FeatureExecutor::LP(new ElementSimilarityExecutor(VectorizedQueryTerms(env, _field_id), std::move(output_specs)));
+    return stash.create<ElementSimilarityExecutor>(VectorizedQueryTerms(env, _field_id), std::move(output_specs));
 }
 
 //-----------------------------------------------------------------------------

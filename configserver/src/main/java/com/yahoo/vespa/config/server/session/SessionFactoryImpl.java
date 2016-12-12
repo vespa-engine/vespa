@@ -70,7 +70,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
     }
 
     @Override
-    public LocalSession createSession(File applicationFile, String applicationName, DeployLogger logger, TimeoutBudget timeoutBudget) {
+    public LocalSession createSession(File applicationFile, String applicationName, TimeoutBudget timeoutBudget) {
         return create(applicationFile, applicationName, nonExistingActiveSession, timeoutBudget);
     }
 
@@ -96,7 +96,7 @@ public class SessionFactoryImpl implements SessionFactory, LocalSessionLoader {
 
     private LocalSession createSessionFromApplication(ApplicationPackage applicationPackage,
                                                       long sessionId,
-                                                      SessionZooKeeperClient sessionZKClient, TimeoutBudget timeoutBudget) throws Exception {
+                                                      SessionZooKeeperClient sessionZKClient, TimeoutBudget timeoutBudget) {
         log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Creating session " + sessionId + " in ZooKeeper");
         sessionZKClient.createNewSession(System.currentTimeMillis(), TimeUnit.MILLISECONDS);
         log.log(LogLevel.DEBUG, Tenants.logPre(tenant) + "Creating upload waiter for session " + sessionId);

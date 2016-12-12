@@ -77,7 +77,7 @@ public class TenantRequestHandlerTest extends TestWithCurator {
         List<ReloadListener> listeners = new ArrayList<>();
         listeners.add(listener);
         server = new TenantRequestHandler(sh, tenant, listeners, new UncompressedConfigResponseFactory(), new HostRegistries());
-        componentRegistry = new TestComponentRegistry(curator, configCurator, createRegistry());
+        componentRegistry = new TestComponentRegistry.Builder().curator(curator).modelFactoryRegistry(createRegistry()).build();
     }
 
     private void feedApp(File appDir, long sessionId) throws IOException {

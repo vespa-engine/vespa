@@ -510,7 +510,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
     // If bucket is split less than distribution bit, we cannot distribute
     // it. Different nodes own various parts of the bucket.
     if (bucket.getUsedBits() < clusterState.getDistributionBitCount()) {
-        std::ostringstream ost;
+        vespalib::asciistream ost;
         ost << "Cannot get ideal state for bucket " << bucket << " using "
             << bucket.getUsedBits() << " bits when cluster uses "
             << clusterState.getDistributionBitCount() << " distribution bits.";

@@ -13,7 +13,8 @@ namespace features {
 
 RawScoreExecutor::RawScoreExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId)
     : FeatureExecutor(),
-      _handles()
+      _handles(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         search::fef::TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -24,16 +25,22 @@ RawScoreExecutor::RawScoreExecutor(const search::fef::IQueryEnvironment &env, ui
 }
 
 void
-RawScoreExecutor::execute(MatchData &data)
+RawScoreExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
-        const TermFieldMatchData *tfmd = data.resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == data.getDocId()) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
+        if (tfmd->getDocId() == docId) {
             output += tfmd->getRawScore();
         }
     }
-    *data.resolveFeature(outputs()[0]) = output;
+    outputs().set_number(0, output);
+}
+
+void
+RawScoreExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -47,10 +54,10 @@ RawScoreBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-RawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv) const
+FeatureExecutor &
+RawScoreBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new RawScoreExecutor(queryEnv, _field->id()));
+    return stash.create<RawScoreExecutor>(queryEnv, _field->id());
 }
 
 } // namespace features

@@ -21,7 +21,8 @@ FieldLengthExecutor::
 FieldLengthExecutor(const IQueryEnvironment &env,
                     uint32_t fieldId)
     : FeatureExecutor(),
-      _fieldHandles()
+      _fieldHandles(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         TermFieldHandle handle = util::getTermFieldHandle(env, i, fieldId);
@@ -32,7 +33,7 @@ FieldLengthExecutor(const IQueryEnvironment &env,
 }
 
 void
-FieldLengthExecutor::execute(MatchData &match)
+FieldLengthExecutor::execute(uint32_t docId)
 {
     uint32_t val = 0;
     bool validVal = false;
@@ -40,8 +41,8 @@ FieldLengthExecutor::execute(MatchData &match)
              hi = _fieldHandles.begin(), hie = _fieldHandles.end();
          hi != hie; ++hi)
     {
-        TermFieldMatchData &tfmd = *match.resolveTermField(*hi);
-        if (tfmd.getDocId() == match.getDocId()) {
+        const TermFieldMatchData &tfmd = *_md->resolveTermField(*hi);
+        if (tfmd.getDocId() == docId) {
             FieldPositionsIterator it = tfmd.getIterator();
             if (it.valid()) {
                 if (val < it.getFieldLength())
@@ -54,7 +55,13 @@ FieldLengthExecutor::execute(MatchData &match)
         val = fef::FieldPositionsIterator::UNKNOWN_LENGTH;
     }
     feature_t value = val;
-    *match.resolveFeature(outputs()[0]) = value; // field length
+    outputs().set_number(0, value); // field length
+}
+
+void
+FieldLengthExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
 }
 
 FieldLengthBlueprint::FieldLengthBlueprint()
@@ -85,15 +92,15 @@ FieldLengthBlueprint::createInstance() const
     return Blueprint::UP(new FieldLengthBlueprint());
 }
 
-FeatureExecutor::LP
-FieldLengthBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+FieldLengthBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     if (_field == 0) {
         std::vector<feature_t> values;
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH);
-        return FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
-    return FeatureExecutor::LP(new FieldLengthExecutor(env, _field->id()));
+    return stash.create<FieldLengthExecutor>(env, _field->id());
 }
 
 }}

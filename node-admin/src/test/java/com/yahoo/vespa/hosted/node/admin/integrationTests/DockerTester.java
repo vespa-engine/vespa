@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -16,7 +15,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
-import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -82,34 +80,6 @@ public class DockerTester implements AutoCloseable {
 
     public int getNumberOfContainerSpecs() {
         return nodeRepositoryMock.getNumberOfContainerSpecs();
-    }
-
-    public void updateContainerNodeSpec(final String hostname,
-                                        final Optional<DockerImage> wantedDockerImage,
-                                        final ContainerName containerName,
-                                        final Node.State nodeState,
-                                        final String nodeType,
-                                        final String nodeFlavor,
-                                        final Optional<Long> wantedRestartGeneration,
-                                        final Optional<Long> currentRestartGeneration,
-                                        final Optional<Double> minCpuCores,
-                                        final Optional<Double> minMainMemoryAvailableGb,
-                                        final Optional<Double> minDiskAvailableGb) {
-
-        nodeRepositoryMock.updateContainerNodeSpec(
-                new ContainerNodeSpec.Builder()
-                        .hostname(hostname)
-                        .wantedDockerImage(wantedDockerImage)
-                        .containerName(containerName)
-                        .nodeState(nodeState)
-                        .nodeType(nodeType)
-                        .nodeFlavor(nodeFlavor)
-                        .wantedRestartGeneration(wantedRestartGeneration)
-                        .currentRestartGeneration(currentRestartGeneration)
-                        .minCpuCores(minCpuCores)
-                        .minMainMemoryAvailableGb(minMainMemoryAvailableGb)
-                        .minDiskAvailableGb(minDiskAvailableGb)
-                        .build());
     }
 
     public void updateContainerNodeSpec(ContainerNodeSpec containerNodeSpec) {

@@ -27,19 +27,19 @@ AgeExecutor::AgeExecutor(const IAttributeVector *attribute) :
 }
 
 void
-AgeExecutor::execute(search::fef::MatchData &data)
+AgeExecutor::execute(uint32_t docId)
 {
     feature_t age = 10000000000.0;
     if (_attribute != NULL) {
-        _buf.fill(*_attribute, data.getDocId());
+        _buf.fill(*_attribute, docId);
         int64_t docTime = _buf[0];
-        feature_t currTime = *data.resolveFeature(inputs()[0]);
+        feature_t currTime = inputs().get_number(0);
         age = currTime - docTime;
         if (age < 0) {
             age = 0;
         }
     }
-    *data.resolveFeature(outputs()[0]) = age;
+    outputs().set_number(0, age);
 }
 
 void
@@ -67,12 +67,12 @@ AgeBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new AgeBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-AgeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+AgeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     // Get docdate attribute vector
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attribute);
-    return search::fef::FeatureExecutor::LP(new AgeExecutor(attribute));
+    return stash.create<AgeExecutor>(attribute);
 }
 
 }

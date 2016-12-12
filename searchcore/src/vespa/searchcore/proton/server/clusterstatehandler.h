@@ -9,6 +9,7 @@
 #include <vespa/persistence/spi/clusterstate.h>
 #include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
 #include <vespa/vespalib/util/threadstackexecutorbase.h>
+#include <set>
 
 namespace proton {
 

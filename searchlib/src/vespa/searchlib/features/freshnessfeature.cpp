@@ -20,13 +20,13 @@ FreshnessExecutor::FreshnessExecutor(feature_t maxAge, feature_t scaleAge) :
 }
 
 void
-FreshnessExecutor::execute(MatchData & match)
+FreshnessExecutor::execute(uint32_t)
 {
-    feature_t age = *match.resolveFeature(inputs()[0]);
+    feature_t age = inputs().get_number(0);
     LOG(debug, "Age: %f  Maxage: %f res: %f\n", age, _maxAge, (age / _maxAge));
     feature_t freshness = std::max(1 - (age / _maxAge), (feature_t)0);
-    *match.resolveFeature(outputs()[0]) = freshness;
-    *match.resolveFeature(outputs()[1]) = _logCalc.get(age);
+    outputs().set_number(0, freshness);
+    outputs().set_number(1, _logCalc.get(age));
 }
 
 
@@ -89,10 +89,10 @@ FreshnessBlueprint::createInstance() const
     return Blueprint::UP(new FreshnessBlueprint());
 }
 
-FeatureExecutor::LP
-FreshnessBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+FreshnessBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new FreshnessExecutor(_maxAge, _scaleAge));
+    return stash.create<FreshnessExecutor>(_maxAge, _scaleAge);
 }
 
 

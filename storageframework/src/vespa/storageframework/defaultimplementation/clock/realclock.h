@@ -16,9 +16,10 @@ namespace framework {
 namespace defaultimplementation {
 
 struct RealClock : public Clock {
-    virtual MicroSecTime getTimeInMicros() const;
-    virtual MilliSecTime getTimeInMillis() const;
-    virtual SecondTime getTimeInSeconds() const;
+    MicroSecTime getTimeInMicros() const override;
+    MilliSecTime getTimeInMillis() const override;
+    SecondTime getTimeInSeconds() const override;
+    MonotonicTimePoint getMonotonicTime() const override;
 };
 
 } // defaultimplementation

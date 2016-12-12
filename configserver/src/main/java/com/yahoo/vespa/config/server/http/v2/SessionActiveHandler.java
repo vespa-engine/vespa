@@ -4,20 +4,19 @@ package com.yahoo.vespa.config.server.http.v2;
 import java.util.concurrent.Executor;
 
 import com.google.inject.Inject;
+import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.http.SessionActiveHandlerBase;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.session.LocalSession;
 
 /**
  * Handler that activates a session given by tenant and id (PUT).
@@ -25,7 +24,7 @@ import com.yahoo.vespa.config.server.session.LocalSession;
  * @author vegardh
  * @since 5.1
  */
-public class SessionActiveHandler extends SessionActiveHandlerBase {
+public class SessionActiveHandler extends SessionHandler {
 
     private final Tenants tenants;
     private final Zone zone;
@@ -43,13 +42,29 @@ public class SessionActiveHandler extends SessionActiveHandlerBase {
 
     @Override
     protected HttpResponse handlePUT(HttpRequest request) {
+        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        Utils.checkThatTenantExists(tenants, tenantName);
+        Tenant tenant = tenants.getTenant(tenantName);
         TimeoutBudget timeoutBudget = getTimeoutBudget(request, SessionHandler.DEFAULT_ACTIVATE_TIMEOUT);
-        TenantName tenantName = Utils.getTenantFromSessionRequest(request);
-        log.log(LogLevel.DEBUG, "Found tenant '" + tenantName + "' in request");
-        Tenant tenant = Utils.checkThatTenantExists(tenants, tenantName);
-        LocalSession localSession = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
-        activate(request, tenant.getLocalSessionRepo(), tenant.getActivateLock(), timeoutBudget, localSession);
-        return new SessionActiveResponse(localSession.getMetaData().getSlime(), tenantName, request, localSession, zone);
+        final Long sessionId = getSessionIdV2(request);
+        ApplicationId applicationId = applicationRepository.activate(tenant, sessionId, timeoutBudget,
+                                                                     shouldIgnoreLockFailure(request),
+                                                                     shouldIgnoreSessionStaleFailure(request));
+        ApplicationMetaData metaData = applicationRepository.getMetadataFromSession(tenant, sessionId);
+        return new SessionActiveResponse(metaData.getSlime(), request, applicationId, sessionId, zone);
+    }
+
+    private boolean shouldIgnoreLockFailure(HttpRequest request) {
+        return request.getBooleanProperty("force");
+    }
+
+    /**
+     * True if this request should ignore activation failure because the session was made from an active session that is not active now
+     * @param request a {@link com.yahoo.container.jdisc.HttpRequest}
+     * @return true if ignore failure
+     */
+    private boolean shouldIgnoreSessionStaleFailure(HttpRequest request) {
+        return request.getBooleanProperty("force");
     }
 
 }

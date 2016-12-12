@@ -8,25 +8,18 @@ using search::IAttributeSaveTarget;
 
 namespace search {
 
-template <typename IndexT>
-MultiValueAttributeSaver<IndexT>::
+MultiValueAttributeSaver::
 MultiValueAttributeSaver(GenerationHandler::Guard &&guard,
                          const IAttributeSaveTarget::Config &cfg,
-                         const MultiValueMappingBase<IndexT> &mvMapping)
+                         const MvMappingBase &mvMapping)
     : AttributeSaver(std::move(guard), cfg),
-      _frozenIndices(mvMapping.getIndicesCopy())
+      _frozenIndices(mvMapping.getRefCopy(cfg.getNumDocs()))
 {
 }
 
 
-template <typename IndexT>
-MultiValueAttributeSaver<IndexT>::~MultiValueAttributeSaver()
+MultiValueAttributeSaver::~MultiValueAttributeSaver()
 {
 }
-
-template class MultiValueAttributeSaver<multivalue::Index32>;
-
-template class MultiValueAttributeSaver<multivalue::Index64>;
-
 
 }  // namespace search

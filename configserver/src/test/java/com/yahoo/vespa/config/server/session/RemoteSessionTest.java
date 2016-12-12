@@ -72,14 +72,14 @@ public class RemoteSessionTest {
         ApplicationSet applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
         assertThat(applicationSet.getApplicationGeneration(), is(3l));
-        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getName(), is("foo"));
+        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getId().application().value(), is("foo"));
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty()).getModel());
         session.deactivate();
 
         applicationSet = session.ensureApplicationLoaded();
         assertNotNull(applicationSet);
         assertThat(applicationSet.getApplicationGeneration(), is(3l));
-        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getName(), is("foo"));
+        assertThat(applicationSet.getForVersionOrLatest(Optional.empty()).getId().application().value(), is("foo"));
         assertNotNull(applicationSet.getForVersionOrLatest(Optional.empty()).getModel());
     }
 
@@ -229,7 +229,15 @@ public class RemoteSessionTest {
     private RemoteSession createSession(long sessionId, SessionZooKeeperClient zkc, List<ModelFactory> modelFactories, Optional<PermanentApplicationPackage> permanentApplicationPackage) {
         zkc.writeStatus(Session.Status.NEW);
         zkc.writeApplicationId(new ApplicationId.Builder().applicationName("foo").instanceName("bim").build());
-        return new RemoteSession(TenantName.from("default"), sessionId, new TestComponentRegistry(curator, new ModelFactoryRegistry(modelFactories), permanentApplicationPackage), zkc);
+        TestComponentRegistry.Builder registryBuilder = new TestComponentRegistry.Builder()
+                .curator(curator)
+                .modelFactoryRegistry(new ModelFactoryRegistry(modelFactories));
+        if (permanentApplicationPackage.isPresent())
+            registryBuilder.permanentApplicationPackage(permanentApplicationPackage.get());
+
+        return new RemoteSession(TenantName.from("default"), sessionId,
+                                 registryBuilder.build(),
+                                 zkc);
     }
 
     private class MockModelFactory implements ModelFactory {

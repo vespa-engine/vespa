@@ -3,6 +3,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.compact_document_words_store");
 #include "compact_document_words_store.h"
+#include <vespa/searchlib/datastore/datastore.hpp>
 
 namespace search {
 namespace memoryindex {
@@ -101,21 +102,12 @@ datastore::EntryRef
 CompactDocumentWordsStore::Store::insert(const Builder &builder)
 {
     size_t serializedSize = getSerializedSize(builder);
-    _store.ensureBufferCapacity(_typeId, serializedSize);
-
-    uint32_t activeBufferId = _store.getActiveBufferId(_typeId);
-    datastore::BufferState &state = _store.getBufferState(activeBufferId);
-    size_t oldSize = state.size();
-    RefType ref(oldSize, activeBufferId);
-    assert(oldSize == ref.offset());
-
-    uint32_t *begin = _store.getBufferEntry<uint32_t>(activeBufferId, oldSize);
+    auto result = _store.rawAllocator<uint32_t>(_typeId).alloc(serializedSize);
+    uint32_t *begin = result.data;
     uint32_t *end = serialize(builder, begin);
     assert(size_t(end - begin) == serializedSize);
     (void) end;
-    state.pushed_back(serializedSize);
-
-    return ref;
+    return result.ref;
 }
 
 CompactDocumentWordsStore::Iterator

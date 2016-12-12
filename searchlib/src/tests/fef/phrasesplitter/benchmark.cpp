@@ -50,8 +50,9 @@ Benchmark::run(size_t numRuns, size_t numPositions)
 
     start();
 
+    ps.bind_match_data(*md);
     for (size_t i = 0; i < numRuns; ++i) {
-        ps.update(*md);
+        ps.update();
     }
 
     sample();

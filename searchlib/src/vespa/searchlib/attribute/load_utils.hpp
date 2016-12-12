@@ -14,7 +14,7 @@ loadFromEnumeratedMultiValue(MvMapping &mapping,
                              vespalib::ConstArrayRef<typename MvMapping::MultiValueType::ValueType> enumValueToValueMap,
                              Saver saver)
 {
-    mapping.prepareLoadFromMultiValue(attrReader);
+    mapping.prepareLoadFromMultiValue();
     using MultiValueType = typename MvMapping::MultiValueType;
     std::vector<MultiValueType> indices;
     uint32_t numDocs = attrReader.getNumIdx() - 1;
@@ -40,6 +40,7 @@ loadFromEnumeratedMultiValue(MvMapping &mapping,
         mapping.set(doc, indices);
     }
     assert(totalValueCount == numValues);
+    mapping.doneLoadFromMultiValue();
     (void) numValues;
     return maxValueCount;
 }

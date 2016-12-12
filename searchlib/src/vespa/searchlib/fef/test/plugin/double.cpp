@@ -13,12 +13,12 @@ namespace fef {
 namespace test {
 
 void
-DoubleExecutor::execute(MatchData & data)
+DoubleExecutor::execute(uint32_t)
 {
     assert(inputs().size() == _cnt);
     assert(outputs().size() == _cnt);
     for (uint32_t i = 0; i < _cnt; ++i) {
-        *data.resolveFeature(outputs()[i]) = *data.resolveFeature(inputs()[i]) * 2;
+        outputs().set_number(i, inputs().get_number(i) * 2);
     }
 }
 
@@ -52,6 +52,13 @@ DoubleBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & 
     }
     _cnt = params.size();
     return true;
+}
+
+FeatureExecutor &
+DoubleBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<DoubleExecutor>(_cnt);
 }
 
 } // namespace test

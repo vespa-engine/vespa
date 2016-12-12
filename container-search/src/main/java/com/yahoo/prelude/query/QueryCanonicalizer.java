@@ -1,22 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
 
 import java.util.*;
 
-
 /**
- * A class which canonicalizes and validates queries.
- * This class is multithread safe.
+ * Query normalizer and sanity checker.
  *
  * @author bratseth
  */
 public class QueryCanonicalizer {
 
-    /** The name of the operation performed by this (for use in search chain ordering) */
+    /** The name of the operation performed by this, for use in search chain ordering */
     public static final String queryCanonicalization = "queryCanonicalization";
 
     /**
@@ -26,75 +23,50 @@ public class QueryCanonicalizer {
      * @return null if the query is valid, an error message if it is invalid
      */
     public static String canonicalize(Query query) {
-        Item root = query.getModel().getQueryTree().getRoot();
-        return canonicalize(query, root);
+        return canonicalize(query.getModel().getQueryTree());
     }
 
     /**
-     * Validates this query and carries out possible operations on this query
-     * which simplifies it without changing its semantics.
-     *
+     * Canonicalize this query
+     * 
      * @return null if the query is valid, an error message if it is invalid
      */
     public static String canonicalize(QueryTree query) {
-        QueryWrapper q = new QueryWrapper();
-        q.setRoot(query.getRoot()); // Could get rid of the wrapper...
-        treeCanonicalize(q, query.getRoot(), null);
-        query.setRoot(q.root);
-        return q.error;
+        ListIterator<Item> rootItemIterator = query.getItemIterator();
+        CanonicalizationResult result = recursivelyCanonicalize(rootItemIterator.next(), rootItemIterator);
+        if (query.isEmpty() && ! result.isError()) result = CanonicalizationResult.error("No query");
+        return result.error().orElse(null); // preserve old API, unfortunately
     }
 
     /**
-     * Validates this query and
-     * carries out possible operations on this query which simplifies it
-     * without changing its semantics.
-     *
-     * @param  item the item to canonicalize
-     * @return null if the query is valid, an error message if it is invalid
-     */
-    private static String canonicalize(Query query, Item item) {
-        QueryWrapper q = new QueryWrapper();
-        q.setRoot(item);
-        treeCanonicalize(q, query.getModel().getQueryTree().getRoot(), null);
-        if (q.root == null)
-            q.root = new NullItem();
-        query.getModel().getQueryTree().setRoot(q.root);
-        return q.error;
-    }
-
-    /**
-     * @param bag wrapper for error message and query root
+     * Canonicalize this query
+     * 
      * @param item the item to canonicalize
-     * @param iterator iterator for the above item if pertinent
-     * @return whether the query could be canonicalized into something
+     * @param parentIterator iterator for the parent of this item, never null
+     * @return true if the given query is valid, false otherwise
      */
-    public static boolean treeCanonicalize(QueryWrapper bag, Item item, ListIterator<Item> iterator) {
-        if (iterator == null && (item == null || item instanceof NullItem)) {
-            bag.setError("No query");
-            return false;
-        }
-
-        if (item instanceof TermItem) {
-            return true;
-        }
-
-        if (item instanceof NullItem) {
-            iterator.remove();
-        }
-
-        if ( ! (item instanceof CompositeItem)) {
-            return true;
-        } // Impossible yet
-        CompositeItem composite = (CompositeItem) item;
-
-        for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext();) {
-            Item child = i.next();
-            boolean subtreeOK = treeCanonicalize(bag, child, i);
-
-            if (!subtreeOK) {
-                return false;
+    private static CanonicalizationResult recursivelyCanonicalize(Item item, ListIterator<Item> parentIterator) {
+        // children first as they may be removed
+        if (item instanceof CompositeItem) {
+            CompositeItem composite = (CompositeItem)item;
+            for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); ) {
+                CanonicalizationResult childResult = recursivelyCanonicalize(i.next(), i);
+                if (childResult.isError()) return childResult;
             }
         }
+
+        return canonicalizeThis(item, parentIterator);
+    }
+    
+    private static CanonicalizationResult canonicalizeThis(Item item, ListIterator<Item> parentIterator) {
+        if (item instanceof NullItem) parentIterator.remove();
+        if ( ! (item instanceof CompositeItem)) return CanonicalizationResult.success();
+        CompositeItem composite = (CompositeItem)item;
+
+        boolean replacedByFalse = collapseFalse(composite, parentIterator);
+        if (replacedByFalse) return CanonicalizationResult.success();
+
+        collapseLevels(composite);
 
         if (composite instanceof EquivItem) {
             removeDuplicates((EquivItem) composite);
@@ -103,36 +75,91 @@ public class QueryCanonicalizer {
             makeDuplicatesCheap((RankItem)composite);
         }
         else if (composite instanceof NotItem) {
-            if (((NotItem) composite).getPositiveItem() == null) {
-                bag.setError("Can not search for only negative items");
-                return false;
-            }
+            if (((NotItem) composite).getPositiveItem() == null)
+                return CanonicalizationResult.error("Can not search for only negative items");
         }
 
-        if (composite.getItemCount() == 0) {
-            if (iterator == null) {
-                bag.setRoot(new NullItem());
-                bag.setError("No query: Contained an empty " + composite.getName() + " only");
-                return false;
-            } else {
-                iterator.remove();
-            }
-        }
+        if (composite.getItemCount() == 0)
+            parentIterator.remove();
 
         if (composite.getItemCount() == 1 && ! (composite instanceof NonReducibleCompositeItem)) {
-            if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem) {
+            if (composite instanceof PhraseItem || composite instanceof PhraseSegmentItem)
                 composite.getItem(0).setWeight(composite.getWeight());
-            }
-            if (iterator == null) {
-                bag.setRoot(composite.getItem(0));
-            } else {
-                iterator.set(composite.getItem(0));
-            }
+            parentIterator.set(composite.getItem(0));
         }
 
-        return true;
+        return CanonicalizationResult.success();
+    }
+    
+    private static void collapseLevels(CompositeItem composite) {
+        if (composite instanceof RankItem || composite instanceof NotItem) {
+            collapseLevels(composite, composite.getItemIterator()); // collapse the first item only
+        }
+        else if (composite instanceof AndItem || composite instanceof OrItem) {
+            for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
+                collapseLevels(composite, i);
+        }
+    }
+    
+    /** Collapse the next item of this iterator into the given parent, if appropriate */
+    private static void collapseLevels(CompositeItem composite, ListIterator<Item> i) {
+        if ( ! i.hasNext()) return;
+        Item child = i.next();
+        if (child == null) return;
+        if (child.getClass() != composite.getClass()) return;
+        i.remove();
+        moveChildren((CompositeItem) child, i);
+    }
+    
+    private static void moveChildren(CompositeItem from, ListIterator<Item> toIterator) {
+        for (ListIterator<Item> i = from.getItemIterator(); i.hasNext(); )
+            toIterator.add(i.next());
     }
 
+    /** 
+     * Handle FALSE items in the immediate children of this
+     * 
+     * @return true if this composite was replaced by FALSE
+     */
+    private static boolean collapseFalse(CompositeItem composite, ListIterator<Item> parentIterator) {
+        if ( ! containsFalse(composite)) return false;
+
+        if (composite instanceof AndItem) { // AND false is always false
+            parentIterator.set(new FalseItem());
+            return true;
+        }
+        else if (composite instanceof OrItem) { // OR false is unnecessary
+            removeFalseIn(composite.getItemIterator());
+            return false;
+        }
+        else if (composite instanceof NotItem || composite instanceof RankItem) { // collapse if first, remove otherwise
+            ListIterator<Item> i = composite.getItemIterator();
+            if (i.next() instanceof FalseItem) {
+                parentIterator.set(new FalseItem());
+                return true;
+            }
+            else {
+                removeFalseIn(i);
+                return false;
+            }
+        }
+        else { // other composites not handled
+            return false;
+        }
+    }
+    
+    private static boolean containsFalse(CompositeItem composite) {
+        for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
+            if (i.next() instanceof FalseItem) return true;
+        return false;
+    }
+
+    private static void removeFalseIn(ListIterator<Item> iterator) {
+        while (iterator.hasNext())
+            if (iterator.next() instanceof FalseItem)
+                iterator.remove();
+    }
+    
     private static void removeDuplicates(EquivItem composite) {
         int origSize = composite.getItemCount();
         for (int i = origSize - 1; i >= 1; --i) {
@@ -173,8 +200,7 @@ public class QueryCanonicalizer {
      * the term during matching, as it will be made available anyway for matches
      * by the same term in the rank part.
      *
-     * @param rankItem
-     *            an item which will be simplified in place
+     * @param rankItem an item which will be simplified in place
      */
     private static void makeDuplicatesCheap(RankItem rankItem) {
         // Collect terms used for ranking
@@ -199,20 +225,28 @@ public class QueryCanonicalizer {
         }
     }
 
-    public static class QueryWrapper {
-        private Item root = null;
-        private String error = null;
+    public static class CanonicalizationResult {
 
-        public Item getRoot() { return root; }
-        public void setRoot(Item root) {
-            this.root = root;
-        }
-        public String getError() {
-            return error;
-        }
-        public void setError(String error) {
+        private final Optional<String> error;
+
+        private CanonicalizationResult(Optional<String> error) {
             this.error = error;
         }
+        
+        /** Returns the error of this query, or empty if it is a valid query */
+        public Optional<String> error() {
+            return error;
+        }
+    
+        public static CanonicalizationResult error(String error) {
+            return new CanonicalizationResult(Optional.of(error));
+        }
+
+        public static CanonicalizationResult success() {
+            return new CanonicalizationResult(Optional.empty());
+        }
+        
+        public boolean isError() { return error.isPresent(); }
 
     }
 

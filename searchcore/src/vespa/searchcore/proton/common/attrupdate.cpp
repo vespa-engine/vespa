@@ -24,7 +24,7 @@ LOG_SETUP(".attrupdate");
 
 using namespace document;
 using vespalib::make_string;
-using search::attribute::TensorAttribute;
+using search::tensor::TensorAttribute;
 
 namespace {
     std::string toString(const FieldUpdate & update) {

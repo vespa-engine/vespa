@@ -18,11 +18,11 @@ namespace search {
 namespace features {
 
 feature_t
-NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs, MatchData & match)
+NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs, uint32_t docId)
 {
     feature_t score = 0;
     for (size_t i = 0; i < fs.pairs.size(); ++i) {
-        score += calculateScoreForPair(fs.pairs[i], fs.fieldId, match);
+        score += calculateScoreForPair(fs.pairs[i], fs.fieldId, docId);
     }
     score *= _params.vector[fs.fieldId].fieldWeight;
     if (fs.divisor > 0) {
@@ -32,13 +32,13 @@ NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs, MatchData
 }
 
 feature_t
-NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t fieldId, MatchData & match)
+NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t fieldId, uint32_t docId)
 {
     const NativeProximityParam & param = _params.vector[fieldId];
     TermDistanceCalculator::Result result;
     const QueryTerm & a = pair.first;
     const QueryTerm & b = pair.second;
-    TermDistanceCalculator::run(a, b, match, result);
+    TermDistanceCalculator::run(a, b, *_md, docId, result);
     uint32_t forwardIdx = result.forwardDist > 0 ? result.forwardDist - 1 : 0;
     uint32_t reverseIdx = result.reverseDist > 0 ? result.reverseDist - 1 : 0;
     feature_t forwardScore = param.proximityTable->get(forwardIdx) * param.proximityImportance;
@@ -60,7 +60,8 @@ NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
     FeatureExecutor(),
     _params(params),
     _setups(),
-    _totalFieldWeight(0)
+    _totalFieldWeight(0),
+    _md(nullptr)
 {
     std::map<uint32_t, QueryTermVector> fields;
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
@@ -90,16 +91,22 @@ NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
 }
 
 void
-NativeProximityExecutor::execute(search::fef::MatchData & match)
+NativeProximityExecutor::execute(uint32_t docId)
 {
     feature_t score = 0;
     for (size_t i = 0; i < _setups.size(); ++i) {
-        score += calculateScoreForField(_setups[i], match);
+        score += calculateScoreForField(_setups[i], docId);
     }
     if (_totalFieldWeight > 0) {
         score /= _totalFieldWeight;
     }
-    *match.resolveFeature(outputs()[0]) = score;
+    outputs().set_number(0, score);
+}
+
+void
+NativeProximityExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 void
@@ -201,14 +208,14 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-NativeProximityBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+NativeProximityBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    std::unique_ptr<NativeProximityExecutor> native(new NativeProximityExecutor(env, _params));
-    if (native->empty()) {
-        return FeatureExecutor::LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+    NativeProximityExecutor &native = stash.create<NativeProximityExecutor>(env, _params);
+    if (native.empty()) {
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     } else {
-        return FeatureExecutor::LP(native.release());
+        return native;
     }
 
 }

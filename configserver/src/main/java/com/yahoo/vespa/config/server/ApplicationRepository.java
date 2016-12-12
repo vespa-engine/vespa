@@ -1,11 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
-
+import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -50,7 +52,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private final Tenants tenants;
     private final Optional<Provisioner> hostProvisioner;
-    private final ConfigserverConfig configserverConfig;
     private final Curator curator;
     private final LogServerLogGrabber logServerLogGrabber;
     private final ApplicationConvergenceChecker convergeChecker;
@@ -60,13 +61,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public ApplicationRepository(Tenants tenants,
                                  HostProvisionerProvider hostProvisionerProvider,
-                                 ConfigserverConfig configserverConfig,
                                  Curator curator,
                                  LogServerLogGrabber logServerLogGrabber,
                                  ApplicationConvergenceChecker applicationConvergenceChecker) {
         this.tenants = tenants;
         this.hostProvisioner = hostProvisionerProvider.getHostProvisioner();
-        this.configserverConfig = configserverConfig;
         this.curator = curator;
         this.logServerLogGrabber = logServerLogGrabber;
         this.convergeChecker = applicationConvergenceChecker;
@@ -93,7 +92,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return Optional.of(Deployment.unprepared(newSession,
                                                  tenant.getLocalSessionRepo(),
                                                  tenant.getPath(),
-                                                 configserverConfig,
                                                  hostProvisioner,
                                                  new ActivateLock(curator, tenant.getPath()),
                                                  timeout,
@@ -145,7 +143,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         return true;
     }
-    
+
     public String grabLog(Tenant tenant, ApplicationId applicationId) {
         Application application = getApplication(tenant, applicationId);
         return logServerLogGrabber.grabLog(application);
@@ -181,6 +179,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty());
     }
 
+    // TODO: Don't use the NotFoundException here
     public LocalSession getLocalSession(Tenant tenant, long sessionId) {
         LocalSession session = tenant.getLocalSessionRepo().getSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
@@ -188,11 +187,58 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session;
     }
 
+    // TODO: Don't use the NotFoundException here
     public RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
         RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
         return session;
+    }
+
+    public void restart(ApplicationId applicationId, HostFilter hostFilter) {
+        if (hostProvisioner.isPresent())
+            hostProvisioner.get().restart(applicationId, hostFilter);
+    }
+
+    public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
+        TenantName tenantName = applicationId.tenant();
+        if (!tenants.checkThatTenantExists(tenantName)) {
+            throw new IllegalArgumentException("Tenant " + tenantName + " was not found.");
+        }
+        Tenant tenant = tenants.getTenant(tenantName);
+        List<ApplicationId> applicationIds = listApplicationIds(tenant);
+        if (!applicationIds.contains(applicationId)) {
+            throw new IllegalArgumentException("No such application id: " + applicationId);
+        }
+        return tenant;
+    }
+
+    public ApplicationId activate(Tenant tenant,
+                                  long sessionId,
+                                  TimeoutBudget timeoutBudget,
+                                  boolean ignoreLockFailure,
+                                  boolean ignoreSessionStaleFailure) {
+        LocalSession localSession = getLocalSession(tenant, sessionId);
+        LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
+        ActivateLock activateLock = tenant.getActivateLock();
+        // TODO: Get rid of the activateLock and localSessionRepo arguments in deployFromPreparedSession
+        Deployment deployment = deployFromPreparedSession(localSession,
+                                                          activateLock,
+                                                          localSessionRepo,
+                                                          timeoutBudget.timeLeft());
+        deployment.setIgnoreLockFailure(ignoreLockFailure);
+        deployment.setIgnoreSessionStaleFailure(ignoreSessionStaleFailure);
+        deployment.activate();
+        return localSession.getApplicationId();
+    }
+
+    public ApplicationMetaData getMetadataFromSession(Tenant tenant, long sessionId) {
+        return getLocalSession(tenant, sessionId).getMetaData();
+    }
+
+    private List<ApplicationId> listApplicationIds(Tenant tenant) {
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
+        return applicationRepo.listApplications();
     }
 
 }

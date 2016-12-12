@@ -45,12 +45,12 @@ QueryTermCountBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-QueryTermCountBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+QueryTermCountBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     std::vector<feature_t> values;
     values.push_back(static_cast<feature_t>(env.getNumTerms()));
-    return FeatureExecutor::LP(new ValueExecutor(values));
+    return stash.create<ValueExecutor>(values);
 }
 
 

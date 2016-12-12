@@ -130,7 +130,7 @@ public class LocalSessionTest {
         ApplicationId origId = new ApplicationId.Builder()
                                .tenant("tenant")
                                .applicationName("foo").instanceName("quux").build();
-        doPrepare(session, new PrepareParams().applicationId(origId));
+        doPrepare(session, new PrepareParams.Builder().applicationId(origId).build());
         ProvisionInfo info = session.getProvisionInfo();
         assertNotNull(info);
         assertThat(info.getHosts().size(), is(1));
@@ -140,7 +140,7 @@ public class LocalSessionTest {
     @Test
     public void require_that_application_metadata_is_correct() throws Exception {
         LocalSession session = createSession(TenantName.defaultName(), 3);
-        doPrepare(session, new PrepareParams());
+        doPrepare(session, new PrepareParams.Builder().build());
         assertThat(session.getMetaData().toString(), is("n/a, n/a, 0, 0, , 0"));
     }
 
@@ -168,7 +168,7 @@ public class LocalSessionTest {
     }
 
     private void doPrepare(LocalSession session) {
-        doPrepare(session, new PrepareParams());
+        doPrepare(session, new PrepareParams.Builder().build());
     }
 
     private void doPrepare(LocalSession session, PrepareParams params) {

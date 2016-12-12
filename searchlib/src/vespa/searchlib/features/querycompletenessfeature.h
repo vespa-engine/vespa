@@ -33,11 +33,14 @@ public:
      */
     QueryCompletenessExecutor(const search::fef::IQueryEnvironment &env,
                               const QueryCompletenessConfig &config);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     const QueryCompletenessConfig            &_config;
     std::vector<search::fef::TermFieldHandle> _fieldHandles;
+    const fef::MatchData                     *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**
@@ -70,7 +73,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 private:
     QueryCompletenessConfig _config;

@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <limits>
 
 namespace search {

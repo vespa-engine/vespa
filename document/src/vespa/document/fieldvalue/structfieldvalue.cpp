@@ -36,6 +36,10 @@ StructFieldValue::StructFieldValue(const DataType &type)
     }
 }
 
+StructFieldValue::~StructFieldValue() { }
+
+StructFieldValue::Chunks::~Chunks() { }
+
 void
 StructFieldValue::swap(StructFieldValue & rhs)
 {

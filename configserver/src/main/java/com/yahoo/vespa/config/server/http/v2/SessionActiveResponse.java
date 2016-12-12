@@ -7,16 +7,15 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.slime.Slime;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.SessionResponse;
-import com.yahoo.vespa.config.server.session.LocalSession;
 
 public class SessionActiveResponse extends SessionResponse {
 
-    public SessionActiveResponse(Slime metaData, TenantName tenantName, HttpRequest request, LocalSession session, Zone zone) {
+    public SessionActiveResponse(Slime metaData, HttpRequest request, ApplicationId applicationId, long sessionId, Zone zone) {
         super(metaData, metaData.get());
-        String message = "Session " + session.getSessionId() + " for tenant '" + tenantName + "' activated.";
+        TenantName tenantName = applicationId.tenant();
+        String message = "Session " + sessionId + " for tenant '" + tenantName.value() + "' activated.";
         root.setString("tenant", tenantName.value());
         root.setString("message", message);
-        final ApplicationId applicationId = session.getApplicationId();
         root.setString("url", "http://" + request.getHost() + ":" + request.getPort() +
                 "/application/v2/tenant/" + tenantName +
                 "/application/" + applicationId.application().value() +

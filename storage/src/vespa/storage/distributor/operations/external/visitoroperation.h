@@ -5,7 +5,6 @@
 #include <vespa/storage/distributor/operations/operation.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
-#include <vespa/storage/distributor/visitormetricsset.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/visiting/memory_bounded_trace.h>
 
@@ -14,6 +13,8 @@ class Document;
 }
 
 namespace storage {
+
+class VisitorMetricSet;
 
 namespace distributor {
 
@@ -38,7 +39,7 @@ public:
     VisitorOperation(DistributorComponent& manager,
                      const std::shared_ptr<api::CreateVisitorCommand> & msg,
                      const Config& config,
-                     VisitorMetricSet* metrics = NULL);
+                     VisitorMetricSet& metrics);
 
     ~VisitorOperation();
 
@@ -89,6 +90,7 @@ private:
     typedef std::map<uint64_t, api::CreateVisitorCommand::SP> SentMessagesMap;
 
     void sendReply(const api::ReturnCode& code, DistributorMessageSender& sender);
+    void updateReplyMetrics(const api::ReturnCode& result);
     void verifyDistributorsAreAvailable();
     void verifyVisitorDistributionBitCount(const document::BucketId&);
     void verifyDistributorIsNotDown(const lib::ClusterState&);
@@ -170,11 +172,10 @@ private:
     std::vector<uint32_t> _activeNodes;
     uint32_t _bucketCount;
 
-    framework::MilliSecTime _startVisitorTime;
     vdslib::VisitorStatistics _visitorStatistics;
 
     Config _config;
-    VisitorMetricSet* _metrics;
+    VisitorMetricSet& _metrics;
     MemoryBoundedTrace _trace;
 
     static constexpr size_t TRACE_SOFT_MEMORY_LIMIT = 65536;
@@ -183,6 +184,7 @@ private:
     bool hasNoPendingMessages();
     document::BucketId getLastBucketVisited();
     mbus::TraceNode trace;
+    framework::MilliSecTimer _operationTimer;
 };
 
 }

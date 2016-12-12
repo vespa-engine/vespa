@@ -492,8 +492,8 @@ DistributionTest::testHighSplitBit()
 
     Distribution distr(Distribution::getDefaultDistributionConfig(3, 100));
 
-    std::ostringstream ost1;
-    std::ostringstream ost2;
+    vespalib::asciistream ost1;
+    vespalib::asciistream ost2;
 
     for (uint32_t bits = 33; bits < 36; ++bits) {
         uint64_t base = 0x23456789;

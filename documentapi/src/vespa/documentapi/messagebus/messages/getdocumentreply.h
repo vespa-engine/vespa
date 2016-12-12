@@ -9,7 +9,7 @@ namespace documentapi {
 class GetDocumentReply : public DocumentAcceptedReply {
 private:
     document::Document::SP _document;
-    uint64_t                              _lastModified;
+    uint64_t               _lastModified;
 
 public:
     /**

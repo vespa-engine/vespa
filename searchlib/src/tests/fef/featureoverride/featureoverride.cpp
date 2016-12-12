@@ -16,16 +16,16 @@ using namespace search::fef::test;
 using namespace search::features;
 using search::feature_t;
 
-typedef FeatureExecutor::LP FESP;
 typedef Blueprint::SP       BPSP;
 
 struct Fixture
 {
     MatchDataLayout mdl;
-    std::vector<FeatureExecutor::LP> executors;
+    vespalib::Stash stash;
+    std::vector<FeatureExecutor *> executors;
     MatchData::UP md;
-    Fixture() : mdl(), executors(), md() {}
-    Fixture &add(FeatureExecutor::LP &executor, size_t outCnt) {
+    Fixture() : mdl(), stash(), executors(), md() {}
+    Fixture &add(FeatureExecutor *executor, size_t outCnt) {
         executor->inputs_done();
         for (uint32_t outIdx = 0; outIdx < outCnt; ++outIdx) {
             executor->bindOutput(mdl.allocFeature());
@@ -37,82 +37,84 @@ struct Fixture
     Fixture &run() {
         md = mdl.createMatchData();
         for (const auto &executor : executors) {
-            executor->execute(*md);
+            executor->bind_match_data(*md);
+            executor->execute(1);
         }
         return *this;
     }
-    feature_t resolveFeature(FeatureHandle handle) {
-        return *md->resolveFeature(handle);
-    }
-    FESP createValueExecutor() {
+    FeatureExecutor &createValueExecutor() {
         std::vector<feature_t> values;
         values.push_back(1.0);
         values.push_back(2.0);
         values.push_back(3.0);
-        return FESP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
 };
 
 TEST_F("test decorator - single override", Fixture)
 {
-    FESP fe = f.createValueExecutor();
-    fe = FESP(new FeatureOverrider(fe, 1, 50.0));
+    FeatureExecutor *fe = &f.createValueExecutor();
+    vespalib::Stash &stash = f.stash;
+    fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[0]), 1.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[1]), 50.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[2]), 3.0);
+    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQUAL(fe->outputs().get_number(1), 50.0);
+    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
 }
 
 TEST_F("test decorator - multiple overrides", Fixture)
 {
-    FESP fe = f.createValueExecutor();
-    fe = FESP(new FeatureOverrider(fe, 0, 50.0));
-    fe = FESP(new FeatureOverrider(fe, 2, 100.0));
+    FeatureExecutor *fe = &f.createValueExecutor();
+    vespalib::Stash &stash = f.stash;
+    fe = &stash.create<FeatureOverrider>(*fe, 0, 50.0);
+    fe = &stash.create<FeatureOverrider>(*fe, 2, 100.0);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[0]), 50.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[1]), 2.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[2]), 100.0);
+    EXPECT_EQUAL(fe->outputs().get_number(0), 50.0);
+    EXPECT_EQUAL(fe->outputs().get_number(1), 2.0);
+    EXPECT_EQUAL(fe->outputs().get_number(2), 100.0);
 }
 
 TEST_F("test decorator - non-existing override", Fixture)
 {
-    FESP fe = f.createValueExecutor();
-    fe = FESP(new FeatureOverrider(fe, 1000, 50.0));
+    FeatureExecutor *fe = &f.createValueExecutor();
+    vespalib::Stash &stash = f.stash;
+    fe = &stash.create<FeatureOverrider>(*fe, 1000, 50.0);
     f.add(fe, 3).run();
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[0]), 1.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[1]), 2.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[2]), 3.0);
+    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQUAL(fe->outputs().get_number(1), 2.0);
+    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
 }
 
 TEST_F("test decorator - transitive override", Fixture)
 {
     FeatureExecutor::SharedInputs inputs;
-    FESP fe = f.createValueExecutor();
-    fe = FESP(new FeatureOverrider(fe, 1, 50.0));
+    FeatureExecutor *fe = &f.createValueExecutor();
+    vespalib::Stash &stash = f.stash;
+    fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0);
     f.add(fe, 3);
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
-    FESP fe2 = FESP(new DoubleExecutor(3));
+    FeatureExecutor *fe2 = &stash.create<DoubleExecutor>(3);
     fe2->bind_shared_inputs(inputs);
     fe2->addInput(fe->outputs()[0]);
     fe2->addInput(fe->outputs()[1]);
     fe2->addInput(fe->outputs()[2]);
-    fe2 = FESP(new FeatureOverrider(fe2, 2, 10.0));
+    fe2 = &stash.create<FeatureOverrider>(*fe2, 2, 10.0);
     f.add(fe2, 3).run();
     EXPECT_EQUAL(fe2->outputs().size(), 3u);
 
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[0]), 1.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[1]), 50.0);
-    EXPECT_EQUAL(f.resolveFeature(fe->outputs()[2]), 3.0);
-    EXPECT_EQUAL(f.resolveFeature(fe2->outputs()[0]), 2.0);
-    EXPECT_EQUAL(f.resolveFeature(fe2->outputs()[1]), 100.0);
-    EXPECT_EQUAL(f.resolveFeature(fe2->outputs()[2]), 10.0);
+    EXPECT_EQUAL(fe->outputs().get_number(0), 1.0);
+    EXPECT_EQUAL(fe->outputs().get_number(1), 50.0);
+    EXPECT_EQUAL(fe->outputs().get_number(2), 3.0);
+    EXPECT_EQUAL(fe2->outputs().get_number(0), 2.0);
+    EXPECT_EQUAL(fe2->outputs().get_number(1), 100.0);
+    EXPECT_EQUAL(fe2->outputs().get_number(2), 10.0);
 }
 
 TEST("test overrides")

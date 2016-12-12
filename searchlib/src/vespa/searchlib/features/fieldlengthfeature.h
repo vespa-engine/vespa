@@ -15,6 +15,9 @@ namespace features {
 class FieldLengthExecutor : public search::fef::FeatureExecutor {
 private:
     std::vector<search::fef::TermFieldHandle> _fieldHandles;
+    const fef::MatchData             *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     /**
@@ -25,7 +28,7 @@ public:
      */
     FieldLengthExecutor(const search::fef::IQueryEnvironment &env,
                         uint32_t fieldId);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 };
 
 /**
@@ -49,7 +52,7 @@ public:
     virtual search::fef::Blueprint::UP createInstance() const;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     // Inherit doc from Blueprint.
     virtual search::fef::ParameterDescriptions getDescriptions() const {

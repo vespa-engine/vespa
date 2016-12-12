@@ -15,7 +15,8 @@ ElementCompletenessExecutor::ElementCompletenessExecutor(const search::fef::IQue
     : _params(params),
       _terms(),
       _queue(),
-      _sumTermWeight(0)
+      _sumTermWeight(0),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         const search::fef::ITermData *termData = env.getTerm(i);
@@ -34,12 +35,12 @@ ElementCompletenessExecutor::ElementCompletenessExecutor(const search::fef::IQue
 }
 
 void
-ElementCompletenessExecutor::execute(search::fef::MatchData &data)
+ElementCompletenessExecutor::execute(uint32_t docId)
 {
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        search::fef::TermFieldMatchData *tfmd = data.resolveTermField(_terms[i].termHandle);
-        if (tfmd->getDocId() == data.getDocId()) {
+        const search::fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
+        if (tfmd->getDocId() == docId) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
                 _queue.push(item);
@@ -68,10 +69,16 @@ ElementCompletenessExecutor::execute(search::fef::MatchData &data)
             best = state;
         }
     }
-    *data.resolveFeature(outputs()[0]) = best.completeness;
-    *data.resolveFeature(outputs()[1]) = best.fieldCompleteness;
-    *data.resolveFeature(outputs()[2]) = best.queryCompleteness;
-    *data.resolveFeature(outputs()[3]) = best.elementWeight;
+    outputs().set_number(0, best.completeness);
+    outputs().set_number(1, best.fieldCompleteness);
+    outputs().set_number(2, best.queryCompleteness);
+    outputs().set_number(3, best.elementWeight);
+}
+
+void
+ElementCompletenessExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -131,10 +138,10 @@ ElementCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-ElementCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+ElementCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new ElementCompletenessExecutor(env, _params));
+    return stash.create<ElementCompletenessExecutor>(env, _params);
 }
 
 //-----------------------------------------------------------------------------

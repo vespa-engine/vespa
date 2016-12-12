@@ -58,7 +58,7 @@ private:
 
 public:
     CompiledRankingExpressionExecutor(const CompiledFunction &compiled_function);
-    void execute(fef::MatchData &data) override;
+    void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -71,10 +71,13 @@ class InterpretedRankingExpressionExecutor : public fef::FeatureExecutor
 private:
     InterpretedFunction::Context _context;
     const InterpretedFunction   &_function;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     InterpretedRankingExpressionExecutor(const InterpretedFunction &function);
-    void execute(fef::MatchData &data) override;
+    void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -86,34 +89,41 @@ CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const Compi
 }
 
 void
-CompiledRankingExpressionExecutor::execute(fef::MatchData &data)
+CompiledRankingExpressionExecutor::execute(uint32_t)
 {
     for (size_t i = 0; i < _params.size(); ++i) {
-        _params[i] = *data.resolveFeature(inputs()[i]);
+        _params[i] = inputs().get_number(i);
     }
-    *data.resolveFeature(outputs()[0]) = _ranking_function(&_params[0]);
+    outputs().set_number(0, _ranking_function(&_params[0]));
 }
 
 //-----------------------------------------------------------------------------
 
 InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function)
     : _context(),
-      _function(function)
+      _function(function),
+      _md(nullptr)
 {
 }
 
 void
-InterpretedRankingExpressionExecutor::execute(fef::MatchData &data)
+InterpretedRankingExpressionExecutor::execute(uint32_t)
 {
     _context.clear_params();
     for (size_t i = 0; i < _function.num_params(); ++i) {
-        if (data.feature_is_object(inputs()[i])) {
-            _context.add_param(*data.resolve_object_feature(inputs()[i]));
+        if (_md->feature_is_object(inputs()[i])) {
+            _context.add_param(inputs().get_object(i));
         } else {
-            _context.add_param(*data.resolveFeature(inputs()[i]));
+            _context.add_param(inputs().get_number(i));
         }
     }
-    *data.resolve_object_feature(outputs()[0]) = _function.eval(_context);
+    outputs().set_object(0, _function.eval(_context));
+}
+
+void
+InterpretedRankingExpressionExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -213,14 +223,14 @@ RankingExpressionBlueprint::createInstance() const
     return fef::Blueprint::UP(new RankingExpressionBlueprint());
 }
 
-fef::FeatureExecutor::LP
-RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &) const
+fef::FeatureExecutor &
+RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &, vespalib::Stash &stash) const
 {
     if (_interpreted_function) {
-        return fef::FeatureExecutor::LP(new InterpretedRankingExpressionExecutor(*_interpreted_function));
+        return stash.create<InterpretedRankingExpressionExecutor>(*_interpreted_function);
     }
     assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
-    return fef::FeatureExecutor::LP(new CompiledRankingExpressionExecutor(_compile_token->get()));
+    return stash.create<CompiledRankingExpressionExecutor>(_compile_token->get());
 }
 
 //-----------------------------------------------------------------------------

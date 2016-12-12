@@ -35,7 +35,6 @@ public:
     typedef std::shared_ptr<const Field> FieldSP;
     typedef vespalib::CloneablePtr<DataType> DataTypeCP;
     typedef vespalib::CloneablePtr<FieldValue> FieldValueCP;
-    typedef vespalib::LinkedPtr<FieldPathEntry> LP;
 
     /**
        Creates a empty field path entry.
@@ -64,6 +63,7 @@ public:
     FieldPathEntry(const DataType & dataType, const DataType& keyType,
                    const DataType& valueType, bool keysOnly, bool valuesOnly);
 
+    ~FieldPathEntry();
     /**
        Creates a field entry for an array, map or wset traversal using a variable.
     */
@@ -120,12 +120,12 @@ public:
     FieldPath();
     FieldPath(const FieldPath& other);
     FieldPath& operator=(const FieldPath& rhs);
+    ~FieldPath();
 
     template <typename InputIterator>
     FieldPath(InputIterator first, InputIterator last)
         : _path(first, last)
-    {
-    }
+    { }
 
     iterator insert(iterator pos, const FieldPathEntry& entry);
     void push_back(const FieldPathEntry& entry);

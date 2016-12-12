@@ -43,7 +43,8 @@ std::vector<vespalib::string> unsupported = {
     "join(",
     "reduce(",
     "rename(",
-    "tensor("
+    "tensor(",
+    "concat("
 };
 
 bool is_unsupported(const vespalib::string &expression) {

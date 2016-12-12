@@ -17,9 +17,9 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * Check query marshaling in VespaSearcher works... and stuff...
+ * Check query marshaling in VespaSearcher works.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class VespaSearcherTestCase extends TestCase {
 

@@ -24,25 +24,26 @@ IndexFieldInfoExecutor::IndexFieldInfoExecutor(feature_t type, feature_t isFilte
       _type(type),
       _isFilter(isFilter),
       _field(field),
-      _fieldHandle(fieldHandle)
+      _fieldHandle(fieldHandle),
+      _md(nullptr)
 {
     // empty
 }
 
 void
-IndexFieldInfoExecutor::execute(fef::MatchData &data)
+IndexFieldInfoExecutor::execute(uint32_t docId)
 {
-    *data.resolveFeature(outputs()[0]) = _type;
-    *data.resolveFeature(outputs()[1]) = _isFilter;
-    *data.resolveFeature(outputs()[2]) = 1.0f; // searched
-    fef::TermFieldMatchData *tfmd = data.resolveTermField(_fieldHandle);
-    if (tfmd->getDocId() == data.getDocId()) {
-        *data.resolveFeature(outputs()[3]) = 1.0f; // hit
+    outputs().set_number(0, _type);
+    outputs().set_number(1, _isFilter);
+    outputs().set_number(2, 1.0f); // searched
+    const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
+    if (tfmd->getDocId() == docId) {
+        outputs().set_number(3, 1.0f); // hit
     } else {
-        *data.resolveFeature(outputs()[3]) = 0.0f; // no hit
+        outputs().set_number(3, 0.0f); // no hit
     }
     fef::FieldPositionsIterator itr = tfmd->getIterator();
-    *data.resolveFeature(outputs()[4]) = itr.getFieldLength();
+    outputs().set_number(4, itr.getFieldLength());
     if (itr.valid()) {
         uint32_t first = itr.getPosition();
         uint32_t last  = 0;
@@ -51,14 +52,20 @@ IndexFieldInfoExecutor::execute(fef::MatchData &data)
             last = itr.getPosition();
             ++cnt;
         }
-        *data.resolveFeature(outputs()[5]) = first;
-        *data.resolveFeature(outputs()[6]) = last;
-        *data.resolveFeature(outputs()[7]) = cnt;
+        outputs().set_number(5, first);
+        outputs().set_number(6, last);
+        outputs().set_number(7, cnt);
     } else {
-        *data.resolveFeature(outputs()[5]) = fef::FieldPositionsIterator::UNKNOWN_LENGTH; // first
-        *data.resolveFeature(outputs()[6]) = fef::FieldPositionsIterator::UNKNOWN_LENGTH; // last
-        *data.resolveFeature(outputs()[7]) = 0.0f;
+        outputs().set_number(5, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // first
+        outputs().set_number(6, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // last
+        outputs().set_number(7, 0.0f);
     }
+}
+
+void
+IndexFieldInfoExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -66,31 +73,38 @@ IndexFieldInfoExecutor::execute(fef::MatchData &data)
 AttrFieldInfoExecutor::AttrFieldInfoExecutor(feature_t type, uint32_t fieldHandle) :
     FeatureExecutor(),
     _type(type),
-    _fieldHandle(fieldHandle)
+    _fieldHandle(fieldHandle),
+    _md(nullptr)
 {
     // empty
 }
 
 void
-AttrFieldInfoExecutor::execute(fef::MatchData &data)
+AttrFieldInfoExecutor::execute(uint32_t docId)
 {
-    *data.resolveFeature(outputs()[0]) = _type;
-    *data.resolveFeature(outputs()[1]) = 0.0; // not filter
-    *data.resolveFeature(outputs()[2]) = 1.0f; // searched
-    fef::TermFieldMatchData *tfmd = data.resolveTermField(_fieldHandle);
-    if (tfmd->getDocId() == data.getDocId()) {
-        *data.resolveFeature(outputs()[3]) = 1.0f; // hit
-        *data.resolveFeature(outputs()[4]) = fef::FieldPositionsIterator::UNKNOWN_LENGTH; // len
-        *data.resolveFeature(outputs()[5]) = 0.0f; // first
-        *data.resolveFeature(outputs()[6]) = 0.0f; // last
-        *data.resolveFeature(outputs()[7]) = 1.0f;
+    outputs().set_number(0, _type);
+    outputs().set_number(1, 0.0); // not filter
+    outputs().set_number(2, 1.0f); // searched
+    const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
+    if (tfmd->getDocId() == docId) {
+        outputs().set_number(3, 1.0f); // hit
+        outputs().set_number(4, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // len
+        outputs().set_number(5, 0.0f); // first
+        outputs().set_number(6, 0.0f); // last
+        outputs().set_number(7, 1.0f);
     } else {
-        *data.resolveFeature(outputs()[3]) = 0.0f; // no hit
-        *data.resolveFeature(outputs()[4]) = fef::FieldPositionsIterator::UNKNOWN_LENGTH; // len
-        *data.resolveFeature(outputs()[5]) = fef::FieldPositionsIterator::UNKNOWN_LENGTH; // first
-        *data.resolveFeature(outputs()[6]) = fef::FieldPositionsIterator::UNKNOWN_LENGTH; // last
-        *data.resolveFeature(outputs()[7]) = 0.0f;
+        outputs().set_number(3, 0.0f); // no hit
+        outputs().set_number(4, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // len
+        outputs().set_number(5, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // first
+        outputs().set_number(6, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // last
+        outputs().set_number(7, 0.0f);
     }
+}
+
+void
+AttrFieldInfoExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -190,14 +204,14 @@ FieldInfoBlueprint::setup(const fef::IIndexEnvironment &indexEnv,
     return false;
 }
 
-fef::FeatureExecutor::LP
-FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv) const
+fef::FeatureExecutor &
+FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
 {
     if (_overview) {
         std::vector<feature_t> values;
         values.push_back(_indexcnt);
         values.push_back(_attrcnt);
-        return fef::FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
     uint32_t fieldHandle = util::getTermFieldHandle(queryEnv, 0, _fieldId);
     if (fieldHandle == fef::IllegalHandle) {
@@ -210,14 +224,12 @@ FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv) const
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default first pos
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default last pos
         values.push_back(0.0f); // number of hits
-        return fef::FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
     if (_type == 1.0) {  // index
-        return fef::FeatureExecutor::
-            LP(new IndexFieldInfoExecutor(_type, _isFilter, _fieldId, fieldHandle));
+        return stash.create<IndexFieldInfoExecutor>(_type, _isFilter, _fieldId, fieldHandle);
     } else if (_type == 2.0) {  // attribute
-        return fef::FeatureExecutor::LP(
-                new AttrFieldInfoExecutor(_type, fieldHandle));
+        return stash.create<AttrFieldInfoExecutor>(_type, fieldHandle);
     }
     std::vector<feature_t> values;
     values.push_back(_type);
@@ -228,7 +240,7 @@ FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv) const
     values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default first pos
     values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default last pos
     values.push_back(0.0f); // number of hits
-    return fef::FeatureExecutor::LP(new ValueExecutor(values));
+    return stash.create<ValueExecutor>(values);
 }
 
 } // namespace features

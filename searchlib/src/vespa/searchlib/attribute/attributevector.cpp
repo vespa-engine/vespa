@@ -18,12 +18,14 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <functional>
 #include <stdexcept>
-#include <vespa/log/log.h>
 #include "ipostinglistsearchcontext.h"
 #include "ipostinglistattributebase.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include "interlock.h"
 #include "attributesaver.h"
+#include <vespa/document/update/mapvalueupdate.h>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");
 
 using vespalib::getLastErrorString;

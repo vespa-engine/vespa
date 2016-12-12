@@ -36,11 +36,11 @@ DotProductExecutor<Vector, Buffer>::DotProductExecutor(const IAttributeVector * 
 
 template <typename Vector, typename Buffer>
 void
-DotProductExecutor<Vector, Buffer>::execute(MatchData & match)
+DotProductExecutor<Vector, Buffer>::execute(uint32_t docId)
 {
     feature_t val = 0;
     if (!_vector.getDimMap().empty()) {
-        _buffer.fill(*_attribute, match.getDocId());
+        _buffer.fill(*_attribute, docId);
         for (size_t i = 0; i < _buffer.size(); ++i) {
             typename Vector::HashMap::const_iterator itr = _vector.getDimMap().find(_buffer[i].getValue());
             if (itr != _vector.getDimMap().end()) {
@@ -48,7 +48,7 @@ DotProductExecutor<Vector, Buffer>::execute(MatchData & match)
             }
         }
     }
-    *match.resolveFeature(outputs()[0]) = val;
+    outputs().set_number(0, val);
 }
 
 }
@@ -73,12 +73,12 @@ DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 
 template <typename A>
 void
-DotProductExecutor<A>::execute(MatchData & match)
+DotProductExecutor<A>::execute(uint32_t docId)
 {
     const AT *values(NULL);
-    size_t count = getAttributeValues(match.getDocId(), values);
+    size_t count = getAttributeValues(docId, values);
     size_t commonRange = std::min(count, _vector.size());
-    *match.resolveFeature(outputs()[0]) = _multiplier->dotProduct(&_vector[0], reinterpret_cast<const typename A::BaseType *>(values), commonRange);
+    outputs().set_number(0, _multiplier->dotProduct(&_vector[0], reinterpret_cast<const typename A::BaseType *>(values), commonRange));
 }
 
 template <typename A>
@@ -221,36 +221,36 @@ parseVectors(const Property & prop, std::vector<T> & values, std::vector<uint32_
 }
 
 template <typename A>
-FeatureExecutor::LP
-create(const IAttributeVector * attribute, const Property & prop)
+FeatureExecutor &
+create(const IAttributeVector * attribute, const Property & prop, vespalib::Stash &stash)
 {
     std::vector<typename A::BaseType> values;
     std::vector<uint32_t> indexes;
     parseVectors(prop, values, indexes);
     if (values.empty()) {
-        return FeatureExecutor::LP(new SingleZeroValueExecutor());
+        return stash.create<SingleZeroValueExecutor>();
     }
     const A & iattr = dynamic_cast<const A &>(*attribute);
     if (indexes.empty()) {
         try {
             const multivalue::Value<typename A::BaseType> * tmp;
             iattr.getRawValues(0, tmp);
-            return FeatureExecutor::LP(new dotproduct::array::DotProductExecutor<A>(&iattr, values));
+            return stash.create<dotproduct::array::DotProductExecutor<A>>(&iattr, values);
         } catch (const std::runtime_error & e) {
             (void) e;
-            return FeatureExecutor::LP(new dotproduct::array::DotProductByCopyExecutor<A>(&iattr, values));
+            return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(&iattr, values);
         }
     } else {
         try {
             const multivalue::Value<typename A::BaseType> * tmp;
             iattr.getRawValues(0, tmp);
-            return FeatureExecutor::LP(new dotproduct::array::SparseDotProductExecutor<A>(&iattr, values, indexes));
+            return stash.create<dotproduct::array::SparseDotProductExecutor<A>>(&iattr, values, indexes);
         } catch (const std::runtime_error & e) {
             (void) e;
-            return FeatureExecutor::LP(new dotproduct::array::SparseDotProductByCopyExecutor<A>(&iattr, values, indexes));
+            return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(&iattr, values, indexes);
         }
     }
-    return FeatureExecutor::LP(new SingleZeroValueExecutor());
+    return stash.create<SingleZeroValueExecutor>();
 }
 
 template <typename T>
@@ -264,52 +264,52 @@ struct ArrayParam : public fef::Anything
 };
 
 template <typename A>
-FeatureExecutor::LP
-create(const IAttributeVector * attribute, const ArrayParam<typename A::BaseType> & arguments)
+FeatureExecutor &
+create(const IAttributeVector * attribute, const ArrayParam<typename A::BaseType> & arguments, vespalib::Stash &stash)
 {
     if (arguments.values.empty()) {
-        return FeatureExecutor::LP(new SingleZeroValueExecutor());
+        return stash.create<SingleZeroValueExecutor>();
     }
     const A & iattr = dynamic_cast<const A &>(*attribute);
     if (arguments.indexes.empty()) {
         try {
             const multivalue::Value<typename A::BaseType> * tmp;
             iattr.getRawValues(0, tmp);
-            return FeatureExecutor::LP(new dotproduct::array::DotProductExecutor<A>(&iattr, arguments.values));
+            return stash.create<dotproduct::array::DotProductExecutor<A>>(&iattr, arguments.values);
         } catch (const std::runtime_error & e) {
             (void) e;
-            return FeatureExecutor::LP(new dotproduct::array::DotProductByCopyExecutor<A>(&iattr, arguments.values));
+            return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(&iattr, arguments.values);
         }
     } else {
         try {
             const multivalue::Value<typename A::BaseType> * tmp;
             iattr.getRawValues(0, tmp);
-            return FeatureExecutor::LP(new dotproduct::array::SparseDotProductExecutor<A>(&iattr, arguments.values, arguments.indexes));
+            return stash.create<dotproduct::array::SparseDotProductExecutor<A>>(&iattr, arguments.values, arguments.indexes);
         } catch (const std::runtime_error & e) {
             (void) e;
-            return FeatureExecutor::LP(new dotproduct::array::SparseDotProductByCopyExecutor<A>(&iattr, arguments.values, arguments.indexes));
+            return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(&iattr, arguments.values, arguments.indexes);
         }
     }
-    return FeatureExecutor::LP(new SingleZeroValueExecutor());
+    return stash.create<SingleZeroValueExecutor>();
 }
 
 //const char * BINARY = "binary";
 const char * OBJECT = "object";
 
 
-FeatureExecutor::LP
-createFromObject(const IAttributeVector * attribute, const fef::Anything & object)
+FeatureExecutor &
+createFromObject(const IAttributeVector * attribute, const fef::Anything & object, vespalib::Stash &stash)
 {
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
         switch (attribute->getBasicType()) {
             case BasicType::INT32:
-                return create<IntegerAttributeTemplate<int32_t>>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object));
+                return create<IntegerAttributeTemplate<int32_t>>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
             case BasicType::INT64:
-                return create<IntegerAttributeTemplate<int64_t>>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object));
+                return create<IntegerAttributeTemplate<int64_t>>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
             case BasicType::FLOAT:
-                return create<FloatingPointAttributeTemplate<float>>(attribute, dynamic_cast<const ArrayParam<float> &>(object));
+                return create<FloatingPointAttributeTemplate<float>>(attribute, dynamic_cast<const ArrayParam<float> &>(object), stash);
             case BasicType::DOUBLE:
-                return create<FloatingPointAttributeTemplate<double>>(attribute, dynamic_cast<const ArrayParam<double> &>(object));
+                return create<FloatingPointAttributeTemplate<double>>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
             default:
                 break;
         }
@@ -318,56 +318,52 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
     //       where the query vector is represented as an object instead of a string.
     LOG(warning, "The attribute vector '%s' is NOT of type array<int/long/float/double>"
             ", returning executor with default value.", attribute->getName().c_str());
-    return FeatureExecutor::LP(new SingleZeroValueExecutor());
+    return stash.create<SingleZeroValueExecutor>();
 }
 
-FeatureExecutor::LP
-createFromString(const IAttributeVector * attribute, const Property & prop)
+FeatureExecutor &
+createFromString(const IAttributeVector * attribute, const Property & prop, vespalib::Stash &stash)
 {
     if (attribute->getCollectionType() == attribute::CollectionType::WSET) {
         if (attribute->isStringType()) {
             if (attribute->hasEnum()) {
                 dotproduct::wset::EnumVector vector(attribute);
                 WeightedSetParser::parse(prop.get(), vector);
-                return FeatureExecutor::LP
-                    (new dotproduct::wset::DotProductExecutor<dotproduct::wset::EnumVector, WeightedEnumContent>(attribute, vector));
+                return stash.create<dotproduct::wset::DotProductExecutor<dotproduct::wset::EnumVector, WeightedEnumContent>>(attribute, vector);
             } else {
                 dotproduct::wset::StringVector vector;
                 WeightedSetParser::parse(prop.get(), vector);
-                return FeatureExecutor::LP
-                    (new dotproduct::wset::DotProductExecutor<dotproduct::wset::StringVector, WeightedConstCharContent>(attribute, vector));
+                return stash.create<dotproduct::wset::DotProductExecutor<dotproduct::wset::StringVector, WeightedConstCharContent>>(attribute, vector);
             }
         } else if (attribute->isIntegerType()) {
             if (attribute->hasEnum()) {
                 dotproduct::wset::EnumVector vector(attribute);
                 WeightedSetParser::parse(prop.get(), vector);
-                return FeatureExecutor::LP
-                    (new dotproduct::wset::DotProductExecutor<dotproduct::wset::EnumVector, WeightedEnumContent>(attribute, vector));
+                return stash.create<dotproduct::wset::DotProductExecutor<dotproduct::wset::EnumVector, WeightedEnumContent>>(attribute, vector);
                 
             } else {
                 dotproduct::wset::IntegerVector vector;
                 WeightedSetParser::parse(prop.get(), vector);
-                return FeatureExecutor::LP
-                    (new dotproduct::wset::DotProductExecutor<dotproduct::wset::IntegerVector, WeightedIntegerContent>(attribute, vector));
+                return stash.create<dotproduct::wset::DotProductExecutor<dotproduct::wset::IntegerVector, WeightedIntegerContent>>(attribute, vector);
             }
         }
     } else if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
         switch (attribute->getBasicType()) {
             case BasicType::INT32:
-                return create<IntegerAttributeTemplate<int32_t>>(attribute, prop);
+                return create<IntegerAttributeTemplate<int32_t>>(attribute, prop, stash);
             case BasicType::INT64:
-                return create<IntegerAttributeTemplate<int64_t>>(attribute, prop);
+                return create<IntegerAttributeTemplate<int64_t>>(attribute, prop, stash);
             case BasicType::FLOAT:
-                return create<FloatingPointAttributeTemplate<float>>(attribute, prop);
+                return create<FloatingPointAttributeTemplate<float>>(attribute, prop, stash);
             case BasicType::DOUBLE:
-                return create<FloatingPointAttributeTemplate<double>>(attribute, prop);
+                return create<FloatingPointAttributeTemplate<double>>(attribute, prop, stash);
             default:
                 break;
         }
     }
     LOG(warning, "The attribute vector '%s' is not of type weighted set string/integer nor"
                  " array<int/long/float/double>, returning executor with default value.", attribute->getName().c_str());
-    return FeatureExecutor::LP(new SingleZeroValueExecutor());
+    return stash.create<SingleZeroValueExecutor>();
 }
 
 }
@@ -424,14 +420,14 @@ DotProductBlueprint::prepareSharedState(const IQueryEnvironment & env, IObjectSt
     }
 }
 
-FeatureExecutor::LP
-DotProductBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+DotProductBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(getAttribute(env));
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
             getAttribute(env).c_str());
-        return FeatureExecutor::LP(new SingleZeroValueExecutor());
+        return stash.create<SingleZeroValueExecutor>();
     }
     if ((attribute->getCollectionType() == attribute::CollectionType::WSET) &&
         attribute->hasEnum() &&
@@ -441,14 +437,14 @@ DotProductBlueprint::createExecutor(const IQueryEnvironment & env) const
     }
     const fef::Anything * argument = env.getObjectStore().get(getBaseName() + "." + _queryVector + "." + OBJECT);
     if (argument != NULL) {
-        return createFromObject(attribute, *argument);
+        return createFromObject(attribute, *argument, stash);
     } else {
         Property prop = env.getProperties().lookup(getBaseName(), _queryVector);
         if (prop.found() && !prop.get().empty()) {
-            return createFromString(attribute, prop);
+            return createFromString(attribute, prop, stash);
         }
     }
-    return FeatureExecutor::LP(new SingleZeroValueExecutor());
+    return stash.create<SingleZeroValueExecutor>();
 }
 
 } // namespace features

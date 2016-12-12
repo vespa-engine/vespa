@@ -1,11 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/persistence/spi/bucket.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vdslib/distribution/distribution.h>
+#include "bucket.h"
 
 namespace storage {
+
+namespace lib {
+    class ClusterState;
+    class Distribution;
+}
 
 namespace spi {
 
@@ -24,6 +27,7 @@ public:
 
     ClusterState(const ClusterState& other);
     ClusterState& operator=(const ClusterState& other);
+    ~ClusterState();
 
     /**
      * Returns true if the system has been set up to have

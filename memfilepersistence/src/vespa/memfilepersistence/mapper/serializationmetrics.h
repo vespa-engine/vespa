@@ -9,13 +9,13 @@ namespace memfile {
 class SerializationWriteMetrics : public metrics::MetricSet
 {
 public:
-    metrics::LongAverageMetric headerLatency;
+    metrics::DoubleAverageMetric headerLatency;
     metrics::LongAverageMetric headerSize;
-    metrics::LongAverageMetric bodyLatency;
+    metrics::DoubleAverageMetric bodyLatency;
     metrics::LongAverageMetric bodySize;
-    metrics::LongAverageMetric metaLatency;
+    metrics::DoubleAverageMetric metaLatency;
     metrics::LongAverageMetric metaSize;
-    metrics::LongAverageMetric totalLatency;
+    metrics::DoubleAverageMetric totalLatency;
 
     SerializationWriteMetrics(const std::string& name, MetricSet& owner);
     ~SerializationWriteMetrics();
@@ -24,16 +24,16 @@ public:
 class SerializationMetrics : public metrics::MetricSet
 {
 public:
-    metrics::LongAverageMetric initialMetaReadLatency;
-    metrics::LongAverageMetric tooLargeMetaReadLatency;
-    metrics::LongAverageMetric totalLoadFileLatency;
-    metrics::LongAverageMetric verifyLatency;
-    metrics::LongAverageMetric deleteFileLatency;
-    metrics::LongAverageMetric headerReadLatency;
+    metrics::DoubleAverageMetric initialMetaReadLatency;
+    metrics::DoubleAverageMetric tooLargeMetaReadLatency;
+    metrics::DoubleAverageMetric totalLoadFileLatency;
+    metrics::DoubleAverageMetric verifyLatency;
+    metrics::DoubleAverageMetric deleteFileLatency;
+    metrics::DoubleAverageMetric headerReadLatency;
     metrics::LongAverageMetric headerReadSize;
-    metrics::LongAverageMetric bodyReadLatency;
+    metrics::DoubleAverageMetric bodyReadLatency;
     metrics::LongAverageMetric bodyReadSize;
-    metrics::LongAverageMetric cacheUpdateAndImplicitVerifyLatency;
+    metrics::DoubleAverageMetric cacheUpdateAndImplicitVerifyLatency;
     metrics::LongCountMetric fullRewritesDueToDownsizingFile;
     metrics::LongCountMetric fullRewritesDueToTooSmallFile;
     SerializationWriteMetrics partialWrite;

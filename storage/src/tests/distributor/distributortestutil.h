@@ -135,7 +135,21 @@ public:
         return _config;
     }
 
-    BucketDatabase& getBucketDatabase() { return _distributor->getBucketDatabase(); }
+    // TODO explicit notion of bucket spaces for tests
+    BucketDatabase& getBucketDatabase() {
+        return _distributor->getDefaultBucketSpace().getBucketDatabase();
+    }
+    const BucketDatabase& getBucketDatabase() const {
+        return _distributor->getDefaultBucketSpace().getBucketDatabase();
+    }
+
+    const lib::Distribution& getDistribution() const {
+        return _distributor->getDefaultBucketSpace().getDistribution();
+    }
+    // "End to end" distribution change trigger, which will invoke the bucket
+    // DB updater as expected based on the previous and new cluster state
+    // and config.
+    void triggerDistributionChange(lib::Distribution::SP distr);
     
     framework::defaultimplementation::FakeClock& getClock() { return _node->getClock(); }
     DistributorComponentRegister& getComponentRegister() { return _node->getComponentRegister(); }

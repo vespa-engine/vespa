@@ -7,11 +7,9 @@ import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.UnaryOperator;
+import java.util.Optional;
 
 /**
  * A sparse implementation of a tensor backed by a Map of cells to values.
@@ -21,27 +19,16 @@ import java.util.function.UnaryOperator;
 @Beta
 public class MapTensor implements Tensor {
 
-    private final ImmutableSet<String> dimensions;
+    // TODO: Enforce that all addresses are dense (and then avoid storing keys in TensorAddress)
+    
+    private final TensorType type;
 
     private final ImmutableMap<TensorAddress, Double> cells;
 
-    /** Creates a sparse tensor where the dimensions are determined by the cells */
-    public MapTensor(Map<TensorAddress, Double> cells) {
-        this(dimensionsOf(cells.keySet()), cells);
-    }
-
-    /** Creates a sparse tensor */
-    MapTensor(Set<String> dimensions, Map<TensorAddress, Double> cells) {
-        ensureValidDimensions(cells, dimensions);
-        this.dimensions = ImmutableSet.copyOf(dimensions);
+    /** Creates a sparse tensor. The cell addresses must match the type. */
+    public MapTensor(TensorType type, Map<TensorAddress, Double> cells) {
+        this.type = type;
         this.cells = ImmutableMap.copyOf(cells);
-    }
-
-    private void ensureValidDimensions(Map<TensorAddress, Double> cells, Set<String> dimensions) {
-        for (TensorAddress address : cells.keySet())
-            if ( ! dimensions.containsAll(address.dimensions()))
-                throw new IllegalArgumentException("Cell address " + address + " is outside this tensors dimensions " +
-                                                   dimensions);
     }
 
     /**
@@ -52,29 +39,56 @@ public class MapTensor implements Tensor {
      */
     public static MapTensor from(String s) {
         s = s.trim();
-        if ( s.startsWith("("))
-            return fromTensorWithEmptyDimensions(s);
-        else if ( s.startsWith("{"))
-            return fromTensor(s, Collections.emptySet());
-        else
-            throw new IllegalArgumentException("Excepted a string starting by { or (, got '" + s + "'");
+        try {
+            if (s.startsWith("tensor("))
+                return fromTypedTensor(s);
+            else if (s.startsWith("{"))
+                return fromCellString(typeFromCellString(s), s);
+            else
+                return fromNumber(Double.parseDouble(s));
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" + s + "'");
+        }
     }
 
-    private static MapTensor fromTensorWithEmptyDimensions(String s) {
-        s = s.substring(1).trim();
-        int multiplier = s.indexOf("*");
-        if (multiplier < 0 || ! s.endsWith(")"))
-            throw new IllegalArgumentException("Expected a tensor on the form ({dimension:-,...}*{{cells}}), got '" + s + "'");
-        MapTensor dimensionTensor = fromTensor(s.substring(0, multiplier).trim(), Collections.emptySet());
-        return fromTensor(s.substring(multiplier + 1, s.length() - 1), dimensionTensor.dimensions());
+    private static MapTensor fromTypedTensor(String s) {
+        int colonIndex = s.indexOf(':');
+        if (colonIndex < 0 || s.length() < colonIndex + 1)
+            throw new IllegalArgumentException("Expected tensorType:tensorValue, but got '" + s + "'");
+        String typeSpec = s.substring(0, colonIndex);
+        String valueSpec = s.substring(colonIndex +1 );
+        return fromCellString(TensorTypeParser.fromSpec(typeSpec), valueSpec);
     }
 
-    private static MapTensor fromTensor(String s, Set<String> additionalDimensions) {
+    /** Derive the tensor type from the first address string in the given tensor string */
+    private static TensorType typeFromCellString(String s) {
+        s = s.substring(1).trim(); // remove tensor start
+        int firstKeyOrEmptyTensorEnd = s.indexOf('}');
+        String addressBody = s.substring(0, firstKeyOrEmptyTensorEnd).trim();
+        if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
+
+        addressBody = addressBody.substring(1); // remove key start
+        if (addressBody.isEmpty()) return TensorType.empty; // Empty key
+
+        TensorType.Builder builder = new TensorType.Builder();
+        for (String elementString : addressBody.split(",")) {
+            String[] pair = elementString.split(":");
+            if (pair.length != 2)
+                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
+                                                   "got '" + elementString + "'");
+            builder.mapped(pair[0].trim());
+        }
+
+        return builder.build();
+    }
+
+    private static MapTensor fromCellString(TensorType type, String s) {
         s = s.trim().substring(1).trim();
         ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
         while (s.length() > 1) {
             int keyEnd = s.indexOf('}');
-            TensorAddress address = TensorAddress.from(s.substring(0, keyEnd+1));
+            TensorAddress address = addressFrom(type, s.substring(0, keyEnd+1));
             s = s.substring(keyEnd + 1).trim();
             if ( ! s.startsWith(":"))
                 throw new IllegalArgumentException("Expecting a ':' after " + address + ", got '" + s + "'");
@@ -90,11 +104,35 @@ public class MapTensor implements Tensor {
         }
 
         ImmutableMap<TensorAddress, Double> cellMap = cells.build();
-        Set<String> dimensions = dimensionsOf(cellMap.keySet());
-        dimensions.addAll(additionalDimensions);
-        return new MapTensor(dimensions, cellMap);
+        return new MapTensor(type, cellMap);
     }
 
+    /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
+    private static TensorAddress addressFrom(TensorType type, String mapAddressString) {
+        mapAddressString = mapAddressString.trim();
+        if ( ! (mapAddressString.startsWith("{") && mapAddressString.endsWith("}")))
+            throw new IllegalArgumentException("Expecting a tensor address to be enclosed in {}, got '" + mapAddressString + "'");
+
+        String addressBody = mapAddressString.substring(1, mapAddressString.length() - 1).trim();
+        if (addressBody.isEmpty()) return TensorAddress.empty;
+
+        TensorAddress.Builder builder = new TensorAddress.Builder(type);
+        for (String elementString : addressBody.split(",")) {
+            String[] pair = elementString.split(":");
+            if (pair.length != 2)
+                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
+                                                   "got '" + elementString + "'");
+            builder.add(pair[0].trim(), pair[1].trim());
+        }
+        return builder.build();
+    }
+
+    private static MapTensor fromNumber(double number) {
+        ImmutableMap.Builder<TensorAddress, Double> singleCell = new ImmutableMap.Builder<>();
+        singleCell.put(TensorAddress.empty, number);
+        return new MapTensor(TensorType.empty, singleCell.build());
+    }
+    
     private static Double asDouble(TensorAddress address, String s) {
         try {
             return Double.valueOf(s);
@@ -104,16 +142,8 @@ public class MapTensor implements Tensor {
         }
     }
 
-    private static Set<String> dimensionsOf(Set<TensorAddress> addresses) {
-        Set<String> dimensions = new HashSet<>();
-        for (TensorAddress address : addresses)
-            for (TensorAddress.Element element : address.elements())
-                dimensions.add(element.dimension());
-        return dimensions;
-    }
-
     @Override
-    public Set<String> dimensions() { return dimensions; }
+    public TensorType type() { return type; }
 
     @Override
     public Map<TensorAddress, Double> cells() { return cells; }

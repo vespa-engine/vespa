@@ -40,6 +40,7 @@ class PartitionStateList {
 
 public:
     PartitionStateList(PartitionId::Type partitionCount);
+    ~PartitionStateList();
 
     PartitionState& operator[](PartitionId::Type index);
     const PartitionState& operator[](PartitionId::Type index) const

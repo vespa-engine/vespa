@@ -4,6 +4,7 @@
 #include <vespa/document/base/field.h>
 
 #include <vespa/document/datatype/datatype.h>
+#include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/bobhash.h>
@@ -38,6 +39,11 @@ Field::Field(const vespalib::stringref & name,
       _fieldId(calculateIdV7()),
       _isHeaderField(headerField)
 {
+}
+
+FieldValue::UP
+Field::createValue() const {
+    return _dataType->createFieldValue();
 }
 
 vespalib::string

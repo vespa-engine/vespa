@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -10,6 +11,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
@@ -20,22 +22,31 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author freva
  */
 public class LocalZoneUtils {
+    public static final int CONFIG_SERVER_WEB_SERVICE_PORT = 4080;
     public static final String CONFIG_SERVER_HOSTNAME = "config-server";
     public static final ContainerName CONFIG_SERVER_CONTAINER_NAME = new ContainerName(CONFIG_SERVER_HOSTNAME);
-    public static final int CONFIG_SERVER_WEB_SERVICE_PORT = 4080;
+    public static final String NODE_ADMIN_HOSTNAME = HostName.getLocalhost();
+    public static final ContainerName NODE_ADMIN_CONTAINER_NAME = new ContainerName("node-admin");
     public static final DockerImage VESPA_LOCAL_IMAGE = new DockerImage("vespa-local:latest");
 
     private static final ConfigServerHttpRequestExecutor requestExecutor = ConfigServerHttpRequestExecutor.create(
@@ -43,11 +54,12 @@ public class LocalZoneUtils {
     private static final String APP_HOSTNAME_PREFIX = "cnode-";
     private static final String TENANT_NAME = "localtenant";
     private static final String APPLICATION_NAME = "default";
+    private static final Path PROJECT_ROOT = Paths.get("").toAbsolutePath();
 
-    public static boolean startConfigServerIfNeeded(Docker docker, Environment environment) throws UnknownHostException {
+    public static void startConfigServerIfNeeded(Docker docker, Environment environment) throws UnknownHostException {
         Optional<Container> container = docker.getContainer(CONFIG_SERVER_HOSTNAME);
         if (container.isPresent()) {
-            if (container.get().isRunning) return true;
+            if (container.get().isRunning) return;
             else docker.deleteContainer(CONFIG_SERVER_CONTAINER_NAME);
         }
 
@@ -65,25 +77,56 @@ public class LocalZoneUtils {
                 .create();
 
         docker.startContainer(CONFIG_SERVER_CONTAINER_NAME);
+    }
 
-        int maxRetries = 2000;
-        for (int i = 0; i < maxRetries; i++) {
-            try {
-                if (i % 100 == 0) System.out.println("Check if config server is up, try " + i + " of " + maxRetries);
-
-                URL url = new URL("http://" + CONFIG_SERVER_HOSTNAME + ":" + CONFIG_SERVER_WEB_SERVICE_PORT +
-                        "/state/v1/health");
-                Thread.sleep(100);
-                HttpURLConnection http = (HttpURLConnection) url.openConnection();
-                if (http.getResponseCode() == 200) return true;
-            } catch (IOException | InterruptedException ignored) { }
+    public static void startNodeAdminIfNeeded(Docker docker, Environment environment, Path pathToContainerStorage) {
+        Optional<Container> container = docker.getContainer(NODE_ADMIN_HOSTNAME);
+        if (container.isPresent()) {
+            if (container.get().isRunning) return;
+            else docker.deleteContainer(NODE_ADMIN_CONTAINER_NAME);
         }
 
-        return false;
+        Docker.CreateContainerCommand createCmd = docker.createContainerCommand(VESPA_LOCAL_IMAGE,
+                NODE_ADMIN_CONTAINER_NAME, NODE_ADMIN_HOSTNAME)
+                .withNetworkMode("host")
+                .withVolume("/proc", "/host/proc")
+                .withVolume("/var/run/docker.sock", "/host/var/run/docker.sock")
+                .withVolume(pathToContainerStorage.toString(), "/host" + pathToContainerStorage.toString())
+                .withEnvironment("ENVIRONMENT", environment.getEnvironment())
+                .withEnvironment("REGION", environment.getRegion())
+                .withEnvironment("CONFIG_SERVER_ADDRESS", CONFIG_SERVER_HOSTNAME)
+                .withEnvironment("JPDA_PORT", "localhost:5555")
+                .withEnvironment("JPDA_SUSPEND", "n")
+                .withEnvironment("YJAVA_OPTS", "-Dvespa.freezedetector.disable=true")
+                .withEntrypoint("/usr/local/bin/start-node-admin.sh");
+
+        Arrays.asList(
+                    "/home/y/logs",
+                    "/home/y/var/cache",
+                    "/home/y/var/crash",
+                    "/home/y/var/db/jdisc",
+                    "/home/y/var/db/vespa",
+                    "/home/y/var/jdisc_container",
+                    "/home/y/var/jdisc_core",
+                    "/home/y/var/maven",
+                    "/home/y/var/run",
+                    "/home/y/var/scoreboards",
+                    "/home/y/var/service",
+                    "/home/y/var/share",
+                    "/home/y/var/spool",
+                    "/home/y/var/vespa",
+                    "/home/y/var/yca",
+                    "/home/y/var/ycore++",
+                    "/home/y/var/ymon",
+                    "/home/y/var/zookeeper")
+                .forEach(path -> createCmd.withVolume(pathToContainerStorage.resolve("node-admin" + path).toString(), path));
+
+        createCmd.create();
+        docker.startContainer(NODE_ADMIN_CONTAINER_NAME);
     }
 
     public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
-        Path dockerfileTemplatePath = Paths.get("Dockerfile.template");
+        Path dockerfileTemplatePath = Paths.get("node-admin/Dockerfile.template");
 
         String dockerfileTemplate = new String(Files.readAllBytes(dockerfileTemplatePath))
                 .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
@@ -97,22 +140,36 @@ public class LocalZoneUtils {
          *
          * Therefore, copy docker-api jar to node-admin/target and used node-admin as build root instead of vespa/
           */
-        Path projectRoot = Paths.get("").toAbsolutePath().getParent();
-        Files.copy(projectRoot.resolve("docker-api/target/docker-api-jar-with-dependencies.jar"),
-                projectRoot.resolve("node-admin/target/docker-api-jar-with-dependencies.jar"),
+        Files.copy(PROJECT_ROOT.resolve("docker-api/target/docker-api-jar-with-dependencies.jar"),
+                PROJECT_ROOT.resolve("node-admin/target/docker-api-jar-with-dependencies.jar"),
                 StandardCopyOption.REPLACE_EXISTING);
 
-        Path dockerfilePath = Paths.get("Dockerfile").toAbsolutePath();
+        Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/Dockerfile");
 
         Files.write(dockerfilePath, dockerfileTemplate.getBytes());
         docker.buildImage(dockerfilePath.getParent().toFile(), VESPA_LOCAL_IMAGE);
+    }
+
+    public static void provisionHost(String hostname) {
+        List<Map<String, String>> nodesToAdd = new ArrayList<>();
+        Map<String, String> provisionNodeRequest = new HashMap<>();
+        provisionNodeRequest.put("type", "host");
+        provisionNodeRequest.put("flavor", "docker");
+        provisionNodeRequest.put("hostname", hostname);
+        provisionNodeRequest.put("openStackId", "fake-" + hostname);
+        nodesToAdd.add(provisionNodeRequest);
+
+        try {
+            requestExecutor.post("/nodes/v2/node", CONFIG_SERVER_WEB_SERVICE_PORT, nodesToAdd, Map.class);
+        } catch (RuntimeException e) {
+            if (! e.getMessage().contains("A node with this name already exists")) throw e;
+        }
     }
 
     /**
      * Adds numberOfNodes to node-repo and returns a set of node hostnames.
      */
     public static Set<String> provisionNodes(String parentHostname, int numberOfNodes) {
-        Set<String> hostnames = new HashSet<>();
         List<Map<String, String>> nodesToAdd = new ArrayList<>();
         for (int i = 1; i <= numberOfNodes; i++) {
             final String hostname = APP_HOSTNAME_PREFIX + i;
@@ -123,16 +180,23 @@ public class LocalZoneUtils {
             provisionNodeRequest.put("hostname", hostname);
             provisionNodeRequest.put("openStackId", "fake-" + hostname);
             nodesToAdd.add(provisionNodeRequest);
-            hostnames.add(hostname);
         }
 
-        requestExecutor.post("/nodes/v2/node", CONFIG_SERVER_WEB_SERVICE_PORT, nodesToAdd, Map.class);
-        return hostnames;
+        try {
+            requestExecutor.post("/nodes/v2/node", CONFIG_SERVER_WEB_SERVICE_PORT, nodesToAdd, Map.class);
+        } catch (RuntimeException e) {
+            if (! e.getMessage().contains("A node with this name already exists")) throw e;
+        }
+        return nodesToAdd.stream().map(i -> i.get("hostname")).collect(Collectors.toSet());
     }
 
     public static void setState(Node.State state, String hostname) {
-        requestExecutor.put("/nodes/v2/state/" + state + "/" + hostname,
-                CONFIG_SERVER_WEB_SERVICE_PORT, Optional.empty(), Map.class);
+        try {
+            requestExecutor.put("/nodes/v2/state/" + state + "/" + hostname,
+                    CONFIG_SERVER_WEB_SERVICE_PORT, Optional.empty(), Map.class);
+        } catch (RuntimeException e) {
+            if (! e.getMessage().contains("Not registered as provisioned, dirty, failed or parked")) throw e;
+        }
     }
 
     public static void deployApp(Docker docker, Path pathToApp) {
@@ -175,6 +239,40 @@ public class LocalZoneUtils {
     public static void deleteApplication(String tenantName, String appName) {
         requestExecutor.delete("/application/v2/tenant/" + tenantName + "/application/" + appName,
                 CONFIG_SERVER_WEB_SERVICE_PORT, Map.class);
+    }
+
+    public static boolean isReachableURL(URL url, Duration timeout) {
+        Instant start = Instant.now();
+        while (Instant.now().minus(timeout).isBefore(start)) {
+            try {
+                Thread.sleep(100);
+                HttpURLConnection http = (HttpURLConnection) url.openConnection();
+                if (http.getResponseCode() == 200) return true;
+            } catch (IOException | InterruptedException ignored) { }
+        }
+
+        return false;
+    }
+
+    public static Maintainer getMaintainer(Path pathToContainerStorage) {
+        Maintainer maintainer = mock(Maintainer.class);
+        when(maintainer.pathInHostFromPathInNode(any(), any())).thenAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            return pathToContainerStorage
+                    .resolve(((ContainerName) args[0]).asString())
+                    .resolve((String) args[1]);
+        });
+        when(maintainer.pathInNodeAdminFromPathInNode(any(), any())).thenAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            return maintainer.pathInHostFromPathInNode((ContainerName) args[0], (String) args[1]);
+        });
+        when(maintainer.pathInNodeAdminToNodeCleanup(any())).thenAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            return pathToContainerStorage
+                    .resolve("cleanup_" + ((ContainerName) args[0]).asString() + "_" + System.currentTimeMillis());
+        });
+
+        return maintainer;
     }
 }
 

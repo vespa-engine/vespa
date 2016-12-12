@@ -18,7 +18,8 @@ namespace features {
 
 TermFieldMdExecutor::TermFieldMdExecutor(const search::fef::IQueryEnvironment &env,
                                          uint32_t fieldId)
-    : _terms()
+    : _terms(),
+      _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         const search::fef::ITermData *td = env.getTerm(i);
@@ -32,7 +33,7 @@ TermFieldMdExecutor::TermFieldMdExecutor(const search::fef::IQueryEnvironment &e
 }
 
 void
-TermFieldMdExecutor::execute(MatchData & match)
+TermFieldMdExecutor::execute(uint32_t docId)
 {
     uint32_t termsmatched = 0;
     uint32_t occs = 0;
@@ -41,10 +42,10 @@ TermFieldMdExecutor::execute(MatchData & match)
     feature_t maxTermWeight = 0;
 
     for (size_t i = 0; i < _terms.size(); ++i) {
-        const TermFieldMatchData &tfmd = *match.resolveTermField(_terms[i].first);
+        const TermFieldMatchData &tfmd = *_md->resolveTermField(_terms[i].first);
         int32_t termWeight = _terms[i].second.percent();
 
-        if (tfmd.getDocId() == match.getDocId()) {
+        if (tfmd.getDocId() == docId) {
             ++termsmatched;
             score += tfmd.getWeight();
             occs += (tfmd.end() - tfmd.begin());
@@ -57,15 +58,20 @@ TermFieldMdExecutor::execute(MatchData & match)
         }
 
     }
-    *match.resolveFeature(outputs()[0]) = score;
-    *match.resolveFeature(outputs()[1]) = _terms.size();
-    *match.resolveFeature(outputs()[2]) = (termsmatched > 0 ? 1.0 : 0.0);
-    *match.resolveFeature(outputs()[3]) = termsmatched;
-    *match.resolveFeature(outputs()[4]) = weight;
-    *match.resolveFeature(outputs()[5]) = occs;
-    *match.resolveFeature(outputs()[6]) = maxTermWeight;
+    outputs().set_number(0, score);
+    outputs().set_number(1, _terms.size());
+    outputs().set_number(2, (termsmatched > 0 ? 1.0 : 0.0));
+    outputs().set_number(3, termsmatched);
+    outputs().set_number(4, weight);
+    outputs().set_number(5, occs);
+    outputs().set_number(6, maxTermWeight);
 }
 
+void
+TermFieldMdExecutor::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
 
 TermFieldMdBlueprint::TermFieldMdBlueprint() :
     Blueprint("termFieldMd"),
@@ -104,10 +110,10 @@ TermFieldMdBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-TermFieldMdBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+TermFieldMdBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new TermFieldMdExecutor(env, _field->id()));
+    return stash.create<TermFieldMdExecutor>(env, _field->id());
 }
 
 

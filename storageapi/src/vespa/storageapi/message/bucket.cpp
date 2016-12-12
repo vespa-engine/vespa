@@ -134,6 +134,11 @@ MergeBucketCommand::print(std::ostream& out, bool verbose,
     }
 }
 
+std::ostream&
+operator<<(std::ostream& out, const MergeBucketCommand::Node& n) {
+    return out << n.index << (n.sourceOnly ? " (source only)" : "");
+}
+
 MergeBucketReply::MergeBucketReply(const MergeBucketCommand& cmd)
     : BucketReply(cmd),
       _nodes(cmd.getNodes()),

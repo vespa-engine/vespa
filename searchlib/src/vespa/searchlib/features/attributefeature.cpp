@@ -24,10 +24,10 @@ using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::ConstCharContent;
-using search::attribute::DenseTensorAttribute;
+using search::tensor::DenseTensorAttribute;
 using search::attribute::IntegerContent;
 using search::attribute::FloatContent;
-using search::attribute::TensorAttribute;
+using search::tensor::TensorAttribute;
 using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedIntegerContent;
 using search::attribute::WeightedFloatContent;
@@ -119,7 +119,7 @@ public:
     SingleAttributeExecutor(const T & attribute) : _attribute(attribute) { }
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 class CountOnlyAttributeExecutor : public fef::FeatureExecutor {
@@ -135,7 +135,7 @@ public:
     CountOnlyAttributeExecutor(const attribute::IAttributeVector & attribute) : _attribute(attribute) { }
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 /**
  * Implements the executor for fetching values from a single or array attribute vector
@@ -159,7 +159,7 @@ public:
     AttributeExecutor(const search::attribute::IAttributeVector * attribute, uint32_t idx);
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 
@@ -186,30 +186,30 @@ public:
     WeightedSetAttributeExecutor(const search::attribute::IAttributeVector * attribute, T key, bool useKey);
 
     // Inherit doc from FeatureExecutor.
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 template <typename T>
 void
-SingleAttributeExecutor<T>::execute(search::fef::MatchData & match)
+SingleAttributeExecutor<T>::execute(uint32_t docId)
 {
-    typename T::LoadedValueType v = _attribute.getFast(match.getDocId());
+    typename T::LoadedValueType v = _attribute.getFast(docId);
     // value
-    *match.resolveFeature(outputs()[0]) = __builtin_expect(attribute::isUndefined(v), false)
-                                          ? attribute::getUndefined<search::feature_t>()
-                                          : util::getAsFeature(v);
-    *match.resolveFeature(outputs()[1]) = 0.0f;  // weight
-    *match.resolveFeature(outputs()[2]) = 0.0f;  // contains
-    *match.resolveFeature(outputs()[3]) = 1.0f; // count
+    outputs().set_number(0, __builtin_expect(attribute::isUndefined(v), false)
+                         ? attribute::getUndefined<search::feature_t>()
+                         : util::getAsFeature(v));
+    outputs().set_number(1, 0.0f);  // weight
+    outputs().set_number(2, 0.0f);  // contains
+    outputs().set_number(3, 1.0f);  // count
 }
 
 void
-CountOnlyAttributeExecutor::execute(search::fef::MatchData & match)
+CountOnlyAttributeExecutor::execute(uint32_t docId)
 {
-    *match.resolveFeature(outputs()[0]) = 0.0f;  // value
-    *match.resolveFeature(outputs()[1]) = 0.0f;  // weight
-    *match.resolveFeature(outputs()[2]) = 0.0f;  // contains
-    *match.resolveFeature(outputs()[3]) = _attribute.getValueCount(match.getDocId()); // count
+    outputs().set_number(0, 0.0f);  // value
+    outputs().set_number(1, 0.0f);  // weight
+    outputs().set_number(2, 0.0f);  // contains
+    outputs().set_number(3, _attribute.getValueCount(docId)); // count
 }
 
 template <typename T>
@@ -226,17 +226,17 @@ AttributeExecutor<T>::AttributeExecutor(const IAttributeVector * attribute, uint
 
 template <typename T>
 void
-AttributeExecutor<T>::execute(search::fef::MatchData & match)
+AttributeExecutor<T>::execute(uint32_t docId)
 {
     feature_t value = 0.0f;
-    _buffer.fill(*_attribute, match.getDocId());
+    _buffer.fill(*_attribute, docId);
     if (_idx < _buffer.size()) {
         value = considerUndefined(_buffer[_idx], _attrType);
     }
-    *match.resolveFeature(outputs()[0]) = value; // value
-    *match.resolveFeature(outputs()[1]) = 0.0f;  // weight
-    *match.resolveFeature(outputs()[2]) = 0.0f;  // contains
-    *match.resolveFeature(outputs()[3]) = _defaultCount; // count
+    outputs().set_number(0, value);         // value
+    outputs().set_number(1, 0.0f);          // weight
+    outputs().set_number(2, 0.0f);          // contains
+    outputs().set_number(3, _defaultCount); // count
 }
 
 
@@ -253,14 +253,14 @@ WeightedSetAttributeExecutor<BT, T>::WeightedSetAttributeExecutor(const IAttribu
 
 template <typename BT, typename T>
 void
-WeightedSetAttributeExecutor<BT, T>::execute(search::fef::MatchData & match)
+WeightedSetAttributeExecutor<BT, T>::execute(uint32_t docId)
 {
     feature_t value = 0.0f;
     feature_t weight = 0.0f;
     feature_t contains = 0.0f;
     feature_t count = 0.0f;
     if (_useKey) {
-        _buffer.fill(*_attribute, match.getDocId());
+        _buffer.fill(*_attribute, docId);
         for (uint32_t i = 0; i < _buffer.size(); ++i) {
             if (equals(_buffer[i].getValue(), _key)) {
                 value = considerUndefined(_key, _attrType);
@@ -270,12 +270,12 @@ WeightedSetAttributeExecutor<BT, T>::execute(search::fef::MatchData & match)
             }
         }
     } else {
-        count = _attribute->getValueCount(match.getDocId());
+        count = _attribute->getValueCount(docId);
     }
-    *match.resolveFeature(outputs()[0]) = value;  // value
-    *match.resolveFeature(outputs()[1]) = weight; // weight
-    *match.resolveFeature(outputs()[2]) = contains; // contains
-    *match.resolveFeature(outputs()[3]) = count; // count
+    outputs().set_number(0, value);    // value
+    outputs().set_number(1, weight);   // weight
+    outputs().set_number(2, contains); // contains
+    outputs().set_number(3, count);    // count
 }
 
 
@@ -331,35 +331,32 @@ AttributeBlueprint::createInstance() const
 
 #define CREATE_AND_RETURN_IF_SINGLE_NUMERIC(a, T) \
     if (dynamic_cast<const SingleValueNumericAttribute<T> *>(a) != NULL) { \
-        return FeatureExecutor::LP(new SingleAttributeExecutor<SingleValueNumericAttribute<T>>(*static_cast<const SingleValueNumericAttribute<T> *>(a))); \
+        return stash.create<SingleAttributeExecutor<SingleValueNumericAttribute<T>>>(*static_cast<const SingleValueNumericAttribute<T> *>(a)); \
     }
 
 namespace {
 
-search::fef::FeatureExecutor::LP
-createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam)
+search::fef::FeatureExecutor &
+createAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName, const vespalib::string &extraParam, vespalib::Stash &stash)
 {
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning default values.",
                 attrName.c_str());
         std::vector<feature_t> values(4, 0.0f);
-        return FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
     if (attribute->getCollectionType() == CollectionType::WSET) {
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
-                return FeatureExecutor::LP
-                    (new WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>(attribute, extraParam, useKey));
+                return stash.create<WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>>(attribute, extraParam, useKey);
             } else if (attribute->isIntegerType()) {
-                return FeatureExecutor::LP
-                    (new WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>(attribute, util::strToNum<int64_t>(extraParam), useKey));
+                return stash.create<WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>>(attribute, util::strToNum<int64_t>(extraParam), useKey);
             } else { // FLOAT
-                return FeatureExecutor::LP
-                    (new WeightedSetAttributeExecutor<WeightedFloatContent, double>(attribute, util::strToNum<double>(extraParam), useKey));
+                return stash.create<WeightedSetAttributeExecutor<WeightedFloatContent, double>>(attribute, util::strToNum<double>(extraParam), useKey);
             }
         } else {
-            return FeatureExecutor::LP(new CountOnlyAttributeExecutor(*attribute));
+            return stash.create<CountOnlyAttributeExecutor>(*attribute);
         }
     } else { // SINGLE or ARRAY
         if ((attribute->getCollectionType() == CollectionType::SINGLE) && (attribute->isIntegerType() || attribute->isFloatingPointType())) {
@@ -373,39 +370,40 @@ createAttributeExecutor(const IAttributeVector *attribute, const vespalib::strin
             if (!extraParam.empty()) {
                 idx = util::strToNum<uint32_t>(extraParam);
             } else if (attribute->getCollectionType() == CollectionType::ARRAY) {
-                return FeatureExecutor::LP(new CountOnlyAttributeExecutor(*attribute));
+                return stash.create<CountOnlyAttributeExecutor>(*attribute);
             }
             if (attribute->isStringType()) {
-                return FeatureExecutor::LP(new AttributeExecutor<ConstCharContent>(attribute, idx));
+                return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
             } else if (attribute->isIntegerType()) {
-                return FeatureExecutor::LP(new AttributeExecutor<IntegerContent>(attribute, idx));
+                return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
             } else { // FLOAT
-                return FeatureExecutor::LP(new AttributeExecutor<FloatContent>(attribute, idx));
+                return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
             }
         }
     }
 }
 
-search::fef::FeatureExecutor::LP
+search::fef::FeatureExecutor &
 createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib::string &attrName,
-                              const ValueType &tensorType)
+                              const ValueType &tensorType,
+                              vespalib::Stash &stash)
 {
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(tensorType);
+        return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (attribute->getCollectionType() != search::attribute::CollectionType::SINGLE ||
             attribute->getBasicType() != search::attribute::BasicType::TENSOR) {
         LOG(warning, "The attribute vector '%s' is NOT of type tensor."
                 " Returning empty tensor.", attribute->getName().c_str());
-        return ConstantTensorExecutor::createEmpty(tensorType);
+        return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     const TensorAttribute *tensorAttribute = dynamic_cast<const TensorAttribute *>(attribute);
     if (tensorAttribute == nullptr) {
         LOG(warning, "The attribute vector '%s' could not be converted to a tensor attribute."
                 " Returning empty tensor.", attribute->getName().c_str());
-        return ConstantTensorExecutor::createEmpty(tensorType);
+        return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (tensorType != tensorAttribute->getConfig().tensorType()) {
         LOG(warning, "The tensor attribute '%s' has tensor type '%s',"
@@ -413,26 +411,26 @@ createTensorAttributeExecutor(const IAttributeVector *attribute, const vespalib:
                 tensorAttribute->getName().c_str(),
                 tensorAttribute->getConfig().tensorType().to_spec().c_str(),
                 tensorType.to_spec().c_str());
-        return ConstantTensorExecutor::createEmpty(tensorType);
+        return ConstantTensorExecutor::createEmpty(tensorType, stash);
     }
     if (tensorType.is_dense()) {
         const DenseTensorAttribute *denseTensorAttribute = dynamic_cast<const DenseTensorAttribute *>(tensorAttribute);
         assert(denseTensorAttribute != nullptr);
-        return FeatureExecutor::LP(new DenseTensorAttributeExecutor(denseTensorAttribute));
+        return stash.create<DenseTensorAttributeExecutor>(denseTensorAttribute);
     }
-    return FeatureExecutor::LP(new TensorAttributeExecutor(tensorAttribute));
+    return stash.create<TensorAttributeExecutor>(tensorAttribute);
 }
 
 }
 
-search::fef::FeatureExecutor::LP
-AttributeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+AttributeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     const IAttributeVector *attribute = env.getAttributeContext().getAttribute(_attrName);
     if (_tensorType.is_tensor()) {
-        return createTensorAttributeExecutor(attribute, _attrName, _tensorType);
+        return createTensorAttributeExecutor(attribute, _attrName, _tensorType, stash);
     } else {
-        return createAttributeExecutor(attribute, _attrName, _extra);
+        return createAttributeExecutor(attribute, _attrName, _extra, stash);
     }
 }
 

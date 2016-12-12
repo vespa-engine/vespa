@@ -33,12 +33,12 @@ DistanceToPathExecutor::DistanceToPathExecutor(std::vector<Vector2> &path,
 }
 
 void
-DistanceToPathExecutor::execute(search::fef::MatchData & match)
+DistanceToPathExecutor::execute(uint32_t docId)
 {
     if (_path.size() > 1 && _pos != NULL) {
         double pos = -1, trip = 0, product = 0;
         double minSqDist = std::numeric_limits<double>::max();
-        _intBuf.fill(*_pos, match.getDocId());
+        _intBuf.fill(*_pos, docId);
 
         // For each line segment, do
         for (uint32_t seg = 1; seg < _path.size(); ++seg) {
@@ -80,13 +80,13 @@ DistanceToPathExecutor::execute(search::fef::MatchData & match)
             trip += len;
         }
 
-        *match.resolveFeature(outputs()[0]) = static_cast<feature_t>(std::sqrt(static_cast<feature_t>(minSqDist)));
-        *match.resolveFeature(outputs()[1]) = static_cast<feature_t>(pos > -1 ? (trip > 0 ? pos / trip : 0) : 1);
-        *match.resolveFeature(outputs()[2]) = static_cast<feature_t>(product);
+        outputs().set_number(0, static_cast<feature_t>(std::sqrt(static_cast<feature_t>(minSqDist))));
+        outputs().set_number(1, static_cast<feature_t>(pos > -1 ? (trip > 0 ? pos / trip : 0) : 1));
+        outputs().set_number(2, static_cast<feature_t>(product));
     } else {
-        *match.resolveFeature(outputs()[0]) = DEFAULT_DISTANCE;
-        *match.resolveFeature(outputs()[1]) = 1;
-        *match.resolveFeature(outputs()[2]) = 0;
+        outputs().set_number(0, DEFAULT_DISTANCE);
+        outputs().set_number(1, 1);
+        outputs().set_number(2, 0);
     }
 }
 
@@ -123,8 +123,8 @@ DistanceToPathBlueprint::setup(const search::fef::IIndexEnvironment & env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     // Retrieve path from query using the name of this and "path" as property.
     std::vector<Vector2> path;
@@ -170,7 +170,7 @@ DistanceToPathBlueprint::createExecutor(const search::fef::IQueryEnvironment &en
     }
 
     // Create and return a compatible executor.
-    return search::fef::FeatureExecutor::LP(new DistanceToPathExecutor(path, pos));
+    return stash.create<DistanceToPathExecutor>(path, pos);
 }
 
 } // namespace features

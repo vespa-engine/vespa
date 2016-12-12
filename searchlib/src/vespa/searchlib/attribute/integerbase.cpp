@@ -3,11 +3,11 @@
 #include <vespa/fastos/fastos.h>
 #include "integerbase.h"
 #include <vespa/searchlib/common/sort.h>
-#include <vespa/log/log.h>
-
-LOG_SETUP(".searchlib.attribute.integerbase");
-
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/document/fieldvalue/fieldvalue.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.integerbase");
 
 namespace search {
 

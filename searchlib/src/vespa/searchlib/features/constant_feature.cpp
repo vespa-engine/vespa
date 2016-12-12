@@ -27,11 +27,11 @@ public:
         : _value(value)
     {}
     virtual bool isPure() override { return true; }
-    virtual void execute(fef::MatchData &data) override {
-        *data.resolve_object_feature(outputs()[0]) = _value;
+    virtual void execute(uint32_t) override {
+        outputs().set_object(0, _value);
     }
-    static FeatureExecutor::LP create(const vespalib::eval::Value &value) {
-        return FeatureExecutor::LP(new ConstantFeatureExecutor(value));
+    static FeatureExecutor &create(const vespalib::eval::Value &value, vespalib::Stash &stash) {
+        return stash.create<ConstantFeatureExecutor>(value);
     }
 };
 
@@ -75,15 +75,15 @@ ConstantBlueprint::setup(const IIndexEnvironment &env,
     return (_value && !_value->type().is_error());
 }
 
-FeatureExecutor::LP
-ConstantBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+ConstantBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     (void) env;
     if (_value) {
-        return ConstantFeatureExecutor::create(_value->value());
+        return ConstantFeatureExecutor::create(_value->value(), stash);
     } else {
         // Note: Should not happen, setup() has already failed
-        return FeatureExecutor::LP(new SingleZeroValueExecutor());
+        return stash.create<SingleZeroValueExecutor>();
     }
 }
 

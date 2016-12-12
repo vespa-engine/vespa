@@ -17,9 +17,9 @@ ChainExecutor::ChainExecutor() :
 }
 
 void
-ChainExecutor::execute(MatchData & data)
+ChainExecutor::execute(uint32_t)
 {
-    *data.resolveFeature(outputs()[0]) = *data.resolveFeature(inputs()[0]);
+    outputs().set_number(0, inputs().get_number(0));
 }
 
 
@@ -62,6 +62,13 @@ ChainBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & p
     }
     describeOutput("out", "chain");
     return true;
+}
+
+FeatureExecutor &
+ChainBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<ChainExecutor>();
 }
 
 } // namespace test

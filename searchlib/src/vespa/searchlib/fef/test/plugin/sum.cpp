@@ -11,13 +11,13 @@ namespace fef {
 namespace test {
 
 void
-SumExecutor::execute(MatchData & data)
+SumExecutor::execute(uint32_t)
 {
     feature_t sum = 0.0f;
     for (uint32_t i = 0; i < inputs().size(); ++i) {
-        sum += *data.resolveFeature(inputs()[i]);
+        sum += inputs().get_number(i);
     }
-    *data.resolveFeature(outputs()[0]) = sum;
+    outputs().set_number(0, sum);
 }
 
 
@@ -67,6 +67,13 @@ SumBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & par
     // Produce only a single output named "out".
     describeOutput("out", "The sum of the values of all parameter features.");
     return true;
+}
+
+FeatureExecutor &
+SumBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
+{
+    (void) queryEnv;
+    return stash.create<SumExecutor>();
 }
 
 } // namespace test

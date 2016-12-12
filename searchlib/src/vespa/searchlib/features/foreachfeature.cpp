@@ -4,6 +4,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.foreachfeature");
 #include "foreachfeature.h"
+#include "valuefeature.h"
 #include "utils.h"
 
 #include <boost/algorithm/string/replace.hpp>
@@ -28,16 +29,16 @@ ForeachExecutor<CO, OP>::ForeachExecutor(const CO & condition, uint32_t numInput
 
 template <typename CO, typename OP>
 void
-ForeachExecutor<CO, OP>::execute(MatchData & match)
+ForeachExecutor<CO, OP>::execute(uint32_t)
 {
     _operation.reset();
     for (uint32_t i = 0; i < inputs().size(); ++i) {
-        feature_t val = *match.resolveFeature(inputs()[i]);
+        feature_t val = inputs().get_number(i);
         if (_condition.useValue(val)) {
             _operation.onValue(val);
         }
     }
-    *match.resolveFeature(outputs()[0]) = _operation.getResult();
+    outputs().set_number(0, _operation.getResult());
 }
 
 
@@ -107,8 +108,8 @@ ForeachBlueprint::setExecutorCreator(CO condition)
         CO _condition;
     public:
         ExecutorCreator(CO cond) : _condition(cond) {}
-        virtual search::fef::FeatureExecutor::LP create(uint32_t numInputs) const {
-            return search::fef::FeatureExecutor::LP(new ForeachExecutor<CO, OP>(_condition,  numInputs));
+        virtual search::fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const {
+            return stash.create<ForeachExecutor<CO, OP>>(_condition,  numInputs);
         }
     };
     _executorCreator.reset(new ExecutorCreator(condition));
@@ -172,13 +173,13 @@ ForeachBlueprint::createInstance() const
     return Blueprint::UP(new ForeachBlueprint());
 }
 
-FeatureExecutor::LP
-ForeachBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+ForeachBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
     if (_executorCreator.get() != NULL) {
-        return _executorCreator->create(_num_inputs);
+        return _executorCreator->create(_num_inputs, stash);
     }
-    return FeatureExecutor::LP(NULL);
+    return stash.create<SingleZeroValueExecutor>();
 }
 
 

@@ -2,6 +2,7 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
+import com.google.common.collect.ImmutableMap;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,40 +18,43 @@ import java.util.Set;
  *
  * @author geirst
  */
+// TODO: Move below MapTensor
 @Beta
 public class MapTensorBuilder {
 
-    private final Set<String> dimensions = new HashSet<>();
-    private final Map<TensorAddress, Double> cells = new HashMap<>();
+    private final TensorType type;
+    private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
+
+    public MapTensorBuilder(TensorType type) {
+        this.type = type;
+    }
+
+    public CellBuilder cell() {
+        return new CellBuilder(type);
+    }
+
+    public Tensor build() {
+        return new MapTensor(type, cells.build());
+    }
 
     public class CellBuilder {
 
-        private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder();
+        private final TensorAddress.Builder addressBuilder;
 
+        private CellBuilder(TensorType type) {
+            addressBuilder = new TensorAddress.Builder(type);
+        }
+        
         public CellBuilder label(String dimension, String label) {
-            dimensions.add(dimension);
             addressBuilder.add(dimension, label);
             return this;
         }
+
         public MapTensorBuilder value(double cellValue) {
             cells.put(addressBuilder.build(), cellValue);
             return MapTensorBuilder.this;
         }
+
     }
 
-    public MapTensorBuilder() {
-    }
-
-    public MapTensorBuilder dimension(String dimension) {
-        dimensions.add(dimension);
-        return this;
-    }
-
-    public CellBuilder cell() {
-        return new CellBuilder();
-    }
-
-    public Tensor build() {
-        return new MapTensor(dimensions, cells);
-    }
 }

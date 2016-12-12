@@ -3,6 +3,8 @@ package com.yahoo.vespa.http.client.config;
 
 import net.jcip.annotations.Immutable;
 
+import java.io.Serializable;
+
 /**
  * Represents an endpoint, in most cases a JDisc container
  * in a Vespa cluster configured with <code>document-api</code>.
@@ -11,7 +13,7 @@ import net.jcip.annotations.Immutable;
  * @since 5.1.20
  */
 @Immutable
-public final class Endpoint {
+public final class Endpoint implements Serializable {
 
     /**
      * Creates an Endpoint with the default port and without using SSL.
@@ -36,6 +38,7 @@ public final class Endpoint {
         return new Endpoint(hostname, port, useSsl);
     }
 
+    private static final long serialVersionUID = 4545345L;
     private final String hostname;
     private final int port;
     private final boolean useSsl;

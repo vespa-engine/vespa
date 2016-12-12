@@ -68,7 +68,7 @@ public class SessionFactoryTest extends TestWithTenant {
 
     @Test(expected = RuntimeException.class)
     public void require_that_invalid_app_dir_is_handled() throws IOException {
-        factory.createSession(new File("doesnotpointtoavaliddir"), "music", new BaseDeployLogger(), TimeoutBudgetTest.day());
+        factory.createSession(new File("doesnotpointtoavaliddir"), "music", TimeoutBudgetTest.day());
     }
 
     private LocalSession getLocalSession() throws IOException {
@@ -77,6 +77,6 @@ public class SessionFactoryTest extends TestWithTenant {
 
     private LocalSession getLocalSession(String appName) throws IOException {
         CompressedApplicationInputStream app = CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(CompressedApplicationInputStreamTest.createTarFile()), SessionCreate.APPLICATION_X_GZIP);
-        return factory.createSession(app.decompress(Files.createTempDir()), appName, new BaseDeployLogger(), TimeoutBudgetTest.day());
+        return factory.createSession(app.decompress(Files.createTempDir()), appName, TimeoutBudgetTest.day());
     }
 }

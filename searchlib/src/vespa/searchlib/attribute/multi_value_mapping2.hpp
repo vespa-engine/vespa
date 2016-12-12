@@ -8,16 +8,9 @@ namespace search {
 namespace attribute {
 
 template <typename EntryT, typename RefT>
-MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize, const GrowStrategy &gs)
+MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(const datastore::ArrayStoreConfig &storeCfg, const GrowStrategy &gs)
     : MultiValueMapping2Base(gs, _store.getGenerationHolder()),
-      _store(maxSmallArraySize)
-{
-}
-
-template <typename EntryT, typename RefT>
-MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(uint32_t maxSmallArraySize, size_t minClusters, size_t maxClusters, const GrowStrategy &gs)
-    : MultiValueMapping2Base(gs, _store.getGenerationHolder()),
-      _store(maxSmallArraySize, minClusters, maxClusters)
+      _store(storeCfg)
 {
 }
 
@@ -53,9 +46,9 @@ MultiValueMapping2<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
 
 template <typename EntryT, typename RefT>
 void
-MultiValueMapping2<EntryT,RefT>::compactWorst()
+MultiValueMapping2<EntryT,RefT>::compactWorst(bool compactMemory, bool compactAddressSpace)
 {
-    datastore::ICompactionContext::UP compactionContext(_store.compactWorst());
+    datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compactMemory, compactAddressSpace));
     if (compactionContext) {
         compactionContext->compact(vespalib::ArrayRef<EntryRef>(&_indices[0],
                                                                 _indices.size()));
@@ -73,6 +66,16 @@ template <typename EntryT, typename RefT>
 AddressSpace
 MultiValueMapping2<EntryT, RefT>::getAddressSpaceUsage() const {
     return _store.addressSpaceUsage();
+}
+
+template <typename EntryT, typename RefT>
+datastore::ArrayStoreConfig
+MultiValueMapping2<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
+                                                             size_t hugePageSize,
+                                                             size_t smallPageSize,
+                                                             size_t minNumArraysForNewBuffer)
+{
+    return ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, minNumArraysForNewBuffer);
 }
 
 } // namespace search::attribute

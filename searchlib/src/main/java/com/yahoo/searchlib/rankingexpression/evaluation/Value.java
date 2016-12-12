@@ -42,7 +42,7 @@ public abstract class Value {
     public abstract Value divide(Value value);
 
     /** Perform the comparison specified by the operator between this value and the given value */
-    public abstract boolean compare(TruthOperator operator,Value value);
+    public abstract Value compare(TruthOperator operator, Value value);
 
     /** Perform the given binary function on this value and the given value */
     public abstract Value function(Function function,Value value);

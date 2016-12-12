@@ -6,10 +6,9 @@
 namespace search {
 namespace fef {
 
-FeatureOverrider::FeatureOverrider(FeatureExecutor::LP executor, uint32_t outputIdx, feature_t value)
+FeatureOverrider::FeatureOverrider(FeatureExecutor &executor, uint32_t outputIdx, feature_t value)
     : _executor(executor),
       _outputIdx(outputIdx),
-      _handle(IllegalHandle),
       _value(value)
 {
 }
@@ -18,36 +17,39 @@ void
 FeatureOverrider::inputs_done()
 {
     for (uint32_t i = 0; i < inputs().size(); ++i) {
-        _executor->addInput(inputs()[i]);
+        _executor.addInput(inputs()[i]);
     }
-    _executor->inputs_done();
+    _executor.inputs_done();
 }
 
 void
 FeatureOverrider::outputs_done()
 {
-    if (_outputIdx < outputs().size()) {
-        _handle = outputs()[_outputIdx];
-    }
     for (uint32_t i = 0; i < outputs().size(); ++i) {
-        _executor->bindOutput(outputs()[i]);
+        _executor.bindOutput(outputs()[i]);
     }
-    _executor->outputs_done();
+    _executor.outputs_done();
 }
 
 bool
 FeatureOverrider::isPure()
 {
-    return _executor->isPure();
+    return _executor.isPure();
 }
 
 void
-FeatureOverrider::execute(MatchData &data)
+FeatureOverrider::execute(uint32_t docId)
 {
-    _executor->execute(data);
-    if (_handle != IllegalHandle) {
-        *data.resolveFeature(_handle) = _value;
+    _executor.execute(docId);
+    if (_outputIdx < outputs().size()) {
+        outputs().set_number(_outputIdx, _value);
     }
+}
+
+void
+FeatureOverrider::handle_bind_match_data(MatchData &md)
+{
+    _executor.bind_match_data(md);
 }
 
 } // namespace fef

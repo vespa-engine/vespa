@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <vespa/vespalib/eval/value.h>
+#include "number_or_object.h"
 
 namespace search {
 namespace fef {
@@ -19,12 +20,6 @@ namespace fef {
 class MatchData
 {
 private:
-    union NumberOrObject {
-        feature_t                   as_number;
-        vespalib::eval::Value::CREF as_object;
-        NumberOrObject() { memset(this, 0, sizeof(NumberOrObject)); }
-        ~NumberOrObject() {}
-    };
     uint32_t                        _docid;
     std::vector<TermFieldMatchData> _termFields;
     std::vector<NumberOrObject>     _features;
@@ -173,6 +168,8 @@ public:
         assert(_feature_is_object[handle]);
         return &_features[handle].as_object;
     }
+
+    const NumberOrObject *resolve_raw(FeatureHandle handle) const { return &_features[handle]; }
 
     static MatchData::UP makeTestInstance(uint32_t numFeatures, uint32_t numHandles, uint32_t fieldIdLimit);
 };

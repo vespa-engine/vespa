@@ -33,14 +33,16 @@ struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
     }
 };
 
-void verify(const vespalib::string &type_expr_in, const vespalib::string &type_spec) {
-    // replace 'tensor' with 'Tensor' in type expression, see hack above
+void verify(const vespalib::string &type_expr_in, const vespalib::string &type_spec, bool replace = true) {
     vespalib::string type_expr = type_expr_in;
-    for (size_t idx = type_expr.find("tensor");
-         idx != type_expr.npos;
-         idx = type_expr.find("tensor"))
-    {
-        type_expr[idx] = 'T';
+    if (replace) {
+        // replace 'tensor' with 'Tensor' in type expression, see hack above
+        for (size_t idx = type_expr.find("tensor");
+             idx != type_expr.npos;
+             idx = type_expr.find("tensor"))
+        {
+            type_expr[idx] = 'T';
+        }
     }
     Function function = Function::parse(type_expr, TypeSpecExtractor());
     if (!EXPECT_TRUE(!function.has_error())) {
@@ -144,6 +146,39 @@ TEST("require that dimension sum resolves correct type") {
     TEST_DO(verify("sum(tensor(x{}),x)", "double"));
 }
 
+TEST("require that reduce resolves correct type") {
+    TEST_DO(verify("reduce(error,sum)", "error"));
+    TEST_DO(verify("reduce(tensor,sum)", "double"));
+    TEST_DO(verify("reduce(tensor(x{}),sum)", "double"));
+    TEST_DO(verify("reduce(double,sum)", "double"));
+    TEST_DO(verify("reduce(any,sum)", "any"));
+    TEST_DO(verify("reduce(error,sum,x)", "error"));
+    TEST_DO(verify("reduce(tensor,sum,x)", "any"));
+    TEST_DO(verify("reduce(any,sum,x)", "any"));
+    TEST_DO(verify("reduce(double,sum,x)", "error"));
+    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,y)", "tensor(x{},z{})"));
+    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,x,z)", "tensor(y{})"));
+    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,y,z,x)", "double"));
+    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,w)", "error"));
+    TEST_DO(verify("reduce(tensor(x{}),sum,x)", "double"));
+}
+
+TEST("require that rename resolves correct type") {
+    TEST_DO(verify("rename(error,x,y)", "error"));
+    TEST_DO(verify("rename(tensor,x,y)", "any"));
+    TEST_DO(verify("rename(double,x,y)", "error"));
+    TEST_DO(verify("rename(any,x,y)", "any"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),a,b)", "error"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),x,y)", "error"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),x,x)", "tensor(x{},y[],z[5])"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),x,w)", "tensor(w{},y[],z[5])"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),y,w)", "tensor(x{},w[],z[5])"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),z,w)", "tensor(x{},y[],w[5])"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),(x,y,z),(z,y,x))", "tensor(z{},y[],x[5])"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),(x,z),(z,x))", "tensor(z{},y[],x[5])"));
+    TEST_DO(verify("rename(tensor(x{},y[],z[5]),(x,y,z),(a,b,c))", "tensor(a{},b[],c[5])"));
+}
+
 vespalib::string strfmt(const char *pattern, const char *a) {
     return vespalib::make_string(pattern, a);
 }
@@ -230,6 +265,28 @@ TEST("require that various operations resolve appropriate type") {
     TEST_DO(verify_op1("isNan(%s)"));    // IsNan
     TEST_DO(verify_op1("relu(%s)"));     // Relu
     TEST_DO(verify_op1("sigmoid(%s)"));  // Sigmoid
+}
+
+TEST("require that map resolves correct type") {
+    TEST_DO(verify_op1("map(%s,f(x)(sin(x)))"));
+}
+
+TEST("require that join resolves correct type") {
+    TEST_DO(verify_op2("join(%s,%s,f(x,y)(x+y))"));
+}
+
+TEST("require that lambda tensor resolves correct type") {
+    TEST_DO(verify("tensor(x[5])(1.0)", "tensor(x[5])", false));
+    TEST_DO(verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])", false));
+    TEST_DO(verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])", false));
+}
+
+TEST("require that tensor concat resolves correct type") {
+    TEST_DO(verify("concat(double,double,x)", "tensor(x[2])"));
+    TEST_DO(verify("concat(tensor(x[2]),tensor(x[3]),x)", "tensor(x[5])"));
+    TEST_DO(verify("concat(tensor(x[2]),tensor(x[3]),y)", "tensor(x[2],y[2])"));
+    TEST_DO(verify("concat(tensor(x[2]),tensor(x{}),x)", "error"));
+    TEST_DO(verify("concat(tensor(x[2]),tensor(y{}),x)", "tensor(x[3],y{})"));
 }
 
 TEST("require that double only expressions can be detected") {

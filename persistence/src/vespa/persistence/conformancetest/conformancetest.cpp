@@ -6,6 +6,13 @@
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/vdslib/state/state.h>
+#include <vespa/vdslib/state/node.h>
+#include <vespa/vdslib/state/nodestate.h>
+#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vdslib/distribution/distribution.h>
 
 LOG_SETUP(".test.conformance");
 

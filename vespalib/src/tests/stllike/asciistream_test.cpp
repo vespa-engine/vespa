@@ -28,6 +28,7 @@ public:
     void testCopyConstruct();
     void testIllegalNumbers();
     void testDouble();
+    void testStateSaver();
 };
 
 template <typename T>
@@ -466,6 +467,21 @@ AsciistreamTest::testDouble() {
     VERIFY_DOUBLE_SERIALIZATION(maxInteger, "9007199254740992.0", automatic << forcedot, 16);
 }
 
+void
+AsciistreamTest::testStateSaver()
+{
+    asciistream as;
+    as << vespalib::hex << vespalib::setfill('0');
+    {
+        asciistream::StateSaver stateSaver(as);
+        as << vespalib::dec << vespalib::setfill('1');
+        EXPECT_EQUAL(vespalib::dec, as.getBase());
+        EXPECT_EQUAL('1', as.getFill());
+    }
+    ASSERT_EQUAL(vespalib::hex, as.getBase());
+    ASSERT_EQUAL('0', as.getFill());
+}
+
 int
 AsciistreamTest::Main()
 {
@@ -512,6 +528,7 @@ AsciistreamTest::Main()
     testGetLine();
     testIllegalNumbers();
     testDouble();
+    testStateSaver();
     TEST_DONE();
 }
 

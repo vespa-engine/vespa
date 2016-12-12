@@ -20,12 +20,12 @@ ClosenessExecutor::ClosenessExecutor(feature_t maxDistance, feature_t scaleDista
 }
 
 void
-ClosenessExecutor::execute(MatchData & match)
+ClosenessExecutor::execute(uint32_t)
 {
-    feature_t distance = *match.resolveFeature(inputs()[0]);
+    feature_t distance = inputs().get_number(0);
     feature_t closeness = std::max(1 - (distance / _maxDistance), (feature_t)0);
-    *match.resolveFeature(outputs()[0]) = closeness;
-    *match.resolveFeature(outputs()[1]) = _logCalc.get(distance);
+    outputs().set_number(0, closeness);
+    outputs().set_number(1, _logCalc.get(distance));
 }
 
 
@@ -99,10 +99,10 @@ ClosenessBlueprint::createInstance() const
     return Blueprint::UP(new ClosenessBlueprint());
 }
 
-FeatureExecutor::LP
-ClosenessBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+ClosenessBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new ClosenessExecutor(_maxDistance, _scaleDistance));
+    return stash.create<ClosenessExecutor>(_maxDistance, _scaleDistance);
 }
 
 

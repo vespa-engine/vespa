@@ -250,13 +250,35 @@ public class ContainerNodeSpec {
         private Optional<Double> minMainMemoryAvailableGb = Optional.of(1d);
         private Optional<Double> minDiskAvailableGb = Optional.of(1d);
 
+        public Builder() {}
+
+        public Builder(ContainerNodeSpec nodeSpec) {
+            hostname(nodeSpec.hostname);
+            containerName(nodeSpec.containerName);
+            nodeState(nodeSpec.nodeState);
+            nodeType(nodeSpec.nodeType);
+            nodeFlavor(nodeSpec.nodeFlavor);
+
+            nodeSpec.wantedDockerImage.ifPresent(this::wantedDockerImage);
+            nodeSpec.vespaVersion.ifPresent(this::vespaVersion);
+            nodeSpec.owner.ifPresent(this::owner);
+            nodeSpec.membership.ifPresent(this::membership);
+            nodeSpec.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
+            nodeSpec.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
+            nodeSpec.wantedRebootGeneration.ifPresent(this::wantedRebootGeneration);
+            nodeSpec.currentRebootGeneration.ifPresent(this::currentRebootGeneration);
+            nodeSpec.minCpuCores.ifPresent(this::minCpuCores);
+            nodeSpec.minMainMemoryAvailableGb.ifPresent(this::minMainMemoryAvailableGb);
+            nodeSpec.minDiskAvailableGb.ifPresent(this::minDiskAvailableGb);
+        }
+
         public Builder hostname(String hostname) {
             this.hostname = hostname;
             return this;
         }
 
-        public Builder wantedDockerImage(Optional<DockerImage> wantedDockerImage) {
-            this.wantedDockerImage = wantedDockerImage;
+        public Builder wantedDockerImage(DockerImage wantedDockerImage) {
+            this.wantedDockerImage = Optional.of(wantedDockerImage);
             return this;
         }
 
@@ -279,53 +301,53 @@ public class ContainerNodeSpec {
             return this;
         }
 
-        public Builder vespaVersion(Optional<String> vespaVersion) {
-            this.vespaVersion = vespaVersion;
+        public Builder vespaVersion(String vespaVersion) {
+            this.vespaVersion = Optional.of(vespaVersion);
             return this;
         }
 
-        public Builder owner(Optional<Owner> owner) {
-            this.owner = owner;
+        public Builder owner(Owner owner) {
+            this.owner = Optional.of(owner);
             return this;
         }
 
-        public Builder membership(Optional<Membership> membership) {
-            this.membership = membership;
+        public Builder membership(Membership membership) {
+            this.membership = Optional.of(membership);
             return this;
         }
 
-        public Builder wantedRestartGeneration(Optional<Long> wantedRestartGeneration) {
-            this.wantedRestartGeneration = wantedRestartGeneration;
+        public Builder wantedRestartGeneration(long wantedRestartGeneration) {
+            this.wantedRestartGeneration = Optional.of(wantedRestartGeneration);
             return this;
         }
 
-        public Builder currentRestartGeneration(Optional<Long> currentRestartGeneration) {
-            this.currentRestartGeneration = currentRestartGeneration;
+        public Builder currentRestartGeneration(long currentRestartGeneration) {
+            this.currentRestartGeneration = Optional.of(currentRestartGeneration);
             return this;
         }
 
-        public Builder wantedRebootGeneration(Optional<Long> wantedRebootGeneration) {
-            this.wantedRebootGeneration = wantedRebootGeneration;
+        public Builder wantedRebootGeneration(long wantedRebootGeneration) {
+            this.wantedRebootGeneration = Optional.of(wantedRebootGeneration);
             return this;
         }
 
-        public Builder currentRebootGeneration(Optional<Long> currentRebootGeneration) {
-            this.currentRebootGeneration = currentRebootGeneration;
+        public Builder currentRebootGeneration(long currentRebootGeneration) {
+            this.currentRebootGeneration = Optional.of(currentRebootGeneration);
             return this;
         }
 
-        public Builder minCpuCores(Optional<Double> minCpuCores) {
-            this.minCpuCores = minCpuCores;
+        public Builder minCpuCores(double minCpuCores) {
+            this.minCpuCores = Optional.of(minCpuCores);
             return this;
         }
 
-        public Builder minMainMemoryAvailableGb(Optional<Double> minMainMemoryAvailableGb) {
-            this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
+        public Builder minMainMemoryAvailableGb(double minMainMemoryAvailableGb) {
+            this.minMainMemoryAvailableGb = Optional.of(minMainMemoryAvailableGb);
             return this;
         }
 
-        public Builder minDiskAvailableGb(Optional<Double> minDiskAvailableGb) {
-            this.minDiskAvailableGb = minDiskAvailableGb;
+        public Builder minDiskAvailableGb(double minDiskAvailableGb) {
+            this.minDiskAvailableGb = Optional.of(minDiskAvailableGb);
             return this;
         }
 

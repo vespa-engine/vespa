@@ -15,9 +15,9 @@ namespace search {
 namespace features {
 
 void
-FirstPhaseExecutor::execute(search::fef::MatchData & match)
+FirstPhaseExecutor::execute(uint32_t)
 {
-    *match.resolveFeature(outputs()[0]) = *match.resolveFeature(inputs()[0]);
+    outputs().set_number(0, inputs().get_number(0));
 }
 
 
@@ -51,10 +51,10 @@ FirstPhaseBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-FirstPhaseBlueprint::createExecutor(const IQueryEnvironment &) const
+FeatureExecutor &
+FirstPhaseBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new FirstPhaseExecutor());
+    return stash.create<FirstPhaseExecutor>();
 }
 
 

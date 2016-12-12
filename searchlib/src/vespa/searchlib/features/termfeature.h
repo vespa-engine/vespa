@@ -23,7 +23,7 @@ public:
      */
     TermExecutor(const search::fef::IQueryEnvironment &env,
                  uint32_t termId);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     const search::fef::ITermData *_termData;
@@ -58,7 +58,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 private:
     uint32_t _termId;

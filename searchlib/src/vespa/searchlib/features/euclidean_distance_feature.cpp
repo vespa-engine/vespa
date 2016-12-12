@@ -45,10 +45,10 @@ feature_t EuclideanDistanceExecutor<DataType>::euclideanDistance(const BufferTyp
 
 template <typename DataType>
 void
-EuclideanDistanceExecutor<DataType>::execute(MatchData &match)
+EuclideanDistanceExecutor<DataType>::execute(uint32_t docId)
 {
-    _attributeBuffer.fill(_attribute, match.getDocId());
-    *match.resolveFeature(outputs()[0]) = euclideanDistance(_attributeBuffer, _vector);
+    _attributeBuffer.fill(_attribute, docId);
+    outputs().set_number(0, euclideanDistance(_attributeBuffer, _vector));
 }
 
 
@@ -84,37 +84,37 @@ EuclideanDistanceBlueprint::createInstance() const
 namespace {
 
 template <typename DataType> 
-FeatureExecutor::LP create(const IAttributeVector &attribute, const Property &queryVector)
+FeatureExecutor & create(const IAttributeVector &attribute, const Property &queryVector, vespalib::Stash &stash)
 {
     std::vector<DataType> v;
     ArrayParser::parse(queryVector.get(), v);
-    return FeatureExecutor::LP(new EuclideanDistanceExecutor<DataType>(attribute, std::move(v)));        
+    return stash.create<EuclideanDistanceExecutor<DataType>>(attribute, std::move(v));
 }
 
 }
 
-FeatureExecutor::LP
-EuclideanDistanceBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+EuclideanDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attributeName);
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager, returning executor with default value.",
             _attributeName.c_str());
-        return FeatureExecutor::LP(new SingleZeroValueExecutor());
+        return stash.create<SingleZeroValueExecutor>();
     }
 
     Property queryVector = env.getProperties().lookup(getBaseName(), _queryVector);
 
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
         if (attribute->isIntegerType()) {
-            return create<IAttributeVector::largeint_t>(*attribute, queryVector);
+            return create<IAttributeVector::largeint_t>(*attribute, queryVector, stash);
         } else if (attribute->isFloatingPointType()) {
-            return create<double>(*attribute, queryVector);
+            return create<double>(*attribute, queryVector, stash);
         }
     }
     LOG(warning, "The attribute vector '%s' is NOT of type array<int/long/float/double>"
             ", returning executor with default value.", attribute->getName().c_str());
-    return FeatureExecutor::LP(new SingleZeroValueExecutor());
+    return stash.create<SingleZeroValueExecutor>();
 
 }
 

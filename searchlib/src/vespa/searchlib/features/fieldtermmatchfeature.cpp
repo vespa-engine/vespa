@@ -18,29 +18,30 @@ namespace features {
 FieldTermMatchExecutor::FieldTermMatchExecutor(const search::fef::IQueryEnvironment &env,
                                                uint32_t fieldId, uint32_t termId) :
     search::fef::FeatureExecutor(),
-    _fieldHandle(util::getTermFieldHandle(env, termId, fieldId))
+    _fieldHandle(util::getTermFieldHandle(env, termId, fieldId)),
+    _md(nullptr)
 {
 }
 
 void
-FieldTermMatchExecutor::execute(search::fef::MatchData &match)
+FieldTermMatchExecutor::execute(uint32_t docId)
 {
     if (_fieldHandle == search::fef::IllegalHandle) {
-        *match.resolveFeature(outputs()[0]) = 1000000; // firstPosition
-        *match.resolveFeature(outputs()[1]) = 1000000; // lastPosition
-        *match.resolveFeature(outputs()[2]) = 0.0f; // occurrences
-        *match.resolveFeature(outputs()[3]) = 0.0f; // sum weight
-        *match.resolveFeature(outputs()[4]) = 0.0f; // avg exactness
+        outputs().set_number(0, 1000000); // firstPosition
+        outputs().set_number(1, 1000000); // lastPosition
+        outputs().set_number(2, 0.0f); // occurrences
+        outputs().set_number(3, 0.0f); // sum weight
+        outputs().set_number(4, 0.0f); // avg exactness
         return;
     }
 
-    search::fef::TermFieldMatchData &tfmd = *match.resolveTermField(_fieldHandle);
+    const search::fef::TermFieldMatchData &tfmd = *_md->resolveTermField(_fieldHandle);
     uint32_t firstPosition = 1000000;
     uint32_t lastPosition = 1000000;
     uint32_t occurrences = 0;
     double sumExactness = 0;
     int64_t weight = 0;
-    if (tfmd.getDocId() == match.getDocId()) {
+    if (tfmd.getDocId() == docId) {
         search::fef::FieldPositionsIterator it = tfmd.getIterator();
         if (it.valid()) {
             lastPosition = 0;
@@ -57,12 +58,19 @@ FieldTermMatchExecutor::execute(search::fef::MatchData &match)
             occurrences = 1;
         }
     }
-    *match.resolveFeature(outputs()[0]) = firstPosition;
-    *match.resolveFeature(outputs()[1]) = lastPosition;
-    *match.resolveFeature(outputs()[2]) = occurrences;
-    *match.resolveFeature(outputs()[3]) = weight;
-    *match.resolveFeature(outputs()[4]) = (occurrences > 0) ? (sumExactness / occurrences) : 0;
+    outputs().set_number(0, firstPosition);
+    outputs().set_number(1, lastPosition);
+    outputs().set_number(2, occurrences);
+    outputs().set_number(3, weight);
+    outputs().set_number(4, (occurrences > 0) ? (sumExactness / occurrences) : 0);
 }
+
+void
+FieldTermMatchExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
+}
+
 
 FieldTermMatchBlueprint::FieldTermMatchBlueprint() :
     search::fef::Blueprint("fieldTermMatch"),
@@ -120,10 +128,10 @@ FieldTermMatchBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new FieldTermMatchBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-FieldTermMatchBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+FieldTermMatchBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new FieldTermMatchExecutor(env, _fieldId, _termId));
+    return stash.create<FieldTermMatchExecutor>(env, _fieldId, _termId);
 }
 
 }}

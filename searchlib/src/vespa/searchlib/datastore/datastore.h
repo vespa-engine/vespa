@@ -2,7 +2,10 @@
 
 #pragma once
 
+#include "allocator.h"
 #include "datastorebase.h"
+#include "free_list_allocator.h"
+#include "raw_allocator.h"
 
 namespace search {
 namespace btree {
@@ -75,21 +78,14 @@ public:
         return getBufferState(RefType(ref).bufferId()).getCompacting();
     }
 
-    template <typename EntryType>
-    std::pair<RefType, EntryType *>
-    allocNewEntry(uint32_t typeId);
+    template <typename EntryT>
+    Allocator<EntryT, RefT> allocator(uint32_t typeId);
 
-    template <typename EntryType, typename Reclaimer>
-    std::pair<RefType, EntryType *>
-    allocEntry(uint32_t typeId);
+    template <typename EntryT, typename ReclaimerT>
+    FreeListAllocator<EntryT, RefT, ReclaimerT> freeListAllocator(uint32_t typeId);
 
-    template <typename EntryType>
-    std::pair<RefType, EntryType *>
-    allocNewEntryCopy(uint32_t typeId, const EntryType &rhs);
-
-    template <typename EntryType, typename Reclaimer>
-    std::pair<RefType, EntryType *>
-    allocEntryCopy(uint32_t typeId, const EntryType &rhs);
+    template <typename EntryT>
+    RawAllocator<EntryT, RefT> rawAllocator(uint32_t typeId);
 
 };
 

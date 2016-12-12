@@ -15,23 +15,23 @@ namespace storage {
 
 struct CommunicationManagerMetrics : public metrics::MetricSet {
     metrics::LongAverageMetric queueSize;
-    metrics::LoadMetric<metrics::LongAverageMetric> messageProcessTime;
-    metrics::LoadMetric<metrics::LongAverageMetric> exceptionMessageProcessTime;
+    metrics::LoadMetric<metrics::DoubleAverageMetric> messageProcessTime;
+    metrics::LoadMetric<metrics::DoubleAverageMetric> exceptionMessageProcessTime;
     metrics::LongCountMetric failedDueToTooLittleMemory;
     metrics::LongCountMetric convertToStorageAPIFailures;
-    metrics::LongAverageMetric sendCommandLatency;
-    metrics::LongAverageMetric sendReplyLatency;
+    metrics::DoubleAverageMetric sendCommandLatency;
+    metrics::DoubleAverageMetric sendReplyLatency;
 
     CommunicationManagerMetrics(const metrics::LoadTypeSet& loadTypes,
                                 metrics::MetricSet* owner = 0)
         : metrics::MetricSet("communication", "",
                 "Metrics for the communication manager", owner),
           queueSize("messagequeue", "", "Size of input message queue.", this),
-          messageProcessTime(loadTypes, metrics::LongAverageMetric(
+          messageProcessTime(loadTypes, metrics::DoubleAverageMetric(
                   "messageprocesstime", "",
                   "Time transport thread uses to process a single message"),
                   this),
-          exceptionMessageProcessTime(loadTypes, metrics::LongAverageMetric(
+          exceptionMessageProcessTime(loadTypes, metrics::DoubleAverageMetric(
                   "exceptionmessageprocesstime", "",
                   "Time transport thread uses to process a single message "
                   "that fails with an exception thrown into communication "

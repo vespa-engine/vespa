@@ -55,7 +55,6 @@ public:
     TermEditDistanceExecutor(const search::fef::IQueryEnvironment &env,
                              const TermEditDistanceConfig &config);
 
-    void inputs_done() override { _lenHandle = inputs()[0]; }
 
     /**
      *
@@ -79,9 +78,9 @@ public:
      *
      * After completing the matrix, the minimum cost is contained in the bottom-right.
      *
-     * @param data All available match data.
+     * @param docid local document id to be evaluated
      */
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     /**
@@ -92,13 +91,15 @@ private:
      */
     void logRow(const std::vector<TedCell> &row, size_t numCols);
 
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 private:
     const TermEditDistanceConfig             &_config;       // The config for this executor.
     std::vector<search::fef::TermFieldHandle> _fieldHandles; // The handles of all query terms.
     std::vector<feature_t>                    _termWeights;  // The weights of all query terms.
-    search::fef::FeatureHandle                _lenHandle;    // Handle to the length input feature.
     std::vector<TedCell>                      _prevRow;      // Optimized representation of the cost table.
     std::vector<TedCell>                      _thisRow;      //
+    const fef::MatchData                     *_md;
 };
 
 /**
@@ -119,7 +120,7 @@ public:
     virtual search::fef::Blueprint::UP createInstance() const;
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     // Inherit doc from Blueprint.
     virtual search::fef::ParameterDescriptions getDescriptions() const {

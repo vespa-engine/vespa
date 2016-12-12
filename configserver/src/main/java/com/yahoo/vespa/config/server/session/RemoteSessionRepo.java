@@ -63,7 +63,6 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
      * @param sessionsPath         a {@link com.yahoo.path.Path} to the sessions dir.
      * @param applicationRepo      an {@link TenantApplications} object.
      * @param executorService      an {@link ExecutorService} to run callbacks from ZooKeeper.
-     * @throws java.lang.Exception if creating the repo fails
      */
     private RemoteSessionRepo(Curator curator,
                               RemoteSessionFactory remoteSessionFactory,
@@ -71,7 +70,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
                               Path sessionsPath,
                               TenantApplications applicationRepo,
                               MetricUpdater metricUpdater,
-                              ExecutorService executorService) throws Exception {
+                              ExecutorService executorService) {
         this.curator = curator;
         this.sessionsPath = sessionsPath;
         this.applicationRepo = applicationRepo;

@@ -60,14 +60,17 @@ private:
     const NativeProximityParams & _params;
     std::vector<FieldSetup>       _setups;
     uint32_t                      _totalFieldWeight;
+    const fef::MatchData         *_md;
 
-    feature_t calculateScoreForField(const FieldSetup & fs, search::fef::MatchData & match);
-    feature_t calculateScoreForPair(const TermPair & pair, uint32_t fieldId, search::fef::MatchData & match);
+    feature_t calculateScoreForField(const FieldSetup & fs, uint32_t docId);
+    feature_t calculateScoreForPair(const TermPair & pair, uint32_t fieldId, uint32_t docId);
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     NativeProximityExecutor(const search::fef::IQueryEnvironment & env,
                             const NativeProximityParams & params);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 
     static void generateTermPairs(const search::fef::IQueryEnvironment & env, const QueryTermVector & terms,
                                   uint32_t slidingWindow, FieldSetup & setup);
@@ -105,7 +108,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment & env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     /**
      * Obtains the parameters used by the executor.

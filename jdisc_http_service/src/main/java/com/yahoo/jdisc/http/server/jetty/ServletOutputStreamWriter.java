@@ -12,15 +12,17 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
+
 /**
  * @author tonytv
+ * @author bjorncs
  */
 public class ServletOutputStreamWriter {
     /** Rules:
@@ -34,14 +36,14 @@ public class ServletOutputStreamWriter {
     private enum State {
         NOT_STARTED,
         WAITING_FOR_WRITE_POSSIBLE_CALLBACK,
-        WAITING_FOR_BUFFER,
+        WAITING_FOR_FIRST_BUFFER,
+        WAITING_FOR_SUBSEQUENT_BUFFER,
         WRITING_BUFFERS,
         FINISHED_OR_ERROR
     }
 
     private static final Logger log = Logger.getLogger(ServletOutputStreamWriter.class.getName());
 
-    // TODO: This reference is not guaranteed to be unique; ByteBuffer.allocate(0) MAY in principle return a singleton!
     // If so, application code could fake a close by writing such a byte buffer.
     // The problem can be solved by filtering out zero-length byte buffers from application code.
     // Other ways to express this are also possible, e.g. with a 'closed' state checked when queue goes empty.
@@ -76,12 +78,38 @@ public class ServletOutputStreamWriter {
         this.metricReporter = metricReporter;
     }
 
-    public void setSendingError() {
+    public void registerWriteListener() {
+        outputStream.setWriteListener(writeListener);
+    }
+
+    public void sendErrorContentAndCloseAsync(ByteBuffer errorContent) {
+        boolean thisThreadShouldWrite;
+
         synchronized (monitor) {
-            // TODO: This assert seems fishy. Investigate.
-            assertStateIs(state, State.NOT_STARTED);
-            state = State.FINISHED_OR_ERROR;
+            // Assert that no content has been written as it is too late to write error response if the response is committed.
+            switch (state) {
+                case NOT_STARTED:
+                    queueErrorContent_holdingLock(errorContent);
+                    state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
+                    thisThreadShouldWrite = false;
+                    break;
+                case WAITING_FOR_FIRST_BUFFER:
+                    queueErrorContent_holdingLock(errorContent);
+                    state = State.WRITING_BUFFERS;
+                    thisThreadShouldWrite = true;
+                    break;
+                default:
+                    throw createAndLogAssertionError("Invalid state: " + state);
+            }
         }
+        if (thisThreadShouldWrite) {
+            writeBuffersInQueueToOutputStream();
+        }
+    }
+
+    private void queueErrorContent_holdingLock(ByteBuffer errorContent) {
+        responseContentQueue.addLast(new ResponseContentPart(errorContent, NOOP_COMPLETION_HANDLER));
+        responseContentQueue.addLast(new ResponseContentPart(CLOSE_STREAM_BUFFER, NOOP_COMPLETION_HANDLER));
     }
 
     public void writeBuffer(ByteBuffer buf, CompletionHandler handler) {
@@ -89,22 +117,19 @@ public class ServletOutputStreamWriter {
 
         synchronized (monitor) {
             if (state == State.FINISHED_OR_ERROR) {
-                if (handler != null) {
-                    executor.execute(() ->  handler.failed(new IllegalStateException("ContentChannel already closed.")));
-                }
+                executor.execute(() ->  handler.failed(new IllegalStateException("ContentChannel already closed.")));
                 return;
             }
-
             responseContentQueue.addLast(new ResponseContentPart(buf, handler));
             switch (state) {
                 case NOT_STARTED:
                     state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
-                    outputStream.setWriteListener(writeListener);
                     break;
                 case WAITING_FOR_WRITE_POSSIBLE_CALLBACK:
                 case WRITING_BUFFERS:
                     break;
-                case WAITING_FOR_BUFFER:
+                case WAITING_FOR_FIRST_BUFFER:
+                case WAITING_FOR_SUBSEQUENT_BUFFER:
                     thisThreadShouldWrite = true;
                     state = State.WRITING_BUFFERS;
                     break;
@@ -114,13 +139,16 @@ public class ServletOutputStreamWriter {
         }
 
         if (thisThreadShouldWrite) {
-            // TODO: Consider refactoring to avoid multiple monitor entry-exit.
             writeBuffersInQueueToOutputStream();
         }
     }
 
     public void close(CompletionHandler handler) {
         writeBuffer(CLOSE_STREAM_BUFFER, handler);
+    }
+
+    public void close() {
+        close(NOOP_COMPLETION_HANDLER);
     }
 
     private void writeBuffersInQueueToOutputStream() {
@@ -130,10 +158,6 @@ public class ServletOutputStreamWriter {
             ResponseContentPart contentPart;
 
             synchronized (monitor) {
-                if (state == State.FINISHED_OR_ERROR) {
-                    return;
-                }
-
                 assertStateIs(state, State.WRITING_BUFFERS);
 
                 if (!outputStream.isReady()) {
@@ -144,7 +168,7 @@ public class ServletOutputStreamWriter {
                 contentPart = responseContentQueue.pollFirst();
 
                 if (contentPart == null && lastOperationWasFlush) {
-                    state = State.WAITING_FOR_BUFFER;
+                    state = State.WAITING_FOR_SUBSEQUENT_BUFFER;
                     return;
                 }
             }
@@ -159,13 +183,15 @@ public class ServletOutputStreamWriter {
                 lastOperationWasFlush = false;
 
                 if (contentPart.buf == CLOSE_STREAM_BUFFER) {
-                    closeOutputStream(contentPart.handler);
+                    callCompletionHandlerWhenDone(contentPart.handler, outputStream::close);
                     setFinished(Optional.empty());
+                    return;
                 } else {
                     writeBufferToOutputStream(contentPart);
                 }
             } catch (Throwable e) {
                 setFinished(Optional.of(e));
+                return;
             }
         }
     }
@@ -203,12 +229,6 @@ public class ServletOutputStreamWriter {
                 () -> failedParts.forEach(failCompletionHandler));
     }
 
-    private void closeOutputStream(CompletionHandler handler) throws Exception {
-        callCompletionHandlerWhenDone(handler, () -> {
-            return null;
-        });
-    }
-
     private void writeBufferToOutputStream(ResponseContentPart contentPart) throws Throwable {
         callCompletionHandlerWhenDone(contentPart.handler, () -> {
             ByteBuffer buffer = contentPart.buf;
@@ -226,28 +246,20 @@ public class ServletOutputStreamWriter {
                 metricReporter.failedWrite();
                 throw throwable;
             }
-
-            return null;
         });
     }
 
-    //Using Callable<Void> instead of Runnable since Callable supports throwing exceptions.
-    private void callCompletionHandlerWhenDone(CompletionHandler handler, Callable<Void> callable) throws Exception {
+    private static void callCompletionHandlerWhenDone(CompletionHandler handler, IORunnable runnable) throws Exception {
         try {
-            callable.call();
+            runnable.run();
         } catch (Throwable e) {
-            assert !Thread.holdsLock(monitor);
-            runCompletionHandler_logOnExceptions(
-                    () -> handler.failed(e));
+            runCompletionHandler_logOnExceptions(() -> handler.failed(e));
             throw e;
         }
-
-        assert !Thread.holdsLock(monitor);
         handler.completed(); //Might throw an exception, handling in the enclosing scope.
     }
 
-    private void runCompletionHandler_logOnExceptions(Runnable runnable) {
-        assert !Thread.holdsLock(monitor);
+    private static void runCompletionHandler_logOnExceptions(Runnable runnable) {
         try {
             runnable.run();
         } catch (Throwable e) {
@@ -255,12 +267,16 @@ public class ServletOutputStreamWriter {
         }
     }
 
-    private void assertStateIs(State currentState, State expectedState) {
+    private static void assertStateIs(State currentState, State expectedState) {
         if (currentState != expectedState) {
-            AssertionError error = new AssertionError("Expected state " + expectedState + ", got state " + currentState);
-            log.log(Level.WARNING, "Assertion failed.", error);
-            throw error;
+            throw createAndLogAssertionError("Expected state " + expectedState + ", got state " + currentState);
         }
+    }
+
+    private static AssertionError createAndLogAssertionError(String detailedMessage) {
+        AssertionError error = new AssertionError(detailedMessage);
+        log.log(Level.WARNING, "Assertion failed.", error);
+        return error;
     }
 
     public void fail(Throwable t) {
@@ -270,16 +286,27 @@ public class ServletOutputStreamWriter {
     private final WriteListener writeListener = new WriteListener() {
         @Override
         public void onWritePossible() throws IOException {
+            boolean shouldWriteBuffers = false;
             synchronized (monitor) {
-                if (state == State.FINISHED_OR_ERROR) {
-                    return;
+                switch (state) {
+                    case NOT_STARTED:
+                        state = State.WAITING_FOR_FIRST_BUFFER;
+                        break;
+                    case WAITING_FOR_WRITE_POSSIBLE_CALLBACK:
+                        state = State.WRITING_BUFFERS;
+                        shouldWriteBuffers = true;
+                        break;
+                    case FINISHED_OR_ERROR:
+                        return;
+                    case WAITING_FOR_FIRST_BUFFER:
+                    case WAITING_FOR_SUBSEQUENT_BUFFER:
+                    case WRITING_BUFFERS:
+                        throw createAndLogAssertionError("Invalid state: " + state);
                 }
-
-                assertStateIs(state, State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK);
-                state = State.WRITING_BUFFERS;
             }
-
-            writeBuffersInQueueToOutputStream();
+            if (shouldWriteBuffers) {
+                writeBuffersInQueueToOutputStream();
+            }
         }
 
         @Override
@@ -288,4 +315,18 @@ public class ServletOutputStreamWriter {
         }
     };
 
+    private static class ResponseContentPart {
+        public final ByteBuffer buf;
+        public final CompletionHandler handler;
+
+        public ResponseContentPart(ByteBuffer buf, CompletionHandler handler) {
+            this.buf = buf;
+            this.handler = handler;
+        }
+    }
+
+    @FunctionalInterface
+    private interface IORunnable {
+        void run() throws IOException;
+    }
 }

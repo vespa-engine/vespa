@@ -32,7 +32,6 @@ public class ZooKeeperAccessMaintainerTest {
         tester.addNode("id1", "host1", "default", NodeType.tenant);
         tester.addNode("id2", "host2", "default", NodeType.tenant);
         tester.addNode("id3", "host3", "default", NodeType.tenant);
-        tester.nodeRepository().setReady(tester.getNodes(NodeType.tenant, Node.State.provisioned));
         maintainer.maintain();
 
         assertEquals(3, tester.getNodes(NodeType.tenant).size());
@@ -54,6 +53,11 @@ public class ZooKeeperAccessMaintainerTest {
         assertEquals(2, tester.getNodes(NodeType.tenant).size());
         assertEquals(2, tester.getNodes(NodeType.proxy).size());
         assertEquals(asSet("host1,host3,host4,host5,server1,server2"), ZooKeeperServer.getAllowedClientHostnames());
+
+        tester.addNode("docker-host-1", "host6", "default", NodeType.host);
+        tester.addNode("docker-host-2", "host7", "default", NodeType.host);
+        maintainer.maintain();
+        assertEquals(asSet("host1,host3,host4,host5,host6,host7,server1,server2"), ZooKeeperServer.getAllowedClientHostnames());
     }
 
     private Set<String> asSet(String s) {

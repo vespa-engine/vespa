@@ -18,7 +18,10 @@ class TermFieldMdExecutor : public fef::FeatureExecutor {
 
     typedef std::pair<search::fef::TermFieldHandle, query::Weight> Element;
     std::vector<Element> _terms;
-    virtual void execute(fef::MatchData &data);
+    const fef::MatchData *_md;
+
+    virtual void execute(uint32_t docId);
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     TermFieldMdExecutor(const search::fef::IQueryEnvironment &env,
@@ -51,7 +54,7 @@ public:
                        const fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const;
+    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment & env, vespalib::Stash &stash) const override;
 };
 
 

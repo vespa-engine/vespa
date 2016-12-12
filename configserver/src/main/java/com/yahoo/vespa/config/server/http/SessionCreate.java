@@ -62,7 +62,7 @@ public class SessionCreate {
         DeployLogger logger = SessionHandler.createLogger(deployLog, request,
                                                           new ApplicationId.Builder().tenant(tenant).applicationName("-").build());
         String name = getNameProperty(request, logger);
-        LocalSession session = sessionFactory.createSession(applicationDirectory, name, logger, timeoutBudget);
+        LocalSession session = sessionFactory.createSession(applicationDirectory, name, timeoutBudget);
         localSessionRepo.addSession(session);
         HttpResponse response = createResponse(request, session);
         cleanupApplicationDirectory(tempDir, logger);

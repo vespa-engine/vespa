@@ -17,9 +17,11 @@
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovider.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/memory/memorymanager.h>
+
 
 namespace storage {
 namespace memfile {
@@ -30,20 +32,24 @@ public:
 
     framework::MicroSecTime _absoluteTime;
 
-    FakeClock() {};
+    FakeClock() {}
 
     virtual void addSecondsToTime(uint32_t nr) {
         _absoluteTime += framework::MicroSecTime(nr * uint64_t(1000000));
     }
 
-    virtual framework::MicroSecTime getTimeInMicros() const {
+    framework::MicroSecTime getTimeInMicros() const override {
         return _absoluteTime;
     }
-    virtual framework::MilliSecTime getTimeInMillis() const {
+    framework::MilliSecTime getTimeInMillis() const override {
         return getTimeInMicros().getMillis();
     }
-    virtual framework::SecondTime getTimeInSeconds() const {
+    framework::SecondTime getTimeInSeconds() const override {
         return getTimeInMicros().getSeconds();
+    }
+    framework::MonotonicTimePoint getMonotonicTime() const override {
+        return framework::MonotonicTimePoint(std::chrono::microseconds(
+                getTimeInMicros().getTime()));
     }
 };
 

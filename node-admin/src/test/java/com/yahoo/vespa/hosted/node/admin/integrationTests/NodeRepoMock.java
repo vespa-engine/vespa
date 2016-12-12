@@ -56,19 +56,11 @@ public class NodeRepoMock implements NodeRepository {
 
         synchronized (monitor) {
             if (cns.isPresent()) {
-                updateContainerNodeSpec(new ContainerNodeSpec.Builder()
-                                                .hostname(cns.get().hostname)
-                                                .wantedDockerImage(cns.get().wantedDockerImage)
-                                                .containerName(cns.get().containerName)
-                                                .nodeState(Node.State.ready)
-                                                .nodeType("tenant")
-                                                .nodeFlavor("docker")
-                                                .wantedRestartGeneration(cns.get().wantedRestartGeneration)
-                                                .currentRestartGeneration(cns.get().currentRestartGeneration)
-                                                .minCpuCores(cns.get().minCpuCores)
-                                                .minMainMemoryAvailableGb(cns.get().minMainMemoryAvailableGb)
-                                                .minDiskAvailableGb(cns.get().minDiskAvailableGb)
-                                                .build());
+                updateContainerNodeSpec(new ContainerNodeSpec.Builder(cns.get())
+                        .nodeState(Node.State.ready)
+                        .nodeType("tenant")
+                        .nodeFlavor("docker")
+                        .build());
             }
             callOrderVerifier.add("markAsReady with HostName: " + hostName);
         }

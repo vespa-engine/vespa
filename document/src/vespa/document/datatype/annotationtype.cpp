@@ -39,4 +39,16 @@ vector<const AnnotationType *> AnnotationType::getDefaultAnnotationTypes() {
     return types;
 }
 
+vespalib::string
+AnnotationType::toString() const {
+    vespalib::asciistream os;
+    os << *this;
+    return os.str();
+}
+
+vespalib::asciistream &
+operator << (vespalib::asciistream & os, const AnnotationType & a) {
+    return os << "AnnotationType(" << a.getId() << ", " << a.getName() << ")";
+}
+
 }  // namespace document

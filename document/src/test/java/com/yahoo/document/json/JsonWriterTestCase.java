@@ -260,10 +260,8 @@ public class JsonWriterTestCase {
         assertEquals(populateMap(inputMap), populateMap(generatedMap));
     }
 
-    private Document readDocumentFromJson(final String docId,
-            final String fields) {
-        InputStream rawDoc = new ByteArrayInputStream(asFeed(
-                docId, fields));
+    private Document readDocumentFromJson(String docId, String fields) {
+        InputStream rawDoc = new ByteArrayInputStream(asFeed(docId, fields));
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
         JsonReader.DocumentParseInfo raw = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(raw.documentId);
@@ -313,7 +311,7 @@ public class JsonWriterTestCase {
     @Test
     public void testWritingOfEmptyTensor() throws IOException {
         assertTensorRoundTripEquality("{}",
-                "{ \"dimensions\": [], \"cells\": [] }");
+                "{ \"cells\": [] }");
     }
 
     @Test
@@ -322,15 +320,14 @@ public class JsonWriterTestCase {
                 + "  \"cells\": [ "
                 + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                 + "      \"value\": 2.0 }, "
-                + "    { \"address\": { \"x\": \"c\" }, "
+                + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
                 + "      \"value\": 3.0 } "
                 + "  ]"
                 + "}", "{ "
-                + "  \"dimensions\": [\"x\", \"y\"], "
                 + "  \"cells\": [ "
                 + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
                 + "      \"value\": 2.0 }, "
-                + "    { \"address\": { \"x\": \"c\" }, "
+                + "    { \"address\": { \"x\": \"c\", \"y\": \"b\" }, "
                 + "      \"value\": 3.0 } "
                 + "  ]"
                 + "}");
@@ -339,22 +336,8 @@ public class JsonWriterTestCase {
     @Test
     public void testWritingOfTensorWithSingleCellWithEmptyAddress() throws IOException {
         assertTensorRoundTripEquality("{ "
-                + "  \"dimensions\": [], "
                 + "  \"cells\": [ "
                 + "    { \"address\": {}, \"value\": 2.0 } "
-                + "  ]"
-                + "}");
-    }
-
-    @Test
-    public void testWritingOfTensorWithDimensionsAndCells() throws IOException {
-        assertTensorRoundTripEquality("{ "
-                + "  \"dimensions\": [\"x\",\"y\",\"z\"], "
-                + "  \"cells\": [ "
-                + "    { \"address\": { \"x\": \"a\", \"y\": \"b\" }, "
-                + "      \"value\": 2.0 }, "
-                + "    { \"address\": { \"x\": \"c\" }, "
-                + "      \"value\": 3.0 } "
                 + "  ]"
                 + "}");
     }

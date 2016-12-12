@@ -134,11 +134,10 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     private CreateContainerCmd createCreateContainerCmd() {
         List<Bind> volumeBinds = volumeBindSpecs.stream().map(Bind::parse).collect(Collectors.toList());
 
-        CreateContainerCmd containerCmd = docker
+        final CreateContainerCmd containerCmd = docker
                 .createContainerCmd(dockerImage.asString())
                 .withName(containerName.asString())
                 .withHostName(hostName)
-                .withMacAddress(generateRandomMACAddress())
                 .withLabels(labels)
                 .withEnv(environmentAssignments)
                 .withBinds(volumeBinds)
@@ -146,11 +145,15 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withCapAdd(new ArrayList<>(addCapabilities))
                 .withCapDrop(new ArrayList<>(dropCapabilities));
 
-        if (memoryInB.isPresent()) containerCmd = containerCmd.withMemory(memoryInB.get());
-        if (networkMode.isPresent()) containerCmd = containerCmd.withNetworkMode(networkMode.get());
-        if (ipv4Address.isPresent()) containerCmd = containerCmd.withIpv4Address(ipv4Address.get());
-        if (ipv6Address.isPresent()) containerCmd = containerCmd.withIpv6Address(ipv6Address.get());
-        if (entrypoint.isPresent()) containerCmd = containerCmd.withEntrypoint(entrypoint.get());
+        networkMode
+                .filter(mode -> ! mode.toLowerCase().equals("host"))
+                .ifPresent(mode -> containerCmd.withMacAddress(generateRandomMACAddress()));
+
+        memoryInB.ifPresent(containerCmd::withMemory);
+        networkMode.ifPresent(containerCmd::withNetworkMode);
+        ipv4Address.ifPresent(containerCmd::withIpv4Address);
+        ipv6Address.ifPresent(containerCmd::withIpv6Address);
+        entrypoint.ifPresent(containerCmd::withEntrypoint);
 
         return containerCmd;
     }

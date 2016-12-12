@@ -73,7 +73,7 @@ public:
      * NB: Both query terms must have attached term fields with valid term field handles.
      **/
     static void run(const QueryTerm &termX, const QueryTerm &termY,
-                    search::fef::MatchData & match, Result & r);
+                    const search::fef::MatchData & match, uint32_t docId, Result & r);
 };
 
 } // namespace features

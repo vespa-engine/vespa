@@ -16,10 +16,13 @@ class MatchCountExecutor : public fef::FeatureExecutor
 {
 private:
     std::vector<fef::TermFieldHandle> _handles;
+    const fef::MatchData             *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     MatchCountExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);
-    void execute(fef::MatchData & data) override;
+    void execute(uint32_t docId) override;
 };
 
 /**
@@ -48,7 +51,7 @@ public:
     bool setup(const fef::IIndexEnvironment & env,
                const fef::ParameterList & params) override;
 
-    fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const override;
+    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 } // namespace features

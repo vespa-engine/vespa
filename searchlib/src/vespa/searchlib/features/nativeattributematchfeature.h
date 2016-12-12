@@ -48,8 +48,9 @@ private:
                                         const NativeAttributeMatchParams & params);
 
 public:
-    static fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env,
-                                                           const NativeAttributeMatchParams & params);
+    static fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment & env,
+                                                const NativeAttributeMatchParams & params,
+                                                vespalib::Stash &stash);
 };
 
 class NativeAttributeMatchExecutorMulti : public NativeAttributeMatchExecutor
@@ -57,24 +58,33 @@ class NativeAttributeMatchExecutorMulti : public NativeAttributeMatchExecutor
 private:
     feature_t                          _divisor;
     std::vector<CachedTermData>        _queryTermData;
+    const fef::MatchData              *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
-    NativeAttributeMatchExecutorMulti(const Precomputed & setup) : _divisor(setup.second), _queryTermData(setup.first) { }
+    NativeAttributeMatchExecutorMulti(const Precomputed & setup) : _divisor(setup.second), _queryTermData(setup.first), _md(nullptr) { }
     // Inherit doc from FeatureExecutor.
-    virtual void execute(fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 class NativeAttributeMatchExecutorSingle : public NativeAttributeMatchExecutor
 {
 private:
     CachedTermData _queryTermData;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     NativeAttributeMatchExecutorSingle(const Precomputed & setup) :
-        _queryTermData(setup.first[0])
+        _queryTermData(setup.first[0]),
+        _md(nullptr)
     {
         _queryTermData.scale /= setup.second;
     }
     // Inherit doc from FeatureExecutor.
-    virtual void execute(fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 
@@ -105,7 +115,7 @@ public:
                        const fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual fef::FeatureExecutor::LP createExecutor(const fef::IQueryEnvironment & env) const;
+    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     /**
      * Obtains the parameters used by the executor.

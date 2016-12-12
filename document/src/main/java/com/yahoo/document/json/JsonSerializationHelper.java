@@ -22,6 +22,7 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.objects.FieldBase;
 import org.apache.commons.codec.binary.Base64;
 
@@ -68,8 +69,7 @@ public class JsonSerializationHelper {
 
             if (value.getTensor().isPresent()) {
                 Tensor tensor = value.getTensor().get();
-                serializeTensorDimensions(generator, tensor.dimensions());
-                serializeTensorCells(generator, tensor.cells());
+                serializeTensorCells(generator, tensor);
             }
             generator.writeEndObject();
         });
@@ -84,11 +84,11 @@ public class JsonSerializationHelper {
         generator.writeEndArray();
     }
 
-    private static void serializeTensorCells(JsonGenerator generator, Map<TensorAddress, Double> cells) throws IOException {
+    private static void serializeTensorCells(JsonGenerator generator, Tensor tensor) throws IOException {
         generator.writeArrayFieldStart(JsonReader.TENSOR_CELLS);
-        for (Map.Entry<TensorAddress, Double> cell : cells.entrySet()) {
+        for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
             generator.writeStartObject();
-            serializeTensorAddress(generator, cell.getKey());
+            serializeTensorAddress(generator, cell.getKey(), tensor.type());
             generator.writeNumberField(JsonReader.TENSOR_VALUE, cell.getValue());
             generator.writeEndObject();
         }
@@ -96,11 +96,10 @@ public class JsonSerializationHelper {
         generator.writeEndArray();
     }
 
-    private static void serializeTensorAddress(JsonGenerator generator, TensorAddress address) throws IOException {
+    private static void serializeTensorAddress(JsonGenerator generator, TensorAddress address, TensorType type) throws IOException {
         generator.writeObjectFieldStart(JsonReader.TENSOR_ADDRESS);
-        for (TensorAddress.Element element : address.elements()) {
-            generator.writeStringField(element.dimension(), element.label());
-        }
+        for (int i = 0; i < type.dimensions().size(); i++)
+            generator.writeStringField(type.dimensions().get(i).name(), address.labels().get(i));
 
         generator.writeEndObject();
     }

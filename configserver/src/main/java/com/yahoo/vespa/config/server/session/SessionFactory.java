@@ -20,11 +20,10 @@ public interface SessionFactory {
      *
      * @param applicationDirectory a File pointing to an application.
      * @param applicationName name of the application for this new session.
-     * @param logger a deploy logger where the deploy log will be written.
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    LocalSession createSession(File applicationDirectory, String applicationName, DeployLogger logger, TimeoutBudget timeoutBudget);
+    LocalSession createSession(File applicationDirectory, String applicationName, TimeoutBudget timeoutBudget);
 
     /**
      * Creates a new deployment session from an already existing session.

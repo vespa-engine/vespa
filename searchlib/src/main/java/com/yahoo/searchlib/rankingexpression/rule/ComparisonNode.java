@@ -8,10 +8,9 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import java.util.*;
 
 /**
- * A node which returns true or false depending on the outcome of a comparison.
+ * A node which returns the outcome of a comparison.
  *
  * @author bratseth
- * @since  5.1.21
  */
 public class ComparisonNode extends BooleanNode {
 
@@ -48,9 +47,9 @@ public class ComparisonNode extends BooleanNode {
 
     @Override
     public Value evaluate(Context context) {
-        Value leftValue=leftCondition.evaluate(context);
-        Value rightValue=rightCondition.evaluate(context);
-        return new BooleanValue(leftValue.compare(operator,rightValue));
+        Value leftValue = leftCondition.evaluate(context);
+        Value rightValue = rightCondition.evaluate(context);
+        return leftValue.compare(operator,rightValue);
     }
 
     @Override

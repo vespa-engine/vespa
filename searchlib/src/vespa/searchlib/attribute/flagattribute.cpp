@@ -269,6 +269,5 @@ FlagAttributeT<B>::SearchContext::createIterator(fef::TermFieldMatchData *
 }
 
 template class FlagAttributeT<FlagBaseImpl>;
-template class FlagAttributeT<HugeFlagBaseImpl>;
 
 }

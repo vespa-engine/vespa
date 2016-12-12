@@ -48,9 +48,7 @@ struct StorageBucketInfo {
     bool operator < (const StorageBucketInfo & b) const;
 };
 
-inline std::ostream& operator<<(std::ostream& out,
-                                const StorageBucketInfo& info)
-    { info.print(out, false, ""); return out; }
+std::ostream& operator<<(std::ostream& out, const StorageBucketInfo& info);
 
 } // bucketdb
 

@@ -33,16 +33,17 @@ public:
      */
     ProximityExecutor(const search::fef::IQueryEnvironment &env,
                       const ProximityConfig &config);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     const ProximityConfig       &_config; // The proximity config.
     search::fef::TermFieldHandle _termA;  // Handle to the first query term.
     search::fef::TermFieldHandle _termB;  // Handle to the second query term.
+    const fef::MatchData        *_md;
 
-    bool findBest(search::fef::MatchData &match,
-                  search::fef::TermFieldMatchData &matchA,
-                  search::fef::TermFieldMatchData &matchB);
+    bool findBest(const fef::TermFieldMatchData &matchA,
+                  const fef::TermFieldMatchData &matchB);
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 };
 
 /**
@@ -72,7 +73,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
 private:
     ProximityConfig _config;

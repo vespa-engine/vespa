@@ -26,7 +26,7 @@ public:
     DebugAttributeWaitExecutor(const IQueryEnvironment &env,
                                const IAttributeVector * attribute,
                                const DebugAttributeWaitParams &params);
-    void execute(MatchData & data) override;
+    void execute(uint32_t docId) override;
 };
 
 DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const IQueryEnvironment &env,
@@ -40,14 +40,14 @@ DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const IQueryEnvironment &
 }
 
 void
-DebugAttributeWaitExecutor::execute(MatchData &data)
+DebugAttributeWaitExecutor::execute(uint32_t docId)
 {
     double waitTime = 0.0;
     FastOS_Time time;
     time.SetNow();
 
     if (_attribute != NULL) {
-        _buf.fill(*_attribute, data.getDocId());
+        _buf.fill(*_attribute, docId);
         waitTime = _buf[0];
     }
     double millis = waitTime * 1000.0;
@@ -61,7 +61,7 @@ DebugAttributeWaitExecutor::execute(MatchData &data)
             FastOS_Thread::Sleep(rem);
         }
     }
-    *data.resolveFeature(outputs()[0]) = 1.0e-6 * time.MicroSecsToNow();
+    outputs().set_number(0, 1.0e-6 * time.MicroSecsToNow());
 }
 
 //-----------------------------------------------------------------------------
@@ -97,12 +97,12 @@ DebugAttributeWaitBlueprint::setup(const IIndexEnvironment &env, const Parameter
     return true;
 }
 
-FeatureExecutor::LP
-DebugAttributeWaitBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+DebugAttributeWaitBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     // Get attribute vector
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_attribute);
-    return FeatureExecutor::LP(new DebugAttributeWaitExecutor(env, attribute, _params));
+    return stash.create<DebugAttributeWaitExecutor>(env, attribute, _params);
 }
 
 //-----------------------------------------------------------------------------

@@ -14,20 +14,28 @@ public:
     typedef std::vector<fef::TermFieldHandle> HandleVector;
 private:
     HandleVector _handles;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     ItemRawScoreExecutor(HandleVector handles)
-        : FeatureExecutor(), _handles(handles) {}
-    virtual void execute(fef::MatchData &data);
+        : FeatureExecutor(), _handles(handles), _md(nullptr) {}
+    virtual void execute(uint32_t docId);
 };
 
 class SimpleItemRawScoreExecutor : public fef::FeatureExecutor
 {
 private:
     fef::TermFieldHandle _handle;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     SimpleItemRawScoreExecutor(fef::TermFieldHandle handle)
-        : FeatureExecutor(), _handle(handle) {}
-    virtual void execute(fef::MatchData &data);
+        : FeatureExecutor(), _handle(handle), _md(nullptr) {}
+    virtual void execute(uint32_t docId);
 };
 
 
@@ -50,8 +58,7 @@ public:
     }
     virtual bool setup(const fef::IIndexEnvironment &env,
                        const fef::ParameterList &params);
-    virtual fef::FeatureExecutor::LP
-    createExecutor(const fef::IQueryEnvironment &env) const;
+    virtual fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 
     static HandleVector resolve(const fef::IQueryEnvironment &env,
                                 const vespalib::string &label);

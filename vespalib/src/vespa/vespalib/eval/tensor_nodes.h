@@ -221,6 +221,38 @@ public:
     void accept(NodeVisitor &visitor) const override;
 };
 
+class TensorConcat : public Node {
+private:
+    Node_UP          _lhs;
+    Node_UP          _rhs;
+    vespalib::string _dimension;
+public:
+    TensorConcat(Node_UP lhs, Node_UP rhs, const vespalib::string &dimension_in)
+        : _lhs(std::move(lhs)), _rhs(std::move(rhs)), _dimension(dimension_in) {}
+    const vespalib::string &dimension() const { return _dimension; }
+    vespalib::string dump(DumpContext &ctx) const override {
+        vespalib::string str;
+        str += "concat(";
+        str += _lhs->dump(ctx);
+        str += ",";
+        str += _rhs->dump(ctx);
+        str += ",";
+        str += _dimension;
+        str += ")";
+        return str;
+    }
+    void accept(NodeVisitor &visitor) const override ;
+    size_t num_children() const override { return 2; }
+    const Node &get_child(size_t idx) const override {
+        assert(idx < 2);
+        return (idx == 0) ? *_lhs : *_rhs;
+    }
+    void detach_children(NodeHandler &handler) override {
+        handler.handle(std::move(_lhs));
+        handler.handle(std::move(_rhs));
+    }
+};
+
 } // namespace vespalib::eval::nodes
 } // namespace vespalib::eval
 } // namespace vespalib

@@ -13,9 +13,9 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
+import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import org.junit.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import java.util.Collections;
 
@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 
 public class StorageClusterTest {
 
-    StorageCluster parse(String xml) {
+    StorageCluster parse(String xml) throws Exception {
         MockRoot root = new MockRoot();
         root.getDeployState().getDocumentModel().getDocumentManager().add(
                 new NewDocumentType(new NewDocumentType.Name("music"))
@@ -31,16 +31,14 @@ public class StorageClusterTest {
         root.getDeployState().getDocumentModel().getDocumentManager().add(
                 new NewDocumentType(new NewDocumentType.Name("movies"))
         );
-        Document doc = XML.getDocument(xml);
-        Element clusterElem = doc.getDocumentElement();
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), root, clusterElem);
+        ContentCluster cluster = ContentClusterUtils.createCluster(xml, root);
 
         root.freezeModelTopology();
         return cluster.getStorageNodes();
     }
 
     @Test
-    public void testBasics() {
+    public void testBasics() throws Exception {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("<content id=\"foofighters\"><documents/>\n" +
               "  <group>" +
@@ -55,7 +53,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testMerges() {
+    public void testMerges() throws Exception {
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("" +
                 "<content id=\"foofighters\">\n" +
@@ -75,7 +73,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testVisitors() {
+    public void testVisitors() throws Exception {
         StorVisitorConfig.Builder builder = new StorVisitorConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -99,7 +97,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testPersistenceThreads() {
+    public void testPersistenceThreads() throws Exception {
         StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -132,7 +130,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testNoPersistenceThreads() {
+    public void testNoPersistenceThreads() throws Exception {
         StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -151,7 +149,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void maintenance_tuning_is_honored_for_vds_provider() {
+    public void maintenance_tuning_is_honored_for_vds_provider() throws Exception {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -175,7 +173,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
+    public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() throws Exception {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -191,7 +189,7 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void integrity_checker_not_explicitly_disabled_when_running_with_vds_provider() {
+    public void integrity_checker_not_explicitly_disabled_when_running_with_vds_provider() throws Exception {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(
                 "<cluster id=\"bees\">\n" +
@@ -211,8 +209,8 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testCapacity() {
-        Document doc = XML.getDocument(
+    public void testCapacity() throws Exception {
+        String xml =
                 "<cluster id=\"storage\">\n" +
                         "  <documents/>" +
                         "  <group>\n" +
@@ -220,10 +218,9 @@ public class StorageClusterTest {
                         "    <node distribution-key=\"1\" hostalias=\"mockhost\" capacity=\"1.5\"/>\n" +
                         "    <node distribution-key=\"2\" hostalias=\"mockhost\" capacity=\"2.0\"/>\n" +
                         "  </group>\n" +
-                        "</cluster>"
-        );
+                        "</cluster>";
 
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
+        ContentCluster cluster = ContentClusterUtils.createCluster(xml, new MockRoot());
 
         for (int i = 0; i < 3; ++i) {
             StorageNode node = cluster.getStorageNodes().getChildren().get("" + i);
@@ -236,17 +233,16 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testRootFolder() {
-        Document doc = XML.getDocument(
+    public void testRootFolder() throws Exception {
+        String xml =
                 "<cluster id=\"storage\">\n" +
                         "  <documents/>" +
                         "  <group>\n" +
                         "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
                         "  </group>\n" +
-                        "</cluster>"
-        );
+                        "</cluster>";
 
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
+        ContentCluster cluster = ContentClusterUtils.createCluster(xml, new MockRoot());
 
         StorageNode node = cluster.getStorageNodes().getChildren().get("0");
 
@@ -275,8 +271,8 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void testGenericPersistenceTuning() {
-        Document doc = XML.getDocument(
+    public void testGenericPersistenceTuning() throws Exception {
+        String xml =
                 "<cluster id=\"storage\">\n" +
                         "<documents/>" +
                         "<engine>\n" +
@@ -287,10 +283,9 @@ public class StorageClusterTest {
                         "  <group>\n" +
                         "    <node distribution-key=\"0\" hostalias=\"mockhost\"/>\n" +
                         "  </group>\n" +
-                        "</cluster>"
-        );
+                        "</cluster>";
 
-        ContentCluster cluster = new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
+        ContentCluster cluster = ContentClusterUtils.createCluster(xml, new MockRoot());
 
         PersistenceConfig.Builder builder = new PersistenceConfig.Builder();
         cluster.getStorageNodes().getConfig(builder);
@@ -302,9 +297,10 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void requireThatUserDoesntSpecifyBothGroupAndNodes() {
-        Document doc = XML.getDocument(
+    public void requireThatUserDoesNotSpecifyBothGroupAndNodes() throws Exception {
+        String xml =
                 "<cluster id=\"storage\">\n" +
+                        "<documents/>\n" +
                         "<engine>\n" +
                         "    <fail-partition-on-error>true</fail-partition-on-error>\n" +
                         "    <revert-time>34m</revert-time>\n" +
@@ -316,20 +312,24 @@ public class StorageClusterTest {
                         "  <nodes>\n" +
                         "    <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
                         "  </nodes>\n" +
-                        "</cluster>"
-        );
+                        "</cluster>";
 
         try {
-            new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
-            assertTrue(false);
-        } catch (Exception e) {
-
+            final MockRoot root = new MockRoot();
+            root.getDeployState().getDocumentModel().getDocumentManager().add(
+                    new NewDocumentType(new NewDocumentType.Name("music"))
+            );
+            ContentClusterUtils.createCluster(xml, root);
+            fail("Did not fail when having both group and nodes");
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            assertEquals("Both group and nodes exists, only one of these tags is legal", e.getMessage());
         }
     }
 
     @Test
-    public void requireThatGroupNamesMustBeUniqueAmongstSiblings() {
-        Document doc = XML.getDocument(
+    public void requireThatGroupNamesMustBeUniqueAmongstSiblings() throws Exception {
+        String xml =
                 "<cluster id=\"storage\">\n" +
                 "<documents/>\n" +
                 "  <group>\n" +
@@ -341,10 +341,10 @@ public class StorageClusterTest {
                 "      <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
                 "    </group>\n" +
                 "  </group>\n" +
-                "</cluster>"
-        );
+                "</cluster>";
+
         try {
-            new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
+            ContentClusterUtils.createCluster(xml, new MockRoot());
             fail("Did not get exception with duplicate group names");
         } catch (RuntimeException e) {
             assertEquals("Cluster 'storage' has multiple groups with name 'bar' in the same subgroup. " +
@@ -353,8 +353,8 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void requireThatGroupNamesCanBeDuplicatedAcrossLevels() {
-        Document doc = XML.getDocument(
+    public void requireThatGroupNamesCanBeDuplicatedAcrossLevels() throws Exception {
+        String xml =
                 "<cluster id=\"storage\">\n" +
                 "<documents/>\n" +
                 "  <group>\n" +
@@ -370,15 +370,15 @@ public class StorageClusterTest {
                 "      </group>\n" +
                 "    </group>\n" +
                 "  </group>\n" +
-                "</cluster>"
-        );
+                "</cluster>";
+
         // Should not throw.
-        new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
+        ContentClusterUtils.createCluster(xml, new MockRoot());
     }
 
     @Test
-    public void requireThatNestedGroupsRequireDistribution() {
-        Document doc = XML.getDocument(
+    public void requireThatNestedGroupsRequireDistribution() throws Exception {
+        String xml =
                 "<cluster id=\"storage\">\n" +
                         "<documents/>\n" +
                         "  <group>\n" +
@@ -389,10 +389,10 @@ public class StorageClusterTest {
                         "      <node distribution-key=\"1\" hostalias=\"mockhost\"/>\n" +
                         "    </group>\n" +
                         "  </group>\n" +
-                        "</cluster>"
-        );
+                        "</cluster>";
+
         try {
-            new ContentCluster.Builder(null, null).build(Collections.emptyList(), new MockRoot(), doc.getDocumentElement());
+            ContentClusterUtils.createCluster(xml, new MockRoot());
             fail("Did not get exception with missing distribution element");
         } catch (RuntimeException e) {
             assertEquals("'distribution' attribute is required with multiple subgroups", e.getMessage());

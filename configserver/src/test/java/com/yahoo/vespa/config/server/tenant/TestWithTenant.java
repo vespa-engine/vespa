@@ -19,7 +19,8 @@ public class TestWithTenant extends TestWithCurator {
 
     @Before
     public void setupTenant() throws Exception {
-        tenants = new Tenants(new TestComponentRegistry(curator), Metrics.createTestMetrics());
+        final Metrics metrics = Metrics.createTestMetrics();
+        tenants = new Tenants(new TestComponentRegistry.Builder().curator(curator).metrics(metrics).build(), metrics);
         tenant = tenants.defaultTenant();
     }
 

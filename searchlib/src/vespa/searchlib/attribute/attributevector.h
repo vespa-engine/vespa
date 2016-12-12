@@ -4,8 +4,6 @@
 
 #include "address_space_usage.h"
 #include "iattributesavetarget.h"
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/fastos/fastos.h>
@@ -30,47 +28,46 @@
 #include <shared_mutex>
 #include <string>
 
-using document::ArithmeticValueUpdate;
-using document::MapValueUpdate;
-using document::FieldValue;
+namespace document {
+    class ArithmeticValueUpdate;
+    class MapValueUpdate;
+    class FieldValue;
+}
 
-namespace vespalib
-{
-
-class GenericHeader;
-
+namespace vespalib {
+    class GenericHeader;
 }
 
  
 namespace search {
 
-template <typename T> class ComponentGuard;
-class AttributeReadGuard;
-class AttributeWriteGuard;
-class AttributeSaver;
-class EnumStoreBase;
-class MultiValueMappingBaseBase;
+    template <typename T> class ComponentGuard;
+    class AttributeReadGuard;
+    class AttributeWriteGuard;
+    class AttributeSaver;
+    class EnumStoreBase;
+    class IDocumentWeightAttribute;
 
-class IDocumentWeightAttribute;
+    namespace fef {
+        class TermFieldMatchData;
+    }
 
-namespace fef {
-class TermFieldMatchData;
+    namespace attribute {
+        class IPostingListSearchContext;
+        class IPostingListAttributeBase;
+        class Interlock;
+        class InterlockGuard;
+        class MultiValueMapping2Base;
+    }
 }
 
-namespace attribute
-{
-
-class IPostingListSearchContext;
-
-class IPostingListAttributeBase;
-
-class Interlock;
-class InterlockGuard;
-
-}
+namespace search {
 
 using search::attribute::WeightedType;
 using search::attribute::Status;
+using document::ArithmeticValueUpdate;
+using document::MapValueUpdate;
+using document::FieldValue;
 
 template <typename T>
 class UnWeightedType
@@ -732,7 +729,7 @@ public:
     SearchContext::UP getSearch(const QueryPacketT &searchSpec, const SearchContext::Params & params) const;
     virtual SearchContext::UP getSearch(QueryTermSimple::UP term, const SearchContext::Params & params) const = 0;
     virtual const EnumStoreBase *getEnumStoreBase() const { return nullptr; }
-    virtual const MultiValueMappingBaseBase *getMultiValueBase() const { return nullptr; }
+    virtual const attribute::MultiValueMapping2Base *getMultiValueBase() const { return nullptr; }
 private:
     void divideByZeroWarning();
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);

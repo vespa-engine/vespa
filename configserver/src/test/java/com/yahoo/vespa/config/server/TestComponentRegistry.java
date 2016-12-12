@@ -30,7 +30,6 @@ import java.util.Optional;
  * @author lulf
  * @since 5.1
  */
-// TODO Use a Builder to avoid so many constructors
 public class TestComponentRegistry implements GlobalComponentRegistry {
 
     private final Curator curator;
@@ -41,60 +40,117 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     private final ConfigserverConfig configserverConfig;
     private final SuperModelGenerationCounter superModelGenerationCounter;
     private final ConfigDefinitionRepo defRepo;
-    final TenantRequestHandlerTest.MockReloadListener reloadListener;
-    final MockTenantListener tenantListener;
+    private final ReloadListener reloadListener;
+    private final TenantListener tenantListener;
     private final PermanentApplicationPackage permanentApplicationPackage;
     private final HostRegistries hostRegistries;
     private final FileDistributionFactory fileDistributionFactory;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final Optional<Provisioner> hostProvisioner;
 
-    public TestComponentRegistry() { this(new MockCurator()); }
-
-    public TestComponentRegistry(Curator curator) {
-       this(curator, ConfigCurator.create(curator), new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))));
-    }
-
-    public TestComponentRegistry(Curator curator, ConfigCurator configCurator, FileDistributionFactory fileDistributionFactory) {
-       this(curator, configCurator, new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry()))), fileDistributionFactory);
-    }
-
-    public TestComponentRegistry(Curator curator, ModelFactoryRegistry modelFactoryRegistry) {
-        this(curator, ConfigCurator.create(curator), modelFactoryRegistry, Optional.empty());
-    }
-
-    public TestComponentRegistry(Curator curator, ConfigCurator configCurator, ModelFactoryRegistry modelFactoryRegistry) {
-        this(curator, configCurator, modelFactoryRegistry, Optional.empty());
-    }
-
-    public TestComponentRegistry(Curator curator, ConfigCurator configCurator, ModelFactoryRegistry modelFactoryRegistry, FileDistributionFactory fileDistributionFactory) {
-        this(curator, configCurator, modelFactoryRegistry, Optional.empty(), fileDistributionFactory);
-    }
-
-    public TestComponentRegistry(Curator curator, ModelFactoryRegistry modelFactoryRegistry, Optional<PermanentApplicationPackage> permanentApplicationPackage) {
-        this(curator, ConfigCurator.create(curator), modelFactoryRegistry, permanentApplicationPackage, new MockFileDistributionFactory());
-    }
-
-    public TestComponentRegistry(Curator curator, ConfigCurator configCurator, ModelFactoryRegistry modelFactoryRegistry, Optional<PermanentApplicationPackage> permanentApplicationPackage) {
-        this(curator, configCurator, modelFactoryRegistry, permanentApplicationPackage, new MockFileDistributionFactory());
-    }
-
-    public TestComponentRegistry(Curator curator, ConfigCurator configCurator, ModelFactoryRegistry modelFactoryRegistry, Optional<PermanentApplicationPackage> permanentApplicationPackage, FileDistributionFactory fileDistributionFactory) {
+    private TestComponentRegistry(Curator curator, ConfigCurator configCurator, Metrics metrics,
+                                  ModelFactoryRegistry modelFactoryRegistry,
+                                  PermanentApplicationPackage permanentApplicationPackage,
+                                  FileDistributionFactory fileDistributionFactory,
+                                  SuperModelGenerationCounter superModelGenerationCounter,
+                                  ConfigServerDB configServerDB,
+                                  HostRegistries hostRegistries,
+                                  ConfigserverConfig configserverConfig,
+                                  SessionPreparer sessionPreparer,
+                                  Optional<Provisioner> hostProvisioner,
+                                  ConfigDefinitionRepo defRepo,
+                                  ReloadListener reloadListener,
+                                  TenantListener tenantListener) {
         this.curator = curator;
         this.configCurator = configCurator;
-        metrics = Metrics.createTestMetrics();
-        configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder().configServerDBDir(Files.createTempDir().getAbsolutePath()));
-        serverDB = new ConfigServerDB(configserverConfig);
-        reloadListener = new TenantRequestHandlerTest.MockReloadListener();
-        tenantListener = new MockTenantListener();
-        this.superModelGenerationCounter = new SuperModelGenerationCounter(curator);
-        this.defRepo = new StaticConfigDefinitionRepo();
-        this.permanentApplicationPackage = permanentApplicationPackage.orElse(new PermanentApplicationPackage(configserverConfig));
-        this.hostRegistries = new HostRegistries();
+        this.metrics = metrics;
+        this.configserverConfig = configserverConfig;
+        this.serverDB = configServerDB;
+        this.reloadListener = reloadListener;
+        this.tenantListener = tenantListener;
+        this.superModelGenerationCounter = superModelGenerationCounter;
+        this.defRepo = defRepo;
+        this.permanentApplicationPackage = permanentApplicationPackage;
+        this.hostRegistries = hostRegistries;
         this.fileDistributionFactory = fileDistributionFactory;
         this.modelFactoryRegistry = modelFactoryRegistry;
-        this.hostProvisioner = Optional.empty();
-        sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory, HostProvisionerProvider.empty(), this.permanentApplicationPackage, configserverConfig, defRepo, curator, new Zone(configserverConfig));
+        this.hostProvisioner = hostProvisioner;
+        this.sessionPreparer = sessionPreparer;
+    }
+
+    public static class Builder {
+
+        private Curator curator = new MockCurator();
+        private Optional<ConfigCurator> configCurator = Optional.empty();
+        private Metrics metrics = Metrics.createTestMetrics();
+        private ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                                                                       .configServerDBDir(Files.createTempDir()
+                                                                                                               .getAbsolutePath()));
+        private ConfigDefinitionRepo defRepo = new StaticConfigDefinitionRepo();
+        private TenantRequestHandlerTest.MockReloadListener reloadListener = new TenantRequestHandlerTest.MockReloadListener();
+        private MockTenantListener tenantListener = new MockTenantListener();
+        private Optional<PermanentApplicationPackage> permanentApplicationPackage = Optional.empty();
+        private HostRegistries hostRegistries = new HostRegistries();
+        private Optional<FileDistributionFactory> fileDistributionFactory = Optional.empty();
+        private ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Collections.singletonList(new VespaModelFactory(new NullConfigModelRegistry())));
+        private Optional<Provisioner> hostProvisioner = Optional.empty();
+
+
+        public Builder configServerConfig(ConfigserverConfig configserverConfig) {
+            this.configserverConfig = configserverConfig;
+            return this;
+        }
+
+        public Builder curator(Curator curator) {
+            this.curator = curator;
+            return this;
+        }
+
+        public Builder configCurator(ConfigCurator configCurator) {
+            this.configCurator = Optional.ofNullable(configCurator);
+            return this;
+        }
+
+        public Builder metrics(Metrics metrics) {
+            this.metrics = metrics;
+            return this;
+        }
+
+        public Builder modelFactoryRegistry(ModelFactoryRegistry modelFactoryRegistry) {
+            this.modelFactoryRegistry = modelFactoryRegistry;
+            return this;
+        }
+
+        public Builder permanentApplicationPackage(PermanentApplicationPackage permanentApplicationPackage) {
+            this.permanentApplicationPackage = Optional.ofNullable(permanentApplicationPackage);
+            return this;
+        }
+
+        public Builder provisioner(Provisioner provisioner) {
+            this.hostProvisioner = Optional.ofNullable(provisioner);
+            return this;
+        }
+
+        public TestComponentRegistry build() {
+            final PermanentApplicationPackage permApp = this.permanentApplicationPackage
+                    .orElse(new PermanentApplicationPackage(configserverConfig));
+            FileDistributionFactory fileDistributionFactory = this.fileDistributionFactory
+                    .orElse(new MockFileDistributionFactory(curator));
+            HostProvisionerProvider hostProvisionerProvider = hostProvisioner.isPresent() ?
+                    HostProvisionerProvider.withProvisioner(hostProvisioner.get()) :
+                    HostProvisionerProvider.empty();
+            SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
+                                                                  hostProvisionerProvider, permApp,
+                                                                  configserverConfig, defRepo, curator, new Zone(configserverConfig));
+            return new TestComponentRegistry(curator, configCurator.orElse(ConfigCurator.create(curator)),
+                                             metrics, modelFactoryRegistry,
+                                             permApp,
+                                             fileDistributionFactory,
+                                             new SuperModelGenerationCounter(curator),
+                                             new ConfigServerDB(configserverConfig),
+                                             hostRegistries, configserverConfig, sessionPreparer,
+                                             hostProvisioner, defRepo, reloadListener, tenantListener);
+        }
     }
 
     @Override

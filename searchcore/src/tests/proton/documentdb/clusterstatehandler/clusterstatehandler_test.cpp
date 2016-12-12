@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("clusterstatehandler_test");
 #include <vespa/searchcore/proton/server/clusterstatehandler.h>
 #include <vespa/searchcore/proton/server/iclusterstatechangedhandler.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 using namespace proton;
 using document::BucketId;

@@ -47,42 +47,54 @@ NativeAttributeMatchExecutor::preComputeSetup(const IQueryEnvironment & env,
     return precomputed;
 }
 
-FeatureExecutor::LP
+FeatureExecutor &
 NativeAttributeMatchExecutor::createExecutor(const IQueryEnvironment & env,
-                                             const NativeAttributeMatchParams & params)
+                                             const NativeAttributeMatchParams & params,
+                                             vespalib::Stash &stash)
 {
     Precomputed setup = preComputeSetup(env, params);
     if (setup.first.size() == 0) {
-        return LP(new ValueExecutor(std::vector<feature_t>(1, 0.0)));
+        return stash.create<ValueExecutor>(std::vector<feature_t>(1, 0.0));
     } else if (setup.first.size() == 1) {
-        return LP(new NativeAttributeMatchExecutorSingle(setup));
+        return stash.create<NativeAttributeMatchExecutorSingle>(setup);
     } else {
-        return LP(new NativeAttributeMatchExecutorMulti(setup));
+        return stash.create<NativeAttributeMatchExecutorMulti>(setup);
     }
 }
 
 void
-NativeAttributeMatchExecutorMulti::execute(MatchData & match)
+NativeAttributeMatchExecutorMulti::execute(uint32_t docId)
 {
     feature_t score = 0;
     for (size_t i = 0; i < _queryTermData.size(); ++i) {
-        const TermFieldMatchData *tfmd = match.resolveTermField(_queryTermData[i].tfh);
-        if (tfmd->getDocId() == match.getDocId()) {
+        const TermFieldMatchData *tfmd = _md->resolveTermField(_queryTermData[i].tfh);
+        if (tfmd->getDocId() == docId) {
             score += calculateScore(_queryTermData[i], *tfmd);
         }
     }
-    *match.resolveFeature(outputs()[0]) = score / _divisor;
+    outputs().set_number(0, score / _divisor);
 }
 
 void
-NativeAttributeMatchExecutorSingle::execute(MatchData & match)
+NativeAttributeMatchExecutorMulti::handle_bind_match_data(MatchData &md)
 {
-    const TermFieldMatchData &tfmd = *match.resolveTermField(_queryTermData.tfh);
-    *match.resolveFeature(outputs()[0]) = (tfmd.getDocId() == match.getDocId())
-                                          ? calculateScore(_queryTermData, tfmd)
-                                          : 0;
+    _md = &md;
 }
 
+void
+NativeAttributeMatchExecutorSingle::execute(uint32_t docId)
+{
+    const TermFieldMatchData &tfmd = *_md->resolveTermField(_queryTermData.tfh);
+    outputs().set_number(0, (tfmd.getDocId() == docId)
+                         ? calculateScore(_queryTermData, tfmd)
+                         : 0);
+}
+
+void
+NativeAttributeMatchExecutorSingle::handle_bind_match_data(MatchData &md)
+{
+    _md = &md;
+}
 
 NativeAttributeMatchBlueprint::NativeAttributeMatchBlueprint() :
     Blueprint("nativeAttributeMatch"),
@@ -139,10 +151,10 @@ NativeAttributeMatchBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-NativeAttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+NativeAttributeMatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(NativeAttributeMatchExecutor::createExecutor(env, _params));
+    return NativeAttributeMatchExecutor::createExecutor(env, _params, stash);
 }
 
 

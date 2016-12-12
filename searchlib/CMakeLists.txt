@@ -75,6 +75,7 @@ vespa_define_module(
     src/tests/attribute/benchmark
     src/tests/attribute/bitvector
     src/tests/attribute/changevector
+    src/tests/attribute/compaction
     src/tests/attribute/comparator
     src/tests/attribute/document_weight_iterator
     src/tests/attribute/enumeratedsave
@@ -82,7 +83,6 @@ vespa_define_module(
     src/tests/attribute/extendattributes
     src/tests/attribute/guard
     src/tests/attribute/multi_value_mapping2
-    src/tests/attribute/multivaluemapping
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute
     src/tests/attribute/searchable
@@ -103,6 +103,7 @@ vespa_define_module(
     src/tests/common/sequencedtaskexecutor
     src/tests/common/summaryfeatures
     src/tests/datastore/array_store
+    src/tests/datastore/array_store_config
     src/tests/datastore/datastore
     src/tests/diskindex/bitvector
     src/tests/diskindex/diskindex

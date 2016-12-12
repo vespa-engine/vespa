@@ -31,7 +31,7 @@ public:
      */
     DistanceExecutor(const search::fef::Location & location,
                      const search::attribute::IAttributeVector * pos);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 
     static const feature_t DEFAULT_DISTANCE;
 };
@@ -66,7 +66,7 @@ public:
                        const search::fef::ParameterList & params);
 
     // Inherit doc from Blueprint.
-    virtual search::fef::FeatureExecutor::LP createExecutor(const search::fef::IQueryEnvironment & env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 

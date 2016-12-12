@@ -12,9 +12,12 @@ class RawScoreExecutor : public search::fef::FeatureExecutor
 {
 private:
     std::vector<search::fef::TermFieldHandle> _handles;
+    const fef::MatchData                     *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 public:
     RawScoreExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 };
 
 //-----------------------------------------------------------------------------
@@ -35,8 +38,7 @@ public:
     }
     virtual bool setup(const search::fef::IIndexEnvironment &env,
                        const search::fef::ParameterList &params);
-    virtual search::fef::FeatureExecutor::LP
-    createExecutor(const search::fef::IQueryEnvironment &env) const;
+    virtual search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
 } // namespace features

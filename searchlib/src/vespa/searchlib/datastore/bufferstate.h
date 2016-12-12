@@ -81,13 +81,11 @@ public:
      * @param typeId		registered data type for buffer.
      * @param typeHandler	type handler for registered data type.
      * @param sizeNeeded	Number of elements needed to be free
-     * @param maxSize		number of clusters expressable via reference
-     * 				type
      * @param buffer		start of buffer.
      */
     void
     onActive(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
-             size_t sizeNeeded, size_t maxSize, void *&buffer);
+             size_t sizeNeeded, void *&buffer);
 
     /**
      * Transition from ACTIVE to HOLD state.
@@ -106,6 +104,8 @@ public:
      *				are disabled.
      */
     void setFreeListList(FreeListList *freeListList);
+
+    void disableFreeList() { setFreeListList(nullptr); }
 
     /**
      * Add buffer state to list of buffer states with nonempty free lists.
@@ -156,7 +156,7 @@ public:
     size_t getExtraHoldBytes() const { return _extraHoldBytes; }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
-    void fallbackResize(uint32_t bufferId, uint64_t sizeNeeded, size_t maxClusters, void *&buffer, Alloc &holdBuffer);
+    void fallbackResize(uint32_t bufferId, uint64_t sizeNeeded, void *&buffer, Alloc &holdBuffer);
 
     bool isActive(uint32_t typeId) const {
         return ((_state == ACTIVE) && (_typeId == typeId));

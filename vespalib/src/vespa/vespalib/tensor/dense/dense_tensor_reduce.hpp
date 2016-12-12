@@ -55,7 +55,7 @@ private:
 public:
     DimensionReducer(const eval::ValueType &oldType,
                      const string &dimensionToRemove)
-        : _type(oldType.remove_dimensions({ dimensionToRemove })),
+        : _type(oldType.reduce({ dimensionToRemove })),
           _cellsResult(calcCellsSize(_type)),
           _innerDimSize(1),
           _sumDimSize(1),
@@ -96,7 +96,7 @@ DenseTensor::UP
 reduce(const DenseTensorView &tensor, const vespalib::string &dimensionToRemove, Function &&func)
 {
     DimensionReducer reducer(tensor.type(), dimensionToRemove);
-    return reducer.reduceCells(tensor.cells(), func);
+    return reducer.reduceCells(tensor.cellsRef(), func);
 }
 
 }

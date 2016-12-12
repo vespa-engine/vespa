@@ -2,6 +2,7 @@
 
 #include <vespa/fastos/fastos.h>
 #include <vespa/memfilepersistence/spi/operationhandler.h>
+#include <vespa/document/select/parser.h>
 
 #include <vespa/log/log.h>
 

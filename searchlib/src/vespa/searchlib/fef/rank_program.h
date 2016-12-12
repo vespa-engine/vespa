@@ -7,6 +7,7 @@
 #include "properties.h"
 #include "matchdata.h"
 #include "matchdatalayout.h"
+#include "feature_resolver.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <memory.h>
@@ -33,7 +34,8 @@ private:
     FeatureExecutor::SharedInputs            _shared_inputs;
     std::vector<FeatureExecutor*>            _program;
     MatchData::UP                            _match_data;
-    std::vector<FeatureExecutor::UP>         _executors;
+    vespalib::Stash                          _stash;
+    std::vector<FeatureExecutor *> _executors;
     std::map<vespalib::string, MappedHandle> _unboxed_seeds;
 
     /**
@@ -46,6 +48,9 @@ private:
      * Prepare the final program and evaluate all constant features.
      **/
     void compile();
+
+    FeatureResolver resolve(const std::vector<vespalib::string> &names,
+                            const std::vector<FeatureHandle> &handles) const;
 
 public:
     typedef std::unique_ptr<RankProgram> UP;
@@ -111,6 +116,25 @@ public:
                                  bool unbox_seeds = true) const;
 
     /**
+     * Obtain the names and storage locations of all seed features for
+     * this rank program. Programs for ranking phases will only have a
+     * single seed while programs used for summary features or
+     * scraping will have multiple seeds.
+     *
+     * @params unbox_seeds make sure seeds values are numbers
+     **/
+    FeatureResolver get_seeds(bool unbox_seeds = true) const;
+
+    /**
+     * Obtain the names and storage locations of all features for this
+     * rank program. This method is intended for debugging and
+     * testing.
+     *
+     * @params unbox_seeds make sure seeds values are numbers
+     **/
+    FeatureResolver get_all_features(bool unbox_seeds = true) const;
+
+    /**
      * Run this rank program on the current state of the internal
      * match data for the given docid. Typically, match data for a
      * specific result will be unpacked before calling run. After run
@@ -126,7 +150,7 @@ public:
         MatchData &md = match_data();
         md.setDocId(docid);
         for (FeatureExecutor *executor: _program) {
-            executor->execute(md);
+            executor->execute(docid);
         }
     }
 };

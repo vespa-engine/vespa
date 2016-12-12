@@ -462,13 +462,14 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
         }
 
         LOG(spam, "Done processing: %s", msg->toString().c_str());
-        _metrics.messageProcessTime[msg->getLoadType()].addValue(startTime);
+        _metrics.messageProcessTime[msg->getLoadType()].addValue(
+                startTime.getElapsedTimeAsDouble());
     } catch (std::exception& e) {
         LOGBP(error, "When running command %s, caught exception %s. "
                      "Discarding message",
               msg->toString().c_str(), e.what());
         _metrics.exceptionMessageProcessTime[msg->getLoadType()].addValue(
-                startTime);
+                startTime.getElapsedTimeAsDouble());
     } catch (...) {
         LOG(fatal, "Caught fatal exception in communication manager");
         throw;
@@ -642,7 +643,7 @@ CommunicationManager::sendCommand(
     default:
         return false;
     }
-    _metrics.sendCommandLatency.addValue(startTime);
+    _metrics.sendCommandLatency.addValue(startTime.getElapsedTimeAsDouble());
     return true;
 }
 
@@ -797,7 +798,7 @@ CommunicationManager::sendReply(
     } else {
         sendMessageBusReply(*context, reply);
     }
-    _metrics.sendReplyLatency.addValue(startTime);
+    _metrics.sendReplyLatency.addValue(startTime.getElapsedTimeAsDouble());
     return true;
 }
 

@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".hop");
-
 #include "hop.h"
 #include "routeparser.h"
 
@@ -11,9 +8,7 @@ namespace mbus {
 Hop::Hop() :
     _selector(),
     _ignoreResult(false)
-{
-    // empty
-}
+{ }
 
 Hop::Hop(const string &selector) :
     _selector(),
@@ -28,9 +23,9 @@ Hop::Hop(const std::vector<IHopDirective::SP> &selector,
          bool ignoreResult) :
     _selector(selector),
     _ignoreResult(ignoreResult)
-{
-    // empty
-}
+{ }
+
+Hop::~Hop() { }
 
 Hop &
 Hop::addDirective(IHopDirective::SP dir)

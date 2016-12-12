@@ -309,4 +309,10 @@ BucketInfo::operator==(const BucketInfo& other) const
     return true;
 };
 
+std::ostream&
+operator<<(std::ostream& out, const BucketInfo& info) {
+    info.print(out, false, "");
+    return out;
+}
+
 }

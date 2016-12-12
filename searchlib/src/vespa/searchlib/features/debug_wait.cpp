@@ -20,7 +20,7 @@ private:
 
 public:
     DebugWaitExecutor(const IQueryEnvironment &env, const DebugWaitParams &params);
-    void execute(MatchData & data) override;
+    void execute(uint32_t docId) override;
 };
 
 DebugWaitExecutor::DebugWaitExecutor(const IQueryEnvironment &env, const DebugWaitParams &params)
@@ -30,7 +30,7 @@ DebugWaitExecutor::DebugWaitExecutor(const IQueryEnvironment &env, const DebugWa
 }
 
 void
-DebugWaitExecutor::execute(MatchData &data)
+DebugWaitExecutor::execute(uint32_t)
 {
     FastOS_Time time;
     time.SetNow();
@@ -45,7 +45,7 @@ DebugWaitExecutor::execute(MatchData &data)
             FastOS_Thread::Sleep(rem);
         }
     }
-    *data.resolveFeature(outputs()[0]) = 1.0e-6 * time.MicroSecsToNow();
+    outputs().set_number(0, 1.0e-6 * time.MicroSecsToNow());
 }
 
 //-----------------------------------------------------------------------------
@@ -80,10 +80,10 @@ DebugWaitBlueprint::setup(const IIndexEnvironment &env, const ParameterList &par
     return true;
 }
 
-FeatureExecutor::LP
-DebugWaitBlueprint::createExecutor(const IQueryEnvironment &env) const
+FeatureExecutor &
+DebugWaitBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return FeatureExecutor::LP(new DebugWaitExecutor(env, _params));
+    return stash.create<DebugWaitExecutor>(env, _params);
 }
 
 //-----------------------------------------------------------------------------

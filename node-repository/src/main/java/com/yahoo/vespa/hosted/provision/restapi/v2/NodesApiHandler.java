@@ -69,6 +69,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
         catch (NotFoundException e) {
             return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
         }
+        catch (com.yahoo.vespa.hosted.provision.NotFoundException e) {
+            return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
+        }
         catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
@@ -192,10 +195,12 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private Node createNode(Inspector inspector) {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
+        Optional<String> ipAddress = optionalString(inspector.field("ipAddress"));
 
         return nodeRepository.createNode(
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
+                ipAddress,
                 parentHostname,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
                 nodeTypeFromSlime(inspector.field(nodeTypeKey)));

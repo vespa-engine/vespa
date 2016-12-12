@@ -30,7 +30,6 @@ Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitt
     _queryTermFieldMatch(),
     _totalTermWeight(0),
     _totalTermSignificance(0.0f),
-    _match(NULL),
     _fieldLength(FieldPositionsIterator::UNKNOWN_LENGTH),
     _currentMetrics(this),
     _finalMetrics(this),
@@ -74,7 +73,7 @@ Computer::Computer(const vespalib::string &propertyNamespace, const PhraseSplitt
 }
 
 void
-Computer::reset(const MatchData & match)
+Computer::reset(uint32_t docId)
 {
     _currentMetrics.reset();
     _finalMetrics.reset();
@@ -91,13 +90,12 @@ Computer::reset(const MatchData & match)
         }
     }
 
-    _match = &match;
     _fieldLength = FieldPositionsIterator::UNKNOWN_LENGTH;
 
     for (uint32_t i = 0; i < _queryTerms.size(); ++i) {
         const ITermData *td = _queryTerms[i].termData();
         const TermFieldMatchData *tfmd = _splitter.resolveTermField(_queryTerms[i].fieldHandle());
-        if (tfmd->getDocId() != match.getDocId()) { // only term match data if we have a hit
+        if (tfmd->getDocId() != docId) { // only term match data if we have a hit
             tfmd = NULL;
         } else {
             FieldPositionsIterator it = tfmd->getIterator();
@@ -127,7 +125,7 @@ Computer::reset(const MatchData & match)
                     if (__builtin_expect(fieldPos < _fieldLength, true))
                         _cachedHits[i].bitvector.setBit(fieldPos);
                     else {
-                        handleError(fieldPos, match.getDocId());
+                        handleError(fieldPos, docId);
                     }
                 }
             }

@@ -14,7 +14,7 @@ using vespalib::tensor::TensorMapper;
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 namespace {
 
@@ -142,8 +142,8 @@ DenseTensorAttribute::onLoad()
             const auto &unboundDimSizes = tensorReader.getUnboundDimSizes();
             auto raw = _denseTensorStore.allocRawBuffer(numCells, unboundDimSizes);
             size_t rawLen = numCells * cellSize;
-            tensorReader.readTensor(raw.first, rawLen);
-            _refVector.push_back(raw.second);
+            tensorReader.readTensor(raw.data, rawLen);
+            _refVector.push_back(raw.ref);
         } else {
             _refVector.push_back(RefType());
         }
@@ -178,6 +178,6 @@ DenseTensorAttribute::getVersion() const
     return DENSE_TENSOR_ATTRIBUTE_VERSION;
 }
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

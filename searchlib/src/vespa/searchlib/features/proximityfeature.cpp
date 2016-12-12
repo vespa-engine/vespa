@@ -31,32 +31,37 @@ ProximityExecutor::ProximityExecutor(const search::fef::IQueryEnvironment &env,
 }
 
 void
-ProximityExecutor::execute(search::fef::MatchData &match)
+ProximityExecutor::execute(uint32_t docId)
 {
     // Cannot calculate proximity in this case
     if (_termA != search::fef::IllegalHandle &&
         _termB != search::fef::IllegalHandle)
     {
-        search::fef::TermFieldMatchData &matchA = *match.resolveTermField(_termA);
-        search::fef::TermFieldMatchData &matchB = *match.resolveTermField(_termB);
+        const fef::TermFieldMatchData &matchA = *_md->resolveTermField(_termA);
+        const fef::TermFieldMatchData &matchB = *_md->resolveTermField(_termB);
 
-        if (matchA.getDocId() == match.getDocId() &&
-            matchB.getDocId() == match.getDocId())
+        if (matchA.getDocId() == docId &&
+            matchB.getDocId() == docId)
         {
-            if (findBest(match, matchA, matchB)) return;
+            if (findBest(matchA, matchB)) return;
         }
     }
     // no match
-    *match.resolveFeature(outputs()[0]) = util::FEATURE_MAX; // out
-    *match.resolveFeature(outputs()[1]) = util::FEATURE_MAX; // posA
-    *match.resolveFeature(outputs()[2]) = util::FEATURE_MIN; // posB
+    outputs().set_number(0, util::FEATURE_MAX); // out
+    outputs().set_number(1, util::FEATURE_MAX); // posA
+    outputs().set_number(2, util::FEATURE_MIN); // posB
     return;
 }
 
+void
+ProximityExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
+}
+
 bool
-ProximityExecutor::findBest(search::fef::MatchData &match,
-                            search::fef::TermFieldMatchData &matchA,
-                            search::fef::TermFieldMatchData &matchB)
+ProximityExecutor::findBest(const fef::TermFieldMatchData &matchA,
+                            const fef::TermFieldMatchData &matchB)
 {
     // Look for optimal positions for term A and B.
     uint32_t optA = 0, optB = 0xFFFFFFFFu;
@@ -97,9 +102,9 @@ ProximityExecutor::findBest(search::fef::MatchData &match,
     }
     if (optB != 0xFFFFFFFFu) {
         // Output proximity score.
-        *match.resolveFeature(outputs()[0]) = optB - optA;
-        *match.resolveFeature(outputs()[1]) = optA;
-        *match.resolveFeature(outputs()[2]) = optB;
+        outputs().set_number(0, optB - optA);
+        outputs().set_number(1, optA);
+        outputs().set_number(2, optB);
         return true;
     } else {
         return false;
@@ -140,10 +145,10 @@ ProximityBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new ProximityBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-ProximityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+ProximityBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new ProximityExecutor(env, _config));
+    return stash.create<ProximityExecutor>(env, _config);
 }
 
 }}

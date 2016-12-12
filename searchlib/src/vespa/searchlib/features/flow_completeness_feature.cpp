@@ -176,11 +176,11 @@ struct State {
 
 
 void
-FlowCompletenessExecutor::execute(search::fef::MatchData &data)
+FlowCompletenessExecutor::execute(uint32_t)
 {
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        search::fef::TermFieldMatchData *tfmd = data.resolveTermField(_terms[i].termHandle);
+        const search::fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
         Item item(i, tfmd->begin(), tfmd->end());
         LOG(spam, "found tfmd item with %zu positions", (item.end - item.pos));
         if (item.pos != item.end) {
@@ -220,13 +220,19 @@ FlowCompletenessExecutor::execute(search::fef::MatchData &data)
             best = state;
         }
     }
-    *data.resolveFeature(outputs()[0]) = best.completeness;
-    *data.resolveFeature(outputs()[1]) = best.fieldCompleteness;
-    *data.resolveFeature(outputs()[2]) = best.queryCompleteness;
-    *data.resolveFeature(outputs()[3]) = best.elementWeight;
-    *data.resolveFeature(outputs()[4]) = _params.fieldWeight;
-    *data.resolveFeature(outputs()[5]) = best.flow;
+    outputs().set_number(0, best.completeness);
+    outputs().set_number(1, best.fieldCompleteness);
+    outputs().set_number(2, best.queryCompleteness);
+    outputs().set_number(3, best.elementWeight);
+    outputs().set_number(4, _params.fieldWeight);
+    outputs().set_number(5, best.flow);
 
+}
+
+void
+FlowCompletenessExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -297,10 +303,10 @@ FlowCompletenessBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::FeatureExecutor::LP
-FlowCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+FlowCompletenessBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new FlowCompletenessExecutor(env, _params));
+    return stash.create<FlowCompletenessExecutor>(env, _params);
 }
 
 //-----------------------------------------------------------------------------

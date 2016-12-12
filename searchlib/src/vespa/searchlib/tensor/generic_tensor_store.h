@@ -6,7 +6,7 @@
 
 namespace search {
 
-namespace attribute {
+namespace tensor {
 
 /**
  * Class for storing serialized tensors in memory, used by TensorAttribute.
@@ -30,7 +30,7 @@ public:
 
     std::pair<const void *, uint32_t> getRawBuffer(RefType ref) const;
 
-    std::pair<void *, RefType> allocRawBuffer(uint32_t size);
+    datastore::Handle<char> allocRawBuffer(uint32_t size);
 
     virtual void holdTensor(EntryRef ref) override;
 
@@ -42,6 +42,6 @@ public:
 };
 
 
-}  // namespace search::attribute
+}  // namespace search::tensor
 
 }  // namespace search

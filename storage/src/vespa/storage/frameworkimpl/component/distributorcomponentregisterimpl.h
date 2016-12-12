@@ -26,27 +26,21 @@ class DistributorComponentRegisterImpl
     std::vector<DistributorManagedComponent*> _components;
 
     UniqueTimeCalculator* _timeCalculator;
-    MapBucketDatabase _bucketDatabase;
     DistributorConfig _distributorConfig;
     VisitorConfig _visitorConfig;
     lib::ClusterState _clusterState;
-    std::unique_ptr<lib::IdealNodeCalculatorConfigurable> _idealNodeCalculator;
 
 public:
     typedef std::unique_ptr<DistributorComponentRegisterImpl> UP;
 
     DistributorComponentRegisterImpl();
-
-    BucketDatabase& getBucketDatabase() { return _bucketDatabase; }
+    ~DistributorComponentRegisterImpl();
 
     virtual void registerDistributorComponent(DistributorManagedComponent&);
 
     void setTimeCalculator(UniqueTimeCalculator& calc);
     void setDistributorConfig(const DistributorConfig&);
     void setVisitorConfig(const VisitorConfig&);
-    void setDistribution(lib::Distribution::SP);
-    void setIdealNodeCalculator(
-            std::unique_ptr<lib::IdealNodeCalculatorConfigurable>);
 
 private:
     virtual void handleNewState();

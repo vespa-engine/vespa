@@ -137,8 +137,8 @@ SingleAttrDFW::WriteField(uint32_t docid,
         BasicType::Type t = v.getBasicType();
         switch (t) {
         case BasicType::TENSOR: {
-            const attribute::TensorAttribute &tv =
-                static_cast<const attribute::TensorAttribute &>(v);
+            const tensor::TensorAttribute &tv =
+                static_cast<const tensor::TensorAttribute &>(v);
             const auto tensor = tv.getTensor(docid);
             vespalib::string str;
             if (tensor) {
@@ -226,8 +226,8 @@ SingleAttrDFW::insertField(uint32_t docid,
         BasicType::Type t = v.getBasicType();
         switch (t) {
         case BasicType::TENSOR: {
-            const attribute::TensorAttribute &tv =
-                static_cast<const attribute::TensorAttribute &>(v);
+            const tensor::TensorAttribute &tv =
+                static_cast<const tensor::TensorAttribute &>(v);
             const auto tensor = tv.getTensor(docid);
             if (tensor) {
                 vespalib::tensor::SlimeBinaryFormat::serialize(target, *tensor);

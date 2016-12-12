@@ -6,8 +6,9 @@
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/attribute/enumstore.h>
 #include <vespa/searchlib/attribute/multienumattribute.h>
-#include <vespa/searchlib/attribute/multivaluemapping.h>
+#include <vespa/searchlib/attribute/multi_value_mapping2.h>
 #include "enumhintsearchcontext.h"
+#include "multivalue.h"
 
 namespace search {
 
@@ -20,7 +21,6 @@ namespace search {
  * B: Base class: EnumAttribute<StringAttribute>
  * M: multivalue::Value<EnumStoreBase::Index> (array) or
  *    multivalue::WeightedValue<EnumStoreBase::Index> (weighted set)
- * M specifies the type stored in the MultiValueMapping
  */
 template <typename B, typename M>
 class MultiValueStringAttributeT : public MultiValueEnumAttribute<B, M>
@@ -52,8 +52,6 @@ private:
     friend class StringAttributeTest;
 
 public:
-    typedef typename MultiValueMappingBaseBase::Histogram Histogram;
-
     MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                               AttributeVector::Config(AttributeVector::BasicType::STRING,
                                                       attribute::CollectionType::ARRAY));
@@ -164,10 +162,8 @@ public:
 };
 
 
-typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::Value<EnumStoreBase::Index>, multivalue::Index32> > ArrayStringAttribute;
-typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::WeightedValue<EnumStoreBase::Index>, multivalue::Index32> > WeightedSetStringAttribute;
-typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::Value<EnumStoreBase::Index>, multivalue::Index64> > HugeArrayStringAttribute;
-typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::MVMTemplateArg<multivalue::WeightedValue<EnumStoreBase::Index>, multivalue::Index64> > HugeWeightedSetStringAttribute;
+typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> > ArrayStringAttribute;
+typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> > WeightedSetStringAttribute;
 
 } // namespace search
 

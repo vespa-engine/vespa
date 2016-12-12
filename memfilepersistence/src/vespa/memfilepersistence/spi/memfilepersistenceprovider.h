@@ -45,59 +45,59 @@ public:
 
     ~MemFilePersistenceProvider();
 
-    spi::PartitionStateListResult getPartitionStates() const;
+    spi::PartitionStateListResult getPartitionStates() const override;
 
-    spi::BucketIdListResult listBuckets(spi::PartitionId) const;
+    spi::BucketIdListResult listBuckets(spi::PartitionId) const override;
 
-    spi::BucketIdListResult getModifiedBuckets() const;
+    spi::BucketIdListResult getModifiedBuckets() const override;
 
-    spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const;
+    spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
 
     spi::Result put(const spi::Bucket&, spi::Timestamp,
-                    const document::Document::SP&, spi::Context&);
+                    const spi::DocumentSP&, spi::Context&) override;
 
     spi::RemoveResult remove(const spi::Bucket&, spi::Timestamp,
-                             const DocumentId&, spi::Context&);
+                             const DocumentId&, spi::Context&) override;
 
     spi::RemoveResult removeIfFound(const spi::Bucket&, spi::Timestamp,
-                                    const DocumentId&, spi::Context&);
+                                    const DocumentId&, spi::Context&) override;
 
     spi::UpdateResult update(const spi::Bucket&, spi::Timestamp,
-                             const document::DocumentUpdate::SP&, spi::Context&);
+                             const spi::DocumentUpdateSP&, spi::Context&) override;
 
     spi::GetResult get(const spi::Bucket&, const document::FieldSet&,
-                       const spi::DocumentId&, spi::Context&) const;
+                       const spi::DocumentId&, spi::Context&) const override;
 
-    spi::Result flush(const spi::Bucket&, spi::Context&);
+    spi::Result flush(const spi::Bucket&, spi::Context&) override;
 
     spi::CreateIteratorResult createIterator(const spi::Bucket&,
                                              const document::FieldSet&,
                                              const spi::Selection&,
                                              spi::IncludedVersions versions,
-                                             spi::Context&);
+                                             spi::Context&) override;
 
     spi::IterateResult iterate(spi::IteratorId,
-                               uint64_t maxByteSize, spi::Context&) const;
+                               uint64_t maxByteSize, spi::Context&) const override;
 
-    spi::Result destroyIterator(spi::IteratorId, spi::Context&);
+    spi::Result destroyIterator(spi::IteratorId, spi::Context&) override;
 
-    spi::Result deleteBucket(const spi::Bucket&, spi::Context&);
+    spi::Result deleteBucket(const spi::Bucket&, spi::Context&) override;
 
     spi::Result split(const spi::Bucket& source,
                       const spi::Bucket& target1,
                       const spi::Bucket& target2,
-                      spi::Context&);
+                      spi::Context&) override;
 
     spi::Result join(const spi::Bucket& source1,
                      const spi::Bucket& source2,
                      const spi::Bucket& target,
-                     spi::Context&);
+                     spi::Context&) override;
 
     spi::Result removeEntry(const spi::Bucket&,
-                            spi::Timestamp, spi::Context&);
+                            spi::Timestamp, spi::Context&) override;
 
     spi::Result maintain(const spi::Bucket&,
-                         spi::MaintenanceLevel level);
+                         spi::MaintenanceLevel level) override;
 
     Environment& getEnvironment() {
         return *_env;

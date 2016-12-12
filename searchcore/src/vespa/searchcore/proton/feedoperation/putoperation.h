@@ -7,21 +7,22 @@ namespace proton {
 
 class PutOperation : public DocumentOperation
 {
-    document::Document::SP _doc;
+    using DocumentSP = std::shared_ptr<document::Document>;
+    DocumentSP _doc;
 
 public:
     PutOperation();
     PutOperation(const document::BucketId &bucketId,
                  const storage::spi::Timestamp &timestamp,
-                 const document::Document::SP &doc);
+                 const DocumentSP &doc);
     PutOperation(const document::BucketId &bucketId,
                  const storage::spi::Timestamp &timestamp,
-                 const document::Document::SP &doc,
+                 const DocumentSP &doc,
                  SerialNum serialNum,
                  DbDocumentId dbdId,
                  DbDocumentId prevDbdId);
-    virtual ~PutOperation() {}
-    const document::Document::SP &getDocument() const { return _doc; }
+    virtual ~PutOperation();
+    const DocumentSP &getDocument() const { return _doc; }
     void assertValid() const;
     virtual void serialize(vespalib::nbostream &os) const;
     virtual void deserialize(vespalib::nbostream &is,

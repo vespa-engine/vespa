@@ -59,9 +59,9 @@ TermEditDistanceExecutor::TermEditDistanceExecutor(const search::fef::IQueryEnvi
     _config(config),
     _fieldHandles(),
     _termWeights(),
-    _lenHandle(search::fef::IllegalHandle),
     _prevRow(16),
-    _thisRow(_prevRow.size())
+    _thisRow(_prevRow.size()),
+    _md(nullptr)
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         _fieldHandles.push_back(util::getTermFieldHandle(env, i, config.fieldId));
@@ -74,13 +74,13 @@ TermEditDistanceExecutor::TermEditDistanceExecutor(const search::fef::IQueryEnvi
 }
 
 void
-TermEditDistanceExecutor::execute(search::fef::MatchData &match)
+TermEditDistanceExecutor::execute(uint32_t docId)
 {
     // Determine the number of terms in the field.
     uint32_t numQueryTerms = _fieldHandles.size();
     uint32_t fieldBegin    = _config.fieldBegin;
     uint32_t fieldEnd      = std::min(_config.fieldEnd,
-                                      (uint32_t)*match.resolveFeature(_lenHandle));
+                                      (uint32_t)inputs().get_number(0));
 
     // _P_A_R_A_N_O_I_A_
     TedCell last;
@@ -104,8 +104,8 @@ TermEditDistanceExecutor::execute(search::fef::MatchData &match)
             // Look for a match of this term.
             search::fef::TermFieldHandle handle = _fieldHandles[query - 1];
             if (handle != search::fef::IllegalHandle) {
-                search::fef::TermFieldMatchData &tfmd = *match.resolveTermField(handle);
-                if (tfmd.getDocId() == match.getDocId()) {
+                const fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
+                if (tfmd.getDocId() == docId) {
                     it = tfmd.getIterator(); // this is now valid
                     while (it.valid() && it.getPosition() < fieldBegin) {
                         it.next(); // forward to window
@@ -158,10 +158,16 @@ TermEditDistanceExecutor::execute(search::fef::MatchData &match)
         // Retrieve the bottom-right value.
         last = _prevRow[numFieldTerms];
     }
-    *match.resolveFeature(outputs()[0]) = last.cost;
-    *match.resolveFeature(outputs()[1]) = last.numDel;
-    *match.resolveFeature(outputs()[2]) = last.numIns;
-    *match.resolveFeature(outputs()[3]) = last.numSub;
+    outputs().set_number(0, last.cost);
+    outputs().set_number(1, last.numDel);
+    outputs().set_number(2, last.numIns);
+    outputs().set_number(3, last.numSub);
+}
+
+void
+TermEditDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 void
@@ -225,10 +231,10 @@ TermEditDistanceBlueprint::createInstance() const
     return search::fef::Blueprint::UP(new TermEditDistanceBlueprint());
 }
 
-search::fef::FeatureExecutor::LP
-TermEditDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env) const
+search::fef::FeatureExecutor &
+TermEditDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    return search::fef::FeatureExecutor::LP(new TermEditDistanceExecutor(env, _config));
+    return stash.create<TermEditDistanceExecutor>(env, _config);
 }
 
 }}

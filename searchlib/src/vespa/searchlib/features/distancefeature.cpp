@@ -72,9 +72,9 @@ DistanceExecutor::DistanceExecutor(const Location & location,
 }
 
 void
-DistanceExecutor::execute(MatchData & match)
+DistanceExecutor::execute(uint32_t docId)
 {
-    *match.resolveFeature(outputs()[0]) = calculateDistance(match.getDocId());
+    outputs().set_number(0, calculateDistance(docId));
 }
 
 const feature_t DistanceExecutor::DEFAULT_DISTANCE(6400000000.0);
@@ -109,8 +109,8 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor::LP
-DistanceBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+DistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     const search::attribute::IAttributeVector * pos = NULL;
     const Location & location = env.getLocation();
@@ -138,7 +138,7 @@ DistanceBlueprint::createExecutor(const IQueryEnvironment & env) const
         }
     }
 
-    return FeatureExecutor::LP(new DistanceExecutor(location, pos));
+    return stash.create<DistanceExecutor>(location, pos);
 }
 
 

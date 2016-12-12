@@ -14,8 +14,7 @@
 
 namespace metrics {
 
-class MetricTimer
-{
+class MetricTimer {
 public:
     MetricTimer();
 
@@ -27,17 +26,17 @@ public:
      * underflow or be affected by system clock changes.
      */
     template<typename AvgVal, typename TotVal, bool SumOnAdd>
-    uint64_t stop(ValueMetric<AvgVal, TotVal, SumOnAdd>& metric) {
+    AvgVal stop(ValueMetric<AvgVal, TotVal, SumOnAdd>& metric) {
         const auto delta = std::chrono::steady_clock::now() - _startTime;
-        const uint64_t deltaMs(
-                std::chrono::duration_cast<std::chrono::milliseconds>(delta)
-                    .count());
+        using ToDuration = std::chrono::duration<AvgVal, std::milli>;
+        const auto deltaMs(
+                std::chrono::duration_cast<ToDuration>(delta).count());
         metric.addValue(deltaMs);
         return deltaMs;
     }
 
 private:
-    std::chrono::time_point<std::chrono::steady_clock> _startTime;
+    std::chrono::steady_clock::time_point _startTime;
 };
 
 } // metrics

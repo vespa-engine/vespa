@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.feedoperation.moveoperation");
-
 #include "moveoperation.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/document/fieldvalue/document.h>
 
 using document::BucketId;
 using document::Document;
@@ -17,8 +15,7 @@ namespace proton {
 MoveOperation::MoveOperation()
     : DocumentOperation(FeedOperation::MOVE),
       _doc()
-{
-}
+{ }
 
 
 MoveOperation::MoveOperation(const BucketId &bucketId,
@@ -33,6 +30,7 @@ MoveOperation::MoveOperation(const BucketId &bucketId,
     setDbDocumentId(DbDocumentId(targetSubDbId, 0u));
 }
 
+MoveOperation::~MoveOperation() { }
 
 void
 MoveOperation::serialize(vespalib::nbostream &os) const

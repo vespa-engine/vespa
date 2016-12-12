@@ -666,7 +666,7 @@ StorageBucketDBInitializer::checkIfDone()
     }
     _state._doneInitializing = true;
     _system._doneInitializeHandler.notifyDoneInitializing();
-    _metrics._initLatency.addValue(_metrics._startTime);
+    _metrics._initLatency.addValue(_metrics._startTime.getElapsedTimeAsDouble());
     LOG(debug, "Completed initializing");
 }
 
@@ -761,7 +761,7 @@ StorageBucketDBInitializer::handleListingCompleted()
     }
     LOG(info, "Completed listing buckets from disk. Minimum used bits is %u",
         _system._component.getMinUsedBitsTracker().getMinUsedBits());
-    _metrics._listLatency.addValue(_metrics._startTime);
+    _metrics._listLatency.addValue(_metrics._startTime.getElapsedTimeAsDouble());
 }
 
 double

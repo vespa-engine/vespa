@@ -87,7 +87,8 @@ PhraseSplitterTest::testSplitter()
         MatchData::UP md = mdl.createMatchData();
         PhraseSplitter ps(qe, 0);
         ASSERT_TRUE(ps.getNumTerms() == 1);
-        ps.update(*md);
+        ps.bind_match_data(*md);
+        ps.update();
         // check that nothing is served from the splitter
         EXPECT_EQUAL(ps.getTerm(0), &terms[0]);
         TermFieldHandle handle = terms[0].lookupField(0)->getHandle();
@@ -105,7 +106,8 @@ PhraseSplitterTest::testSplitter()
         MatchData::UP md = mdl.createMatchData();
         PhraseSplitter ps(qe, 7);
         ASSERT_TRUE(ps.getNumTerms() == 3);
-        ps.update(*md);
+        ps.bind_match_data(*md);
+        ps.update();
         // check that all is served from the splitter
         for (size_t i = 0; i < 3; ++i) {
             // fprintf(stderr, "checking term %d\n", (int)i);
@@ -136,7 +138,8 @@ PhraseSplitterTest::testSplitter()
         MatchData::UP md = mdl.createMatchData();
         PhraseSplitter ps(qe, 4);
         ASSERT_TRUE(ps.getNumTerms() == 5);
-        ps.update(*md);
+        ps.bind_match_data(*md);
+        ps.update();
         { // first term
             // fprintf(stderr, "first term\n");
             EXPECT_EQUAL(ps.getTerm(0), &terms[0]);
@@ -201,7 +204,8 @@ PhraseSplitterTest::testSplitterUpdate()
             TermFieldMatchData * tmd = md->resolveTermField(terms[2].lookupField(0)->getHandle());
             tmd->appendPosition(TermFieldMatchDataPosition(0, 30, 0, 1000));
         }
-        ps.update(*md);
+        ps.bind_match_data(*md);
+        ps.update();
         for (size_t i = 0; i < 2; ++i) { // first phrase
             const TermFieldMatchData * tmd = ps.resolveTermField(ps.getTerm(i)->lookupField(0)->getHandle());
             TermFieldMatchData::PositionsIterator itr = tmd->begin();

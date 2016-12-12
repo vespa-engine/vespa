@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ZKApplicationFileTest extends ApplicationFileTest {
 
-    private void feed(ConfigCurator zk, File dirToFeed) throws IOException {
+    private void feed(ConfigCurator zk, File dirToFeed) {
         assertTrue(dirToFeed.isDirectory());
         String appPath = "/0";
         zk.feedZooKeeper(dirToFeed, appPath + ConfigCurator.USERAPP_ZK_SUBPATH, null, true);

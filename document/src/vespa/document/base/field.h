@@ -13,11 +13,12 @@
 
 #include <memory>
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/fieldset/fieldset.h>
 #include <set>
 
 namespace document {
+
+class FieldValue;
 
 class Field : public vespalib::FieldBase,
               public vespalib::Identifiable,
@@ -74,7 +75,7 @@ public:
     Field(const vespalib::stringref & name, const DataType &dataType, bool headerField);
 
     FieldSet* clone() const override { return new Field(*this); }
-    FieldValue::UP createValue() const { return _dataType->createFieldValue(); }
+    std::unique_ptr<FieldValue> createValue() const;
 
     // Note that only id is checked for equality.
     bool operator==(const Field & other) const { return (_fieldId == other._fieldId); }

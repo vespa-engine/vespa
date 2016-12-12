@@ -20,7 +20,8 @@ TermDistanceExecutor::TermDistanceExecutor(const IQueryEnvironment & env,
     FeatureExecutor(),
     _params(params),
     _termA(env.getTerm(params.termX)),
-    _termB(env.getTerm(params.termY))
+    _termB(env.getTerm(params.termY)),
+    _md(nullptr)
 {
     _termA.fieldHandle(util::getTermFieldData(env, params.termX, params.fieldId));
     _termB.fieldHandle(util::getTermFieldData(env, params.termY, params.fieldId));
@@ -33,16 +34,21 @@ bool TermDistanceExecutor::valid() const
 }
 
 void
-TermDistanceExecutor::execute(MatchData & match)
+TermDistanceExecutor::execute(uint32_t docId)
 {
     TermDistanceCalculator::Result result;
-    TermDistanceCalculator::run(_termA, _termB, match, result);
-    *match.resolveFeature(outputs()[0]) = result.forwardDist;
-    *match.resolveFeature(outputs()[1]) = result.forwardTermPos;
-    *match.resolveFeature(outputs()[2]) = result.reverseDist;
-    *match.resolveFeature(outputs()[3]) = result.reverseTermPos;
+    TermDistanceCalculator::run(_termA, _termB, *_md, docId, result);
+    outputs().set_number(0, result.forwardDist);
+    outputs().set_number(1, result.forwardTermPos);
+    outputs().set_number(2, result.reverseDist);
+    outputs().set_number(3, result.reverseTermPos);
 }
 
+void
+TermDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
+}
 
 TermDistanceBlueprint::TermDistanceBlueprint() :
     Blueprint("termDistance"),
@@ -78,12 +84,12 @@ TermDistanceBlueprint::setup(const IIndexEnvironment &,
     return true;
 }
 
-FeatureExecutor::LP
-TermDistanceBlueprint::createExecutor(const IQueryEnvironment & env) const
+FeatureExecutor &
+TermDistanceBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    std::unique_ptr<TermDistanceExecutor> tde(new TermDistanceExecutor(env, _params));
-    if (tde->valid()) {
-        return FeatureExecutor::LP(tde.release());
+    TermDistanceExecutor &tde(stash.create<TermDistanceExecutor>(env, _params));
+    if (tde.valid()) {
+        return tde;
     } else {
         TermDistanceCalculator::Result r;
         std::vector<feature_t> values(4);
@@ -91,7 +97,7 @@ TermDistanceBlueprint::createExecutor(const IQueryEnvironment & env) const
         values[1] = r.forwardTermPos;
         values[2] = r.reverseDist;
         values[3] = r.reverseTermPos;
-        return FeatureExecutor::LP(new ValueExecutor(values));
+        return stash.create<ValueExecutor>(values);
     }
 }
 

@@ -2,13 +2,18 @@
 package com.yahoo.vespa.model.content.utils;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.monitoring.Yamas;
+import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import org.w3c.dom.Document;
@@ -46,7 +51,9 @@ public class ContentClusterUtils {
 
     public static ContentCluster createCluster(String clusterXml, MockRoot root) throws Exception {
         Document doc = XML.getDocument(clusterXml);
-        return new ContentCluster.Builder(null, null).build(Collections.emptyList(), root, doc.getDocumentElement());
+        Admin admin = new Admin(root, new Yamas("vespa", 60), new Metrics(), Collections.emptyMap(), false);
+        DeployLogger deployLogger = new BaseDeployLogger();
+        return new ContentCluster.Builder(admin, deployLogger).build(Collections.emptyList(), root, doc.getDocumentElement());
     }
 
     public static ContentCluster createCluster(String clusterXml, List<String> searchDefinitions) throws Exception {

@@ -62,6 +62,7 @@ class HttpRequestDispatch {
         this.servletRequest = servletRequest;
         honourMaxKeepAliveRequests();
         this.servletResponseController = new ServletResponseController(
+                servletRequest,
                 servletResponse,
                 jDiscContext.janitor,
                 metricReporter,
@@ -140,7 +141,9 @@ class HttpRequestDispatch {
         };
     }
 
+    @SuppressWarnings("try")
     private ServletRequestReader handleRequest() throws IOException {
+        servletResponseController.registerWriteListener();
         HttpRequest jdiscRequest = HttpRequestFactory.newJDiscRequest(jDiscContext.container, servletRequest);
         final ContentChannel requestContentChannel;
 
@@ -156,8 +159,7 @@ class HttpRequestDispatch {
                         servletInputStream,
                         requestContentChannel,
                         jDiscContext.janitor,
-                        metricReporter,
-                        servletResponseController);
+                        metricReporter);
 
         servletInputStream.setReadListener(servletRequestReader);
         return servletRequestReader;
@@ -173,6 +175,7 @@ class HttpRequestDispatch {
 
     ContentChannel handleRequestFilterResponse(Response response) {
         try {
+            servletResponseController.registerWriteListener();
             servletRequest.getInputStream().close();
             ContentChannel responseContentChannel = servletResponseController.responseHandler.handleResponse(response);
             servletResponseController.finishedFuture().whenComplete(completeRequestCallback);
