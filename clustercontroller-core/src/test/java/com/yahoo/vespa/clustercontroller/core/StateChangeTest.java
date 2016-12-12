@@ -1198,4 +1198,45 @@ public class StateChangeTest extends FleetControllerTest {
                 "Event: storage.2: 5000 milliseconds without contact. Marking node down.\n");
     }
 
+    @Test
+    public void do_not_emit_multiple_events_when_node_state_does_not_match_versioned_state() throws Exception {
+        FleetControllerOptions options = new FleetControllerOptions("mycluster", createNodes(10));
+        initialize(options);
+
+        ctrl.tick();
+        communicator.setNodeState(
+                new Node(NodeType.STORAGE, 2),
+                new NodeState(NodeType.STORAGE, State.INITIALIZING)
+                        .setInitProgress(0.1).setMinUsedBits(16), "");
+
+        ctrl.tick();
+
+        // Node 2 is in Init mode with 16 min used bits. Emulate continuous init progress reports
+        // from the content node which also contains an updated min used bits. Since init progress
+        // and min used bits changes do not by themselves trigger a new cluster state version,
+        // deciding whether to emit new events by comparing the reported node state versus the
+        // versioned cluster state will cause the code to believe there's been a change every
+        // time a new message is received. This will cause a lot of "Altered min distribution
+        // bit count" events to be emitted, one per init progress update from the content node.
+        // There may be thousands of such updates from each node during their init sequence, so
+        // this gets old really quickly.
+        for (int i = 1; i < 10; ++i) {
+            communicator.setNodeState(
+                    new Node(NodeType.STORAGE, 2),
+                    new NodeState(NodeType.STORAGE, State.INITIALIZING)
+                            .setInitProgress((i * 0.1) + 0.1).setMinUsedBits(17), "");
+            timer.advanceTime(1000);
+            ctrl.tick();
+        }
+
+        // We should only get "Altered min distribution bit count" event once, not 9 times.
+        verifyNodeEvents(new Node(NodeType.STORAGE, 2),
+                "Event: storage.2: Now reporting state U\n" +
+                        "Event: storage.2: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
+                        "Event: storage.2: Now reporting state I, i 0.100 (read)\n" +
+                        "Event: storage.2: Altered node state in cluster state from 'U' to 'I, i 0.100 (read)'\n" +
+                        "Event: storage.2: Altered min distribution bit count from 16 to 17\n");
+
+    }
+
 }
