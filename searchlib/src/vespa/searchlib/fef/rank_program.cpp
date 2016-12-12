@@ -100,7 +100,7 @@ RankProgram::compile()
             is_const &= is_calculated[inputs[in_idx]];
         }
         if (is_const) {
-            executor.execute(0);
+            executor.execute(1);
             const auto &outputs = executor.outputs();
             for (size_t out_idx = 0; out_idx < outputs.size(); ++out_idx) {
                 is_calculated[outputs[out_idx]] = true;
