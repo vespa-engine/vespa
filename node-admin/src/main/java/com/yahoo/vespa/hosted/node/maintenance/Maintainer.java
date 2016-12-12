@@ -17,7 +17,6 @@ import io.airlift.airline.Help;
 import io.airlift.airline.Option;
 import io.airlift.airline.ParseArgumentsUnexpectedException;
 import io.airlift.airline.ParseOptionMissingException;
-import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.File;
@@ -52,8 +51,8 @@ public class Maintainer {
     private static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
     private static final Maintainer maintainer = new Maintainer();
-    private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
-    private static final CoreCollector CORE_COLLECTOR = new CoreCollector(maintainer);
+    private static final CoredumpHandler COREDUMP_HANDLER =
+            new CoredumpHandler(HttpClientBuilder.create().build(), new CoreCollector(maintainer));
     private static final Gson gson = new Gson();
 
     private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
@@ -186,7 +185,7 @@ public class Maintainer {
             Path doneCoredumps = maintainer.pathInNodeAdminToDoneCoredumps();
 
             if (doneCoredumps.toFile().exists()) {
-                CoredumpHandler.removeOldCoredumps(doneCoredumps);
+                COREDUMP_HANDLER.removeOldCoredumps(doneCoredumps);
             }
         }
     }
@@ -275,9 +274,8 @@ public class Maintainer {
                 Path path = maintainer.pathInNodeAdminFromPathInNode(new ContainerName(container), "/home/y/var/crash");
                 Path doneCoredumps = maintainer.pathInNodeAdminToDoneCoredumps();
 
-                CoredumpHandler coredumpHandler = new CoredumpHandler(HTTP_CLIENT, CORE_COLLECTOR, attributesMap);
-                CoredumpHandler.removeJavaCoredumps(path);
-                coredumpHandler.processAndReportCoredumps(path, doneCoredumps);
+                COREDUMP_HANDLER.removeJavaCoredumps(path);
+                COREDUMP_HANDLER.processAndReportCoredumps(path, doneCoredumps, attributesMap);
             } catch (Throwable e) {
                 logger.log(Level.WARNING, "Could not process coredumps", e);
             }

@@ -31,30 +31,27 @@ public class CoredumpHandler {
     public static final String PROCESSING_DIRECTORY_NAME = "processing";
     public static final String METADATA_FILE_NAME = "metadata.json";
 
-    private static final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
-    private static final Gson gson = new Gson();
+    private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
+    private final Gson gson = new Gson();
 
     private final HttpClient httpClient;
     private final CoreCollector coreCollector;
 
-    private final Map<String, Object> nodeAttributes;
-
-    public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Map<String, Object> nodeAttributes) {
+    public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
-        this.nodeAttributes = nodeAttributes;
     }
 
-    public void processAndReportCoredumps(Path coredumpsPath, Path doneCoredumpPath) throws IOException {
-        Path processingCoredumps = processCoredumps(coredumpsPath);
+    public void processAndReportCoredumps(Path coredumpsPath, Path doneCoredumpPath, Map<String, Object> nodeAttributes) throws IOException {
+        Path processingCoredumps = processCoredumps(coredumpsPath, nodeAttributes);
         reportCoredumps(processingCoredumps, doneCoredumpPath);
     }
 
-    public static void removeJavaCoredumps(Path javaCoredumpsPath) {
+    public void removeJavaCoredumps(Path javaCoredumpsPath) {
         DeleteOldAppData.deleteFiles(javaCoredumpsPath.toString(), 0, "^java_pid.*\\.hprof$", false);
     }
 
-    Path processCoredumps(Path coredumpsPath) throws IOException {
+    Path processCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) throws IOException {
         Path processingCoredumpsPath = coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
         processingCoredumpsPath.toFile().mkdirs();
 
@@ -65,7 +62,7 @@ public class CoredumpHandler {
                         coredumpPath = startProcessing(coredumpPath, processingCoredumpsPath);
 
                         Path metadataPath = coredumpPath.getParent().resolve(METADATA_FILE_NAME);
-                        Map<String, Object> metadata = collectMetadata(coredumpPath);
+                        Map<String, Object> metadata = collectMetadata(coredumpPath, nodeAttributes);
                         writeMetadata(metadataPath, metadata);
                     } catch (Throwable e) {
                         logger.log(Level.WARNING, "Failed to process coredump " + coredumpPath, e);
@@ -90,17 +87,17 @@ public class CoredumpHandler {
                 });
     }
 
-    public static void removeOldCoredumps(Path doneCoredumpsPath) {
+    public void removeOldCoredumps(Path doneCoredumpsPath) {
         DeleteOldAppData.deleteDirectories(doneCoredumpsPath.toString(), Duration.ofDays(10).getSeconds(), null);
     }
 
-    private static Path startProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
+    Path startProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
         Path folder = processingCoredumpsPath.resolve(UUID.randomUUID().toString());
         folder.toFile().mkdirs();
         return Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
     }
 
-    private Map<String, Object> collectMetadata(Path coredumpPath) throws IOException, InterruptedException {
+    private Map<String, Object> collectMetadata(Path coredumpPath, Map<String, Object> nodeAttributes) throws IOException, InterruptedException {
         Map<String, Object> metadata = coreCollector.collect(coredumpPath);
         metadata.putAll(nodeAttributes);
 
@@ -113,7 +110,7 @@ public class CoredumpHandler {
         Files.write(metadataPath, gson.toJson(metadata).getBytes());
     }
 
-    private void report(Path coredumpDirectory) throws IOException, InterruptedException {
+    void report(Path coredumpDirectory) throws IOException, InterruptedException {
         // Use core dump UUID as document ID
         String documentId = coredumpDirectory.getFileName().toString();
         String metadata = new String(Files.readAllBytes(coredumpDirectory.resolve(METADATA_FILE_NAME)));
@@ -132,7 +129,7 @@ public class CoredumpHandler {
         logger.info("Successfully reported coredump " + documentId);
     }
 
-    private static void finishProcessing(Path coredumpDirectory, Path doneCoredumpsPath) throws IOException {
+    void finishProcessing(Path coredumpDirectory, Path doneCoredumpsPath) throws IOException {
         Files.move(coredumpDirectory, doneCoredumpsPath.resolve(coredumpDirectory.getFileName()));
     }
 }
