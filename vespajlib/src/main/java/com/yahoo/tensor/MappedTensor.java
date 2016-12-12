@@ -12,7 +12,7 @@ import java.util.Map;
  * @author bratseth
  */
 @Beta
-public class MapTensor implements Tensor {
+public class MappedTensor implements Tensor {
 
     private final TensorType type;
 
@@ -20,12 +20,12 @@ public class MapTensor implements Tensor {
 
     /** Creates a sparse tensor. The cell addresses must match the type. */
     // TODO: Privatize
-    public MapTensor(TensorType type, Map<TensorAddress, Double> cells) {
+    public MappedTensor(TensorType type, Map<TensorAddress, Double> cells) {
         this.type = type;
         this.cells = ImmutableMap.copyOf(cells);
     }
 
-    static MapTensor from(TensorType type, String tensorString) {
+    static MappedTensor from(TensorType type, String tensorString) {
         tensorString = tensorString.trim();
         if ( ! tensorString.startsWith("{"))
             throw new IllegalArgumentException("Expecting a tensor starting by {, got '" + tensorString+ "'");
@@ -49,7 +49,7 @@ public class MapTensor implements Tensor {
         }
 
         ImmutableMap<TensorAddress, Double> cellMap = cells.build();
-        return new MapTensor(type, cellMap);
+        return new MappedTensor(type, cellMap);
     }
 
     /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
@@ -116,7 +116,7 @@ public class MapTensor implements Tensor {
         }
     
         public Tensor build() {
-            return new MapTensor(type, cells.build());
+            return new MappedTensor(type, cells.build());
         }
     
         public class CellBuilder {

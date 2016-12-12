@@ -1,6 +1,8 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.MapEvaluationContext;
 
 import java.util.List;
 
@@ -39,7 +41,7 @@ public abstract class TensorFunction {
     public abstract Tensor evaluate(EvaluationContext context);
 
     /** Evaluate with no context */
-    public final Tensor evaluate() { return evaluate(EvaluationContext.empty()); }
+    public final Tensor evaluate() { return evaluate(new MapEvaluationContext()); }
 
     /**
      * Return a string representation of this context.

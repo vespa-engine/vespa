@@ -2,7 +2,6 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.Join;
@@ -16,15 +15,11 @@ import com.yahoo.tensor.functions.Softmax;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
-
-import static com.yahoo.tensor.TensorType.Dimension.Type.mapped;
 
 /**
  * A multidimensional array which can be used in computations.
@@ -229,7 +224,7 @@ public interface Tensor {
         if (containsIndexedDimensions && containsMappedDimensions)
             throw new IllegalArgumentException("Mixed dimension types are not supported, got: " + type);
         if (containsMappedDimensions)
-            return MapTensor.from(type, tensorString);
+            return MappedTensor.from(type, tensorString);
         else // indexed or none
             return IndexedTensor.from(type, tensorString);
     }

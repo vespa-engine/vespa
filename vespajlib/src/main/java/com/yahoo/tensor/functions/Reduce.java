@@ -3,10 +3,11 @@ package com.yahoo.tensor.functions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.IndexedTensor;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,7 +119,7 @@ public class Reduce extends PrimitiveTensorFunction {
         ImmutableMap.Builder<TensorAddress, Double> reducedCells = new ImmutableMap.Builder<>();
         for (Map.Entry<TensorAddress, ValueAggregator> aggregatingCell : aggregatingCells.entrySet())
             reducedCells.put(aggregatingCell.getKey(), aggregatingCell.getValue().aggregatedValue());
-        return new MapTensor(reducedType, reducedCells.build());
+        return new MappedTensor(reducedType, reducedCells.build());
     }
     
     private TensorAddress reduceDimensions(TensorAddress address, TensorType argumentType, TensorType reducedType) {

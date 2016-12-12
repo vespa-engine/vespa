@@ -1,5 +1,8 @@
 package com.yahoo.tensor;
 
+import com.yahoo.tensor.evaluation.MapEvaluationContext;
+import com.yahoo.tensor.evaluation.VariableTensor;
+import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
@@ -34,10 +37,17 @@ public class TensorFunctionBenchmark {
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
         double largest = Double.MIN_VALUE;
         // TODO: Build function before applying, support context
-        // TensorFunction dotProduct = new Reduce(new Join(), Reduce.Aggregator.max);
+        TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor), 
+                                                                new VariableTensor("argument"), (a, b) -> a * b), 
+                                                       Reduce.Aggregator.max).toPrimitive();
+        MapEvaluationContext context = new MapEvaluationContext();
+        
         for (Tensor tensorElement : tensors) { // tensors.size() = 1 for larger tensor
-            Tensor result = tensor.join(tensorElement, (a, b) -> a * b).reduce(Reduce.Aggregator.sum, "x");
-            double dotProduct = result.reduce(Reduce.Aggregator.max).asDouble(); // for larger tensor
+            context.put("argument", tensorElement);
+            double dotProduct = dotProductFunction.evaluate(context).asDouble();
+            // Tensor result = tensor.join(tensorElement, (a, b) -> a * b).reduce(Reduce.Aggregator.sum, "x");
+            
+            //double dotProduct = result.reduce(Reduce.Aggregator.max).asDouble(); // for larger tensor
             if (dotProduct > largest) {
                 largest = dotProduct;
             }
@@ -52,7 +62,7 @@ public class TensorFunctionBenchmark {
         for (int i = 0; i < vectorCount; i++) {
             // TODO: Avoid this by creating a (type independent) Tensor.Builder
             if (dimensionType == TensorType.Dimension.Type.mapped) {
-                MapTensor.Builder builder = new MapTensor.Builder(type);
+                MappedTensor.Builder builder = new MappedTensor.Builder(type);
                 for (int j = 0; j < vectorSize; j++) {
                     builder.cell().label("x", String.valueOf(j)).value(random.nextDouble());
                 }
@@ -69,13 +79,13 @@ public class TensorFunctionBenchmark {
         return tensors;
     }
 
-    private static List<Tensor> generateMatrix(int vectorCount, int vectorSize,
+    private static List<Tensor> generateMatrix(int vectorCount, int vectorSize, 
                                                TensorType.Dimension.Type dimensionType) {
         List<Tensor> tensors = new ArrayList<>();
         TensorType type = new TensorType.Builder().dimension("i", dimensionType).dimension("x", dimensionType).build();
         // TODO: Avoid this by creating a (type independent) Tensor.Builder
         if (dimensionType == TensorType.Dimension.Type.mapped) {
-            MapTensor.Builder builder = new MapTensor.Builder(type);
+            MappedTensor.Builder builder = new MappedTensor.Builder(type);
             for (int i = 0; i < vectorCount; i++) {
                 for (int j = 0; j < vectorSize; j++) {
                     builder.cell()

@@ -4,8 +4,6 @@ package com.yahoo.search.query.profile.types;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.yql.YqlQuery;
-import com.yahoo.tensor.MapTensor;
-import com.yahoo.tensor.Tensor;
 
 /**
  * A YQL query template field type in a query profile

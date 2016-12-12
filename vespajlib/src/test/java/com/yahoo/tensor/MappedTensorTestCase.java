@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class MapTensorTestCase {
+public class MappedTensorTestCase {
 
     @Test
     public void testStringForm() {

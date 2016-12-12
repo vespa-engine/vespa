@@ -4,7 +4,6 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 
 /**

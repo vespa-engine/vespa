@@ -2,10 +2,11 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,7 +72,7 @@ public class Rename extends PrimitiveTensorFunction {
             TensorAddress renamedAddress = rename(cell.getKey(), toIndexes);
             renamedCells.put(renamedAddress, cell.getValue());
         }
-        return new MapTensor(renamedType, renamedCells.build());
+        return new MappedTensor(renamedType, renamedCells.build());
     }
 
     private TensorType rename(TensorType type, Map<String, String> fromToMap) {

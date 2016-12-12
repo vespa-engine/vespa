@@ -34,7 +34,7 @@ import com.yahoo.document.json.TokenBuffer.Token;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.TensorType;
 import org.apache.commons.codec.binary.Base64;
 
@@ -584,7 +584,7 @@ public class JsonReader {
     private void fillTensor(TensorFieldValue tensorFieldValue) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
-        MapTensor.Builder tensorBuilder = null;
+        MappedTensor.Builder tensorBuilder = null;
         // read tensor cell fields and ignore everything else
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             if (TENSOR_CELLS.equals(buffer.currentName()))
@@ -592,11 +592,11 @@ public class JsonReader {
         }
         expectObjectEnd(buffer.currentToken());
         if (tensorBuilder == null) // no cells + no type: empty tensor type
-            tensorBuilder = new MapTensor.Builder(TensorType.empty);
+            tensorBuilder = new MappedTensor.Builder(TensorType.empty);
         tensorFieldValue.assign(tensorBuilder.build());
     }
 
-    private MapTensor.Builder readTensorCells(MapTensor.Builder tensorBuilder) {
+    private MappedTensor.Builder readTensorCells(MappedTensor.Builder tensorBuilder) {
         expectArrayStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
@@ -606,11 +606,11 @@ public class JsonReader {
         return tensorBuilder;
     }
 
-    private MapTensor.Builder readTensorCell(MapTensor.Builder tensorBuilder) {
+    private MappedTensor.Builder readTensorCell(MappedTensor.Builder tensorBuilder) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         double cellValue = 0.0;
-        MapTensor.Builder.CellBuilder cellBuilder = null;
+        MappedTensor.Builder.CellBuilder cellBuilder = null;
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             String currentName = buffer.currentName();
             if (TENSOR_ADDRESS.equals(currentName)) {
@@ -630,7 +630,7 @@ public class JsonReader {
                     TensorType.Builder typeBuilder = new TensorType.Builder();
                     for (Pair<String,String> entry : entries)
                         typeBuilder.mapped(entry.getFirst());
-                    tensorBuilder = new MapTensor.Builder(typeBuilder.build());
+                    tensorBuilder = new MappedTensor.Builder(typeBuilder.build());
                     cellBuilder = tensorBuilder.cell();
                     for (Pair<String,String> entry : entries)
                         cellBuilder.label(entry.getFirst(), entry.getSecond());
@@ -642,14 +642,14 @@ public class JsonReader {
         }
         expectObjectEnd(buffer.currentToken());
         if (tensorBuilder == null) { // no content TODO; This will go away with the above
-            tensorBuilder = new MapTensor.Builder(TensorType.empty);
+            tensorBuilder = new MappedTensor.Builder(TensorType.empty);
             cellBuilder = tensorBuilder.cell();
         }
         cellBuilder.value(cellValue);
         return tensorBuilder;
     }
 
-    private void readTensorAddress(MapTensor.Builder.CellBuilder cellBuilder) {
+    private void readTensorAddress(MappedTensor.Builder.CellBuilder cellBuilder) {
         expectObjectStart(buffer.currentToken());
         int initNesting = buffer.nesting();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {

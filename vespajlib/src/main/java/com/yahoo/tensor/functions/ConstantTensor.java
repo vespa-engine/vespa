@@ -1,7 +1,7 @@
 package com.yahoo.tensor.functions;
 
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
 import java.util.List;

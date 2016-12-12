@@ -3,10 +3,11 @@ package com.yahoo.tensor.functions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.IndexedTensor;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.List;
 import java.util.Map;
@@ -91,7 +92,7 @@ public class Join extends PrimitiveTensorFunction {
             if (bCellValue == null) continue; // no match
             joinedCells.put(aCell.getKey(), combinator.applyAsDouble(aCell.getValue(), bCellValue));
         }
-        return new MapTensor(joinedType, joinedCells.build());
+        return new MappedTensor(joinedType, joinedCells.build());
     }
 
     /** Slow join which works for any two tensors */
@@ -107,7 +108,7 @@ public class Join extends PrimitiveTensorFunction {
                 joinedCells.put(combinedAddress, combinator.applyAsDouble(aCell.getValue(), bCell.getValue()));
             }
         }
-        return new MapTensor(joinedType, joinedCells.build());
+        return new MappedTensor(joinedType, joinedCells.build());
     }
 
     /**

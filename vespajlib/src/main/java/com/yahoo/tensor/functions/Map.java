@@ -1,9 +1,10 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +52,7 @@ public class Map extends PrimitiveTensorFunction {
         ImmutableMap.Builder<TensorAddress, Double> mappedCells = new ImmutableMap.Builder<>();
         for (java.util.Map.Entry<TensorAddress, Double> cell : argument.cells().entrySet())
             mappedCells.put(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
-        return new MapTensor(argument.type(), mappedCells.build());
+        return new MappedTensor(argument.type(), mappedCells.build());
     }
 
     @Override
