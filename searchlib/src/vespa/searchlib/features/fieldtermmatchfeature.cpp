@@ -24,7 +24,7 @@ FieldTermMatchExecutor::FieldTermMatchExecutor(const search::fef::IQueryEnvironm
 }
 
 void
-FieldTermMatchExecutor::execute(search::fef::MatchData &match)
+FieldTermMatchExecutor::execute(uint32_t docId)
 {
     if (_fieldHandle == search::fef::IllegalHandle) {
         outputs().set_number(0, 1000000); // firstPosition
@@ -41,7 +41,7 @@ FieldTermMatchExecutor::execute(search::fef::MatchData &match)
     uint32_t occurrences = 0;
     double sumExactness = 0;
     int64_t weight = 0;
-    if (tfmd.getDocId() == match.getDocId()) {
+    if (tfmd.getDocId() == docId) {
         search::fef::FieldPositionsIterator it = tfmd.getIterator();
         if (it.valid()) {
             lastPosition = 0;

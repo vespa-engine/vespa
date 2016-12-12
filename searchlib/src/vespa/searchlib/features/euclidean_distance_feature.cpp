@@ -45,9 +45,9 @@ feature_t EuclideanDistanceExecutor<DataType>::euclideanDistance(const BufferTyp
 
 template <typename DataType>
 void
-EuclideanDistanceExecutor<DataType>::execute(MatchData &match)
+EuclideanDistanceExecutor<DataType>::execute(uint32_t docId)
 {
-    _attributeBuffer.fill(_attribute, match.getDocId());
+    _attributeBuffer.fill(_attribute, docId);
     outputs().set_number(0, euclideanDistance(_attributeBuffer, _vector));
 }
 

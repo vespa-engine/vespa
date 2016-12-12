@@ -96,13 +96,13 @@ AttributeMatchExecutor<T>::Computer::reset()
 
 template <typename T>
 void
-AttributeMatchExecutor<T>::Computer::run(MatchData & match)
+AttributeMatchExecutor<T>::Computer::run(uint32_t docId)
 {
     for (size_t i = 0; i < _queryTerms.size(); ++i) {
         const ITermData * td = _queryTerms[i].termData();
         feature_t significance = _queryTerms[i].significance();
         const TermFieldMatchData *tfmd = _md->resolveTermField(_queryTerms[i].fieldHandle());
-        if (tfmd->getDocId() == match.getDocId()) { // hit on this document
+        if (tfmd->getDocId() == docId) { // hit on this document
             _matches++;
             _matchedTermWeight += td->getWeight().percent();
             _matchedTermSignificance += significance;
@@ -115,12 +115,12 @@ AttributeMatchExecutor<T>::Computer::run(MatchData & match)
         }
     }
     if (_params.weightedSet) {
-        _buffer.fill(*_params.attribute, match.getDocId());
+        _buffer.fill(*_params.attribute, docId);
         for (uint32_t i = 0; i < _buffer.size(); ++i) {
             _weightSum += _buffer[i].getWeight();
         }
     } else {
-        _valueCount = _params.attribute->getValueCount(match.getDocId());
+        _valueCount = _params.attribute->getValueCount(docId);
     }
 
     LOG(debug, "attributeMatch(%s)::Computer::run(): matches(%u), totalWeight(%d), normalizedWeightedWeight(%f), "
@@ -233,11 +233,11 @@ AttributeMatchExecutor<T>::AttributeMatchExecutor(const IQueryEnvironment & env,
 
 template <typename T>
 void
-AttributeMatchExecutor<T>::execute(MatchData & match)
+AttributeMatchExecutor<T>::execute(uint32_t docId)
 {
     //LOG(debug, "Execute for field '%s':", _params.attrInfo->name().c_str());
     _cmp.reset();
-    _cmp.run(match);
+    _cmp.run(docId);
 
     outputs().set_number(0, _cmp.getCompleteness());
     outputs().set_number(1, _cmp.getQueryCompleteness());

@@ -31,7 +31,7 @@ public:
      */
     DistanceExecutor(const search::fef::Location & location,
                      const search::attribute::IAttributeVector * pos);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 
     static const feature_t DEFAULT_DISTANCE;
 };

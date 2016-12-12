@@ -21,7 +21,7 @@ private:
 public:
     ItemRawScoreExecutor(HandleVector handles)
         : FeatureExecutor(), _handles(handles), _md(nullptr) {}
-    virtual void execute(fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 };
 
 class SimpleItemRawScoreExecutor : public fef::FeatureExecutor
@@ -35,7 +35,7 @@ private:
 public:
     SimpleItemRawScoreExecutor(fef::TermFieldHandle handle)
         : FeatureExecutor(), _handle(handle), _md(nullptr) {}
-    virtual void execute(fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 };
 
 

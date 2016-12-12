@@ -36,11 +36,11 @@ DotProductExecutor<Vector, Buffer>::DotProductExecutor(const IAttributeVector * 
 
 template <typename Vector, typename Buffer>
 void
-DotProductExecutor<Vector, Buffer>::execute(MatchData & match)
+DotProductExecutor<Vector, Buffer>::execute(uint32_t docId)
 {
     feature_t val = 0;
     if (!_vector.getDimMap().empty()) {
-        _buffer.fill(*_attribute, match.getDocId());
+        _buffer.fill(*_attribute, docId);
         for (size_t i = 0; i < _buffer.size(); ++i) {
             typename Vector::HashMap::const_iterator itr = _vector.getDimMap().find(_buffer[i].getValue());
             if (itr != _vector.getDimMap().end()) {
@@ -73,10 +73,10 @@ DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
 
 template <typename A>
 void
-DotProductExecutor<A>::execute(MatchData & match)
+DotProductExecutor<A>::execute(uint32_t docId)
 {
     const AT *values(NULL);
-    size_t count = getAttributeValues(match.getDocId(), values);
+    size_t count = getAttributeValues(docId, values);
     size_t commonRange = std::min(count, _vector.size());
     outputs().set_number(0, _multiplier->dotProduct(&_vector[0], reinterpret_cast<const typename A::BaseType *>(values), commonRange));
 }

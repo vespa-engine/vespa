@@ -78,9 +78,9 @@ public:
      *
      * After completing the matrix, the minimum cost is contained in the bottom-right.
      *
-     * @param data All available match data.
+     * @param docid local document id to be evaluated
      */
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     /**

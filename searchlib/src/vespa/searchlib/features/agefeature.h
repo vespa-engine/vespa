@@ -25,7 +25,7 @@ public:
      * Constructs a new executor.
      **/
     AgeExecutor(const search::attribute::IAttributeVector *attribute);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 /**

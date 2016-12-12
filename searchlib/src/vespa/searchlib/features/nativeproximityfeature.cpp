@@ -18,11 +18,11 @@ namespace search {
 namespace features {
 
 feature_t
-NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs)
+NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs, uint32_t docId)
 {
     feature_t score = 0;
     for (size_t i = 0; i < fs.pairs.size(); ++i) {
-        score += calculateScoreForPair(fs.pairs[i], fs.fieldId);
+        score += calculateScoreForPair(fs.pairs[i], fs.fieldId, docId);
     }
     score *= _params.vector[fs.fieldId].fieldWeight;
     if (fs.divisor > 0) {
@@ -32,13 +32,13 @@ NativeProximityExecutor::calculateScoreForField(const FieldSetup & fs)
 }
 
 feature_t
-NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t fieldId)
+NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t fieldId, uint32_t docId)
 {
     const NativeProximityParam & param = _params.vector[fieldId];
     TermDistanceCalculator::Result result;
     const QueryTerm & a = pair.first;
     const QueryTerm & b = pair.second;
-    TermDistanceCalculator::run(a, b, *_md, result);
+    TermDistanceCalculator::run(a, b, *_md, docId, result);
     uint32_t forwardIdx = result.forwardDist > 0 ? result.forwardDist - 1 : 0;
     uint32_t reverseIdx = result.reverseDist > 0 ? result.reverseDist - 1 : 0;
     feature_t forwardScore = param.proximityTable->get(forwardIdx) * param.proximityImportance;
@@ -91,11 +91,11 @@ NativeProximityExecutor::NativeProximityExecutor(const IQueryEnvironment & env,
 }
 
 void
-NativeProximityExecutor::execute(search::fef::MatchData &)
+NativeProximityExecutor::execute(uint32_t docId)
 {
     feature_t score = 0;
     for (size_t i = 0; i < _setups.size(); ++i) {
-        score += calculateScoreForField(_setups[i]);
+        score += calculateScoreForField(_setups[i], docId);
     }
     if (_totalFieldWeight > 0) {
         score /= _totalFieldWeight;

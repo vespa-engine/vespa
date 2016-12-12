@@ -33,7 +33,7 @@ FieldLengthExecutor(const IQueryEnvironment &env,
 }
 
 void
-FieldLengthExecutor::execute(MatchData &match)
+FieldLengthExecutor::execute(uint32_t docId)
 {
     uint32_t val = 0;
     bool validVal = false;
@@ -42,7 +42,7 @@ FieldLengthExecutor::execute(MatchData &match)
          hi != hie; ++hi)
     {
         const TermFieldMatchData &tfmd = *_md->resolveTermField(*hi);
-        if (tfmd.getDocId() == match.getDocId()) {
+        if (tfmd.getDocId() == docId) {
             FieldPositionsIterator it = tfmd.getIterator();
             if (it.valid()) {
                 if (val < it.getFieldLength())

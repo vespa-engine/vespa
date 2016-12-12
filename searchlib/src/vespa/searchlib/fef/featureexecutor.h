@@ -199,9 +199,9 @@ public:
     /**
      * Execute this feature executor on the given data.
      *
-     * @param data data storage
+     * @param docid the local document id being evaluated
      **/
-    virtual void execute(MatchData &data) = 0;
+    virtual void execute(uint32_t docId) = 0;
 
     /**
      * Virtual destructor to allow subclassing.

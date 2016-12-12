@@ -17,7 +17,7 @@ ChainExecutor::ChainExecutor() :
 }
 
 void
-ChainExecutor::execute(MatchData &)
+ChainExecutor::execute(uint32_t)
 {
     outputs().set_number(0, inputs().get_number(0));
 }

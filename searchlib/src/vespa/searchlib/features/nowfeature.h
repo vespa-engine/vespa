@@ -26,7 +26,7 @@ public:
      * Constructs a new executor.
      **/
     NowExecutor(int64_t timestamp);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 /**

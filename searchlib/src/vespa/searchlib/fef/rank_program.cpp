@@ -65,7 +65,7 @@ struct UnboxingExecutor : FeatureExecutor {
         bindOutput(new_feature);
     }
     bool isPure() override { return true; }
-    void execute(search::fef::MatchData &) override {
+    void execute(uint32_t) override {
         outputs().set_number(0, inputs().get_object(0).get().as_double());
     }
 };
@@ -100,7 +100,7 @@ RankProgram::compile()
             is_const &= is_calculated[inputs[in_idx]];
         }
         if (is_const) {
-            executor.execute(md);
+            executor.execute(1);
             const auto &outputs = executor.outputs();
             for (size_t out_idx = 0; out_idx < outputs.size(); ++out_idx) {
                 is_calculated[outputs[out_idx]] = true;

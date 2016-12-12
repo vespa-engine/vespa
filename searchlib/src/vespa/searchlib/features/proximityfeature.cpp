@@ -31,7 +31,7 @@ ProximityExecutor::ProximityExecutor(const search::fef::IQueryEnvironment &env,
 }
 
 void
-ProximityExecutor::execute(search::fef::MatchData &match)
+ProximityExecutor::execute(uint32_t docId)
 {
     // Cannot calculate proximity in this case
     if (_termA != search::fef::IllegalHandle &&
@@ -40,8 +40,8 @@ ProximityExecutor::execute(search::fef::MatchData &match)
         const fef::TermFieldMatchData &matchA = *_md->resolveTermField(_termA);
         const fef::TermFieldMatchData &matchB = *_md->resolveTermField(_termB);
 
-        if (matchA.getDocId() == match.getDocId() &&
-            matchB.getDocId() == match.getDocId())
+        if (matchA.getDocId() == docId &&
+            matchB.getDocId() == docId)
         {
             if (findBest(matchA, matchB)) return;
         }

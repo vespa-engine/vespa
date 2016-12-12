@@ -22,7 +22,7 @@ public:
      * Constructs an executor.
      */
     ClosenessExecutor(feature_t maxDistance, feature_t scaleDistance);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

@@ -20,7 +20,8 @@ TermDistanceExecutor::TermDistanceExecutor(const IQueryEnvironment & env,
     FeatureExecutor(),
     _params(params),
     _termA(env.getTerm(params.termX)),
-    _termB(env.getTerm(params.termY))
+    _termB(env.getTerm(params.termY)),
+    _md(nullptr)
 {
     _termA.fieldHandle(util::getTermFieldData(env, params.termX, params.fieldId));
     _termB.fieldHandle(util::getTermFieldData(env, params.termY, params.fieldId));
@@ -33,16 +34,21 @@ bool TermDistanceExecutor::valid() const
 }
 
 void
-TermDistanceExecutor::execute(MatchData & match)
+TermDistanceExecutor::execute(uint32_t docId)
 {
     TermDistanceCalculator::Result result;
-    TermDistanceCalculator::run(_termA, _termB, match, result);
+    TermDistanceCalculator::run(_termA, _termB, *_md, docId, result);
     outputs().set_number(0, result.forwardDist);
     outputs().set_number(1, result.forwardTermPos);
     outputs().set_number(2, result.reverseDist);
     outputs().set_number(3, result.reverseTermPos);
 }
 
+void
+TermDistanceExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
+}
 
 TermDistanceBlueprint::TermDistanceBlueprint() :
     Blueprint("termDistance"),

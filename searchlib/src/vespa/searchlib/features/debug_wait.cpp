@@ -20,7 +20,7 @@ private:
 
 public:
     DebugWaitExecutor(const IQueryEnvironment &env, const DebugWaitParams &params);
-    void execute(MatchData & data) override;
+    void execute(uint32_t docId) override;
 };
 
 DebugWaitExecutor::DebugWaitExecutor(const IQueryEnvironment &env, const DebugWaitParams &params)
@@ -30,7 +30,7 @@ DebugWaitExecutor::DebugWaitExecutor(const IQueryEnvironment &env, const DebugWa
 }
 
 void
-DebugWaitExecutor::execute(MatchData &)
+DebugWaitExecutor::execute(uint32_t)
 {
     FastOS_Time time;
     time.SetNow();

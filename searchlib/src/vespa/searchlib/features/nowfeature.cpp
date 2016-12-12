@@ -20,7 +20,7 @@ NowExecutor::NowExecutor(int64_t timestamp) :
 }
 
 void
-NowExecutor::execute(search::fef::MatchData &) {
+NowExecutor::execute(uint32_t) {
     outputs().set_number(0, _timestamp);
 }
 

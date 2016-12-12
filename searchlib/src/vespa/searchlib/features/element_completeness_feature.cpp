@@ -35,12 +35,12 @@ ElementCompletenessExecutor::ElementCompletenessExecutor(const search::fef::IQue
 }
 
 void
-ElementCompletenessExecutor::execute(search::fef::MatchData &data)
+ElementCompletenessExecutor::execute(uint32_t docId)
 {
     assert(_queue.empty());
     for (size_t i = 0; i < _terms.size(); ++i) {
         const search::fef::TermFieldMatchData *tfmd = _md->resolveTermField(_terms[i].termHandle);
-        if (tfmd->getDocId() == data.getDocId()) {
+        if (tfmd->getDocId() == docId) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
                 _queue.push(item);

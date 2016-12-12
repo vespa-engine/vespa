@@ -58,7 +58,7 @@ private:
 
 public:
     CompiledRankingExpressionExecutor(const CompiledFunction &compiled_function);
-    void execute(fef::MatchData &data) override;
+    void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -71,10 +71,13 @@ class InterpretedRankingExpressionExecutor : public fef::FeatureExecutor
 private:
     InterpretedFunction::Context _context;
     const InterpretedFunction   &_function;
+    const fef::MatchData *_md;
+
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
 
 public:
     InterpretedRankingExpressionExecutor(const InterpretedFunction &function);
-    void execute(fef::MatchData &data) override;
+    void execute(uint32_t docId) override;
 };
 
 //-----------------------------------------------------------------------------
@@ -86,7 +89,7 @@ CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const Compi
 }
 
 void
-CompiledRankingExpressionExecutor::execute(fef::MatchData &)
+CompiledRankingExpressionExecutor::execute(uint32_t)
 {
     for (size_t i = 0; i < _params.size(); ++i) {
         _params[i] = inputs().get_number(i);
@@ -98,22 +101,29 @@ CompiledRankingExpressionExecutor::execute(fef::MatchData &)
 
 InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function)
     : _context(),
-      _function(function)
+      _function(function),
+      _md(nullptr)
 {
 }
 
 void
-InterpretedRankingExpressionExecutor::execute(fef::MatchData &data)
+InterpretedRankingExpressionExecutor::execute(uint32_t)
 {
     _context.clear_params();
     for (size_t i = 0; i < _function.num_params(); ++i) {
-        if (data.feature_is_object(inputs()[i])) {
+        if (_md->feature_is_object(inputs()[i])) {
             _context.add_param(inputs().get_object(i));
         } else {
             _context.add_param(inputs().get_number(i));
         }
     }
     outputs().set_object(0, _function.eval(_context));
+}
+
+void
+InterpretedRankingExpressionExecutor::handle_bind_match_data(fef::MatchData &md)
+{
+    _md = &md;
 }
 
 //-----------------------------------------------------------------------------

@@ -104,7 +104,7 @@ private:
 
 public:
     DotProductExecutor(const search::attribute::IAttributeVector * attribute, const Vector & vector);
-    virtual void execute(fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 }
@@ -127,7 +127,7 @@ private:
     virtual size_t getAttributeValues(uint32_t docid, const AT * & count);
 public:
     DotProductExecutor(const A * attribute, const V & vector);
-    virtual void execute(fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 template <typename A>

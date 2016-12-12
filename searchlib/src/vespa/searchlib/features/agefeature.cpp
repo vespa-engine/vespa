@@ -27,11 +27,11 @@ AgeExecutor::AgeExecutor(const IAttributeVector *attribute) :
 }
 
 void
-AgeExecutor::execute(search::fef::MatchData &data)
+AgeExecutor::execute(uint32_t docId)
 {
     feature_t age = 10000000000.0;
     if (_attribute != NULL) {
-        _buf.fill(*_attribute, data.getDocId());
+        _buf.fill(*_attribute, docId);
         int64_t docTime = _buf[0];
         feature_t currTime = inputs().get_number(0);
         age = currTime - docTime;

@@ -18,9 +18,9 @@ TensorAttributeExecutor(const search::tensor::TensorAttribute *attribute)
 }
 
 void
-TensorAttributeExecutor::execute(fef::MatchData &data)
+TensorAttributeExecutor::execute(uint32_t docId)
 {
-    auto tensor = _attribute->getTensor(data.getDocId());
+    auto tensor = _attribute->getTensor(docId);
     if (!tensor) {
         _tensor = TensorValue(*_emptyTensor);
     } else {

@@ -108,11 +108,11 @@ TextSimilarityExecutor::TextSimilarityExecutor(const search::fef::IQueryEnvironm
 }
 
 void
-TextSimilarityExecutor::execute(search::fef::MatchData &data)
+TextSimilarityExecutor::execute(uint32_t docId)
 {
     for (size_t i = 0; i < _handles.size(); ++i) {
         const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == data.getDocId()) {
+        if (tfmd->getDocId() == docId) {
             Item item(i, tfmd->begin(), tfmd->end());
             if (item.pos != item.end) {
                 _queue.push(item);

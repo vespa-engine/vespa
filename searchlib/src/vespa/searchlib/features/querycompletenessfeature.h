@@ -33,7 +33,7 @@ public:
      */
     QueryCompletenessExecutor(const search::fef::IQueryEnvironment &env,
                               const QueryCompletenessConfig &config);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     const QueryCompletenessConfig            &_config;

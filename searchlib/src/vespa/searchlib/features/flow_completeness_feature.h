@@ -72,7 +72,7 @@ public:
     FlowCompletenessExecutor(const search::fef::IQueryEnvironment &env,
                              const FlowCompletenessParams &params);
     virtual bool isPure() { return _terms.empty(); }
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 //-----------------------------------------------------------------------------

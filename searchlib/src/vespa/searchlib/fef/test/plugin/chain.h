@@ -15,7 +15,7 @@ class ChainExecutor : public FeatureExecutor
 {
 public:
     ChainExecutor();
-    virtual void execute(MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

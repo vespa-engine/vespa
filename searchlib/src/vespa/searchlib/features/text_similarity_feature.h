@@ -42,7 +42,7 @@ private:
 public:
     TextSimilarityExecutor(const search::fef::IQueryEnvironment &env, uint32_t field_id);
     virtual bool isPure() { return _handles.empty(); }
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 //-----------------------------------------------------------------------------

@@ -21,7 +21,7 @@ private:
 
 public:
     TensorAttributeExecutor(const search::tensor::TensorAttribute *attribute);
-    virtual void execute(fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 };
 
 } // namespace features

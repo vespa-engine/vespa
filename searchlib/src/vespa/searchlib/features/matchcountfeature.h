@@ -22,7 +22,7 @@ private:
 
 public:
     MatchCountExecutor(uint32_t fieldId, const fef::IQueryEnvironment &env);
-    void execute(fef::MatchData & data) override;
+    void execute(uint32_t docId) override;
 };
 
 /**

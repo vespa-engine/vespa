@@ -25,7 +25,7 @@ MatchExecutor::MatchExecutor(const MatchParams & params) :
 }
 
 void
-MatchExecutor::execute(MatchData &)
+MatchExecutor::execute(uint32_t)
 {
     feature_t sum = 0.0f;
     feature_t totalWeight = 0.0f;

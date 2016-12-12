@@ -26,7 +26,7 @@ public:
     DebugAttributeWaitExecutor(const IQueryEnvironment &env,
                                const IAttributeVector * attribute,
                                const DebugAttributeWaitParams &params);
-    void execute(MatchData & data) override;
+    void execute(uint32_t docId) override;
 };
 
 DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const IQueryEnvironment &env,
@@ -40,14 +40,14 @@ DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const IQueryEnvironment &
 }
 
 void
-DebugAttributeWaitExecutor::execute(MatchData &data)
+DebugAttributeWaitExecutor::execute(uint32_t docId)
 {
     double waitTime = 0.0;
     FastOS_Time time;
     time.SetNow();
 
     if (_attribute != NULL) {
-        _buf.fill(*_attribute, data.getDocId());
+        _buf.fill(*_attribute, docId);
         waitTime = _buf[0];
     }
     double millis = waitTime * 1000.0;

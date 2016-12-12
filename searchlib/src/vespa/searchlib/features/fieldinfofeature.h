@@ -25,7 +25,7 @@ private:
 public:
     IndexFieldInfoExecutor(feature_t type, feature_t isFilter,
                            uint32_t field, uint32_t fieldHandle);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 //-----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ private:
 
 public:
     AttrFieldInfoExecutor(feature_t type, uint32_t fieldHandle);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 //-----------------------------------------------------------------------------

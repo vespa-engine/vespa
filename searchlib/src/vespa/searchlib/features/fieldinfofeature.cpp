@@ -31,13 +31,13 @@ IndexFieldInfoExecutor::IndexFieldInfoExecutor(feature_t type, feature_t isFilte
 }
 
 void
-IndexFieldInfoExecutor::execute(fef::MatchData &data)
+IndexFieldInfoExecutor::execute(uint32_t docId)
 {
     outputs().set_number(0, _type);
     outputs().set_number(1, _isFilter);
     outputs().set_number(2, 1.0f); // searched
     const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
-    if (tfmd->getDocId() == data.getDocId()) {
+    if (tfmd->getDocId() == docId) {
         outputs().set_number(3, 1.0f); // hit
     } else {
         outputs().set_number(3, 0.0f); // no hit
@@ -80,13 +80,13 @@ AttrFieldInfoExecutor::AttrFieldInfoExecutor(feature_t type, uint32_t fieldHandl
 }
 
 void
-AttrFieldInfoExecutor::execute(fef::MatchData &data)
+AttrFieldInfoExecutor::execute(uint32_t docId)
 {
     outputs().set_number(0, _type);
     outputs().set_number(1, 0.0); // not filter
     outputs().set_number(2, 1.0f); // searched
     const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
-    if (tfmd->getDocId() == data.getDocId()) {
+    if (tfmd->getDocId() == docId) {
         outputs().set_number(3, 1.0f); // hit
         outputs().set_number(4, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // len
         outputs().set_number(5, 0.0f); // first

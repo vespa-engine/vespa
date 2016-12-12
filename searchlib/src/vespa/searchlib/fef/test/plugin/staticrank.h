@@ -18,7 +18,7 @@ private:
 
 public:
     StaticRankExecutor(const search::attribute::IAttributeVector * attribute);
-    virtual void execute(MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 

@@ -13,12 +13,12 @@ namespace search {
 namespace features {
 
 void
-ItemRawScoreExecutor::execute(MatchData &data)
+ItemRawScoreExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
     for (uint32_t i = 0; i < _handles.size(); ++i) {
         const TermFieldMatchData *tfmd = _md->resolveTermField(_handles[i]);
-        if (tfmd->getDocId() == data.getDocId()) {
+        if (tfmd->getDocId() == docId) {
             output += tfmd->getRawScore();
         }
     }
@@ -34,11 +34,11 @@ ItemRawScoreExecutor::handle_bind_match_data(MatchData &md)
 //-----------------------------------------------------------------------------
 
 void
-SimpleItemRawScoreExecutor::execute(MatchData &data)
+SimpleItemRawScoreExecutor::execute(uint32_t docId)
 {
     feature_t output = 0.0;
     const TermFieldMatchData *tfmd = _md->resolveTermField(_handle);
-    if (tfmd->getDocId() == data.getDocId()) {
+    if (tfmd->getDocId() == docId) {
         output = tfmd->getRawScore();
     }
     outputs().set_number(0, output);

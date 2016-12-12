@@ -94,11 +94,10 @@ PhraseSplitter::copyTermFieldMatchData(TermFieldMatchData & dst, const TermField
 }
 
 void
-PhraseSplitter::update(const MatchData & matchData)
+PhraseSplitter::update()
 {
-    _matchData = &matchData;
     for (uint32_t i = 0; i < _copyInfo.size(); ++i) {
-        const TermFieldMatchData *src = matchData.resolveTermField(_copyInfo[i].orig_handle);
+        const TermFieldMatchData *src = _matchData->resolveTermField(_copyInfo[i].orig_handle);
         TermFieldMatchData *dst = resolveSplittedTermField(_copyInfo[i].split_handle);
         LOG_ASSERT(src != NULL && dst != NULL);
         copyTermFieldMatchData(*dst, *src, _copyInfo[i].offsetInPhrase);

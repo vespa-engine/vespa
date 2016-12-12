@@ -23,7 +23,7 @@ public:
      */
     TermExecutor(const search::fef::IQueryEnvironment &env,
                  uint32_t termId);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 
 private:
     const search::fef::ITermData *_termData;

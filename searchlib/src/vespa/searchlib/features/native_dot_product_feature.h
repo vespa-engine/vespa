@@ -21,7 +21,7 @@ private:
 
 public:
     NativeDotProductExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 };
 
 //-----------------------------------------------------------------------------

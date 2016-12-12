@@ -17,7 +17,7 @@ private:
     virtual void handle_bind_match_data(fef::MatchData &md) override;
 public:
     RawScoreExecutor(const search::fef::IQueryEnvironment &env, uint32_t fieldId);
-    virtual void execute(search::fef::MatchData &data);
+    virtual void execute(uint32_t docId);
 };
 
 //-----------------------------------------------------------------------------

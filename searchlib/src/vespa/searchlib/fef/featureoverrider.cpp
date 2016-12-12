@@ -38,9 +38,9 @@ FeatureOverrider::isPure()
 }
 
 void
-FeatureOverrider::execute(MatchData &data)
+FeatureOverrider::execute(uint32_t docId)
 {
-    _executor.execute(data);
+    _executor.execute(docId);
     if (_outputIdx < outputs().size()) {
         outputs().set_number(_outputIdx, _value);
     }

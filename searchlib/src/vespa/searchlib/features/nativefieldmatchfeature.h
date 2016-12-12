@@ -54,7 +54,7 @@ private:
     feature_t                      _divisor;
     const fef::MatchData          *_md;
 
-    VESPA_DLL_LOCAL feature_t calculateScore(const MyQueryTerm &qt, search::fef::MatchData &md);
+    VESPA_DLL_LOCAL feature_t calculateScore(const MyQueryTerm &qt, uint32_t docId);
 
     uint32_t getFieldLength(const NativeFieldMatchParam & param, uint32_t fieldLength) const {
         if (param.averageFieldLength != NativeFieldMatchParam::NOT_DEF_FIELD_LENGTH) {
@@ -80,7 +80,7 @@ private:
 public:
     NativeFieldMatchExecutor(const search::fef::IQueryEnvironment & env,
                              const NativeFieldMatchParams & params);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 
     feature_t getFirstOccBoost(uint32_t field, uint32_t position, uint32_t fieldLength) const {
         return getFirstOccBoost(_params.vector[field], position, fieldLength);

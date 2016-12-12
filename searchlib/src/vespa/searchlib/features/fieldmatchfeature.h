@@ -19,6 +19,8 @@ private:
     const fieldmatch::Params              & _params;
     fieldmatch::Computer                    _cmp;
 
+    virtual void handle_bind_match_data(fef::MatchData &md) override;
+
 public:
     /**
      * Constructs an executor.
@@ -26,7 +28,7 @@ public:
     FieldMatchExecutor(const search::fef::IQueryEnvironment & queryEnv,
                        const search::fef::FieldInfo & field,
                        const fieldmatch::Params & params);
-    virtual void execute(search::fef::MatchData & data);
+    virtual void execute(uint32_t docId);
 };
 
 
