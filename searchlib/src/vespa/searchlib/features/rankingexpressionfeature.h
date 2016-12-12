@@ -19,6 +19,7 @@ class RankingExpressionBlueprint : public fef::Blueprint
 private:
     vespalib::eval::InterpretedFunction::UP _interpreted_function;
     vespalib::eval::CompileCache::Token::UP _compile_token;
+    std::vector<char>                       _input_is_object;
 
 public:
     /**
