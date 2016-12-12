@@ -103,7 +103,7 @@ class WebSocketRequestDispatch extends WebSocketAdapter {
         final Response jdiscResponse = (Response)responseRef.getAndSet(new Object());
         if (jdiscResponse != null) {
             log.finer("Applying sync " + jdiscResponse.getStatus() + " response to websocket response.");
-            servletResponse.setStatusCode(jdiscResponse.getStatus());
+            servletResponse.setStatus(jdiscResponse.getStatus());
             WebSocketRequestFactory.copyHeaders(jdiscResponse, servletResponse);
         }
         return this;
