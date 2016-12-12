@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/clock.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/log/log.h>
 #include <cmath>
 
@@ -389,7 +390,7 @@ MatchThread::run()
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time.stop();
     match_time_s = match_time.elapsed().sec();
-    resultContext = resultProcessor.createThreadContext(matchTools->getHardDoom(), thread_id);
+    resultContext = resultProcessor.createThreadContext(matchTools->getHardDoom(), thread_id, _distributionKey);
     {
         WaitTimer get_token_timer(wait_time_s);
         QueryLimiter::Token::UP processToken(

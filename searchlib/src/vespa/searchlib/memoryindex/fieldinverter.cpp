@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.fieldinverter");
 #include "fieldinverter.h"
 #include <vespa/document/datatype/urldatatype.h>
 #include <vespa/searchlib/util/url.h>
@@ -20,11 +18,9 @@ LOG_SETUP(".memoryindex.fieldinverter");
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
 
-namespace search
-{
+namespace search {
 
-namespace memoryindex
-{
+namespace memoryindex {
 
 using document::Field;
 using document::FieldValue;
@@ -50,11 +46,9 @@ using index::Schema;
 using vespalib::make_string;
 using search::util::URL;
 
-namespace documentinverterkludge
-{
+namespace documentinverterkludge {
 
-namespace linguistics
-{
+namespace linguistics {
 
 const vespalib::string SPANTREE_NAME("linguistics");
 
@@ -433,14 +427,14 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
     const vespalib::Identifiable::RuntimeClass & cInfo(val.getClass());
     const Schema::IndexField &field = _schema.getIndexField(_fieldId);
     switch (field.getCollectionType()) {
-    case Schema::SINGLE:
+    case index::schema::SINGLE:
         if (cInfo.id() == StringFieldValue::classId) {
             processNormalDocTextField(static_cast<const StringFieldValue &>(val));
         } else {
             throw std::runtime_error(make_string("Expected DataType::STRING, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
-    case Schema::WEIGHTEDSET:
+    case index::schema::WEIGHTEDSET:
         if (cInfo.id() == WeightedSetFieldValue::classId) {
             const WeightedSetFieldValue &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (wset.getNestedType() == *DataType::STRING) {
@@ -452,7 +446,7 @@ FieldInverter::invertNormalDocTextField(const FieldValue &val)
             throw std::runtime_error(make_string("Expected weighted set, got '%s'", cInfo.name()));
         }
         break;
-    case Schema::ARRAY:
+    case index::schema::ARRAY:
         if (cInfo.id() == ArrayFieldValue::classId) {
             const ArrayFieldValue &arr = static_cast<const ArrayFieldValue&>(val);
             if (arr.getNestedType() == *DataType::STRING) {

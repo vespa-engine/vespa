@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespa-index-inspect");
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
@@ -18,6 +16,8 @@ LOG_SETUP("vespa-index-inspect");
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <iostream>
+#include <vespa/log/log.h>
+LOG_SETUP("vespa-index-inspect");
 
 using search::index::Schema;
 using search::index::SchemaUtil;
@@ -38,6 +38,7 @@ using search::diskindex::WordNumMapping;
 using search::diskindex::FieldReader;
 using search::diskindex::PageDict4FileSeqRead;
 using search::TuneFileSeqRead;
+using namespace search::index;
 
 namespace
 {
@@ -410,7 +411,7 @@ ShowPostingListSubApp::readDocIdLimit(const Schema &schema)
     uint32_t numIndexFields = schema.getNumIndexFields();
     for (uint32_t fieldId = 0; fieldId < numIndexFields; ++fieldId) {
         const Schema::IndexField &field = schema.getIndexField(fieldId);
-        if (field.getDataType() == Schema::STRING) {
+        if (field.getDataType() == schema::STRING) {
             FieldReader fr;
             if (!fr.open(_indexDir + "/" + field.getName() + "/",
                          tuneFileRead))

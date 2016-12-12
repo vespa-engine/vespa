@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("memoryindexstress_test");
 #include <vespa/vespalib/testkit/testapp.h>
-
 #include <vespa/searchlib/memoryindex/memoryindex.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
@@ -27,6 +24,9 @@ LOG_SETUP("memoryindexstress_test");
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/searchlib/util/rand48.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("memoryindexstress_test");
+
 using document::AnnotationType;
 using document::DataType;
 using document::Document;
@@ -48,8 +48,7 @@ using namespace search::memoryindex;
 using namespace search::queryeval;
 using vespalib::asciistream;
 
-namespace
-{
+namespace {
 
 const vespalib::string SPANTREE_NAME("linguistics");
 const vespalib::string title("title");
@@ -65,8 +64,8 @@ Schema
 makeSchema()
 {
     Schema schema;
-    schema.addIndexField(Schema::IndexField(title, Schema::STRING));
-    schema.addIndexField(Schema::IndexField(body, Schema::STRING));
+    schema.addIndexField(Schema::IndexField(title, schema::STRING));
+    schema.addIndexField(Schema::IndexField(body, schema::STRING));
     return schema;
 }
 

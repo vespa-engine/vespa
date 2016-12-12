@@ -37,8 +37,7 @@ using namespace search::queryeval;
 struct Setup {
     Schema schema;
     Setup &field(const std::string &name) {
-        schema.addIndexField(Schema::IndexField(name,
-                                     Schema::STRING));
+        schema.addIndexField(Schema::IndexField(name, schema::STRING));
         return *this;
     }
 };

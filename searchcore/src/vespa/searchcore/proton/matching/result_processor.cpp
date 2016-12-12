@@ -1,13 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.result_processor");
 #include "result_processor.h"
-#include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/common/docstamp.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
+#include <vespa/searchcore/grouping/groupingmanager.h>
+#include <vespa/searchcore/grouping/groupingsession.h>
+#include "partial_result.h"
+#include "sessionmanager.h"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.matching.result_processor");
+
+using search::attribute::IAttributeContext;
+using search::grouping::GroupingSession;
+using search::grouping::GroupingContext;
+using search::grouping::SessionId;
 
 namespace proton {
 namespace matching {
@@ -19,21 +29,40 @@ ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> rep
 
 ResultProcessor::Result::~Result() { }
 
-ResultProcessor::Sort::Sort(const vespalib::Doom & doom, search::attribute::IAttributeContext &ac, const vespalib::string &ss)
+ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const vespalib::string &ss)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
-      sortSpec(doom, *_ucaFactory)
+      sortSpec(partitionId, doom, *_ucaFactory)
 {
     if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
         sorter = &sortSpec;
     }
 }
 
-ResultProcessor::ResultProcessor(search::attribute::IAttributeContext &attrContext,
+ResultProcessor::Context::Context(Sort::UP s, PartialResult::LP r, GroupingContext::UP g)
+    : sort(std::move(s)),
+      result(r),
+      grouping(std::move(g)),
+      groupingSource(grouping.get())
+{ }
+
+ResultProcessor::Context::~Context() { }
+
+void
+ResultProcessor::GroupingSource::merge(Source &s) {
+    GroupingSource &rhs = static_cast<GroupingSource&>(s);
+    assert((ctx == 0) == (rhs.ctx == 0));
+    if (ctx != 0) {
+        search::grouping::GroupingManager man(*ctx);
+        man.merge(*rhs.ctx);
+    }
+}
+
+ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
                                  const search::IDocumentMetaStore &metaStore,
                                  SessionManager &sessionMgr,
-                                 search::grouping::GroupingContext &groupingContext,
-                                 const search::grouping::SessionId &sessionId,
+                                 GroupingContext &groupingContext,
+                                 const vespalib::string &sessionId,
                                  const vespalib::string &sortSpec,
                                  size_t offset, size_t hits)
     : _attrContext(attrContext),
@@ -48,10 +77,11 @@ ResultProcessor::ResultProcessor(search::attribute::IAttributeContext &attrConte
       _wasMerged(false)
 {
     if (!_groupingContext.empty()) {
-        _groupingSession.reset(new search::grouping::GroupingSession(sessionId,
-                                       _groupingContext, attrContext));
+        _groupingSession.reset(new GroupingSession(sessionId, _groupingContext, attrContext));
     }
 }
+
+ResultProcessor::~ResultProcessor() { }
 
 void
 ResultProcessor::prepareThreadContextCreation(size_t num_threads)
@@ -65,9 +95,9 @@ ResultProcessor::prepareThreadContextCreation(size_t num_threads)
 }
 
 ResultProcessor::Context::UP
-ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id)
+ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey)
 {
-    Sort::UP sort(new Sort(hardDoom, _attrContext, _sortSpec));
+    Sort::UP sort(new Sort(distributionKey, hardDoom, _attrContext, _sortSpec));
     PartialResult::LP result(new PartialResult((_offset + _hits), sort->hasSortData()));
     if (thread_id == 0) {
         _result = result;
@@ -113,8 +143,7 @@ ResultProcessor::makeReply()
             dst.gid = gid;
         }
         dst.metric = src._rankValue;
-        LOG(debug, "convertLidToGid: hit[%zu]: lid(%u) -> gid(%s)",
-            i, docId, dst.gid.toString().c_str());
+        LOG(debug, "convertLidToGid: hit[%zu]: lid(%u) -> gid(%s)", i, docId, dst.gid.toString().c_str());
     }
     if (result.hasSortData() && hitcnt > 0) {
         size_t sortDataSize = result.sortDataSize();

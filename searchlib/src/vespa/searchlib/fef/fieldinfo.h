@@ -5,7 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "fieldtype.h"
 #include "collection_type.h"
-#include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchcommon/common/datatype.h>
 
 namespace search {
 namespace fef {
@@ -19,7 +19,7 @@ const uint32_t IllegalFieldId = 0xffffffff;
 class FieldInfo
 {
 public:
-    using DataType = search::index::Schema::DataType;
+    using DataType = search::index::schema::DataType;
     typedef vespalib::string string;
 private:
     FieldType      _type;

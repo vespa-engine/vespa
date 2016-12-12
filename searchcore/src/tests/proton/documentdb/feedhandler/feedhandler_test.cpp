@@ -35,9 +35,7 @@ using documentapi::DocumentReply;
 using documentapi::RemoveDocumentReply;
 using documentapi::UpdateDocumentReply;
 using mbus::Reply;
-using search::index::DocBuilder;
-using search::index::DummyFileHeaderContext;
-using search::index::Schema;
+using namespace search::index;
 using search::SerialNum;
 using search::transactionlog::TransLogServer;
 using storage::spi::PartitionId;
@@ -259,7 +257,7 @@ struct SchemaContext {
         schema(new Schema()),
         builder()
     {
-        schema->addIndexField(Schema::IndexField("i1", Schema::STRING, Schema::SINGLE));
+        schema->addIndexField(Schema::IndexField("i1", schema::STRING, schema::SINGLE));
         builder.reset(new DocBuilder(*schema));
     }
     DocTypeName getDocType() const {

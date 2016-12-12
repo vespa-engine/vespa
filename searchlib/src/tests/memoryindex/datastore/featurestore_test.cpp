@@ -217,10 +217,8 @@ Test::requireThatAddFeaturesTriggersChangeOfBuffer(void)
 Test::Test()
     : _schema()
 {
-    _schema.addIndexField(Schema::IndexField("f0", Schema::STRING));
-    _schema.addIndexField(Schema::IndexField("f1",
-                                  Schema::STRING,
-                                  Schema::WEIGHTEDSET));
+    _schema.addIndexField(Schema::IndexField("f0", schema::STRING));
+    _schema.addIndexField(Schema::IndexField("f1", schema::STRING, schema::WEIGHTEDSET));
 }
 
 

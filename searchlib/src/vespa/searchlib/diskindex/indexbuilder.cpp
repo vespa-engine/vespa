@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "indexbuilder.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -9,17 +8,15 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.indexbuilder");
 
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
-namespace
-{
+namespace {
 
 using index::DocIdAndFeatures;
 using index::PostingListCounts;
@@ -545,7 +542,7 @@ IndexBuilder::IndexBuilder(const Schema &schema)
         const Schema::IndexField &iField = schema.getIndexField(i);
         FieldHandle fh(schema, i, this);
         // Only know how to handle string index for now.
-        if (iField.getDataType() == Schema::STRING)
+        if (iField.getDataType() == index::schema::STRING)
             fh.setValid();
         _fields.push_back(fh);
     }

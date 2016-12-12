@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.urlfieldinverter");
 #include "urlfieldinverter.h"
 #include "fieldinverter.h"
 #include <vespa/document/datatype/urldatatype.h>
@@ -11,15 +9,15 @@ LOG_SETUP(".memoryindex.urlfieldinverter");
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/common/sort.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".memoryindex.urlfieldinverter");
 
-namespace search
-{
+namespace search {
 
-namespace memoryindex
-{
+namespace memoryindex {
 
-namespace
-{
+namespace {
+
 static vespalib::string HOSTNAME_BEGIN("StArThOsT");
 static vespalib::string HOSTNAME_END("EnDhOsT");
 const vespalib::string SPANTREE_NAME("linguistics");
@@ -306,7 +304,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
 {
     const vespalib::Identifiable::RuntimeClass & cInfo(val.getClass());
     switch (_collectionType) {
-    case Schema::SINGLE:
+    case index::schema::SINGLE:
         if (isUriType(*val.getDataType())) {
             startElement(1);
             processUrlField(val);
@@ -315,7 +313,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
             throw std::runtime_error(make_string("Expected URI struct, got '%s'", val.getDataType()->getName().c_str()));
         }
         break;
-    case Schema::WEIGHTEDSET:
+    case index::schema::WEIGHTEDSET:
         if (cInfo.id() == WeightedSetFieldValue::classId) {
             const WeightedSetFieldValue &wset = static_cast<const WeightedSetFieldValue &>(val);
             if (isUriType(wset.getNestedType())) {
@@ -327,7 +325,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val)
             throw std::runtime_error(make_string("Expected weighted set, got '%s'", cInfo.name()));
         }
         break;
-    case Schema::ARRAY:
+    case index::schema::ARRAY:
         if (cInfo.id() == ArrayFieldValue::classId) {
             const ArrayFieldValue &arr = static_cast<const ArrayFieldValue&>(val);
             if (isUriType(arr.getNestedType())) {

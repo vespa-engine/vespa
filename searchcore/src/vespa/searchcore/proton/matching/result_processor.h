@@ -2,41 +2,45 @@
 
 #pragma once
 
-#include "partial_result.h"
-#include "result_processor.h"
-#include "sessionmanager.h"
-#include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchcore/grouping/groupingmanager.h>
-#include <vespa/searchcore/grouping/groupingsession.h>
-#include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/common/sortresults.h>
-#include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchlib/common/resultset.h>
 #include <vespa/vespalib/util/dual_merge_director.h>
-#include <vespa/vespalib/util/noncopyable.hpp>
 
 namespace search {
-namespace engine {
-    class SearchReply;
-}
+    namespace engine {
+        class SearchReply;
+    }
+    namespace grouping {
+        class GroupingContext;
+        class GroupingSession;
+    }
+    class IDocumentMetaStore;
 }
 
 namespace proton {
 namespace matching {
 
+class SessionManager;
+class PartialResult;
+
 class ResultProcessor
 {
+    using GroupingContext = search::grouping::GroupingContext;
+    using GroupingSession = search::grouping::GroupingSession;
+    using IAttributeContext = search::attribute::IAttributeContext;
+    using PartialResultLP = vespalib::LinkedPtr<PartialResult>;
 public:
     /**
      * Sorter selection and owner of additional data needed for
      * multi-level sorting.
      **/
-    struct Sort : vespalib::noncopyable {
+    struct Sort {
         typedef std::unique_ptr<Sort> UP;
         FastS_IResultSorter *sorter;
         std::unique_ptr<search::common::ConverterFactory> _ucaFactory;
         FastS_SortSpec       sortSpec;
-        Sort(const vespalib::Doom & doom, search::attribute::IAttributeContext &ac, const vespalib::string &ss);
+        Sort(const Sort &) = delete;
+        Sort & operator = (const Sort &) = delete;
+        Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const vespalib::string &ss);
         bool hasSortData() const {
             return (sorter == (const FastS_IResultSorter *) &sortSpec);
         }
@@ -46,68 +50,62 @@ public:
      * Adapter to use grouping contexts as merging sources.
      **/
     struct GroupingSource : vespalib::DualMergeDirector::Source {
-        search::grouping::GroupingContext *ctx;
-        GroupingSource(search::grouping::GroupingContext *g) : ctx(g) {}
-        virtual void merge(Source &s) {
-            GroupingSource &rhs = static_cast<GroupingSource&>(s);
-            assert((ctx == 0) == (rhs.ctx == 0));
-            if (ctx != 0) {
-                search::grouping::GroupingManager man(*ctx);
-                man.merge(*rhs.ctx);
-            }
-        }
+        GroupingContext *ctx;
+        GroupingSource(GroupingContext *g) : ctx(g) {}
+        void merge(Source &s) override;
     };
 
     /**
      * Context per thread used for result processing.
      **/
     struct Context {
-        typedef std::unique_ptr<Context> UP;
+        using UP = std::unique_ptr<Context>;
+        using GroupingContextUP = std::unique_ptr<GroupingContext>;
 
-        Sort::UP                              sort;
-        PartialResult::LP                     result;
-        search::grouping::GroupingContext::UP grouping;
-        GroupingSource                        groupingSource;
+        Sort::UP          sort;
+        PartialResultLP   result;
+        GroupingContextUP grouping;
+        GroupingSource    groupingSource;
 
-        Context(Sort::UP s, PartialResult::LP r,
-                search::grouping::GroupingContext::UP g)
-            : sort(std::move(s)), result(r), grouping(std::move(g)),
-              groupingSource(grouping.get()) {}
+        Context(Sort::UP s, PartialResultLP r, GroupingContextUP g);
+        ~Context();
     };
 
     struct Result {
-        typedef std::unique_ptr<Result> UP;
-        Result(std::unique_ptr<search::engine::SearchReply> reply, size_t numFs4Hits);
+        using UP = std::unique_ptr<Result>;
+        using SearchReply = search::engine::SearchReply;
+        Result(std::unique_ptr<SearchReply> reply, size_t numFs4Hits);
         ~Result();
-        std::unique_ptr<search::engine::SearchReply> _reply;
+        std::unique_ptr<SearchReply> _reply;
         size_t _numFs4Hits;
     };
 
 private:
-    search::attribute::IAttributeContext  &_attrContext;
+    IAttributeContext                     &_attrContext;
     const search::IDocumentMetaStore      &_metaStore;
     SessionManager                        &_sessionMgr;
-    search::grouping::GroupingContext     &_groupingContext;
-    search::grouping::GroupingSession::UP  _groupingSession;
+    GroupingContext                       &_groupingContext;
+    std::unique_ptr<GroupingSession>       _groupingSession;
     const vespalib::string                &_sortSpec;
     size_t                                 _offset;
     size_t                                 _hits;
-    PartialResult::LP                      _result;
+    PartialResultLP                        _result;
     bool                                   _wasMerged;
 
 public:
-    ResultProcessor(search::attribute::IAttributeContext &attrContext,
-                    const search::IDocumentMetaStore &metaStore,
-                    SessionManager &sessionMgr,
-                    search::grouping::GroupingContext &groupingContext,
-                    const search::grouping::SessionId &sessionId,
-                    const vespalib::string &sortSpec,
+    ResultProcessor(IAttributeContext &attrContext,
+                    const search::IDocumentMetaStore & metaStore,
+                    SessionManager & sessionMgr,
+                    GroupingContext & groupingContext,
+                    const vespalib::string & sessionId,
+                    const vespalib::string & sortSpec,
                     size_t offset, size_t hits);
+    ~ResultProcessor();
 
     size_t countFS4Hits();
     void prepareThreadContextCreation(size_t num_threads);
-    Context::UP createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id);
-    Result::UP makeReply();
+    Context::UP createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey);
+    std::unique_ptr<Result> makeReply();
 };
 
 } // namespace proton::matching

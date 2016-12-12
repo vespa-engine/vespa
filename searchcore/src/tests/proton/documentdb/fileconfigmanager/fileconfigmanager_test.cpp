@@ -38,12 +38,12 @@ Schema::SP
 getSchema(int step)
 {
     Schema::SP schema(new Schema);
-    schema->addIndexField(Schema::IndexField("foo1", Schema::STRING));
+    schema->addIndexField(Schema::IndexField("foo1", schema::STRING));
     if (step < 2) {
-        schema->addIndexField(Schema::IndexField("foo2", Schema::STRING));
+        schema->addIndexField(Schema::IndexField("foo2", schema::STRING));
     }
     if (step < 1) {
-        schema->addIndexField(Schema::IndexField("foo3", Schema::STRING));
+        schema->addIndexField(Schema::IndexField("foo3", schema::STRING));
     }
     return schema;
 }
@@ -76,7 +76,7 @@ Schema
 makeHistorySchema()
 {
     Schema hs;
-    hs.addIndexField(Schema::IndexField("history", Schema::STRING));
+    hs.addIndexField(Schema::IndexField("history", schema::STRING));
     return hs;
 }
 

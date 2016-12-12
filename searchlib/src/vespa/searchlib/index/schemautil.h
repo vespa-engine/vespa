@@ -4,65 +4,39 @@
 
 #include <vespa/searchcommon/common/schema.h>
 
-namespace search
-{
+namespace search {
 
-namespace index
-{
-
+namespace index {
 
 class SchemaUtil
 {
 public:
-    typedef Schema::DataType DataType;
 
     class IndexSettings
     {
-        DataType _dataType;
+        schema::DataType _dataType;
         bool _error;		// Schema is bad.
         bool _prefix;
         bool _phrases;
         bool _positions;
 
     public:
-        const DataType &
-        getDataType(void) const
-        {
+        const schema::DataType & getDataType(void) const {
             return _dataType;
         }
 
-        bool
-        hasError(void) const
-        {
-            return _error;
-        }
-
-        bool
-        hasPrefix(void) const
-        {
-            return _prefix;
-        }
-
-        bool
-        hasPhrases(void) const
-        {
-            return _phrases;
-        }
-
-        bool
-        hasPositions(void) const
-        {
-            return _positions;
-        }
+        bool hasError(void) const { return _error; }
+        bool hasPrefix(void) const { return _prefix; }
+        bool hasPhrases(void) const { return _phrases; }
+        bool hasPositions(void) const { return _positions; }
 
         IndexSettings(void)
-            : _dataType(Schema::STRING),
+            : _dataType(schema::STRING),
               _error(false),
               _prefix(false),
               _phrases(false),
               _positions(false)
-        {
-        }
+        { }
 
         IndexSettings(const IndexSettings &rhs)
             : _dataType(rhs._dataType),
@@ -70,10 +44,9 @@ public:
               _prefix(rhs._prefix),
               _phrases(rhs._phrases),
               _positions(rhs._positions)
-        {
-        }
+        { }
 
-        IndexSettings(DataType dataType,
+        IndexSettings(schema::DataType dataType,
                       bool error,
                       bool prefix,
                       bool phrases,
@@ -83,20 +56,15 @@ public:
               _prefix(prefix),
               _phrases(phrases),
               _positions(positions)
-        {
-        }
+        { }
 
-        IndexSettings &
-        operator=(const IndexSettings &rhs)
-        {
+        IndexSettings & operator=(const IndexSettings &rhs) {
             IndexSettings tmp(rhs);
             swap(tmp);
             return *this;
         }
 
-        void
-        swap(IndexSettings &rhs)
-        {
+        void swap(IndexSettings &rhs) {
             std::swap(_dataType, rhs._dataType);
             std::swap(_error, rhs._error);
             std::swap(_prefix, rhs._prefix);
@@ -114,14 +82,12 @@ public:
         IndexIterator(const Schema &schema)
             : _schema(schema),
               _index(0u)
-        {
-        }
+        { }
 
         IndexIterator(const Schema &schema, uint32_t index)
             : _schema(schema),
               _index(index)
-        {
-        }
+        { }
 
         IndexIterator(const Schema &schema, const IndexIterator &rhs)
             : _schema(schema),
@@ -131,42 +97,30 @@ public:
             _index = schema.getIndexFieldId(name);
         }
 
-        const Schema &
-        getSchema(void) const
-        {
+        const Schema & getSchema(void) const {
             return _schema;
         }
 
-        uint32_t
-        getIndex(void) const
-        {
+        uint32_t getIndex(void) const {
             return _index;
         }
 
-        const vespalib::string &
-        getName(void) const
-        {
+        const vespalib::string &getName(void) const {
             return _schema.getIndexField(_index).getName();
         }
 
-        IndexIterator &
-        operator++(void)
-        {
+        IndexIterator &operator++(void) {
             if (_index < _schema.getNumIndexFields()) {
                 ++_index;
             }
             return *this;
         }
 
-        bool
-        isValid(void) const
-        {
+        bool isValid(void) const {
             return _index < _schema.getNumIndexFields();
         }
 
-        IndexSettings
-        getIndexSettings(void) const
-        {
+        IndexSettings getIndexSettings(void) const {
             return SchemaUtil::getIndexSettings(_schema, _index);
         }
 
@@ -178,8 +132,7 @@ public:
          * @param oldSchema	old schema, present in an input index
          * @param phrases	ask for phrase files
          */
-        bool
-        hasOldFields(const Schema &oldSchema, bool phrases) const;
+        bool hasOldFields(const Schema &oldSchema, bool phrases) const;
 
         /**
          * Return if fields in old schema matches fields in new
@@ -190,20 +143,16 @@ public:
          * @param oldSchema	old schema, present in an input index
          * @param phrases	ask for phrase files
          */
-        bool
-        hasMatchingOldFields(const Schema &oldSchema, bool phrases) const;
+        bool hasMatchingOldFields(const Schema &oldSchema, bool phrases) const;
     };
 
-    static IndexSettings
-    getIndexSettings(const Schema &schema, const uint32_t index);
+    static IndexSettings getIndexSettings(const Schema &schema, const uint32_t index);
 
 
-    static bool
-    validateIndexFieldType(DataType dataType)
-    {
+    static bool validateIndexFieldType(schema::DataType dataType) {
         switch (dataType) {
-        case Schema::STRING:
-        case Schema::INT32:
+        case schema::STRING:
+        case schema::INT32:
             return true;
         default:
             ;
@@ -211,20 +160,10 @@ public:
         return false;
     }
 
-    static bool
-    validateIndexField(const Schema::IndexField &field);
-
-    static bool
-    addIndexField(Schema &schema,
-                  const Schema::IndexField &field);
-
-    static bool
-    validateSchema(const Schema &schema);
-
-    static bool
-    getIndexIds(const Schema &schema,
-                DataType dataType,
-                std::vector<uint32_t> &indexes);
+    static bool validateIndexField(const Schema::IndexField &field);
+    static bool addIndexField(Schema &schema, const Schema::IndexField &field);
+    static bool validateSchema(const Schema &schema);
+    static bool getIndexIds(const Schema &schema, schema::DataType dataType, std::vector<uint32_t> &indexes);
 };
 
 

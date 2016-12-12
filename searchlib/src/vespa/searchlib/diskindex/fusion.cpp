@@ -32,12 +32,9 @@ using search::docsummary::DocumentSummary;
 using vespalib::getLastErrorString;
 
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
-
+namespace diskindex {
 
 void
 FusionInputIndex::setSchema(const Schema::SP &schema)
@@ -56,8 +53,7 @@ Fusion::Fusion(bool dynamicKPosIndexFormat,
       _outDir("merged"),
       _tuneFileIndexing(tuneFileIndexing),
       _fileHeaderContext(fileHeaderContext)
-{
-}
+{ }
 
 
 Fusion::~Fusion()
@@ -405,7 +401,7 @@ Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
         std::vector<uint32_t> oldIndexes;
         const Schema &oldSchema = oi.getSchema();
         if (!SchemaUtil::getIndexIds(oldSchema,
-                                     Schema::STRING,
+                                     index::schema::STRING,
                                      oldIndexes))
             return false;
         if (oldIndexes.empty()) {
@@ -417,8 +413,7 @@ Fusion::ReadMappingFiles(const SchemaUtil::IndexIterator *index)
         }
 
         // Open word mapping file
-        vespalib::string old2newname = oi.getTmpPath() +
-                                  "/old2new.dat";
+        vespalib::string old2newname = oi.getTmpPath() + "/old2new.dat";
         wordNumMapping.readMappingFile(old2newname, _tuneFileIndexing._read);
     }
 

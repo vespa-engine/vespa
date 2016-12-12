@@ -15,8 +15,8 @@ const std::string gen_dir("generated");
 const char *valid_feature = "value(0)";
 const char *invalid_feature = "invalid_feature_name and format";
 
-using search::index::Schema;
 using namespace search::fef::indexproperties;
+using namespace search::index;
 
 struct Writer {
     FILE *file;
@@ -53,17 +53,17 @@ struct Model {
     Model() : indexes(), attributes(), properties(), extra_profiles() {
         verify_dir();
     }
-    void index(const std::string &name, Schema::DataType data_type,
-               Schema::CollectionType collection_type)
+    void index(const std::string &name, schema::DataType data_type,
+               schema::CollectionType collection_type)
     {
-        indexes[name].first = Schema::getTypeName(data_type);
-        indexes[name].second = Schema::getTypeName(collection_type);
+        indexes[name].first = schema::getTypeName(data_type);
+        indexes[name].second = schema::getTypeName(collection_type);
     }
-    void attribute(const std::string &name, Schema::DataType data_type,
-                   Schema::CollectionType collection_type)
+    void attribute(const std::string &name, schema::DataType data_type,
+                   schema::CollectionType collection_type)
     {
-        attributes[name].first = Schema::getTypeName(data_type);
-        attributes[name].second = Schema::getTypeName(collection_type);
+        attributes[name].first = schema::getTypeName(data_type);
+        attributes[name].second = schema::getTypeName(collection_type);
     }
     void property(const std::string &name, const std::string &val) {
         properties[name] = val;
@@ -162,18 +162,18 @@ struct EmptyModel : Model {};
 
 struct SimpleModel : Model {
     SimpleModel() : Model() {
-        index("title", Schema::STRING, Schema::SINGLE);
-        index("list", Schema::STRING, Schema::ARRAY);
-        index("keywords", Schema::STRING, Schema::WEIGHTEDSET);
-        attribute("date", Schema::INT32, Schema::SINGLE);
+        index("title", schema::STRING, schema::SINGLE);
+        index("list", schema::STRING, schema::ARRAY);
+        index("keywords", schema::STRING, schema::WEIGHTEDSET);
+        attribute("date", schema::INT32, schema::SINGLE);
         constants["my_tensor"] = "tensor(x{},y{})";
     }
 };
 
 struct ShadowModel : Model {
     ShadowModel() : Model() {
-        index("both", Schema::STRING, Schema::SINGLE);
-        attribute("both", Schema::STRING, Schema::SINGLE);
+        index("both", schema::STRING, schema::SINGLE);
+        attribute("both", schema::STRING, schema::SINGLE);
     }
 };
 

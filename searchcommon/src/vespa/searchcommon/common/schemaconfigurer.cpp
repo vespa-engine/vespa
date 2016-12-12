@@ -19,13 +19,13 @@ SchemaBuilder::convert(const IndexschemaConfig::Indexfield::Datatype &type)
 {
     switch (type) {
     case IndexschemaConfig::Indexfield::STRING:
-        return Schema::STRING;
+        return schema::STRING;
     case IndexschemaConfig::Indexfield::INT64:
-        return Schema::INT64;
+        return schema::INT64;
     case IndexschemaConfig::Indexfield::BOOLEANTREE:
-        return Schema::BOOLEANTREE;
+        return schema::BOOLEANTREE;
     }
-    return Schema::STRING;
+    return schema::STRING;
 }
 
 
@@ -34,13 +34,13 @@ SchemaBuilder::convert(const IndexschemaConfig::Indexfield::Collectiontype & typ
 {
     switch (type) {
     case IndexschemaConfig::Indexfield::SINGLE:
-        return Schema::SINGLE;
+        return schema::SINGLE;
     case IndexschemaConfig::Indexfield::ARRAY:
-        return Schema::ARRAY;
+        return schema::ARRAY;
     case IndexschemaConfig::Indexfield::WEIGHTEDSET:
-        return Schema::WEIGHTEDSET;
+        return schema::WEIGHTEDSET;
     }
-    return Schema::SINGLE;
+    return schema::SINGLE;
 }
 
 
@@ -49,34 +49,34 @@ SchemaBuilder::convert(const AttributesConfig::Attribute::Datatype &type)
 {
     switch (type) {
     case AttributesConfig::Attribute::STRING:
-        return Schema::STRING;
+        return schema::STRING;
     case AttributesConfig::Attribute::UINT1:
-        return Schema::UINT1;
+        return schema::UINT1;
     case AttributesConfig::Attribute::UINT2:
-        return Schema::UINT2;
+        return schema::UINT2;
     case AttributesConfig::Attribute::UINT4:
-        return Schema::UINT4;
+        return schema::UINT4;
     case AttributesConfig::Attribute::INT8:
-        return Schema::INT8;
+        return schema::INT8;
     case AttributesConfig::Attribute::INT16:
-        return Schema::INT16;
+        return schema::INT16;
     case AttributesConfig::Attribute::INT32:
-        return Schema::INT32;
+        return schema::INT32;
     case AttributesConfig::Attribute::INT64:
-        return Schema::INT64;
+        return schema::INT64;
     case AttributesConfig::Attribute::FLOAT:
-        return Schema::FLOAT;
+        return schema::FLOAT;
     case AttributesConfig::Attribute::DOUBLE:
-        return Schema::DOUBLE;
+        return schema::DOUBLE;
     case AttributesConfig::Attribute::PREDICATE:
-        return Schema::BOOLEANTREE;
+        return schema::BOOLEANTREE;
     case AttributesConfig::Attribute::TENSOR:
-        return Schema::TENSOR;
+        return schema::TENSOR;
     default:
         break;
     }
     // TODO: exception?
-    return Schema::STRING;
+    return schema::STRING;
 }
 
 
@@ -85,13 +85,13 @@ SchemaBuilder::convert(const AttributesConfig::Attribute::Collectiontype &type)
 {
     switch (type) {
     case AttributesConfig::Attribute::SINGLE:
-        return Schema::SINGLE;
+        return schema::SINGLE;
     case AttributesConfig::Attribute::ARRAY:
-        return Schema::ARRAY;
+        return schema::ARRAY;
     case AttributesConfig::Attribute::WEIGHTEDSET:
-        return Schema::WEIGHTEDSET;
+        return schema::WEIGHTEDSET;
     }
-    return Schema::SINGLE;
+    return schema::SINGLE;
 }
 
 
@@ -99,30 +99,30 @@ Schema::DataType
 SchemaBuilder::convertSummaryType(const vespalib::string & type)
 {
     if (type == "byte") {
-        return Schema::INT8;
+        return schema::INT8;
     } else if (type == "short") {
-        return Schema::INT16;
+        return schema::INT16;
     } else if (type == "integer") {
-        return Schema::INT32;
+        return schema::INT32;
     } else if (type == "int64") {
-        return Schema::INT64;
+        return schema::INT64;
     } else if (type == "float") {
-        return Schema::FLOAT;
+        return schema::FLOAT;
     } else if (type == "double") {
-        return Schema::DOUBLE;
+        return schema::DOUBLE;
     } else if (type == "string" ||
                type == "longstring" ||
                type == "xmlstring" ||
                type == "featuredata" ||
                type == "jsonstring")
     {
-        return Schema::STRING;
+        return schema::STRING;
     } else if (type == "data" ||
                type == "longdata")
     {
-        return Schema::RAW;
+        return schema::RAW;
     }
-    return Schema::RAW;
+    return schema::RAW;
 }
 
 

@@ -445,11 +445,11 @@ void Test::checkArray(const char *(&str)[N], const FieldValue *value) {
 }
 
 void Test::setSummaryField(const string &field) {
-    _schema->addSummaryField(Schema::Field(field, Schema::STRING));
+    _schema->addSummaryField(Schema::Field(field, search::index::schema::STRING));
 }
 
 void Test::setAttributeField(const string &field) {
-    _schema->addAttributeField(Schema::Field(field, Schema::STRING));
+    _schema->addAttributeField(Schema::Field(field, search::index::schema::STRING));
 }
 
 void Test::requireThatSummaryIsAnUnmodifiedString() {
