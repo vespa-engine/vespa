@@ -28,6 +28,8 @@ using vespalib::eval::ValueType;
 using vespalib::eval::NodeTypes;
 using vespalib::tensor::DefaultTensorEngine;
 using search::fef::FeatureType;
+using vespalib::ArrayRef;
+using vespalib::ConstArrayRef;
 
 namespace search {
 namespace features {
@@ -71,12 +73,11 @@ class InterpretedRankingExpressionExecutor : public fef::FeatureExecutor
 private:
     InterpretedFunction::Context _context;
     const InterpretedFunction   &_function;
-    const fef::MatchData *_md;
-
-    virtual void handle_bind_match_data(fef::MatchData &md) override;
+    const ConstArrayRef<char>    _input_is_object;
 
 public:
-    InterpretedRankingExpressionExecutor(const InterpretedFunction &function);
+    InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
+                                         ConstArrayRef<char> input_is_object);
     void execute(uint32_t docId) override;
 };
 
@@ -99,10 +100,11 @@ CompiledRankingExpressionExecutor::execute(uint32_t)
 
 //-----------------------------------------------------------------------------
 
-InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function)
+InterpretedRankingExpressionExecutor::InterpretedRankingExpressionExecutor(const InterpretedFunction &function,
+        ConstArrayRef<char> input_is_object)
     : _context(),
       _function(function),
-      _md(nullptr)
+      _input_is_object(input_is_object)
 {
 }
 
@@ -111,19 +113,13 @@ InterpretedRankingExpressionExecutor::execute(uint32_t)
 {
     _context.clear_params();
     for (size_t i = 0; i < _function.num_params(); ++i) {
-        if (_md->feature_is_object(inputs()[i])) {
+        if (_input_is_object[i]) {
             _context.add_param(inputs().get_object(i));
         } else {
             _context.add_param(inputs().get_number(i));
         }
     }
     outputs().set_object(0, _function.eval(_context));
-}
-
-void
-InterpretedRankingExpressionExecutor::handle_bind_match_data(fef::MatchData &md)
-{
-    _md = &md;
 }
 
 //-----------------------------------------------------------------------------
@@ -170,6 +166,7 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     std::vector<ValueType> input_types;
     for (size_t i = 0; i < rank_function.num_params(); ++i) {
         const FeatureType &input = defineInput(rank_function.param_name(i), AcceptInput::ANY);
+        _input_is_object.push_back(char(input.is_object()));
         if (input.is_object()) {
             do_compile = false;
             input_types.push_back(input.type());
@@ -227,7 +224,8 @@ fef::FeatureExecutor &
 RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &, vespalib::Stash &stash) const
 {
     if (_interpreted_function) {
-        return stash.create<InterpretedRankingExpressionExecutor>(*_interpreted_function);
+        ConstArrayRef<char> input_is_object = stash.copy_array<char>(_input_is_object);
+        return stash.create<InterpretedRankingExpressionExecutor>(*_interpreted_function, input_is_object);
     }
     assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
     return stash.create<CompiledRankingExpressionExecutor>(_compile_token->get());

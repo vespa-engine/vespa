@@ -40,6 +40,7 @@ class ConstArrayRef {
 public:
     ConstArrayRef(const T *v, size_t sz) : _v(v), _sz(sz) { }
     ConstArrayRef(const std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
+    ConstArrayRef(const ArrayRef<T> & v) : _v(&v[0]), _sz(v.size()) { }
     inline ConstArrayRef(const Array<T> &v);
     ConstArrayRef() : _v(nullptr), _sz(0) {}
     const T & operator [] (size_t i) const { return _v[i]; }
