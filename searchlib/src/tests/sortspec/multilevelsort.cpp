@@ -401,22 +401,32 @@ TEST("test that [docid] translates to [lid][paritionid]") {
     vespalib::Clock clock;
     vespalib::Doom doom(clock, fastos::ClockSystem::now() + fastos::TimeStamp::SEC*10);
     search::uca::UcaConverterFactory ucaFactory;
-    FastS_SortSpec fs(7, doom, ucaFactory);
+    FastS_SortSpec asc(7, doom, ucaFactory);
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
     search::AttributeManager mgr;
     search::AttributeContext ac(mgr);
-    fs.Init("[docid]", ac);
-    fs.initWithoutSorting(hits, 2);
+    asc.Init("[docid]", ac);
+    asc.initWithoutSorting(hits, 2);
     constexpr uint8_t FIRST_ASC[6] = {0,0,0,91,0,7};
     constexpr uint8_t SECOND_ASC[6] = {0,0,0,3,0,7};
     constexpr uint8_t FIRST_DESC[6] = {0,0,0,91,0,7};
     constexpr uint8_t SECOND_DESC[6] = {0,0,0,3,0,7};
-    auto sr1 = fs.getSortRef(0);
+    auto sr1 = asc.getSortRef(0);
     EXPECT_EQUAL(6u, sr1.second);
     EXPECT_EQUAL(0, memcmp(FIRST_ASC, sr1.first, 6));
-    auto sr2 = fs.getSortRef(1);
+    auto sr2 = asc.getSortRef(1);
     EXPECT_EQUAL(6u, sr2.second);
     EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 6));
+
+    FastS_SortSpec desc(7, doom, ucaFactory);
+    asc.Init("-[docid]", ac);
+    asc.initWithoutSorting(hits, 2);
+    sr1 = asc.getSortRef(0);
+    EXPECT_EQUAL(6u, sr1.second);
+    EXPECT_EQUAL(0, memcmp(FIRST_DESC, sr1.first, 6));
+    sr2 = asc.getSortRef(1);
+    EXPECT_EQUAL(6u, sr2.second);
+    EXPECT_EQUAL(0, memcmp(SECOND_DESC, sr2.first, 6));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
