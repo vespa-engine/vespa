@@ -23,7 +23,6 @@ public class RemoteSession extends Session {
 
     private static final Logger log = Logger.getLogger(RemoteSession.class.getName());
     private volatile ApplicationSet applicationSet = null;
-    private final SessionZooKeeperClient zooKeeperClient;
     private final ActivatedModelsBuilder applicationLoader;
 
     /**
@@ -38,8 +37,7 @@ public class RemoteSession extends Session {
                          long sessionId,
                          GlobalComponentRegistry globalComponentRegistry,
                          SessionZooKeeperClient zooKeeperClient) {
-        super(tenant, sessionId);
-        this.zooKeeperClient = zooKeeperClient;
+        super(tenant, sessionId, zooKeeperClient);
         this.applicationLoader = new ActivatedModelsBuilder(tenant, sessionId, zooKeeperClient, globalComponentRegistry);
     }
 

@@ -60,9 +60,7 @@ public class SessionPrepareHandler extends SessionHandler {
         TenantName tenantName = tenant.getName();
         long sessionId = getSessionIdV2(request);
         LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
-        if (Session.Status.ACTIVATE.equals(session.getStatus())) {
-            throw new IllegalArgumentException("Session is active: " + sessionId);
-        }
+        validateThatSessionIsNotActive(session);
         log.log(LogLevel.DEBUG, "session=" + session);
         boolean verbose = request.getBooleanProperty("verbose");
         Slime rawDeployLog = createDeployLog();
@@ -95,13 +93,20 @@ public class SessionPrepareHandler extends SessionHandler {
     @Override
     protected HttpResponse handleGET(HttpRequest request) {
         Tenant tenant = getExistingTenant(request);
-        long sessionId = getSessionIdV2(request);
         RemoteSession session = applicationRepository.getRemoteSession(tenant, getSessionIdV2(request));
-        if (Session.Status.ACTIVATE.equals(session.getStatus()))
-            throw new IllegalArgumentException("Session is active: " + sessionId);
-        if (!Session.Status.PREPARE.equals(session.getStatus()))
-            throw new IllegalArgumentException("Session not prepared: " + sessionId);
+        validateThatSessionIsNotActive(session);
+        validateThatSessionIsPrepared(session);
         return new SessionPrepareResponse(createDeployLog(), tenant, request, session, new ConfigChangeActions());
+    }
+
+    private void validateThatSessionIsNotActive(Session session) {
+        if (Session.Status.ACTIVATE.equals(session.getStatus()))
+            throw new IllegalStateException("Session is active: " + session.getSessionId());
+    }
+
+    private void validateThatSessionIsPrepared(Session session) {
+        if ( ! Session.Status.PREPARE.equals(session.getStatus()))
+            throw new IllegalStateException("Session not prepared: " + session.getSessionId());
     }
 
     private static Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {

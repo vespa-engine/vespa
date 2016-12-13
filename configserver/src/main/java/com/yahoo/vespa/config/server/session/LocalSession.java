@@ -37,7 +37,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     private final ApplicationPackage applicationPackage;
     private final TenantApplications applicationRepo;
-    private final SessionZooKeeperClient zooKeeperClient;
     private final SessionPreparer sessionPreparer;
     private final SessionContext sessionContext;
     private final File serverDB;
@@ -50,10 +49,9 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
      */
     // TODO tenant in SessionContext?
     public LocalSession(TenantName tenant, long sessionId, SessionPreparer sessionPreparer, SessionContext sessionContext) {
-        super(tenant, sessionId);
+        super(tenant, sessionId, sessionContext.getSessionZooKeeperClient());
         this.serverDB = sessionContext.getServerDBSessionDir();
         this.applicationPackage = sessionContext.getApplicationPackage();
-        this.zooKeeperClient = sessionContext.getSessionZooKeeperClient();
         this.applicationRepo = sessionContext.getApplicationRepo();
         this.sessionPreparer = sessionPreparer;
         this.sessionContext = sessionContext;
@@ -91,10 +89,6 @@ public class LocalSession extends Session implements Comparable<LocalSession> {
 
     private Transaction createSetStatusTransaction(Status status) {
         return zooKeeperClient.createWriteStatusTransaction(status);
-    }
-
-    public Session.Status getStatus() {
-        return zooKeeperClient.readStatus();
     }
 
     private void setStatus(Session.Status newStatus) {
