@@ -14,9 +14,11 @@ Usage: ${0##*/} <command> [<args>...]
 Script for manipulating the Node Repository.
 
 Commands
-    add [-c <configserverhost>] [-f <parent host flavor>] -p <parenthostname> [<hostname>...]
-        Provision Docker host <parenthostname> in node repo with type "host", flavor <parent host flavor> (only if -f option supplied).
-        Provision Docker nodes <hostname...> list (0 or more) in node repo with flavor "docker" and parent host <parenthostname>.
+    add [-c <configserverhost>] -p <parent-hostname> [-f <parent-flavor>]
+        [-n <flavor> <hostname>...]
+        With -f, provision "host" node <parent-hostname> with flavor
+        <parent-flavor>. With -n, provision "tenant" nodes <hostname...> with
+        flavor <flavor> and parent host <parenthostname>.
     reprovision [-c <configserverhost>] -p <parenthostname> <hostname>...
         Fail node <hostname>, then rm and add.
     rm [-c <configserverhost>] <hostname>...
@@ -126,13 +128,14 @@ function ProvisionDockerNode {
     local config_server_hostname="$1"
     local container_hostname="$2"
     local parent_hostname="$3"
+    local flavor="$4"
 
     local json="[
                   {
                     \"hostname\":\"$container_hostname\",
                     \"parentHostname\":\"$parent_hostname\",
                     \"openStackId\":\"fake-$container_hostname\",
-                    \"flavor\":\"docker\",
+                    \"flavor\":\"$flavor\",
                     \"type\":\"tenant\"
                   }
                 ]"
@@ -184,12 +187,13 @@ function AddCommand {
 
     OPTIND=1
     local option
-    while getopts "c:p:f:" option
+    while getopts "c:p:f:n:" option
     do
         case "$option" in
             c) config_server_hostname="$OPTARG" ;;
             p) parent_hostname="$OPTARG" ;;
             f) parent_host_flavor="$OPTARG" ;;
+            n) node_flavor="$OPTARG" ;;
             ?) exit 1 ;; # E.g. option lacks argument, in case error has been
                          # already been printed
             *) Fail "Unknown option '$option' with value '$OPTARG'"
@@ -211,17 +215,21 @@ function AddCommand {
                             "$parent_host_flavor"
     fi
 
-    echo -n "Provisioning $# nodes with parent host $parent_hostname"
-    local container_hostname
-    for container_hostname in "$@"
-    do
-        ProvisionDockerNode "$config_server_hostname" \
-                            "$container_hostname" \
-                            "$parent_hostname"
-        echo -n .
-    done
+    if [ -n "$node_flavor" ]
+    then
+        echo -n "Provisioning $# nodes with parent host $parent_hostname"
+        local container_hostname
+        for container_hostname in "$@"
+        do
+            ProvisionDockerNode "$config_server_hostname" \
+                                "$container_hostname" \
+                                "$parent_hostname" \
+                                "$node_flavor"
+            echo -n .
+        done
 
-    echo " done"
+        echo " done"
+    fi
 }
 
 function ReprovisionCommand {
