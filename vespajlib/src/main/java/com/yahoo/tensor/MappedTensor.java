@@ -19,8 +19,7 @@ public class MappedTensor implements Tensor {
     private final ImmutableMap<TensorAddress, Double> cells;
 
     /** Creates a sparse tensor. The cell addresses must match the type. */
-    // TODO: Privatize
-    public MappedTensor(TensorType type, Map<TensorAddress, Double> cells) {
+    private MappedTensor(TensorType type, Map<TensorAddress, Double> cells) {
         this.type = type;
         this.cells = ImmutableMap.copyOf(cells);
     }

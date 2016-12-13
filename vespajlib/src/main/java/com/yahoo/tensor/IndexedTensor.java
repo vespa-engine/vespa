@@ -30,6 +30,7 @@ public class IndexedTensor implements Tensor {
     }
     
     /** Construct an indexed tensor having a single dimension with the given values */
+    // TODO: Privatize
     public IndexedTensor(TensorType type, List<Object> values) {
         if (type.dimensions().size() != 1 ||  ! type.dimensions().get(0).isIndexed())
             throw new IllegalArgumentException("Expected a single-dimensional indexed tensor but got " + type);
