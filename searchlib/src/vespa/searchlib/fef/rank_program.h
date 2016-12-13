@@ -11,6 +11,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <memory.h>
+#include <vespa/vespalib/util/array.h>
 
 namespace search {
 namespace fef {
@@ -30,18 +31,19 @@ private:
     using MappedValues = std::map<const NumberOrObject *, const NumberOrObject *>;
 
     BlueprintResolver::SP          _resolver;
-    FeatureExecutor::SharedInputs  _shared_inputs;
     std::vector<FeatureExecutor *> _program;
     MatchData::UP                  _match_data;
     vespalib::Stash                _stash;
     std::vector<FeatureExecutor *> _executors;
     MappedValues                   _unboxed_seeds;
 
+    size_t count_features() const;
+
     /**
      * Add unboxing executors for seeds that are object features to
      * make sure all output values are numbers.
      **/
-    void add_unboxing_executors(MatchDataLayout &my_mdl);
+    void add_unboxing_executors(vespalib::ArrayRef<NumberOrObject> features, size_t feature_offset, size_t total_features);
 
     /**
      * Prepare the final program and evaluate all constant features.

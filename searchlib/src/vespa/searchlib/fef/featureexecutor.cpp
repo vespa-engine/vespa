@@ -19,15 +19,37 @@ FeatureExecutor::isPure()
 }
 
 void
+FeatureExecutor::handle_bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *>)
+{
+}
+
+void
+FeatureExecutor::handle_bind_outputs(vespalib::ArrayRef<NumberOrObject>)
+{
+}
+
+void
 FeatureExecutor::handle_bind_match_data(MatchData &)
 {
 }
 
 void
+FeatureExecutor::bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *> inputs)
+{
+    _inputs.bind(inputs);
+    handle_bind_inputs(inputs);
+}
+
+void
+FeatureExecutor::bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs)
+{
+    _outputs.bind(outputs);
+    handle_bind_outputs(outputs);
+}
+
+void
 FeatureExecutor::bind_match_data(MatchData &md)
 {
-    _inputs.bind(md);
-    _outputs.bind(md);
     handle_bind_match_data(md);
 }
 

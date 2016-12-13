@@ -26,11 +26,7 @@ struct Fixture
     MatchData::UP md;
     Fixture() : mdl(), stash(), executors(), md() {}
     Fixture &add(FeatureExecutor *executor, size_t outCnt) {
-        executor->inputs_done();
-        for (uint32_t outIdx = 0; outIdx < outCnt; ++outIdx) {
-            executor->bindOutput(mdl.allocFeature());
-        }
-        executor->outputs_done();
+        executor->bind_outputs(stash.create_array<NumberOrObject>(outCnt));
         executors.push_back(executor);
         return *this;
     }
@@ -93,7 +89,6 @@ TEST_F("test decorator - non-existing override", Fixture)
 
 TEST_F("test decorator - transitive override", Fixture)
 {
-    FeatureExecutor::SharedInputs inputs;
     FeatureExecutor *fe = &f.createValueExecutor();
     vespalib::Stash &stash = f.stash;
     fe = &stash.create<FeatureOverrider>(*fe, 1, 50.0);
@@ -101,11 +96,12 @@ TEST_F("test decorator - transitive override", Fixture)
     EXPECT_EQUAL(fe->outputs().size(), 3u);
 
     FeatureExecutor *fe2 = &stash.create<DoubleExecutor>(3);
-    fe2->bind_shared_inputs(inputs);
-    fe2->addInput(fe->outputs()[0]);
-    fe2->addInput(fe->outputs()[1]);
-    fe2->addInput(fe->outputs()[2]);
     fe2 = &stash.create<FeatureOverrider>(*fe2, 2, 10.0);
+    auto inputs = stash.create_array<const NumberOrObject *>(3);
+    inputs[0] = fe->outputs().get_raw(0);
+    inputs[1] = fe->outputs().get_raw(1);
+    inputs[2] = fe->outputs().get_raw(2);
+    fe2->bind_inputs(inputs);
     f.add(fe2, 3).run();
     EXPECT_EQUAL(fe2->outputs().size(), 3u);
 

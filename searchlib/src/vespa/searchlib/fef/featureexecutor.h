@@ -8,6 +8,7 @@
 #include "matchdata.h"
 #include <cassert>
 #include <memory>
+#include <vespa/vespalib/util/array.h>
 
 namespace search {
 namespace fef {
@@ -21,95 +22,50 @@ namespace fef {
 class FeatureExecutor
 {
 public:
-    class SharedInputs {
-        std::vector<FeatureHandle> _inputs;
-    public:
-        SharedInputs() : _inputs() {}
-        void add(FeatureHandle handle) { _inputs.push_back(handle); }
-        size_t size() const { return _inputs.size(); }
-        FeatureHandle operator[](size_t idx) const { return _inputs[idx]; }
-    };
-
     class Inputs {
-        SharedInputs    *_inputs;
-        uint32_t         _offset;
-        uint32_t         _size;
-        const MatchData *_md;
+        vespalib::ConstArrayRef<const NumberOrObject *> _inputs;
     public:
-        Inputs() : _inputs(nullptr), _offset(0), _size(0), _md(nullptr) {}
-        void bind(const MatchData &md) { _md = &md; }
+        Inputs() : _inputs(nullptr, 0) {}
+        void bind(vespalib::ConstArrayRef<const NumberOrObject *> inputs) { _inputs = inputs; }
         feature_t get_number(size_t idx) const {
-            return *_md->resolveFeature((*this)[idx]);
+            return _inputs[idx]->as_number;
         }
         vespalib::eval::Value::CREF get_object(size_t idx) const {
-            return *_md->resolve_object_feature((*this)[idx]);
+            return _inputs[idx]->as_object;
         }
         const NumberOrObject *get_raw(size_t idx) const {
-            return _md->resolve_raw((*this)[idx]);
+            return _inputs[idx];
         }
-        void bind(SharedInputs &inputs) {
-            _inputs = &inputs;
-            _offset = _inputs->size();
-            _size = 0;
-        }
-        void add(FeatureHandle handle) {
-            assert(_inputs != nullptr);
-            assert(_inputs->size() == (_offset + _size));
-            _inputs->add(handle);
-            ++_size;
-        }
-        bool empty() const { return (_size == 0); }
-        size_t size() const { return _size; }
-        FeatureHandle operator[](size_t idx) const {
-            assert(idx < _size);
-            return (*_inputs)[_offset + idx];
-        }
+        size_t size() const { return _inputs.size(); }
     };
 
     class Outputs {
-        FeatureHandle _begin;
-        FeatureHandle _end;
-        MatchData    *_md;
+        vespalib::ArrayRef<NumberOrObject> _outputs;
     public:
-        Outputs() : _begin(IllegalHandle), _end(IllegalHandle), _md(nullptr) {}
-        void bind(MatchData &md) { _md = &md; }
+        Outputs() : _outputs(nullptr, 0) {}
+        void bind(vespalib::ArrayRef<NumberOrObject> outputs) { _outputs = outputs; }
         void set_number(size_t idx, feature_t value) {
-            *_md->resolveFeature((*this)[idx]) = value;
+            _outputs[idx].as_number = value;
         }
         void set_object(size_t idx, vespalib::eval::Value::CREF value) {
-            *_md->resolve_object_feature((*this)[idx]) = value;
+            _outputs[idx].as_object = value;
         }
         feature_t *get_number_ptr(size_t idx) {
-            return _md->resolveFeature((*this)[idx]);
+            return &_outputs[idx].as_number;
         }
-        vespalib::eval::Value::CREF *get_object_ptr(size_t idx) {
-            return _md->resolve_object_feature((*this)[idx]);
+        vespalib::eval::Value::CREF *get_object_ptr(size_t idx) { 
+            return &_outputs[idx].as_object;
         }
         feature_t get_number(size_t idx) const {
-            return *_md->resolveFeature((*this)[idx]);
+            return _outputs[idx].as_number;
         }
         vespalib::eval::Value::CREF get_object(size_t idx) const {
-            return *_md->resolve_object_feature((*this)[idx]);
+            return _outputs[idx].as_object;
         }
         const NumberOrObject *get_raw(size_t idx) const {
-            return _md->resolve_raw((*this)[idx]);
+            return &_outputs[idx];
         }
-        void add(FeatureHandle handle) {
-            if (_begin == IllegalHandle) {
-                _begin = handle;
-                _end = (_begin + 1);
-            } else if (handle == _end) {
-                ++_end;
-            } else {
-                assert(handle == _end);
-            }
-        }
-        bool empty() const { return (_end == _begin); }
-        size_t size() const { return (_end - _begin); }
-        FeatureHandle operator[](size_t idx) const {
-            assert(idx < (_end - _begin));
-            return (_begin + idx);
-        }
+        size_t size() const { return _outputs.size(); }
     };
 
 private:
@@ -120,6 +76,8 @@ private:
     Outputs _outputs;
 
 protected:
+    virtual void handle_bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *> inputs);
+    virtual void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
     virtual void handle_bind_match_data(MatchData &md);
 
 public:
@@ -129,60 +87,13 @@ public:
      **/
     FeatureExecutor();
 
-    /**
-     * Bind shared external storage to this feature executor. The
-     * shared storage will be used to store the handle of feature
-     * inputs. This function must be called before starting to add
-     * inputs.
-     *
-     * @param shared_inputs shared store for input feature handles
-     **/
-    void bind_shared_inputs(SharedInputs &shared_inputs) { _inputs.bind(shared_inputs); }
-
-    // Bind inputs and outputs directly to the underlying match data
-    // to be able to hide the fact that input and output values are
-    // stored in a match data object from the executor itself.
+    // bind order per executor: inputs, outputs, match_data
+    void bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *> inputs);
+    void bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs);
     void bind_match_data(MatchData &md);
 
-    /**
-     * Add an input to this feature executor. All inputs must be added
-     * before this object is added to the feature execution manager.
-     *
-     * @param handle the feature handle of the input to add
-     **/
-    void addInput(FeatureHandle handle) { _inputs.add(handle); }
-    virtual void inputs_done() {} // needed for feature decorators
-
-    /**
-     * Access the input features for this executor. Use {@link
-     * MatchData#resolveFeature} to resolve these handles.
-     *
-     * @return const view of input features
-     **/
     const Inputs &inputs() const { return _inputs; }
-
-    /**
-     * Assign a feature handle to the next unbound output feature.
-     * This method will be invoked by the @ref FeatureExecutionManager
-     * when new feature executors are added. It may also be used for
-     * testing, but should not be invoked directly from application
-     * code. Note that this method must be invoked exactly the number
-     * of times indicated by the @ref getNumOutputs method.
-     *
-     * @param handle feature handle to be assigned to the next unbound
-     *               output feature.
-     **/
-    void bindOutput(FeatureHandle handle) { _outputs.add(handle); }
-    virtual void outputs_done() {} // needed for feature decorators
-
-    /**
-     * Access the output features for this executor. Use {@link
-     * MatchData#resolveFeature} to resolve these handles.
-     *
-     * @return const view of output features
-     **/
     const Outputs &outputs() const { return _outputs; }
-
     Outputs &outputs() { return _outputs; }
 
     /**
