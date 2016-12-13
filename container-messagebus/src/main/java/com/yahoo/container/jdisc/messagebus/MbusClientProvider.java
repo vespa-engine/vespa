@@ -11,10 +11,6 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.jdisc.MbusClient;
 import com.yahoo.messagebus.shared.SharedIntermediateSession;
 import com.yahoo.messagebus.shared.SharedSourceSession;
-import com.yahoo.messagebus.ThrottlePolicy;
-import com.yahoo.messagebus.Message;
-
-import com.yahoo.messagebus.Reply;
 
 /**
  * @author tonytv
@@ -26,7 +22,6 @@ public class MbusClientProvider implements Provider<MbusClient> {
 
     private static MbusClient createSourceClient(
             SessionCache sessionCache,
-            SessionConfig sessionConfig,
             boolean setAllPassThrottlePolicy) {
         final SourceSessionParams sourceSessionParams = new SourceSessionParams();
         if (setAllPassThrottlePolicy) {
@@ -49,10 +44,10 @@ public class MbusClientProvider implements Provider<MbusClient> {
                 }
                 break;
             case SOURCE:
-                client = createSourceClient(sessionCache, sessionConfig, false);
+                client = createSourceClient(sessionCache, false);
                 break;
             case INTERNAL:
-                client = createSourceClient(sessionCache, sessionConfig, true);
+                client = createSourceClient(sessionCache, true);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown session type: " + sessionConfig.type());
