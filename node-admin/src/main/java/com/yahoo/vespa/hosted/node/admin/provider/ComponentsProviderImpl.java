@@ -95,9 +95,9 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
+            docker.executeInContainer(nodeAdminName, "service", "yamas-agent", "restart");
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for node-admin", e);
         }
-        docker.executeInContainer(nodeAdminName, "service", "yamas-agent", "restart");
     }
 }
