@@ -158,6 +158,9 @@ public class ServletOutputStreamWriter {
             ResponseContentPart contentPart;
 
             synchronized (monitor) {
+                if (state == State.FINISHED_OR_ERROR) {
+                    return;
+                }
                 assertStateIs(state, State.WRITING_BUFFERS);
 
                 if (!outputStream.isReady()) {
