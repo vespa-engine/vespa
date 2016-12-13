@@ -48,7 +48,6 @@ public class TensorFunctionBenchmark {
                 largest = dotProduct;
             }
         }
-        System.out.println(largest);
         return largest;
     }
 
