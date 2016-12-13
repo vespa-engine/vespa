@@ -36,8 +36,8 @@ public class DockerMock implements Docker {
             ContainerName containerName,
             String hostName) {
         synchronized (monitor) {
-            callOrderVerifier.add("createContainerCommand with DockerImage: " + dockerImage + ", HostName: " + hostName +
-                                  ", ContainerName: " + containerName);
+            callOrderVerifier.add("createContainerCommand with " + dockerImage +
+                    ", HostName: " + hostName + ", " + containerName);
             containers.add(new Container(hostName, dockerImage, containerName, true));
         }
 
@@ -76,14 +76,14 @@ public class DockerMock implements Docker {
     @Override
     public void startContainer(ContainerName containerName) {
         synchronized (monitor) {
-            callOrderVerifier.add("startContainer with ContainerName: " + containerName);
+            callOrderVerifier.add("startContainer with " + containerName);
         }
     }
 
     @Override
     public void stopContainer(ContainerName containerName) {
         synchronized (monitor) {
-            callOrderVerifier.add("stopContainer with ContainerName: " + containerName);
+            callOrderVerifier.add("stopContainer with " + containerName);
             containers = containers.stream()
                     .map(container -> container.name.equals(containerName) ?
                             new Container(container.hostname, container.image, container.name, false) : container)
@@ -94,7 +94,7 @@ public class DockerMock implements Docker {
     @Override
     public void deleteContainer(ContainerName containerName) {
         synchronized (monitor) {
-            callOrderVerifier.add("deleteContainer with ContainerName: " + containerName);
+            callOrderVerifier.add("deleteContainer with " + containerName);
             containers = containers.stream()
                     .filter(container -> !container.name.equals(containerName))
                     .collect(Collectors.toList());
@@ -111,7 +111,7 @@ public class DockerMock implements Docker {
     @Override
     public CompletableFuture<DockerImage> pullImageAsync(DockerImage image) {
         synchronized (monitor) {
-            callOrderVerifier.add("pullImageAsync with DockerImage: " + image);
+            callOrderVerifier.add("pullImageAsync with " + image);
             final CompletableFuture<DockerImage> completableFuture = new CompletableFuture<>();
             new Thread() {
                 public void run() {
@@ -151,8 +151,7 @@ public class DockerMock implements Docker {
     @Override
     public ProcessResult executeInContainer(ContainerName containerName, String... args) {
         synchronized (monitor) {
-            callOrderVerifier.add("executeInContainer with ContainerName: " + containerName +
-                                  ", args: " + Arrays.toString(args));
+            callOrderVerifier.add("executeInContainer with " + containerName + ", args: " + Arrays.toString(args));
         }
         return new ProcessResult(0, null, "");
     }

@@ -2,7 +2,7 @@
 
 ## Setup
 
-Set up Docker on your machine according to the instructions in [LINUX](README_LINUX.md) or [Mac](README_MAC.md), depending on your hardware.
+Set up Docker on your machine according to the instructions in [Linux](README_LINUX.md) or [Mac](README_MAC.md), depending on your hardware.
 
 You should have the docker daemon running and the following environment variables set:
 ```
@@ -10,7 +10,7 @@ VESPA_HOME
 VESPA_WEB_SERVICE_PORT
 ```
 
-To add update `/etc/hosts` with the required hostnames for the local containers, run
+To update `/etc/hosts` with the required hostnames for the local containers, run
 ```
 sudo ./scripts/etc-hosts.sh
 ```
@@ -62,7 +62,7 @@ You can delete application with
 
 Trigger the incredibly rich and complex `node-admin` REST API(s)
 ```
-curl localhost:4080/test/ping
+curl localhost:4080/rest/info
 ```
 
 ## Troubleshooting

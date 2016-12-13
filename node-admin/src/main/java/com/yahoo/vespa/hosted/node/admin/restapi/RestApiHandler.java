@@ -84,18 +84,14 @@ public class RestApiHandler extends LoggingRequestHandler{
         String path = request.getUri().getPath();
         // Check paths to disallow illegal state changes
         if (path.endsWith("/resume")) {
-            final Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
-            if (errorMessage.isPresent()) {
-                return new SimpleResponse(409, errorMessage.get());
-            }
-            return new SimpleResponse(200, "ok");
-        }
-        if (path.endsWith("/suspend")) {
-            Optional<String> errorMessage = refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
-            if (errorMessage.isPresent()) {
-                return new SimpleResponse(409, errorMessage.get());
-            }
-            return new SimpleResponse(200, "ok");
+            return refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED)
+                    .map(error -> new SimpleResponse(409, error))
+                    .orElse(new SimpleResponse(200, "ok"));
+
+        } else if (path.endsWith("/suspend")) {
+            return refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED)
+                    .map(error -> new SimpleResponse(409, error))
+                    .orElse(new SimpleResponse(200, "ok"));
         }
         return new SimpleResponse(400, "unknown path" + path);
     }

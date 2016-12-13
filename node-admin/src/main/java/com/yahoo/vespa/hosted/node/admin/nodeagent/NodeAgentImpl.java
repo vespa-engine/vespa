@@ -483,18 +483,17 @@ public class NodeAgentImpl implements NodeAgent {
                 .add("zone", environment.getZone())
                 .add("parentHostname", environment.getParentHostHostname());
 
-        if (nodeSpec.owner.isPresent()) {
-            dimensionsBuilder
-                    .add("tenantName", nodeSpec.owner.get().tenant)
-                    .add("app", nodeSpec.owner.get().application + "." + nodeSpec.owner.get().instance);
-        }
-        if (nodeSpec.membership.isPresent()) {
-            dimensionsBuilder
-                    .add("clustertype", nodeSpec.membership.get().clusterType)
-                    .add("clusterid", nodeSpec.membership.get().clusterId);
-        }
+        nodeSpec.owner.ifPresent(owner ->
+                dimensionsBuilder
+                        .add("tenantName", owner.tenant)
+                        .add("app", owner.application + "." + owner.instance));
 
-        if (vespaVersion.isPresent()) dimensionsBuilder.add("vespaVersion", vespaVersion.get());
+        nodeSpec.membership.ifPresent(membership ->
+                dimensionsBuilder
+                        .add("clustertype", membership.clusterType)
+                        .add("clusterid", membership.clusterId));
+
+        vespaVersion.ifPresent(version -> dimensionsBuilder.add("vespaVersion", version));
 
         Dimensions dimensions = dimensionsBuilder.build();
         long currentCpuContainerTotalTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("total_usage")).longValue();
@@ -559,16 +558,17 @@ public class NodeAgentImpl implements NodeAgent {
                 .withTag("zone", environment.getZone())
                 .withTag("parentHostname", environment.getParentHostHostname());
 
-        if (nodeSpec.owner.isPresent()) scheduleMaker
-                .withTag("tenantName", nodeSpec.owner.get().tenant)
-                .withTag("app", nodeSpec.owner.get().application + "." + nodeSpec.owner.get().instance);
+        nodeSpec.owner.ifPresent(owner ->
+                scheduleMaker
+                        .withTag("tenantName", owner.tenant)
+                        .withTag("app", owner.application + "." + owner.instance));
 
-        if (nodeSpec.membership.isPresent()) scheduleMaker
-                .withTag("clustertype", nodeSpec.membership.get().clusterType)
-                .withTag("clusterid", nodeSpec.membership.get().clusterId);
+        nodeSpec.membership.ifPresent(membership ->
+                scheduleMaker
+                        .withTag("clustertype", membership.clusterType)
+                        .withTag("clusterid", membership.clusterId));
 
-        if (nodeSpec.vespaVersion.isPresent()) scheduleMaker
-                .withTag("vespaVersion", nodeSpec.vespaVersion.get());
+        nodeSpec.vespaVersion.ifPresent(version -> scheduleMaker.withTag("vespaVersion", version));
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);

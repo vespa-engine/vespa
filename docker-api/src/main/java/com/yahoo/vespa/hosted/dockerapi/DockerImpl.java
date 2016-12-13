@@ -91,7 +91,7 @@ public class DockerImpl implements Docker {
 
         SECONDS_TO_WAIT_BEFORE_KILLING = config.secondsToWaitBeforeKillingContainer();
 
-        initDockerConnection(config, fallbackTo123OnErrors);
+        dockerClient = initDockerConnection(config, fallbackTo123OnErrors);
         setMetrics(metricReceiverWrapper);
 
         if (trySetupNetwork) {
@@ -157,8 +157,14 @@ public class DockerImpl implements Docker {
 
     @Override
     public void copyArchiveToContainer(String sourcePath, ContainerName destinationContainer, String destinationPath) {
-        dockerClient.copyArchiveToContainerCmd(destinationContainer.asString())
-                .withHostResource(sourcePath).withRemotePath(destinationPath).exec();
+        try {
+            dockerClient.copyArchiveToContainerCmd(destinationContainer.asString())
+                    .withHostResource(sourcePath).withRemotePath(destinationPath).exec();
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to copy container " + sourcePath + " to " +
+                    destinationPath + ":" + destinationPath, e);
+        }
     }
 
     @Override
@@ -172,7 +178,13 @@ public class DockerImpl implements Docker {
             scheduledPulls.put(image, completionListener);
         }
 
-        dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+        try {
+            dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to pull image '" + image.asString() + "'", e);
+        }
+
         return completionListener;
     }
 
@@ -196,7 +208,7 @@ public class DockerImpl implements Docker {
                     .withImageNameFilter(dockerImage.asString()).exec().stream().findFirst();
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to list image name: '" + dockerImage + "'", e);
+            throw new RuntimeException("Failed to inspect image '" + dockerImage.asString() + "'", e);
         }
     }
 
@@ -213,7 +225,8 @@ public class DockerImpl implements Docker {
                     .withNetworkId(networkName).exec();
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to connect container to network", e);
+            throw new RuntimeException("Failed to connect container '" + containerName.asString() +
+                    "' to network '" + networkName + "'", e);
         }
     }
 
@@ -240,8 +253,8 @@ public class DockerImpl implements Docker {
             return new ProcessResult(exitCode, new String(output.toByteArray()), new String(errors.toByteArray()));
         } catch (DockerException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Container " + containerName.asString()
-                    + " failed to execute " + Arrays.toString(args), e);
+            throw new RuntimeException("Container '" + containerName.asString()
+                    + "' failed to execute " + Arrays.toString(args), e);
         }
     }
 
@@ -252,15 +265,14 @@ public class DockerImpl implements Docker {
             return Optional.empty();
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to get container info", e);
+            throw new RuntimeException("Failed to get info for container '" + container + "'", e);
         }
     }
 
     @Override
     public Optional<ContainerInfo> inspectContainer(ContainerName containerName) {
-        Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(containerName.asString());
-        if (! inspectResponse.isPresent()) return Optional.empty();
-        else return Optional.of(new ContainerInfoImpl(containerName, inspectResponse.get()));
+        return inspectContainerCmd(containerName.asString())
+                .map(response -> new ContainerInfoImpl(containerName, response));
     }
 
     @Override
@@ -275,7 +287,7 @@ public class DockerImpl implements Docker {
             return Optional.empty();
         } catch (DockerException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to get container stats", e);
+            throw new RuntimeException("Failed to get stats for container '" + containerName.asString() + "'", e);
         }
     }
 
@@ -283,11 +295,11 @@ public class DockerImpl implements Docker {
     public void startContainer(ContainerName containerName) {
         try {
             dockerClient.startContainerCmd(containerName.asString()).exec();
-        } catch(NotFoundException | NotModifiedException ignored) {
-            // If container doesn't exist or is already started, ignore
+        } catch (NotModifiedException ignored) {
+            // If is already started, ignore
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to start container", e);
+            throw new RuntimeException("Failed to start container '" + containerName.asString() + "'", e);
         }
     }
 
@@ -295,11 +307,11 @@ public class DockerImpl implements Docker {
     public void stopContainer(final ContainerName containerName) {
         try {
             dockerClient.stopContainerCmd(containerName.asString()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
-        } catch(NotFoundException | NotModifiedException ignored) {
-            // If container doesn't exist or is already stopped, ignore
+        } catch (NotModifiedException ignored) {
+            // If is already stopped, ignore
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to stop container", e);
+            throw new RuntimeException("Failed to stop container '" + containerName.asString() + "'", e);
         }
     }
 
@@ -308,52 +320,44 @@ public class DockerImpl implements Docker {
         try {
             dockerImageGC.ifPresent(imageGC -> {
                 Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(containerName.asString());
-                if (inspectResponse.isPresent()) imageGC.updateLastUsedTimeFor(inspectResponse.get().getImageId());
+                inspectResponse.ifPresent(response -> imageGC.updateLastUsedTimeFor(response.getImageId()));
             });
 
             dockerClient.removeContainerCmd(containerName.asString()).exec();
-        } catch(NotFoundException ignored) {
+        } catch (NotFoundException ignored) {
             // If container doesn't exist ignore
         } catch (DockerException e) {
             numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Failed to delete container", e);
+            throw new RuntimeException("Failed to delete container '" + containerName.asString() + "'", e);
         }
     }
 
     @Override
     public List<Container> getAllContainersManagedBy(String manager) {
-        try {
-            return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
-                    .filter(container -> isManagedBy(container, manager))
-                    .flatMap(this::asContainer)
-                    .collect(Collectors.toList());
-        } catch (DockerException e) {
-            numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Could not retrieve all containers", e);
-        }
+        return listAllContainers().stream()
+                .filter(container -> isManagedBy(container, manager))
+                .flatMap(this::asContainer)
+                .collect(Collectors.toList());
     }
 
     @Override
     public Optional<Container> getContainer(String hostname) {
-        try {
-            return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
-                    .flatMap(this::asContainer)
-                    .filter(c -> Objects.equals(hostname, c.hostname))
-                    .findFirst();
-        } catch (DockerException e) {
-            numberOfDockerDaemonFails.add();
-            throw new RuntimeException("Could not retrieve all containers", e);
-        }
+        return listAllContainers().stream()
+                .flatMap(this::asContainer)
+                .filter(c -> Objects.equals(hostname, c.hostname))
+                .findFirst();
     }
 
     private Stream<Container> asContainer(com.github.dockerjava.api.model.Container dockerClientContainer) {
-        Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(dockerClientContainer.getId());
-        if (! inspectResponse.isPresent()) return Stream.empty();
-        return Stream.of(new Container(
-                inspectResponse.get().getConfig().getHostName(),
-                new DockerImage(inspectResponse.get().getConfig().getImage()),
-                new ContainerName(decode(inspectResponse.get().getName())),
-                inspectResponse.get().getState().getRunning()));
+        return inspectContainerCmd(dockerClientContainer.getId())
+                .map(response ->
+                        new Container(
+                                response.getConfig().getHostName(),
+                                new DockerImage(response.getConfig().getImage()),
+                                new ContainerName(decode(response.getName())),
+                                response.getState().getRunning()))
+                .map(Stream::of)
+                .orElse(Stream.empty());
     }
 
     private boolean isManagedBy(final com.github.dockerjava.api.model.Container container, String manager) {
@@ -364,6 +368,24 @@ public class DockerImpl implements Docker {
 
     private String decode(String encodedContainerName) {
         return encodedContainerName.substring(FRAMEWORK_CONTAINER_PREFIX.length());
+    }
+
+    private List<com.github.dockerjava.api.model.Container> listAllContainers() {
+        try {
+            return dockerClient.listContainersCmd().withShowAll(true).exec();
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to list all containers", e);
+        }
+    }
+
+    private List<Image> listAllImages() {
+        try {
+            return dockerClient.listImagesCmd().withShowAll(true).exec();
+        } catch (DockerException e) {
+            numberOfDockerDaemonFails.add();
+            throw new RuntimeException("Failed to list all images", e);
+        }
     }
 
     @Override
@@ -393,8 +415,8 @@ public class DockerImpl implements Docker {
     public void deleteUnusedDockerImages() {
         if (! dockerImageGC.isPresent()) return;
 
-        List<Image> images = dockerClient.listImagesCmd().withShowAll(true).exec();
-        List<com.github.dockerjava.api.model.Container> containers = dockerClient.listContainersCmd().withShowAll(true).exec();
+        List<Image> images = listAllImages();
+        List<com.github.dockerjava.api.model.Container> containers = listAllContainers();
 
         dockerImageGC.get().getUnusedDockerImages(images, containers).forEach(this::deleteImage);
     }
@@ -437,7 +459,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private void initDockerConnection(final DockerConfig config, boolean fallbackTo123orErrors) {
+    private DockerClient initDockerConnection(final DockerConfig config, boolean fallbackTo123orErrors) {
         JerseyDockerCmdExecFactory dockerFactory = new JerseyDockerCmdExecFactory()
                 .withMaxPerRouteConnections(config.maxPerRouteConnections())
                 .withMaxTotalConnections(config.maxTotalConnections())
@@ -462,7 +484,8 @@ public class DockerImpl implements Docker {
             logger.log(LogLevel.ERROR, "Failed when trying to figure out remote API version of docker, using 1.23", e);
             remoteApiVersion = RemoteApiVersion.VERSION_1_23;
         }
-        dockerClient = DockerClientImpl.getInstance(
+
+        return DockerClientImpl.getInstance(
                 buildDockerClientConfig(config)
                         .withApiVersion(remoteApiVersion)
                         .build())

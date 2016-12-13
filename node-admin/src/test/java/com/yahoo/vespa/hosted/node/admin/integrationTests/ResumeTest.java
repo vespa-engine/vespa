@@ -47,8 +47,8 @@ public class ResumeTest {
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
-            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                                            "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion=''}");
+            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1, ContainerName { name=container }",
+                                            "updateNodeAttributes with HostName: host1, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=dockerImage, vespaVersion=''}");
 
             // Force orchestrator to reject the suspend
             orchestratorMock.setForceGroupSuspendResponse(Optional.of("Orchestrator reject suspend"));

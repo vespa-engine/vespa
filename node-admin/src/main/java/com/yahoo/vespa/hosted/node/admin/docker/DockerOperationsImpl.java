@@ -209,7 +209,7 @@ public class DockerOperationsImpl implements DockerOperations {
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
                 String pathInHost = maintainer.pathInHostFromPathInNode(nodeSpec.containerName, pathInNode).toString();
-                command = command.withVolume(pathInHost, pathInNode);
+                command.withVolume(pathInHost, pathInNode);
             }
 
             // TODO: Enforce disk constraints
@@ -246,20 +246,17 @@ public class DockerOperationsImpl implements DockerOperations {
     private void setupContainerNetworkingWithScript(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 
-        Optional<Docker.ContainerInfo> containerInfo = docker.inspectContainer(containerName);
-        if (!containerInfo.isPresent()) {
-            throw new RuntimeException("Container " + containerName + " does not exist");
-        }
-        Optional<Integer> containerPid = containerInfo.get().getPid();
-        if (!containerPid.isPresent()) {
-            throw new RuntimeException("Container " + containerName + " isn't running (pid not found)");
-        }
+        Docker.ContainerInfo containerInfo = docker.inspectContainer(containerName)
+                .orElseThrow(() -> new RuntimeException("Container " + containerName + " does not exist"));
+
+        Integer containerPid = containerInfo.getPid()
+                .orElseThrow(() -> new RuntimeException("Container " + containerName + " isn't running (pid not found)"));
 
         final List<String> command = new LinkedList<>();
         command.add("sudo");
         command.add(getDefaults().underVespaHome("libexec/vespa/node-admin/configure-container-networking.py"));
         command.add("--fix-docker-gateway");
-        command.add(containerPid.get().toString());
+        command.add(containerPid.toString());
 
         for (int retry = 0; retry < 30; ++retry) {
             try {

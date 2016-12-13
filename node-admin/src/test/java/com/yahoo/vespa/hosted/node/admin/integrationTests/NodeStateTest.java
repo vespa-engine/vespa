@@ -9,10 +9,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Optional;
-
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * Test NodeState transitions in NodeRepository
@@ -20,7 +16,7 @@ import static org.junit.Assert.assertThat;
  * @author freva
  */
 public class NodeStateTest {
-    private static ContainerNodeSpec initialContainerNodeSpec = new ContainerNodeSpec.Builder()
+    private final ContainerNodeSpec initialContainerNodeSpec = new ContainerNodeSpec.Builder()
             .hostname("host1")
             .wantedDockerImage(new DockerImage("dockerImage"))
             .containerName(new ContainerName("container"))
@@ -40,9 +36,9 @@ public class NodeStateTest {
         }
 
         tester.getCallOrderVerifier().assertInOrder(
-                "createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                "executeInContainer with ContainerName: ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1, ContainerName { name=container }",
+                "executeInContainer with ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
     }
 
 
@@ -56,20 +52,16 @@ public class NodeStateTest {
                     .build());
 
             // Wait until it is marked ready
-            Optional<ContainerNodeSpec> containerNodeSpec;
-            while ((containerNodeSpec = dockerTester.getContainerNodeSpec(initialContainerNodeSpec.hostname)).isPresent()
-                    && containerNodeSpec.get().nodeState != Node.State.ready) {
+            while (dockerTester.getContainerNodeSpec(initialContainerNodeSpec.hostname)
+                    .filter(nodeSpec -> nodeSpec.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
 
-            assertThat(dockerTester.getContainerNodeSpec(initialContainerNodeSpec.hostname)
-                                   .get().nodeState, is(Node.State.ready));
-
             dockerTester.getCallOrderVerifier()
-                        .assertInOrder("executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                                       "executeInContainer with ContainerName: ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]",
-                                       "stopContainer with ContainerName: ContainerName { name=container }",
-                                       "deleteContainer with ContainerName: ContainerName { name=container }");
+                        .assertInOrder("executeInContainer with ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                                       "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", stop]",
+                                       "stopContainer with ContainerName { name=container }",
+                                       "deleteContainer with ContainerName { name=container }");
         }
     }
 
@@ -89,8 +81,8 @@ public class NodeStateTest {
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrderWithAssertMessage("Node set to inactive, but no stop/delete call received",
-                                                             "stopContainer with ContainerName: ContainerName { name=container }",
-                                                             "deleteContainer with ContainerName: ContainerName { name=container }");
+                                                             "stopContainer with ContainerName { name=container }",
+                                                             "deleteContainer with ContainerName { name=container }");
 
 
             // Change node state to active
@@ -101,10 +93,10 @@ public class NodeStateTest {
 
             // Check that the container is started again after the delete call
             callOrderVerifier.assertInOrderWithAssertMessage("Node not started again after being put to active state",
-                                                             "deleteContainer with ContainerName: ContainerName { name=container }",
-                                                             "createContainerCommand with DockerImage: DockerImage { imageId=newDockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                                                             "executeInContainer with ContainerName: ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                                                             "executeInContainer with ContainerName: ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                                                             "deleteContainer with ContainerName { name=container }",
+                                                             "createContainerCommand with DockerImage { imageId=newDockerImage }, HostName: host1, ContainerName { name=container }",
+                                                             "executeInContainer with ContainerName { name=container }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                                                             "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
         }
     }
 }

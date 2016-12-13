@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * @author freva
@@ -29,9 +28,8 @@ public class MultiDockerTest {
                             .build());
 
             // Wait until it is marked ready
-            Optional<ContainerNodeSpec> tempContainerNodeSpec;
-            while ((tempContainerNodeSpec = dockerTester.getContainerNodeSpec(containerNodeSpec2.hostname)).isPresent()
-                    && tempContainerNodeSpec.get().nodeState != Node.State.ready) {
+            while (dockerTester.getContainerNodeSpec(containerNodeSpec2.hostname)
+                    .filter(nodeSpec -> nodeSpec.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
 
@@ -39,30 +37,30 @@ public class MultiDockerTest {
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             callOrderVerifier.assertInOrder(
-                    "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host1, ContainerName: ContainerName { name=container1 }",
-                    "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                    "executeInContainer with ContainerName: ContainerName { name=container1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
+                    "createContainerCommand with DockerImage { imageId=image1 }, HostName: host1, ContainerName { name=container1 }",
+                    "executeInContainer with ContainerName { name=container1 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                    "executeInContainer with ContainerName { name=container1 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
-                    "createContainerCommand with DockerImage: DockerImage { imageId=image2 }, HostName: host2, ContainerName: ContainerName { name=container2 }",
-                    "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                    "executeInContainer with ContainerName: ContainerName { name=container2 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
+                    "createContainerCommand with DockerImage { imageId=image2 }, HostName: host2, ContainerName { name=container2 }",
+                    "executeInContainer with ContainerName { name=container2 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                    "executeInContainer with ContainerName { name=container2 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]",
 
-                    "stopContainer with ContainerName: ContainerName { name=container2 }",
-                    "deleteContainer with ContainerName: ContainerName { name=container2 }",
+                    "stopContainer with ContainerName { name=container2 }",
+                    "deleteContainer with ContainerName { name=container2 }",
 
-                    "createContainerCommand with DockerImage: DockerImage { imageId=image1 }, HostName: host3, ContainerName: ContainerName { name=container3 }",
-                    "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                    "executeInContainer with ContainerName: ContainerName { name=container3 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                    "createContainerCommand with DockerImage { imageId=image1 }, HostName: host3, ContainerName { name=container3 }",
+                    "executeInContainer with ContainerName { name=container3 }, args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                    "executeInContainer with ContainerName { name=container3 }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
             callOrderVerifier.assertInOrderWithAssertMessage("Maintainer did not receive call to delete application storage",
-                                                             "deleteContainer with ContainerName: ContainerName { name=container2 }",
-                                                             "DeleteContainerStorage with ContainerName: ContainerName { name=container2 }");
+                                                             "deleteContainer with ContainerName { name=container2 }",
+                                                             "DeleteContainerStorage with ContainerName { name=container2 }");
 
             callOrderVerifier.assertInOrder(
-                    "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=image1 }, vespaVersion=''}",
-                    "updateNodeAttributes with HostName: host2, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=image2 }, vespaVersion=''}",
+                    "updateNodeAttributes with HostName: host1, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}",
+                    "updateNodeAttributes with HostName: host2, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2, vespaVersion=''}",
                     "markAsReady with HostName: host2",
-                    "updateNodeAttributes with HostName: host3, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=image1 }, vespaVersion=''}");
+                    "updateNodeAttributes with HostName: host3, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1, vespaVersion=''}");
         }
     }
 
@@ -86,9 +84,9 @@ public class MultiDockerTest {
         }
 
         tester.getCallOrderVerifier().assertInOrder(
-                "createContainerCommand with DockerImage: " + dockerImage + ", HostName: " + hostName + ", ContainerName: " + containerName,
-                "executeInContainer with ContainerName: " + containerName + ", args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
-                "executeInContainer with ContainerName: " + containerName + ", args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
+                "createContainerCommand with " + dockerImage + ", HostName: " + hostName + ", " + containerName,
+                "executeInContainer with " + containerName + ", args: [/usr/bin/env, test, -x, " + DockerOperationsImpl.NODE_PROGRAM + "]",
+                "executeInContainer with " + containerName + ", args: [" + DockerOperationsImpl.NODE_PROGRAM + ", resume]");
 
         return containerNodeSpec;
     }
