@@ -8,13 +8,10 @@ LOG_SETUP(".proton.server.documentsubdbcollection");
 #include "commit_and_wait_document_retriever.h"
 #include "document_subdb_collection_initializer.h"
 #include "documentsubdbcollection.h"
-#include "icommitable.h"
-#include "idocumentsubdb.h"
 #include "maintenancecontroller.h"
 #include "searchabledocsubdb.h"
 
-#include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
-#include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
+#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
 
 using proton::matching::SessionManager;
 using search::index::Schema;
@@ -33,7 +30,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         vespalib::ThreadStackExecutorBase &summaryExecutor,
         const search::common::FileHeaderContext &fileHeaderContext,
         MetricsWireService &metricsWireService,
-        LegacyDocumentDBMetrics &metrics,
+        DocumentDBMetricsCollection &metrics,
         matching::QueryLimiter &queryLimiter,
         const vespalib::Clock &clock,
         vespalib::Lock &configLock,
@@ -68,7 +65,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                                        summaryExecutor,
                                        _bucketDB,
                                        *_bucketDBHandler,
-                                       metrics,
+                                       metrics.getMetrics(),
                                        configLock,
                                        hwInfo);
     _subDBs.push_back
@@ -87,8 +84,9 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                         numSearcherThreads),
                 SearchableDocSubDB::Context(FastAccessDocSubDB::Context
                         (context,
-                        metrics.ready.attributes,
-                        &metrics.attributes,
+                         AttributeMetricsCollection(metrics.getTaggedMetrics().ready.attributes,
+                                                    metrics.getMetrics().ready.attributes),
+                        &metrics.getMetrics().attributes,
                         metricsWireService),
                         queryLimiter,
                         clock,
@@ -115,7 +113,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                         true,
                         true),
                 FastAccessDocSubDB::Context(context,
-                        metrics.notReady.attributes,
+                        AttributeMetricsCollection(metrics.getTaggedMetrics().notReady.attributes,
+                                                   metrics.getMetrics().notReady.attributes),
                         NULL,
                         metricsWireService)));
 }

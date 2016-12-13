@@ -32,7 +32,8 @@ DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name
                                                     MetricSet *parent)
     : MetricSet(name, "", "Sub database metrics", parent),
       lidSpace(this),
-      documentStore(this)
+      documentStore(this),
+      attributes(this)
 {
 }
 

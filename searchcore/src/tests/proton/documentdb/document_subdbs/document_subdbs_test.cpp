@@ -2,6 +2,9 @@
 
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
+#include <vespa/searchcore/proton/metrics/attribute_metrics.h>
+#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
+#include <vespa/searchcore/proton/metrics/legacy_attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
@@ -91,17 +94,13 @@ struct MyFileHeaderContext : public FileHeaderContext
 	virtual void addTags(vespalib::GenericHeader &, const vespalib::string &) const {}
 };
 
-struct MyMetricsWireService : public MetricsWireService
+struct MyMetricsWireService : public DummyWireService
 {
 	std::set<vespalib::string> _attributes;
 	MyMetricsWireService() : _attributes() {}
-	virtual void addAttribute(LegacyAttributeMetrics &, LegacyAttributeMetrics *, const std::string &name) {
+	virtual void addAttribute(const AttributeMetricsCollection &, LegacyAttributeMetrics *, const std::string &name) override {
 		_attributes.insert(name);
 	}
-	virtual void removeAttribute(LegacyAttributeMetrics &, LegacyAttributeMetrics *, const std::string &) {}
-	virtual void cleanAttributes(LegacyAttributeMetrics &, LegacyAttributeMetrics *) {}
-	virtual void addRankProfile(LegacyDocumentDBMetrics &, const std::string &, size_t) {}
-	virtual void cleanRankProfiles(LegacyDocumentDBMetrics &) {}
 };
 
 struct MyStoreOnlyConfig
@@ -170,7 +169,9 @@ struct MyFastAccessConfig
 struct MyFastAccessContext
 {
 	MyStoreOnlyContext _storeOnlyCtx;
-	LegacyAttributeMetrics _attributeMetrics;
+	AttributeMetrics _attributeMetrics;
+	LegacyAttributeMetrics _legacyAttributeMetrics;
+	AttributeMetricsCollection _attributeMetricsCollection;
 	MyMetricsWireService _wireService;
 	FastAccessContext _ctx;
 	MyFastAccessContext(IThreadingService &writeService,
@@ -181,8 +182,10 @@ struct MyFastAccessContext
 	    : _storeOnlyCtx(writeService, summaryExecutor, bucketDB,
                             bucketDBHandlerInitializer),
 	      _attributeMetrics(NULL),
+		  _legacyAttributeMetrics(NULL),
+		  _attributeMetricsCollection(_attributeMetrics, _legacyAttributeMetrics),
 	      _wireService(),
-	      _ctx(_storeOnlyCtx._ctx, _attributeMetrics, NULL, _wireService)
+	      _ctx(_storeOnlyCtx._ctx, _attributeMetricsCollection, NULL, _wireService)
 	{
 	}
 	const MyMetricsWireService &getWireService() const {

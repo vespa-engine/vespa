@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
+#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
 #include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
@@ -148,7 +149,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
               summaryExecutor,
               fileHeaderContext,
               metricsWireService,
-              getMetricsCollection().getMetrics(),
+              getMetricsCollection(),
               queryLimiter,
               clock,
               _configLock,
@@ -557,9 +558,12 @@ DocumentDB::close()
     stopMaintenance();
 
     // The attributes in the ready sub db is also the total set of attributes.
-    LegacyDocumentDBMetrics &metrics = getMetricsCollection().getMetrics();
-    _metricsWireService.cleanAttributes(metrics.ready.attributes, &metrics.attributes);
-    _metricsWireService.cleanAttributes(metrics.notReady.attributes, NULL);
+    DocumentDBTaggedMetrics &metrics = getMetricsCollection().getTaggedMetrics();
+    LegacyDocumentDBMetrics &legacyMetrics = getMetricsCollection().getMetrics();
+    AttributeMetricsCollection ready(metrics.ready.attributes, legacyMetrics.ready.attributes);
+    AttributeMetricsCollection notReady(metrics.notReady.attributes, legacyMetrics.notReady.attributes);
+    _metricsWireService.cleanAttributes(ready, &legacyMetrics.attributes);
+    _metricsWireService.cleanAttributes(notReady, NULL);
     _writeService.sync();
     _writeService.master().execute(makeTask(makeClosure(this, &DocumentDB::closeSubDBs)));
     _writeService.sync();
@@ -1251,11 +1255,11 @@ updateIndexMetrics(LegacyDocumentDBMetrics::IndexMetrics &metrics,
 
 struct TempAttributeMetric
 {
-    uint64_t _memoryUsage;
-    uint64_t _bitVectors;
+    MemoryUsage _memoryUsage;
+    uint64_t    _bitVectors;
 
     TempAttributeMetric()
-        : _memoryUsage(0),
+        : _memoryUsage(),
           _bitVectors(0)
     {
     }
@@ -1269,26 +1273,27 @@ struct TempAttributeMetrics
 };
 
 bool
-isReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &sub_dbs)
+isReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &subDbs)
 {
-    return subDb == sub_dbs.getReadySubDB();
+    return subDb == subDbs.getReadySubDB();
 }
 
 bool
-isNotReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &sub_dbs)
+isNotReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &subDbs)
 {
-    return subDb == sub_dbs.getNotReadySubDB();
+    return subDb == subDbs.getNotReadySubDB();
 }
 
 void
 fillTempAttributeMetrics(TempAttributeMetrics &metrics,
                          const vespalib::string &attrName,
-                         size_t mem, uint32_t bitVectors)
+                         const MemoryUsage &memoryUsage,
+                         uint32_t bitVectors)
 {
-    metrics._total._memoryUsage += mem;
+    metrics._total._memoryUsage.merge(memoryUsage);
     metrics._total._bitVectors += bitVectors;
     TempAttributeMetric &m = metrics._attrs[attrName];
-    m._memoryUsage += mem;
+    m._memoryUsage.merge(memoryUsage);
     m._bitVectors += bitVectors;
 }
 
@@ -1296,23 +1301,23 @@ void
 fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
                          TempAttributeMetrics &readyMetrics,
                          TempAttributeMetrics &notReadyMetrics,
-                         const DocumentSubDBCollection &sub_dbs)
+                         const DocumentSubDBCollection &subDbs)
 {
-    for (const auto subDb : sub_dbs) {
+    for (const auto subDb : subDbs) {
         proton::IAttributeManager::SP attrMgr(subDb->getAttributeManager());
         if (attrMgr.get()) {
             TempAttributeMetrics *subMetrics =
-                    (isReadySubDB(subDb, sub_dbs) ? &readyMetrics :
-                            (isNotReadySubDB(subDb, sub_dbs) ? &notReadyMetrics : NULL));
+                    (isReadySubDB(subDb, subDbs) ? &readyMetrics :
+                     (isNotReadySubDB(subDb, subDbs) ? &notReadyMetrics : nullptr));
             std::vector<search::AttributeGuard> list;
             attrMgr->getAttributeListAll(list);
             for (const auto &attr : list) {
                 const search::attribute::Status &status = attr->getStatus();
-                size_t mem = status.getAllocated();
+                MemoryUsage memoryUsage(status.getAllocated(), status.getUsed(), status.getDead(), status.getOnHold());
                 uint32_t bitVectors = status.getBitVectors();
-                fillTempAttributeMetrics(totalMetrics, attr->getName(), mem, bitVectors);
-                if (subMetrics != NULL) {
-                    fillTempAttributeMetrics(*subMetrics, attr->getName(), mem, bitVectors);
+                fillTempAttributeMetrics(totalMetrics, attr->getName(), memoryUsage, bitVectors);
+                if (subMetrics != nullptr) {
+                    fillTempAttributeMetrics(*subMetrics, attr->getName(), memoryUsage, bitVectors);
                 }
             }
         }
@@ -1320,34 +1325,49 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
 }
 
 void
-updateAttributeMetrics(LegacyAttributeMetrics &metrics,
-                       const TempAttributeMetrics &tmpMetrics)
+updateLegacyAttributeMetrics(LegacyAttributeMetrics &metrics,
+                             const TempAttributeMetrics &tmpMetrics)
 {
-    for (const auto &kv : tmpMetrics._attrs) {
-        LegacyAttributeMetrics::List::Entry::LP entry = metrics.list.get(kv.first);
+    for (const auto &attr : tmpMetrics._attrs) {
+        LegacyAttributeMetrics::List::Entry::LP entry = metrics.list.get(attr.first);
         if (entry.get()) {
-            entry->memoryUsage.set(kv.second._memoryUsage);
-            entry->bitVectors.set(kv.second._bitVectors);
+            entry->memoryUsage.set(attr.second._memoryUsage.allocatedBytes());
+            entry->bitVectors.set(attr.second._bitVectors);
         } else {
-            LOG(debug, "could not update metrics for attribute: '%s'",
-                kv.first.c_str());
+            LOG(debug, "Could not update metrics for attribute: '%s'", attr.first.c_str());
         }
     }
-    metrics.memoryUsage.set(tmpMetrics._total._memoryUsage);
+    metrics.memoryUsage.set(tmpMetrics._total._memoryUsage.allocatedBytes());
     metrics.bitVectors.set(tmpMetrics._total._bitVectors);
 }
 
 void
-updateAttributeMetrics(LegacyDocumentDBMetrics &metrics,
-                       const DocumentSubDBCollection &sub_dbs)
+updateAttributeMetrics(AttributeMetrics &metrics,
+                       const TempAttributeMetrics &tmpMetrics)
+{
+    for (const auto &attr : tmpMetrics._attrs) {
+        auto entry = metrics.get(attr.first);
+        if (entry.get()) {
+            entry->memoryUsage.update(attr.second._memoryUsage);
+        }
+    }
+}
+
+void
+updateAttributeMetrics(DocumentDBMetricsCollection &metrics,
+                       const DocumentSubDBCollection &subDbs)
 {
     TempAttributeMetrics totalMetrics;
     TempAttributeMetrics readyMetrics;
     TempAttributeMetrics notReadyMetrics;
-    fillTempAttributeMetrics(totalMetrics, readyMetrics, notReadyMetrics, sub_dbs);
-    updateAttributeMetrics(metrics.attributes, totalMetrics);
-    updateAttributeMetrics(metrics.ready.attributes, readyMetrics);
-    updateAttributeMetrics(metrics.notReady.attributes, notReadyMetrics);
+    fillTempAttributeMetrics(totalMetrics, readyMetrics, notReadyMetrics, subDbs);
+
+    updateLegacyAttributeMetrics(metrics.getMetrics().attributes, totalMetrics);
+    updateLegacyAttributeMetrics(metrics.getMetrics().ready.attributes, readyMetrics);
+    updateLegacyAttributeMetrics(metrics.getMetrics().notReady.attributes, notReadyMetrics);
+
+    updateAttributeMetrics(metrics.getTaggedMetrics().ready.attributes, readyMetrics);
+    updateAttributeMetrics(metrics.getTaggedMetrics().notReady.attributes, notReadyMetrics);
 }
 
 void
@@ -1434,16 +1454,16 @@ updateLidSpaceMetrics(MetricSetType &metrics,
 void
 DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
 {
-    updateMetrics(metrics.getMetrics());
+    updateLegacyMetrics(metrics.getMetrics());
+    updateAttributeMetrics(metrics, _subDBs);
     updateMetrics(metrics.getTaggedMetrics());
 }
 
 void
-DocumentDB::updateMetrics(LegacyDocumentDBMetrics &metrics)
+DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics)
 {
     updateIndexMetrics(metrics.index,
                        _subDBs.getReadySubDB()->getSearchableStats());
-    updateAttributeMetrics(metrics, _subDBs);
     updateMatchingMetrics(metrics.matching, *_subDBs.getReadySubDB());
     metrics.executor.update(_writeService.getMasterExecutor().getStats());
     metrics.indexExecutor.update(_writeService.getIndexExecutor().getStats());
