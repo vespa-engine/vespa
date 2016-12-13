@@ -27,16 +27,15 @@ private:
     RankProgram(const RankProgram &) = delete;
     RankProgram &operator=(const RankProgram &) = delete;
 
-    // { first: old_handle, second: new_handle }
-    typedef std::pair<FeatureHandle, FeatureHandle> MappedHandle;
+    using MappedValues = std::map<const NumberOrObject *, const NumberOrObject *>;
 
-    BlueprintResolver::SP                    _resolver;
-    FeatureExecutor::SharedInputs            _shared_inputs;
-    std::vector<FeatureExecutor*>            _program;
-    MatchData::UP                            _match_data;
-    vespalib::Stash                          _stash;
+    BlueprintResolver::SP          _resolver;
+    FeatureExecutor::SharedInputs  _shared_inputs;
+    std::vector<FeatureExecutor *> _program;
+    MatchData::UP                  _match_data;
+    vespalib::Stash                _stash;
     std::vector<FeatureExecutor *> _executors;
-    std::map<vespalib::string, MappedHandle> _unboxed_seeds;
+    MappedValues                   _unboxed_seeds;
 
     /**
      * Add unboxing executors for seeds that are object features to
@@ -49,8 +48,7 @@ private:
      **/
     void compile();
 
-    FeatureResolver resolve(const std::vector<vespalib::string> &names,
-                            const std::vector<FeatureHandle> &handles) const;
+    FeatureResolver resolve(const BlueprintResolver::FeatureMap &features, bool unbox_seeds) const;
 
 public:
     typedef std::unique_ptr<RankProgram> UP;
@@ -83,37 +81,6 @@ public:
      **/
     MatchData &match_data() { return *_match_data; }
     const MatchData &match_data() const { return *_match_data; }
-
-    /**
-     * Obtain the names and match data storage locations of all seed
-     * features for this rank program. The obtained information is
-     * written in parallel into the given vectors such that the i'th
-     * name corresponds to the i'th storage location. Programs for
-     * ranking phases will only have a single seed while programs used
-     * for summary features or scraping will have multiple seeds.
-     *
-     * @param names where to store feature names
-     * @param handles where to store feature storage locations
-     * @params unbox_seeds make sure seeds values are numbers
-     **/
-    void get_seed_handles(std::vector<vespalib::string> &names_out,
-                          std::vector<FeatureHandle> &handles_out,
-                          bool unbox_seeds = true) const;
-
-    /**
-     * Obtain the names and match data storage locations of all
-     * features for this rank program. The obtained information is
-     * written in parallel into the given vectors such that the i'th
-     * name corresponds to the i'th storage location.  This method is
-     * intended for debugging and testing.
-     *
-     * @param names where to store feature names
-     * @param handles where to store feature storage locations
-     * @params unbox_seeds make sure seeds values are numbers
-     **/
-    void get_all_feature_handles(std::vector<vespalib::string> &names_out,
-                                 std::vector<FeatureHandle> &handles_out,
-                                 bool unbox_seeds = true) const;
 
     /**
      * Obtain the names and storage locations of all seed features for

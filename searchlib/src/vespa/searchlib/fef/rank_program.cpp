@@ -56,15 +56,22 @@ std::vector<Override> prepare_overrides(const BlueprintResolver::FeatureMap &fea
 }
 
 struct UnboxingExecutor : FeatureExecutor {
+    using MappedValues = std::map<const NumberOrObject *, const NumberOrObject *>;
+    MappedValues &unbox_map;
     UnboxingExecutor(SharedInputs &shared_inputs,
                      FeatureHandle old_feature,
-                     FeatureHandle new_feature)
+                     FeatureHandle new_feature,
+                     MappedValues &unbox_map_in)
+        : unbox_map(unbox_map_in)
     {
         bind_shared_inputs(shared_inputs);
         addInput(old_feature);
         bindOutput(new_feature);
     }
     bool isPure() override { return true; }
+    void handle_bind_match_data(MatchData &) override {
+        unbox_map[inputs().get_raw(0)] = outputs().get_raw(0);
+    }
     void execute(uint32_t) override {
         outputs().set_number(0, inputs().get_object(0).get().as_double());
     }
@@ -81,8 +88,7 @@ RankProgram::add_unboxing_executors(MatchDataLayout &my_mdl)
         if (specs[seed.executor].output_types[seed.output]) {
             FeatureHandle old_handle = _executors[seed.executor]->outputs()[seed.output];
             FeatureHandle new_handle = my_mdl.allocFeature(false);
-            _executors.emplace_back(&_stash.create<UnboxingExecutor>(_shared_inputs, old_handle, new_handle));
-            _unboxed_seeds[seed_entry.first] = std::make_pair(old_handle, new_handle);
+            _executors.emplace_back(&_stash.create<UnboxingExecutor>(_shared_inputs, old_handle, new_handle, _unboxed_seeds));
         }
     }
 }
@@ -112,14 +118,23 @@ RankProgram::compile()
 }
 
 FeatureResolver
-RankProgram::resolve(const std::vector<vespalib::string> &names,
-                     const std::vector<FeatureHandle> &handles) const
+RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_seeds) const
 {
-    FeatureResolver result(names.size());
-    for (size_t i = 0; i < names.size(); ++i) {
-        result.add(names[i],
-                   match_data().resolve_raw(handles[i]),
-                   match_data().feature_is_object(handles[i]));
+    FeatureResolver result(features.size());
+    const auto &specs = _resolver->getExecutorSpecs();
+    for (const auto &entry: features) {
+        const auto &name = entry.first;
+        auto ref = entry.second;
+        bool is_object = specs[ref.executor].output_types[ref.output];
+        const NumberOrObject *raw_value = _executors[ref.executor]->outputs().get_raw(ref.output);
+        if (is_object && unbox_seeds) {
+            auto pos = _unboxed_seeds.find(raw_value);
+            if (pos != _unboxed_seeds.end()) {
+                raw_value = pos->second;
+                is_object = false;
+            }
+        }
+        result.add(name, raw_value, is_object);
     }
     return result;
 }
@@ -175,99 +190,16 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
     compile();
 }
 
-namespace {
-
-template <typename Each>
-void extract_handles(const BlueprintResolver::FeatureMap &features,
-                     const std::vector<FeatureExecutor *> &executors,
-                     const Each &each)
-{
-    each.reserve(features.size());
-    for (const auto &entry: features) {
-        auto ref = entry.second;
-        FeatureHandle handle = executors[ref.executor]->outputs()[ref.output];
-        each.process(entry.first, handle);
-    }
-}
-
-struct RawHandleCollector {
-    std::vector<vespalib::string> &names;
-    std::vector<FeatureHandle> &handles;
-    RawHandleCollector(std::vector<vespalib::string> &names_in,
-                       std::vector<FeatureHandle> &handles_in)
-        : names(names_in), handles(handles_in) {}
-    void reserve(size_t size) const {
-        names.reserve(size);
-        handles.reserve(size);
-    }
-    void process(const vespalib::string &name, FeatureHandle handle) const {
-        names.push_back(name);
-        handles.push_back(handle);
-    }
-};
-
-struct MappedHandleCollector {
-    typedef std::map<vespalib::string, std::pair<FeatureHandle, FeatureHandle> > MappedFeatures;
-    RawHandleCollector collector;
-    const MappedFeatures &mapped;
-    MappedHandleCollector(std::vector<vespalib::string> &names,
-                          std::vector<FeatureHandle> &handles,
-                          const MappedFeatures &mapped_in)
-        : collector(names, handles), mapped(mapped_in) {}
-    void reserve(size_t size) const { collector.reserve(size); }
-    void process(const vespalib::string &name, FeatureHandle handle) const {
-        auto pos = mapped.find(name);
-        if (pos == mapped.end()) {
-            collector.process(name, handle);
-        } else {
-            assert(handle == pos->second.first);
-            collector.process(name, pos->second.second);
-        }
-    }
-};
-
-}
-
-void
-RankProgram::get_seed_handles(std::vector<vespalib::string> &names_out,
-                              std::vector<FeatureHandle> &handles_out,
-                              bool unbox_seeds) const
-{
-    if (unbox_seeds && !_unboxed_seeds.empty()) {
-        extract_handles(_resolver->getSeedMap(), _executors, MappedHandleCollector(names_out, handles_out, _unboxed_seeds));
-    } else {
-        extract_handles(_resolver->getSeedMap(), _executors, RawHandleCollector(names_out, handles_out));
-    }
-}
-
-void
-RankProgram::get_all_feature_handles(std::vector<vespalib::string> &names_out,
-                                     std::vector<FeatureHandle> &handles_out,
-                                     bool unbox_seeds) const
-{
-    if (unbox_seeds && !_unboxed_seeds.empty()) {
-        extract_handles(_resolver->getFeatureMap(), _executors, MappedHandleCollector(names_out, handles_out, _unboxed_seeds));
-    } else {
-        extract_handles(_resolver->getFeatureMap(), _executors, RawHandleCollector(names_out, handles_out));
-    }
-}
-
 FeatureResolver
 RankProgram::get_seeds(bool unbox_seeds) const
 {
-    std::vector<vespalib::string> names;
-    std::vector<FeatureHandle> handles;
-    get_seed_handles(names, handles, unbox_seeds);
-    return resolve(names, handles);
+    return resolve(_resolver->getSeedMap(), unbox_seeds);
 }
 
 FeatureResolver
 RankProgram::get_all_features(bool unbox_seeds) const
 {
-    std::vector<vespalib::string> names;
-    std::vector<FeatureHandle> handles;
-    get_all_feature_handles(names, handles, unbox_seeds);
-    return resolve(names, handles);
+    return resolve(_resolver->getFeatureMap(), unbox_seeds);
 }
 
 } // namespace fef

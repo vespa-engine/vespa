@@ -44,6 +44,9 @@ public:
         vespalib::eval::Value::CREF get_object(size_t idx) const {
             return *_md->resolve_object_feature((*this)[idx]);
         }
+        const NumberOrObject *get_raw(size_t idx) const {
+            return _md->resolve_raw((*this)[idx]);
+        }
         void bind(SharedInputs &inputs) {
             _inputs = &inputs;
             _offset = _inputs->size();
@@ -87,6 +90,9 @@ public:
         }
         vespalib::eval::Value::CREF get_object(size_t idx) const {
             return *_md->resolve_object_feature((*this)[idx]);
+        }
+        const NumberOrObject *get_raw(size_t idx) const {
+            return _md->resolve_raw((*this)[idx]);
         }
         void add(FeatureHandle handle) {
             if (_begin == IllegalHandle) {
