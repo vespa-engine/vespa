@@ -32,17 +32,17 @@ HitCollector::getDocSum(const search::DocumentIdT & docId) const
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument::SP & doc, const search::fef::MatchData & data, double score)
+HitCollector::addHit(const vsm::StorageDocument::SP & doc, uint32_t docId, const search::fef::MatchData & data, double score)
 {
-    Hit h(doc, data, score);
+    Hit h(doc, docId, data, score);
     return addHit(h);
 }
 
 bool
-HitCollector::addHit(const vsm::StorageDocument::SP & doc, const search::fef::MatchData & data,
+HitCollector::addHit(const vsm::StorageDocument::SP & doc, uint32_t docId, const search::fef::MatchData & data,
                      double score, const void * sortData, size_t sortDataLen)
 {
-    Hit h(doc, data, score, sortData, sortDataLen);
+    Hit h(doc, docId, data, score, sortData, sortDataLen);
     return addHit(h);
 }
 
@@ -139,8 +139,8 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
     }
     FeatureSet::SP retval = FeatureSet::SP(new FeatureSet(names, _hits.size()));
     for (HitVector::iterator it(_hits.begin()), mt(_hits.end()); it != mt; ++it) {
-        const MatchData &matchData = rankProgram.run(it->getDocId(), it->getMatchData());
-        uint32_t docId = matchData.getDocId();
+        rankProgram.run(it->getDocId(), it->getMatchData());
+        uint32_t docId = it->getDocId();
         search::feature_t * f = retval->getFeaturesByIndex(retval->addDocId(docId));
         for (uint32_t j = 0; j < names.size(); ++j) {
             f[j] = *resolver.resolve_number(j);

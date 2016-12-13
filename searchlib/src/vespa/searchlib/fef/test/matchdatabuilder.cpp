@@ -23,11 +23,10 @@ MatchDataBuilder::MatchDataBuilder(QueryEnvironment &queryEnv, MatchData &data) 
     _index(),
     _match()
 {
-    // reset all match data objects and set docId to 'endId' (aka -1)
+    // reset all match data objects.
     for (TermFieldHandle handle = 0; handle < _data.getNumTermFields(); ++handle) {
         _data.resolveTermField(handle)->reset(TermFieldMatchData::invalidId());
     }
-    _data.setDocId(TermFieldMatchData::invalidId());
 }
 
 TermFieldMatchData *
@@ -119,8 +118,6 @@ MatchDataBuilder::setWeight(const vespalib::string &fieldName, uint32_t termId, 
 bool
 MatchDataBuilder::apply(uint32_t docId)
 {
-    _data.setDocId(docId);
-
     // For each term, do
     for (TermMap::const_iterator term_iter = _match.begin();
          term_iter != _match.end(); ++term_iter)

@@ -71,8 +71,7 @@ HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const c
     StorageDocument::SP sdoc(new StorageDocument(std::move(doc)));
     ASSERT_TRUE(sdoc->valid());
     MatchData md(MatchData::params());
-    md.setDocId(docId);
-    hc.addHit(sdoc, md, score, sortData, sortDataSize);
+    hc.addHit(sdoc, docId, md, score, sortData, sortDataSize);
 }
 
 void
@@ -237,11 +236,9 @@ public:
           _fooValue(),
           _barValue()
     {}
-    virtual const search::fef::MatchData &run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
-        _matchData.setDocId(docid);
+    virtual void  run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
         _fooValue.as_number = docid + 10;
         _barValue.as_number = docid + 30;
-        return _matchData;
     }
 
     FeatureResolver get_resolver() {

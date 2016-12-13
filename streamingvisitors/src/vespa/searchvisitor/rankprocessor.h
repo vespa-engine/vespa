@@ -30,6 +30,7 @@ private:
     QueryEnvironment                     _queryEnv;
     search::fef::MatchDataLayout         _mdLayout;
     search::fef::RankProgram::UP         _rankProgram;
+    uint32_t                             _docId;
     double                               _score;
     search::fef::RankProgram::UP         _summaryProgram;
     const search::feature_t             *_rankScorePtr;
@@ -69,6 +70,7 @@ public:
     void setRankScore(double score) { _score = score; } 
     double getRankScore() const { return _score; }
     HitCollector & getHitCollector() { return *_hitCollector; }
+    uint32_t getDocId() const { return _docId; }
 };
 
 } // namespace storage

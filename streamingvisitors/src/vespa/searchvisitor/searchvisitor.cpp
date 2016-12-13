@@ -536,7 +536,7 @@ SearchVisitor::RankController::rankMatchedDocument(uint32_t docId)
 {
     _rankProcessor->runRankProgram(docId);
     LOG(debug, "Rank score for matched document %u: %f",
-        _rankProcessor->getMatchData().getDocId(),
+        docId,
         _rankProcessor->getRankScore());
     if (_dumpFeatures) {
         _dumpProcessor->runRankProgram(docId);
@@ -560,18 +560,19 @@ SearchVisitor::RankController::collectMatchedDocument(bool hasSorting,
                                                       const vsm::StorageDocument::SP & document)
 {
     bool amongTheBest(false);
+    uint32_t docId = _rankProcessor->getDocId();
     if (!hasSorting) {
-        amongTheBest = _rankProcessor->getHitCollector().addHit(document, _rankProcessor->getMatchData(), _rankProcessor->getRankScore());
+        amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(), _rankProcessor->getRankScore());
         if (amongTheBest && _dumpFeatures) {
-            _dumpProcessor->getHitCollector().addHit(vsm::StorageDocument::SP(NULL), _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore());
+            _dumpProcessor->getHitCollector().addHit(vsm::StorageDocument::SP(NULL), docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore());
         }
     } else {
         size_t pos = visitor.fillSortBuffer();
         LOG(spam, "SortBlob is %ld bytes", pos);
-        amongTheBest = _rankProcessor->getHitCollector().addHit(document, _rankProcessor->getMatchData(), _rankProcessor->getRankScore(),
+        amongTheBest = _rankProcessor->getHitCollector().addHit(document, docId, _rankProcessor->getMatchData(), _rankProcessor->getRankScore(),
                                                  &tmpSortBuffer[0], pos);
         if (amongTheBest && _dumpFeatures) {
-            _dumpProcessor->getHitCollector().addHit(vsm::StorageDocument::SP(NULL), _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore(),
+            _dumpProcessor->getHitCollector().addHit(vsm::StorageDocument::SP(NULL), docId, _dumpProcessor->getMatchData(), _dumpProcessor->getRankScore(),
                                                      &tmpSortBuffer[0], pos);
         }
     }
@@ -950,11 +951,11 @@ SearchVisitor::handleDocument(const vsm::StorageDocument::SP & document)
         vespalib::string documentId(document->docDoc().getId().getScheme().toString());
         LOG(debug, "Matched document with id '%s'", documentId.c_str());
 
-        document->setDocId(rp.getMatchData().getDocId());
+        document->setDocId(rp.getDocId());
 
         fillAttributeVectors(documentId, *document);
 
-        _rankController.rankMatchedDocument(rp.getMatchData().getDocId());
+        _rankController.rankMatchedDocument(rp.getDocId());
 
         if (_shouldFillRankAttribute) {
             _rankAttribute.add(rp.getRankScore());
