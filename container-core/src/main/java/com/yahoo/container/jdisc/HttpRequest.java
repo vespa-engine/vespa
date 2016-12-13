@@ -34,8 +34,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method;
  * framework, e.g. Processing.
  *
  * @author hmusum
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1
+ * @author Steinar Knutsen
  */
 public class HttpRequest {
 

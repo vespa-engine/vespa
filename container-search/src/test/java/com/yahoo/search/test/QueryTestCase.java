@@ -58,7 +58,7 @@ public class QueryTestCase {
         assertEquals("", q.properties().get("aParameter"));
         assertNull(q.properties().get("notSetParameter"));
     }
-
+    
     // TODO: YQL work in progress (jon)
     @Ignore
     @Test

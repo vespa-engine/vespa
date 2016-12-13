@@ -17,6 +17,8 @@ public class PrefixItem extends WordItem {
         super(prefix, isFromQuery);
     }
 
+    public PrefixItem(String prefix, String indexName) { super(prefix, indexName); }
+
     public ItemType getItemType() {
         return ItemType.PREFIX;
     }

@@ -39,7 +39,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * Accept feeds from outside of the Vespa cluster.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @since 5.1
  */
 public class FeedHandler extends LoggingRequestHandler {
@@ -79,8 +79,7 @@ public class FeedHandler extends LoggingRequestHandler {
     /**
      * Exposed for creating mocks.
      */
-    protected DocumentTypeManager createDocumentManager(
-            DocumentmanagerConfig documentManagerConfig) {
+    protected DocumentTypeManager createDocumentManager(DocumentmanagerConfig documentManagerConfig) {
         return new DocumentTypeManager(documentManagerConfig);
     }
 
