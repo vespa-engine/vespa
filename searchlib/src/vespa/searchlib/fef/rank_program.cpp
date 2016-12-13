@@ -6,6 +6,7 @@ LOG_SETUP(".fef.rank_program");
 #include "rank_program.h"
 #include "featureoverrider.h"
 #include <algorithm>
+#include <set>
 
 namespace search {
 namespace fef {
@@ -56,22 +57,7 @@ std::vector<Override> prepare_overrides(const BlueprintResolver::FeatureMap &fea
 }
 
 struct UnboxingExecutor : FeatureExecutor {
-    using MappedValues = std::map<const NumberOrObject *, const NumberOrObject *>;
-    MappedValues &unbox_map;
-    UnboxingExecutor(SharedInputs &shared_inputs,
-                     FeatureHandle old_feature,
-                     FeatureHandle new_feature,
-                     MappedValues &unbox_map_in)
-        : unbox_map(unbox_map_in)
-    {
-        bind_shared_inputs(shared_inputs);
-        addInput(old_feature);
-        bindOutput(new_feature);
-    }
     bool isPure() override { return true; }
-    void handle_bind_match_data(MatchData &) override {
-        unbox_map[inputs().get_raw(0)] = outputs().get_raw(0);
-    }
     void execute(uint32_t) override {
         outputs().set_number(0, inputs().get_object(0).get().as_double());
     }
@@ -79,37 +65,59 @@ struct UnboxingExecutor : FeatureExecutor {
 
 } // namespace search::fef::<unnamed>
 
+size_t
+RankProgram::count_features() const
+{
+    size_t cnt = 0;
+    const auto &specs = _resolver->getExecutorSpecs();
+    for (const auto &entry: specs) {
+        cnt += entry.output_types.size(); // normal outputs
+    }
+    for (const auto &seed_entry: _resolver->getSeedMap()) {
+        auto seed = seed_entry.second;
+        if (specs[seed.executor].output_types[seed.output]) {
+            ++cnt; // unboxed seeds
+        }
+    }
+    return cnt;
+}
+
 void
-RankProgram::add_unboxing_executors(MatchDataLayout &my_mdl)
+RankProgram::add_unboxing_executors(vespalib::ArrayRef<NumberOrObject> features, size_t feature_offset, size_t total_features)
 {
     const auto &specs = _resolver->getExecutorSpecs();
     for (const auto &seed_entry: _resolver->getSeedMap()) {
         auto seed = seed_entry.second;
         if (specs[seed.executor].output_types[seed.output]) {
-            FeatureHandle old_handle = _executors[seed.executor]->outputs()[seed.output];
-            FeatureHandle new_handle = my_mdl.allocFeature(false);
-            _executors.emplace_back(&_stash.create<UnboxingExecutor>(_shared_inputs, old_handle, new_handle, _unboxed_seeds));
+            vespalib::ArrayRef<const NumberOrObject *> inputs = _stash.create_array<const NumberOrObject *>(1);
+            inputs[0] = _executors[seed.executor]->outputs().get_raw(seed.output);
+            vespalib::ArrayRef<NumberOrObject> outputs(&features[feature_offset++], 1);
+            _unboxed_seeds[inputs[0]] = &outputs[0];
+            _executors.emplace_back(&_stash.create<UnboxingExecutor>());
+            _executors.back()->bind_inputs(inputs);
+            _executors.back()->bind_outputs(outputs);
+            _executors.back()->bind_match_data(*_match_data);            
         }
     }
+    assert(feature_offset == total_features);
 }
 
 void
 RankProgram::compile()
 {
-    MatchData &md = match_data();
-    std::vector<bool> is_calculated(md.getNumFeatures(), false);
+    std::set<const NumberOrObject *> is_calculated;
     for (size_t i = 0; i < _executors.size(); ++i) {
         FeatureExecutor &executor = *_executors[i];
         bool is_const = executor.isPure();
         const auto &inputs = executor.inputs();
         for (size_t in_idx = 0; is_const && (in_idx < inputs.size()); ++in_idx) { 
-            is_const &= is_calculated[inputs[in_idx]];
+            is_const &= (is_calculated.count(inputs.get_raw(in_idx)) > 0);
         }
         if (is_const) {
             executor.execute(1);
             const auto &outputs = executor.outputs();
             for (size_t out_idx = 0; out_idx < outputs.size(); ++out_idx) {
-                is_calculated[outputs[out_idx]] = true;
+                is_calculated.insert(outputs.get_raw(out_idx));
             }
         } else {
             _program.push_back(&executor);
@@ -141,7 +149,6 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
 
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(resolver),
-      _shared_inputs(),
       _program(),
       _stash(),
       _executors(),
@@ -155,38 +162,37 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
                    const Properties &featureOverrides)
 {
     assert(_executors.empty());
-    MatchDataLayout my_mdl(mdl_in);
+    _match_data = mdl_in.createMatchData();
     std::vector<Override> overrides = prepare_overrides(_resolver->getFeatureMap(), featureOverrides);
     auto override = overrides.begin();
     auto override_end = overrides.end();
 
+    size_t feature_offset = 0;
+    size_t total_features = count_features();
+    vespalib::ArrayRef<NumberOrObject> features = _stash.create_array<NumberOrObject>(total_features);
     const auto &specs = _resolver->getExecutorSpecs();
     _executors.reserve(specs.size());
     for (uint32_t i = 0; i < specs.size(); ++i) {
+        size_t num_inputs = specs[i].inputs.size();
+        vespalib::ArrayRef<const NumberOrObject *> inputs = _stash.create_array<const NumberOrObject *>(num_inputs);
+        for (size_t input_idx = 0; input_idx < num_inputs; ++input_idx) {
+            auto ref = specs[i].inputs[input_idx];
+            inputs[input_idx] = _executors[ref.executor]->outputs().get_raw(ref.output);
+        }
+        size_t num_outputs =  specs[i].output_types.size();
+        vespalib::ArrayRef<NumberOrObject> outputs(&features[feature_offset], num_outputs);
+        feature_offset += num_outputs;
         FeatureExecutor *executor = &(specs[i].blueprint->createExecutor(queryEnv, _stash));
-        assert(executor);
-        executor->bind_shared_inputs(_shared_inputs);
         for (; (override < override_end) && (override->ref.executor == i); ++override) {
             FeatureExecutor *tmp = executor;
             executor = &(_stash.create<FeatureOverrider>(*tmp, override->ref.output, override->value));
-            executor->bind_shared_inputs(_shared_inputs);
         }
-        for (auto ref: specs[i].inputs) {
-            executor->addInput(_executors[ref.executor]->outputs()[ref.output]);
-        }
-        executor->inputs_done();
-        uint32_t out_cnt = specs[i].output_types.size();
-        for (uint32_t out_idx = 0; out_idx < out_cnt; ++out_idx) {
-            executor->bindOutput(my_mdl.allocFeature(specs[i].output_types[out_idx]));
-        }
-        executor->outputs_done();
+        executor->bind_inputs(inputs);
+        executor->bind_outputs(outputs);
+        executor->bind_match_data(*_match_data);
         _executors.push_back(executor);
     }
-    add_unboxing_executors(my_mdl);
-    _match_data = my_mdl.createMatchData();
-    for (auto executor: _executors) {
-        executor->bind_match_data(*_match_data);
-    }
+    add_unboxing_executors(features, feature_offset, total_features);
     compile();
 }
 

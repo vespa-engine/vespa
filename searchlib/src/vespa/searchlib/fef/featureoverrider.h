@@ -25,6 +25,9 @@ private:
     feature_t           _value;
 
     virtual void handle_bind_match_data(MatchData &md) override;
+    virtual void handle_bind_inputs(vespalib::ConstArrayRef<const NumberOrObject *> inputs) override;
+    virtual void handle_bind_outputs(vespalib::ArrayRef<NumberOrObject> outputs) override;
+
 public:
     /**
      * Create a feature overrider that will override the given output
@@ -35,8 +38,6 @@ public:
      * @param value what value to override with
      **/
     FeatureOverrider(FeatureExecutor &executor, uint32_t outputIdx, feature_t value);
-    void inputs_done() override;
-    void outputs_done() override;
     bool isPure() override;
     void execute(uint32_t docId) override;
 };
