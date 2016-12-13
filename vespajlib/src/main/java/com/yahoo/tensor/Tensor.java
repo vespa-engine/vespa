@@ -15,10 +15,8 @@ import com.yahoo.tensor.functions.Softmax;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
@@ -29,7 +27,6 @@ import java.util.function.Function;
  * A tensor consists of a set of <i>dimension</i> names and a set of <i>cells</i> containing scalar <i>values</i>.
  * Each cell is is identified by its <i>address</i>, which consists of a set of dimension-label pairs which defines
  * the location of that cell. Both dimensions and labels are string on the form of an identifier or integer.
- * Any dimension in an address may be assigned the special label "undefined", represented in string form as "-".
  * <p>
  * The size of the set of dimensions of a tensor is called its <i>order</i>.
  * <p>
@@ -139,20 +136,7 @@ public interface Tensor {
     default Tensor prod(List<String> dimensions) { return reduce(Reduce.Aggregator.prod, dimensions); }
     default Tensor sum(List<String> dimensions) { return reduce(Reduce.Aggregator.sum, dimensions); }
 
-    /**
-     * Returns true if the given tensor is mathematically equal to this:
-     * Both are of type Tensor and have the same content.
-     */
-    @Override
-    boolean equals(Object o);
-
-    /** Returns true if the two given tensors are mathematically equivalent, that is whether both have the same content */
-    static boolean equals(Tensor a, Tensor b) {
-        if (a == b) return true;
-        if ( ! a.type().equals(b.type())) return false;
-        if ( ! a.cells().equals(b.cells())) return false;
-        return true;
-    }
+    // ----------------- serialization
 
     /**
      * Returns this tensor on the form
@@ -168,23 +152,6 @@ public interface Tensor {
     @Override
     String toString();
 
-    /** Returns a tensor instance containing the given data on the standard string format returned by toString */
-    static Tensor from(String tensorString) {
-        return MapTensor.from(tensorString);
-    }
-
-    /**
-     * Returns a tensor instance containing the given data on the standard string format returned by toString
-     *
-     * @param tensorType the type of the tensor to return, as a string on the tensor type format, given in
-     *        {@link TensorType#fromSpec}
-     * @param tensorString the tensor on the standard tensor string format
-     */
-    static Tensor from(String tensorType, String tensorString) {
-        TensorType.fromSpec(tensorType); // Just validate type spec for now, as we only have one, generic implementation
-        return MapTensor.from(tensorString);
-    }
-
     /**
      * Call this from toString in implementations to return the standard string format.
      * (toString cannot be a default method because default methods cannot override super methods).
@@ -193,7 +160,7 @@ public interface Tensor {
      * @return the tensor on the standard string format
      */
     static String toStandardString(Tensor tensor) {
-        if (tensor.cells().isEmpty() && ! tensor.type().dimensions().isEmpty()) // explicitly output type TODO: Always do that
+        if (tensor.cells().isEmpty() && ! tensor.type().dimensions().isEmpty()) // explicitly output type TODO: Never do that?
             return tensor.type() + ":" + contentToString(tensor);
         else
             return contentToString(tensor);
@@ -201,6 +168,12 @@ public interface Tensor {
 
     static String contentToString(Tensor tensor) {
         List<java.util.Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
+        if (tensor.type().dimensions().isEmpty()) { // TODO: Decide on one way to represent degeneration to number
+            if (cellEntries.isEmpty()) return "{}";
+            double value = cellEntries.get(0).getValue();
+            return value == 0.0 ? "{}" : "{" + value +"}";
+        }
+        
         Collections.sort(cellEntries, java.util.Map.Entry.<TensorAddress, Double>comparingByKey());
 
         StringBuilder b = new StringBuilder("{");
@@ -212,6 +185,107 @@ public interface Tensor {
             b.setLength(b.length() - 1);
         b.append("}");
         return b.toString();
+    }
+
+    // ----------------- equality
+
+    /**
+     * Returns true if the given tensor is mathematically equal to this:
+     * Both are of type Tensor and have the same content.
+     */
+    @Override
+    boolean equals(Object o);
+
+    /** Returns true if the two given tensors are mathematically equivalent, that is whether both have the same content */
+    static boolean equals(Tensor a, Tensor b) {
+        if (a == b) return true;
+        if ( ! a.cells().equals(b.cells())) return false;
+        return true;
+    }
+
+    // ----------------- Factories
+
+    /**
+     * Returns a tensor instance containing the given data on the standard string format returned by toString
+     *
+     * @param type the type of the tensor to return
+     * @param tensorString the tensor on the standard tensor string format
+     */
+    static Tensor from(TensorType type, String tensorString) {
+        boolean containsIndexedDimensions = false;
+        boolean containsMappedDimensions = false;
+        for (TensorType.Dimension dimension : type.dimensions()) {
+            switch (dimension.type()) {
+                case indexedBound: case indexedUnbound: containsIndexedDimensions = true; break;
+                case mapped : containsMappedDimensions = true; break;
+                default: throw new RuntimeException("Unknown dimension type: " + dimension);
+            }
+        }
+        if (containsIndexedDimensions && containsMappedDimensions)
+            throw new IllegalArgumentException("Mixed dimension types are not supported, got: " + type);
+        if (containsMappedDimensions)
+            return MappedTensor.from(type, tensorString);
+        else // indexed or none
+            return IndexedTensor.from(type, tensorString);
+    }
+
+    /**
+     * Returns a tensor instance containing the given data on the standard string format returned by toString
+     *
+     * @param tensorType the type of the tensor to return, as a string on the tensor type format, given in
+     *        {@link TensorType#fromSpec}
+     * @param tensorString the tensor on the standard tensor string format
+     */
+    static Tensor from(String tensorType, String tensorString) {
+        return from(TensorType.fromSpec(tensorType), tensorString);
+    }
+
+    /**
+     * Returns a tensor instance containing the given data on the standard string format returned by toString.
+     * If a type is not specified it is derived from the first cell of the tensor
+     */
+    static Tensor from(String tensorString) {
+        tensorString = tensorString.trim();
+        try {
+            if (tensorString.startsWith("tensor(")) {
+                int colonIndex = tensorString.indexOf(':');
+                String typeSpec = tensorString.substring(0, colonIndex);
+                String valueSpec = tensorString.substring(colonIndex + 1);
+                return from(TensorTypeParser.fromSpec(typeSpec), valueSpec);
+            }
+            else if (tensorString.startsWith("{")) {
+                return from(typeFromCellString(tensorString), tensorString);
+            }
+            else {
+                return new IndexedTensor.Builder(TensorType.empty).set(Double.parseDouble(tensorString)).build();
+            }
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" +
+                                               tensorString + "'");
+        }
+    }
+
+    /** Derive the tensor type from the first address string in the given tensor string */
+    static TensorType typeFromCellString(String s) {
+        s = s.substring(1).trim(); // remove tensor start
+        int firstKeyOrEmptyTensorEnd = s.indexOf('}');
+        String addressBody = s.substring(0, firstKeyOrEmptyTensorEnd).trim();
+        if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
+
+        addressBody = addressBody.substring(1); // remove key start
+        if (addressBody.isEmpty()) return TensorType.empty; // Empty key
+
+        TensorType.Builder builder = new TensorType.Builder();
+        for (String elementString : addressBody.split(",")) {
+            String[] pair = elementString.split(":");
+            if (pair.length != 2)
+                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
+                                                   "got '" + elementString + "'");
+            builder.mapped(pair[0].trim());
+        }
+
+        return builder.build();
     }
 
 }

@@ -5,6 +5,7 @@ import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -76,10 +77,14 @@ public final class TensorAddress implements Comparable<TensorAddress> {
         private final String[] labels;
         
         public Builder(TensorType type) {
-            this.type = type;
-            labels = new String[type.dimensions().size()];
+            this(type, new String[type.dimensions().size()]);
         }
-        
+
+        private Builder(TensorType type, String[] labels) {
+            this.type = type;
+            this.labels = labels;
+        }
+
         /**
          * Adds a label in a dimension to this.
          *
@@ -93,6 +98,11 @@ public final class TensorAddress implements Comparable<TensorAddress> {
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
             labels[labelIndex.get()] = label;
             return this;
+        }
+        
+        /** Creates a copy of this which can be modified separately */
+        public Builder copy() {
+            return new Builder(type, Arrays.copyOf(labels, labels.length));
         }
 
         public TensorAddress build() {

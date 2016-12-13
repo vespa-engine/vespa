@@ -2,7 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
-import com.yahoo.tensor.functions.EvaluationContext;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Set;
 

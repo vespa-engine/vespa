@@ -49,16 +49,13 @@ public class TensorTypeTestCase {
 
     @Test
     public void requireThatDimensionsMustHaveUniqueNames() {
-        assertIllegalTensorType("tensor(x[10],y[20],x[30])", "'x[10]' and 'x[30]' have the same name");
-        assertIllegalTensorType("tensor(x{},y{},x{})", "'x{}' and 'x{}' have the same name");
+        assertIllegalTensorType("tensor(x[10],y[20],x[30])", "Could not add dimension x[30] as this dimension is already present");
+        assertIllegalTensorType("tensor(x{},y{},x{})", "Could not add dimension x{} as this dimension is already present");
     }
 
     @Test
     public void requireThatDimensionsAreOfSameType() {
-        assertIllegalTensorType("tensor(x[10],y[])", "'x[10]' does not have the same type as 'y[]'");
-        assertIllegalTensorType("tensor(x[10],y{})", "'x[10]' does not have the same type as 'y{}'");
-        assertIllegalTensorType("tensor(x[10],y[20],z{})", "'y[20]' does not have the same type as 'z{}'");
-        assertIllegalTensorType("tensor(x[],y{})", "'x[]' does not have the same type as 'y{}'");
+        assertIllegalTensorType("tensor(x[],y{})", "[x[], y{}] contains both indexed and mapped dimensions, this is not supported yet");
     }
 
     @Test
@@ -80,7 +77,7 @@ public class TensorTypeTestCase {
     private static void assertIllegalTensorType(String typeSpec, String messageSubstring) {
         try {
             TensorType.fromSpec(typeSpec);
-            fail("Exception exception to be thrown with message: '" + messageSubstring + "'");
+            fail("Expoected exception to be thrown with message: '" + messageSubstring + "'");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsString(messageSubstring));
         }

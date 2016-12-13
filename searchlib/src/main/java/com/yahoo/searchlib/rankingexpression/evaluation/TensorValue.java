@@ -38,7 +38,7 @@ public class TensorValue extends Value {
     @Override
     public double asDouble() {
         if (hasDouble())
-            return value.get(TensorAddress.empty);
+            return value.cells().get(TensorAddress.empty);
         throw new UnsupportedOperationException("Requires a double value, but " + this.value + " cannot be " +
                                                 "used as a double");
     }

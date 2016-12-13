@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
@@ -15,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class TensorFieldValueTestCase {
 
     private static TensorFieldValue createFieldValue(String tensor) {
-        return new TensorFieldValue(MapTensor.from(tensor));
+        return new TensorFieldValue(Tensor.from(tensor));
     }
 
     @Test
@@ -33,7 +32,7 @@ public class TensorFieldValueTestCase {
 
     @Test
     public void requireThatSameTensorValueIsEqual() {
-        Tensor tensor = MapTensor.from("{{x:0}:2.0}");
+        Tensor tensor = Tensor.from("{{x:0}:2.0}");
         TensorFieldValue lhs = new TensorFieldValue(tensor);
         TensorFieldValue rhs = new TensorFieldValue(tensor);
         assertTrue(lhs.equals(lhs));

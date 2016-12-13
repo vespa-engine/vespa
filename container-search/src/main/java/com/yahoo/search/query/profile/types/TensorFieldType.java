@@ -3,7 +3,6 @@ package com.yahoo.search.query.profile.types;
 
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -16,6 +15,8 @@ import java.util.Optional;
  */
 public class TensorFieldType extends FieldType {
 
+    // TODO: Require tensor type
+    
     private final Optional<TensorType> type;
 
     /** Creates a tensor field type with optional information about the kind of tensor this will hold */
@@ -41,7 +42,7 @@ public class TensorFieldType extends FieldType {
     @Override
     public Object convertFrom(Object o, QueryProfileRegistry registry) {
         if (o instanceof Tensor) return o;
-        if (o instanceof String) return MapTensor.from((String)o);
+        if (o instanceof String) return type.isPresent() ? Tensor.from(type.get(), (String)o) : Tensor.from((String)o);
         return null;
     }
 

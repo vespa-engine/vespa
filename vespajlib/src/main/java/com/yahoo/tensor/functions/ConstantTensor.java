@@ -1,7 +1,7 @@
 package com.yahoo.tensor.functions;
 
-import com.yahoo.tensor.MapTensor;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +16,7 @@ public class ConstantTensor extends PrimitiveTensorFunction {
     private final Tensor constant;
     
     public ConstantTensor(String tensorString) {
-        this.constant = MapTensor.from(tensorString);
+        this.constant = Tensor.from(tensorString);
     }
     
     public ConstantTensor(Tensor tensor) {

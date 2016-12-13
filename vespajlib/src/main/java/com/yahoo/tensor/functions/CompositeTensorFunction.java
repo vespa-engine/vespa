@@ -1,6 +1,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 /**
  * A composite tensor function is a tensor function which can be expressed (less tersely)

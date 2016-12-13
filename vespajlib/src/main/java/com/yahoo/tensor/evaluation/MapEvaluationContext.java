@@ -1,0 +1,21 @@
+package com.yahoo.tensor.evaluation;
+
+import com.yahoo.tensor.Tensor;
+
+import java.util.HashMap;
+
+/**
+ * @author bratseth
+ */
+public class MapEvaluationContext implements EvaluationContext {
+
+    private final java.util.Map<String, Tensor> bindings = new HashMap<>();
+
+    static MapEvaluationContext empty() { return new MapEvaluationContext(); }
+
+    public void put(String name, Tensor tensor) { bindings.put(name, tensor); }
+
+    /** Returns the tensor bound to this name, or null if none */
+    public Tensor get(String name) { return bindings.get(name); }
+
+}

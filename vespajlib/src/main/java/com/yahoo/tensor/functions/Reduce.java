@@ -2,10 +2,12 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.IndexedTensor;
+import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,7 +97,10 @@ public class Reduce extends PrimitiveTensorFunction {
                                                dimensions + ": Not all those dimensions are present in this tensor");
 
         if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size())
-            return reduceAll(argument);
+            if (argument.type().dimensions().size() == 1 && argument instanceof IndexedTensor)
+                return reduceIndexedVector((IndexedTensor)argument);
+            else
+                return reduceAllGeneral(argument);
         
         // Reduce type
         TensorType.Builder builder = new TensorType.Builder();
@@ -114,7 +119,7 @@ public class Reduce extends PrimitiveTensorFunction {
         ImmutableMap.Builder<TensorAddress, Double> reducedCells = new ImmutableMap.Builder<>();
         for (Map.Entry<TensorAddress, ValueAggregator> aggregatingCell : aggregatingCells.entrySet())
             reducedCells.put(aggregatingCell.getKey(), aggregatingCell.getValue().aggregatedValue());
-        return new MapTensor(reducedType, reducedCells.build());
+        return new MappedTensor(reducedType, reducedCells.build());
     }
     
     private TensorAddress reduceDimensions(TensorAddress address, TensorType argumentType, TensorType reducedType) {
@@ -130,13 +135,20 @@ public class Reduce extends PrimitiveTensorFunction {
         return new TensorAddress(reducedLabels);
     }
     
-    private Tensor reduceAll(Tensor argument) {
+    private Tensor reduceAllGeneral(Tensor argument) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
         for (Double cellValue : argument.cells().values())
             valueAggregator.aggregate(cellValue);
-        return new MapTensor(TensorType.empty, ImmutableMap.of(TensorAddress.empty, valueAggregator.aggregatedValue()));
+        return new IndexedTensor.Builder(TensorType.empty).set((valueAggregator.aggregatedValue())).build();
     }
-    
+
+    private Tensor reduceIndexedVector(IndexedTensor argument) {
+        ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);        
+        for (int i = 0; i < argument.length(0); i++)
+            valueAggregator.aggregate(argument.get(i));
+        return new IndexedTensor.Builder(TensorType.empty).set((valueAggregator.aggregatedValue())).build();
+    }
+
     private static abstract class ValueAggregator {
         
         private static ValueAggregator ofType(Aggregator aggregator) {

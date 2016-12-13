@@ -37,7 +37,7 @@ import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.text.Utf8;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
@@ -1218,7 +1218,7 @@ public class JsonReaderTestCase {
         assertEquals("testtensor", doc.getId().getDocType());
         assertEquals(TENSOR_DOC_ID, doc.getId().toString());
         TensorFieldValue fieldValue = (TensorFieldValue)doc.getFieldValue(doc.getField("tensorfield"));
-        assertEquals(MapTensor.from(expectedTensor), fieldValue.getTensor().get());
+        assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
     }
 
     private static void assertTensorAssignUpdate(String expectedTensor, DocumentUpdate update) {
@@ -1226,7 +1226,7 @@ public class JsonReaderTestCase {
         assertEquals(TENSOR_DOC_ID, update.getId().toString());
         AssignValueUpdate assignUpdate = (AssignValueUpdate) getTensorField(update).getValueUpdate(0);
         TensorFieldValue fieldValue = (TensorFieldValue) assignUpdate.getValue();
-        assertEquals(MapTensor.from(expectedTensor), fieldValue.getTensor().get());
+        assertEquals(Tensor.from(expectedTensor), fieldValue.getTensor().get());
     }
 
     private static FieldUpdate getTensorField(DocumentUpdate update) {

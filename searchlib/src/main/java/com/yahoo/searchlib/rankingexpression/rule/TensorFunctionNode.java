@@ -6,9 +6,8 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.functions.EvaluationContext;
+import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.functions.PrimitiveTensorFunction;
-import com.yahoo.tensor.functions.Softmax;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
 

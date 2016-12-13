@@ -9,7 +9,7 @@ import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.tensor.MapTensor;
+import com.yahoo.tensor.Tensor;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,11 +17,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-
 /**
  * Tests applying and serializing document updates.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentUpdateTestCase extends junit.framework.TestCase {
     DocumentTypeManager docMan;
@@ -620,7 +619,7 @@ public class DocumentUpdateTestCase extends junit.framework.TestCase {
     }
 
     private static TensorFieldValue createTensorFieldValue(String tensor) {
-        return new TensorFieldValue(MapTensor.from(tensor));
+        return new TensorFieldValue(Tensor.from(tensor));
     }
 
     private DocumentUpdate createTensorAssignUpdate() {
