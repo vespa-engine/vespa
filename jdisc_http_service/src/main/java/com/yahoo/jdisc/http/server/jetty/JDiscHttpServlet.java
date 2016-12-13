@@ -4,36 +4,30 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.OverloadException;
-
 import org.eclipse.jetty.server.HttpConnection;
-import org.eclipse.jetty.websocket.server.WebSocketServerFactory;
-import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
-import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
-import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
-import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.server.jetty.ConnectorFactory.JDiscServerConnector;
 
 /**
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen Hult</a>
+ * @author bjorncs
  */
 @WebServlet(asyncSupported = true, description = "Bridge between Servlet and JDisc APIs")
-class JDiscHttpServlet extends WebSocketServlet {
+class JDiscHttpServlet extends HttpServlet {
     public static final String ATTRIBUTE_NAME_ACCESS_LOG_ENTRY
             = JDiscHttpServlet.class.getName() + "_access-log-entry";
 
@@ -42,16 +36,6 @@ class JDiscHttpServlet extends WebSocketServlet {
 
     public JDiscHttpServlet(JDiscContext context) {
         this.context = context;
-    }
-
-    @Override
-    public void init() throws ServletException {
-        // The parent class of this loads the WebSocketServerFactory class using Class.forName() in the current thread's
-        // context class loader. To make sure that the class is available when running on OSGi, we configure it
-        // explicitly. This also has the required side-effect of generating the appropriate Import-Package statement in
-        // our OSGi bundle's manifest.
-        Thread.currentThread().setContextClassLoader(WebSocketServerFactory.class.getClassLoader());
-        super.init();
     }
 
     @Override
@@ -94,11 +78,6 @@ class JDiscHttpServlet extends WebSocketServlet {
     protected void doTrace(final HttpServletRequest request, final HttpServletResponse response)
             throws ServletException, IOException {
         dispatchHttpRequest(request, response);
-    }
-
-    @Override
-    public void configure(final WebSocketServletFactory factory) {
-        dispatchWebSocketRequest(factory);
     }
 
     private static final Set<String> JETTY_UNSUPPORTED_METHODS = new HashSet<>(Arrays.asList(
@@ -153,30 +132,6 @@ class JDiscHttpServlet extends WebSocketServlet {
             }
         } catch (OverloadException e) {
             // nop
-        } catch (RuntimeException e) {
-            throw new ExceptionWrapper(e);
-        }
-    }
-
-    private void dispatchWebSocketRequest(final WebSocketServletFactory factory) {
-        try {
-            // any configuration of the websocket factory goes here
-            factory.setCreator(new WebSocketCreator() {
-
-                @Override
-                public Object createWebSocket(
-                        final ServletUpgradeRequest request,
-                        final ServletUpgradeResponse response) {
-
-                    if (true) {
-                        log.warning("WebSocket is currently not supported for JDisc RequestHandlers when running on Jetty.");
-                        return null;
-                    }
-                    return new WebSocketRequestDispatch(context.container, context.janitor, context.metric,
-                                                        getMetricContext(request.getHttpServletRequest()))
-                            .dispatch(request, response);
-                }
-            });
         } catch (RuntimeException e) {
             throw new ExceptionWrapper(e);
         }

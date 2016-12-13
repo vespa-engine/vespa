@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
- * Responsible for metric reporting for JDisc http and web socket request handler support.
+ * Responsible for metric reporting for JDisc http request handler support.
  * @author tonytv
  */
 public class MetricReporter {

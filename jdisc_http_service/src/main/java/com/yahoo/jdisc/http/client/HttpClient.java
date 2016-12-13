@@ -53,7 +53,6 @@ public class HttpClient extends AbstractClientProvider {
         String TRANSFER_LATENCY = "ClientDataTransferLatency";
     }
 
-    private static final String WEBSOCKET = "ws";
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
 
@@ -89,8 +88,6 @@ public class HttpClient extends AbstractClientProvider {
         String uriScheme = request.getUri().getScheme();
 
         switch (uriScheme) {
-        case WEBSOCKET:
-            return WebSocketClientRequest.executeRequest(ningClient, request, handler, metric, ctx);
         case HTTP:
         case HTTPS:
             HttpRequest.Method method = resolveMethod(request);
