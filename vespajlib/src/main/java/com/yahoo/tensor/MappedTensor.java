@@ -114,6 +114,12 @@ public class MappedTensor implements Tensor {
         public MappedCellBuilder cell() {
             return new MappedCellBuilder();
         }
+        
+        @Override
+        public Builder cell(TensorAddress address, double value) {
+            cells.put(address, value);
+            return this;
+        }
     
         @Override
         public MappedTensor build() {
@@ -122,8 +128,7 @@ public class MappedTensor implements Tensor {
     
         public class MappedCellBuilder implements Tensor.Builder.CellBuilder {
     
-            private final TensorAddress.Builder addressBuilder = 
-                    new TensorAddress.Builder(MappedTensor.Builder.this.type);
+            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(MappedTensor.Builder.this.type);
     
             @Override
             public MappedCellBuilder label(String dimension, String label) {
@@ -133,8 +138,7 @@ public class MappedTensor implements Tensor {
     
             @Override
             public Builder value(double cellValue) {
-                cells.put(addressBuilder.build(), cellValue);
-                return Builder.this;
+                return MappedTensor.Builder.this.cell(addressBuilder.build(), cellValue);
             }
     
         }

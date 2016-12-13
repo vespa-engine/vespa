@@ -302,9 +302,13 @@ public interface Tensor {
                 return new MappedTensor.Builder(type);
         }
         
-        Tensor build();
-        
+        /** Return a cell builder */
         CellBuilder cell();
+
+        /** Add a built cell */
+        Builder cell(TensorAddress address, double value);
+
+        Tensor build();
 
         interface CellBuilder {
 

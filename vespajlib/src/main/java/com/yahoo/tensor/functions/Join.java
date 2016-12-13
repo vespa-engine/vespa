@@ -72,7 +72,7 @@ public class Join extends PrimitiveTensorFunction {
         if (a.type().equals(b.type()) && a.type().dimensions().size() == 1 && a.type().dimensions().get(0).isIndexed())
             return indexedVectorJoin((IndexedTensor)a, (IndexedTensor)b, joinedType);
         // TODO: Special case general indexed join or make the next two type sensitive in what they return
-        if (joinedType.dimensions().size() == a.type().dimensions().size() && joinedType.dimensions().size() == b.type().dimensions().size())
+        else if (joinedType.dimensions().size() == a.type().dimensions().size() && joinedType.dimensions().size() == b.type().dimensions().size())
             return singleSpaceJoin(a, b, joinedType);
         else
             return generalJoin(a, b, joinedType);

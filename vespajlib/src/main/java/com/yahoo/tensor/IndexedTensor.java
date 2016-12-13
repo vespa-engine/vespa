@@ -306,6 +306,21 @@ public class IndexedTensor implements Tensor {
             return new IndexedCellBuilder();
         }
 
+        @Override
+        public Builder cell(TensorAddress address, double value) {
+            int[] indexes = new int[address.labels().size()];
+            for (int i = 0; i < address.labels().size(); i++) {
+                try {
+                    indexes[i] = Integer.parseInt(address.labels().get(i));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Labels in an indexed tensor must be integers, not '" +
+                                                       address.labels().get(i) + "'");
+                }
+            }
+            set(value, indexes);
+            return this;
+        }
+
         /** Fill the given list with nulls if necessary to make sure it has a (possibly null) value at the given index */
         private void ensureCapacity(int index, List<Object> list) {
             while (list.size() <= index)
@@ -324,18 +339,7 @@ public class IndexedTensor implements Tensor {
 
             @Override
             public IndexedTensor.Builder value(double cellValue) {
-                TensorAddress address = addressBuilder.build();
-                int[] indexes = new int[address.labels().size()];
-                for (int i = 0; i < address.labels().size(); i++) {
-                    try {
-                        indexes[i] = Integer.parseInt(address.labels().get(i));
-                    } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException("Labels in an indexed tensor must be integers, not '" + 
-                                                           address.labels().get(i) + "'");
-                    }
-                }
-                IndexedTensor.Builder.this.set(cellValue, indexes);
-                return IndexedTensor.Builder.this;
+                return IndexedTensor.Builder.this.cell(addressBuilder.build(), cellValue);
             }
 
         }
