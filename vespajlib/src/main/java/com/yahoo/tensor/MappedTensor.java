@@ -102,7 +102,7 @@ public class MappedTensor implements Tensor {
         return Tensor.equals(this, (Tensor)o);
     }
 
-    public static class Builder {
+    public static class Builder implements Tensor.Builder {
     
         private final TensorType type;
         private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
@@ -111,27 +111,27 @@ public class MappedTensor implements Tensor {
             this.type = type;
         }
     
-        public CellBuilder cell() {
-            return new CellBuilder(type);
+        public MappedCellBuilder cell() {
+            return new MappedCellBuilder();
         }
     
-        public Tensor build() {
+        @Override
+        public MappedTensor build() {
             return new MappedTensor(type, cells.build());
         }
     
-        public class CellBuilder {
+        public class MappedCellBuilder implements Tensor.Builder.CellBuilder {
     
-            private final TensorAddress.Builder addressBuilder;
+            private final TensorAddress.Builder addressBuilder = 
+                    new TensorAddress.Builder(MappedTensor.Builder.this.type);
     
-            private CellBuilder(TensorType type) {
-                addressBuilder = new TensorAddress.Builder(type);
-            }
-            
-            public CellBuilder label(String dimension, String label) {
+            @Override
+            public MappedCellBuilder label(String dimension, String label) {
                 addressBuilder.add(dimension, label);
                 return this;
             }
     
+            @Override
             public Builder value(double cellValue) {
                 cells.put(addressBuilder.build(), cellValue);
                 return Builder.this;

@@ -48,6 +48,7 @@ public class TensorFunctionBenchmark {
                 largest = dotProduct;
             }
         }
+        System.out.println(largest);
         return largest;
     }
 
@@ -56,21 +57,11 @@ public class TensorFunctionBenchmark {
         List<Tensor> tensors = new ArrayList<>();
         TensorType type = new TensorType.Builder().dimension("x", dimensionType).build();
         for (int i = 0; i < vectorCount; i++) {
-            // TODO: Avoid this by creating a (type independent) Tensor.Builder
-            if (dimensionType == TensorType.Dimension.Type.mapped) {
-                MappedTensor.Builder builder = new MappedTensor.Builder(type);
-                for (int j = 0; j < vectorSize; j++) {
-                    builder.cell().label("x", String.valueOf(j)).value(random.nextDouble());
-                }
-                tensors.add(builder.build());
+            Tensor.Builder builder = Tensor.Builder.of(type);
+            for (int j = 0; j < vectorSize; j++) {
+                builder.cell().label("x", String.valueOf(j)).value(random.nextDouble());
             }
-            else {
-                IndexedTensor.Builder builder = new IndexedTensor.Builder(type);
-                for (int j = 0; j < vectorSize; j++) {
-                    builder.set(random.nextDouble(), j);
-                }
-                tensors.add(builder.build());
-            }
+            tensors.add(builder.build());
         }
         return tensors;
     }
@@ -78,28 +69,16 @@ public class TensorFunctionBenchmark {
     private static List<Tensor> generateMatrix(int vectorCount, int vectorSize, 
                                                TensorType.Dimension.Type dimensionType) {
         TensorType type = new TensorType.Builder().dimension("i", dimensionType).dimension("x", dimensionType).build();
-        // TODO: Avoid this by creating a (type independent) Tensor.Builder
-        if (dimensionType == TensorType.Dimension.Type.mapped) {
-            MappedTensor.Builder builder = new MappedTensor.Builder(type);
-            for (int i = 0; i < vectorCount; i++) {
-                for (int j = 0; j < vectorSize; j++) {
-                    builder.cell()
-                            .label("i", String.valueOf(i))
-                            .label("x", String.valueOf(j))
-                            .value(random.nextDouble());
-                }
+        Tensor.Builder builder = Tensor.Builder.of(type);
+        for (int i = 0; i < vectorCount; i++) {
+            for (int j = 0; j < vectorSize; j++) {
+                builder.cell()
+                        .label("i", String.valueOf(i))
+                        .label("x", String.valueOf(j))
+                        .value(random.nextDouble());
             }
-            return Collections.singletonList(builder.build());
         }
-        else {
-            IndexedTensor.Builder builder = new IndexedTensor.Builder(type);
-            for (int i = 0; i < vectorCount; i++) {
-                for (int j = 0; j < vectorSize; j++) {
-                    builder.set(random.nextDouble(), i, j);
-                }
-            }
-            return Collections.singletonList(builder.build());
-        }
+        return Collections.singletonList(builder.build());
     }
 
     public static void main(String[] args) {

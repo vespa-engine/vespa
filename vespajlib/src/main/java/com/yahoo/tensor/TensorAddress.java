@@ -30,7 +30,7 @@ public final class TensorAddress implements Comparable<TensorAddress> {
         this.labels = ImmutableList.copyOf(labels);
     }
 
-    /** Returns the labels of this as an immutable list in the order of the tensor this is the type of */
+    /** Returns the labels of this as an immutable list in the order of the dimensions of the tensor type of this */
     public List<String> labels() { return labels; }
 
     @Override
