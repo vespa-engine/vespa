@@ -17,10 +17,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 import static com.yahoo.prelude.searcher.JuniperSearcher.JUNIPER_TAG_REPLACING;
 import static com.yahoo.language.LinguisticsCase.toLowerCase;

@@ -1,5 +1,6 @@
 package com.yahoo.tensor.evaluation;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 
 import java.util.HashMap;
@@ -7,6 +8,7 @@ import java.util.HashMap;
 /**
  * @author bratseth
  */
+@Beta
 public class MapEvaluationContext implements EvaluationContext {
 
     private final java.util.Map<String, Tensor> bindings = new HashMap<>();

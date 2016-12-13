@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
@@ -14,6 +15,7 @@ import java.util.function.Function;
  * 
  * @author bratseth
  */
+@Beta
 public class Generate extends PrimitiveTensorFunction {
 
     private final TensorType type;

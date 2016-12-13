@@ -34,7 +34,7 @@ import com.yahoo.search.searchchain.PhaseNames;
  * Note: This searcher only converts backend binary highlighting and separators
  * to the configured highlighting and separator tags.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @After(PhaseNames.RAW_QUERY)
 @Before(PhaseNames.TRANSFORMED_QUERY)

@@ -19,8 +19,7 @@ public class MappedTensor implements Tensor {
     private final ImmutableMap<TensorAddress, Double> cells;
 
     /** Creates a sparse tensor. The cell addresses must match the type. */
-    // TODO: Privatize
-    public MappedTensor(TensorType type, Map<TensorAddress, Double> cells) {
+    private MappedTensor(TensorType type, Map<TensorAddress, Double> cells) {
         this.type = type;
         this.cells = ImmutableMap.copyOf(cells);
     }
@@ -102,7 +101,7 @@ public class MappedTensor implements Tensor {
         return Tensor.equals(this, (Tensor)o);
     }
 
-    public static class Builder {
+    public static class Builder implements Tensor.Builder {
     
         private final TensorType type;
         private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
@@ -111,30 +110,34 @@ public class MappedTensor implements Tensor {
             this.type = type;
         }
     
-        public CellBuilder cell() {
-            return new CellBuilder(type);
+        public MappedCellBuilder cell() {
+            return new MappedCellBuilder();
+        }
+        
+        @Override
+        public Builder cell(TensorAddress address, double value) {
+            cells.put(address, value);
+            return this;
         }
     
-        public Tensor build() {
+        @Override
+        public MappedTensor build() {
             return new MappedTensor(type, cells.build());
         }
     
-        public class CellBuilder {
+        public class MappedCellBuilder implements Tensor.Builder.CellBuilder {
     
-            private final TensorAddress.Builder addressBuilder;
+            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(MappedTensor.Builder.this.type);
     
-            private CellBuilder(TensorType type) {
-                addressBuilder = new TensorAddress.Builder(type);
-            }
-            
-            public CellBuilder label(String dimension, String label) {
+            @Override
+            public MappedCellBuilder label(String dimension, String label) {
                 addressBuilder.add(dimension, label);
                 return this;
             }
     
+            @Override
             public Builder value(double cellValue) {
-                cells.put(addressBuilder.build(), cellValue);
-                return Builder.this;
+                return MappedTensor.Builder.this.cell(addressBuilder.build(), cellValue);
             }
     
         }

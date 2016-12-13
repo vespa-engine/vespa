@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
@@ -16,6 +17,7 @@ import java.util.function.DoubleUnaryOperator;
  *
  * @author bratseth
  */
+@Beta
 public class Map extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;
@@ -49,10 +51,10 @@ public class Map extends PrimitiveTensorFunction {
     @Override
     public Tensor evaluate(EvaluationContext context) {
         Tensor argument = argument().evaluate(context);
-        ImmutableMap.Builder<TensorAddress, Double> mappedCells = new ImmutableMap.Builder<>();
+        Tensor.Builder builder = Tensor.Builder.of(argument.type());
         for (java.util.Map.Entry<TensorAddress, Double> cell : argument.cells().entrySet())
-            mappedCells.put(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
-        return new MappedTensor(argument.type(), mappedCells.build());
+            builder.cell(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
+        return builder.build();
     }
 
     @Override

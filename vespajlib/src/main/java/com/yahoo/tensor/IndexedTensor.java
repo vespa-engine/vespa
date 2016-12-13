@@ -30,6 +30,7 @@ public class IndexedTensor implements Tensor {
     }
     
     /** Construct an indexed tensor having a single dimension with the given values */
+    // TODO: Privatize
     public IndexedTensor(TensorType type, List<Object> values) {
         if (type.dimensions().size() != 1 ||  ! type.dimensions().get(0).isIndexed())
             throw new IllegalArgumentException("Expected a single-dimensional indexed tensor but got " + type);
@@ -218,7 +219,7 @@ public class IndexedTensor implements Tensor {
 
     }
 
-    public static class Builder {
+    public static class Builder implements Tensor.Builder {
     
         private final TensorType type;
         
@@ -229,6 +230,7 @@ public class IndexedTensor implements Tensor {
             this.type = type;
         }
     
+        @Override
         public IndexedTensor build() {
             // TODO: Enforce that all values in all dimensions are equally large
             if (firstDimension == null) // empty
@@ -267,7 +269,7 @@ public class IndexedTensor implements Tensor {
         }
 
         /**
-         * Set a value. The number of indexes must be the same as the dimensions in the type of this.
+         * Set a value using an index API. The number of indexes must be the same as the dimensions in the type of this.
          * Values can be written in any order but all values needed to make this dense must be provided
          * before building this.
          * 
@@ -300,11 +302,48 @@ public class IndexedTensor implements Tensor {
             return this;
         }
         
+        @Override
+        public IndexedCellBuilder cell() {
+            return new IndexedCellBuilder();
+        }
+
+        @Override
+        public Builder cell(TensorAddress address, double value) {
+            int[] indexes = new int[address.labels().size()];
+            for (int i = 0; i < address.labels().size(); i++) {
+                try {
+                    indexes[i] = Integer.parseInt(address.labels().get(i));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Labels in an indexed tensor must be integers, not '" +
+                                                       address.labels().get(i) + "'");
+                }
+            }
+            set(value, indexes);
+            return this;
+        }
+
         /** Fill the given list with nulls if necessary to make sure it has a (possibly null) value at the given index */
         private void ensureCapacity(int index, List<Object> list) {
             while (list.size() <= index)
                 list.add(list.size(), null);
         }
-    
+
+        public class IndexedCellBuilder implements Tensor.Builder.CellBuilder {
+
+            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(IndexedTensor.Builder.this.type);
+
+            @Override
+            public IndexedTensor.Builder.IndexedCellBuilder label(String dimension, String label) {
+                addressBuilder.add(dimension, label);
+                return this;
+            }
+
+            @Override
+            public IndexedTensor.Builder value(double cellValue) {
+                return IndexedTensor.Builder.this.cell(addressBuilder.build(), cellValue);
+            }
+
+        }
+
     }
 }

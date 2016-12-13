@@ -1,5 +1,6 @@
 package com.yahoo.tensor.evaluation;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.tensor.functions.TensorFunction;
 
 /**
@@ -7,6 +8,7 @@ import com.yahoo.tensor.functions.TensorFunction;
  * 
  * @author bratseth
  */
+@Beta
 public class FunctionOptimizer {
 
     public TensorFunction optimize(TensorFunction function) {

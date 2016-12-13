@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.IndexedTensor;
@@ -23,6 +24,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
+@Beta
 public class Reduce extends PrimitiveTensorFunction {
 
     public enum Aggregator { avg, count, prod, sum, max, min; }
@@ -116,10 +118,10 @@ public class Reduce extends PrimitiveTensorFunction {
             aggregatingCells.putIfAbsent(reducedAddress, ValueAggregator.ofType(aggregator));
             aggregatingCells.get(reducedAddress).aggregate(cell.getValue());
         }
-        ImmutableMap.Builder<TensorAddress, Double> reducedCells = new ImmutableMap.Builder<>();
+        Tensor.Builder reducedBuilder = Tensor.Builder.of(reducedType);
         for (Map.Entry<TensorAddress, ValueAggregator> aggregatingCell : aggregatingCells.entrySet())
-            reducedCells.put(aggregatingCell.getKey(), aggregatingCell.getValue().aggregatedValue());
-        return new MappedTensor(reducedType, reducedCells.build());
+            reducedBuilder.cell(aggregatingCell.getKey(), aggregatingCell.getValue().aggregatedValue());
+        return reducedBuilder.build();
     }
     
     private TensorAddress reduceDimensions(TensorAddress address, TensorType argumentType, TensorType reducedType) {

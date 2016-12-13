@@ -1,8 +1,7 @@
 package com.yahoo.tensor.evaluation;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.evaluation.EvaluationContext;
-import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.functions.PrimitiveTensorFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
@@ -15,6 +14,7 @@ import java.util.List;
  * 
  * @author bratseth
  */
+@Beta
 public class VariableTensor extends PrimitiveTensorFunction {
 
     private final String name;

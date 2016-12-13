@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.MappedTensor;
@@ -19,6 +20,7 @@ import java.util.Objects;
  * 
  * @author bratseth
  */
+@Beta
 public class Rename extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;
@@ -67,12 +69,12 @@ public class Rename extends PrimitiveTensorFunction {
             toIndexes[i] = renamedType.indexOfDimension(newDimensionName).get();
         }
             
-        ImmutableMap.Builder<TensorAddress, Double> renamedCells = new ImmutableMap.Builder<>();
+        Tensor.Builder builder = Tensor.Builder.of(renamedType);
         for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
             TensorAddress renamedAddress = rename(cell.getKey(), toIndexes);
-            renamedCells.put(renamedAddress, cell.getValue());
+            builder.cell(renamedAddress, cell.getValue());
         }
-        return new MappedTensor(renamedType, renamedCells.build());
+        return builder.build();
     }
 
     private TensorType rename(TensorType type, Map<String, String> fromToMap) {

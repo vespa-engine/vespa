@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * A HTTP request.
  *
  * @author <a href="mailto:anirudha@yahoo-inc.com">Anirudha Khanna</a>
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
 

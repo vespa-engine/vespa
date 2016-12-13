@@ -288,4 +288,36 @@ public interface Tensor {
         return builder.build();
     }
 
+    interface Builder {
+        
+        /** Creates a suitable builder for the given type */
+        static Builder of(TensorType type) {
+            boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
+            boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
+            if (containsIndexed && containsMapped)
+                throw new IllegalArgumentException("Combining indexed and mapped dimensions is not supported yet");
+            if (containsIndexed)
+                return new IndexedTensor.Builder(type);
+            else
+                return new MappedTensor.Builder(type);
+        }
+        
+        /** Return a cell builder */
+        CellBuilder cell();
+
+        /** Add a built cell */
+        Builder cell(TensorAddress address, double value);
+
+        Tensor build();
+
+        interface CellBuilder {
+
+            CellBuilder label(String dimension, String label);
+
+            Builder value(double cellValue);
+
+        }
+
+    }
+    
 }
