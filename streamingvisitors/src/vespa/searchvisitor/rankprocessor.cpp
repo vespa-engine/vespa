@@ -139,6 +139,7 @@ RankProcessor::RankProcessor(RankManager::Snapshot::SP snapshot,
     _queryEnv(location, snapshot->getIndexEnvironment(rankProfile), queryProperties, attrMgr),
     _mdLayout(),
     _rankProgram(),
+    _docId(TermFieldMatchData::invalidId()),
     _score(0.0),
     _summaryProgram(),
     _rankScorePtr(nullptr),
@@ -188,11 +189,10 @@ private:
 
 public:
     RankProgramWrapper(RankProgram &rankProgram) : _rankProgram(rankProgram) {}
-    virtual const MatchData &run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) override {
+    virtual void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &matchData) override {
         // Prepare the match data object used by the rank program with earlier unpacked match data.
         copyTermFieldMatchData(matchData, _rankProgram.match_data());
         _rankProgram.run(docid);
-        return _rankProgram.match_data();
     }
 };
 
@@ -221,7 +221,7 @@ void
 RankProcessor::unpackMatchData(uint32_t docId)
 {
     MatchData &matchData = _rankProgram->match_data();
-    matchData.setDocId(docId);
+    _docId = docId;
     unpackMatchData(matchData);
 }
 
@@ -263,8 +263,8 @@ RankProcessor::unpackMatchData(MatchData &matchData)
                             tmd = matchData.resolveTermField(tfd->getHandle());
                             tmd->setFieldId(fieldId);
                             // reset field match data, but only once per docId
-                            if (tmd->getDocId() != matchData.getDocId()) {
-                                tmd->reset(matchData.getDocId());
+                            if (tmd->getDocId() != _docId) {
+                                tmd->reset(_docId);
                             }
                         }
                         // find fieldLen for new field

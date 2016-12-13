@@ -120,7 +120,6 @@ void testGenerate(State &state) {
 
 
     // fresh unpacked data
-    state.md->setDocId(10);
     state.f3->reset(10);
     {
         TermFieldMatchDataPosition pos;
@@ -154,9 +153,9 @@ void testGenerate(State &state) {
 }
 
 void testAnalyze(State &state) {
-    EXPECT_EQUAL(state.md->getDocId(), state.f3->getDocId());
-    EXPECT_NOT_EQUAL(state.md->getDocId(), state.f5->getDocId());
-    EXPECT_EQUAL(state.md->getDocId(), state.f7->getDocId());
+    EXPECT_EQUAL(10u, state.f3->getDocId());
+    EXPECT_NOT_EQUAL(10u, state.f5->getDocId());
+    EXPECT_EQUAL(10u, state.f7->getDocId());
 
     FieldPositionsIterator it = state.f3->getIterator();
     EXPECT_EQUAL(20u, it.getFieldLength());

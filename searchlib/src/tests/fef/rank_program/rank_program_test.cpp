@@ -107,13 +107,6 @@ struct MySetup {
     }
 };
 
-TEST_F("require that match data docid is set by run", MySetup()) {
-    f1.compile();
-    EXPECT_NOT_EQUAL(1u, f1.program.match_data().getDocId());
-    f1.run();
-    EXPECT_EQUAL(1u, f1.program.match_data().getDocId());
-}
-
 TEST_F("require that simple program works", MySetup()) {
     EXPECT_EQUAL(15.0, f1.add("mysum(value(10),ivalue(5))").compile().run().get());
     EXPECT_EQUAL(3u, f1.program.num_executors());

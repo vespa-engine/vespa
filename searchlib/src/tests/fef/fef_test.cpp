@@ -36,7 +36,6 @@ Test::testLayout()
     EXPECT_EQUAL(mdl.allocFeature(), 2u);
 
     MatchData::UP md = mdl.createMatchData();
-    EXPECT_EQUAL(TermFieldMatchData::invalidId(), md->getDocId());
     EXPECT_EQUAL(md->getNumTermFields(), 3u);
     EXPECT_EQUAL(md->getNumFeatures(), 3u);
     TermFieldMatchData *t0 = md->resolveTermField(0);

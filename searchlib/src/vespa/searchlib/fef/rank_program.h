@@ -114,8 +114,6 @@ public:
      * @param docid the document we are ranking
      **/
     void run(uint32_t docid) {
-        MatchData &md = match_data();
-        md.setDocId(docid);
         for (FeatureExecutor *executor: _program) {
             executor->execute(docid);
         }

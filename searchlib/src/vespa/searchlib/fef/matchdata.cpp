@@ -7,8 +7,7 @@ namespace search {
 namespace fef {
 
 MatchData::MatchData(const Params &cparams)
-    : _docid(TermFieldMatchData::invalidId()),
-      _termFields(cparams.numTermFields()),
+    : _termFields(cparams.numTermFields()),
       _features(cparams.numFeatures()),
       _feature_is_object(cparams.numFeatures(), false),
       _termwise_limit(1.0)

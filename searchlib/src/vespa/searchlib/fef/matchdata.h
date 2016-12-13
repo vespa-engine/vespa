@@ -20,7 +20,6 @@ namespace fef {
 class MatchData
 {
 private:
-    uint32_t                        _docid;
     std::vector<TermFieldMatchData> _termFields;
     std::vector<NumberOrObject>     _features;
     std::vector<bool>               _feature_is_object;
@@ -84,25 +83,6 @@ public:
      **/
     double get_termwise_limit() const { return _termwise_limit; }
     void set_termwise_limit(double value) { _termwise_limit = value; }
-
-    /**
-     * Set the document id for this match object. This method is
-     * invoked by the parallel query evaluation driver code during
-     * term data unpacking.
-     *
-     * @param docid docid for this match data
-     **/
-    void setDocId(uint32_t docid) { _docid = docid; }
-
-    /**
-     * Obtain the document id for this match data. This may be used to
-     * check if we have term match data for the document we are
-     * processing or not. Also, it will be used when merging hits from
-     * the heap back into the full result set.
-     *
-     * @return document id for this match data
-     **/
-    uint32_t getDocId() const { return _docid; }
 
     /**
      * Obtain the number of term fields allocated in this match data
