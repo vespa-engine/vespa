@@ -32,22 +32,22 @@ public class RestartTest {
 
             CallOrderVerifier callOrderVerifier = dockerTester.getCallOrderVerifier();
             // Check that the container is started and NodeRepo has received the PATCH update
-            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage: DockerImage { imageId=dockerImage }, HostName: host1, ContainerName: ContainerName { name=container }",
-                                            "updateNodeAttributes with HostName: host1, NodeAttributes: NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=DockerImage { imageId=dockerImage }, vespaVersion=''}");
+            callOrderVerifier.assertInOrder("createContainerCommand with DockerImage { imageId=image:1.2.3 }, HostName: host1, ContainerName { name=container }",
+                                            "updateNodeAttributes with HostName: host1, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image:1.2.3, vespaVersion=''}");
 
             wantedRestartGeneration = 2;
             currentRestartGeneration = 1;
             dockerTester.updateContainerNodeSpec(createContainerNodeSpec(wantedRestartGeneration, currentRestartGeneration));
 
             callOrderVerifier.assertInOrder("Suspend for host1",
-                                            "executeInContainer with ContainerName: ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", restart]");
+                                            "executeInContainer with ContainerName { name=container }, args: [" + DockerOperationsImpl.NODE_PROGRAM + ", restart]");
         }
     }
 
     private ContainerNodeSpec createContainerNodeSpec(long wantedRestartGeneration, long currentRestartGeneration) {
         return new ContainerNodeSpec.Builder()
                 .hostname("host1")
-                .wantedDockerImage(new DockerImage("dockerImage"))
+                .wantedDockerImage(new DockerImage("image:1.2.3"))
                 .containerName(new ContainerName("container"))
                 .nodeState(Node.State.active)
                 .nodeType("tenant")

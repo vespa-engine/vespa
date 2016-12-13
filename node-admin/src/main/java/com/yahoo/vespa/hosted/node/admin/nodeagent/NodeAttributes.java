@@ -76,7 +76,7 @@ public class NodeAttributes {
         return "NodeAttributes{" +
                 "restartGeneration=" + restartGeneration +
                 ", rebootGeneration=" + rebootGeneration +
-                ", dockerImage=" + dockerImage +
+                ", dockerImage=" + dockerImage.asString() +
                 ", vespaVersion='" + vespaVersion + '\'' +
                 '}';
     }

@@ -46,7 +46,7 @@ public class NodeRepoMock implements NodeRepository {
     @Override
     public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) throws IOException {
         synchronized (monitor) {
-            callOrderVerifier.add("updateNodeAttributes with HostName: " + hostName + ", NodeAttributes: " + nodeAttributes);
+            callOrderVerifier.add("updateNodeAttributes with HostName: " + hostName + ", " + nodeAttributes);
         }
     }
 
