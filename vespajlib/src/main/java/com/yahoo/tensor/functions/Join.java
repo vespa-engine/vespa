@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.IndexedTensor;
@@ -21,6 +22,7 @@ import java.util.function.DoubleBinaryOperator;
  * 
  * @author bratseth
  */
+@Beta
 public class Join extends PrimitiveTensorFunction {
     
     private final TensorFunction argumentA, argumentB;

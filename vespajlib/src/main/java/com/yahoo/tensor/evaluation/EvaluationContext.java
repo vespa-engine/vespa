@@ -1,5 +1,7 @@
 package com.yahoo.tensor.evaluation;
 
+import com.google.common.annotations.Beta;
+
 import java.util.HashMap;
 
 /**
@@ -8,6 +10,7 @@ import java.util.HashMap;
  * 
  * @author bratseth
  */
+@Beta
 public interface EvaluationContext {
 
 }

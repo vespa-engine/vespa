@@ -1,5 +1,7 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
+
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 
@@ -10,6 +12,7 @@ import java.util.function.DoubleUnaryOperator;
  * 
  * @author bratseth
  */
+@Beta
 public class ScalarFunctions {
 
     public static DoubleBinaryOperator add() { return new Addition(); }

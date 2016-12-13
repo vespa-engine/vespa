@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 
 /**
@@ -9,6 +10,7 @@ import com.yahoo.tensor.Tensor;
  * 
  * @author bratseth
  */
+@Beta
 public abstract class PrimitiveTensorFunction extends TensorFunction {
     
 }

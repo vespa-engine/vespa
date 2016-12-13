@@ -1,11 +1,14 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
+
 import java.util.Collections;
 import java.util.List;
 
 /**
  * @author bratseth
  */
+@Beta
 public class L1Normalize extends CompositeTensorFunction {
 
     private final TensorFunction argument;

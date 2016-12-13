@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
@@ -9,6 +10,7 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
  * 
  * @author bratseth
  */
+@Beta
 public abstract class CompositeTensorFunction extends TensorFunction {
 
     /** Evaluates this by first converting it to a primitive function */

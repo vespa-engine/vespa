@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.IndexedTensor;
@@ -23,6 +24,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
+@Beta
 public class Reduce extends PrimitiveTensorFunction {
 
     public enum Aggregator { avg, count, prod, sum, max, min; }

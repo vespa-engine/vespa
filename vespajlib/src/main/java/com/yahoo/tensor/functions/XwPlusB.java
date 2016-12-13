@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.List;
 /**
  * @author bratseth
  */
+@Beta
 public class XwPlusB extends CompositeTensorFunction {
 
     private final TensorFunction x, w, b;

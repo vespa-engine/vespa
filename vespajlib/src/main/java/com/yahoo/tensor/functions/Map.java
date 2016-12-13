@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
@@ -16,6 +17,7 @@ import java.util.function.DoubleUnaryOperator;
  *
  * @author bratseth
  */
+@Beta
 public class Map extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;

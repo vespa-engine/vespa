@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.MappedTensor;
@@ -19,6 +20,7 @@ import java.util.Objects;
  * 
  * @author bratseth
  */
+@Beta
 public class Rename extends PrimitiveTensorFunction {
 
     private final TensorFunction argument;

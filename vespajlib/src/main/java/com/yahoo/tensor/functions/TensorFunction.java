@@ -1,5 +1,6 @@
 package com.yahoo.tensor.functions;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
@@ -13,6 +14,7 @@ import java.util.List;
  * 
  * @author bratseth
  */
+@Beta
 public abstract class TensorFunction {
 
     /** Returns the function arguments of this node in the order they are applied */
