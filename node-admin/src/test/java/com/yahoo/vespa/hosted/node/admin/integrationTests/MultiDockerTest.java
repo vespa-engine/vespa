@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * @author freva
@@ -29,9 +28,8 @@ public class MultiDockerTest {
                             .build());
 
             // Wait until it is marked ready
-            Optional<ContainerNodeSpec> tempContainerNodeSpec;
-            while ((tempContainerNodeSpec = dockerTester.getContainerNodeSpec(containerNodeSpec2.hostname)).isPresent()
-                    && tempContainerNodeSpec.get().nodeState != Node.State.ready) {
+            while (dockerTester.getContainerNodeSpec(containerNodeSpec2.hostname)
+                    .filter(nodeSpec -> nodeSpec.nodeState != Node.State.ready).isPresent()) {
                 Thread.sleep(10);
             }
 
