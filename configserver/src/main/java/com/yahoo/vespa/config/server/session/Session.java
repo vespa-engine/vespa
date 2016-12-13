@@ -16,10 +16,12 @@ public abstract class Session {
 
     private final long sessionId;
     protected final TenantName tenant;
+    protected final SessionZooKeeperClient zooKeeperClient;
 
-    protected Session(TenantName tenant, long sessionId) {
+    protected Session(TenantName tenant, long sessionId, SessionZooKeeperClient zooKeeperClient) {
         this.tenant = tenant;
         this.sessionId = sessionId;
+        this.zooKeeperClient = zooKeeperClient;
     }
     /**
      * Retrieve the session id for this session.
@@ -27,6 +29,10 @@ public abstract class Session {
      */
     public final long getSessionId() {
         return sessionId;
+    }
+
+    public Session.Status getStatus() {
+        return zooKeeperClient.readStatus();
     }
 
     @Override

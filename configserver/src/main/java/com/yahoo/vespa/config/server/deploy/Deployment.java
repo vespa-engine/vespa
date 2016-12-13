@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
@@ -160,7 +159,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (Session.Status.NEW.equals(localSession.getStatus())) {
             throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is not prepared");
         } else if (Session.Status.ACTIVATE.equals(localSession.getStatus())) {
-            throw new IllegalArgumentException(localSession.logPre() + "Session " + sessionId + " is already active");
+            throw new IllegalStateException(localSession.logPre() + "Session " + sessionId + " is already active");
         }
         return sessionId;
     }
