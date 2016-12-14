@@ -190,9 +190,14 @@ public class IndexedTensor implements Tensor {
     /** Returns the value at this address, or NaN if there is no value at this address */
     @Override
     public double get(TensorAddress address) { 
+        if (type.dimensions().isEmpty()) // either empty or a sinle value
+            return firstDimension.values().isEmpty() ? Double.NaN : (double)firstDimension.values().get(0);
+        
         IndexedDimension currentDimension = firstDimension;
         for (int i = 0; i < address.labels().size(); i++) {
             int index = Integer.parseInt(address.labels().get(i));
+            if (index >= currentDimension.values().size()) return Double.NaN;
+
             Object value = currentDimension.values().get(index);
             if (value == null) return Double.NaN;
             
@@ -350,6 +355,11 @@ public class IndexedTensor implements Tensor {
             public IndexedTensor.Builder.IndexedCellBuilder label(String dimension, String label) {
                 addressBuilder.add(dimension, label);
                 return this;
+            }
+
+            @Override
+            public IndexedTensor.Builder.IndexedCellBuilder label(String dimension, int label) {
+                return label(dimension, String.valueOf(label));
             }
 
             @Override

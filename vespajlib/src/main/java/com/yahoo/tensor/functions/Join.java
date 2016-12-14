@@ -65,7 +65,6 @@ public class Join extends PrimitiveTensorFunction {
     public Tensor evaluate(EvaluationContext context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
-        
         TensorType joinedType = a.type().combineWith(b.type());
 
         // Choose join algorithm
@@ -74,9 +73,9 @@ public class Join extends PrimitiveTensorFunction {
         else if (joinedType.dimensions().size() == a.type().dimensions().size() && joinedType.dimensions().size() == b.type().dimensions().size())
             return singleSpaceJoin(a, b, joinedType);
         else if (a.type().dimensions().containsAll(b.type().dimensions()))
-            return subspaceJoin(b, a, joinedType);
+            return subspaceJoin(b, a, joinedType, true);
         else if (b.type().dimensions().containsAll(a.type().dimensions()))
-            return subspaceJoin(a, b,joinedType);
+            return subspaceJoin(a, b, joinedType, false);
         else
             return generalJoin(a, b, joinedType);
     }
@@ -101,14 +100,16 @@ public class Join extends PrimitiveTensorFunction {
     }
     
     /** Join a tensor into a superspace */
-    private Tensor subspaceJoin(Tensor subspace, Tensor superspace, TensorType joinedType) {
+    private Tensor subspaceJoin(Tensor subspace, Tensor superspace, TensorType joinedType, boolean reversedArgumentOrder) {
         int[] subspaceIndexes = subspaceIndexes(superspace.type(), subspace.type());
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
         for (Map.Entry<TensorAddress, Double> supercell : superspace.cells().entrySet()) {
             TensorAddress subaddress = mapAddressToSubspace(supercell.getKey(), subspaceIndexes);
             double subspaceValue = subspace.get(subaddress);
-            if (subspaceValue != Double.NaN)
-                builder.cell(supercell.getKey(), combinator.applyAsDouble(subspaceValue, supercell.getValue()));
+            if ( ! Double.isNaN(subspaceValue))
+                builder.cell(supercell.getKey(), 
+                             reversedArgumentOrder ? combinator.applyAsDouble(supercell.getValue(), subspaceValue)
+                                                   : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
         }
         return builder.build();
     }

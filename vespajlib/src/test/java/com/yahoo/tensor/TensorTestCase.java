@@ -40,8 +40,6 @@ public class TensorTestCase {
     /** Test the same computation made in various ways which are implemented with special-cvase optimizations */
     @Test
     public void testOptimizedComputation() {
-        // All ways of making this computation should return the same value
-        
         assertEquals("Mapped vector",  42, (int)dotProduct(vector(Type.mapped), vectors(Type.mapped, 2)));
         assertEquals("Indexed vector", 42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.indexedUnbound, 2)));
         assertEquals("Mapped matrix",  42, (int)dotProduct(vector(Type.mapped), matrix(Type.mapped, 2)));
@@ -54,6 +52,13 @@ public class TensorTestCase {
         assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
         assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
         assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
+        
+        // Test the unoptimized path by joining in another dimension
+        Tensor unitJ = Tensor.Builder.of(new TensorType.Builder().mapped("j").build()).cell().label("j", 0).value(1).build();
+        Tensor unitK = Tensor.Builder.of(new TensorType.Builder().mapped("k").build()).cell().label("k", 0).value(1).build();
+        Tensor vectorInJSpace = vector(Type.mapped).multiply(unitJ);
+        Tensor matrixInKSpace = matrix(Type.mapped, 2).get(0).multiply(unitK);
+        assertEquals("Generic computation implementation", 42, (int)dotProduct(vectorInJSpace, Collections.singletonList(matrixInKSpace)));
     }
 
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
@@ -92,7 +97,7 @@ public class TensorTestCase {
 
     /** 
      * Create a matrix of vectors (in dimension i) where each vector has the dimension x.
-     * Thie matric contains the same vectors as returned by createVectors
+     * This matrix contains the same vectors as returned by createVectors, in a single list element for convenience.
      */
     private List<Tensor> matrix(TensorType.Dimension.Type dimensionType, int vectorCount) {
         int vectorSize = 3;
