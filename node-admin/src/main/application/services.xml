@@ -14,6 +14,8 @@
       <uri>tcp://localhost:2376</uri>
     </config>
 
-    <config name='vespa.hosted.node.admin.node-admin'/>
+    <config name='vespa.hosted.node.admin.node-admin'>
+      <isRunningLocally>false</isRunningLocally>
+    </config>
   </jdisc>
 </services>

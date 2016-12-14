@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Helper class to generate and write the secret-agent schedule file.
  *
- * @author valerijf
+ * @author freva
  */
 public class SecretAgentScheduleMaker {
     private final String id;
@@ -38,6 +38,7 @@ public class SecretAgentScheduleMaker {
     }
 
     public void writeTo(Path yamasAgentDirectory) throws IOException {
+        if (! Files.exists(yamasAgentDirectory)) yamasAgentDirectory.toFile().mkdirs();
         Path scheduleFilePath = yamasAgentDirectory.resolve(id + ".yaml");
         Files.write(scheduleFilePath, toString().getBytes());
         scheduleFilePath.toFile().setReadable(true, false); // Give everyone read access to the schedule file
