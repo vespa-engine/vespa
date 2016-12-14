@@ -8,20 +8,20 @@ namespace search {
 namespace attribute {
 
 template <typename EntryT, typename RefT>
-MultiValueMapping2<EntryT,RefT>::MultiValueMapping2(const datastore::ArrayStoreConfig &storeCfg, const GrowStrategy &gs)
-    : MultiValueMapping2Base(gs, _store.getGenerationHolder()),
+MultiValueMapping<EntryT,RefT>::MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg, const GrowStrategy &gs)
+    : MultiValueMappingBase(gs, _store.getGenerationHolder()),
       _store(storeCfg)
 {
 }
 
 template <typename EntryT, typename RefT>
-MultiValueMapping2<EntryT,RefT>::~MultiValueMapping2()
+MultiValueMapping<EntryT,RefT>::~MultiValueMapping()
 {
 }
 
 template <typename EntryT, typename RefT>
 void
-MultiValueMapping2<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
+MultiValueMapping<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
 {
     _indices.ensure_size(docId + 1);
     EntryRef oldRef(_indices[docId]);
@@ -33,7 +33,7 @@ MultiValueMapping2<EntryT,RefT>::set(uint32_t docId, ConstArrayRef values)
 
 template <typename EntryT, typename RefT>
 void
-MultiValueMapping2<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
+MultiValueMapping<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
 {
     ConstArrayRef oldValues = _store.get(_indices[docId]);
     assert(oldValues.size() == values.size());
@@ -46,7 +46,7 @@ MultiValueMapping2<EntryT,RefT>::replace(uint32_t docId, ConstArrayRef values)
 
 template <typename EntryT, typename RefT>
 void
-MultiValueMapping2<EntryT,RefT>::compactWorst(bool compactMemory, bool compactAddressSpace)
+MultiValueMapping<EntryT,RefT>::compactWorst(bool compactMemory, bool compactAddressSpace)
 {
     datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compactMemory, compactAddressSpace));
     if (compactionContext) {
@@ -57,20 +57,20 @@ MultiValueMapping2<EntryT,RefT>::compactWorst(bool compactMemory, bool compactAd
 
 template <typename EntryT, typename RefT>
 MemoryUsage
-MultiValueMapping2<EntryT,RefT>::getArrayStoreMemoryUsage() const
+MultiValueMapping<EntryT,RefT>::getArrayStoreMemoryUsage() const
 {
     return _store.getMemoryUsage();
 }
 
 template <typename EntryT, typename RefT>
 AddressSpace
-MultiValueMapping2<EntryT, RefT>::getAddressSpaceUsage() const {
+MultiValueMapping<EntryT, RefT>::getAddressSpaceUsage() const {
     return _store.addressSpaceUsage();
 }
 
 template <typename EntryT, typename RefT>
 datastore::ArrayStoreConfig
-MultiValueMapping2<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
+MultiValueMapping<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                              size_t hugePageSize,
                                                              size_t smallPageSize,
                                                              size_t minNumArraysForNewBuffer)

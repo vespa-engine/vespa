@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/enumattribute.h>
 #include <vespa/searchlib/attribute/enumstore.h>
 #include <vespa/searchlib/attribute/multienumattribute.h>
-#include <vespa/searchlib/attribute/multi_value_mapping2.h>
+#include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include "enumhintsearchcontext.h"
 #include "multivalue.h"
 

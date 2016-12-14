@@ -3,7 +3,7 @@
 #include <vespa/fastos/fastos.h>
 #include "postingchange.h"
 #include "multivalue.h"
-#include "multi_value_mapping2.h"
+#include "multi_value_mapping.h"
 #include "postinglistattribute.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <map>
@@ -345,19 +345,19 @@ typedef EnumStoreBase::Index EnumIndex;
 typedef multivalue::WeightedValue<EnumIndex> WeightedIndex; 
 typedef multivalue::Value<EnumIndex> ValueIndex; 
 
-using WeightedMultiValueMapping2 = attribute::MultiValueMapping2<WeightedIndex>;
-using ValueMultiValueMapping2 = attribute::MultiValueMapping2<ValueIndex>;
+using WeightedMultiValueMapping = attribute::MultiValueMapping<WeightedIndex>;
+using ValueMultiValueMapping = attribute::MultiValueMapping<ValueIndex>;
 typedef std::vector<std::pair<uint32_t, std::vector<WeightedIndex>>> DocIndicesWeighted;
 typedef std::vector<std::pair<uint32_t, std::vector<ValueIndex>>> DocIndicesValue;
 
 template WeightedPostingChangeMap PostingChangeComputerT<WeightedIndex, WeightedPostingChangeMap>
-             ::compute<WeightedMultiValueMapping2>(const WeightedMultiValueMapping2 &,
+             ::compute<WeightedMultiValueMapping>(const WeightedMultiValueMapping &,
                                                    const DocIndicesWeighted &,
                                                    const EnumStoreComparator &,
                                                    const EnumIndexMapper &);
 
 template WeightedPostingChangeMap PostingChangeComputerT<ValueIndex, WeightedPostingChangeMap>
-             ::compute<ValueMultiValueMapping2>(const ValueMultiValueMapping2 &,
+             ::compute<ValueMultiValueMapping>(const ValueMultiValueMapping &,
                                                 const DocIndicesValue &,
                                                 const EnumStoreComparator &,
                                                 const EnumIndexMapper &);

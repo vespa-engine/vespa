@@ -4,7 +4,7 @@
 
 #include "attributesaver.h"
 #include "iattributesavetarget.h"
-#include "multi_value_mapping2.h"
+#include "multi_value_mapping.h"
 
 namespace search {
 
@@ -15,7 +15,7 @@ class MultiValueAttributeSaver : public AttributeSaver
 {
 protected:
     using GenerationHandler = vespalib::GenerationHandler;
-    using MvMappingBase = attribute::MultiValueMapping2Base;
+    using MvMappingBase = attribute::MultiValueMappingBase;
     using RefCopyVector = MvMappingBase::RefCopyVector;
     RefCopyVector _frozenIndices;
 

@@ -20,7 +20,7 @@ class MultiValueNumericAttributeSaver : public MultiValueAttributeSaver
     using ValueType = typename MultiValueType::ValueType;
     using GenerationHandler = vespalib::GenerationHandler;
     using Parent::_frozenIndices;
-    using MultiValueMapping = attribute::MultiValueMapping2<MultiValueType>;
+    using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
 
     const MultiValueMapping &_mvMapping;
 public:
