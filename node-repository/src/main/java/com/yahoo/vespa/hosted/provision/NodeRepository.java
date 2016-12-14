@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
+import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.time.Clock;
@@ -72,7 +73,7 @@ public class NodeRepository extends AbstractComponent {
      */
     @Inject
     public NodeRepository(NodeFlavors flavors, Curator curator, Zone zone) {
-        this(flavors, curator, Clock.systemUTC(), zone, new NameResolver() {} /* use default implementation */);
+        this(flavors, curator, Clock.systemUTC(), zone, new DnsNameResolver());
     }
 
     /**
