@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "attribute_metrics.h"
+#include "legacy_attribute_metrics.h"
 #include "executor_metrics.h"
 #include <vespa/metrics/metrics.h>
 #include "sessionmanager_metrics.h"
@@ -98,13 +98,13 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
             DocumentMetaStoreMetrics(metrics::MetricSet *parent);
         };
 
-        AttributeMetrics attributes;
+        LegacyAttributeMetrics attributes;
         DocumentMetaStoreMetrics docMetaStore;
         SubDBMetrics(const vespalib::string &name, metrics::MetricSet *parent);
     };
 
     IndexMetrics                                 index;
-    AttributeMetrics                             attributes;
+    LegacyAttributeMetrics                       attributes;
     DocstoreMetrics                              docstore;
     MatchingMetrics                              matching;
     ExecutorMetrics                              executor;

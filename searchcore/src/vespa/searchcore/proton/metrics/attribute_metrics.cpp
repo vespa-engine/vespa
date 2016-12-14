@@ -5,70 +5,60 @@
 
 namespace proton {
 
-AttributeMetrics::List::Entry::Entry(const std::string &name)
-    : metrics::MetricSet(name, "", "Attribute vector metrics", 0),
-      memoryUsage("memoryusage", "", "Memory usage", this),
-      bitVectors("bitvectors", "", "Number of bitvectors", this)
-{
-}
+using Entry = AttributeMetrics::Entry;
 
-AttributeMetrics::List::Entry::LP
-AttributeMetrics::List::add(const std::string &name)
-{
-    if (metrics.find(name) != metrics.end()) {
-        return Entry::LP(0);
-    }
-    Entry::LP entry(new Entry(name));
-    metrics[name] = entry;
-    return entry;
-}
-
-AttributeMetrics::List::Entry::LP
-AttributeMetrics::List::get(const std::string &name) const
-{
-    std::map<std::string, Entry::LP>::const_iterator pos = metrics.find(name);
-    if (pos == metrics.end()) {
-        return Entry::LP(0);
-    }
-    return pos->second;
-}
-
-AttributeMetrics::List::Entry::LP
-AttributeMetrics::List::remove(const std::string &name)
-{
-    std::map<std::string, Entry::LP>::const_iterator pos = metrics.find(name);
-    if (pos == metrics.end()) {
-        return Entry::LP(0);
-    }
-    Entry::LP retval = pos->second;
-    metrics.erase(name);
-    return retval;
-}
-
-std::vector<AttributeMetrics::List::Entry::LP>
-AttributeMetrics::List::release()
-{
-    std::vector<Entry::LP> entries;
-    std::map<std::string, Entry::LP>::const_iterator pos = metrics.begin();
-    for (; pos != metrics.end(); ++pos) {
-        entries.push_back(pos->second);
-    }
-    metrics.clear();
-    return entries;
-}
-
-AttributeMetrics::List::List(metrics::MetricSet *parent)
-    : metrics::MetricSet("list", "", "Metrics per attribute vector", parent),
-      metrics()
+AttributeMetrics::Entry::Entry(const vespalib::string &attrName)
+    : metrics::MetricSet("attribute", {{"fieldname", attrName}}, "Metrics for a given attribute vector", nullptr),
+      memoryUsage(this)
 {
 }
 
 AttributeMetrics::AttributeMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("attributes", "", "Attribute metrics", parent),
-      list(this),
-      memoryUsage("memoryusage", "", "Memory usage for attributes", this),
-      bitVectors("bitvectors", "", "Number of bitvectors for attributes", this)
+    : _parent(parent),
+      _attributes()
 {
+}
+
+Entry::SP
+AttributeMetrics::add(const vespalib::string &attrName)
+{
+    if (get(attrName).get() != nullptr) {
+        return Entry::SP();
+    }
+    Entry::SP result = std::make_shared<Entry>(attrName);
+    _attributes.insert(std::make_pair(attrName, result));
+    return result;
+}
+
+Entry::SP
+AttributeMetrics::get(const vespalib::string &attrName) const
+{
+    auto itr = _attributes.find(attrName);
+    if (itr != _attributes.end()) {
+        return itr->second;
+    }
+    return Entry::SP();
+}
+
+Entry::SP
+AttributeMetrics::remove(const vespalib::string &attrName)
+{
+    Entry::SP result = get(attrName);
+    if (result.get() != nullptr) {
+        _attributes.erase(attrName);
+    }
+    return result;
+}
+
+std::vector<Entry::SP>
+AttributeMetrics::release()
+{
+    std::vector<Entry::SP> result;
+    for (const auto &attr : _attributes) {
+        result.push_back(attr.second);
+    }
+    _attributes.clear();
+    return result;
 }
 
 } // namespace proton

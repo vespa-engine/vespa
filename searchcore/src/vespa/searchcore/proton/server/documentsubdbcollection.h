@@ -18,7 +18,7 @@
 
 namespace proton {
 class DocumentDBConfig;
-class LegacyDocumentDBMetrics;
+class DocumentDBMetricsCollection;
 class MaintenanceController;
 class MetricsWireService;
 class ICommitable;
@@ -54,7 +54,7 @@ public:
             vespalib::ThreadStackExecutorBase &summaryExecutor,
             const search::common::FileHeaderContext &fileHeaderContext,
             MetricsWireService &metricsWireService,
-            LegacyDocumentDBMetrics &metrics,
+            DocumentDBMetricsCollection &metrics,
             matching::QueryLimiter & queryLimiter,
             const vespalib::Clock &clock,
             vespalib::Lock &configLock,

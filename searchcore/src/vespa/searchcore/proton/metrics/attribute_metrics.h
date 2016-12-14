@@ -3,44 +3,31 @@
 #pragma once
 
 #include <vespa/metrics/metrics.h>
-#include <vespa/vespalib/util/linkedptr.h>
+#include "memory_usage_metrics.h"
 
 namespace proton {
 
-struct LegacyDocumentDBMetrics;
-
-struct AttributeMetrics : metrics::MetricSet {
-
-    // The metric set also owns the actual metrics for individual
-    // attribute vectors. Another way to do this would be to let the
-    // attribute vectors own their own metrics, but this would
-    // generate more dependencies and reduce locality of code changes.
-
-    struct List : metrics::MetricSet {
-        struct Entry : metrics::MetricSet {
-            typedef vespalib::LinkedPtr<Entry> LP;
-            metrics::LongValueMetric memoryUsage;
-            metrics::LongValueMetric bitVectors;
-            Entry(const std::string &name);
-        };
-        Entry::LP add(const std::string &name);
-        Entry::LP get(const std::string &name) const;
-        Entry::LP remove(const std::string &name);
-        std::vector<Entry::LP> release();
-
-        // per attribute metrics will be wired in here (by the metrics engine)
-        List(metrics::MetricSet *parent);
-
-    private:
-        std::map<std::string, Entry::LP> metrics;
+class AttributeMetrics
+{
+public:
+    struct Entry : public metrics::MetricSet {
+        using SP = std::shared_ptr<Entry>;
+        MemoryUsageMetrics memoryUsage;
+        Entry(const vespalib::string &attrName);
     };
+private:
+    using Map = std::map<vespalib::string, Entry::SP>;
 
-    List                     list;
-    metrics::LongValueMetric memoryUsage;
-    metrics::LongValueMetric bitVectors;
+    metrics::MetricSet *_parent;
+    Map _attributes;
 
+public:
     AttributeMetrics(metrics::MetricSet *parent);
+    Entry::SP add(const vespalib::string &attrName);
+    Entry::SP get(const vespalib::string &attrName) const;
+    Entry::SP remove(const vespalib::string &attrName);
+    std::vector<Entry::SP> release();
+    metrics::MetricSet *parent() { return _parent; }
 };
 
 } // namespace proton
-

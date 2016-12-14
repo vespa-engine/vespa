@@ -234,7 +234,7 @@ private:
      * Implements IWipeOldRemovedFieldsHandler
      */
     virtual void wipeOldRemovedFields(TimeStamp wipeTimeLimit);
-    void updateMetrics(LegacyDocumentDBMetrics &metrics);
+    void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics &metrics);
     void updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
 

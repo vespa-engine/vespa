@@ -6,6 +6,7 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.metricsengine");
+#include "attribute_metrics_collection.h"
 
 namespace proton {
 
@@ -128,10 +129,10 @@ MetricsEngine::removeDocumentDBMetrics(DocumentDBMetricsCollection &child)
 namespace {
 
 void
-doAddAttribute(AttributeMetrics &attributes,
+doAddAttribute(LegacyAttributeMetrics &attributes,
                const std::string &name)
 {
-    AttributeMetrics::List::Entry::LP entry = attributes.list.add(name);
+    LegacyAttributeMetrics::List::Entry::LP entry = attributes.list.add(name);
     if (entry.get() != 0) {
         LOG(debug, "doAddAttribute(): name='%s', attributes=%p",
                 name.c_str(), (void*)&attributes);
@@ -142,10 +143,10 @@ doAddAttribute(AttributeMetrics &attributes,
 }
 
 void
-doRemoveAttribute(AttributeMetrics &attributes,
+doRemoveAttribute(LegacyAttributeMetrics &attributes,
                   const std::string &name)
 {
-    AttributeMetrics::List::Entry::LP entry = attributes.list.remove(name);
+    LegacyAttributeMetrics::List::Entry::LP entry = attributes.list.remove(name);
     if (entry.get() != 0) {
         LOG(debug, "doRemoveAttribute(): name='%s', attributes=%p",
                 name.c_str(), (void*)&attributes);
@@ -156,46 +157,80 @@ doRemoveAttribute(AttributeMetrics &attributes,
 }
 
 void
-doCleanAttributes(AttributeMetrics &attributes)
+doCleanAttributes(LegacyAttributeMetrics &attributes)
 {
-    std::vector<AttributeMetrics::List::Entry::LP> entries = attributes.list.release();
+    std::vector<LegacyAttributeMetrics::List::Entry::LP> entries = attributes.list.release();
     for (size_t i = 0; i < entries.size(); ++i) {
         attributes.list.unregisterMetric(*entries[i]);
+    }
+}
+
+void
+doAddAttribute(AttributeMetrics &attributes, const std::string &attrName)
+{
+    auto entry = attributes.add(attrName);
+    if (entry) {
+        attributes.parent()->registerMetric(*entry);
+    } else {
+        LOG(warning, "Could not add metrics for attribute '%s', already existing", attrName.c_str());
+    }
+}
+
+void
+doRemoveAttribute(AttributeMetrics &attributes, const std::string &attrName)
+{
+    auto entry = attributes.remove(attrName);
+    if (entry) {
+        attributes.parent()->unregisterMetric(*entry);
+    } else {
+        LOG(warning, "Could not remove metrics for attribute '%s', not found", attrName.c_str());
+    }
+}
+
+void
+doCleanAttributes(AttributeMetrics &attributes)
+{
+    auto entries = attributes.release();
+    for (const auto entry : entries) {
+        attributes.parent()->unregisterMetric(*entry);
     }
 }
 
 }
 
 void
-MetricsEngine::addAttribute(AttributeMetrics &subAttributes,
-                            AttributeMetrics *totalAttributes,
+MetricsEngine::addAttribute(const AttributeMetricsCollection &subAttributes,
+                            LegacyAttributeMetrics *totalAttributes,
                             const std::string &name)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doAddAttribute(subAttributes, name);
+    doAddAttribute(subAttributes.getMetrics(), name);
+    doAddAttribute(subAttributes.getLegacyMetrics(), name);
     if (totalAttributes != NULL) {
         doAddAttribute(*totalAttributes, name);
     }
 }
 
 void
-MetricsEngine::removeAttribute(AttributeMetrics &subAttributes,
-                               AttributeMetrics *totalAttributes,
+MetricsEngine::removeAttribute(const AttributeMetricsCollection &subAttributes,
+                               LegacyAttributeMetrics *totalAttributes,
                                const std::string &name)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doRemoveAttribute(subAttributes, name);
+    doRemoveAttribute(subAttributes.getMetrics(), name);
+    doRemoveAttribute(subAttributes.getLegacyMetrics(), name);
     if (totalAttributes != NULL) {
         doRemoveAttribute(*totalAttributes, name);
     }
 }
 
 void
-MetricsEngine::cleanAttributes(AttributeMetrics &subAttributes,
-                               AttributeMetrics *totalAttributes)
+MetricsEngine::cleanAttributes(const AttributeMetricsCollection &subAttributes,
+                               LegacyAttributeMetrics *totalAttributes)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doCleanAttributes(subAttributes);
+    doCleanAttributes(subAttributes.getMetrics());
+    doCleanAttributes(subAttributes.getLegacyMetrics());
     if (totalAttributes != NULL) {
         doCleanAttributes(*totalAttributes);
     }

@@ -5,15 +5,58 @@
 #include <vespa/log/log.h>
 LOG_SETUP("metrics_engine_test");
 
+#include <vespa/metrics/metricset.h>
+#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace proton;
 
-namespace {
+struct DummyMetricSet : public metrics::MetricSet {
+    DummyMetricSet(const vespalib::string &name) : metrics::MetricSet(name, "", "", nullptr) {}
+};
 
-TEST("require that the metric proton.diskusage is the sum of the documentDB "
-     "diskusage metrics.") {
+struct AttributeMetricsFixture {
+    MetricsEngine engine;
+    DummyMetricSet parent;
+    AttributeMetrics metrics;
+    LegacyAttributeMetrics legacyMetrics;
+    LegacyAttributeMetrics totalLegacyMetrics;
+    AttributeMetricsFixture()
+        : engine(),
+          parent("parent"),
+          metrics(&parent),
+          legacyMetrics(nullptr),
+          totalLegacyMetrics(nullptr)
+    {}
+    void addAttribute(const vespalib::string &attrName) {
+        engine.addAttribute(AttributeMetricsCollection(metrics, legacyMetrics), &totalLegacyMetrics, attrName);
+    }
+    void removeAttribute(const vespalib::string &attrName) {
+        engine.removeAttribute(AttributeMetricsCollection(metrics, legacyMetrics), &totalLegacyMetrics, attrName);
+    }
+    void cleanAttributes() {
+        engine.cleanAttributes(AttributeMetricsCollection(metrics, legacyMetrics), &totalLegacyMetrics);
+    }
+    void assertRegisteredMetrics(size_t expNumMetrics) const {
+        EXPECT_EQUAL(expNumMetrics, parent.getRegisteredMetrics().size());
+        EXPECT_EQUAL(expNumMetrics, legacyMetrics.list.getRegisteredMetrics().size());
+        EXPECT_EQUAL(expNumMetrics, totalLegacyMetrics.list.getRegisteredMetrics().size());
+    }
+    void assertMetricsExists(const vespalib::string &attrName) {
+        EXPECT_TRUE(metrics.get(attrName).get() != nullptr);
+        EXPECT_TRUE(legacyMetrics.list.get(attrName).get() != nullptr);
+        EXPECT_TRUE(totalLegacyMetrics.list.get(attrName).get() != nullptr);
+    }
+    void assertMetricsNotExists(const vespalib::string &attrName) {
+        EXPECT_TRUE(metrics.get(attrName).get() == nullptr);
+        EXPECT_TRUE(legacyMetrics.list.get(attrName).get() == nullptr);
+        EXPECT_TRUE(totalLegacyMetrics.list.get(attrName).get() == nullptr);
+    }
+};
+
+TEST("require that the metric proton.diskusage is the sum of the documentDB diskusage metrics")
+{
     MetricsEngine metrics_engine;
 
     DocumentDBMetricsCollection metrics1("type1", 1);
@@ -27,6 +70,36 @@ TEST("require that the metric proton.diskusage is the sum of the documentDB "
     EXPECT_EQUAL(1100, metrics_engine.legacyRoot().diskUsage.getLongValue("value"));
 }
 
-}  // namespace
+TEST_F("require that attribute metrics can be added", AttributeMetricsFixture)
+{
+    TEST_DO(f.assertRegisteredMetrics(0));
+    f.addAttribute("foo");
+    TEST_DO(f.assertRegisteredMetrics(1));
+    TEST_DO(f.assertMetricsExists("foo"));
+}
+
+TEST_F("require that attribute metrics can be removed", AttributeMetricsFixture)
+{
+    TEST_DO(f.assertRegisteredMetrics(0));
+    f.addAttribute("foo");
+    f.addAttribute("bar");
+    TEST_DO(f.assertRegisteredMetrics(2));
+    f.removeAttribute("foo");
+    TEST_DO(f.assertRegisteredMetrics(1));
+    TEST_DO(f.assertMetricsNotExists("foo"));
+    TEST_DO(f.assertMetricsExists("bar"));
+}
+
+TEST_F("require that all attribute metrics can be cleaned", AttributeMetricsFixture)
+{
+    TEST_DO(f.assertRegisteredMetrics(0));
+    f.addAttribute("foo");
+    f.addAttribute("bar");
+    TEST_DO(f.assertRegisteredMetrics(2));
+    f.cleanAttributes();
+    TEST_DO(f.assertRegisteredMetrics(0));
+    TEST_DO(f.assertMetricsNotExists("foo"));
+    TEST_DO(f.assertMetricsNotExists("bar"));
+}
 
 TEST_MAIN() { TEST_RUN_ALL(); }

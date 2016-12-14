@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "attribute_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 
@@ -52,6 +53,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
 
         LidSpaceMetrics lidSpace;
         DocumentStoreMetrics documentStore;
+        proton::AttributeMetrics attributes;
 
         SubDBMetrics(const vespalib::string &name, metrics::MetricSet *parent);
     };

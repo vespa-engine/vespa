@@ -44,18 +44,18 @@ public:
     void removeExternalMetrics(metrics::Metric &child);
     void addDocumentDBMetrics(DocumentDBMetricsCollection &child);
     void removeDocumentDBMetrics(DocumentDBMetricsCollection &child);
-    virtual void addAttribute(AttributeMetrics &subAttributes,
-                              AttributeMetrics *totalAttributes,
-                              const std::string &name);
-    virtual void removeAttribute(AttributeMetrics &subAttributes,
-                                 AttributeMetrics *totalAttributes,
-                                 const std::string &name);
-    virtual void cleanAttributes(AttributeMetrics &subAttributes,
-                                 AttributeMetrics *totalAttributes);
+    virtual void addAttribute(const AttributeMetricsCollection &subAttributes,
+                              LegacyAttributeMetrics *totalAttributes,
+                              const std::string &name) override;
+    virtual void removeAttribute(const AttributeMetricsCollection &subAttributes,
+                                 LegacyAttributeMetrics *totalAttributes,
+                                 const std::string &name) override;
+    virtual void cleanAttributes(const AttributeMetricsCollection &subAttributes,
+                                 LegacyAttributeMetrics *totalAttributes);
     virtual void addRankProfile(LegacyDocumentDBMetrics &owner,
                                 const std::string &name,
-                                size_t numDocIdPartitions);
-    virtual void cleanRankProfiles(LegacyDocumentDBMetrics &owner);
+                                size_t numDocIdPartitions) override;
+    virtual void cleanRankProfiles(LegacyDocumentDBMetrics &owner) override;
     void stop();
 
     vespalib::MetricsProducer &metrics_producer() { return _metrics_producer; }
