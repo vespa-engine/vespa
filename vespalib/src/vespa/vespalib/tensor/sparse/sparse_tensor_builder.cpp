@@ -2,6 +2,7 @@
 
 #include "sparse_tensor_builder.h"
 #include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace vespalib {
 namespace tensor {

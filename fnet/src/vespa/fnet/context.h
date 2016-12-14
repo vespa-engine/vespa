@@ -2,6 +2,11 @@
 
 #pragma once
 
+class FNET_IOComponent;
+class FNET_Connector;
+class FNET_Connection;
+class FNET_Channel;
+class FNET_IExecutable;
 /**
  * This class indicates the context of a packet. It is external to the
  * packet class because a single packet may occur in many contexts at

@@ -1,14 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/bucket/bucketid.h>
 
+#include "bucketid.h"
 #include <iomanip>
-#include <sstream>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 
 using vespalib::nbostream;
+
+template class vespalib::Array<document::BucketId>;
 
 namespace document {
 
@@ -146,3 +147,5 @@ operator>>(nbostream &is, BucketId &bucketId)
 }
 
 } // document
+
+VESPALIB_HASH_SET_INSTANTIATE_H(document::BucketId, document::BucketId::hash);

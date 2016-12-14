@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/util/fileutil.h>
-#include <vespa/vespalib/util/stringfmt.h>
+
+#include "fileutil.hpp"
+#include "filesizecalculator.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/guard.h>
-#include <vespa/vespalib/data/fileheader.h>
-#include "filesizecalculator.h"
-#include <stdexcept>
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.util.fileutil");
 
@@ -16,9 +13,7 @@ using vespalib::GenericHeader;
 using vespalib::FileDescriptor;
 using vespalib::getLastErrorString;
 
-namespace search
-{
-
+namespace search {
 
 FileUtil::LoadedMmap::LoadedMmap(const vespalib::string &fileName)
     : LoadedBuffer(NULL, 0),
@@ -124,33 +119,55 @@ SequentialFileArray::SequentialFileArray(const vespalib::string & fname) :
     _backingFile(),
     _name(fname)
 {
-    _backingFile.EnableDirectIO();
+    _backingFile->EnableDirectIO();
+}
+
+SequentialFileArray::~SequentialFileArray()
+{
+    close();
 }
 
 void SequentialFileArray::rewind()
 {
-    assert(_backingFile.SetPosition(0));
+    assert(_backingFile->SetPosition(0));
 }
 
 void SequentialFileArray::close()
 {
-    _backingFile.Close();
+    _backingFile->Close();
 }
 
 void SequentialFileArray::erase()
 {
     close();
-    FastOS_File::Delete(_backingFile.GetFileName());
+    FastOS_File::Delete(_backingFile->GetFileName());
 }
 
 void SequentialFileArray::openReadOnly()
 {
-    _backingFile.ReadOpen(_name.c_str());
+    _backingFile->ReadOpen(_name.c_str());
 }
 
 void SequentialFileArray::openWriteOnly()
 {
-    _backingFile.OpenWriteOnlyTruncate(_name.c_str());
+    _backingFile->OpenWriteOnlyTruncate(_name.c_str());
 }
 
+ssize_t
+FileReaderBase::read(void *buf, size_t sz) {
+    ssize_t numRead = _file.Read(buf, sz);
+    if (numRead != ssize_t(sz)) {
+        handleError(numRead, sz);
+    }
+    return numRead;
+}
+
+ssize_t
+FileWriterBase::write(const void *buf, size_t sz) {
+    ssize_t numWritten = _file.Write2(buf, sz);
+    if (numWritten != ssize_t(sz)) {
+        handleError(numWritten, sz);
+    }
+    return numWritten;
+}
 }

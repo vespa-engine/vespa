@@ -2,13 +2,12 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/hash_map.h>
+#include "utils.h"
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 #include <vespa/searchlib/attribute/multivalue.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
-#include "utils.h"
-
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 namespace features {

@@ -4,7 +4,6 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
-#include <set>
 #include <vespa/vespalib/stllike/hash_set.h>
 
 namespace vespalib {

@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multinumericenumattribute.h>
+#include "multinumericenumattribute.h"
+#include "loadednumericvalue.h"
+#include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/searchlib/attribute/loadednumericvalue.h>
+
 
 namespace search {
 

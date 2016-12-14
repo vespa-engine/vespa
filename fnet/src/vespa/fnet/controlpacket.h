@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "packet.h"
+
 /**
  * Packets of this type may be used to send simple control signals
  * between components in the application. Control packets only contain

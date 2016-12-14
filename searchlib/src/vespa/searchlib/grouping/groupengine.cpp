@@ -1,8 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/grouping/groupengine.h>
+
+#include "groupengine.h"
 #include <vespa/searchlib/expression/nullresultnode.h>
 #include <vespa/searchlib/common/sort.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 
 namespace search {
 
@@ -87,6 +88,11 @@ void GroupEngine::merge(const GroupEngine & b)
     if (_nextEngine != NULL) {
         _nextEngine->merge(*_groupBacking[0], *b._nextEngine);
     }
+}
+
+std::unique_ptr<GroupEngine::Children>
+GroupEngine::createChildren() {
+    return std::unique_ptr<Children>(new Children(0, GroupHash(*this), GroupEqual(*this)));
 }
 
 #if 0

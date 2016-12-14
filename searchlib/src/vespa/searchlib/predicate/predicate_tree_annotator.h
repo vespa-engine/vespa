@@ -6,6 +6,7 @@
 #include <vespa/vespalib/data/slime/memory.h>
 #include <vespa/vespalib/stllike/string.h>
 #include "predicate_interval.h"
+#include <climits>
 
 namespace vespalib {
 namespace slime { class Inspector; }

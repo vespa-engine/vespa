@@ -2,7 +2,15 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/hash_map.h>
+#include <memory>
+#include <vector>
+
+namespace fnet {
+    class ChannelMap;
+}
+
+class FNET_Channel;
+class FNET_ControlPacket;
 
 /**
  * This class handles registration/deregistration and lookup of
@@ -14,8 +22,7 @@
 class FNET_ChannelLookup
 {
 private:
-    typedef vespalib::hash_map<uint32_t, FNET_Channel *> ChannelMap;
-    ChannelMap _map;
+    std::unique_ptr<fnet::ChannelMap> _map;
 
     FNET_ChannelLookup(const FNET_ChannelLookup &);
     FNET_ChannelLookup &operator=(const FNET_ChannelLookup &);
@@ -35,11 +42,6 @@ public:
      * method is called.
      **/
     ~FNET_ChannelLookup();
-
-    /**
-     * @return number of registered channels.
-     **/
-    uint32_t GetEntryCnt() { return _map.size(); }
 
     /**
      * Register a channel. If you register several channels with the
@@ -75,7 +77,7 @@ public:
      * @return vector of all channels to be freed.
      * @param cpacket the control packet you want to broadcast.
      **/
-    std::vector<FNET_Channel::UP> Broadcast(FNET_ControlPacket *cpacket);
+    std::vector<std::unique_ptr<FNET_Channel>> Broadcast(FNET_ControlPacket *cpacket);
 
     /**
      * Unregister a channel. This method uses both the channel ID and

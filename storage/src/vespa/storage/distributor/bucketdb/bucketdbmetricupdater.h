@@ -94,8 +94,7 @@ public:
     }
 
 private:
-    void updateMinReplicationStats(const BucketDatabase::Entry& entry,
-                                   uint32_t trustedCopies);
+    void updateMinReplicationStats(const BucketDatabase::Entry& entry, uint32_t trustedCopies);
 
     void resetStats();
 };

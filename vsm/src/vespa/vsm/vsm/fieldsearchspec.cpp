@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vsm/vsm/fieldsearchspec.h>
+
+#include "fieldsearchspec.h"
 #include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
@@ -151,8 +151,7 @@ FieldSearchSpecMap::FieldSearchSpecMap() :
     _specMap(),
     _documentTypeMap(),
     _nameIdMap()
-{
-}
+{ }
 
 namespace {
     const vespalib::string _G_empty("");

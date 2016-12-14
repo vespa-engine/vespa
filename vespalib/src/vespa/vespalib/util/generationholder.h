@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "generationhandler.h"
 
 namespace vespalib {
@@ -22,8 +23,7 @@ public:
     GenerationHeldBase(size_t size)
         : _generation(0u),
           _size(size)
-    {
-    }
+    { }
 
     virtual ~GenerationHeldBase(void);
     size_t getSize(void) const { return _size; }

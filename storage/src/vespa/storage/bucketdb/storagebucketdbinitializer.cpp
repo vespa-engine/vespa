@@ -10,10 +10,10 @@
 #include <vespa/config-stor-filestor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/config.h>
-#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <iomanip>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".storage.bucketdb.initializer");
 
 namespace storage {
@@ -105,6 +105,14 @@ StorageBucketDBInitializer::Metrics::Metrics(framework::Component& component)
 {
     component.registerMetric(*this);
 }
+
+StorageBucketDBInitializer::GlobalState::GlobalState()
+        : _insertedCount(0), _infoReadCount(0),
+          _infoSetByLoad(0), _dirsListed(0), _dirsToList(0),
+          _gottenInitProgress(false), _doneListing(false),
+          _doneInitializing(false)
+{ }
+StorageBucketDBInitializer::GlobalState::~GlobalState() { }
 
 StorageBucketDBInitializer::StorageBucketDBInitializer(
         const config::ConfigUri & configUri,

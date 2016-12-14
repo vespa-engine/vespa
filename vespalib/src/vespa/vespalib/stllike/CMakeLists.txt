@@ -3,6 +3,9 @@ vespa_add_library(vespalib_vespalib_stllike OBJECT
     SOURCES
     asciistream.cpp
     hashtable.cpp
+    hashtable.cpp
+    hash_set.cpp
+    hash_map.cpp
     string.cpp
     DEPENDS
 )

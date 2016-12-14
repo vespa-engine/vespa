@@ -1,25 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
-#include <vespa/log/log.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include "idealstatemanager.h"
+#include "statecheckers.h"
+#include "distributor.h"
+#include "idealstatemetricsset.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
-#include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storage/distributor/statecheckers.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storageapi/message/stat.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/storage/distributor/idealstatemetricsset.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.operation.queue");
 
 using storage::lib::Node;

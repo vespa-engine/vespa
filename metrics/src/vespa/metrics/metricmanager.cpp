@@ -13,7 +13,6 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-
 #include <vespa/log/log.h>
 
 LOG_SETUP(".metrics.manager");
@@ -21,6 +20,9 @@ LOG_SETUP(".metrics.manager");
 namespace metrics {
 
 typedef MetricsmanagerConfig Config;
+
+MetricManager::ConsumerSpec::ConsumerSpec() : includedMetrics() { }
+MetricManager::ConsumerSpec::~ConsumerSpec() { }
 
 void
 MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {
@@ -355,8 +357,7 @@ MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
     for (const auto & consumer : _config->consumer) {
         ConsumerMetricBuilder consumerMetricBuilder(consumer);
         _activeMetrics.getMetrics().visit(consumerMetricBuilder);
-        configMap[consumer.name] = ConsumerSpec::SP(
-                new ConsumerSpec(consumerMetricBuilder._matchedMetrics));
+        configMap[consumer.name] = ConsumerSpec::SP(new ConsumerSpec(std::move(consumerMetricBuilder._matchedMetrics)));
     }
     LOG(debug, "Recreating snapshots to include altered metrics");
     _activeMetrics.updateNames(_nameHash);

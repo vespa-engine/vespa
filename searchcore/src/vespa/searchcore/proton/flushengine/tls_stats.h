@@ -19,13 +19,17 @@ public:
         : _numBytes(0),
           _firstSerial(0),
           _lastSerial(0)
-    {
-    }
+    { }
     TlsStats(uint64_t numBytes, uint64_t firstSerial, uint64_t lastSerial)
         : _numBytes(numBytes),
           _firstSerial(firstSerial),
           _lastSerial(lastSerial)
-    {
+    { }
+
+    bool operator == (const TlsStats & b) const {
+        return  (_numBytes == b._numBytes) &&
+                (_firstSerial == b._firstSerial) &&
+                (_lastSerial == b._lastSerial);
     }
 
     uint64_t getNumBytes() const    { return _numBytes; }

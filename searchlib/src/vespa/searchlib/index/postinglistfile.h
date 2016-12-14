@@ -8,29 +8,17 @@
 #include <map>
 #include <string>
 
-namespace vespalib
-{
+class FastOS_FileInterface;
 
-class nbostream;
+namespace vespalib { class nbostream; }
 
-}
+namespace search {
 
-namespace search
-{
+namespace common { class FileHeaderContext; }
 
-namespace common
-{
-
-class FileHeaderContext;
-
-}
-
-namespace index
-{
-
+namespace index {
 
 class DocIdAndFeatures;
-
 
 /**
  * Interface for posting list files containing document ids and features
@@ -42,16 +30,14 @@ protected:
     PostingListCounts _counts;
     unsigned int _residueDocs;	// Docids left to read for word
 public:
-    PostingListFileSeqRead(void);
+    PostingListFileSeqRead();
 
-    virtual
-    ~PostingListFileSeqRead(void);
+    virtual ~PostingListFileSeqRead();
 
     /**
      * Read document id and features.
      */
-    virtual void
-    readDocIdAndFeatures(DocIdAndFeatures &features) = 0;
+    virtual void readDocIdAndFeatures(DocIdAndFeatures &features) = 0;
 
     /**
      * Checkpoint write.  Used at semi-regular intervals during indexing
@@ -59,53 +45,44 @@ public:
      * flush from memory to disk, and possibly also sync to permanent
      * storage media.
      */
-    virtual void
-    checkPointWrite(vespalib::nbostream &out) = 0;
+    virtual void checkPointWrite(vespalib::nbostream &out) = 0;
 
     /**
      * Checkpoint read.  Used when resuming indexing after an interrupt.
      */
-    virtual void
-    checkPointRead(vespalib::nbostream &in) = 0;
+    virtual void checkPointRead(vespalib::nbostream &in) = 0;
 
     /**
      * Read counts for a word.
      */
-    virtual void
-    readCounts(const PostingListCounts &counts) = 0;
+    virtual void readCounts(const PostingListCounts &counts) = 0;
 
     /**
      * Open posting list file for sequential read.
      */
-    virtual bool
-    open(const vespalib::string &name,
-         const TuneFileSeqRead &tuneFileRead) = 0;
+    virtual bool open(const vespalib::string &name, const TuneFileSeqRead &tuneFileRead) = 0;
 
     /**
      * Close posting list file.
      */
-    virtual bool
-    close(void) = 0;
+    virtual bool close() = 0;
 
     /*
      * Get current parameters.
      */
-    virtual void
-    getParams(PostingListParams &params);
+    virtual void getParams(PostingListParams &params);
 
     /*
      * Set (word, docid) feature parameters.
      *
      * Typically can only enable or disable cooked features.
      */
-    virtual void
-    setFeatureParams(const PostingListParams &params);
+    virtual void setFeatureParams(const PostingListParams &params);
 
     /*
      * Get current (word, docid) feature parameters.
      */
-    virtual void
-    getFeatureParams(PostingListParams &params);
+    virtual void getFeatureParams(PostingListParams &params);
 
     // Methods used when generating posting list for common word pairs.
 
@@ -115,8 +92,7 @@ public:
      *
      * @return current posting offset, measured in bits.
      */
-    virtual uint64_t
-    getCurrentPostingOffset(void) const = 0;
+    virtual uint64_t getCurrentPostingOffset() const = 0;
 
     /**
      * Set current posting offset, measured in bits.  First posting
@@ -127,25 +103,14 @@ public:
      * @param readAheadOffset end of posting list for either this or a
      *				 later word pair, depending on disk seek cost.
      */
-    virtual void
-    setPostingOffset(uint64_t offset,
-                     uint64_t endOffset,
-                     uint64_t readAheadOffset) = 0;
+    virtual void setPostingOffset(uint64_t offset, uint64_t endOffset, uint64_t readAheadOffset) = 0;
 
     /**
      * Get counts read by last readCounts().
      */
-    const PostingListCounts &
-    getCounts(void) const
-    {
-        return _counts;
-    }
+    const PostingListCounts &getCounts() const { return _counts; }
 
-    PostingListCounts &
-    getCounts(void)
-    {
-        return _counts;
-    }
+    PostingListCounts &getCounts() { return _counts; }
 };
 
 /**
@@ -157,23 +122,19 @@ class PostingListFileSeqWrite
 protected:
     PostingListCounts _counts;
 public:
-    PostingListFileSeqWrite(void);
-
-    virtual
-    ~PostingListFileSeqWrite(void);
+    PostingListFileSeqWrite();
+    virtual ~PostingListFileSeqWrite();
 
     /**
      * Write document id and features.
      */
-    virtual void
-    writeDocIdAndFeatures(const DocIdAndFeatures &features) = 0;
+    virtual void writeDocIdAndFeatures(const DocIdAndFeatures &features) = 0;
 
     /**
      * Flush word (during write) after it is complete to buffers, i.e.
      * prepare for next word, but not for application crash.
      */
-    virtual void
-    flushWord(void) = 0;
+    virtual void flushWord() = 0;
 
     /**
      * Checkpoint write.  Used at semi-regular intervals during indexing
@@ -181,14 +142,12 @@ public:
      * flush from memory to disk, and possibly also sync to permanent
      * storage media.
      */
-    virtual void
-    checkPointWrite(vespalib::nbostream &out) = 0;
+    virtual void checkPointWrite(vespalib::nbostream &out) = 0;
 
     /**
      * Checkpoint read.  Used when resuming indexing after an interrupt.
      */
-    virtual void
-    checkPointRead(vespalib::nbostream &in) = 0;
+    virtual void checkPointRead(vespalib::nbostream &in) = 0;
 
     /**
      * Open posting list file for sequential write.
@@ -201,38 +160,29 @@ public:
     /**
      * Close posting list file.
      */
-    virtual bool
-    close(void) = 0;
+    virtual bool close() = 0;
 
     /*
      * Set parameters.
      */
-    virtual void
-    setParams(const PostingListParams &params);
+    virtual void setParams(const PostingListParams &params);
 
     /*
      * Get current parameters.
      */
-    virtual void
-    getParams(PostingListParams &params);
+    virtual void getParams(PostingListParams &params);
 
     /*
      * Set (word, docid) feature parameters.
      */
-    virtual void
-    setFeatureParams(const PostingListParams &params);
+    virtual void setFeatureParams(const PostingListParams &params);
 
     /*
      * Get current (word, docid) feature parameters.
      */
-    virtual void
-    getFeatureParams(PostingListParams &params);
+    virtual void getFeatureParams(PostingListParams &params);
 
-    PostingListCounts &
-    getCounts(void)
-    {
-        return _counts;
-    }
+    PostingListCounts &getCounts(void) { return _counts; }
 };
 
 
@@ -248,10 +198,8 @@ protected:
 public:
     typedef std::shared_ptr<PostingListFileRandRead> SP;
 
-    PostingListFileRandRead(void);
-
-    virtual
-    ~PostingListFileRandRead(void);
+    PostingListFileRandRead();
+    virtual ~PostingListFileRandRead();
 
     /**
      * Create iterator for single word.  Semantic lifetime of counts and
@@ -280,25 +228,17 @@ public:
     /**
      * Open posting list file for random read.
      */
-    virtual bool
-    open(const vespalib::string &name,
-         const TuneFileRandRead &tuneFileRead) = 0;
+    virtual bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) = 0;
 
     /**
      * Close posting list file.
      */
-    virtual bool
-    close(void) = 0;
+    virtual bool close() = 0;
 
-    bool
-    getMemoryMapped(void) const
-    {
-        return _memoryMapped;
-    }
+    bool getMemoryMapped() const { return _memoryMapped; }
 
 protected:
-    void
-    afterOpen(FastOS_FileInterface &file);
+    void afterOpen(FastOS_FileInterface &file);
 };
 
 
@@ -312,11 +252,8 @@ protected:
     bool _ownLower;
 
 public:
-    PostingListFileRandReadPassThrough(PostingListFileRandRead *lower,
-                                       bool ownLower);
-
-    virtual
-    ~PostingListFileRandReadPassThrough(void);
+    PostingListFileRandReadPassThrough(PostingListFileRandRead *lower, bool ownLower);
+    virtual~PostingListFileRandReadPassThrough();
 
     virtual search::queryeval::SearchIterator *
     createIterator(const PostingListCounts &counts,
@@ -330,15 +267,12 @@ public:
                     uint32_t numSegments,
                     PostingListHandle &handle);
 
-    virtual bool
-    open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead);
+    virtual bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead);
 
-    virtual bool
-    close(void);
+    virtual bool close();
 };
 
 
 } // namespace index
 
 } // namespace search
-

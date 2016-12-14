@@ -1,10 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
 
-#include <vespa/log/log.h>
-#include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/storageapi/message/bucket.h>
+#include "filestorhandlerimpl.h"
+#include "filestormetrics.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -16,12 +13,13 @@
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/common/messagebucketid.h>
-#include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/batch.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.handler.impl");
 
 namespace storage {
@@ -57,13 +55,10 @@ FileStorHandlerImpl::FileStorHandlerImpl(
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
 }
 
-FileStorHandlerImpl::~FileStorHandlerImpl()
-{
-}
+FileStorHandlerImpl::~FileStorHandlerImpl() { }
 
 void
-FileStorHandlerImpl::addMergeStatus(const document::BucketId& bucket,
-                                    MergeStatus::SP status)
+FileStorHandlerImpl::addMergeStatus(const document::BucketId& bucket, MergeStatus::SP status)
 {
     vespalib::LockGuard mlock(_mergeStatesLock);
     if (_mergeStates.find(bucket) != _mergeStates.end()) {;
@@ -1197,8 +1192,7 @@ FileStorHandlerImpl::failOperations(
 }
 
 void
-FileStorHandlerImpl::sendCommand(
-        const std::shared_ptr<api::StorageCommand>& msg)
+FileStorHandlerImpl::sendCommand(const std::shared_ptr<api::StorageCommand>& msg)
 {
     _messageSender.sendCommand(msg);
 }
@@ -1209,18 +1203,35 @@ FileStorHandlerImpl::sendReply(const std::shared_ptr<api::StorageReply>& msg)
     _messageSender.sendReply(msg);
 }
 
+FileStorHandlerImpl::MessageEntry::MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd,
+                                                const document::BucketId& bId)
+    : _command(cmd),
+      _timer(),
+      _bucketId(bId),
+      _priority(cmd->getPriority())
+{ }
+
+FileStorHandlerImpl::MessageEntry::MessageEntry(const MessageEntry& entry)
+    : _command(entry._command),
+      _timer(entry._timer),
+      _bucketId(entry._bucketId),
+      _priority(entry._priority)
+{ }
+
+FileStorHandlerImpl::MessageEntry::~MessageEntry() { }
+
 FileStorHandlerImpl::Disk::Disk()
     : lock(),
       queue(),
       lockedBuckets(100),
       metrics(0),
       state(FileStorHandler::AVAILABLE)
-{
-}
+{ }
+
+FileStorHandlerImpl::Disk::~Disk() { }
 
 bool
-FileStorHandlerImpl::Disk::isLocked(
-        const document::BucketId& bucket) const noexcept
+FileStorHandlerImpl::Disk::isLocked(const document::BucketId& bucket) const noexcept
 {
     return (lockedBuckets.find(bucket) != lockedBuckets.end());
 }

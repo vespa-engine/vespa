@@ -37,8 +37,8 @@ template<class Type0,
          class Type3 = Type2 >
 class JudyMultiMap : public vespalib::Printable {
 public:
-    JudyMultiMap()
-        : _values0(1), _values1(1), _values2(1), _values3(1), _free(4) {}
+    JudyMultiMap();
+    ~JudyMultiMap();
 
     class Iterator;
     class ConstIterator;

@@ -9,17 +9,13 @@ namespace documentapi {
 GetBucketListReply::BucketInfo::BucketInfo() :
     _bucket(),
     _bucketInformation()
-{
-    // empty
-}
+{ }
 
 GetBucketListReply::BucketInfo::BucketInfo(const document::BucketId &bucketId,
                                            const string &bucketInformation) :
     _bucket(bucketId),
     _bucketInformation(bucketInformation)
-{
-    // empty
-}
+{ }
 
 bool
 GetBucketListReply::BucketInfo::operator==(const GetBucketListReply::BucketInfo &rhs) const

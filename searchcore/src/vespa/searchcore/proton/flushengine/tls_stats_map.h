@@ -19,18 +19,10 @@ private:
     Map _map;
 
 public:
-    TlsStatsMap(Map &&map)
-        : _map(std::move(map))
-    {
-    }
+    TlsStatsMap(Map &&map);
+    ~TlsStatsMap();
 
-    const TlsStats &getTlsStats(const vespalib::string &domain) const {
-        auto itr = _map.find(domain);
-        if (itr != _map.end()) {
-            return itr->second;
-        }
-        abort();
-    }
+    const TlsStats &getTlsStats(const vespalib::string &domain) const;
 };
 
 } // namespace proton::flushengine

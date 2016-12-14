@@ -3,6 +3,7 @@
 #include "parameters.hpp"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/objects/hexdump.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using namespace vdslib;
 
@@ -169,3 +170,5 @@ template int64_t vdslib::Parameters::get(const vespalib::stringref &, int64_t) c
 template uint64_t vdslib::Parameters::get(const vespalib::stringref &, uint64_t) const;
 template double vdslib::Parameters::get(const vespalib::stringref &, double) const;
 template std::string vdslib::Parameters::get(const vespalib::stringref &, std::string) const;
+
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vdslib::Parameters::Value);

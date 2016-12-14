@@ -11,8 +11,6 @@
 
 // DEFINES
 
-#define FNET_NOID ((uint32_t)-1)
-
 // THREAD/MUTEX STUFF
 
 #ifdef FASTOS_NO_THREADS

@@ -135,6 +135,7 @@ private:
     class Cache : public vespalib::cache<CacheParams> {
     public:
         Cache(BackingStore & b, size_t maxBytes);
+        ~Cache();
         CompressedBlobSet readSet(const KeySet & keys);
         void removeKey(uint32_t key);
     private:

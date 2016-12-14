@@ -2,8 +2,9 @@
 
 #include "compacter.h"
 #include "logdatastore.h"
-#include <vespa/log/log.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.compacter");
 
 namespace search {

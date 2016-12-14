@@ -21,8 +21,8 @@ private:
             return lcm.hash();
         }
     };
-    typedef hash_map<Memory, Symbol, hasher> SymbolMap;
-    typedef VariableSizeVector SymbolVector;
+    using SymbolMap = hash_map<Memory, Symbol, hasher>;
+    using SymbolVector = VariableSizeVector;
     SymbolMap    _symbols;
     SymbolVector _names;
 
@@ -38,23 +38,8 @@ public:
         SymbolVector::Reference r(_names[symbol.getValue()]);
         return Memory(r.c_str(), r.size());
     }
-    Symbol insert(const Memory &name) {
-        SymbolMap::const_iterator pos = _symbols.find(name);
-        if (pos == _symbols.end()) {
-            Symbol symbol(_names.size());
-            SymbolVector::Reference r(_names.push_back(name.data, name.size));
-            _symbols.insert(std::make_pair(Memory(r.c_str(), r.size()), symbol));
-            return symbol;
-        }
-        return pos->second;
-    }
-    Symbol lookup(const Memory &name) const {
-        SymbolMap::const_iterator pos = _symbols.find(name);
-        if (pos == _symbols.end()) {
-            return Symbol();
-        }
-        return pos->second;
-    }
+    Symbol insert(const Memory &name);
+    Symbol lookup(const Memory &name) const;
     void clear();
 };
 

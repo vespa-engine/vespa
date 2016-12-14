@@ -1,10 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+#include "memoryfieldindex.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include "memoryfieldindex.h"
 
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
@@ -16,8 +14,7 @@
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btree.hpp>
 #include "ordereddocumentinserter.h"
-
-LOG_SETUP(".memoryindex.memoryfieldindex");
+#include <vespa/vespalib/util/array.hpp>
 
 namespace search {
 
@@ -122,14 +119,7 @@ MemoryFieldIndex::compactFeatures(void)
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                datastore::EntryRef newFeatures =
-                    _featureStore.moveFeatures(packedIndex, oldFeatures);
-
-#if 0
-                LOG(info,
-                    "Moved features from 0x%x to 0x%x\n",
-                    oldFeatures.ref(), newFeatures.ref());
-#endif
+                datastore::EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, oldFeatures);
 
                 // Features must be written before reference is updated.
                 std::atomic_thread_fence(std::memory_order_release);
@@ -148,14 +138,7 @@ MemoryFieldIndex::compactFeatures(void)
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                datastore::EntryRef newFeatures =
-                    _featureStore.moveFeatures(packedIndex, oldFeatures);
-
-#if 0
-                LOG(info,
-                    "Moved features from 0x%x to 0x%x\n",
-                    oldFeatures.ref(), newFeatures.ref());
-#endif
+                datastore::EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, oldFeatures);
 
                 // Features must be written before reference is updated.
                 std::atomic_thread_fence(std::memory_order_release);

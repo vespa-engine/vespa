@@ -400,8 +400,8 @@ public:
         document::BucketId _bucketId;
         BucketInfo _info;
 
-        bool operator==(const Entry& e) const
-            { return (_bucketId == e._bucketId && _info == e._info); }
+        bool operator==(const Entry& e) const { return (_bucketId == e._bucketId && _info == e._info); }
+        bool operator!=(const Entry& e) const { return !(*this == e); }
         Entry() : _bucketId(), _info() {}
         Entry(const document::BucketId& id, const BucketInfo& info)
             : _bucketId(id), _info(info) {}
@@ -414,6 +414,7 @@ private:
 public:
 
     explicit RequestBucketInfoReply(const RequestBucketInfoCommand& cmd);
+    ~RequestBucketInfoReply();
 
     const EntryVector & getBucketInfo() const { return _buckets; }
     EntryVector & getBucketInfo() { return _buckets; }

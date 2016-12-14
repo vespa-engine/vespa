@@ -116,6 +116,7 @@ public:
     AttributeManager(const AttributeManager &currMgr,
                      const Spec &newSpec,
                      IAttributeInitializerRegistry &initializerRegistry);
+    ~AttributeManager();
 
     search::AttributeVector::SP addAttribute(const vespalib::string &name,
                                              const Config &cfg,

@@ -74,7 +74,7 @@ public:
     virtual void merge(Children & children, const GroupEngine & b);
     virtual void merge(const GroupEngine & b);
 
-    std::unique_ptr<Children> createChildren() { return std::unique_ptr<Children>(new Children(0, GroupHash(*this), GroupEqual(*this))); }
+    std::unique_ptr<Children> createChildren();
 
     virtual aggregation::Group::UP getGroup(GroupRef ref) const;
     aggregation::Group::UP getRootGroup() const { return getGroup(GroupRef(0)); }

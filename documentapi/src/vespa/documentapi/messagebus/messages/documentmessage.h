@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/util/bytebuffer.h>
+#include "documentreply.h"
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/reply.h>
-#include "documentreply.h"
 #include <vespa/documentapi/loadtypes/loadtype.h>
 #include <vespa/documentapi/messagebus/priority.h>
 

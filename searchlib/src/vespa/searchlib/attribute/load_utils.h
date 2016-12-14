@@ -3,6 +3,7 @@
 #pragma once
 
 #include "attributevector.h"
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace search {
 namespace attribute {

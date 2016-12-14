@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "indexbuilder.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
+#include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.indexbuilder");

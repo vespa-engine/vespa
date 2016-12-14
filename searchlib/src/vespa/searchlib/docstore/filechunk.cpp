@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/docstore/filechunk.h>
-#include <vespa/searchlib/util/filekit.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <stdexcept>
-#include <map>
-#include <vespa/vespalib/data/fileheader.h>
+#include "filechunk.h"
 #include "data_store_file_chunk_stats.h"
+#include <vespa/searchlib/util/filekit.h>
+#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.filechunk");
@@ -19,8 +18,7 @@ using vespalib::getLastErrorString;
 using vespalib::getErrorString;
 
 
-namespace search
-{
+namespace search {
 
 namespace {
 

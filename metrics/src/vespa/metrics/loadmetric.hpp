@@ -3,6 +3,7 @@
 
 #include "loadmetric.h"
 #include "memoryconsumption.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace metrics {
 

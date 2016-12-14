@@ -2,6 +2,7 @@
 #include <vespa/searchlib/common/condensedbitvectors.h>
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;

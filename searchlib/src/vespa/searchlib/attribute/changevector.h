@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vector>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 
@@ -142,7 +141,8 @@ private:
     typedef vespalib::hash_map<uint32_t, uint32_t> Map;
     typedef vespalib::Array<T> Vector;
 public:
-    ChangeVectorT() : _tail(0) { } 
+    ChangeVectorT();
+    ~ChangeVectorT();
     class const_iterator {
     public:
         const_iterator(const Vector & vector, uint32_t next) : _v(&vector), _next(next) { }
@@ -165,7 +165,7 @@ public:
     const T & back()       const { return _v.back(); }
     T & back()                   { return _v.back(); }
     size_t size()          const { return _v.size(); }
-    void clear()                 { _v.clear(); _docs.clear(); }
+    void clear();
     const_iterator begin() const { return const_iterator(_v, 0); }
     const_iterator end()   const { return const_iterator(_v, size()); }
 private:
@@ -175,56 +175,4 @@ private:
     uint32_t _tail;
 };
 
-template <typename T>
-void
-ChangeVectorT<T>::push_back(const T & c)
-{
-    size_t index(size());
-    _v.push_back(c);
-    linkIn(c._doc, index, index);
-}
-
-template <typename T>
-template <typename Accessor>
-void
-ChangeVectorT<T>::push_back(uint32_t doc, Accessor & ac)
-{
-    if (ac.size() <= 0) { return; }
-
-    size_t index(size());
-    _v.reserve(vespalib::roundUp2inN(index + ac.size()));
-    for (size_t i(0), m(ac.size()); i < m; i++, ac.next()) {
-        _v.push_back(T(ChangeBase::APPEND, doc, typename T::DataType(ac.value()), ac.weight()));
-        _v.back().setNext(index + i + 1);
-    }
-    linkIn(doc, index, size() - 1);
-}
-
-template <typename T>
-void
-ChangeVectorT<T>::linkIn(uint32_t doc, size_t first, size_t last)
-{
-    if (first != 0 && (_v[_tail]._doc == doc)) {
-        _v[_tail].setNext(first);
-        _tail = last;
-    } else {
-        Map::iterator found(_docs.find(doc));
-        if (found == _docs.end()) {
-            _docs[doc] = last;
-            if (_tail != first) {
-                _v[_tail].setNext(first);
-            }
-            _tail = last;
-        } else {
-            uint32_t prev(found->second);
-            for (; _v[_v[prev].getNext()]._doc == doc; prev = _v[prev].getNext());
-            _v[last].setNext(_v[prev].getNext());
-            _v[prev].setNext(first);
-            found->second = last;
-        }
-    }
-    _v[_tail].setNext(size());
-}
-
 } // namespace search
-

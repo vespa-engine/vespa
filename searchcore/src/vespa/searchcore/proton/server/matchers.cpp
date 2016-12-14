@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.matchers");
 #include "matchers.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace proton {
 
@@ -14,8 +12,9 @@ Matchers::Matchers(const vespalib::Clock &clock,
       _fallback(new matching::Matcher(search::index::Schema(), search::fef::Properties(),
                                       clock, queryLimiter, constantValueRepo, -1)),
       _default()
-{
-}
+{ }
+
+Matchers::~Matchers() { }
 
 void
 Matchers::add(const vespalib::string &name, matching::Matcher::SP matcher)

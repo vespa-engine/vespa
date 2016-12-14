@@ -9,11 +9,11 @@ class DocumentTypeRepo;
 
 class DocumentCalculator {
 public:
-    typedef vespalib::hash_map<vespalib::string, double> VariableMap;
+    using VariableMap = vespalib::hash_map<vespalib::string, double>;
 
-    DocumentCalculator(const DocumentTypeRepo& repo,
-                       const vespalib::string& expression);
-    double evaluate(const Document& doc, VariableMap& variables);
+    DocumentCalculator(const DocumentTypeRepo& repo, const vespalib::string& expression);
+    ~DocumentCalculator();
+    double evaluate(const Document& doc, VariableMap && variables);
 
 private:
     std::unique_ptr<select::Node> _selectionNode;

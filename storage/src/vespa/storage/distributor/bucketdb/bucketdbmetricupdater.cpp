@@ -1,11 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
-
+#include "bucketdbmetricupdater.h"
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
-
-#include <algorithm>
 
 namespace storage {
 namespace distributor {

@@ -3,7 +3,7 @@
 
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/generationholder.h>
-#include <vector>
+#include <vespa/vespalib/util/arrayref.h>
 #include <set>
 
 namespace search {

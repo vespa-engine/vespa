@@ -3,8 +3,9 @@
 
 #include <map>
 #include "databuffer.h"
-#include <vespa/fastos/file.h>
 #include <vespa/vespalib/util/exception.h>
+
+class FastOS_FileInterface;
 
 namespace vespalib {
 

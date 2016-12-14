@@ -1,16 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <algorithm>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include "dummypersistence.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/log/log.h>
 
 using std::binary_search;
@@ -21,6 +20,16 @@ LOG_SETUP(".dummypersistence");
 namespace storage {
 namespace spi {
 namespace dummy {
+
+BucketContent::BucketContent()
+    : _entries(),
+      _gidMap(),
+      _info(),
+      _inUse(false),
+      _outdatedInfo(true),
+      _active(false)
+{ }
+BucketContent::~BucketContent() { }
 
 uint32_t
 BucketContent::computeEntryChecksum(const BucketEntry& e) const

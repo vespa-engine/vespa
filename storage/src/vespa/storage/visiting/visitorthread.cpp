@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitorthread.h"
-
+#include "messages.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/bodyfielddetector.h>
 #include <vespa/document/select/orderingselector.h>
@@ -9,14 +9,12 @@
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storage/visiting/messages.h>
 #include <vespa/storageapi/message/datagram.h>
-#include <vespa/storageapi/message/visitor.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/base/exceptions.h>
-#include <algorithm>
 #include <locale>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.thread");
 

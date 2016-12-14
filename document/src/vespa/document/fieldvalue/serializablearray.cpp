@@ -5,6 +5,7 @@
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.serializable-array");

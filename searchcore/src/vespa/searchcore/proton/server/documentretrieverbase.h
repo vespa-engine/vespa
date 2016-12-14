@@ -9,8 +9,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
-namespace proton
-{
+namespace proton {
 
 class DocumentRetrieverBase : public IDocumentRetriever
 {
@@ -18,7 +17,7 @@ class DocumentRetrieverBase : public IDocumentRetriever
     const document::DocumentTypeRepo &_repo;
     const IDocumentMetaStoreContext  &_meta_store;
 
-    typedef vespalib::lrucache_map<vespalib::LruParam<vespalib::string, CachedSelect::SP>> SelectCache;
+    using SelectCache = vespalib::lrucache_map<vespalib::LruParam<vespalib::string, CachedSelect::SP>>;
 
     mutable SelectCache    _selectCache;
     vespalib::Lock         _lock;
@@ -33,6 +32,7 @@ public:
                           const document::DocumentTypeRepo &repo,
                           const IDocumentMetaStoreContext &meta_store,
                           bool hasFields);
+    ~DocumentRetrieverBase();
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override;
     void getBucketMetaData(const storage::spi::Bucket &bucket,

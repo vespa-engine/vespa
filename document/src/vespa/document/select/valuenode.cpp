@@ -1,19 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "valuenode.h"
 #include "visitor.h"
 
 #include <iomanip>
-#include <vespa/log/log.h>
 #include <vespa/document/base/exceptions.h>
 #include "parser.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/document/util/stringutil.h>
-#include <sys/time.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <regex>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".document.select.valuenode");
 
 namespace document {
@@ -24,8 +23,7 @@ namespace {
 }
 
 namespace {
-    bool documentTypeEqualsName(const DocumentType& type,
-                                const vespalib::stringref& name)
+    bool documentTypeEqualsName(const DocumentType& type, const vespalib::stringref& name)
     {
         if (type.getName() == name) return true;
         for (std::vector<const DocumentType *>::const_iterator it
@@ -40,8 +38,7 @@ namespace {
 
 InvalidValueNode::InvalidValueNode(const vespalib::stringref & name)
     : _name(name)
-{
-}
+{ }
 
 
 void
@@ -63,8 +60,7 @@ InvalidValueNode::print(std::ostream& out, bool verbose,
 
 NullValueNode::NullValueNode(const vespalib::stringref & name)
     : _name(name)
-{
-}
+{ }
 
 
 void
@@ -263,8 +259,7 @@ FieldValueNode::getValue(const Context& context) const
         LOG(warning, "Caught exception while fetching field from document: %s", e.what());
         return std::unique_ptr<Value>(new InvalidValue());
     } catch (FieldNotFoundException& e) {
-        LOG(warning, "Tried to compare to field %s, not found in document type",
-                     _fieldExpression.c_str());
+        LOG(warning, "Tried to compare to field %s, not found in document type", _fieldExpression.c_str());
         return std::unique_ptr<Value>(new InvalidValue());
     }
 }

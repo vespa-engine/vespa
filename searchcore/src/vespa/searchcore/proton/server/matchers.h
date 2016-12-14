@@ -19,6 +19,7 @@ public:
     Matchers(const vespalib::Clock &clock,
              matching::QueryLimiter &queryLimiter,
              const matching::IConstantValueRepo &constantValueRepo);
+    ~Matchers();
     void add(const vespalib::string &name, matching::Matcher::SP matcher);
     matching::MatchingStats getStats() const;
     matching::MatchingStats getStats(const vespalib::string &name) const;

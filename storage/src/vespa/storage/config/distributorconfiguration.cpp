@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/storage/config/distributorconfiguration.h>
-#include <vespa/log/log.h>
+#include "distributorconfiguration.h"
 #include <vespa/document/select/parser.h>
-#include <vespa/document/select/node.h>
 #include <vespa/document/select/traversingvisitor.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributorconfiguration");
 
 namespace storage {
@@ -34,9 +33,9 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _enableHostInfoReporting(true),
       _disableBucketActivation(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
-{
-    
-}
+{ }
+
+DistributorConfiguration::~DistributorConfiguration() { }
 
 namespace {
 

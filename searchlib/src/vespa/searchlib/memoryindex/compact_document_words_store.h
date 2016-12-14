@@ -18,7 +18,6 @@ namespace memoryindex {
 class CompactDocumentWordsStore
 {
 public:
-
     /**
      * Builder used to collect all wordRefs for a field.
      */
@@ -33,7 +32,8 @@ public:
         WordRefVector _words;
 
     public:
-        Builder(uint32_t docId_) : _docId(docId_), _words() {}
+        Builder(uint32_t docId_);
+        ~Builder();
         Builder &insert(datastore::EntryRef wordRef);
         uint32_t docId() const { return _docId; }
         const WordRefVector &words() const { return _words; }
@@ -91,6 +91,7 @@ private:
 
 public:
     CompactDocumentWordsStore();
+    ~CompactDocumentWordsStore();
     void insert(const Builder &builder);
     void remove(uint32_t docId);
     Iterator get(uint32_t docId) const;

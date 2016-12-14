@@ -28,6 +28,7 @@ private:
 
 public:
     AttributeContext(const search::IAttributeManager & manager);
+    ~AttributeContext();
 
     // Implements IAttributeContext
     const attribute::IAttributeVector * getAttribute(const string & name) const override;

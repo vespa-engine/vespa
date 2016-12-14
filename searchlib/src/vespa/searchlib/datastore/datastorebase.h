@@ -17,15 +17,8 @@ class DataStoreBase
 private:
     DataStoreBase(const DataStoreBase &rhs);
 
-    DataStoreBase &
-    operator=(const DataStoreBase &rhs);
-protected:
-    typedef vespalib::GenerationHandler::generation_t generation_t;
-    typedef vespalib::GenerationHandler::sgeneration_t sgeneration_t;
-
-    std::vector<void *> _buffers;	// For fast mapping with known types
-    std::vector<uint32_t> _activeBufferIds;	// typeId -> active buffer
-
+    DataStoreBase &operator=(const DataStoreBase &rhs);
+public:
     // Hold list before freeze, before knowing how long elements must be held
     class ElemHold1ListElem
     {
@@ -34,11 +27,17 @@ protected:
         uint64_t _len;	// Aligned length
 
         ElemHold1ListElem(EntryRef ref, uint64_t len)
-            : _ref(ref),
-              _len(len)
-        {
-        }
+                : _ref(ref),
+                  _len(len)
+        { }
     };
+
+protected:
+    typedef vespalib::GenerationHandler::generation_t generation_t;
+    typedef vespalib::GenerationHandler::sgeneration_t sgeneration_t;
+
+    std::vector<void *> _buffers;	// For fast mapping with known types
+    std::vector<uint32_t> _activeBufferIds;	// typeId -> active buffer
 
     // Hold list at freeze, when knowing how long elements must be held
     class ElemHold2ListElem : public ElemHold1ListElem

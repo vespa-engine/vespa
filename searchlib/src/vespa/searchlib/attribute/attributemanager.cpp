@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "attributemanager.h"
-#include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/attribute/attrvector.h>
-#include <vespa/searchlib/attribute/attributefile.h>
-#include <stdexcept>
-#include <vespa/searchlib/attribute/attrvector.hpp>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include "attributecontext.h"
+#include "attributefactory.h"
+#include "attrvector.h"
+#include "attributefile.h"
+#include "multistringattribute.h"
 #include "interlock.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attributemanager");

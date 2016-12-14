@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include "traits.h"
-#include "array.h"
+#include "arrayref.h"
 
 namespace vespalib {
 namespace stash {

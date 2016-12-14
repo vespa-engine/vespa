@@ -1,22 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/visiting/visitormanager.h>
-
-#include <cstdlib>
-#include <vespa/log/log.h>
+#include "visitormanager.h"
+#include "messages.h"
+#include "dumpvisitor.h"
+#include "dumpvisitorsingle.h"
+#include "countvisitor.h"
+#include "testvisitor.h"
+#include "recoveryvisitor.h"
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
-#include <vespa/storage/visiting/messages.h>
-
-#include <vespa/storage/visiting/dumpvisitor.h>
-#include <vespa/storage/visiting/dumpvisitorsingle.h>
-#include <vespa/storage/visiting/countvisitor.h>
-#include <vespa/storage/visiting/testvisitor.h>
-#include <vespa/storage/visiting/recoveryvisitor.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".visitor.manager");
 
 namespace storage {

@@ -30,8 +30,7 @@ class EnumStoreBase;
 class EnumStoreComparator;
 class EnumStoreComparatorWrapper;
 
-typedef datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> >
-EnumStoreDataStoreType;
+typedef datastore::DataStoreT<datastore::AlignedEntryRefT<31, 4> > EnumStoreDataStoreType;
 typedef EnumStoreDataStoreType::RefType EnumStoreIndex;
 typedef vespalib::Array<EnumStoreIndex> EnumStoreIndexVector;
 typedef vespalib::Array<uint32_t> EnumStoreEnumVector;

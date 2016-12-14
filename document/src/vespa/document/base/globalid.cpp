@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/document/base/globalid.h>
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 
 namespace {
 
@@ -196,3 +196,5 @@ std::ostream & operator << (std::ostream & os, const GlobalId & gid)
 }
 
 } // document
+
+VESPALIB_HASH_SET_INSTANTIATE_H(document::GlobalId, document::GlobalId::hash);

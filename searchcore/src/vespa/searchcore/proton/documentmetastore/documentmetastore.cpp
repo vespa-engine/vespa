@@ -2,7 +2,7 @@
 
 #include "documentmetastore.h"
 #include "search_context.h"
-
+#include "documentmetastoresaver.h"
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/btree/btree.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
@@ -17,7 +17,8 @@
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>
 #include <vespa/searchlib/util/bufferwriter.h>
-#include "documentmetastoresaver.h"
+#include <vespa/searchlib/common/rcuvector.hpp>
+
 
 using document::GlobalId;
 using document::BucketId;

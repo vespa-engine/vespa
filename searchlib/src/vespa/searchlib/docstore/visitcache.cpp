@@ -1,6 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitcache.h"
+#include <vespa/vespalib/stllike/cache.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 namespace docstore {
@@ -201,6 +203,8 @@ VisitCache::getCacheStats() const {
 VisitCache::Cache::Cache(BackingStore & b, size_t maxBytes) :
     Parent(b, maxBytes)
 { }
+
+VisitCache::Cache::~Cache() { }
 
 void
 VisitCache::Cache::removeKey(uint32_t subKey) {

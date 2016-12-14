@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/datastore/array_store.hpp>
+#include <vespa/searchlib/common/rcuvector.hpp>
 
 namespace search {
 namespace attribute {

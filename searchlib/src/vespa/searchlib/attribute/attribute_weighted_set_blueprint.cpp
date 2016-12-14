@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+
 #include "attribute_weighted_set_blueprint.h"
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
+#include "attributevector.h"
+#include "attributeguard.h"
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 

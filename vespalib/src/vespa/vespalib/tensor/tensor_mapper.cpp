@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-
 #include "tensor_mapper.h"
 #include "tensor.h"
 #include "tensor_visitor.h"
@@ -9,6 +7,7 @@
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include "tensor_address_element_iterator.h"
 #include "default_tensor.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::eval::ValueType;
 

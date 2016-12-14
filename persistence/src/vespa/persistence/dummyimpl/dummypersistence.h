@@ -53,14 +53,9 @@ struct BucketContent {
     mutable bool _outdatedInfo;
     bool _active;
 
-    BucketContent()
-        : _entries(),
-          _gidMap(),
-          _info(),
-          _inUse(false),
-          _outdatedInfo(true),
-          _active(false)
-    { }
+    BucketContent();
+    ~BucketContent();
+
 
     uint32_t computeEntryChecksum(const BucketEntry&) const;
     BucketChecksum updateRollingChecksum(uint32_t entryChecksum);

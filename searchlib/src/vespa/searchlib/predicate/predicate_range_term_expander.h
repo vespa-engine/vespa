@@ -42,12 +42,9 @@ public:
  * Handler must implement handleRange(string) and handleEdge(string, uint64_t).
  */
 template <typename Handler>
-void PredicateRangeTermExpander::expand(
-        const vespalib::string &key, int64_t signed_value, Handler &handler) {
+void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t signed_value, Handler &handler) {
     if (signed_value < _lower_bound || signed_value > _upper_bound) {
-        LOG(warning, "Search outside bounds should have been rejected by "
-            "ValidatePredicateSearcher.");
-        return;
+        throw vespalib::IllegalArgumentException("Search outside bounds should have been rejected by ValidatePredicateSearcher.");
     }
     char buffer[21 * 2 + 3 + key.size()];  // 2 numbers + punctuation + key
     int size;

@@ -2,7 +2,6 @@
 #pragma once
 
 #include <vespa/messagebus/reply.h>
-#include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/priority.h>
 
 namespace documentapi {

@@ -159,7 +159,8 @@ public:
         Uniques _uniques;
         uint64_t _bufferSize;
     public:
-        Builder() : _uniques(), _bufferSize(Index::align(1)) {}
+        Builder();
+        ~Builder();
         Index insert(Type value, uint32_t pidx = 0) {
             uint32_t entrySize = getEntrySize(value);
             _uniques.push_back(UniqueEntry(value, entrySize, pidx));

@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/base/documentcalculator.h>
+#include "documentcalculator.h"
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/select/compare.h>
 #include <vespa/document/select/parser.h>
@@ -18,14 +18,16 @@ DocumentCalculator::DocumentCalculator(
     _selectionNode = parser.parse(expression + " == 0");
 }
 
+DocumentCalculator::~DocumentCalculator() { }
+
 double
-DocumentCalculator::evaluate(const Document& doc, VariableMap& variables)
+DocumentCalculator::evaluate(const Document& doc, VariableMap && variables)
 {
     select::Compare& compare(static_cast<select::Compare&>(*_selectionNode));
     const select::ValueNode& left = compare.getLeft();
 
     select::Context context(doc);
-    context._variables = variables;
+    context._variables = std::move(variables);
     std::unique_ptr<select::Value> value = left.getValue(context);
 
     select::NumberValue* num = dynamic_cast<select::NumberValue*>(value.get());

@@ -4,6 +4,8 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
+class FNET_DataBuffer;
+
 /**
  * This is a general superclass of all packets. Packets are used to
  * encapsulate data when communicating with other computers through

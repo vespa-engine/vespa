@@ -212,7 +212,7 @@ private:
         ~LockIdSet();
         void print(std::ostream& out, bool verbose, const std::string& indent) const;
         bool exist(const LockId & lid) const { return this->find(lid) != Hash::end(); }
-        size_t getMemoryUsage() const { return Hash::getMemoryConsumption(); }
+        size_t getMemoryUsage() const;
     };
 
     class LockWaiters {

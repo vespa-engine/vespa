@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#include <vespa/metrics/memoryconsumption.h>
+#include "memoryconsumption.h"
 
 namespace metrics {
 

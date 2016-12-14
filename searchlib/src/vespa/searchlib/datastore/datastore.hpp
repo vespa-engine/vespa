@@ -6,6 +6,7 @@
 #include "allocator.hpp"
 #include "free_list_allocator.hpp"
 #include "raw_allocator.hpp"
+#include <vespa/vespalib/util/array.hpp>
 
 namespace search {
 namespace datastore {

@@ -2,15 +2,13 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/fnet/frt/frt.h>
-#include <vespa/searchsummary/docsummary/resultclass.h>
-#include <vespa/searchsummary/docsummary/resultconfig.h>
+
+#include "resultclass.h"
+#include "resultconfig.h"
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <zlib.h>
-
-LOG_SETUP(".searchlib.docsummary.resultclass");
 
 namespace search {
 namespace docsummary {
@@ -23,13 +21,10 @@ ResultClass::ResultClass(const char *name, uint32_t id, util::StringEnum & field
       _fieldEnum(fieldEnum),
       _enumMap(),
       _dynInfo(NULL)
-{
-}
+{ }
 
 
-ResultClass::~ResultClass()
-{
-}
+ResultClass::~ResultClass() { }
 
 
 bool

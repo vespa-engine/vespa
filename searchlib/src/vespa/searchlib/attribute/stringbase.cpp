@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "stringbase.h"
-#include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/searchlib/util/fileutil.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.stringbase");
@@ -77,7 +77,6 @@ public:
         return retval;
     }
 };
-
 
 class SortDataCharEof
 {

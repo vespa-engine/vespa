@@ -1,19 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".common.sequencedtaskexecutor");
-
 #include "sequencedtaskexecutor.h"
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::BlockingThreadStackExecutor;
 
-namespace search
-{
+namespace search {
 
-namespace
-{
+namespace {
 
 constexpr uint32_t stackSize = 128 * 1024;
 

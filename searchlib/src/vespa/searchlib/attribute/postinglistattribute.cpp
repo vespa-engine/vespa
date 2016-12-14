@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "postinglistattribute.h"
 #include "loadednumericvalue.h"
-#include "loadedstringvalue.h"
 #include "enumcomparator.h"
+#include <vespa/vespalib/util/array.hpp>
 
-namespace search
-{
+namespace search {
 
 using attribute::LoadedNumericValue;
 
@@ -21,8 +19,7 @@ PostingListAttributeBase(AttributeVector &attr,
       _attr(attr),
       _dict(enumStore.getPostingDictionary()),
       _esb(enumStore)
-{
-}
+{ }
 
 
 template <typename P>

@@ -5,8 +5,7 @@
 #include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vsm/common/document.h>
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * Interface for classes that want to modify a field value.
@@ -43,6 +42,7 @@ private:
 
 public:
     FieldModifierMap();
+    ~FieldModifierMap();
     FieldModifierMapT & map() { return _map; }
     const FieldModifierMapT & map() const { return _map; }
 

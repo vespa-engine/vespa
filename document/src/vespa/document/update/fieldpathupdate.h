@@ -39,7 +39,7 @@ public:
                     stringref fieldPath,
                     stringref whereClause = stringref());
 
-    virtual ~FieldPathUpdate() {}
+    ~FieldPathUpdate();
 
     enum FieldPathUpdateType {
         Add    = IDENTIFIABLE_CLASSID(AddFieldPathUpdate),

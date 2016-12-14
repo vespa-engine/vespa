@@ -1,14 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".engine.propertiesmap");
 #include "propertiesmap.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 namespace engine {
 
 search::fef::Properties PropertiesMap::_emptyProperties;
+
+PropertiesMap::PropertiesMap()
+    : _propertiesMap()
+{ }
+
+PropertiesMap::~PropertiesMap() { }
 
 search::fef::Properties &
 PropertiesMap::lookupCreate(const vespalib::stringref &name)
@@ -28,3 +32,5 @@ PropertiesMap::lookup(const vespalib::stringref &name) const
 
 } // namespace engine
 } // namespace search
+
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, search::fef::Properties);
