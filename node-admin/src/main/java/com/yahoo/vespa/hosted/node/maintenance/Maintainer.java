@@ -59,7 +59,6 @@ public class Maintainer {
     private static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
     private static final String JOB_ARCHIVE_APP_DATA = "archive-app-data";
     private static final String JOB_CLEAN_CORE_DUMPS = "clean-core-dumps";
-    private static final String JOB_CLEAN_HOME = "clean-home";
     private static final String JOB_HANDLE_CORE_DUMPS = "handle-core-dumps";
 
     private static Optional<String> kernelVersion = Optional.empty();
@@ -115,13 +114,13 @@ public class Maintainer {
             attributes.put("kernel_version", "unknown");
         }
 
-        if (nodeSpec.wantedDockerImage.isPresent()) attributes.put("docker_image", nodeSpec.wantedDockerImage.get().asString());
-        if (nodeSpec.vespaVersion.isPresent()) attributes.put("vespa_version", nodeSpec.vespaVersion.get());
-        if (nodeSpec.owner.isPresent()) {
-            attributes.put("tenant", nodeSpec.owner.get().tenant);
-            attributes.put("application", nodeSpec.owner.get().application);
-            attributes.put("instance", nodeSpec.owner.get().instance);
-        }
+        nodeSpec.wantedDockerImage.ifPresent(image -> attributes.put("docker_image", image.asString()));
+        nodeSpec.vespaVersion.ifPresent(version -> attributes.put("vespa_version", version));
+        nodeSpec.owner.ifPresent(owner -> {
+            attributes.put("tenant", owner.tenant);
+            attributes.put("application", owner.application);
+            attributes.put("instance", owner.instance);
+        });
 
         executeMaintainer(logger, JOB_HANDLE_CORE_DUMPS,
                 "--container", nodeSpec.containerName.asString(),

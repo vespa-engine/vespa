@@ -125,7 +125,7 @@ public class StorageMaintainer {
         DeleteOldAppData.deleteFiles(nodeAdminJDiskLogsPath.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
     }
 
-    public void archiveNodeData(ContainerName containerName) throws IOException {
+    public void archiveNodeData(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
         Maintainer.archiveAppData(logger, containerName);
     }

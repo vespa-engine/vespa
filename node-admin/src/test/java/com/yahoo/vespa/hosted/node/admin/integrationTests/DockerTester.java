@@ -43,7 +43,7 @@ public class DockerTester implements AutoCloseable {
 
     public DockerTester() {
         callOrderVerifier = new CallOrderVerifier();
-        StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
+        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(callOrderVerifier);
         orchestratorMock = new OrchestratorMock(callOrderVerifier);
         nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
         dockerMock = new DockerMock(callOrderVerifier);
@@ -65,8 +65,8 @@ public class DockerTester implements AutoCloseable {
         final Maintainer maintainer = new Maintainer();
         final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, maintainer, mr);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
-                orchestratorMock, dockerOperations, maintenanceSchedulerMock, mr, environment, maintainer);
-        nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
+                orchestratorMock, dockerOperations, Optional.of(storageMaintainer), mr, environment);
+        nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.of(storageMaintainer), 100, mr);
         updater = new NodeAdminStateUpdater(nodeRepositoryMock, nodeAdmin, 1, 1, orchestratorMock, "basehostname");
     }
 

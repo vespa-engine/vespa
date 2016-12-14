@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -28,7 +29,6 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     static final Maintainer maintainer = new Maintainer();
     static final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     static final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
-    static final StorageMaintainerMock maintenanceSchedulerMock = new StorageMaintainerMock(callOrderVerifier);
     static final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
     static final Docker dockerMock = new DockerMock(callOrderVerifier);
 
@@ -40,11 +40,9 @@ public class ComponentsProviderWithMocks implements ComponentsProvider {
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, maintainer, mr);
     private final Function<String, NodeAgent> nodeAgentFactory =
-            (hostName) -> new NodeAgentImpl(hostName,
-                                            nodeRepositoryMock, orchestratorMock, dockerOperations,
-                                            maintenanceSchedulerMock, mr,
-                                            environment, maintainer);
-    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, maintenanceSchedulerMock, 100, mr);
+            (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
+                    dockerOperations, Optional.empty(), mr, environment);
+    private NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.empty(), 100, mr);
 
 
     @Override

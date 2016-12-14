@@ -45,7 +45,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
-    private final StorageMaintainer storageMaintainer;
+    private final Optional<StorageMaintainer> storageMaintainer;
     private AtomicBoolean frozen = new AtomicBoolean(false);
 
     private final Map<String, NodeAgent> nodeAgents = new HashMap<>();
@@ -57,7 +57,7 @@ public class NodeAdminImpl implements NodeAdmin {
     private CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
     public NodeAdminImpl(final DockerOperations dockerOperations, final Function<String, NodeAgent> nodeAgentFactory,
-                         final StorageMaintainer storageMaintainer, int nodeAgentScanIntervalMillis,
+                         final Optional<StorageMaintainer> storageMaintainer, int nodeAgentScanIntervalMillis,
                          final MetricReceiverWrapper metricReceiver) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
@@ -84,7 +84,7 @@ public class NodeAdminImpl implements NodeAdmin {
     public void refreshContainersToRun(final List<ContainerNodeSpec> containersToRun) {
         final List<Container> existingContainers = dockerOperations.getAllManagedContainers();
 
-        storageMaintainer.cleanNodeAdmin();
+        storageMaintainer.ifPresent(StorageMaintainer::cleanNodeAdmin);
         synchronizeNodeSpecsToNodeAgents(containersToRun, existingContainers);
         dockerOperations.deleteUnusedDockerImages();
 

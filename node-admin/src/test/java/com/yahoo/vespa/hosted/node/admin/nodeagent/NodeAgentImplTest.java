@@ -66,7 +66,7 @@ public class NodeAgentImplTest {
                                               "parent.host.name.yahoo.com",
                                               new InetAddressResolver());
     private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-            storageMaintainer, metricReceiver, environment, maintainer);
+            Optional.of(storageMaintainer), metricReceiver, environment);
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -146,6 +146,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(true);
         when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
+        when(storageMaintainer.getMaintainer()).thenReturn(maintainer);
         when(maintainer.pathInNodeAdminFromPathInNode(any(ContainerName.class), any(String.class))).thenReturn(Files.createTempDirectory("foo"));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 

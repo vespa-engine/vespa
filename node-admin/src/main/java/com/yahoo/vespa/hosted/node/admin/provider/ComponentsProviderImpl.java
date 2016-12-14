@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
@@ -13,8 +14,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.NodeAdminConfig;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepositoryImpl;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
@@ -26,6 +27,7 @@ import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -46,8 +48,8 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     // which happens rarely. Changes of apps running etc it detected by the NodeAgent.
     private static final int NODE_ADMIN_STATE_INTERVAL_MILLIS = 5 * 60000;
 
-    public ComponentsProviderImpl(final Docker docker, final MetricReceiverWrapper metricReceiver,
-                                  final StorageMaintainer storageMaintainer, final Environment environment) {
+    public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment,
+                                  Maintainer maintainer, Optional<StorageMaintainer> storageMaintainer) {
         String baseHostName = HostName.getLocalhost();
         Set<String> configServerHosts = environment.getConfigServerHosts();
 
@@ -55,10 +57,10 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
 
         final DockerOperations dockerOperations = new DockerOperationsImpl(
-                docker, environment, storageMaintainer.getMaintainer(), metricReceiver);
+                docker, environment, maintainer, metricReceiver);
         final Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-                        storageMaintainer, metricReceiver, environment, storageMaintainer.getMaintainer());
+                        storageMaintainer, metricReceiver, environment);
         final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer,
                 NODE_AGENT_SCAN_INTERVAL_MILLIS, metricReceiver);
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, nodeAdmin, INITIAL_SCHEDULER_DELAY_MILLIS,
@@ -68,9 +70,15 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     }
 
     @Inject
-    public ComponentsProviderImpl(final Docker docker, final MetricReceiverWrapper metricReceiver) {
-        this(docker, metricReceiver, new StorageMaintainer(new Maintainer()), new Environment());
-        initializeNodeAgentSecretAgent(docker);
+    public ComponentsProviderImpl(final NodeAdminConfig config, final Docker docker, final MetricReceiverWrapper metricReceiver) {
+        this(
+                docker,
+                metricReceiver,
+                new Environment(),
+                new Maintainer(),
+                config.isRunningLocally() ? Optional.empty() : Optional.of(new StorageMaintainer(new Maintainer())));
+
+        if (! config.isRunningLocally()) initializeNodeAgentSecretAgent(docker);
     }
 
     @Override
@@ -85,8 +93,8 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
 
     private void initializeNodeAgentSecretAgent(Docker docker) {
-        ContainerName nodeAdminName = new ContainerName("node-admin");
         final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
+        ContainerName nodeAdminName = new ContainerName("node-admin");
         docker.executeInContainer(nodeAdminName, "sudo", "chmod", "a+w", yamasAgentFolder.toString());
 
         Path nodeAdminCheckPath = Paths.get("/usr/bin/curl");

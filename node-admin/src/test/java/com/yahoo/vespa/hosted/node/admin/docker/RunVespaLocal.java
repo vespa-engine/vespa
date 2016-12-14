@@ -7,8 +7,6 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerTestUtils;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
-import com.yahoo.vespa.hosted.node.admin.integrationTests.StorageMaintainerMock;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
@@ -23,6 +21,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -91,10 +90,12 @@ public class RunVespaLocal {
      */
     void startNodeAdminInIDE(Path pathToContainerStorage) {
         logger.info("Starting node-admin");
-        nodeAdminStateUpdater = new ComponentsProviderImpl(docker,
+        nodeAdminStateUpdater = new ComponentsProviderImpl(
+                docker,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation),
-                new StorageMaintainerMock(LocalZoneUtils.getMaintainer(pathToContainerStorage), new CallOrderVerifier()),
-                environment).getNodeAdminStateUpdater();
+                environment,
+                LocalZoneUtils.getMaintainer(pathToContainerStorage),
+                Optional.empty()).getNodeAdminStateUpdater();
     }
 
     /**
