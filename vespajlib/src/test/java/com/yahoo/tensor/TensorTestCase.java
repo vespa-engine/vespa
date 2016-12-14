@@ -1,8 +1,20 @@
 package com.yahoo.tensor;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.tensor.evaluation.MapEvaluationContext;
+import com.yahoo.tensor.evaluation.VariableTensor;
+import com.yahoo.tensor.functions.ConstantTensor;
+import com.yahoo.tensor.functions.Join;
+import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.tensor.functions.TensorFunction;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static com.yahoo.tensor.TensorType.Dimension.Type;
 
 /**
  * Tests functionality on Tensor
@@ -11,7 +23,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class TensorTestCase {
 
-    /** This is mostly tested in searchlib - spot checking here */
+    /** All functions are more throughly tested in searchlib EvaluationTestCase */
     @Test
     public void testTensorComputation() {
         Tensor tensor1 = Tensor.from("{ {x:1}:3, {x:2}:7 }");
@@ -23,6 +35,78 @@ public class TensorTestCase {
         assertEquals(Tensor.from("{ {z:1}:3, {z:2}:7 }"), tensor1.rename("x", "z"));
         assertEquals(Tensor.from("{ {y:1,x:1}:8, {x:1,y:2}:12 }"), tensor1.add(tensor2).rename(ImmutableList.of("x", "y"),
                                                                                                ImmutableList.of("y", "x")));
+    }
+    
+    /** Test the same computation made in various ways which are implemented with special-cvase optimizations */
+    @Test
+    public void testOptimizedComputation() {
+        // All ways of making this computation should return the same value
+        
+        assertEquals("Mapped vector",  42, (int)dotProduct(vector(Type.mapped), vectors(Type.mapped, 2)));
+        assertEquals("Indexed vector", 42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.indexedUnbound, 2)));
+        assertEquals("Mapped matrix",  42, (int)dotProduct(vector(Type.mapped), matrix(Type.mapped, 2)));
+        assertEquals("Indexed matrix", 42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.indexedUnbound, 2)));
+        assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
+        assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
+        assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.mapped), matrix(Type.indexedUnbound, 2)));
+        assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.mapped), matrix(Type.indexedUnbound, 2)));
+        assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
+        assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
+        assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
+        assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
+    }
+
+    private double dotProduct(Tensor tensor, List<Tensor> tensors) {
+        double sum = 0;
+        TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor),
+                                                                new VariableTensor("argument"), (a, b) -> a * b),
+                                                       Reduce.Aggregator.sum).toPrimitive();
+        MapEvaluationContext context = new MapEvaluationContext();
+
+        for (Tensor tensorElement : tensors) { // tensors.size() = 1 for larger tensor
+            context.put("argument", tensorElement);
+            // System.out.println("Dot product of " + tensor + " and " + tensorElement + ": " + dotProductFunction.evaluate(context).asDouble());
+            sum += dotProductFunction.evaluate(context).asDouble();
+        }
+        return sum;
+    }
+
+    private Tensor vector(TensorType.Dimension.Type dimensionType) {
+        return vectors(dimensionType, 1).get(0);
+    }
+    
+    /** Create a list of vectors having a single dimension x */
+    private List<Tensor> vectors(TensorType.Dimension.Type dimensionType, int vectorCount) {
+        int vectorSize = 3;
+        List<Tensor> tensors = new ArrayList<>();
+        TensorType type = new TensorType.Builder().dimension("x", dimensionType).build();
+        for (int i = 0; i < vectorCount; i++) {
+            Tensor.Builder builder = Tensor.Builder.of(type);
+            for (int j = 0; j < vectorSize; j++) {
+                builder.cell().label("x", String.valueOf(j)).value((i+1)*(j+1));
+            }
+            tensors.add(builder.build());
+        }
+        return tensors;
+    }
+
+    /** 
+     * Create a matrix of vectors (in dimension i) where each vector has the dimension x.
+     * Thie matric contains the same vectors as returned by createVectors
+     */
+    private List<Tensor> matrix(TensorType.Dimension.Type dimensionType, int vectorCount) {
+        int vectorSize = 3;
+        TensorType type = new TensorType.Builder().dimension("i", dimensionType).dimension("x", dimensionType).build();
+        Tensor.Builder builder = Tensor.Builder.of(type);
+        for (int i = 0; i < vectorCount; i++) {
+            for (int j = 0; j < vectorSize; j++) {
+                builder.cell()
+                        .label("i", String.valueOf(i))
+                        .label("x", String.valueOf(j))
+                        .value((i+1)*(j+1));
+            }
+        }
+        return Collections.singletonList(builder.build());
     }
 
 }

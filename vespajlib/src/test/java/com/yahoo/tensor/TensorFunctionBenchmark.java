@@ -38,7 +38,7 @@ public class TensorFunctionBenchmark {
         double largest = Double.MIN_VALUE;
         TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor), 
                                                                 new VariableTensor("argument"), (a, b) -> a * b), 
-                                                       Reduce.Aggregator.max).toPrimitive();
+                                                       Reduce.Aggregator.sum).toPrimitive();
         MapEvaluationContext context = new MapEvaluationContext();
         
         for (Tensor tensorElement : tensors) { // tensors.size() = 1 for larger tensor

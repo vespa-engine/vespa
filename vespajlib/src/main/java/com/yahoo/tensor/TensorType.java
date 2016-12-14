@@ -54,6 +54,8 @@ public class TensorType {
         return TensorTypeParser.fromSpec(specString);
     }
 
+    private static final boolean supportsMixedTypes = false;
+    
     /** 
      * Returns a new tensor type which is the combination of the dimensions of both arguments.
      * If the same dimension is indexed with different size restrictions the largest size will be used.
@@ -61,6 +63,8 @@ public class TensorType {
      * If it is indexed in one and mapped in the other it will become mapped.
      */
     public TensorType combineWith(TensorType other) {
+        if ( ! supportsMixedTypes) return combineWithAndDisallowMixedTypes(other); // TODO: Support it
+        
         if (this.equals(other)) return this;
 
         TensorType.Builder b = new TensorType.Builder();
@@ -72,6 +76,28 @@ public class TensorType {
         }
         return b.build();
     }
+
+    private TensorType combineWithAndDisallowMixedTypes(TensorType other) {
+        if (this.equals(other)) return this;
+        
+        boolean containsMapped = dimensions().stream().anyMatch(d -> ! d.isIndexed());
+        containsMapped = containsMapped || other.dimensions().stream().anyMatch(d -> ! d.isIndexed());
+
+        TensorType.Builder b = new TensorType.Builder();
+        for (Dimension thisDimension : dimensions) {
+            if (containsMapped)
+                thisDimension = new MappedDimension(thisDimension.name());
+            b.add(thisDimension);
+        }
+        for (Dimension otherDimension : other.dimensions) {
+            if (containsMapped)
+                otherDimension = new MappedDimension(otherDimension.name());
+            Dimension thisDimension = b.dimensions.get(otherDimension.name());
+            b.set(otherDimension.combineWith(Optional.ofNullable(thisDimension)));
+        }
+        return b.build();
+    }
+    
     
     /** Returns an immutable list of the dimensions of this */
     public List<Dimension> dimensions() { return dimensions; }
