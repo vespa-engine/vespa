@@ -314,6 +314,8 @@ public interface Tensor {
 
             CellBuilder label(String dimension, String label);
 
+            CellBuilder label(String dimension, int label);
+
             Builder value(double cellValue);
 
         }

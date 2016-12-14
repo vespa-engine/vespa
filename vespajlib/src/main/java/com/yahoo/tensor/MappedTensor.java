@@ -134,7 +134,12 @@ public class MappedTensor implements Tensor {
                 addressBuilder.add(dimension, label);
                 return this;
             }
-    
+
+            @Override
+            public MappedCellBuilder label(String dimension, int label) {
+                return label(dimension, String.valueOf(label));
+            }
+
             @Override
             public Builder value(double cellValue) {
                 return MappedTensor.Builder.this.cell(addressBuilder.build(), cellValue);

@@ -261,7 +261,7 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
         tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");
     }
-
+    
     @Test
     public void testProgrammaticBuildingAndPrecedence() {
         RankingExpression standardPrecedence = new RankingExpression(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, new ArithmeticNode(constant(3), ArithmeticOperator.MULTIPLY, constant(4))));
