@@ -202,10 +202,9 @@ void verify(const std::vector<uint32_t> &expect, SearchIterator &search, uint32_
 //-----------------------------------------------------------------------------
 
 MatchData::UP make_match_data() {
-    uint32_t num_features = 0;
     uint32_t num_handles = 100;
     uint32_t num_fields = 1;
-    return MatchData::makeTestInstance(num_features, num_handles, num_fields);
+    return MatchData::makeTestInstance(num_handles, num_fields);
 }
 
 //-----------------------------------------------------------------------------

@@ -61,7 +61,7 @@ struct DP {
     }
 
     FakeResult search(Searchable &searchable, const std::string &field, bool strict) const {
-        MatchData::UP md(MatchData::makeTestInstance(0, 1, 1));
+        MatchData::UP md(MatchData::makeTestInstance(1, 1));
         FakeRequestContext requestContext;
         Node::UP node = createNode();
         FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle));
@@ -107,7 +107,7 @@ struct MockFixture {
         std::vector<SearchIterator*> children;
         std::vector<TermFieldMatchData*> childMatch;
         std::vector<int32_t> weights;
-        MatchData::UP md(MatchData::makeTestInstance(0, 1, 1));
+        MatchData::UP md(MatchData::makeTestInstance(1, 1));
         mock = new MockSearch(initial);
         children.push_back(mock);
         childMatch.push_back(md->resolveTermField(0));

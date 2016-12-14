@@ -9,6 +9,7 @@
 #include <cassert>
 #include <memory>
 #include <vespa/vespalib/util/array.h>
+#include "number_or_object.h"
 
 namespace search {
 namespace fef {

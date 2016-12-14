@@ -111,7 +111,7 @@ public:
         _phrase_fs(field, fieldId, phrase_handle),
         _phrase(_phrase_fs, _requestContext),
         _children(),
-        _md(MatchData::makeTestInstance(0, 100, 10)),
+        _md(MatchData::makeTestInstance(100, 10)),
         _order(),
         _pos(1),
         _strict(false)

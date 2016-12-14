@@ -31,13 +31,9 @@ Test::testLayout()
     EXPECT_EQUAL(mdl.allocTermField(0), 0u);
     EXPECT_EQUAL(mdl.allocTermField(42), 1u);
     EXPECT_EQUAL(mdl.allocTermField(IllegalFieldId), 2u);
-    EXPECT_EQUAL(mdl.allocFeature(), 0u);
-    EXPECT_EQUAL(mdl.allocFeature(), 1u);
-    EXPECT_EQUAL(mdl.allocFeature(), 2u);
 
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQUAL(md->getNumTermFields(), 3u);
-    EXPECT_EQUAL(md->getNumFeatures(), 3u);
     TermFieldMatchData *t0 = md->resolveTermField(0);
     TermFieldMatchData *t1 = md->resolveTermField(1);
     TermFieldMatchData *t2 = md->resolveTermField(2);
@@ -46,12 +42,6 @@ Test::testLayout()
     EXPECT_EQUAL(0u, t0->getFieldId());
     EXPECT_EQUAL(42u, t1->getFieldId());
     EXPECT_EQUAL(IllegalFieldId, t2->getFieldId());
-    feature_t *f0 = md->resolveFeature(0);
-    feature_t *f1 = md->resolveFeature(1);
-    feature_t *f2 = md->resolveFeature(2);
-    EXPECT_EQUAL(f1, f0 + 1);
-    EXPECT_EQUAL(f2, f1 + 1);
-    EXPECT_TRUE((void*)t2 < (void*)f0 || (void*)f2 < (void*)t0);
 }
 
 void

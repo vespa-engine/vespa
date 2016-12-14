@@ -1043,7 +1043,7 @@ TEST("test WeakAnd Blueprint") {
         FakeResult z = FakeResult().doc(1).doc(4);
         {
             WeakAndBlueprint wa(456);
-            MatchData::UP md = MatchData::makeTestInstance(0, 100, 10);
+            MatchData::UP md = MatchData::makeTestInstance(100, 10);
             wa.addTerm(Blueprint::UP(new FakeBlueprint(field, x)), 120);
             wa.addTerm(Blueprint::UP(new FakeBlueprint(field, z)), 140);
             wa.addTerm(Blueprint::UP(new FakeBlueprint(field, y)), 130);
@@ -1099,7 +1099,7 @@ TEST("require_that_unpack_of_or_over_multisearch_is_optimized") {
                ap((new OrBlueprint())->
                        addChild(std::move(child1)).
                        addChild(std::move(child2))));
-    MatchData::UP md = MatchData::makeTestInstance(0, 100, 10);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->fetchPostings(false);
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::FullUnpack>",
                  top_up->createSearch(*md, false)->getClassName());
@@ -1125,7 +1125,7 @@ TEST("require_that_unpack_of_or_is_optimized") {
                        addChild(ap(MyLeafSpec(20).addField(1,1).create())).
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))));
-    MatchData::UP md = MatchData::makeTestInstance(0, 100, 10);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->fetchPostings(false);
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::FullUnpack>",
                  top_up->createSearch(*md, false)->getClassName());
@@ -1144,7 +1144,7 @@ TEST("require_that_unpack_of_and_is_optimized") {
                        addChild(ap(MyLeafSpec(20).addField(1,1).create())).
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))));
-    MatchData::UP md = MatchData::makeTestInstance(0, 100, 10);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->fetchPostings(false);
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::FullUnpack>",
                  top_up->createSearch(*md, false)->getClassName());
@@ -1164,7 +1164,7 @@ TEST("require_that_unpack_optimization_is_honoured_by_parents") {
                        addChild(ap(MyLeafSpec(20).addField(1,1).create())).
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))))));
-    MatchData::UP md = MatchData::makeTestInstance(0, 100, 10);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->fetchPostings(false);
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::FullUnpack>",
                  top_up->createSearch(*md, false)->getClassName());
@@ -1213,7 +1213,7 @@ TEST("require that children does not optimize when parents refuse them to") {
                addTerm(index.getIndex().createBlueprint(requestContext,
                                                         FieldSpec("f2", 2, idxth21), makeTerm("w2")),
                        1.0)));
-    MatchData::UP md = MatchData::makeTestInstance(0, 100, 10);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->fetchPostings(false);
     SearchIterator::UP search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
@@ -1251,7 +1251,7 @@ TEST("require_that_unpack_optimization_is_overruled_by_equiv") {
                           addChild(ap(MyLeafSpec(20).addField(2,idxth2).create())).
                           addChild(ap(MyLeafSpec(10).addField(3,idxth3).create()))),
                        1.0)));
-    MatchData::UP md = MatchData::makeTestInstance(0, 100, 10);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->fetchPostings(false);
     SearchIterator::UP search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());

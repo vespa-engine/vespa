@@ -77,7 +77,6 @@ Test::testFramework()
 
     MatchData::UP data = layout.createMatchData();
     EXPECT_EQUAL(data->getNumTermFields(), 4u);
-    EXPECT_EQUAL(data->getNumFeatures(), 0u);
 
     { // check match data access
         MatchDataBuilder mdb(queryEnv, *data);

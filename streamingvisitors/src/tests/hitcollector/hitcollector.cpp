@@ -226,21 +226,19 @@ HitCollectorTest::testEmpty()
 class MyRankProgram : public HitCollector::IRankProgram
 {
 private:
-    MatchData _matchData;
     NumberOrObject _fooValue;
     NumberOrObject _barValue;
 
 public:
     MyRankProgram()
-        : _matchData(MatchData::params().numFeatures(0)),
-          _fooValue(),
+        : _fooValue(),
           _barValue()
     {}
     virtual void  run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
         _fooValue.as_number = docid + 10;
         _barValue.as_number = docid + 30;
     }
-
+  
     FeatureResolver get_resolver() {
         FeatureResolver resolver(2);
         resolver.add("foo", &_fooValue, false);

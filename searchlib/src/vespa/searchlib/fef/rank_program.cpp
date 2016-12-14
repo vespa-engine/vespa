@@ -179,7 +179,7 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
             auto ref = specs[i].inputs[input_idx];
             inputs[input_idx] = _executors[ref.executor]->outputs().get_raw(ref.output);
         }
-        size_t num_outputs =  specs[i].output_types.size();
+        size_t num_outputs = specs[i].output_types.size();
         vespalib::ArrayRef<NumberOrObject> outputs(&features[feature_offset], num_outputs);
         feature_offset += num_outputs;
         FeatureExecutor *executor = &(specs[i].blueprint->createExecutor(queryEnv, _stash));

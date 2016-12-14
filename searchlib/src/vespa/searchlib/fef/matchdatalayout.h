@@ -16,9 +16,7 @@ class MatchDataLayout
 {
 private:
     uint32_t _numTermFields;
-    uint32_t _numFeatures;
     std::vector<uint32_t> _fieldIds;
-    std::vector<FeatureHandle> _object_features;
 
 public:
     /**
@@ -35,18 +33,6 @@ public:
     TermFieldHandle allocTermField(uint32_t fieldId) {
         _fieldIds.push_back(fieldId);
         return _numTermFields++;
-    }
-
-    /**
-     * Allocate space for a feature.
-     *
-     * @return handle to be used with match data objects
-     **/
-    FeatureHandle allocFeature(bool is_object = false) {
-        if (is_object) {
-            _object_features.push_back(_numFeatures);
-        }
-        return _numFeatures++;
     }
 
     /**
