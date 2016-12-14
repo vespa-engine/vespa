@@ -218,7 +218,7 @@ TEST("testAnd") {
     a.addHit(5).addHit(10).addHit(16).addHit(30);
     b.addHit(3).addHit(5).addHit(17).addHit(30).addHit(52);
 
-    MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+    MatchData::UP md(MatchData::makeTestInstance(100, 10));
     AndBlueprint *and_b = new AndBlueprint();
     and_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
     and_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
@@ -246,7 +246,7 @@ TEST("testOr") {
         a.addHit(5).addHit(10);
         b.addHit(5).addHit(17).addHit(30);
 
-        MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+        MatchData::UP md(MatchData::makeTestInstance(100, 10));
         OrBlueprint *or_b = new OrBlueprint();
         or_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
         or_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
@@ -357,7 +357,7 @@ TEST("testAndNot") {
         a.addHit(5).addHit(10);
         b.addHit(5).addHit(17).addHit(30);
 
-        MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+        MatchData::UP md(MatchData::makeTestInstance(100, 10));
         AndNotBlueprint *andnot_b = new AndNotBlueprint();
         andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
         andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
@@ -378,7 +378,7 @@ TEST("testAndNot") {
         a.addHit(1).addHit(5).addHit(10);
         b.addHit(5).addHit(17).addHit(30);
 
-        MatchData::UP md(MatchData::makeTestInstance(2, 100, 10));
+        MatchData::UP md(MatchData::makeTestInstance(100, 10));
         AndNotBlueprint *andnot_b = new AndNotBlueprint();
         andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
         andnot_b->addChild(Blueprint::UP(new DummySingleValueBitNumericAttributeBlueprint(b)));
@@ -402,7 +402,7 @@ TEST("testAndNot") {
         b.addHit(5).addHit(17).addHit(30);
         c.addHit(1).addHit(5).addHit(10).addHit(17).addHit(30);
 
-        MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+        MatchData::UP md(MatchData::makeTestInstance(100, 10));
         AndNotBlueprint *andnot_b = new AndNotBlueprint();
         andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
         andnot_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));
@@ -432,7 +432,7 @@ TEST("testRank") {
         a.addHit(5).addHit(10).addHit(16).addHit(30);
         b.addHit(3).addHit(5).addHit(17).addHit(30).addHit(52);
 
-        MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+        MatchData::UP md(MatchData::makeTestInstance(100, 10));
         RankBlueprint *rank_b = new RankBlueprint();
         rank_b->addChild(Blueprint::UP(new SimpleBlueprint(a)));
         rank_b->addChild(Blueprint::UP(new SimpleBlueprint(b)));

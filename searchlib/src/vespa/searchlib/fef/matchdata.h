@@ -4,11 +4,8 @@
 
 #include "handle.h"
 #include "termfieldmatchdata.h"
-#include <vespa/searchlib/common/feature.h>
 #include <memory>
 #include <vector>
-#include <vespa/vespalib/eval/value.h>
-#include "number_or_object.h"
 
 namespace search {
 namespace fef {
@@ -21,8 +18,6 @@ class MatchData
 {
 private:
     std::vector<TermFieldMatchData> _termFields;
-    std::vector<NumberOrObject>     _features;
-    std::vector<bool>               _feature_is_object;
     double                          _termwise_limit;
 
 public:
@@ -33,20 +28,13 @@ public:
     {
     private:
         uint32_t _numTermFields;
-        uint32_t _numFeatures;
 
         friend class ::search::fef::MatchData;
-        Params() : _numTermFields(0), _numFeatures(0) {}
+        Params() : _numTermFields(0) {}
     public:
         uint32_t numTermFields() const { return _numTermFields; }
         Params & numTermFields(uint32_t value) {
             _numTermFields = value;
-            return *this;
-        }
-
-        uint32_t numFeatures() const { return _numFeatures; }
-        Params & numFeatures(uint32_t value) {
-            _numFeatures = value;
             return *this;
         }
     };
@@ -93,14 +81,6 @@ public:
     uint32_t getNumTermFields() const { return _termFields.size(); }
 
     /**
-     * Obtain the number of features allocated in this match data
-     * structure.
-     *
-     * @return number of features allocated
-     **/
-    uint32_t getNumFeatures() const { return _features.size(); }
-
-    /**
      * Resolve a term field handle into a pointer to the actual data.
      *
      * @return term field match data
@@ -116,42 +96,7 @@ public:
      **/
     const TermFieldMatchData *resolveTermField(TermFieldHandle handle) const { return &_termFields[handle]; }
 
-    /**
-     * Resolve a feature handle into a pointer to the actual data.
-     * This is used to resolve both {@link FeatureExecutor#inputs}
-     * and {@link FeatureExecutor#outputs}.
-     *
-     * @return feature location
-     * @param handle feature handle
-     **/
-    feature_t *resolveFeature(FeatureHandle handle) { return &_features[handle].as_number; }
-
-    /**
-     * Resolve a feature handle into a pointer to the actual data.
-     * This is used to resolve both {@link FeatureExecutor#inputs}
-     * and {@link FeatureExecutor#outputs}.
-     *
-     * @return feature location
-     * @param handle feature handle
-     **/
-    const feature_t *resolveFeature(FeatureHandle handle) const { return &_features[handle].as_number; }
-
-    void tag_feature_as_object(FeatureHandle handle) { _feature_is_object[handle] = true; }
-    bool feature_is_object(FeatureHandle handle) const { return _feature_is_object[handle]; }
-
-    vespalib::eval::Value::CREF *resolve_object_feature(FeatureHandle handle) {
-        assert(_feature_is_object[handle]);
-        return &_features[handle].as_object;
-    }
-
-    const vespalib::eval::Value::CREF *resolve_object_feature(FeatureHandle handle) const {
-        assert(_feature_is_object[handle]);
-        return &_features[handle].as_object;
-    }
-
-    const NumberOrObject *resolve_raw(FeatureHandle handle) const { return &_features[handle]; }
-
-    static MatchData::UP makeTestInstance(uint32_t numFeatures, uint32_t numHandles, uint32_t fieldIdLimit);
+    static MatchData::UP makeTestInstance(uint32_t numTermFields, uint32_t fieldIdLimit);
 };
 
 } // namespace fef

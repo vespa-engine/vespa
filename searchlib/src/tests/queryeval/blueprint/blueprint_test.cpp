@@ -162,7 +162,7 @@ private:
 public:
     Test()
         : vespalib::TestApp(),
-          _md(MatchData::makeTestInstance(0, 100, 10))
+          _md(MatchData::makeTestInstance(100, 10))
     {
     }
     Blueprint::UP buildBlueprint1();

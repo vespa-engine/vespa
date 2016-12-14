@@ -22,7 +22,7 @@ public:
 void
 Test::testEmptyBlueprint()
 {
-    MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+    MatchData::UP md(MatchData::makeTestInstance(100, 10));
     EmptyBlueprint empty(FieldSpecBase(1, 11));
     ASSERT_TRUE(empty.getState().numFields() == 1u);
     EXPECT_EQUAL(1u, empty.getState().field(0).getFieldId());
@@ -40,7 +40,7 @@ Test::testEmptyBlueprint()
 void
 Test::testSimpleBlueprint()
 {
-    MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+    MatchData::UP md(MatchData::makeTestInstance(100, 10));
     SimpleResult a;
     a.addHit(3).addHit(5).addHit(7);
     SimpleBlueprint simple(a);
@@ -59,7 +59,7 @@ Test::testSimpleBlueprint()
 void
 Test::testFakeBlueprint()
 {
-    MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+    MatchData::UP md(MatchData::makeTestInstance(100, 10));
     FakeResult fake;
     fake.doc(10).len(50).pos(2).pos(3)
         .doc(25).len(10).pos(5);

@@ -54,7 +54,7 @@ public:
 //-----------------------------------------------------------------------------
 
 TEST("test strictness") {
-    MatchData::UP md(MatchData::makeTestInstance(0, 100, 10));
+    MatchData::UP md(MatchData::makeTestInstance(100, 10));
     for (uint32_t i = 0; i < 2; ++i) {
         bool strict = (i == 0);
 

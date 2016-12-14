@@ -123,7 +123,7 @@ bool Test::search(const string &term, IAttributeManager &attribute_manager) {
 bool Test::search(const Node &node, IAttributeManager &attribute_manager) {
     AttributeContext ac(attribute_manager);
     FakeRequestContext requestContext(&ac);
-    MatchData::UP md(MatchData::makeTestInstance(0, 1, 1));
+    MatchData::UP md(MatchData::makeTestInstance(1, 1));
     AttributeBlueprintFactory source;
     Blueprint::UP result = source.createBlueprint(requestContext, FieldSpec(field, 0, 0), node);
     ASSERT_TRUE(result.get());
