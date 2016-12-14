@@ -103,7 +103,8 @@ public class TensorFunctionBenchmark {
         time = new TensorFunctionBenchmark().benchmark(5000, generateVectors(100, 300, TensorType.Dimension.Type.indexedUnbound),TensorType.Dimension.Type.indexedUnbound);
         System.out.printf("Indexed vectors, time per join: %1$8.3f ms\n", time);
         // Initial: 3500 ms
-        time = new TensorFunctionBenchmark().benchmark(10, generateMatrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound);
+        // - After special-casing subspace: 28 ms
+        time = new TensorFunctionBenchmark().benchmark(500, generateMatrix(100, 300, TensorType.Dimension.Type.indexedUnbound), TensorType.Dimension.Type.indexedUnbound);
         System.out.printf("Indexed matrix,  time per join: %1$8.3f ms\n", time);
     }
 

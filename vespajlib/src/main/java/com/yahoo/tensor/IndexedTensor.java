@@ -187,8 +187,22 @@ public class IndexedTensor implements Tensor {
         }
     }
 
+    /** Returns the value at this address, or NaN if there is no value at this address */
     @Override
-    public double get(TensorAddress address) { throw new IllegalArgumentException("Remove?"); } // TODO: Keep this method?
+    public double get(TensorAddress address) { 
+        IndexedDimension currentDimension = firstDimension;
+        for (int i = 0; i < address.labels().size(); i++) {
+            int index = Integer.parseInt(address.labels().get(i));
+            Object value = currentDimension.values().get(index);
+            if (value == null) return Double.NaN;
+            
+            if (i == address.labels().size() -1) // last dimension
+                return (double)value;
+            else
+                currentDimension = (IndexedDimension)value;
+        }
+        return Double.NaN;
+    }
 
     @Override
     public int hashCode() { return firstDimension.hashCode(); }
