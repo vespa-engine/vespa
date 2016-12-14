@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "multi_value_mapping2.h"
+#include "multi_value_mapping.h"
 #include <vespa/vespalib/stllike/string.h>
 #include "attributevector.h"
 
@@ -24,7 +24,7 @@ protected:
     typedef typename B::ChangeVector::const_iterator            ChangeVectorIterator;
 
     using MultiValueType = M;
-    using MultiValueMapping = attribute::MultiValueMapping2<MultiValueType>;
+    using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
     typedef typename MultiValueType::ValueType            ValueType;
     typedef std::vector<MultiValueType>                   ValueVector;
     using MultiValueArrayRef = vespalib::ConstArrayRef<MultiValueType>;
@@ -58,7 +58,7 @@ public:
 
     virtual bool addDoc(DocId & doc);
     virtual uint32_t getValueCount(DocId doc) const;
-    virtual const attribute::MultiValueMapping2Base *getMultiValueBase() const override {
+    virtual const attribute::MultiValueMappingBase *getMultiValueBase() const override {
         return &getMultiValueMapping();
     }
 

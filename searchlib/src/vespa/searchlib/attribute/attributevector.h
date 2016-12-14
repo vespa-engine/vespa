@@ -56,7 +56,7 @@ namespace search {
         class IPostingListAttributeBase;
         class Interlock;
         class InterlockGuard;
-        class MultiValueMapping2Base;
+        class MultiValueMappingBase;
     }
 }
 
@@ -727,7 +727,7 @@ public:
     SearchContext::UP getSearch(const QueryPacketT &searchSpec, const SearchContext::Params & params) const;
     virtual SearchContext::UP getSearch(QueryTermSimple::UP term, const SearchContext::Params & params) const = 0;
     virtual const EnumStoreBase *getEnumStoreBase() const { return nullptr; }
-    virtual const attribute::MultiValueMapping2Base *getMultiValueBase() const { return nullptr; }
+    virtual const attribute::MultiValueMappingBase *getMultiValueBase() const { return nullptr; }
 private:
     void divideByZeroWarning();
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);

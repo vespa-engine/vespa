@@ -17,7 +17,7 @@ namespace attribute {
 /**
  * Base class for mapping from from document id to an array of values.
  */
-class MultiValueMapping2Base
+class MultiValueMappingBase
 {
 public:
     using EntryRef = datastore::EntryRef;
@@ -29,8 +29,8 @@ protected:
     MemoryUsage _cachedArrayStoreMemoryUsage;
     AddressSpace _cachedArrayStoreAddressSpaceUsage;
 
-    MultiValueMapping2Base(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
-    virtual ~MultiValueMapping2Base();
+    MultiValueMappingBase(const GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
+    virtual ~MultiValueMappingBase();
 
     void updateValueCount(size_t oldValues, size_t newValues) {
         _totalValues += newValues - oldValues;

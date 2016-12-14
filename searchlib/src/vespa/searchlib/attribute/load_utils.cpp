@@ -5,7 +5,7 @@
 #include "multivalue.h"
 #include "enumstorebase.h"
 #include "loadedenumvalue.h"
-#include "multi_value_mapping2.h"
+#include "multi_value_mapping.h"
 
 using search::multivalue::Value;
 using search::multivalue::WeightedValue;
@@ -14,9 +14,9 @@ namespace search {
 namespace attribute {
 
 #define INSTANTIATE_ARRAY(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping2<Value<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<Value<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 #define INSTANTIATE_WSET(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping2<WeightedValue<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver) \
 template void loadFromEnumeratedSingleValue(RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 

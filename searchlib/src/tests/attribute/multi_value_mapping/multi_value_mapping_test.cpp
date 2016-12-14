@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
-LOG_SETUP("multivaluemapping2_test");
+LOG_SETUP("multivaluemapping_test");
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/searchlib/attribute/multi_value_mapping2.h>
-#include <vespa/searchlib/attribute/multi_value_mapping2.hpp>
+#include <vespa/searchlib/attribute/multi_value_mapping.h>
+#include <vespa/searchlib/attribute/multi_value_mapping.hpp>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -63,7 +63,7 @@ template <typename EntryT>
 class Fixture
 {
 protected:
-    using MvMapping = search::attribute::MultiValueMapping2<EntryT>;
+    using MvMapping = search::attribute::MultiValueMapping<EntryT>;
     MvMapping _mvMapping;
     MyAttribute<MvMapping> _attr;
     using RefType = typename MvMapping::RefType;

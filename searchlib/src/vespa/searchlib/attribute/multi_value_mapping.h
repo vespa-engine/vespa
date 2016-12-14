@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "multi_value_mapping2_base.h"
+#include "multi_value_mapping_base.h"
 #include <vespa/searchlib/datastore/array_store.h>
 #include <vespa/searchlib/common/address_space.h>
 
@@ -13,7 +13,7 @@ namespace attribute {
  * Class for mapping from from document id to an array of values.
  */
 template <typename EntryT, typename RefT = datastore::EntryRefT<19> >
-class MultiValueMapping2 : public MultiValueMapping2Base
+class MultiValueMapping : public MultiValueMappingBase
 {
 public:
     using MultiValueType = EntryT;
@@ -25,9 +25,9 @@ private:
 
     ArrayStore _store;
 public:
-    MultiValueMapping2(const datastore::ArrayStoreConfig &storeCfg,
+    MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg,
                        const GrowStrategy &gs = GrowStrategy());
-    virtual ~MultiValueMapping2();
+    virtual ~MultiValueMapping();
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
     void set(uint32_t docId, ConstArrayRef values);
