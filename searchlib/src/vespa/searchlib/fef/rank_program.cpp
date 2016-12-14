@@ -105,6 +105,7 @@ RankProgram::add_unboxing_executors(vespalib::ArrayRef<NumberOrObject> features,
 void
 RankProgram::compile()
 {
+    std::vector<FeatureExecutor *> program;
     std::set<const NumberOrObject *> is_calculated;
     for (size_t i = 0; i < _executors.size(); ++i) {
         FeatureExecutor &executor = *_executors[i];
@@ -120,9 +121,10 @@ RankProgram::compile()
                 is_calculated.insert(outputs.get_raw(out_idx));
             }
         } else {
-            _program.push_back(&executor);
+            program.push_back(&executor);
         }
     }
+    _program = _stash.copy_array<FeatureExecutor *>(program);
 }
 
 FeatureResolver
@@ -149,8 +151,9 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
 
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(resolver),
-      _program(),
+      _match_data(),
       _stash(),
+      _program(),
       _executors(),
       _unboxed_seeds()
 {
@@ -171,7 +174,6 @@ RankProgram::setup(const MatchDataLayout &mdl_in,
     size_t total_features = count_features();
     vespalib::ArrayRef<NumberOrObject> features = _stash.create_array<NumberOrObject>(total_features);
     const auto &specs = _resolver->getExecutorSpecs();
-    _executors.reserve(specs.size());
     for (uint32_t i = 0; i < specs.size(); ++i) {
         size_t num_inputs = specs[i].inputs.size();
         vespalib::ArrayRef<const NumberOrObject *> inputs = _stash.create_array<const NumberOrObject *>(num_inputs);

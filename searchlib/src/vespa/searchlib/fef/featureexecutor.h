@@ -26,7 +26,7 @@ public:
     class Inputs {
         vespalib::ConstArrayRef<const NumberOrObject *> _inputs;
     public:
-        Inputs() : _inputs(nullptr, 0) {}
+        Inputs() : _inputs() {}
         void bind(vespalib::ConstArrayRef<const NumberOrObject *> inputs) { _inputs = inputs; }
         feature_t get_number(size_t idx) const {
             return _inputs[idx]->as_number;
@@ -43,7 +43,7 @@ public:
     class Outputs {
         vespalib::ArrayRef<NumberOrObject> _outputs;
     public:
-        Outputs() : _outputs(nullptr, 0) {}
+        Outputs() : _outputs() {}
         void bind(vespalib::ArrayRef<NumberOrObject> outputs) { _outputs = outputs; }
         void set_number(size_t idx, feature_t value) {
             _outputs[idx].as_number = value;

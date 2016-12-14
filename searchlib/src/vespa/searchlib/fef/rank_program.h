@@ -30,12 +30,12 @@ private:
 
     using MappedValues = std::map<const NumberOrObject *, const NumberOrObject *>;
 
-    BlueprintResolver::SP          _resolver;
-    std::vector<FeatureExecutor *> _program;
-    MatchData::UP                  _match_data;
-    vespalib::Stash                _stash;
-    std::vector<FeatureExecutor *> _executors;
-    MappedValues                   _unboxed_seeds;
+    BlueprintResolver::SP                 _resolver;
+    MatchData::UP                         _match_data;
+    vespalib::Stash                       _stash;
+    vespalib::ArrayRef<FeatureExecutor *> _program;
+    std::vector<FeatureExecutor *>        _executors;
+    MappedValues                          _unboxed_seeds;
 
     size_t count_features() const;
 
@@ -68,9 +68,8 @@ public:
     /**
      * Set up this rank program by creating the needed feature
      * executors and wiring them together. This function will also
-     * create the MatchData to be used for iterator unpacking and
-     * feature calculation as well as pre-calculating all constant
-     * features.
+     * create the MatchData to be used for iterator unpacking as well
+     * as pre-calculating all constant features.
      **/
     void setup(const MatchDataLayout &mdl,
                const IQueryEnvironment &queryEnv,
