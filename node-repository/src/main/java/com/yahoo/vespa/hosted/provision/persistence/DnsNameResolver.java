@@ -12,24 +12,23 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Implementation of a name resolver that always use a DNS server to resolve the given name. The intention is to avoid
+ * Implementation of a name resolver that always uses a DNS server to resolve the given name. The intention is to avoid
  * possibly incorrect/incomplete records in /etc/hosts.
  *
  * @author mpolden
  */
 public class DnsNameResolver implements NameResolver {
 
-    private static final String TYPE_A = "A";
-    private static final String TYPE_AAAA = "AAAA";
-
     /** Resolve IP addresses for given host name */
     @Override
     public Set<String> getAllByNameOrThrow(String hostname) {
         try {
-            DirContext ctx = new InitialDirContext();
-            Attributes attributes = ctx.getAttributes("dns:/" + hostname, new String[] {TYPE_A, TYPE_AAAA});
-            Optional<String> inet4Address = getStringAttribute(attributes, TYPE_A);
-            Optional<String> inet6Address = getStringAttribute(attributes, TYPE_AAAA);
+            Optional<String> cname = lookupName(hostname, Type.CNAME);
+            if (cname.isPresent()) {
+                hostname = cname.get();
+            }
+            Optional<String> inet4Address = lookupName(hostname, Type.A);
+            Optional<String> inet6Address = lookupName(hostname, Type.AAAA);
 
             ImmutableSet.Builder<String> ipAddresses = ImmutableSet.builder();
             inet4Address.ifPresent(ipAddresses::add);
@@ -40,11 +39,26 @@ public class DnsNameResolver implements NameResolver {
         }
     }
 
-    private static Optional<String> getStringAttribute(Attributes attributes, String key) throws NamingException {
-        Optional<Attribute> attribute = Optional.ofNullable(attributes.get(key));
+    private Optional<String> lookupName(String name, Type type) throws NamingException {
+        DirContext ctx = new InitialDirContext();
+        Attributes attributes = ctx.getAttributes("dns:/" + name, new String[]{type.value});
+        Optional<Attribute> attribute = Optional.ofNullable(attributes.get(type.value));
         if (attribute.isPresent()) {
             return Optional.ofNullable(attribute.get().get()).map(Object::toString);
         }
         return Optional.empty();
+    }
+
+    private enum Type {
+
+        A("A"),
+        AAAA("AAAA"),
+        CNAME("CNAME");
+
+        private final String value;
+
+        Type(String value) {
+            this.value = value;
+        }
     }
 }
