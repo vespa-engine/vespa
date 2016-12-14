@@ -12,6 +12,7 @@ import javax.ws.rs.core.MediaType;
  * @author hakonhall
  */
 public interface ClusterControllerJaxRsApi {
+
     @POST
     @Path("/cluster/v2/{clusterName}/storage/{storageNodeIndex}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -28,4 +29,5 @@ public interface ClusterControllerJaxRsApi {
     ClusterControllerStateResponse setClusterState(
             @PathParam("clusterName") String clusterName,
             ClusterControllerStateRequest request);
+
 }

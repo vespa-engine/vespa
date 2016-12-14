@@ -41,9 +41,8 @@ public class InstanceResource {
     private final InstanceLookupService instanceLookupService;
 
     @Inject
-    public InstanceResource(
-            @Component final InstanceLookupService instanceLookupService,
-            @Component final StatusService statusService) {
+    public InstanceResource(@Component InstanceLookupService instanceLookupService,
+                            @Component StatusService statusService) {
         this.instanceLookupService = instanceLookupService;
         this.statusService = statusService;
     }
@@ -58,24 +57,21 @@ public class InstanceResource {
     @Path("/{instanceId}")
     @Produces(MediaType.APPLICATION_JSON)
     public InstanceStatusResponse getInstance(@PathParam("instanceId") String instanceIdString) {
-        final ApplicationInstanceReference instanceId;
+        ApplicationInstanceReference instanceId;
         try {
             instanceId = parseAppInstanceReference(instanceIdString);
         } catch (IllegalArgumentException e) {
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).build());
         }
 
-        final ApplicationInstance<ServiceMonitorStatus> applicationInstance
+        ApplicationInstance<ServiceMonitorStatus> applicationInstance
                 = instanceLookupService.findInstanceById(instanceId)
                 .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build()));
 
-        final Set<HostName> hostsUsedByApplicationInstance = getHostsUsedByApplicationInstance(applicationInstance);
-        final Map<HostName, HostStatus> hostStatusMap = getHostStatusMap(
-                hostsUsedByApplicationInstance,
-                statusService.forApplicationInstance(instanceId));
-        final Map<HostName, String> hostStatusStringMap = OrchestratorUtil.mapValues(
-                hostStatusMap,
-                HostStatus::name);
+        Set<HostName> hostsUsedByApplicationInstance = getHostsUsedByApplicationInstance(applicationInstance);
+        Map<HostName, HostStatus> hostStatusMap = getHostStatusMap(hostsUsedByApplicationInstance,
+                                                                   statusService.forApplicationInstance(instanceId));
+        Map<HostName, String> hostStatusStringMap = OrchestratorUtil.mapValues(hostStatusMap, HostStatus::name);
         return InstanceStatusResponse.create(applicationInstance, hostStatusStringMap);
     }
 }

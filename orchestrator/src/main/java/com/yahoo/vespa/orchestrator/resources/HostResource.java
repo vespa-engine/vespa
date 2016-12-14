@@ -36,8 +36,8 @@ public class HostResource implements HostApi {
     }
 
     @Override
-    public GetHostResponse getHost(final String hostNameString) {
-        final HostName hostName = new HostName(hostNameString);
+    public GetHostResponse getHost(String hostNameString) {
+        HostName hostName = new HostName(hostNameString);
         try {
             HostStatus status = orchestrator.getNodeStatus(hostName);
             return new GetHostResponse(hostName.s(), status.name());
@@ -48,8 +48,8 @@ public class HostResource implements HostApi {
     }
 
     @Override
-    public UpdateHostResponse suspend(final String hostNameString) {
-        final HostName hostName = new HostName(hostNameString);
+    public UpdateHostResponse suspend(String hostNameString) {
+        HostName hostName = new HostName(hostNameString);
         try {
             orchestrator.suspend(hostName);
         } catch (HostNameNotFoundException e) {
@@ -64,7 +64,7 @@ public class HostResource implements HostApi {
 
     @Override
     public UpdateHostResponse resume(final String hostNameString) {
-        final HostName hostName = new HostName(hostNameString);
+        HostName hostName = new HostName(hostNameString);
         try {
             orchestrator.resume(hostName);
         } catch (HostNameNotFoundException e) {
@@ -78,9 +78,9 @@ public class HostResource implements HostApi {
     }
 
     private static WebApplicationException webExceptionWithDenialReason(HostName hostName, HostStateChangeDeniedException e) {
-        final HostStateChangeDenialReason hostStateChangeDenialReason = new HostStateChangeDenialReason(
+        HostStateChangeDenialReason hostStateChangeDenialReason = new HostStateChangeDenialReason(
                 e.getConstraintName(), e.getServiceType().s(), e.getMessage());
-        final UpdateHostResponse response = new UpdateHostResponse(hostName.s(), hostStateChangeDenialReason);
+        UpdateHostResponse response = new UpdateHostResponse(hostName.s(), hostStateChangeDenialReason);
         return new WebApplicationException(
                 hostStateChangeDenialReason.toString(),
                 e,
@@ -90,5 +90,6 @@ public class HostResource implements HostApi {
                         .build());
 
     }
+
 }
 

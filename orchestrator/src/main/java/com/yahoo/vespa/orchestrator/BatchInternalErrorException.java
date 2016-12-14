@@ -6,10 +6,12 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import java.util.List;
 
 public class BatchInternalErrorException extends OrchestrationException {
+
     public BatchInternalErrorException(HostName parentHostname,
                                        List<HostName> orderedHostNames,
                                        RuntimeException e) {
         super("Failed to suspend " + orderedHostNames + " with parent host "
                 + parentHostname + ": " + e.getMessage(), e);
     }
+
 }

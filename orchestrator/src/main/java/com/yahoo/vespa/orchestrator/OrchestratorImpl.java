@@ -50,11 +50,10 @@ public class OrchestratorImpl implements Orchestrator {
     private final ClusterControllerClientFactory clusterControllerClientFactory;
 
     @Inject
-    public OrchestratorImpl(
-            final ClusterControllerClientFactory clusterControllerClientFactory,
-            final StatusService statusService,
-            final OrchestratorConfig orchestratorConfig,
-            final InstanceLookupService instanceLookupService)
+    public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
+                            StatusService statusService,
+                            OrchestratorConfig orchestratorConfig,
+                            InstanceLookupService instanceLookupService)
     {
         this(new HostedVespaPolicy(clusterControllerClientFactory),
                 clusterControllerClientFactory,
@@ -63,12 +62,11 @@ public class OrchestratorImpl implements Orchestrator {
                 orchestratorConfig.serviceMonitorConvergenceLatencySeconds());
     }
 
-    public OrchestratorImpl(
-            final Policy policy,
-            final ClusterControllerClientFactory clusterControllerClientFactory,
-            final StatusService statusService,
-            final InstanceLookupService instanceLookupService,
-            final int serviceMonitorConvergenceLatencySeconds)
+    public OrchestratorImpl(Policy policy,
+                            ClusterControllerClientFactory clusterControllerClientFactory,
+                            StatusService statusService,
+                            InstanceLookupService instanceLookupService,
+                            int serviceMonitorConvergenceLatencySeconds)
     {
         this.policy = policy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
@@ -134,8 +132,7 @@ public class OrchestratorImpl implements Orchestrator {
     }
 
     @Override
-    public ApplicationInstanceStatus getApplicationInstanceStatus(
-            final ApplicationId appId) throws ApplicationIdNotFoundException {
+    public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) throws ApplicationIdNotFoundException {
         ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId,instanceLookupService);
         return statusService.forApplicationInstance(appRef).getApplicationInstanceStatus();
     }
@@ -242,10 +239,8 @@ public class OrchestratorImpl implements Orchestrator {
         return orderedHostNames;
     }
 
-    private int compareHostNamesForSuspend(
-            HostName leftHostname,
-            HostName rightHostname,
-            Map<HostName, ApplicationInstanceReference> applicationReferences) {
+    private int compareHostNamesForSuspend(HostName leftHostname, HostName rightHostname,
+                                           Map<HostName, ApplicationInstanceReference> applicationReferences) {
         ApplicationInstanceReference leftApplicationReference = applicationReferences.get(leftHostname);
         assert leftApplicationReference != null;
 
@@ -261,17 +256,12 @@ public class OrchestratorImpl implements Orchestrator {
         return leftHostname.toString().compareTo(rightHostname.toString());
     }
 
-    private HostStatus getNodeStatus(
-            final ApplicationInstanceReference applicationRef,
-            final HostName hostName) {
+    private HostStatus getNodeStatus(ApplicationInstanceReference applicationRef, HostName hostName) {
         return statusService.forApplicationInstance(applicationRef).getHostStatus(hostName);
     }
 
-    private void setApplicationStatus(
-            final ApplicationId appId,
-            final ApplicationInstanceStatus status) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
-
-
+    private void setApplicationStatus(ApplicationId appId, ApplicationInstanceStatus status) 
+            throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException{
         ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
         try (MutableStatusRegistry statusRegistry =
                      statusService.lockApplicationInstance_forCurrentThreadOnly(appRef)) {
@@ -296,10 +286,9 @@ public class OrchestratorImpl implements Orchestrator {
         }
     }
 
-    private void setClusterStateInController(
-            final ApplicationInstance<ServiceMonitorStatus> application,
-            final ClusterControllerState state) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
-
+    private void setClusterStateInController(ApplicationInstance<ServiceMonitorStatus> application,
+                                             ClusterControllerState state) 
+            throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
         // Get all content clusters for this application
         Set<ClusterId> contentClusterIds = application.serviceClusters().stream()
                 .filter(VespaModelUtil::isContent)
@@ -310,7 +299,7 @@ public class OrchestratorImpl implements Orchestrator {
         log.log(LogLevel.INFO, String.format("Setting content clusters %s for application %s to %s",
                 contentClusterIds,application.applicationInstanceId(),state));
         for (ClusterId clusterId : contentClusterIds) {
-            final ClusterControllerClient client = clusterControllerClientFactory.createClient(
+            ClusterControllerClient client = clusterControllerClientFactory.createClient(
                     VespaModelUtil.getClusterControllerInstances(application, clusterId),
                     clusterId.s());
             try {
@@ -335,7 +324,7 @@ public class OrchestratorImpl implements Orchestrator {
         return instanceLookupService.findInstanceById(appRef).orElseThrow(ApplicationIdNotFoundException::new);
     }
 
-    private static void sleep(final long time, final TimeUnit timeUnit) {
+    private static void sleep(long time, TimeUnit timeUnit) {
         try {
             Thread.sleep(timeUnit.toMillis(time));
         } catch (InterruptedException e) {

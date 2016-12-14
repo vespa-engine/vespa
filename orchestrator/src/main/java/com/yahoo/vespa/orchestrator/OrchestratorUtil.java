@@ -34,54 +34,48 @@ import static java.util.stream.Collectors.toSet;
  * @author bakksjo
  */
 public class OrchestratorUtil {
+
     // Utility class, not to be instantiated.
     private OrchestratorUtil() {}
 
-    public static Set<HostName> getHostsUsedByApplicationInstance(final ApplicationInstance<?> applicationInstance) {
+    public static Set<HostName> getHostsUsedByApplicationInstance(ApplicationInstance<?> applicationInstance) {
         return applicationInstance.serviceClusters().stream()
                 .flatMap(serviceCluster -> getHostsUsedByServiceCluster(serviceCluster).stream())
                 .collect(toSet());
     }
 
-    public static Set<HostName> getHostsUsedByServiceCluster(final ServiceCluster<?> serviceCluster) {
+    public static Set<HostName> getHostsUsedByServiceCluster(ServiceCluster<?> serviceCluster) {
         return serviceCluster.serviceInstances().stream()
                 .map(ServiceInstance::hostName)
                 .collect(toSet());
     }
 
-    public static <T> Set<ServiceCluster<T>> getServiceClustersUsingHost(
-            final Collection<ServiceCluster<T>> serviceClusters,
-            final HostName hostName) {
+    public static <T> Set<ServiceCluster<T>> getServiceClustersUsingHost(Collection<ServiceCluster<T>> serviceClusters,
+                                                                         HostName hostName) {
         return serviceClusters.stream()
                 .filter(serviceCluster -> hasServiceInstanceOnHost(serviceCluster, hostName))
                 .collect(toSet());
     }
 
-    public static Map<HostName, HostStatus> getHostStatusMap(
-            final Collection<HostName> hosts,
-            final ReadOnlyStatusRegistry hostStatusService) {
+    public static Map<HostName, HostStatus> getHostStatusMap(Collection<HostName> hosts,
+                                                             ReadOnlyStatusRegistry hostStatusService) {
         return hosts.stream()
                 .collect(Collectors.toMap(
                         hostName -> hostName,
                         hostName -> hostStatusService.getHostStatus(hostName)));
     }
 
-    private static boolean hasServiceInstanceOnHost(
-            final ServiceCluster<?> serviceCluster,
-            final HostName hostName) {
+    private static boolean hasServiceInstanceOnHost(ServiceCluster<?> serviceCluster, HostName hostName) {
         return serviceInstancesOnHost(serviceCluster, hostName).count() > 0;
     }
 
-    public static <T> Stream<ServiceInstance<T>> serviceInstancesOnHost(
-            final ServiceCluster<T> serviceCluster,
-            final HostName hostName) {
+    public static <T> Stream<ServiceInstance<T>> serviceInstancesOnHost(ServiceCluster<T> serviceCluster,
+                                                                        HostName hostName) {
         return serviceCluster.serviceInstances().stream()
                 .filter(instance -> instance.hostName().equals(hostName));
     }
 
-    public static <K, V1, V2> Map<K, V2> mapValues(
-            final Map<K, V1> map,
-            final Function<V1, V2> valueConverter) {
+    public static <K, V1, V2> Map<K, V2> mapValues(Map<K, V1> map, Function<V1, V2> valueConverter) {
         return map.entrySet().stream()
                 .collect(toMap(Map.Entry::getKey, entry -> valueConverter.apply(entry.getValue())));
     }
@@ -89,22 +83,22 @@ public class OrchestratorUtil {
     private static final Pattern APPLICATION_INSTANCE_REFERENCE_REST_FORMAT_PATTERN = Pattern.compile("^([^:]+):(.+)$");
 
     /** Returns an ApplicationInstanceReference constructed from the serialized format used in the REST API. */
-    public static ApplicationInstanceReference parseAppInstanceReference(final String restFormat) {
+    public static ApplicationInstanceReference parseAppInstanceReference(String restFormat) {
         if (restFormat == null) {
             throw new IllegalArgumentException("Could not construct instance id from null string");
         }
 
-        final Matcher matcher = APPLICATION_INSTANCE_REFERENCE_REST_FORMAT_PATTERN.matcher(restFormat);
+        Matcher matcher = APPLICATION_INSTANCE_REFERENCE_REST_FORMAT_PATTERN.matcher(restFormat);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Could not construct instance id from string \"" + restFormat +"\"");
         }
 
-        final TenantId tenantId = new TenantId(matcher.group(1));
-        final ApplicationInstanceId applicationInstanceId = new ApplicationInstanceId(matcher.group(2));
+        TenantId tenantId = new TenantId(matcher.group(1));
+        ApplicationInstanceId applicationInstanceId = new ApplicationInstanceId(matcher.group(2));
         return new ApplicationInstanceReference(tenantId, applicationInstanceId);
     }
 
-    public static String toRestApiFormat(final ApplicationInstanceReference applicationInstanceReference) {
+    public static String toRestApiFormat(ApplicationInstanceReference applicationInstanceReference) {
         return applicationInstanceReference.tenantId() + ":" + applicationInstanceReference.applicationInstanceId();
     }
 
@@ -152,4 +146,5 @@ public class OrchestratorUtil {
                 ApplicationName.from(appNameParts[1]),
                 InstanceName.from(appNameParts[4]));
     }
+
 }

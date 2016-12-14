@@ -52,24 +52,23 @@ public class HostedVespaPolicy implements Policy {
 
 
     @Override
-    public void grantSuspensionRequest(
-            final ApplicationInstance<ServiceMonitorStatus> applicationInstance,
-            final HostName hostName,
-            final MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
+    public void grantSuspensionRequest(ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+                                       HostName hostName,
+                                       MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
 
         Set<ServiceCluster<ServiceMonitorStatus>> serviceClustersOnHost =
                 getServiceClustersUsingHost(applicationInstance.serviceClusters(), hostName);
 
-        final Map<HostName, HostStatus> hostStatusMap = getHostStatusMap(
+        Map<HostName, HostStatus> hostStatusMap = getHostStatusMap(
                 getHostsUsedByApplicationInstance(applicationInstance),
                 hostStatusService);
 
         boolean hasUpStorageInstance = false;
-        for (final ServiceCluster<ServiceMonitorStatus> serviceCluster : serviceClustersOnHost) {
-            final Set<ServiceInstance<ServiceMonitorStatus>> instancesOnThisHost;
-            final Set<ServiceInstance<ServiceMonitorStatus>> instancesOnOtherHosts;
+        for (ServiceCluster<ServiceMonitorStatus> serviceCluster : serviceClustersOnHost) {
+            Set<ServiceInstance<ServiceMonitorStatus>> instancesOnThisHost;
+            Set<ServiceInstance<ServiceMonitorStatus>> instancesOnOtherHosts;
             {
-                final Map<Boolean, Set<ServiceInstance<ServiceMonitorStatus>>> serviceInstancesByLocality =
+                Map<Boolean, Set<ServiceInstance<ServiceMonitorStatus>>> serviceInstancesByLocality =
                         serviceCluster.serviceInstances().stream()
                                 .collect(
                                         Collectors.groupingBy(
@@ -80,7 +79,7 @@ public class HostedVespaPolicy implements Policy {
             }
 
             if (VespaModelUtil.isStorage(serviceCluster)) {
-                final boolean thisHostHasSomeUpInstances = instancesOnThisHost.stream()
+                boolean thisHostHasSomeUpInstances = instancesOnThisHost.stream()
                         .map(ServiceInstance::serviceStatus)
                         .anyMatch(status -> status == ServiceMonitorStatus.UP);
                 if (thisHostHasSomeUpInstances) {
@@ -88,7 +87,7 @@ public class HostedVespaPolicy implements Policy {
                 }
             }
 
-            final boolean thisHostHasOnlyDownInstances = instancesOnThisHost.stream()
+            boolean thisHostHasOnlyDownInstances = instancesOnThisHost.stream()
                     .map(ServiceInstance::serviceStatus)
                     .allMatch(status -> status == ServiceMonitorStatus.DOWN);
             if (thisHostHasOnlyDownInstances) {
@@ -96,7 +95,7 @@ public class HostedVespaPolicy implements Policy {
                 continue;
             }
 
-            final Set<ServiceInstance<ServiceMonitorStatus>> possiblyDownInstancesOnOtherHosts =
+            Set<ServiceInstance<ServiceMonitorStatus>> possiblyDownInstancesOnOtherHosts =
                     instancesOnOtherHosts.stream()
                             .filter(instance -> effectivelyDown(instance, hostStatusMap))
                             .collect(Collectors.toSet());
@@ -108,25 +107,25 @@ public class HostedVespaPolicy implements Policy {
             }
 
             // Now calculate what the service suspension percentage will be if we suspend this host.
-            final int numServiceInstancesTotal = serviceCluster.serviceInstances().size();
-            final int numInstancesThatWillBeSuspended = union(possiblyDownInstancesOnOtherHosts, instancesOnThisHost).size();
-            final int percentThatWillBeSuspended = numInstancesThatWillBeSuspended * 100 / numServiceInstancesTotal;
-            final int suspendPercentageAllowed = ServiceClusterSuspendPolicy.getSuspendPercentageAllowed(serviceCluster);
+            int numServiceInstancesTotal = serviceCluster.serviceInstances().size();
+            int numInstancesThatWillBeSuspended = union(possiblyDownInstancesOnOtherHosts, instancesOnThisHost).size();
+            int percentThatWillBeSuspended = numInstancesThatWillBeSuspended * 100 / numServiceInstancesTotal;
+            int suspendPercentageAllowed = ServiceClusterSuspendPolicy.getSuspendPercentageAllowed(serviceCluster);
             if (percentThatWillBeSuspended > suspendPercentageAllowed) {
                 // It may seem like this may in some cases prevent upgrading, especially for small clusters (where the
                 // percentage of service instances affected by suspending a single host may easily exceed the allowed
                 // suspension percentage). Note that we always allow progress by allowing a single host to suspend.
                 // See previous section.
-                final int currentSuspensionPercentage
+                int currentSuspensionPercentage
                         = possiblyDownInstancesOnOtherHosts.size() * 100 / numServiceInstancesTotal;
-                final Set<HostName> otherHostsWithThisServiceCluster = instancesOnOtherHosts.stream()
+                Set<HostName> otherHostsWithThisServiceCluster = instancesOnOtherHosts.stream()
                         .map(ServiceInstance::hostName)
                         .collect(Collectors.toSet());
-                final Set<HostName> hostsAllowedToBeDown = hostStatusMap.entrySet().stream()
+                Set<HostName> hostsAllowedToBeDown = hostStatusMap.entrySet().stream()
                         .filter(entry -> entry.getValue() == HostStatus.ALLOWED_TO_BE_DOWN)
                         .map(Map.Entry::getKey)
                         .collect(Collectors.toSet());
-                final Set<HostName> otherHostsAllowedToBeDown
+                Set<HostName> otherHostsAllowedToBeDown
                         = intersection(otherHostsWithThisServiceCluster, hostsAllowedToBeDown);
                 throw new HostStateChangeDeniedException(
                         hostName,
@@ -155,23 +154,23 @@ public class HostedVespaPolicy implements Policy {
         log.log(LogLevel.INFO, hostName + " is now allowed to be down (suspended)");
     }
 
-    private static <T> Set<T> union(final Set<T> setA, Set<T> setB) {
-        final Set<T> union = new HashSet<>(setA);
+    private static <T> Set<T> union(Set<T> setA, Set<T> setB) {
+        Set<T> union = new HashSet<>(setA);
         union.addAll(setB);
         return union;
     }
 
-    private static <T> Set<T> intersection(final Set<T> setA, Set<T> setB) {
-        final Set<T> intersection = new HashSet<>(setA);
+    private static <T> Set<T> intersection(Set<T> setA, Set<T> setB) {
+        Set<T> intersection = new HashSet<>(setA);
         intersection.retainAll(setB);
         return intersection;
     }
 
     @Override
     public void releaseSuspensionGrant(
-            final ApplicationInstance<ServiceMonitorStatus> applicationInstance,
-            final HostName hostName,
-            final MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
+            ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+            HostName hostName,
+            MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
         Set<ServiceCluster<ServiceMonitorStatus>> serviceClustersOnHost =
                 getServiceClustersUsingHost(applicationInstance.serviceClusters(), hostName);
 
@@ -183,21 +182,19 @@ public class HostedVespaPolicy implements Policy {
         log.log(LogLevel.INFO, hostName + " is no longer allowed to be down (resumed)");
     }
 
-    private static boolean effectivelyDown(
-            final ServiceInstance<ServiceMonitorStatus> serviceInstance,
-            final Map<HostName, HostStatus> hostStatusMap) {
-        final ServiceMonitorStatus instanceStatus = serviceInstance.serviceStatus();
-        final HostStatus hostStatus = hostStatusMap.get(serviceInstance.hostName());
+    private static boolean effectivelyDown(ServiceInstance<ServiceMonitorStatus> serviceInstance,
+                                           Map<HostName, HostStatus> hostStatusMap) {
+        ServiceMonitorStatus instanceStatus = serviceInstance.serviceStatus();
+        HostStatus hostStatus = hostStatusMap.get(serviceInstance.hostName());
         return hostStatus == HostStatus.ALLOWED_TO_BE_DOWN || instanceStatus == ServiceMonitorStatus.DOWN;
     }
 
-    private void setNodeStateInController(
-            ApplicationInstance<?> application,
-            HostName hostName,
-            ClusterControllerState nodeState) throws HostStateChangeDeniedException {
+    private void setNodeStateInController(ApplicationInstance<?> application,
+                                          HostName hostName,
+                                          ClusterControllerState nodeState) throws HostStateChangeDeniedException {
         ClusterId contentClusterId = VespaModelUtil.getContentClusterName(application, hostName);
         Set<? extends ServiceInstance<?>> clusterControllers = VespaModelUtil.getClusterControllerInstances(application, contentClusterId);
-        final ClusterControllerClient client = clusterControllerClientFactory.createClient(
+        ClusterControllerClient client = clusterControllerClientFactory.createClient(
                 clusterControllers,
                 contentClusterId.s());
         int nodeIndex = VespaModelUtil.getStorageNodeIndex(application, hostName);
@@ -209,7 +206,7 @@ public class HostedVespaPolicy implements Policy {
                 ", node index " + nodeIndex +
                 ", node state " + nodeState);
 
-        final ClusterControllerStateResponse response;
+        ClusterControllerStateResponse response;
         try {
             response = client.setNodeState(nodeIndex, nodeState);
         } catch (IOException e) {
@@ -221,7 +218,7 @@ public class HostedVespaPolicy implements Policy {
                     e);
         }
 
-        if (!response.wasModified) {
+        if ( ! response.wasModified) {
             throw new HostStateChangeDeniedException(
                     hostName,
                     SET_NODE_STATE_CONSTRAINT,
@@ -229,4 +226,5 @@ public class HostedVespaPolicy implements Policy {
                     "Failed to set state to " + nodeState + " in controller: " + response.reason);
         }
     }
+
 }

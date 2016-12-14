@@ -26,13 +26,13 @@ import java.util.stream.Collectors;
  */
 @Path(ApplicationSuspensionApi.PATH_PREFIX)
 public class ApplicationSuspensionResource implements ApplicationSuspensionApi {
+
     private static final Logger log = Logger.getLogger(ApplicationSuspensionResource.class.getName());
 
     private final OrchestratorImpl orchestrator;
 
     @Inject
-    public ApplicationSuspensionResource(
-            @Component OrchestratorImpl orchestrator) {
+    public ApplicationSuspensionResource(@Component OrchestratorImpl orchestrator) {
         this.orchestrator = orchestrator;
     }
 
@@ -118,4 +118,5 @@ public class ApplicationSuspensionResource implements ApplicationSuspensionApi {
             throw new BadRequestException(e);
         }
     }
+
 }

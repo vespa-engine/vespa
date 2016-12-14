@@ -18,6 +18,7 @@ import static com.yahoo.vespa.orchestrator.VespaModelUtil.getClusterControllerIn
  * @author bakksjo
  */
 public class SingleInstanceClusterControllerClientFactory implements ClusterControllerClientFactory {
+
     public static final int CLUSTERCONTROLLER_HARDCODED_PORT = 19050;
     public static final String CLUSTERCONTROLLER_API_PATH = "/";
 
@@ -29,26 +30,24 @@ public class SingleInstanceClusterControllerClientFactory implements ClusterCont
 
     private JaxRsClientFactory jaxRsClientFactory;
 
-    public SingleInstanceClusterControllerClientFactory(
-            final JaxRsClientFactory jaxRsClientFactory) {
+    public SingleInstanceClusterControllerClientFactory(JaxRsClientFactory jaxRsClientFactory) {
         this.jaxRsClientFactory = jaxRsClientFactory;
     }
 
     @Override
-    public ClusterControllerClient createClient(
-            final Collection<? extends ServiceInstance<?>> clusterControllers,
-            final String clusterName) {
-        final ServiceInstance<?> serviceInstance = clusterControllers.stream()
+    public ClusterControllerClient createClient(Collection<? extends ServiceInstance<?>> clusterControllers,
+                                                String clusterName) {
+        ServiceInstance<?> serviceInstance = clusterControllers.stream()
                 .min(CLUSTER_CONTROLLER_INDEX_COMPARATOR)
                 .orElseThrow(() -> new IllegalArgumentException("No cluster controller instances found"));
-        final HostName controllerHostName = serviceInstance.hostName();
-        final int port = CLUSTERCONTROLLER_HARDCODED_PORT;  // TODO: Get this from service monitor.
+        HostName controllerHostName = serviceInstance.hostName();
+        int port = CLUSTERCONTROLLER_HARDCODED_PORT;  // TODO: Get this from service monitor.
 
         log.log(LogLevel.DEBUG, () ->
                 "For cluster '" + clusterName + "' with controllers " + clusterControllers
                         + ", creating api client for " + controllerHostName.s() + ":" + port);
 
-        final JaxRsStrategy<ClusterControllerJaxRsApi> strategy = new NoRetryJaxRsStrategy<>(
+        JaxRsStrategy<ClusterControllerJaxRsApi> strategy = new NoRetryJaxRsStrategy<>(
                 controllerHostName,
                 port,
                 jaxRsClientFactory,
@@ -57,4 +56,5 @@ public class SingleInstanceClusterControllerClientFactory implements ClusterCont
 
         return new ClusterControllerClientImpl(strategy, clusterName);
     }
+
 }

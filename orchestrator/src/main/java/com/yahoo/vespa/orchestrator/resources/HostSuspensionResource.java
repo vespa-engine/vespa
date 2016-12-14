@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Path(HostSuspensionApi.PATH_PREFIX)
 public class HostSuspensionResource implements HostSuspensionApi {
+
     private static final Logger log = Logger.getLogger(HostSuspensionResource.class.getName());
 
     private final Orchestrator orchestrator;
@@ -34,13 +35,13 @@ public class HostSuspensionResource implements HostSuspensionApi {
 
     @Override
     public BatchOperationResult suspendAll(BatchHostSuspendRequest request) throws WebApplicationException {
-        final String parentHostnameString = request.getParentHostname();
+        String parentHostnameString = request.getParentHostname();
         if (parentHostnameString == null || parentHostnameString.isEmpty()) {
             String message = "parentHostname missing or empty in request: " + request;
             log.log(LogLevel.DEBUG, message);
             throw createWebApplicationException(message, Response.Status.BAD_REQUEST);
         }
-        final List<String> hostnamesAsStrings = request.getHostnames();
+        List<String> hostnamesAsStrings = request.getHostnames();
         if (hostnamesAsStrings == null) {
             String message = "hostnames missing in request: " + request;
             log.log(LogLevel.DEBUG, message);
@@ -76,4 +77,5 @@ public class HostSuspensionResource implements HostSuspensionApi {
                         .type(MediaType.APPLICATION_JSON_TYPE)
                         .build());
     }
+
 }

@@ -7,6 +7,7 @@ import com.yahoo.vespa.orchestrator.OrchestrationException;
 import java.util.List;
 
 public class BatchHostStateChangeDeniedException extends OrchestrationException {
+
     public BatchHostStateChangeDeniedException(HostName parentHostname,
                                                List<HostName> orderedHostNames,
                                                HostStateChangeDeniedException e) {
@@ -14,4 +15,5 @@ public class BatchHostStateChangeDeniedException extends OrchestrationException 
                 + parentHostname + ": " + e.getMessage(), e);
 
     }
+
 }

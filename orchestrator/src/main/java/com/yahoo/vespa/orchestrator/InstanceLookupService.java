@@ -13,7 +13,9 @@ import java.util.Set;
  * @author oyving
  */
 public interface InstanceLookupService {
+
     Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceById(ApplicationInstanceReference applicationInstanceReference);
     Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceByHost(HostName hostName);
     Set<ApplicationInstanceReference> knownInstances();
+
 }

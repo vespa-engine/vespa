@@ -9,5 +9,7 @@ import java.util.Collection;
  * @author bakksjo
  */
 public interface ClusterControllerClientFactory {
+
     ClusterControllerClient createClient(Collection<? extends ServiceInstance<?>> clusterControllers, String clusterName);
+
 }
