@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
@@ -33,10 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author freva
@@ -126,19 +121,13 @@ public class LocalZoneUtils {
     }
 
     public static void buildVespaLocalDockerImage(Docker docker, DockerImage vespaBaseImage) throws IOException {
-        Path dockerfileTemplatePath = Paths.get("node-admin/Dockerfile.template");
-
-        String dockerfileTemplate = new String(Files.readAllBytes(dockerfileTemplatePath))
-                .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
-                .replaceAll("\\$VESPA_HOME", Defaults.getDefaults().vespaHome());
-
         /*
          * Because the daemon could be running on a remote machine, docker build command will upload the entire
          * build path to daemon and then execute the Dockerfile. This means that:
          * 1. We cant use relative paths in Dockerfile
          * 2. We should avoid using a large directory as build root
          *
-         * Therefore, copy docker-api jar to node-admin/target and used node-admin as build root instead of vespa/
+         * Therefore, copy docker-api jar to node-admin/target and use node-admin as build root instead of vespa/
           */
         Files.copy(PROJECT_ROOT.resolve("docker-api/target/docker-api-jar-with-dependencies.jar"),
                 PROJECT_ROOT.resolve("node-admin/target/docker-api-jar-with-dependencies.jar"),
@@ -146,7 +135,16 @@ public class LocalZoneUtils {
 
         Path dockerfilePath = PROJECT_ROOT.resolve("node-admin/Dockerfile");
 
+        Path dockerfileTemplatePath = Paths.get("node-admin/Dockerfile.template");
+        String dockerfileTemplate = new String(Files.readAllBytes(dockerfileTemplatePath))
+                .replaceAll("\\$NODE_ADMIN_FROM_IMAGE", vespaBaseImage.asString())
+                .replaceAll("\\$VESPA_HOME", Defaults.getDefaults().vespaHome());
         Files.write(dockerfilePath, dockerfileTemplate.getBytes());
+
+        String servicesXml = new String(Files.readAllBytes(PROJECT_ROOT.resolve("node-admin/src/main/application/services.xml")))
+                .replaceAll("(<isRunningLocally>).*(<\\/isRunningLocally>)", "$1true$2");
+        Files.write(PROJECT_ROOT.resolve("node-admin/include/services.xml"), servicesXml.getBytes());
+
         docker.buildImage(dockerfilePath.getParent().toFile(), VESPA_LOCAL_IMAGE);
     }
 
@@ -252,27 +250,6 @@ public class LocalZoneUtils {
         }
 
         return false;
-    }
-
-    public static Maintainer getMaintainer(Path pathToContainerStorage) {
-        Maintainer maintainer = mock(Maintainer.class);
-        when(maintainer.pathInHostFromPathInNode(any(), any())).thenAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            return pathToContainerStorage
-                    .resolve(((ContainerName) args[0]).asString())
-                    .resolve((String) args[1]);
-        });
-        when(maintainer.pathInNodeAdminFromPathInNode(any(), any())).thenAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            return maintainer.pathInHostFromPathInNode((ContainerName) args[0], (String) args[1]);
-        });
-        when(maintainer.pathInNodeAdminToNodeCleanup(any())).thenAnswer(invocation -> {
-            Object[] args = invocation.getArguments();
-            return pathToContainerStorage
-                    .resolve("cleanup_" + ((ContainerName) args[0]).asString() + "_" + System.currentTimeMillis());
-        });
-
-        return maintainer;
     }
 }
 

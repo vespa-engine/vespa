@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.io.InputStreamReader;
 import java.net.Inet6Address;
@@ -78,13 +77,11 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final Environment environment;
-    private final Maintainer maintainer;
     private GaugeWrapper numberOfRunningContainersGauge;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, Maintainer maintainer, MetricReceiverWrapper metricReceiver) {
+    public DockerOperationsImpl(Docker docker, Environment environment, MetricReceiverWrapper metricReceiver) {
         this.docker = docker;
         this.environment = environment;
-        this.maintainer = maintainer;
         setMetrics(metricReceiver);
     }
 
@@ -208,7 +205,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
             command.withVolume("/etc/hosts", "/etc/hosts");
             for (String pathInNode : DIRECTORIES_TO_MOUNT.keySet()) {
-                String pathInHost = maintainer.pathInHostFromPathInNode(nodeSpec.containerName, pathInNode).toString();
+                String pathInHost = environment.pathInHostFromPathInNode(nodeSpec.containerName, pathInNode).toString();
                 command.withVolume(pathInHost, pathInNode);
             }
 

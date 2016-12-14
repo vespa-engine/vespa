@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
+import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import io.airlift.airline.Arguments;
 import io.airlift.airline.Cli;
@@ -24,17 +25,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -43,18 +38,11 @@ import java.util.regex.Pattern;
  * @author freva
  */
 public class Maintainer {
-    private static final Path ROOT = Paths.get("/");
-    private static final Path RELATIVE_APPLICATION_STORAGE_PATH = Paths.get("home/docker/container-storage");
-    private static final Path APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN = Paths.get("/host").resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    private static final Path APPLICATION_STORAGE_PATH_FOR_HOST = ROOT.resolve(RELATIVE_APPLICATION_STORAGE_PATH);
-    private static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
-
+    private static final Environment environment = new Environment.Builder().pathResolver(new PathResolver()).build();
     private static final Maintainer maintainer = new Maintainer();
     private static final CoredumpHandler COREDUMP_HANDLER =
             new CoredumpHandler(HttpClientBuilder.create().build(), new CoreCollector(maintainer));
     private static final Gson gson = new Gson();
-
-    private static DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
     private static final String JOB_DELETE_OLD_APP_DATA = "delete-old-app-data";
     private static final String JOB_ARCHIVE_APP_DATA = "archive-app-data";
@@ -62,10 +50,6 @@ public class Maintainer {
     private static final String JOB_HANDLE_CORE_DUMPS = "handle-core-dumps";
 
     private static Optional<String> kernelVersion = Optional.empty();
-
-    static {
-        filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
@@ -153,7 +137,7 @@ public class Maintainer {
         return new ProcessResult(process.waitFor(), output, errors);
     }
 
-    public static String[] concatenateArrays(String[] ar1, String... ar2) {
+    private static String[] concatenateArrays(String[] ar1, String... ar2) {
         String[] concatenated = new String[ar1.length + ar2.length];
         System.arraycopy(ar1, 0, concatenated, 0, ar1.length);
         System.arraycopy(ar2, 0, concatenated, ar1.length, ar2.length);
@@ -164,8 +148,8 @@ public class Maintainer {
     public static class DeleteOldAppDataArguments implements Runnable {
         @Override
         public void run() {
-            String path = APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.toString();
-            String regex = "^" + Pattern.quote(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
+            String path = environment.getPathResolver().getApplicationStoragePathForNodeAdmin().toString();
+            String regex = "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX);
 
             DeleteOldAppData.deleteDirectories(path, Duration.ofDays(7).getSeconds(), regex);
         }
@@ -175,7 +159,7 @@ public class Maintainer {
     public static class CleanCoreDumpsArguments implements Runnable {
         @Override
         public void run() {
-            Path doneCoredumps = maintainer.pathInNodeAdminToDoneCoredumps();
+            Path doneCoredumps = environment.pathInNodeAdminToDoneCoredumps();
 
             if (doneCoredumps.toFile().exists()) {
                 COREDUMP_HANDLER.removeOldCoredumps(doneCoredumps);
@@ -200,7 +184,7 @@ public class Maintainer {
             Logger logger = Logger.getLogger(ArchiveApplicationData.class.getName());
             Maintainer maintainer = new Maintainer();
 
-            File yVarDir = maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
+            File yVarDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
             if (yVarDir.exists()) {
                 logger.info("Recursively deleting " + yVarDir);
                 try {
@@ -210,13 +194,13 @@ public class Maintainer {
                 }
             }
 
-            Path from = maintainer.pathInNodeAdminFromPathInNode(containerName, "/");
+            Path from = environment.pathInNodeAdminFromPathInNode(containerName, "/");
             if (!Files.exists(from)) {
                 logger.info("The container storage at " + from + " doesn't exist");
                 return;
             }
 
-            Path to = maintainer.pathInNodeAdminToNodeCleanup(containerName);
+            Path to = environment.pathInNodeAdminToNodeCleanup(containerName);
             logger.info("Moving container storage from " + from + " to " + to);
             try {
                 Files.move(from, to);
@@ -246,8 +230,8 @@ public class Maintainer {
             try {
                 Map<String, Object> attributesMap = (Map<String, Object>) gson.fromJson(attributes, Map.class);
 
-                Path path = maintainer.pathInNodeAdminFromPathInNode(new ContainerName(container), "/home/y/var/crash");
-                Path doneCoredumps = maintainer.pathInNodeAdminToDoneCoredumps();
+                Path path = environment.pathInNodeAdminFromPathInNode(new ContainerName(container), "/home/y/var/crash");
+                Path doneCoredumps = environment.pathInNodeAdminToDoneCoredumps();
 
                 COREDUMP_HANDLER.removeJavaCoredumps(path);
                 COREDUMP_HANDLER.processAndReportCoredumps(path, doneCoredumps, attributesMap);
@@ -258,54 +242,6 @@ public class Maintainer {
     }
 
 
-    /**
-     * Absolute path in node admin to directory with processed and reported core dumps
-     */
-    private Path pathInNodeAdminToDoneCoredumps() {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve("processed-coredumps");
-    }
-
-    /**
-     * Absolute path in node admin container to the node cleanup directory.
-     */
-    public Path pathInNodeAdminToNodeCleanup(ContainerName containerName) {
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN.resolve(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX +
-                containerName.asString() + "_" + filenameFormatter.format(Date.from(Instant.now())));
-    }
-
-    /**
-     * Translates an absolute path in node agent container to an absolute path in node admin container.
-     * @param containerName name of the node agent container
-     * @param absolutePathInNode absolute path in that container
-     * @return the absolute path in node admin container pointing at the same inode
-     */
-    public Path pathInNodeAdminFromPathInNode(ContainerName containerName, String absolutePathInNode) {
-        Path pathInNode = Paths.get(absolutePathInNode);
-        if (! pathInNode.isAbsolute()) {
-            throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
-        }
-
-        return APPLICATION_STORAGE_PATH_FOR_NODE_ADMIN
-                .resolve(containerName.asString())
-                .resolve(ROOT.relativize(pathInNode));
-    }
-
-    /**
-     * Translates an absolute path in node agent container to an absolute path in host.
-     * @param containerName name of the node agent container
-     * @param absolutePathInNode absolute path in that container
-     * @return the absolute path in host pointing at the same inode
-     */
-    public Path pathInHostFromPathInNode(ContainerName containerName, String absolutePathInNode) {
-        Path pathInNode = Paths.get(absolutePathInNode);
-        if (! pathInNode.isAbsolute()) {
-            throw new IllegalArgumentException("The specified path in node was not absolute: " + absolutePathInNode);
-        }
-
-        return APPLICATION_STORAGE_PATH_FOR_HOST
-                .resolve(containerName.asString())
-                .resolve(ROOT.relativize(pathInNode));
-    }
 
     public static String getKernelVersion() throws IOException, InterruptedException {
         if (! kernelVersion.isPresent()) {

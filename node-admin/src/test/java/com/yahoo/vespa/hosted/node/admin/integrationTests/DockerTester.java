@@ -14,12 +14,10 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -42,12 +40,6 @@ public class DockerTester implements AutoCloseable {
 
 
     public DockerTester() {
-        callOrderVerifier = new CallOrderVerifier();
-        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(callOrderVerifier);
-        orchestratorMock = new OrchestratorMock(callOrderVerifier);
-        nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
-        dockerMock = new DockerMock(callOrderVerifier);
-
         InetAddressResolver inetAddressResolver = mock(InetAddressResolver.class);
         try {
             when(inetAddressResolver.getInetAddressForHost(any(String.class))).thenReturn(InetAddress.getByName("1.1.1.1"));
@@ -55,15 +47,17 @@ public class DockerTester implements AutoCloseable {
             throw new RuntimeException(e);
         }
 
-        Environment environment = new Environment(Collections.emptySet(),
-                                                  "dev",
-                                                  "us-east-1",
-                                                  "parent.host.name.yahoo.com",
-                                                  inetAddressResolver);
+        Environment environment = new Environment.Builder().inetAddressResolver(inetAddressResolver).build();
+
+        callOrderVerifier = new CallOrderVerifier();
+        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(environment, callOrderVerifier);
+        orchestratorMock = new OrchestratorMock(callOrderVerifier);
+        nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+        dockerMock = new DockerMock(callOrderVerifier);
+
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        final Maintainer maintainer = new Maintainer();
-        final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, maintainer, mr);
+        final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, mr);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
                 orchestratorMock, dockerOperations, Optional.of(storageMaintainer), mr, environment);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, Optional.of(storageMaintainer), 100, mr);

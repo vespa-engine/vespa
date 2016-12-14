@@ -547,8 +547,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void configureContainerMetrics(ContainerNodeSpec nodeSpec) {
         if (! storageMaintainer.isPresent()) return;
-        final Path yamasAgentFolder = storageMaintainer.get().getMaintainer()
-                .pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
+        final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")

@@ -13,10 +13,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProvider;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
-import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -26,19 +23,14 @@ import java.util.function.Function;
  * @author dybis
  */
 public class ComponentsProviderWithMocks implements ComponentsProvider {
-    static final Maintainer maintainer = new Maintainer();
     static final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
     static final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
     static final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
     static final Docker dockerMock = new DockerMock(callOrderVerifier);
 
-    private Environment environment = new Environment(Collections.emptySet(),
-                                                      "dev",
-                                                      "us-east-1",
-                                                      "parent.host.name.yahoo.com",
-                                                      new InetAddressResolver());
+    private final Environment environment = new Environment.Builder().build();
     private final MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-    private final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, maintainer, mr);
+    private final DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, mr);
     private final Function<String, NodeAgent> nodeAgentFactory =
             (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock,
                     dockerOperations, Optional.empty(), mr, environment);

@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -49,15 +48,14 @@ public class ComponentsProviderImpl implements ComponentsProvider {
     private static final int NODE_ADMIN_STATE_INTERVAL_MILLIS = 5 * 60000;
 
     public ComponentsProviderImpl(Docker docker, MetricReceiverWrapper metricReceiver, Environment environment,
-                                  Maintainer maintainer, Optional<StorageMaintainer> storageMaintainer) {
+                                  Optional<StorageMaintainer> storageMaintainer) {
         String baseHostName = HostName.getLocalhost();
         Set<String> configServerHosts = environment.getConfigServerHosts();
 
         Orchestrator orchestrator = new OrchestratorImpl(configServerHosts);
         NodeRepository nodeRepository = new NodeRepositoryImpl(configServerHosts, WEB_SERVICE_PORT, baseHostName);
 
-        final DockerOperations dockerOperations = new DockerOperationsImpl(
-                docker, environment, maintainer, metricReceiver);
+        final DockerOperations dockerOperations = new DockerOperationsImpl(docker, environment, metricReceiver);
         final Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
                         storageMaintainer, metricReceiver, environment);
@@ -75,8 +73,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 docker,
                 metricReceiver,
                 new Environment(),
-                new Maintainer(),
-                config.isRunningLocally() ? Optional.empty() : Optional.of(new StorageMaintainer(new Maintainer())));
+                config.isRunningLocally() ? Optional.empty() : Optional.of(new StorageMaintainer(new Environment())));
 
         if (! config.isRunningLocally()) initializeNodeAgentSecretAgent(docker);
     }
