@@ -73,6 +73,10 @@ public class Join extends PrimitiveTensorFunction {
             return indexedVectorJoin((IndexedTensor)a, (IndexedTensor)b, joinedType);
         else if (joinedType.dimensions().size() == a.type().dimensions().size() && joinedType.dimensions().size() == b.type().dimensions().size())
             return singleSpaceJoin(a, b, joinedType);
+        else if (a.type().dimensions().containsAll(b.type().dimensions()))
+            return subspaceJoin(b, a, joinedType);
+        else if (b.type().dimensions().containsAll(a.type().dimensions()))
+            return subspaceJoin(a, b,joinedType);
         else
             return generalJoin(a, b, joinedType);
     }
@@ -94,6 +98,34 @@ public class Join extends PrimitiveTensorFunction {
             builder.cell(aCell.getKey(), combinator.applyAsDouble(aCell.getValue(), bCellValue));
         }
         return builder.build();
+    }
+    
+    /** Join a tensor into a superspace */
+    private Tensor subspaceJoin(Tensor subspace, Tensor superspace, TensorType joinedType) {
+        int[] subspaceIndexes = subspaceIndexes(superspace.type(), subspace.type());
+        Tensor.Builder builder = Tensor.Builder.of(joinedType);
+        for (Map.Entry<TensorAddress, Double> supercell : superspace.cells().entrySet()) {
+            TensorAddress subaddress = mapAddressToSubspace(supercell.getKey(), subspaceIndexes);
+            double subspaceValue = subspace.get(subaddress);
+            if (subspaceValue != Double.NaN)
+                builder.cell(supercell.getKey(), combinator.applyAsDouble(subspaceValue, supercell.getValue()));
+        }
+        return builder.build();
+    }
+    
+    /** Returns the indexes in the superspace type which should be retained to create the subspace type */
+    private int[] subspaceIndexes(TensorType supertype, TensorType subtype) {
+        int[] subspaceIndexes = new int[subtype.dimensions().size()];
+        for (int i = 0; i < subtype.dimensions().size(); i++)
+            subspaceIndexes[i] = supertype.indexOfDimension(subtype.dimensions().get(i).name()).get();
+        return subspaceIndexes;
+    }
+    
+    private TensorAddress mapAddressToSubspace(TensorAddress superAddress, int[] subspaceIndexes) {
+        String[] subspaceLabels = new String[subspaceIndexes.length];
+        for (int i = 0; i < subspaceIndexes.length; i++)
+            subspaceLabels[i] = superAddress.labels().get(subspaceIndexes[i]);
+        return new TensorAddress(subspaceLabels);
     }
 
     /** Slow join which works for any two tensors */
