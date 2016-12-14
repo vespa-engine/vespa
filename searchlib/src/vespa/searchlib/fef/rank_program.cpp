@@ -152,7 +152,7 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(resolver),
       _match_data(),
-      _stash(),
+      _stash(32768),
       _program(),
       _executors(),
       _unboxed_seeds()
