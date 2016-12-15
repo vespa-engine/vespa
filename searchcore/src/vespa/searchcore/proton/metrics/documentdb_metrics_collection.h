@@ -21,7 +21,7 @@ public:
           _taggedMetrics(docTypeName)
     {
     }
-    LegacyDocumentDBMetrics &getMetrics() { return _metrics; }
+    LegacyDocumentDBMetrics &getLegacyMetrics() { return _metrics; }
     DocumentDBTaggedMetrics &getTaggedMetrics() { return _taggedMetrics; }
 };
 

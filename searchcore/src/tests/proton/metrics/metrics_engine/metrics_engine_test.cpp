@@ -61,8 +61,8 @@ TEST("require that the metric proton.diskusage is the sum of the documentDB disk
 
     DocumentDBMetricsCollection metrics1("type1", 1);
     DocumentDBMetricsCollection metrics2("type2", 1);
-    metrics1.getMetrics().index.diskUsage.addValue(100);
-    metrics2.getMetrics().index.diskUsage.addValue(1000);
+    metrics1.getLegacyMetrics().index.diskUsage.addValue(100);
+    metrics2.getLegacyMetrics().index.diskUsage.addValue(1000);
 
     metrics_engine.addDocumentDBMetrics(metrics1);
     metrics_engine.addDocumentDBMetrics(metrics2);

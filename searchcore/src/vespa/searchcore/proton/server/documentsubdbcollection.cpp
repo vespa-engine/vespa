@@ -65,7 +65,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                                        summaryExecutor,
                                        _bucketDB,
                                        *_bucketDBHandler,
-                                       metrics.getMetrics(),
+                                       metrics.getLegacyMetrics(),
                                        configLock,
                                        hwInfo);
     _subDBs.push_back
@@ -85,8 +85,8 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                 SearchableDocSubDB::Context(FastAccessDocSubDB::Context
                         (context,
                          AttributeMetricsCollection(metrics.getTaggedMetrics().ready.attributes,
-                                                    metrics.getMetrics().ready.attributes),
-                        &metrics.getMetrics().attributes,
+                                                    metrics.getLegacyMetrics().ready.attributes),
+                        &metrics.getLegacyMetrics().attributes,
                         metricsWireService),
                         queryLimiter,
                         clock,
@@ -114,7 +114,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
                         true),
                 FastAccessDocSubDB::Context(context,
                         AttributeMetricsCollection(metrics.getTaggedMetrics().notReady.attributes,
-                                                   metrics.getMetrics().notReady.attributes),
+                                                   metrics.getLegacyMetrics().notReady.attributes),
                         NULL,
                         metricsWireService)));
 }
