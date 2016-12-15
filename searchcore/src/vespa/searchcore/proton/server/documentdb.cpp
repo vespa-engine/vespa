@@ -1245,12 +1245,16 @@ DocumentDB::getIndexManagerFactory(const vespalib::stringref &name) const
 namespace {
 
 void
-updateIndexMetrics(LegacyDocumentDBMetrics::IndexMetrics &metrics,
+updateIndexMetrics(DocumentDBMetricsCollection &metrics,
                    const search::SearchableStats &stats)
 {
-    metrics.memoryUsage.set(stats.memoryUsage());
-    metrics.docsInMemory.set(stats.docsInMemory());
-    metrics.diskUsage.set(stats.sizeOnDisk());
+    DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.getTaggedMetrics().index;
+    indexMetrics.memoryUsage.update(stats.memoryUsage());
+
+    LegacyDocumentDBMetrics::IndexMetrics &legacyIndexMetrics = metrics.getMetrics().index;
+    legacyIndexMetrics.memoryUsage.set(stats.memoryUsage().allocatedBytes());
+    legacyIndexMetrics.docsInMemory.set(stats.docsInMemory());
+    legacyIndexMetrics.diskUsage.set(stats.sizeOnDisk());
 }
 
 struct TempAttributeMetric
@@ -1456,6 +1460,7 @@ void
 DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
 {
     updateLegacyMetrics(metrics.getMetrics());
+    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats());
     updateAttributeMetrics(metrics, _subDBs);
     updateMetrics(metrics.getTaggedMetrics());
 }
@@ -1463,8 +1468,6 @@ DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
 void
 DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics)
 {
-    updateIndexMetrics(metrics.index,
-                       _subDBs.getReadySubDB()->getSearchableStats());
     updateMatchingMetrics(metrics.matching, *_subDBs.getReadySubDB());
     metrics.executor.update(_writeService.getMasterExecutor().getStats());
     metrics.indexExecutor.update(_writeService.getIndexExecutor().getStats());

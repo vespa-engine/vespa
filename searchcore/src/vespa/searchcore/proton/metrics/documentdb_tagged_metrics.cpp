@@ -76,10 +76,17 @@ DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMe
 {
 }
 
+DocumentDBTaggedMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
+    : MetricSet("index", "", "Index metrics (memory and disk) for this document db", parent),
+      memoryUsage(this)
+{
+}
+
 DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
       job(this),
       attribute(this),
+      index(this),
       ready("ready", this),
       notReady("notready", this),
       removed("removed", this)

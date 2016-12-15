@@ -18,7 +18,8 @@ namespace searchcorespi {
 
 namespace {
 
-void insertDiskIndex(Cursor &arrayCursor, const DiskIndexStats &diskIndex)
+void
+insertDiskIndex(Cursor &arrayCursor, const DiskIndexStats &diskIndex)
 {
     Cursor &diskIndexCursor = arrayCursor.addObject();
     const SearchableStats &sstats = diskIndex.getSearchableStats();
@@ -27,13 +28,24 @@ void insertDiskIndex(Cursor &arrayCursor, const DiskIndexStats &diskIndex)
     diskIndexCursor.setLong("sizeOnDisk", sstats.sizeOnDisk());
 }
 
-void insertMemoryIndex(Cursor &arrayCursor, const MemoryIndexStats &memoryIndex)
+void
+insertMemoryUsage(Cursor &object, const search::MemoryUsage &usage)
+{
+    Cursor &memory = object.setObject("memoryUsage");
+    memory.setLong("allocatedBytes", usage.allocatedBytes());
+    memory.setLong("usedBytes", usage.usedBytes());
+    memory.setLong("deadBytes", usage.deadBytes());
+    memory.setLong("onHoldBytes", usage.allocatedBytesOnHold());
+}
+
+void
+insertMemoryIndex(Cursor &arrayCursor, const MemoryIndexStats &memoryIndex)
 {
     Cursor &memoryIndexCursor = arrayCursor.addObject();
     const SearchableStats &sstats = memoryIndex.getSearchableStats();
     memoryIndexCursor.setLong("serialNum", memoryIndex.getSerialNum());
     memoryIndexCursor.setLong("docsInMemory", sstats.docsInMemory());
-    memoryIndexCursor.setLong("memoryUsage", sstats.memoryUsage());
+    insertMemoryUsage(memoryIndexCursor, sstats.memoryUsage());
 }
 
 }

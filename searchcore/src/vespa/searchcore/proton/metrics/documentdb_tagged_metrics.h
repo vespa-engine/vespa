@@ -76,8 +76,16 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         AttributeMetrics(metrics::MetricSet *parent);
     };
 
+    struct IndexMetrics : metrics::MetricSet
+    {
+        MemoryUsageMetrics memoryUsage;
+
+        IndexMetrics(metrics::MetricSet *parent);
+    };
+
     JobMetrics job;
     AttributeMetrics attribute;
+    IndexMetrics index;
     SubDBMetrics ready;
     SubDBMetrics notReady;
     SubDBMetrics removed;
