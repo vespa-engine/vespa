@@ -2,6 +2,7 @@
 #pragma once
 
 #include "array.h"
+#include <vector>
 
 namespace vespalib {
 

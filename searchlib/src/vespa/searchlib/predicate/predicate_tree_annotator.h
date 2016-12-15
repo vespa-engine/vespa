@@ -2,15 +2,14 @@
 
 #pragma once
 
+#include "predicate_interval.h"
 #include <unordered_map>
 #include <vespa/vespalib/data/slime/memory.h>
 #include <vespa/vespalib/stllike/string.h>
-#include "predicate_interval.h"
 #include <climits>
+#include <vector>
 
-namespace vespalib {
-namespace slime { class Inspector; }
-}  // namespace vespalib;
+namespace vespalib { namespace slime { class Inspector; } }
 
 namespace search {
 namespace predicate {

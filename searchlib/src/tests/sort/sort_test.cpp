@@ -4,7 +4,7 @@
 #include <vespa/searchlib/common/sortspec.h>
 #include <vespa/searchlib/common/converters.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
-#include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <vector>
 #include <fstream>

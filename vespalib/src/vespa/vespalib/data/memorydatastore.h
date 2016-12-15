@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vector>
 
 namespace vespalib {
 

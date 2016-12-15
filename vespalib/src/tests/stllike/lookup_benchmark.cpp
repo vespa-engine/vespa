@@ -8,7 +8,7 @@
 #include <tr1/unordered_set>
 #include <vector>
 #include <algorithm>
-#include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 
 template <typename S>
 void fill(S & s, size_t count)
