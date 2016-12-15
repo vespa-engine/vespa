@@ -17,6 +17,20 @@ DocumentStoreExplorer::DocumentStoreExplorer(ISummaryManager::SP mgr)
 {
 }
 
+namespace {
+
+void
+setMemoryUsage(Cursor &object, const search::MemoryUsage &usage)
+{
+    Cursor &memory = object.setObject("memoryUsage");
+    memory.setLong("allocatedBytes", usage.allocatedBytes());
+    memory.setLong("usedBytes", usage.usedBytes());
+    memory.setLong("deadBytes", usage.deadBytes());
+    memory.setLong("onHoldBytes", usage.allocatedBytesOnHold());
+}
+
+}
+
 void
 DocumentStoreExplorer::get_state(const Inserter &inserter, bool full) const
 {
@@ -28,6 +42,7 @@ DocumentStoreExplorer::get_state(const Inserter &inserter, bool full) const
     object.setDouble("maxBucketSpread", storageStats.maxBucketSpread());
     object.setLong("lastFlushedSerialNum", storageStats.lastFlushedSerialNum());
     object.setLong("lastSerialNum", storageStats.lastSerialNum());
+    setMemoryUsage(object, store.getMemoryUsage());
     if (full) {
         const vespalib::string &baseDir = store.getBaseDir();
         std::vector<DataStoreFileChunkStats> chunks;
