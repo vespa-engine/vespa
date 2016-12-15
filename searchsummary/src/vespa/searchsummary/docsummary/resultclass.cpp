@@ -5,9 +5,6 @@
 
 #include "resultclass.h"
 #include "resultconfig.h"
-
-#include <vespa/vespalib/stllike/hash_map.hpp>
-
 #include <zlib.h>
 
 namespace search {
