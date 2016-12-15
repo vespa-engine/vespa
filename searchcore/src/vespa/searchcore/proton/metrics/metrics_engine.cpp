@@ -112,7 +112,7 @@ void
 MetricsEngine::addDocumentDBMetrics(DocumentDBMetricsCollection &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    addLegacyDocumentDBMetrics(_legacyRoot, child.getMetrics());
+    addLegacyDocumentDBMetrics(_legacyRoot, child.getLegacyMetrics());
 
     _root.registerMetric(child.getTaggedMetrics());
 }
@@ -121,7 +121,7 @@ void
 MetricsEngine::removeDocumentDBMetrics(DocumentDBMetricsCollection &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    removeLegacyDocumentDBMetrics(_legacyRoot, child.getMetrics());
+    removeLegacyDocumentDBMetrics(_legacyRoot, child.getLegacyMetrics());
 
     _root.unregisterMetric(child.getTaggedMetrics());
 }

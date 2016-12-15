@@ -51,7 +51,7 @@ public:
     }
     virtual search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats()
-            .memoryUsage(getMemoryUsage().allocatedBytes())
+            .memoryUsage(getMemoryUsage())
             .docsInMemory(_index.getNumDocs())
             .sizeOnDisk(0);
     }

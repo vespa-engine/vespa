@@ -132,7 +132,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _feedHandler(_writeService,
                    tlsSpec,
                    docTypeName,
-                   getMetricsCollection().getMetrics().feed,
+                   getMetricsCollection().getLegacyMetrics().feed,
                    _state,
                    *this,
                    _writeFilter,
@@ -559,7 +559,7 @@ DocumentDB::close()
 
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics &metrics = getMetricsCollection().getTaggedMetrics();
-    LegacyDocumentDBMetrics &legacyMetrics = getMetricsCollection().getMetrics();
+    LegacyDocumentDBMetrics &legacyMetrics = getMetricsCollection().getLegacyMetrics();
     AttributeMetricsCollection ready(metrics.ready.attributes, legacyMetrics.ready.attributes);
     AttributeMetricsCollection notReady(metrics.notReady.attributes, legacyMetrics.notReady.attributes);
     _metricsWireService.cleanAttributes(ready, &legacyMetrics.attributes);
@@ -1245,12 +1245,16 @@ DocumentDB::getIndexManagerFactory(const vespalib::stringref &name) const
 namespace {
 
 void
-updateIndexMetrics(LegacyDocumentDBMetrics::IndexMetrics &metrics,
+updateIndexMetrics(DocumentDBMetricsCollection &metrics,
                    const search::SearchableStats &stats)
 {
-    metrics.memoryUsage.set(stats.memoryUsage());
-    metrics.docsInMemory.set(stats.docsInMemory());
-    metrics.diskUsage.set(stats.sizeOnDisk());
+    DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.getTaggedMetrics().index;
+    indexMetrics.memoryUsage.update(stats.memoryUsage());
+
+    LegacyDocumentDBMetrics::IndexMetrics &legacyIndexMetrics = metrics.getLegacyMetrics().index;
+    legacyIndexMetrics.memoryUsage.set(stats.memoryUsage().allocatedBytes());
+    legacyIndexMetrics.docsInMemory.set(stats.docsInMemory());
+    legacyIndexMetrics.diskUsage.set(stats.sizeOnDisk());
 }
 
 struct TempAttributeMetric
@@ -1362,9 +1366,9 @@ updateAttributeMetrics(DocumentDBMetricsCollection &metrics,
     TempAttributeMetrics notReadyMetrics;
     fillTempAttributeMetrics(totalMetrics, readyMetrics, notReadyMetrics, subDbs);
 
-    updateLegacyAttributeMetrics(metrics.getMetrics().attributes, totalMetrics);
-    updateLegacyAttributeMetrics(metrics.getMetrics().ready.attributes, readyMetrics);
-    updateLegacyAttributeMetrics(metrics.getMetrics().notReady.attributes, notReadyMetrics);
+    updateLegacyAttributeMetrics(metrics.getLegacyMetrics().attributes, totalMetrics);
+    updateLegacyAttributeMetrics(metrics.getLegacyMetrics().ready.attributes, readyMetrics);
+    updateLegacyAttributeMetrics(metrics.getLegacyMetrics().notReady.attributes, notReadyMetrics);
 
     updateAttributeMetrics(metrics.getTaggedMetrics().ready.attributes, readyMetrics);
     updateAttributeMetrics(metrics.getTaggedMetrics().notReady.attributes, notReadyMetrics);
@@ -1455,7 +1459,8 @@ updateLidSpaceMetrics(MetricSetType &metrics,
 void
 DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
 {
-    updateLegacyMetrics(metrics.getMetrics());
+    updateLegacyMetrics(metrics.getLegacyMetrics());
+    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats());
     updateAttributeMetrics(metrics, _subDBs);
     updateMetrics(metrics.getTaggedMetrics());
 }
@@ -1463,8 +1468,6 @@ DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
 void
 DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics)
 {
-    updateIndexMetrics(metrics.index,
-                       _subDBs.getReadySubDB()->getSearchableStats());
     updateMatchingMetrics(metrics.matching, *_subDBs.getReadySubDB());
     metrics.executor.update(_writeService.getMasterExecutor().getStats());
     metrics.indexExecutor.update(_writeService.getIndexExecutor().getStats());
