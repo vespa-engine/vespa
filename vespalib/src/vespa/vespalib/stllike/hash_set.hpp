@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "hash_set.h"
+#include "hash_set_insert.hpp"
 #include "hashtable.hpp"
 
 namespace vespalib {
@@ -15,14 +15,6 @@ template<typename K, typename H, typename EQ, typename M>
 hash_set<K, H, EQ, M>::hash_set(size_t reserveSize, const H &hasher, const EQ &equal)
     : _ht(reserveSize, hasher, equal)
 { }
-
-template<typename K, typename H, typename EQ, typename M>
-template<typename InputIterator>
-hash_set<K, H, EQ, M>::hash_set(InputIterator first, InputIterator last)
-    : _ht(0)
-{
-    insert(first, last);
-}
 
 template<typename K, typename H, typename EQ, typename M>
 hash_set<K, H, EQ, M>::hash_set(std::initializer_list<K> input)
@@ -68,16 +60,6 @@ template<typename K, typename H, typename EQ, typename M>
 size_t
 hash_set<K, H, EQ, M>::getMemoryConsumption() const {
     return _ht.getMemoryConsumption();
-}
-
-template<typename K, typename H, typename EQ, typename M>
-template<typename InputIt>
-void
-hash_set<K, H, EQ, M>::insert(InputIt first, InputIt last) {
-    _ht.resize(last - first + capacity());
-    for (; first < last; first++) {
-        _ht.insert(*first);
-    }
 }
 
 template<typename K, typename H, typename EQ, typename M>

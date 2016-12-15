@@ -69,6 +69,23 @@ LoadMetric<MetricType>::clone(std::vector<Metric::LP>& ownerList,
 }
 
 template<typename MetricType>
+MetricType&
+LoadMetric<MetricType>::getMetric(const LoadType& type) {
+    MetricType* metric;
+
+    typename vespalib::hash_map<uint32_t, MetricTypeLP>::iterator it(
+            _metrics.find(type.getId()));
+    if (it == _metrics.end()) {
+        it = _metrics.find(0);
+        assert(it != _metrics.end()); // Default should always exist
+    }
+    metric = it->second.get();
+    assert(metric);
+
+    return *metric;
+}
+
+template<typename MetricType>
 void
 LoadMetric<MetricType>::addMemoryUsage(MemoryConsumption& mc) const {
     ++mc._loadMetricCount;

@@ -37,13 +37,13 @@ public:
     insert_result insert(const value_type & value);
     template <typename InputIt>
     void insert(InputIt first, InputIt last);
-    const V & operator [] (const K & key) const    { return _ht.find(key)->second; }
-    V & operator [] (const K & key)          { return _ht.insert(value_type(key, V())).first->second; }
+    const V & operator [] (const K & key) const { return _ht.find(key)->second; }
+    V & operator [] (const K & key)             { return _ht.insert(value_type(key, V())).first->second; }
     void erase(const K & key);
-    void erase(iterator it)                  { return erase(it->first); }
-    void erase(const_iterator it)            { return erase(it->first); }
-    iterator find(const K & key)             { return _ht.find(key); }
-    const_iterator find(const K & key) const { return _ht.find(key); }
+    void erase(iterator it)                     { return erase(it->first); }
+    void erase(const_iterator it)               { return erase(it->first); }
+    iterator find(const K & key)                { return _ht.find(key); }
+    const_iterator find(const K & key)    const { return _ht.find(key); }
     void clear();
     void resize(size_t newSize);
     void swap(hash_map & rhs);

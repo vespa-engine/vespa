@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.compact_document_words_store_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/memoryindex/compact_document_words_store.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <iostream>
 #include <map>
 

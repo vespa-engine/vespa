@@ -56,20 +56,7 @@ public:
     MetricType& operator[](const LoadType& type) { return getMetric(type); }
     const MetricType& operator[](const LoadType& type) const
         { return const_cast<LoadMetric<MetricType>*>(this)->getMetric(type); }
-    MetricType& getMetric(const LoadType& type) {
-        MetricType* metric;
-
-        typename vespalib::hash_map<uint32_t, MetricTypeLP>::iterator it(
-                _metrics.find(type.getId()));
-        if (it == _metrics.end()) {
-            it = _metrics.find(0);
-            assert(it != _metrics.end()); // Default should always exist
-        }
-        metric = it->second.get();
-        assert(metric);
-
-        return *metric;
-    }
+    MetricType& getMetric(const LoadType& type);
 
     void addMemoryUsage(MemoryConsumption& mc) const override;
 };

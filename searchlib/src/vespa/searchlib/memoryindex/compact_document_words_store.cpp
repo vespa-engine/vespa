@@ -3,6 +3,7 @@
 #include "compact_document_words_store.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.compact_document_words_store");
 

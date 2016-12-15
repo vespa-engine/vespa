@@ -7,7 +7,6 @@
 #include <vespa/vespalib/tensor/dense/dense_tensor.h>
 #include "tensor_address_element_iterator.h"
 #include "default_tensor.h"
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::eval::ValueType;
 

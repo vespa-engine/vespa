@@ -2,8 +2,6 @@
 
 #include "dense_tensor_builder.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;

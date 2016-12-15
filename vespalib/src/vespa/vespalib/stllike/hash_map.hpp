@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "hash_map.h"
+#include "hash_map_insert.hpp"
 #include "hashtable.hpp"
 
 namespace vespalib {
@@ -24,16 +24,6 @@ template <typename K, typename V, typename H, typename EQ, typename M>
 void
 hash_map<K, V, H, EQ, M>::erase(const K & key) {
     return _ht.erase(key);
-}
-
-template <typename K, typename V, typename H, typename EQ, typename M>
-template <typename InputIt>
-void
-hash_map<K, V, H, EQ, M>::insert(InputIt first, InputIt last) {
-    while (first != last) {
-        _ht.insert(*first);
-        ++first;
-    }
 }
 
 template <typename K, typename V, typename H, typename EQ, typename M>
