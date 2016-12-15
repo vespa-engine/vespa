@@ -13,6 +13,7 @@ namespace vespalib {
 template <typename T>
 class ArrayRef {
 public:
+    ArrayRef() : _v(nullptr), _sz(0) { }
     ArrayRef(T * v, size_t sz) : _v(v), _sz(sz) { }
     ArrayRef(std::vector<T> & v) : _v(&v[0]), _sz(v.size()) { }
     ArrayRef(Array<T> &v) : _v(&v[0]), _sz(v.size()) { }
