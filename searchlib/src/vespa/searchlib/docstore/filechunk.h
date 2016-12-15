@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/docstore/chunk.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
+#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -230,6 +231,7 @@ public:
     virtual size_t getDiskFootprint() const { return _diskFootprint; }
     virtual size_t getMemoryFootprint() const;
     virtual size_t getMemoryMetaFootprint() const;
+    virtual MemoryUsage getMemoryUsage() const;
 
     virtual size_t getDiskHeaderFootprint(void) const { return _dataHeaderLen + _idxHeaderLen; }
     size_t getDiskBloat() const {

@@ -1070,6 +1070,20 @@ LogDataStore::getStorageStats() const
                                  lastSerialNum, lastFlushedSerialNum);
 }
 
+MemoryUsage
+LogDataStore::getMemoryUsage() const
+{
+    LockGuard guard(_updateLock);
+    MemoryUsage result;
+    result.merge(_lidInfo.getMemoryUsage());
+    for (const auto &fileChunk : _fileChunks) {
+        if (fileChunk) {
+            result.merge(fileChunk->getMemoryUsage());
+        }
+    }
+    return result;
+}
+
 std::vector<DataStoreFileChunkStats>
 LogDataStore::getFileChunkStats() const
 {

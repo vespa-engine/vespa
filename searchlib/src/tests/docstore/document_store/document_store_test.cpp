@@ -30,6 +30,7 @@ struct NullDataStore : IDataStore {
     virtual DataStoreStorageStats getStorageStats() const override {
         return DataStoreStorageStats(0, 0, 0.0, 0, 0);
     }
+    virtual MemoryUsage getMemoryUsage() const override { return MemoryUsage(); }
     virtual std::vector<DataStoreFileChunkStats>
     getFileChunkStats() const override {
         std::vector<DataStoreFileChunkStats> result;

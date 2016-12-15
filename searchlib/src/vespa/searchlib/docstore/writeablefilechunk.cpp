@@ -559,6 +559,21 @@ WriteableFileChunk::getMemoryMetaFootprint() const
     return mySizeWithoutMyParent + FileChunk::getMemoryMetaFootprint();
 }
 
+MemoryUsage
+WriteableFileChunk::getMemoryUsage() const
+{
+    LockGuard guard(_lock);
+    MemoryUsage result;
+    for (const auto &chunk : _chunkMap) {
+        result.merge(chunk.second->getMemoryUsage());
+    }
+    size_t pendingBytes = _pendingIdx + _pendingDat;
+    result.incAllocatedBytes(pendingBytes);
+    result.incUsedBytes(pendingBytes);
+    result.merge(FileChunk::getMemoryUsage());
+    return result;
+}
+
 int32_t WriteableFileChunk::flushLastIfNonEmpty(bool force)
 {
     int32_t chunkId(-1);

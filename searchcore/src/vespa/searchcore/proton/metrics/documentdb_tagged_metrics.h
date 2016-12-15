@@ -2,6 +2,7 @@
 #pragma once
 
 #include "attribute_metrics.h"
+#include "memory_usage_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 
@@ -47,6 +48,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::LongValueMetric diskUsage;
             metrics::LongValueMetric diskBloat;
             metrics::DoubleValueMetric maxBucketSpread;
+            MemoryUsageMetrics memoryUsage;
 
             DocumentStoreMetrics(metrics::MetricSet *parent);
         };

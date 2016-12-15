@@ -196,6 +196,8 @@ public:
 
     virtual DataStoreStorageStats getStorageStats() const override;
 
+    virtual MemoryUsage getMemoryUsage() const override;
+
     virtual std::vector<DataStoreFileChunkStats>
     getFileChunkStats() const override;
 

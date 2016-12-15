@@ -112,6 +112,17 @@ Chunk::getUniqueLids() const
     return unique;
 }
 
+MemoryUsage
+Chunk::getMemoryUsage() const
+{
+    MemoryUsage result;
+    result.incAllocatedBytes(_format->getBuffer().capacity());
+    result.incUsedBytes(_format->getBuffer().size());
+    result.incAllocatedBytes(sizeof(Entry) * _lids.capacity());
+    result.incUsedBytes(sizeof(Entry) * _lids.size());
+    return result;
+}
+
 vespalib::nbostream &
 ChunkMeta::deserialize(vespalib::nbostream & is)
 {

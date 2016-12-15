@@ -156,6 +156,8 @@ public:
      */
     virtual DataStoreStorageStats getStorageStats() const override;
 
+    virtual MemoryUsage getMemoryUsage() const override;
+
     /*
      * Return detailed stats about underlying files for data store.
      */
