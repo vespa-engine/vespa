@@ -94,18 +94,6 @@ void Array<T>::reserve(size_t n) {
 }
 
 template <typename T>
-bool Array<T>::operator ==(const Array & rhs) const
-{
-    bool retval(size() == rhs.size());
-    for (size_t i(0); retval && (i < _sz); i++) {
-        if ( ! (*array(i) == rhs[i]) ) {
-            retval = false;
-        }
-    }
-    return retval;
-}
-
-template <typename T>
 void Array<T>::resize(size_t n)
 {
     if (n > capacity()) {

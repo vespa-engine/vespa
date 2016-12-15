@@ -2,10 +2,7 @@
 
 
 #include "attribute_weighted_set_blueprint.h"
-#include "attributevector.h"
-#include "attributeguard.h"
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 

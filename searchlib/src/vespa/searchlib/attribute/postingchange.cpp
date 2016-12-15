@@ -5,7 +5,6 @@
 #include "multi_value_mapping.h"
 #include "postinglistattribute.h"
 #include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 

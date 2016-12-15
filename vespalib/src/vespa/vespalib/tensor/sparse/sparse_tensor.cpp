@@ -10,6 +10,8 @@
 #include <vespa/vespalib/tensor/tensor_visitor.h>
 #include <vespa/vespalib/eval/operation.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
+#include <vespa/vespalib/util/array_equal.hpp>
 #include <sstream>
 
 using vespalib::eval::TensorSpec;

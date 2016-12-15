@@ -10,7 +10,6 @@
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <regex>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.select.valuenode");

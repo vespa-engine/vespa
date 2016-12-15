@@ -2,6 +2,7 @@
 
 #include "properties.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
 
 namespace search {
 namespace fef {
@@ -11,13 +12,11 @@ const Property::Values Property::_emptyValues;
 
 Property::Property(const Property::Values &values)
     : _values(&values)
-{
-}
+{ }
 
 Property::Property()
     : _values(&_emptyValues)
-{
-}
+{ }
 
 bool
 Property::found() const

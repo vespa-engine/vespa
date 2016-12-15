@@ -137,7 +137,7 @@ public:
     T & operator [] (size_t i)              { return *array(i); }
     const T & operator [] (size_t i) const  { return *array(i); }
     bool operator == (const Array & rhs) const;
-    bool operator != (const Array & rhs) const { return !(*this == rhs); }
+    bool operator != (const Array & rhs) const;
 private:
     T *       array(size_t i)       { return static_cast<T *>(_array.get()) + i; }
     const T * array(size_t i) const { return static_cast<const T *>(_array.get()) + i; }

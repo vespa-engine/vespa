@@ -4,7 +4,7 @@
 
 #include "singleenumattribute.h"
 #include "singlenumericattribute.h"
-#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 /**
  * This file contains low-level code used to implement diversified

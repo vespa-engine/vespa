@@ -952,3 +952,5 @@ DummyPersistence::releaseBucketNoLock(const BucketContent& bc) const
 } // dummy
 } // spi
 } // storage
+
+VESPALIB_HASH_MAP_INSTANTIATE_H(storage::spi::Bucket, vespalib::LinkedPtr<storage::spi::dummy::BucketContent>, document::BucketId::hash)
