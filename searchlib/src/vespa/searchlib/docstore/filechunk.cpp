@@ -633,7 +633,7 @@ FileChunk::getMemoryFootprint() const
 size_t
 FileChunk::getMemoryMetaFootprint() const
 {
-    return getMemoryUsage().allocatedBytes();
+    return sizeof(*this) + _chunkInfo.byteCapacity();
 }
 
 MemoryUsage
