@@ -356,10 +356,12 @@ maxvisibilitydelay double default=1.0
 ## You can set this to a number above zero for visit to shortcut expensive serialize size computation.
 ## This value will be provided instead.
 ## negative number will compute it accurately.
-visit.defaultserializedsize long default=1
+## Default will be flipped shortly. (Once image personal index has gone live.)
+visit.defaultserializedsize long default=-1
 
 ## This will ignore the maxbytes limit advised from above.
-visit.ignoremaxbytes bool default=true
+## default will be flipped shortly. (Once image personal index has gone live.)
+visit.ignoremaxbytes bool default=false
 
 ## Number of initializer threads used for loading structures from disk at proton startup.
 ## The threads are shared between document databases when value is larger than 0.
