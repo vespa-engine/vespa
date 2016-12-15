@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <cstddef>
 
 using namespace vespalib;
