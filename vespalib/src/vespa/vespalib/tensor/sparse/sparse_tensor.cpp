@@ -307,6 +307,6 @@ SparseTensor::reduce(const eval::BinaryOperation &op,
 
 } // namespace vespalib::tensor
 
-template class hash_map<tensor::SparseTensorAddressRef, double>;
-
 } // namespace vespalib
+
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::tensor::SparseTensorAddressRef, double);

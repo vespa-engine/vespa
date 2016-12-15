@@ -2,7 +2,6 @@
 
 #include "slotiterator.h"
 #include <vespa/memfilepersistence/memfile/memfile.h>
-#include <vespa/vespalib/stllike/hash_set.hpp>
 
 namespace storage {
 namespace memfile {

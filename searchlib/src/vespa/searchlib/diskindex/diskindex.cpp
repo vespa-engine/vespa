@@ -7,7 +7,7 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/util/dirtraverse.h>
-#include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/cache.hpp>
 #include "pagedict4randread.h"

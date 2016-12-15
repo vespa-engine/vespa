@@ -2,7 +2,6 @@
 
 #include "predicate_index.h"
 #include "predicate_hash.h"
-#include <vespa/vespalib/stllike/hash_set.hpp>
 
 
 using search::datastore::EntryRef;

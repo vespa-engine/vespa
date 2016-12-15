@@ -8,7 +8,6 @@
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
-#include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_blueprint");

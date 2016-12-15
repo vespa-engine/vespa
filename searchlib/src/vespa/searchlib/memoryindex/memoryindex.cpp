@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryindex.h"
+#include "postingiterator.h"
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/memoryindex/postingiterator.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/stllike/hash_set.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.memoryindex.memoryindex");
 

@@ -12,7 +12,6 @@
 #include <vespa/memfilepersistence/common/environment.h>
 #include <iomanip>
 #include <vespa/document/util/stringutil.h>
-#include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.memfile.memfile");
