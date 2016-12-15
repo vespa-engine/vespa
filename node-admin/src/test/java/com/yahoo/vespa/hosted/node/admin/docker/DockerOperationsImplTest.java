@@ -7,13 +7,10 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
-import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.util.Collections;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
@@ -26,14 +23,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
-    private final Environment environment = new Environment(Collections.emptySet(),
-                                              "dev",
-                                              "us-east-1",
-                                              "parent.host.name.yahoo.com",
-                                              new InetAddressResolver());
+    private final Environment environment = new Environment.Builder().build();
     private final Docker docker = mock(Docker.class);
     private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(docker, environment,
-            new Maintainer(), new MetricReceiverWrapper(MetricReceiver.nullImplementation));
+            new MetricReceiverWrapper(MetricReceiver.nullImplementation));
 
     @Test
     public void absenceOfNodeProgramIsSuccess() throws Exception {

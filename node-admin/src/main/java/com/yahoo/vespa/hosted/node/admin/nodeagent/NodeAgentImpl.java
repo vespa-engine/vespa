@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.node.admin.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentScheduleMaker;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
@@ -58,10 +57,9 @@ public class NodeAgentImpl implements NodeAgent {
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
-    private final StorageMaintainer storageMaintainer;
+    private final Optional<StorageMaintainer> storageMaintainer;
     private final MetricReceiverWrapper metricReceiver;
     private final Environment environment;
-    private final Maintainer maintainer;
 
     private final Object monitor = new Object();
 
@@ -91,10 +89,9 @@ public class NodeAgentImpl implements NodeAgent {
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
-            final StorageMaintainer storageMaintainer,
+            final Optional<StorageMaintainer> storageMaintainer,
             final MetricReceiverWrapper metricReceiver,
-            final Environment environment,
-            final Maintainer maintainer) {
+            final Environment environment) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.hostname = hostName;
@@ -104,7 +101,6 @@ public class NodeAgentImpl implements NodeAgent {
                 NodeRepositoryImpl.containerNameFromHostName(hostName));
         this.metricReceiver = metricReceiver;
         this.environment = environment;
-        this.maintainer = maintainer;
     }
 
     @Override
@@ -270,8 +266,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (! nodeSpec.currentRestartGeneration.isPresent() ||
                 nodeSpec.currentRestartGeneration.get() < nodeSpec.wantedRestartGeneration.get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
-                                       + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration
-                    .get());
+                    + nodeSpec.currentRestartGeneration.get() + " -> " + nodeSpec.wantedRestartGeneration.get());
         }
         return Optional.empty();
     }
@@ -399,7 +394,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     // Public for testing
-    public void tick() throws Exception {
+    void tick() throws Exception {
         final ContainerNodeSpec nodeSpec = nodeRepository.getContainerNodeSpec(hostname)
                 .orElseThrow(() ->
                         new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
@@ -420,8 +415,10 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case active:
-                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
-                storageMaintainer.handleCoreDumpsForContainer(nodeSpec, environment);
+                storageMaintainer.ifPresent(maintainer -> {
+                    maintainer.removeOldFilesFromNode(nodeSpec.containerName);
+                    maintainer.handleCoreDumpsForContainer(nodeSpec, environment);
+                });
                 scheduleDownLoadIfNeeded(nodeSpec);
                 if (imageBeingDownloaded != null) {
                     addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
@@ -446,16 +443,16 @@ public class NodeAgentImpl implements NodeAgent {
                 orchestrator.resume(nodeSpec.hostname);
                 break;
             case inactive:
-                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
+                storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(nodeSpec.containerName));
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 updateNodeRepoWithCurrentAttributes(nodeSpec);
                 break;
             case provisioned:
             case dirty:
-                storageMaintainer.removeOldFilesFromNode(nodeSpec.containerName);
+                storageMaintainer.ifPresent(maintainer -> maintainer.removeOldFilesFromNode(nodeSpec.containerName));
                 removeContainerIfNeededUpdateContainerState(nodeSpec);
                 logger.info("State is " + nodeSpec.nodeState + ", will delete application storage and mark node as ready");
-                storageMaintainer.archiveNodeData(nodeSpec.containerName);
+                storageMaintainer.ifPresent(maintainer -> maintainer.archiveNodeData(nodeSpec.containerName));
                 updateNodeRepoAndMarkNodeAsReady(nodeSpec);
                 break;
             default:
@@ -513,8 +510,10 @@ public class NodeAgentImpl implements NodeAgent {
             addIfNotNull(netDims, "node.network.bytes_sent", interfaceStats, "tx_bytes");
         });
 
-        storageMaintainer.updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName).forEach(
-                (metricName, metricValue) -> metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue()));
+        storageMaintainer.ifPresent(maintainer -> maintainer
+                .updateIfNeededAndGetDiskMetricsFor(nodeSpec.containerName)
+                .forEach((metricName, metricValue) ->
+                        metricReceiver.declareGauge(dimensions, metricName).sample(metricValue.doubleValue())));
     }
 
     @SuppressWarnings("unchecked")
@@ -547,7 +546,8 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void configureContainerMetrics(ContainerNodeSpec nodeSpec) {
-        final Path yamasAgentFolder = maintainer.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
+        if (! storageMaintainer.isPresent()) return;
+        final Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(nodeSpec.containerName, "/etc/yamas-agent/");
 
         Path vespaCheckPath = Paths.get(getDefaults().underVespaHome("libexec/yms/yms_check_vespa"));
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("vespa", 60, vespaCheckPath, "all")
@@ -572,11 +572,11 @@ public class NodeAgentImpl implements NodeAgent {
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
+            final String[] restartYamasAgent = new String[] {"service" , "yamas-agent", "restart"};
+            dockerOperations.executeCommandInContainer(nodeSpec.containerName, restartYamasAgent);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for " + nodeSpec.containerName, e);
         }
-        final String[] restartYamasAgent = new String[] {"service" , "yamas-agent", "restart"};
-        dockerOperations.executeCommandInContainer(nodeSpec.containerName, restartYamasAgent);
     }
 
     class CpuUsageReporter {

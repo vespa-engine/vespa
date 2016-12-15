@@ -7,12 +7,11 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerTestUtils;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.integrationTests.CallOrderVerifier;
-import com.yahoo.vespa.hosted.node.admin.integrationTests.StorageMaintainerMock;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.provider.ComponentsProviderImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
+import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.io.IOException;
@@ -22,7 +21,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -41,9 +40,12 @@ import static org.junit.Assert.assertTrue;
  * @author freva
  */
 public class RunVespaLocal {
-    private static final Environment environment = new Environment(
-            Collections.singleton(LocalZoneUtils.CONFIG_SERVER_HOSTNAME), "prod", "vespa-local",
-            HostName.getLocalhost(), new InetAddressResolver());
+    private static final Environment.Builder environmentBuilder = new Environment.Builder()
+            .configServerHosts(LocalZoneUtils.CONFIG_SERVER_HOSTNAME)
+            .environment("prod")
+            .region("vespa-local")
+            .parentHostHostname(HostName.getLocalhost())
+            .inetAddressResolver(new InetAddressResolver());
 
     private NodeAdminStateUpdater nodeAdminStateUpdater = null;
     private final Docker docker;
@@ -72,7 +74,7 @@ public class RunVespaLocal {
      */
     void startLocalZoneWithNodes(int numNodesToProvision) throws IOException, InterruptedException, ExecutionException {
         logger.info("Starting config-server");
-        LocalZoneUtils.startConfigServerIfNeeded(docker, environment);
+        LocalZoneUtils.startConfigServerIfNeeded(docker, environmentBuilder.build());
 
         logger.info("Waiting until config-server is ready to serve");
         URL configServerUrl = new URL("http://" + LocalZoneUtils.CONFIG_SERVER_HOSTNAME +
@@ -86,15 +88,18 @@ public class RunVespaLocal {
 
     /**
      * Start node-admin in IDE
-     * @param pathToContainerStorage Path to where the container data will be stored, the path must exist and must
-     *                               be writeable by user, normally /home/docker/container-storage
+     * @param pathResolver Instance of {@link PathResolver} that specifies the path to where the container data will
+     *                     be stored, the path must exist and must be writeable by user,
+     *                     normally /home/docker/container-storage
      */
-    void startNodeAdminInIDE(Path pathToContainerStorage) {
+    void startNodeAdminInIDE(PathResolver pathResolver) {
         logger.info("Starting node-admin");
-        nodeAdminStateUpdater = new ComponentsProviderImpl(docker,
+        environmentBuilder.pathResolver(pathResolver);
+        nodeAdminStateUpdater = new ComponentsProviderImpl(
+                docker,
                 new MetricReceiverWrapper(MetricReceiver.nullImplementation),
-                new StorageMaintainerMock(LocalZoneUtils.getMaintainer(pathToContainerStorage), new CallOrderVerifier()),
-                environment).getNodeAdminStateUpdater();
+                environmentBuilder.build(),
+                Optional.empty()).getNodeAdminStateUpdater();
     }
 
     /**
@@ -108,7 +113,7 @@ public class RunVespaLocal {
         LocalZoneUtils.provisionHost(hostname);
 
         logger.info("Starting node-admin");
-        LocalZoneUtils.startNodeAdminIfNeeded(docker, environment, pathToContainerStorage);
+        LocalZoneUtils.startNodeAdminIfNeeded(docker, environmentBuilder.build(), pathToContainerStorage);
         try {
             URL nodeUrl = new URL("http://localhost:" + System.getenv("VESPA_WEB_SERVICE_PORT") + "/");
             assertTrue(LocalZoneUtils.isReachableURL(nodeUrl, Duration.ofSeconds(120)));

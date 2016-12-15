@@ -5,9 +5,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,12 +15,8 @@ import java.util.Map;
 public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrderVerifier;
 
-    public StorageMaintainerMock(CallOrderVerifier callOrderVerifier) {
-        this(new Maintainer(), callOrderVerifier);
-    }
-
-    public StorageMaintainerMock(Maintainer maintainer, CallOrderVerifier callOrderVerifier) {
-        super(maintainer);
+    public StorageMaintainerMock(Environment environment, CallOrderVerifier callOrderVerifier) {
+        super(environment);
         this.callOrderVerifier = callOrderVerifier;
     }
 
@@ -44,7 +38,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void archiveNodeData(ContainerName containerName) throws IOException {
+    public void archiveNodeData(ContainerName containerName) {
         callOrderVerifier.add("DeleteContainerStorage with " + containerName);
     }
 }

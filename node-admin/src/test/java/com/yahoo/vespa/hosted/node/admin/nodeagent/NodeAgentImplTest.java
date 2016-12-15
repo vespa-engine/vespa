@@ -16,7 +16,7 @@ import com.yahoo.vespa.hosted.node.admin.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
-import com.yahoo.vespa.hosted.node.maintenance.Maintainer;
+import com.yahoo.vespa.hosted.node.admin.util.PathResolver;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -24,7 +24,6 @@ import org.mockito.InOrder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -57,16 +56,18 @@ public class NodeAgentImplTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-    private final Maintainer maintainer = mock(Maintainer.class);
     private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
 
-    private final Environment environment = new Environment(Collections.emptySet(),
-                                              "dev",
-                                              "us-east-1",
-                                              "parent.host.name.yahoo.com",
-                                              new InetAddressResolver());
+    private final PathResolver pathResolver = mock(PathResolver.class);
+    private final Environment environment = new Environment.Builder()
+            .environment("dev")
+            .region("us-east-1")
+            .parentHostHostname("parent.host.name.yahoo.com")
+            .inetAddressResolver(new InetAddressResolver())
+            .pathResolver(pathResolver).build();
+
     private final NodeAgentImpl nodeAgent = new NodeAgentImpl(hostName, nodeRepository, orchestrator, dockerOperations,
-            storageMaintainer, metricReceiver, environment, maintainer);
+            Optional.of(storageMaintainer), metricReceiver, environment);
 
     @Test
     public void upToDateContainerIsUntouched() throws Exception {
@@ -146,7 +147,7 @@ public class NodeAgentImplTest {
         when(dockerOperations.shouldScheduleDownloadOfImage(any())).thenReturn(false);
         when(dockerOperations.startContainerIfNeeded(eq(nodeSpec))).thenReturn(true);
         when(dockerOperations.getVespaVersion(eq(containerName))).thenReturn(Optional.of(vespaVersion));
-        when(maintainer.pathInNodeAdminFromPathInNode(any(ContainerName.class), any(String.class))).thenReturn(Files.createTempDirectory("foo"));
+        when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
         when(nodeRepository.getContainerNodeSpec(hostName)).thenReturn(Optional.of(nodeSpec));
 
         nodeAgent.tick();

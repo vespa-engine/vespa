@@ -27,13 +27,13 @@ public class StorageMaintainer {
     private static final long intervalSec = 1000;
 
     private final Object monitor = new Object();
-    private final Maintainer maintainer;
+    private final Environment environment;
 
     private Map<ContainerName, MetricsCache> metricsCacheByContainerName = new ConcurrentHashMap<>();
 
 
-    public StorageMaintainer(Maintainer maintainer) {
-        this.maintainer = maintainer;
+    public StorageMaintainer(Environment environment) {
+        this.environment = environment;
     }
 
     public Map<String, Number> updateIfNeededAndGetDiskMetricsFor(ContainerName containerName) {
@@ -48,7 +48,7 @@ public class StorageMaintainer {
             // Throttle to one disk usage calculation at a time.
             synchronized (monitor) {
                 PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-                File containerDir = maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/").toFile();
+                File containerDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/").toFile();
                 try {
                     long used = getDiscUsedInBytes(containerDir);
                     metricsCache.metrics.put("node.disk.used", used);
@@ -92,19 +92,19 @@ public class StorageMaintainer {
         String[] pathsToClean = {"/home/y/logs/elasticsearch2", "/home/y/logs/logstash2",
                 "/home/y/logs/daemontools_y", "/home/y/logs/nginx", "/home/y/logs/vespa"};
         for (String pathToClean : pathsToClean) {
-            File path = maintainer.pathInNodeAdminFromPathInNode(containerName, pathToClean).toFile();
+            File path = environment.pathInNodeAdminFromPathInNode(containerName, pathToClean).toFile();
             if (path.exists()) {
                 DeleteOldAppData.deleteFiles(path.getAbsolutePath(), Duration.ofDays(3).getSeconds(), ".*\\.log\\..+", false);
                 DeleteOldAppData.deleteFiles(path.getAbsolutePath(), Duration.ofDays(3).getSeconds(), ".*QueryAccessLog.*", false);
             }
         }
 
-        File logArchiveDir = maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/logs/vespa/logarchive").toFile();
+        File logArchiveDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/logs/vespa/logarchive").toFile();
         if (logArchiveDir.exists()) {
             DeleteOldAppData.deleteFiles(logArchiveDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
         }
 
-        File fileDistrDir = maintainer.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/db/vespa/filedistribution").toFile();
+        File fileDistrDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var/db/vespa/filedistribution").toFile();
         if (fileDistrDir.exists()) {
             DeleteOldAppData.deleteFiles(fileDistrDir.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
         }
@@ -120,18 +120,14 @@ public class StorageMaintainer {
         Maintainer.deleteOldAppData(NODE_ADMIN_LOGGER);
         Maintainer.cleanCoreDumps(NODE_ADMIN_LOGGER);
 
-        File nodeAdminJDiskLogsPath = maintainer.pathInNodeAdminFromPathInNode(new ContainerName("node-admin"),
+        File nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(new ContainerName("node-admin"),
                 "/home/y/logs/jdisc_core/").toFile();
         DeleteOldAppData.deleteFiles(nodeAdminJDiskLogsPath.getAbsolutePath(), Duration.ofDays(31).getSeconds(), null, false);
     }
 
-    public void archiveNodeData(ContainerName containerName) throws IOException {
+    public void archiveNodeData(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
         Maintainer.archiveAppData(logger, containerName);
-    }
-
-    public Maintainer getMaintainer() {
-        return maintainer;
     }
 
     private static class MetricsCache {
