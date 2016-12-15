@@ -2,6 +2,7 @@
 
 #include "compacter.h"
 #include "logdatastore.h"
+#include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.compacter");
