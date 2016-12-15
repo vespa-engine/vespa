@@ -5,12 +5,12 @@
 #include <vespa/searchlib/predicate/predicate_interval_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_zero_constraint_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_zstar_compressed_posting_list.h>
-#include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 #include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".predicate_blueprint");
+#include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 
 using search::query::PredicateQuery;
 using search::query::PredicateQueryTerm;

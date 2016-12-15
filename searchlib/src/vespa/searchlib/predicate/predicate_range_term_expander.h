@@ -45,7 +45,8 @@ public:
 template <typename Handler>
 void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t signed_value, Handler &handler) {
     if (signed_value < _lower_bound || signed_value > _upper_bound) {
-        throw vespalib::IllegalArgumentException("Search outside bounds should have been rejected by ValidatePredicateSearcher.");
+        LOG(warning, "Search outside bounds should have been rejected by ValidatePredicateSearcher.");
+        return;
     }
     char buffer[21 * 2 + 3 + key.size()];  // 2 numbers + punctuation + key
     int size;
