@@ -8,7 +8,7 @@ namespace proton {
 using Entry = AttributeMetrics::Entry;
 
 AttributeMetrics::Entry::Entry(const vespalib::string &attrName)
-    : metrics::MetricSet("attribute", {{"fieldname", attrName}}, "Metrics for a given attribute vector", nullptr),
+    : metrics::MetricSet("attribute", {{"field", attrName}}, "Metrics for a given attribute vector", nullptr),
       memoryUsage(this)
 {
 }
