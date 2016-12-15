@@ -1433,6 +1433,7 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::
     metrics.diskUsage.set(storageStats.diskUsage());
     metrics.diskBloat.set(storageStats.diskBloat());
     metrics.maxBucketSpread.set(storageStats.maxBucketSpread());
+    metrics.memoryUsage.update(backingStore.getMemoryUsage());
 }
 
 template <typename MetricSetType>

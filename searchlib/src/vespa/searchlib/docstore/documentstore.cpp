@@ -487,6 +487,12 @@ DocumentStore::getStorageStats() const
     return _backingStore.getStorageStats();
 }
 
+MemoryUsage
+DocumentStore::getMemoryUsage() const
+{
+    return _backingStore.getMemoryUsage();
+}
+
 std::vector<DataStoreFileChunkStats>
 DocumentStore::getFileChunkStats() const
 {

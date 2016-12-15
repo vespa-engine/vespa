@@ -6,6 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
+#include <vespa/searchlib/util/memoryusage.h>
 #include "data_store_file_chunk_stats.h"
 
 namespace search {
@@ -157,6 +158,11 @@ public:
      * Return brief stats for data store.
      */
     virtual DataStoreStorageStats getStorageStats() const = 0;
+
+    /*
+     * Return the memory usage for data store.
+     */
+    virtual MemoryUsage getMemoryUsage() const = 0;
 
     /*
      * Return detailed stats about underlying files for data store.

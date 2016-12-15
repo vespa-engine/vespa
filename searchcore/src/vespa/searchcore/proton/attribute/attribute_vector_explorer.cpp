@@ -34,11 +34,11 @@ convertStatusToSlime(const Status &status, Cursor &object)
     object.setLong("bitVectors", status.getBitVectors());
     {
         Cursor &memory = object.setObject("memoryUsage");
-        memory.setLong("allocated", status.getAllocated());
-        memory.setLong("used", status.getUsed());
-        memory.setLong("dead", status.getDead());
-        memory.setLong("onHold", status.getOnHold());
-        memory.setLong("onHoldMax", status.getOnHoldMax());
+        memory.setLong("allocatedBytes", status.getAllocated());
+        memory.setLong("usedBytes", status.getUsed());
+        memory.setLong("deadBytes", status.getDead());
+        memory.setLong("onHoldBytes", status.getOnHold());
+        memory.setLong("onHoldBytesMax", status.getOnHoldMax());
     }
 }
 

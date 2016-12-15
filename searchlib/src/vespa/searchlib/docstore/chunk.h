@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/docstore/chunkformat.h>
+#include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/memory.h>
 
 namespace search {
@@ -92,6 +93,7 @@ public:
     vespalib::ConstBufferRef getLid(uint32_t lid) const;
     const vespalib::nbostream & getData() const { return _format->getBuffer(); }
     bool hasRoom(size_t len) const;
+    MemoryUsage getMemoryUsage() const;
 private:
     vespalib::nbostream & getData() { return _format->getBuffer(); }
 

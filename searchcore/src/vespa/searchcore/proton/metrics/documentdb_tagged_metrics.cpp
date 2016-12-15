@@ -55,7 +55,8 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetric
     : MetricSet("document_store", "", "document store metrics for this document sub DB", parent),
       diskUsage("disk_usage", "", "Disk space usage in bytes", this),
       diskBloat("disk_bloat", "", "Disk space bloat in bytes", this),
-      maxBucketSpread("max_bucket_spread", "", "Max bucket spread in underlying files (sum(unique buckets in each chunk)/unique buckets in file)", this)
+      maxBucketSpread("max_bucket_spread", "", "Max bucket spread in underlying files (sum(unique buckets in each chunk)/unique buckets in file)", this),
+      memoryUsage(this)
 {
 }
 

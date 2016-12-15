@@ -195,6 +195,11 @@ public:
     virtual DataStoreStorageStats getStorageStats() const = 0;
 
     /*
+     * Return the memory usage for document store.
+     */
+    virtual MemoryUsage getMemoryUsage() const = 0;
+
+    /*
      * Return detailed stats about underlying files for data store.
      */
     virtual std::vector<DataStoreFileChunkStats> getFileChunkStats() const = 0;
