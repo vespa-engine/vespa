@@ -191,7 +191,7 @@ public:
     reverse_iterator rbegin()               { return array(_sz) - 1; }
     reverse_iterator rend()                 { return array(0) - 1; }
     size_t size() const                     { return _sz; }
-    size_t byteSize() const                 { return _array.size(); }
+    size_t byteCapacity() const             { return _array.size(); }
     size_t capacity() const                 { return _array.size()/sizeof(T); }
     void clear() {
         std::_Destroy(array(0), array(_sz));
