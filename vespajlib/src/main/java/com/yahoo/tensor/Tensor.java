@@ -251,11 +251,17 @@ public interface Tensor {
                 return IndexedTensor.Builder.of(type);
         }
         
+        /** Returns the type this is building */
+        TensorType type();
+        
         /** Return a cell builder */
         CellBuilder cell();
 
-        /** Add a built cell */
+        /** Add a cell */
         Builder cell(TensorAddress address, double value);
+        
+        /** Add a cell */
+        Builder cell(double value, int ... labels);
 
         Tensor build();
 

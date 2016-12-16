@@ -113,13 +113,22 @@ public class MappedTensor implements Tensor {
         public MappedCellBuilder cell() {
             return new MappedCellBuilder();
         }
-        
+
+        @Override
+        public TensorType type() { return type; }
+
         @Override
         public Builder cell(TensorAddress address, double value) {
             cells.put(address, value);
             return this;
         }
-    
+
+        @Override
+        public Builder cell(double value, int... labels) {
+            cells.put(new TensorAddress(labels), value);
+            return this;
+        }
+
         @Override
         public MappedTensor build() {
             return new MappedTensor(type, cells.build());

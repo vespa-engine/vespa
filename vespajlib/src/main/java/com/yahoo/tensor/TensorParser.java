@@ -39,17 +39,6 @@ class TensorParser {
         }
     }
 
-    private static Tensor tensorFromValueString(String tensorCellString, TensorType type) {
-        boolean containsIndexedDimensions = type.dimensions().stream().anyMatch(d -> d.isIndexed());
-        boolean containsMappedDimensions = type.dimensions().stream().anyMatch(d -> !d.isIndexed());
-        if (containsIndexedDimensions && containsMappedDimensions)
-            throw new IllegalArgumentException("Mixed dimension types are not supported, got: " + type);
-        if (containsMappedDimensions)
-            return MappedTensor.from(type, tensorCellString);
-        else // indexed or none
-            return IndexedTensor.from(type, tensorCellString);
-    }
-
     /** Derive the tensor type from the first address string in the given tensor string */
     private static TensorType typeFromValueString(String s) {
         s = s.substring(1).trim(); // remove tensor start
@@ -71,6 +60,76 @@ class TensorParser {
         }
 
         return builder.build();
+    }
+
+    private static Tensor tensorFromValueString(String tensorValueString, TensorType type) {
+        Tensor.Builder builder = Tensor.Builder.of(type);
+        tensorValueString = tensorValueString.trim();
+        try {
+            if (tensorValueString.startsWith("{"))
+                return fromCellString(builder, tensorValueString);
+            else
+                return builder.cell(Double.parseDouble(tensorValueString)).build();
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" +
+                                               tensorValueString + "'");
+        }
+    }
+
+    private static Tensor fromCellString(Tensor.Builder builder, String s) {
+        s = s.trim().substring(1).trim();
+        while (s.length() > 1) {
+            int keyOrTensorEnd = s.indexOf('}');
+            TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
+            if (keyOrTensorEnd < s.length() - 1) { // Key end: This has a key - otherwise TensorAdress is empty
+                addLabels(s.substring(0, keyOrTensorEnd + 1), addressBuilder);
+                s = s.substring(keyOrTensorEnd + 1).trim();
+                if ( ! s.startsWith(":"))
+                    throw new IllegalArgumentException("Expecting a ':' after " + s + ", got '" + s + "'");
+                s = s.substring(1);
+            }
+            int valueEnd = s.indexOf(',');
+            if (valueEnd < 0) { // last value
+                valueEnd = s.indexOf("}");
+                if (valueEnd < 0)
+                    throw new IllegalArgumentException("A tensor string must end by '}'");
+            }
+            
+            TensorAddress address = addressBuilder.build();
+            Double value = asDouble(address, s.substring(0, valueEnd).trim());
+            builder.cell(address, value);
+            s = s.substring(valueEnd+1).trim();
+        }
+        return builder.build();
+    }
+
+    /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
+    private static void addLabels(String mapAddressString, TensorAddress.Builder builder) {
+        mapAddressString = mapAddressString.trim();
+        if ( ! (mapAddressString.startsWith("{") && mapAddressString.endsWith("}")))
+            throw new IllegalArgumentException("Expecting a tensor address enclosed in {}, got '" + mapAddressString + "'");
+
+        String addressBody = mapAddressString.substring(1, mapAddressString.length() - 1).trim();
+        if (addressBody.isEmpty()) return;
+
+        for (String elementString : addressBody.split(",")) {
+            String[] pair = elementString.split(":");
+            if (pair.length != 2)
+                throw new IllegalArgumentException("Expecting argument elements on the form dimension:label, " +
+                                                   "got '" + elementString + "'");
+            String dimension = pair[0].trim();
+            builder.add(dimension, pair[1].trim());
+        }
+    }
+
+    private static Double asDouble(TensorAddress address, String s) {
+        try {
+            return Double.valueOf(s);
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("At " + address + ": Expected a floating point number, got '" + s + "'");
+        }
     }
 
 }

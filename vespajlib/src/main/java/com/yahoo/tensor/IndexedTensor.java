@@ -82,115 +82,17 @@ public class IndexedTensor implements Tensor {
         return product;
     }
 
+    @Override
+    public TensorType type() { return type; }
+
     /**
      * Returns the lenght of this in the nth dimension
-     * 
+     *
      * @throws IndexOutOfBoundsException if the index is larger than the number of dimensions in this tensor minus one
      */
     public int length(int dimension) {
         return dimensionSizes[dimension];
     }
-
-    // TODO: Duplication with MixedTensor
-    static IndexedTensor from(TensorType type, String tensorString) {
-        tensorString = tensorString.trim();
-        try {
-            if (tensorString.startsWith("{"))
-                return fromCellString(type, tensorString);
-            else
-                return fromNumber(Double.parseDouble(tensorString));
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" + 
-                                               tensorString + "'");
-        }
-    }
-
-    // TODO: Duplication with MixedTensor
-    private static IndexedTensor fromCellString(TensorType type, String s) {
-        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
-        s = s.trim().substring(1).trim();
-        while (s.length() > 1) {
-            int keyOrTensorEnd = s.indexOf('}'); 
-            int[] cellIndexes;
-            if (keyOrTensorEnd == s.length()-1) { // Tensor end: No keys: This is empty or contains a single number
-                cellIndexes = new int[0];
-            }
-            else {
-                cellIndexes = indexesFrom(type, s.substring(0, keyOrTensorEnd + 1));
-                s = s.substring(keyOrTensorEnd + 1).trim();
-                if ( ! s.startsWith(":"))
-                    throw new IllegalArgumentException("Expecting a ':' after " + s + ", got '" + s + "'");
-                s = s.substring(1);
-            }
-            int valueEnd = s.indexOf(',');
-            if (valueEnd < 0) { // last value
-                valueEnd = s.indexOf("}");
-                if (valueEnd < 0)
-                    throw new IllegalArgumentException("A tensor string must end by '}'");
-            }
-            Double value = asDouble(cellIndexes, s.substring(0, valueEnd).trim());
-            
-            builder.cell(value, cellIndexes);
-            s = s.substring(valueEnd+1).trim();
-        }
-        return builder.build();
-    }
-
-    // TODO: Duplication with MixedTensor
-    /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
-    private static int[] indexesFrom(TensorType type, String mapAddressString) {
-        mapAddressString = mapAddressString.trim();
-        if ( ! (mapAddressString.startsWith("{") && mapAddressString.endsWith("}")))
-            throw new IllegalArgumentException("Expecting a tensor address enclosed in {}, got '" + mapAddressString + "'");
-
-        String addressBody = mapAddressString.substring(1, mapAddressString.length() - 1).trim();
-        if (addressBody.isEmpty()) return new int[0];
-
-        int[] indexes = new int[type.dimensions().size()];
-        for (String elementString : addressBody.split(",")) {
-            String[] pair = elementString.split(":");
-            if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements on the form dimension:label, " +
-                                                   "got '" + elementString + "'");
-            String dimension = pair[0].trim();
-            Optional<Integer> dimensionIndex = type.indexOfDimension(dimension);
-            if ( ! dimensionIndex.isPresent())
-                throw new IllegalArgumentException("Dimension '" + dimension + "' is not present in " + type);
-            indexes[dimensionIndex.get()] = asInteger(pair[1].trim(), dimension);
-        }
-        return indexes;
-    }
-
-    // TODO: Duplication with MixedTensor
-    private static int asInteger(String value, String dimension) {
-        try {
-            return Integer.parseInt(value);
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Expected an integer value for dimension '" + dimension + "', " +
-                                               "but got '" + value + "'");
-        }
-        
-    }
-
-    private static IndexedTensor fromNumber(double number) {
-        return new IndexedTensor(TensorType.empty, new int[] {}, new double[] { number });
-    }
-
-    // TODO: Duplication with MixedTensor
-    private static Double asDouble(int[] indexes, String s) {
-        try {
-            return Double.valueOf(s);
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("At " + Arrays.toString(indexes) + 
-                                               ": Expected a floating point number, got '" + s + "'");
-        }
-    }
-
-    @Override
-    public TensorType type() { return type; }
 
     @Override
     // TODO: Replace this with iterator
@@ -274,7 +176,10 @@ public class IndexedTensor implements Tensor {
                 productSize *= dimensionSize;
             return new double[productSize];
         }
-        
+
+        @Override
+        public TensorType type() { return type; }
+
         @Override
         public abstract IndexedTensor build();
 
@@ -341,7 +246,7 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public Tensor.Builder cell(TensorAddress address, double value) {
+        public Builder cell(TensorAddress address, double value) {
             values[toValueIndex(address, dimensionSizes)] = value;
             return this;
         }
@@ -423,6 +328,26 @@ public class IndexedTensor implements Tensor {
             }
         }
 
+        @Override
+        public IndexedCellBuilder cell() {
+            return new IndexedCellBuilder();
+        }
+
+        @Override
+        public Builder cell(TensorAddress address, double value) {
+            int[] indexes = new int[address.labels().size()];
+            for (int i = 0; i < address.labels().size(); i++) {
+                try {
+                    indexes[i] = Integer.parseInt(address.labels().get(i));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Labels in an indexed tensor must be integers, not '" +
+                                                       address.labels().get(i) + "'");
+                }
+            }
+            cell(value, indexes);
+            return this;
+        }
+
         /**
          * Set a value using an index API. The number of indexes must be the same as the dimensions in the type of this.
          * Values can be written in any order but all values needed to make this dense must be provided
@@ -431,6 +356,7 @@ public class IndexedTensor implements Tensor {
          * @return this for chaining
          */
         @SuppressWarnings("unchecked")
+        @Override
         public Builder cell(double value, int... indexes) {
             if (indexes.length != type.dimensions().size())
                 throw new IllegalArgumentException("Wrong number of indexes (" + indexes.length + ") for " + type);
@@ -453,26 +379,6 @@ public class IndexedTensor implements Tensor {
                     currentValues = (List<Object>) currentValues.get(indexes[dimensionIndex]);
                 }
             }
-            return this;
-        }
-
-        @Override
-        public IndexedCellBuilder cell() {
-            return new IndexedCellBuilder();
-        }
-
-        @Override
-        public Builder cell(TensorAddress address, double value) {
-            int[] indexes = new int[address.labels().size()];
-            for (int i = 0; i < address.labels().size(); i++) {
-                try {
-                    indexes[i] = Integer.parseInt(address.labels().get(i));
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Labels in an indexed tensor must be integers, not '" +
-                                                       address.labels().get(i) + "'");
-                }
-            }
-            cell(value, indexes);
             return this;
         }
 
