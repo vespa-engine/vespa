@@ -13,46 +13,73 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * An indexed (dense) tensor backed by array lists.
+ * An indexed (dense) tensor backed by a double array.
  *
  * @author bratseth
  */
 @Beta
 public class IndexedTensor implements Tensor {
 
+    /** The prescribed and possibly abstract type this is an instance of */
     private final TensorType type;
-
-    private final IndexedDimension firstDimension;
     
-    private IndexedTensor(TensorType type, IndexedDimension firstDimension) {
+    /** The sizes of the dimensions of this in the order of the dimensions of the type */
+    private final int[] dimensionSizes;
+    
+    private final double[] values;
+    
+    private IndexedTensor(TensorType type, int[] dimensionSizes, double[] values) {
         this.type = type;
-        this.firstDimension = firstDimension;
+        this.dimensionSizes = dimensionSizes;
+        this.values = values;
     }
     
-    /** Construct an indexed tensor having a single dimension with the given values */
-    // TODO: Privatize
-    public IndexedTensor(TensorType type, List<Object> values) {
-        if (type.dimensions().size() != 1 ||  ! type.dimensions().get(0).isIndexed())
-            throw new IllegalArgumentException("Expected a single-dimensional indexed tensor but got " + type);
-        this.type = type;
-        this.firstDimension = new IndexedDimension(values);
-    }
-
     /** 
      * Returns the value at the given indexes
      * 
      * @param indexes the indexes into the dimensions of this. Must be one number per dimension of this
      * @throws IndexOutOfBoundsException if any of the indexes are out of bound or a wrong number of indexes are given
      */
-    public Double get(int ... indexes) {
-        IndexedDimension currentDimension = firstDimension;
-        for (int i = 0; i < indexes.length; i++) {
-            if (i == indexes.length -1)
-                return (Double)currentDimension.values().get(indexes[i]);
-            else
-                currentDimension = (IndexedDimension)currentDimension.values().get(indexes[i]);
+    public double get(int ... indexes) {
+        if (values.length == 0) return Double.NaN;
+        return values[toValueIndex(indexes, dimensionSizes)];
+    }
+
+    /** Returns the value at this address, or NaN if there is no value at this address */
+    @Override
+    public double get(TensorAddress address) {
+        // optimize for fast lookup within bounds
+        try {
+            return values[toValueIndex(address, dimensionSizes)];
         }
-        return Double.NaN; // empty
+        catch (IndexOutOfBoundsException e) {
+            return Double.NaN;
+        }
+    }
+    
+    private static int toValueIndex(int[] indexes, int[] dimensionSizes) {
+        if (indexes.length == 0) return 0;
+
+        int valueIndex = 0;
+        for (int i = 0; i < indexes.length; i++)
+            valueIndex += productOfDimensionsAfter(i, dimensionSizes) * indexes[i];
+        return valueIndex;
+    }
+    
+    private static int toValueIndex(TensorAddress address, int[] dimensionSizes) {
+        if (address.labels().isEmpty()) return 0;
+
+        int valueIndex = 0;
+        for (int i = 0; i < address.labels().size(); i++)
+            valueIndex += productOfDimensionsAfter(i, dimensionSizes) * Integer.parseInt(address.labels().get(i));
+        return valueIndex;
+    }
+
+    private static int productOfDimensionsAfter(int afterIndex, int[] dimensionSizes) {
+        int product = 1;
+        for (int i = afterIndex + 1; i < dimensionSizes.length; i++)
+            product *= dimensionSizes[i];
+        return product;
     }
 
     /**
@@ -61,14 +88,10 @@ public class IndexedTensor implements Tensor {
      * @throws IndexOutOfBoundsException if the index is larger than the number of dimensions in this tensor minus one
      */
     public int length(int dimension) {
-        if (firstDimension.values().isEmpty()) return 0; // empty tensor
-
-        IndexedDimension currentDimension = firstDimension;
-        while (dimension > 0)
-            currentDimension = (IndexedDimension)currentDimension.values().get(0); // get the first as all (should) have the same size
-        return currentDimension.values().size();
+        return dimensionSizes[dimension];
     }
-    
+
+    // TODO: Duplication with MixedTensor
     static IndexedTensor from(TensorType type, String tensorString) {
         tensorString = tensorString.trim();
         try {
@@ -83,34 +106,43 @@ public class IndexedTensor implements Tensor {
         }
     }
 
+    // TODO: Duplication with MixedTensor
     private static IndexedTensor fromCellString(TensorType type, String s) {
-        IndexedTensor.Builder builder = new IndexedTensor.Builder(type);
+        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type);
         s = s.trim().substring(1).trim();
         while (s.length() > 1) {
-            int keyEnd = s.indexOf('}');
-            int[] cellIndexes = indexesFrom(type, s.substring(0, keyEnd+1));
-            s = s.substring(keyEnd + 1).trim();
-            if ( ! s.startsWith(":"))
-                throw new IllegalArgumentException("Expecting a ':' after " + s + ", got '" + s + "'");
+            int keyOrTensorEnd = s.indexOf('}'); 
+            int[] cellIndexes;
+            if (keyOrTensorEnd == s.length()-1) { // Tensor end: No keys: This is empty or contains a single number
+                cellIndexes = new int[0];
+            }
+            else {
+                cellIndexes = indexesFrom(type, s.substring(0, keyOrTensorEnd + 1));
+                s = s.substring(keyOrTensorEnd + 1).trim();
+                if ( ! s.startsWith(":"))
+                    throw new IllegalArgumentException("Expecting a ':' after " + s + ", got '" + s + "'");
+                s = s.substring(1);
+            }
             int valueEnd = s.indexOf(',');
             if (valueEnd < 0) { // last value
                 valueEnd = s.indexOf("}");
                 if (valueEnd < 0)
                     throw new IllegalArgumentException("A tensor string must end by '}'");
             }
-            Double value = asDouble(cellIndexes, s.substring(1, valueEnd).trim());
+            Double value = asDouble(cellIndexes, s.substring(0, valueEnd).trim());
             
-            builder.set(value, cellIndexes);
+            builder.cell(value, cellIndexes);
             s = s.substring(valueEnd+1).trim();
         }
         return builder.build();
     }
 
+    // TODO: Duplication with MixedTensor
     /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
     private static int[] indexesFrom(TensorType type, String mapAddressString) {
         mapAddressString = mapAddressString.trim();
         if ( ! (mapAddressString.startsWith("{") && mapAddressString.endsWith("}")))
-            throw new IllegalArgumentException("Expecting a tensor address to be enclosed in {}, got '" + mapAddressString + "'");
+            throw new IllegalArgumentException("Expecting a tensor address enclosed in {}, got '" + mapAddressString + "'");
 
         String addressBody = mapAddressString.substring(1, mapAddressString.length() - 1).trim();
         if (addressBody.isEmpty()) return new int[0];
@@ -119,7 +151,7 @@ public class IndexedTensor implements Tensor {
         for (String elementString : addressBody.split(",")) {
             String[] pair = elementString.split(":");
             if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
+                throw new IllegalArgumentException("Expecting argument elements on the form dimension:label, " +
                                                    "got '" + elementString + "'");
             String dimension = pair[0].trim();
             Optional<Integer> dimensionIndex = type.indexOfDimension(dimension);
@@ -129,7 +161,8 @@ public class IndexedTensor implements Tensor {
         }
         return indexes;
     }
-    
+
+    // TODO: Duplication with MixedTensor
     private static int asInteger(String value, String dimension) {
         try {
             return Integer.parseInt(value);
@@ -142,9 +175,10 @@ public class IndexedTensor implements Tensor {
     }
 
     private static IndexedTensor fromNumber(double number) {
-        return new IndexedTensor(TensorType.empty, new IndexedDimension(number));
+        return new IndexedTensor(TensorType.empty, new int[] {}, new double[] { number });
     }
-    
+
+    // TODO: Duplication with MixedTensor
     private static Double asDouble(int[] indexes, String s) {
         try {
             return Double.valueOf(s);
@@ -159,58 +193,33 @@ public class IndexedTensor implements Tensor {
     public TensorType type() { return type; }
 
     @Override
+    // TODO: Replace this with iterator
     public Map<TensorAddress, Double> cells() {
+        if (dimensionSizes.length == 0) 
+            return values.length == 0 ? Collections.emptyMap() : Collections.singletonMap(TensorAddress.empty, values[0]);
+        
         ImmutableMap.Builder<TensorAddress, Double> builder = new ImmutableMap.Builder<>();
-        populateRecursively(builder, firstDimension, new TensorAddress.Builder(type), new ArrayList<>(type.dimensions()));
+        int[] tensorIndexes = new int[dimensionSizes.length];
+        for (int i = 0; i < values.length; i++) {
+            builder.put(new TensorAddress(tensorIndexes), values[i]);
+            if (i < values.length -1)
+                next(tensorIndexes.length - 1, tensorIndexes, dimensionSizes);
+        }
         return builder.build();
     }
-
-    private void populateRecursively(ImmutableMap.Builder<TensorAddress, Double> valueBuilder, IndexedDimension dimensionValues, 
-                                     TensorAddress.Builder partialAddress, List<TensorType.Dimension> remainingDimensions) {
-        if (remainingDimensions.size() == 0) {
-            if ( ! dimensionValues.values().isEmpty()) // either empty or a single value
-                valueBuilder.put(TensorAddress.empty, (Double)dimensionValues.values().get(0));
-        }
-        else if (remainingDimensions.size() == 1) {
-            for (int i = 0; i < dimensionValues.values().size(); i++)
-                valueBuilder.put(partialAddress.copy().add(remainingDimensions.get(0).name(), String.valueOf(i)).build(), 
-                                 (Double)dimensionValues.values().get(i));
+    
+    private void next(int dimension, int[] tensorIndexes, int[] dimensionSizes) {
+        if (tensorIndexes[dimension] + 1 == dimensionSizes[dimension]) {
+            tensorIndexes[dimension] = 0;
+            next(dimension - 1, tensorIndexes, dimensionSizes);
         }
         else {
-            List<TensorType.Dimension> nestedRemainingDimensions = new ArrayList<>(remainingDimensions);
-            TensorType.Dimension currentDimension = nestedRemainingDimensions.remove(0);
-            for (int i = 0; i < dimensionValues.values().size(); i++) {
-                populateRecursively(valueBuilder, (IndexedDimension)dimensionValues.values().get(i), 
-                                    partialAddress.copy().add(currentDimension.name(), String.valueOf(i)),
-                                    nestedRemainingDimensions);
-            }
+            tensorIndexes[dimension]++;
         }
     }
 
-    /** Returns the value at this address, or NaN if there is no value at this address */
     @Override
-    public double get(TensorAddress address) { 
-        if (type.dimensions().isEmpty()) // either empty or a sinle value
-            return firstDimension.values().isEmpty() ? Double.NaN : (double)firstDimension.values().get(0);
-        
-        IndexedDimension currentDimension = firstDimension;
-        for (int i = 0; i < address.labels().size(); i++) {
-            int index = Integer.parseInt(address.labels().get(i));
-            if (index >= currentDimension.values().size()) return Double.NaN;
-
-            Object value = currentDimension.values().get(index);
-            if (value == null) return Double.NaN;
-            
-            if (i == address.labels().size() -1) // last dimension
-                return (double)value;
-            else
-                currentDimension = (IndexedDimension)value;
-        }
-        return Double.NaN;
-    }
-
-    @Override
-    public int hashCode() { return firstDimension.hashCode(); }
+    public int hashCode() { return Arrays.hashCode(values); }
 
     @Override
     public String toString() { return Tensor.toStandardString(this); }
@@ -221,69 +230,196 @@ public class IndexedTensor implements Tensor {
         return Tensor.equals(this, (Tensor)o);
     }
 
-    /** An indexed dimension containing another indexed dimension */
-    private static class IndexedDimension {
+    public abstract static class Builder implements Tensor.Builder {
+        
+        final TensorType type;
+        
+        private Builder(TensorType type) {
+            this.type = type;
+        }
 
-        private final ImmutableList<Object> values;
+        // TODO: Let other tensor builders be created by this method as well (and update system tests)
+        public static Builder of(TensorType type) {
+            if (type.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension))
+                return new BoundBuilder(type);
+            else
+                return new UnboundBuilder(type);
+        }
 
-        public IndexedDimension() { values = ImmutableList.of(); }
+        /** 
+         * Create a builder with dimension size information for this instance. Must be one size entry per dimension,
+         * and, agree with the type size information when specified in the type.
+         * If sizes are completely specified in the type this size information is redundant.
+         */
+        public static Builder of(TensorType type, int[] dimensionSizes) {
+            // validate
+            if (dimensionSizes.length != type.dimensions().size())
+                throw new IllegalArgumentException(dimensionSizes.length + " is the wrong number of dimension sizes " + 
+                                                   " for " + type);
+            for (int i = 0; i < dimensionSizes.length; i++ ) {
+                Optional<Integer> size = type.dimensions().get(i).size();
+                if (size.isPresent() && size.get() != dimensionSizes[i])
+                    throw new IllegalArgumentException("Size of " + type.dimensions() + " must be " + size.get() + 
+                                                       ", not " + dimensionSizes[i]);
+            }
+            
+            return new BoundBuilder(type, dimensionSizes);
+        }
 
-        public IndexedDimension(Double value) { values = ImmutableList.of(value); }
-
-        public IndexedDimension(List<Object> values) {
-            this.values = ImmutableList.copyOf(values);
+        public abstract Builder cell(double value, int ... indexes);
+        
+        protected double[] arrayFor(int[] dimensionSizes) {
+            int productSize = 1;
+            for (int dimensionSize : dimensionSizes)
+                productSize *= dimensionSize;
+            return new double[productSize];
         }
         
-        public ImmutableList<Object> values() { return values; }
+        @Override
+        public abstract IndexedTensor build();
+
+        // TODO: Can this be pushed up to Tensor.Builder?
+        public class IndexedCellBuilder implements Tensor.Builder.CellBuilder {
+
+            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(IndexedTensor.Builder.this.type);
+
+            @Override
+            public IndexedCellBuilder label(String dimension, String label) {
+                addressBuilder.add(dimension, label);
+                return this;
+            }
+
+            @Override
+            public IndexedCellBuilder label(String dimension, int label) {
+                return label(dimension, String.valueOf(label));
+            }
+
+            @Override
+            public Builder value(double cellValue) {
+                return (Builder)Builder.this.cell(addressBuilder.build(), cellValue);
+            }
+
+        }
+
+    }
+    
+    /** A bound builder can create the double array directly */
+    private static class BoundBuilder extends Builder {
+
+        private int[] dimensionSizes;
+        private double[] values;
+
+        private BoundBuilder(TensorType type) {
+            this(type, dimensionSizesOf(type));
+        }
+
+        private BoundBuilder(TensorType type, int[] dimensionSizes) {
+            super(type);
+            if ( dimensionSizes.length != type.dimensions().size())
+                throw new IllegalArgumentException("Must have a dimension size entry for each dimension in " + type);
+            this.dimensionSizes = dimensionSizes;
+            values = arrayFor(dimensionSizes);
+            Arrays.fill(values, Double.NaN);
+        }
+        
+        private static int[] dimensionSizesOf(TensorType type) {
+            int[] dimensionSizes = new int[type.dimensions().size()];
+            for (int i = 0; i < type.dimensions().size(); i++)
+                dimensionSizes[i] = type.dimensions().get(i).size().get();
+            return dimensionSizes;
+        }
+
+        @Override
+        public BoundBuilder cell(double value, int ... indexes) {
+            values[toValueIndex(indexes, dimensionSizes)] = value;
+            return this;
+        }
+        
+        @Override
+        public CellBuilder cell() {
+            return new IndexedCellBuilder();
+        }
+
+        @Override
+        public Tensor.Builder cell(TensorAddress address, double value) {
+            values[toValueIndex(address, dimensionSizes)] = value;
+            return this;
+        }
+
+        @Override
+        public IndexedTensor build() {
+            // Note that we do not check for no NaN's here for performance reasons. 
+            // NaN's don't get lost so leaving them in place should be quite benign 
+            if (values.length == 1 && Double.isNaN(values[0]))
+                values = new double[0];
+            IndexedTensor tensor = new IndexedTensor(type, dimensionSizes, values);
+            // prevent further modification
+            dimensionSizes = null;
+            values = null;
+            return tensor;
+        }
 
     }
 
-    public static class Builder implements Tensor.Builder {
-    
-        private final TensorType type;
-        
+    /**
+     * A builder used when we don't know the size of the dimensions up front.
+     * All values is all dimensions must be specified.
+     */
+    private static class UnboundBuilder extends Builder {
+
         /** List of List or Double */
         private List<Object> firstDimension = null;
-    
-        public Builder(TensorType type) {
-            this.type = type;
+
+        private UnboundBuilder(TensorType type) {
+            super(type);
         }
-    
+
         @Override
         public IndexedTensor build() {
-            // TODO: Enforce that all values in all dimensions are equally large
             if (firstDimension == null) // empty
-                return new IndexedTensor(type, new IndexedDimension());
+                return new IndexedTensor(type, new int[type.dimensions().size()], new double[] {});
             if (type.dimensions().isEmpty()) // single number
-                return new IndexedTensor(type, 
-                                         new IndexedDimension((Double)firstDimension.get(0)));
+                return new IndexedTensor(type, new int[type.dimensions().size()], new double[] {(Double) firstDimension.get(0) });
 
-            List<TensorType.Dimension> dimensions = new ArrayList<>(type.dimensions());
-            IndexedDimension firstDimension = buildRecursively(dimensions, this.firstDimension);
-            return new IndexedTensor(type, firstDimension);
+            int[] dimensionSizes = findDimensionSizes(firstDimension);
+            double[] values = arrayFor(dimensionSizes);
+            fillValues(0, 0, firstDimension, dimensionSizes, values);
+            return new IndexedTensor(type, dimensionSizes, values);
         }
         
+        private int[] findDimensionSizes(List<Object> firstDimension) {
+            List<Integer> dimensionSizeList = new ArrayList<>(type.dimensions().size());
+            findDimensionSizes(0, dimensionSizeList, firstDimension);
+            int[] dimensionSizes = new int[type.dimensions().size()]; // may be longer than the list but that's correct
+            for (int i = 0; i < dimensionSizes.length; i++)
+                dimensionSizes[i] = dimensionSizeList.get(i);
+            return dimensionSizes;
+        }
+
         @SuppressWarnings("unchecked")
-        private IndexedDimension buildRecursively(List<TensorType.Dimension> remainingDimensions, 
-                                                  List<Object> currentDimensionValues) {
-            if (remainingDimensions.size() == 1) { // last dimension
-                for (int i = 0; i < currentDimensionValues.size(); i++)
-                    if (currentDimensionValues.get(i) == null)
-                        throw new IllegalArgumentException("Missing a value at index " + i + " in dimension " + 
-                                                           remainingDimensions.get(0) + " for tensor of type " + type);
-                return new IndexedDimension(currentDimensionValues);
-            }
-            else {
-                List<TensorType.Dimension> nestedRemainingDimensions = new ArrayList<>(remainingDimensions);                
-                TensorType.Dimension currentDimension = nestedRemainingDimensions.remove(0);
-                ImmutableList.Builder<Object> values = new ImmutableList.Builder<>();
-                for (int i = 0; i < currentDimensionValues.size(); i++) {
-                    if (currentDimensionValues.get(i) == null)
-                        throw new IllegalArgumentException("Missing a value at index " + i + " in dimension " +
-                                                           currentDimension + " for tensor of type " + type);
-                    values.add(buildRecursively(nestedRemainingDimensions, (List<Object>)currentDimensionValues.get(i)));
-                }
-                return new IndexedDimension(values.build());
+        private void findDimensionSizes(int currentDimensionIndex, List<Integer> dimensionSizes, List<Object> currentDimension) {
+            if (currentDimensionIndex == dimensionSizes.size())
+                dimensionSizes.add(currentDimension.size());
+            else if (dimensionSizes.get(currentDimensionIndex) != currentDimension.size())
+                throw new IllegalArgumentException("Missing values in dimension " + 
+                                                   type.dimensions().get(currentDimensionIndex) + " in " + type);
+            
+            for (Object value : currentDimension)
+                if (value instanceof List)
+                    findDimensionSizes(currentDimensionIndex + 1, dimensionSizes, (List<Object>)value);
+        }
+
+        @SuppressWarnings("unchecked")
+        private void fillValues(int currentDimensionIndex, int offset, List<Object> currentDimension, 
+                                int[] dimensionSizes, double[] values) {
+            if (currentDimensionIndex < dimensionSizes.length - 1) { // recurse to next dimension
+                for (int i = 0; i < currentDimension.size(); i++)
+                    fillValues(currentDimensionIndex + 1,
+                               offset + productOfDimensionsAfter(currentDimensionIndex, dimensionSizes) * i,
+                               (List<Object>) currentDimension.get(i), dimensionSizes, values);
+            } else { // last dimension - fill values
+                for (int i = 0; i < currentDimension.size(); i++)
+                    values[offset + i] = (double) currentDimension.get(i);
             }
         }
 
@@ -291,11 +427,11 @@ public class IndexedTensor implements Tensor {
          * Set a value using an index API. The number of indexes must be the same as the dimensions in the type of this.
          * Values can be written in any order but all values needed to make this dense must be provided
          * before building this.
-         * 
+         *
          * @return this for chaining
          */
         @SuppressWarnings("unchecked")
-        public Builder set(double value, int ... indexes) {
+        public Builder cell(double value, int... indexes) {
             if (indexes.length != type.dimensions().size())
                 throw new IllegalArgumentException("Wrong number of indexes (" + indexes.length + ") for " + type);
 
@@ -311,16 +447,15 @@ public class IndexedTensor implements Tensor {
                 ensureCapacity(indexes[dimensionIndex], currentValues);
                 if (dimensionIndex == indexes.length - 1) { // last dimension
                     currentValues.set(indexes[dimensionIndex], value);
-                }
-                else {
+                } else {
                     if (currentValues.get(indexes[dimensionIndex]) == null)
                         currentValues.set(indexes[dimensionIndex], new ArrayList<>());
-                    currentValues = (List<Object>)currentValues.get(indexes[dimensionIndex]);
+                    currentValues = (List<Object>) currentValues.get(indexes[dimensionIndex]);
                 }
             }
             return this;
         }
-        
+
         @Override
         public IndexedCellBuilder cell() {
             return new IndexedCellBuilder();
@@ -337,7 +472,7 @@ public class IndexedTensor implements Tensor {
                                                        address.labels().get(i) + "'");
                 }
             }
-            set(value, indexes);
+            cell(value, indexes);
             return this;
         }
 
@@ -347,27 +482,6 @@ public class IndexedTensor implements Tensor {
                 list.add(list.size(), null);
         }
 
-        public class IndexedCellBuilder implements Tensor.Builder.CellBuilder {
-
-            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(IndexedTensor.Builder.this.type);
-
-            @Override
-            public IndexedTensor.Builder.IndexedCellBuilder label(String dimension, String label) {
-                addressBuilder.add(dimension, label);
-                return this;
-            }
-
-            @Override
-            public IndexedTensor.Builder.IndexedCellBuilder label(String dimension, int label) {
-                return label(dimension, String.valueOf(label));
-            }
-
-            @Override
-            public IndexedTensor.Builder value(double cellValue) {
-                return IndexedTensor.Builder.this.cell(addressBuilder.build(), cellValue);
-            }
-
-        }
-
     }
+
 }

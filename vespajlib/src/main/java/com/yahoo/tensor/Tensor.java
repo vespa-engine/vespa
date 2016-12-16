@@ -58,9 +58,11 @@ public interface Tensor {
     default double asDouble() {
         if (type().dimensions().size() > 0)
             throw new IllegalStateException("This tensor is not dimensionless. Dimensions: " + type().dimensions().size());
-        if (cells().size() != 1)
+        Map<TensorAddress, Double> cells = cells();
+        if (cells.size() == 0) return Double.NaN;
+        if (cells.size() > 1)
             throw new IllegalStateException("This tensor does not have a single value, it has " + cells().size());
-        return cells().values().iterator().next();
+        return cells.values().iterator().next();
     }
     
     // ----------------- Primitive tensor functions
@@ -211,7 +213,9 @@ public interface Tensor {
      * @param type the type of the tensor to return
      * @param tensorString the tensor on the standard tensor string format
      */
+    // TODO: Allow type:value syntax also when a type is sent as a separate argument
     static Tensor from(TensorType type, String tensorString) {
+        // TODO: Rewrite next 10 lines to 2
         boolean containsIndexedDimensions = false;
         boolean containsMappedDimensions = false;
         for (TensorType.Dimension dimension : type.dimensions()) {
@@ -257,7 +261,7 @@ public interface Tensor {
                 return from(typeFromCellString(tensorString), tensorString);
             }
             else {
-                return new IndexedTensor.Builder(TensorType.empty).set(Double.parseDouble(tensorString)).build();
+                return IndexedTensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
             }
         }
         catch (NumberFormatException e) {
@@ -297,7 +301,7 @@ public interface Tensor {
             if (containsIndexed && containsMapped)
                 throw new IllegalArgumentException("Combining indexed and mapped dimensions is not supported yet");
             if (containsIndexed)
-                return new IndexedTensor.Builder(type);
+                return IndexedTensor.Builder.of(type);
             else
                 return new MappedTensor.Builder(type);
         }

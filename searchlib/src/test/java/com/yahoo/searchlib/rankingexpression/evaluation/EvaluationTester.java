@@ -33,6 +33,7 @@ public class EvaluationTester {
         return assertEvaluates(expectedTensor, expressionString, true, tensorArguments);
     }
 
+    // TODO: Test both bound and unbound indexed
     public RankingExpression assertEvaluates(String expectedTensor, String expressionString, boolean mappedTensors, 
                                              String ... tensorArgumentStrings) {
         MapContext context = defaultContext.thawedCopy();
@@ -45,11 +46,12 @@ public class EvaluationTester {
                 argument = Tensor.from(typeFrom(argumentString, mappedTensors), argumentString);
             context.put("tensor" + (argumentIndex++), new TensorValue(argument));
         }
-        return assertEvaluates(new TensorValue(Tensor.from(expectedTensor)), expressionString, context);
+        return assertEvaluates(new TensorValue(Tensor.from(expectedTensor)), expressionString, context, 
+                               mappedTensors ? "Mapped tensors" : "Indexed tensors");
     }
 
     public RankingExpression assertEvaluates(Value value, String expressionString) {
-        return assertEvaluates(value, expressionString, defaultContext);
+        return assertEvaluates(value, expressionString, defaultContext, "");
     }
 
     public RankingExpression assertEvaluates(double value, String expressionString) {
@@ -57,13 +59,15 @@ public class EvaluationTester {
     }
 
     public RankingExpression assertEvaluates(double value, String expressionString, Context context) {
-        return assertEvaluates(new DoubleValue(value), expressionString, context);
+        return assertEvaluates(new DoubleValue(value), expressionString, context, "");
     }
 
-    public RankingExpression assertEvaluates(Value value, String expressionString, Context context) {
+    public RankingExpression assertEvaluates(Value value, String expressionString, Context context, String explanation) {
         try {
             RankingExpression expression = new RankingExpression(expressionString);
-            assertEquals(expression.toString(), value, expression.evaluate(context));
+            if ( ! explanation.isEmpty())
+                explanation = explanation + ": ";
+            assertEquals(explanation + expression.toString(), value, expression.evaluate(context));
             return expression;
         }
         catch (ParseException e) {

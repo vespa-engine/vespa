@@ -93,7 +93,6 @@ public class Reduce extends PrimitiveTensorFunction {
     @Override
     public Tensor evaluate(EvaluationContext context) {
         Tensor argument = this.argument.evaluate(context);
-
         if ( ! dimensions.isEmpty() && ! argument.type().dimensionNames().containsAll(dimensions))
             throw new IllegalArgumentException("Cannot reduce " + argument + " over dimensions " + 
                                                dimensions + ": Not all those dimensions are present in this tensor");
@@ -121,6 +120,7 @@ public class Reduce extends PrimitiveTensorFunction {
         Tensor.Builder reducedBuilder = Tensor.Builder.of(reducedType);
         for (Map.Entry<TensorAddress, ValueAggregator> aggregatingCell : aggregatingCells.entrySet())
             reducedBuilder.cell(aggregatingCell.getKey(), aggregatingCell.getValue().aggregatedValue());
+        
         return reducedBuilder.build();
     }
     
@@ -141,14 +141,15 @@ public class Reduce extends PrimitiveTensorFunction {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
         for (Double cellValue : argument.cells().values())
             valueAggregator.aggregate(cellValue);
-        return new IndexedTensor.Builder(TensorType.empty).set((valueAggregator.aggregatedValue())).build();
+        return IndexedTensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
     }
 
     private Tensor reduceIndexedVector(IndexedTensor argument) {
-        ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);        
+        ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
+        System.out.println("Reducing " + argument);
         for (int i = 0; i < argument.length(0); i++)
             valueAggregator.aggregate(argument.get(i));
-        return new IndexedTensor.Builder(TensorType.empty).set((valueAggregator.aggregatedValue())).build();
+        return IndexedTensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
     }
 
     private static abstract class ValueAggregator {

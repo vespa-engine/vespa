@@ -312,6 +312,7 @@ public class TensorType {
             return this;
         }
 
+        // TODO: Rename this and the next to "indexed" as they can be separated parameters (and check system tests)
         public Builder indexedBound(String name, int size) {
             return add(new IndexedBoundDimension(name, size));
         }

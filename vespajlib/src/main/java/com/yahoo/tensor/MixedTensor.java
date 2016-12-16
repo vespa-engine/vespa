@@ -13,25 +13,25 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * An indexed (dense) tensor backed by array lists.
+ * Sketch of a mixed dimension tensor which retains efficiency for indexed dimensions
  *
  * @author bratseth
  */
 @Beta
-public class IndexedTensor implements Tensor {
+public class MixedTensor implements Tensor {
 
     private final TensorType type;
 
     private final IndexedDimension firstDimension;
     
-    private IndexedTensor(TensorType type, IndexedDimension firstDimension) {
+    private MixedTensor(TensorType type, IndexedDimension firstDimension) {
         this.type = type;
         this.firstDimension = firstDimension;
     }
     
     /** Construct an indexed tensor having a single dimension with the given values */
     // TODO: Privatize
-    public IndexedTensor(TensorType type, List<Object> values) {
+    public MixedTensor(TensorType type, List<Object> values) {
         if (type.dimensions().size() != 1 ||  ! type.dimensions().get(0).isIndexed())
             throw new IllegalArgumentException("Expected a single-dimensional indexed tensor but got " + type);
         this.type = type;
@@ -69,7 +69,7 @@ public class IndexedTensor implements Tensor {
         return currentDimension.values().size();
     }
     
-    static IndexedTensor from(TensorType type, String tensorString) {
+    static MixedTensor from(TensorType type, String tensorString) {
         tensorString = tensorString.trim();
         try {
             if (tensorString.startsWith("{"))
@@ -83,8 +83,8 @@ public class IndexedTensor implements Tensor {
         }
     }
 
-    private static IndexedTensor fromCellString(TensorType type, String s) {
-        IndexedTensor.Builder builder = new IndexedTensor.Builder(type);
+    private static MixedTensor fromCellString(TensorType type, String s) {
+        MixedTensor.Builder builder = new MixedTensor.Builder(type);
         s = s.trim().substring(1).trim();
         while (s.length() > 1) {
             int keyEnd = s.indexOf('}');
@@ -141,8 +141,8 @@ public class IndexedTensor implements Tensor {
         
     }
 
-    private static IndexedTensor fromNumber(double number) {
-        return new IndexedTensor(TensorType.empty, new IndexedDimension(number));
+    private static MixedTensor fromNumber(double number) {
+        return new MixedTensor(TensorType.empty, new IndexedDimension(number));
     }
     
     private static Double asDouble(int[] indexes, String s) {
@@ -250,17 +250,17 @@ public class IndexedTensor implements Tensor {
         }
     
         @Override
-        public IndexedTensor build() {
+        public MixedTensor build() {
             // TODO: Enforce that all values in all dimensions are equally large
             if (firstDimension == null) // empty
-                return new IndexedTensor(type, new IndexedDimension());
+                return new MixedTensor(type, new IndexedDimension());
             if (type.dimensions().isEmpty()) // single number
-                return new IndexedTensor(type, 
-                                         new IndexedDimension((Double)firstDimension.get(0)));
+                return new MixedTensor(type,
+                                       new IndexedDimension((Double)firstDimension.get(0)));
 
             List<TensorType.Dimension> dimensions = new ArrayList<>(type.dimensions());
             IndexedDimension firstDimension = buildRecursively(dimensions, this.firstDimension);
-            return new IndexedTensor(type, firstDimension);
+            return new MixedTensor(type, firstDimension);
         }
         
         @SuppressWarnings("unchecked")
@@ -347,24 +347,24 @@ public class IndexedTensor implements Tensor {
                 list.add(list.size(), null);
         }
 
-        public class IndexedCellBuilder implements Tensor.Builder.CellBuilder {
+        public class IndexedCellBuilder implements CellBuilder {
 
-            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(IndexedTensor.Builder.this.type);
+            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(MixedTensor.Builder.this.type);
 
             @Override
-            public IndexedTensor.Builder.IndexedCellBuilder label(String dimension, String label) {
+            public MixedTensor.Builder.IndexedCellBuilder label(String dimension, String label) {
                 addressBuilder.add(dimension, label);
                 return this;
             }
 
             @Override
-            public IndexedTensor.Builder.IndexedCellBuilder label(String dimension, int label) {
+            public MixedTensor.Builder.IndexedCellBuilder label(String dimension, int label) {
                 return label(dimension, String.valueOf(label));
             }
 
             @Override
-            public IndexedTensor.Builder value(double cellValue) {
-                return IndexedTensor.Builder.this.cell(addressBuilder.build(), cellValue);
+            public MixedTensor.Builder value(double cellValue) {
+                return MixedTensor.Builder.this.cell(addressBuilder.build(), cellValue);
             }
 
         }
