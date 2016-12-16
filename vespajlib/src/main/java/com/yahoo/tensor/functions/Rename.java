@@ -11,6 +11,7 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,7 +71,8 @@ public class Rename extends PrimitiveTensorFunction {
         }
             
         Tensor.Builder builder = Tensor.Builder.of(renamedType);
-        for (Map.Entry<TensorAddress, Double> cell : tensor.cells().entrySet()) {
+        for (Iterator<Map.Entry<TensorAddress, Double>> i = tensor.cellIterator(); i.hasNext(); ) {
+            Map.Entry<TensorAddress, Double> cell = i.next();
             TensorAddress renamedAddress = rename(cell.getKey(), toIndexes);
             builder.cell(renamedAddress, cell.getValue());
         }

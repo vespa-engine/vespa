@@ -13,6 +13,7 @@ import com.yahoo.tensor.evaluation.EvaluationContext;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,6 +98,7 @@ public class Reduce extends PrimitiveTensorFunction {
             throw new IllegalArgumentException("Cannot reduce " + argument + " over dimensions " + 
                                                dimensions + ": Not all those dimensions are present in this tensor");
 
+        // Special case: Reduce all
         if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size())
             if (argument.type().dimensions().size() == 1 && argument instanceof IndexedTensor)
                 return reduceIndexedVector((IndexedTensor)argument);
@@ -112,7 +114,8 @@ public class Reduce extends PrimitiveTensorFunction {
         
         // Reduce cells
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>();
-        for (Map.Entry<TensorAddress, Double> cell : argument.cells().entrySet()) {
+        for (Iterator<Map.Entry<TensorAddress, Double>> i = argument.cellIterator(); i.hasNext(); ) {
+            Map.Entry<TensorAddress, Double> cell = i.next();
             TensorAddress reducedAddress = reduceDimensions(cell.getKey(), argument.type(), reducedType);
             aggregatingCells.putIfAbsent(reducedAddress, ValueAggregator.ofType(aggregator));
             aggregatingCells.get(reducedAddress).aggregate(cell.getValue());
@@ -139,8 +142,8 @@ public class Reduce extends PrimitiveTensorFunction {
     
     private Tensor reduceAllGeneral(Tensor argument) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
-        for (Double cellValue : argument.cells().values())
-            valueAggregator.aggregate(cellValue);
+        for (Iterator<Map.Entry<TensorAddress, Double>> i = argument.cellIterator(); i.hasNext(); )
+            valueAggregator.aggregate(i.next().getValue());
         return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
     }
 

@@ -20,11 +20,11 @@ public class IndexedTensorTestCase {
     public void testEmpty() {
         Tensor empty = Tensor.Builder.of(TensorType.empty).build();
         assertTrue(empty instanceof IndexedTensor);
-        assertTrue(empty.cells().isEmpty());
+        assertTrue(empty.isEmpty());
         assertEquals("{}", empty.toString());
         Tensor emptyFromString = Tensor.from(TensorType.empty, "{}");
         assertEquals("{}", Tensor.from(TensorType.empty, "{}").toString());
-        assertTrue(emptyFromString.cells().isEmpty());
+        assertTrue(emptyFromString.isEmpty());
         assertTrue(emptyFromString instanceof IndexedTensor);
         assertEquals(empty, emptyFromString);
     }

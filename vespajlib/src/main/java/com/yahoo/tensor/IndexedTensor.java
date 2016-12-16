@@ -8,8 +8,10 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -33,7 +35,17 @@ public class IndexedTensor implements Tensor {
         this.dimensionSizes = dimensionSizes;
         this.values = values;
     }
-    
+
+    @Override
+    public int size() {
+        return values.length;
+    }
+
+    @Override
+    public Iterator<Map.Entry<TensorAddress, Double>> cellIterator() {
+        return new ValueIterator();
+    }
+
     /** 
      * Returns the value at the given indexes
      * 
@@ -58,7 +70,8 @@ public class IndexedTensor implements Tensor {
     }
     
     private static int toValueIndex(int[] indexes, int[] dimensionSizes) {
-        if (indexes.length == 0) return 0;
+        if (indexes.length == 1) return indexes[0]; // for speed
+        if (indexes.length == 0) return 0; // for speed
 
         int valueIndex = 0;
         for (int i = 0; i < indexes.length; i++)
@@ -95,9 +108,8 @@ public class IndexedTensor implements Tensor {
     }
 
     @Override
-    // TODO: Replace this with iterator
     public Map<TensorAddress, Double> cells() {
-        if (dimensionSizes.length == 0) 
+        if (dimensionSizes.length == 0)
             return values.length == 0 ? Collections.emptyMap() : Collections.singletonMap(TensorAddress.empty, values[0]);
         
         ImmutableMap.Builder<TensorAddress, Double> builder = new ImmutableMap.Builder<>();
@@ -105,15 +117,20 @@ public class IndexedTensor implements Tensor {
         for (int i = 0; i < values.length; i++) {
             builder.put(new TensorAddress(tensorIndexes), values[i]);
             if (i < values.length -1)
-                next(tensorIndexes.length - 1, tensorIndexes, dimensionSizes);
+                next(tensorIndexes);
         }
         return builder.build();
     }
     
-    private void next(int dimension, int[] tensorIndexes, int[] dimensionSizes) {
+    private void next(int[] tensorIndexes) {
+        nextRecursively(tensorIndexes.length - 1, tensorIndexes);
+    }
+
+    // TODO: Tail recursion -> loop
+    private void nextRecursively(int dimension, int[] tensorIndexes) {
         if (tensorIndexes[dimension] + 1 == dimensionSizes[dimension]) {
             tensorIndexes[dimension] = 0;
-            next(dimension - 1, tensorIndexes, dimensionSizes);
+            nextRecursively(dimension - 1, tensorIndexes);
         }
         else {
             tensorIndexes[dimension]++;
@@ -362,6 +379,54 @@ public class IndexedTensor implements Tensor {
         private void ensureCapacity(int index, List<Object> list) {
             while (list.size() <= index)
                 list.add(list.size(), null);
+        }
+
+    }
+    
+    private class ValueIterator implements Iterator<Map.Entry<TensorAddress, Double>> {
+
+        private int cursor = 0;
+        private final int[] tensorIndexes = new int[dimensionSizes.length];
+
+        @Override
+        public boolean hasNext() {
+            return cursor < values.length;
+        }
+
+        @Override
+        public Map.Entry<TensorAddress, Double> next() {
+            if ( ! hasNext()) throw new NoSuchElementException();
+            
+            Map.Entry<TensorAddress, Double> current = new Cell(new TensorAddress(tensorIndexes), values[cursor]);
+            
+            cursor++;
+            if (hasNext())
+                IndexedTensor.this.next(tensorIndexes);
+
+            return current;
+        }
+        
+        private class Cell implements Map.Entry<TensorAddress, Double> {
+
+            private final TensorAddress address;
+            private final Double value;
+            
+            private Cell(TensorAddress address, Double value) {
+                this.address = address;
+                this.value = value;
+            }
+            
+            @Override
+            public TensorAddress getKey() { return address; }
+
+            @Override
+            public Double getValue() { return value; }
+
+            @Override
+            public Double setValue(Double value) {
+                throw new UnsupportedOperationException("A tensor cannot be modified");
+            }
+
         }
 
     }
