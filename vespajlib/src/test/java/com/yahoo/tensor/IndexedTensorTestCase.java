@@ -27,16 +27,30 @@ public class IndexedTensorTestCase {
         assertTrue(emptyFromString.cells().isEmpty());
         assertTrue(emptyFromString instanceof IndexedTensor);
         assertEquals(empty, emptyFromString);
-        
+    }
+    
+    @Test
+    public void testSingleValue() {
         Tensor singleValue = Tensor.Builder.of(TensorType.empty).cell(TensorAddress.empty, 3.5).build();
+        assertTrue(singleValue instanceof IndexedTensor);
         assertEquals("{3.5}", singleValue.toString());
-        assertEquals("{3.5}", Tensor.from(TensorType.empty, "{3.5}").toString());
-
+        Tensor singleValueFromString = Tensor.from(TensorType.empty, "{3.5}");
+        assertEquals("{3.5}", singleValueFromString.toString());
+        assertTrue(singleValueFromString instanceof IndexedTensor);
+        assertEquals(singleValue, singleValueFromString);
+    }
+    
+    @Test
+    public void testSingleValueWithDimensions() {
         TensorType type = new TensorType.Builder().indexed("x").indexed("y").build();
         Tensor emptyWithDimensions = Tensor.Builder.of(type).build();
         assertTrue(emptyWithDimensions instanceof IndexedTensor);
         assertEquals("tensor(x[],y[]):{}", emptyWithDimensions.toString());
-        assertEquals("tensor(x[],y[]):{}", Tensor.from("tensor(x[],y[]):{}").toString());
+        Tensor emptyWithDimensionsFromString = Tensor.from("tensor(x[],y[]):{}");
+        assertEquals("tensor(x[],y[]):{}", emptyWithDimensionsFromString.toString());
+        assertTrue(emptyWithDimensionsFromString instanceof IndexedTensor);
+        assertEquals(emptyWithDimensions, emptyWithDimensionsFromString);
+
         IndexedTensor emptyWithDimensionsIndexed = (IndexedTensor)emptyWithDimensions;
         assertEquals(0, emptyWithDimensionsIndexed.length(0));
         assertEquals(0, emptyWithDimensionsIndexed.length(1));
