@@ -182,29 +182,6 @@ public class IndexedTensor implements Tensor {
         @Override
         public abstract IndexedTensor build();
 
-        // TODO: Can this be pushed up to Tensor.Builder?
-        public class IndexedCellBuilder implements Tensor.Builder.CellBuilder {
-
-            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(IndexedTensor.Builder.this.type);
-
-            @Override
-            public IndexedCellBuilder label(String dimension, String label) {
-                addressBuilder.add(dimension, label);
-                return this;
-            }
-
-            @Override
-            public IndexedCellBuilder label(String dimension, int label) {
-                return label(dimension, String.valueOf(label));
-            }
-
-            @Override
-            public Builder value(double cellValue) {
-                return (Builder)Builder.this.cell(addressBuilder.build(), cellValue);
-            }
-
-        }
-
     }
     
     /** A bound builder can create the double array directly */
@@ -241,7 +218,7 @@ public class IndexedTensor implements Tensor {
         
         @Override
         public CellBuilder cell() {
-            return new IndexedCellBuilder();
+            return new CellBuilder(type, this);
         }
 
         @Override
@@ -328,8 +305,8 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public IndexedCellBuilder cell() {
-            return new IndexedCellBuilder();
+        public CellBuilder cell() {
+            return new CellBuilder(type, this);
         }
 
         @Override

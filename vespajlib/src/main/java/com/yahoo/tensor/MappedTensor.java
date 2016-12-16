@@ -56,8 +56,8 @@ public class MappedTensor implements Tensor {
             this.type = type;
         }
         
-        public MappedCellBuilder cell() {
-            return new MappedCellBuilder();
+        public CellBuilder cell() {
+            return new CellBuilder(type, this);
         }
 
         @Override
@@ -78,28 +78,6 @@ public class MappedTensor implements Tensor {
         @Override
         public MappedTensor build() {
             return new MappedTensor(type, cells.build());
-        }
-    
-        public class MappedCellBuilder implements Tensor.Builder.CellBuilder {
-    
-            private final TensorAddress.Builder addressBuilder = new TensorAddress.Builder(MappedTensor.Builder.this.type);
-    
-            @Override
-            public MappedCellBuilder label(String dimension, String label) {
-                addressBuilder.add(dimension, label);
-                return this;
-            }
-
-            @Override
-            public MappedCellBuilder label(String dimension, int label) {
-                return label(dimension, String.valueOf(label));
-            }
-
-            @Override
-            public Builder value(double cellValue) {
-                return MappedTensor.Builder.this.cell(addressBuilder.build(), cellValue);
-            }
-    
         }
     
     }

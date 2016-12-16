@@ -265,13 +265,28 @@ public interface Tensor {
 
         Tensor build();
 
-        interface CellBuilder {
+        class CellBuilder {
 
-            CellBuilder label(String dimension, String label);
+            private final TensorAddress.Builder addressBuilder;
+            private final Tensor.Builder tensorBuilder;
+            
+            CellBuilder(TensorType type, Tensor.Builder tensorBuilder) {
+                addressBuilder = new TensorAddress.Builder(type);
+                this.tensorBuilder = tensorBuilder;
+            }
 
-            CellBuilder label(String dimension, int label);
+            public CellBuilder label(String dimension, String label) {
+                addressBuilder.add(dimension, label);
+                return this;
+            }
 
-            Builder value(double cellValue);
+            public CellBuilder label(String dimension, int label) {
+                return label(dimension, String.valueOf(label));
+            }
+
+            public Builder value(double cellValue) {
+                return tensorBuilder.cell(addressBuilder.build(), cellValue);
+            }
 
         }
 
