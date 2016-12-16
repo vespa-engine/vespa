@@ -4,8 +4,7 @@
 #include <vespa/vsm/searcher/strchrfieldsearcher.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * This class is the base class for all utf8 string searchers.

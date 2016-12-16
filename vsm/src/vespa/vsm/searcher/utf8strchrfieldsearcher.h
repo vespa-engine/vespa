@@ -3,8 +3,7 @@
 
 #include <vespa/vsm/searcher/utf8stringfieldsearcherbase.h>
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * This class does normal utf8 searches.

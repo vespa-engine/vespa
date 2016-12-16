@@ -2,10 +2,8 @@
 #pragma once
 
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
-#include <vespa/fastlib/text/normwordfolder.h>
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * This class does substring utf8 searches.
