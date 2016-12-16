@@ -74,7 +74,7 @@ public class TensorTestCase {
         assertEquals(Tensor.from("{ {y:1,x:1}:8, {x:1,y:2}:12 }"), tensor1.add(tensor2).rename(ImmutableList.of("x", "y"),
                                                                                                ImmutableList.of("y", "x")));
     }
-    
+
     /** Test the same computation made in various ways which are implemented with special-cvase optimizations */
     @Test
     public void testOptimizedComputation() {
@@ -135,16 +135,6 @@ public class TensorTestCase {
         return tensors;
     }
     
-    private TensorType vectorType(TensorType.Builder builder, String name, TensorType.Dimension.Type type, int size) {
-        switch (type) {
-            case mapped: builder.mapped(name); break;
-            case indexedUnbound: builder.indexed(name); break;
-            case indexedBound: builder.indexed(name, size); break;
-            default: throw new IllegalArgumentException("Dimension type " + type + " not supported");
-        }
-        return builder.build();
-    }
-    
     /** 
      * Create a matrix of vectors (in dimension i) where each vector has the dimension x.
      * This matrix contains the same vectors as returned by createVectors, in a single list element for convenience.
@@ -164,6 +154,16 @@ public class TensorTestCase {
             }
         }
         return Collections.singletonList(builder.build());
+    }
+
+    private TensorType vectorType(TensorType.Builder builder, String name, TensorType.Dimension.Type type, int size) {
+        switch (type) {
+            case mapped: builder.mapped(name); break;
+            case indexedUnbound: builder.indexed(name); break;
+            case indexedBound: builder.indexed(name, size); break;
+            default: throw new IllegalArgumentException("Dimension type " + type + " not supported");
+        }
+        return builder.build();
     }
 
 }
