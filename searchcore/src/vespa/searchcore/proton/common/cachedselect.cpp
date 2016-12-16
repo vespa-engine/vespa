@@ -145,9 +145,9 @@ CachedSelect::CachedSelect(void)
       _allTrue(false),
       _allInvalid(false),
       _attrSelect()
-{
-}
+{ }
 
+CachedSelect::~CachedSelect() { }
 
 void
 CachedSelect::set(const vespalib::string &selection,

@@ -39,9 +39,13 @@ public:
         bool isEqual() const { return low == high; }
     };
 
+    QueryTermSimple(const QueryTermSimple &) = default;
+    QueryTermSimple & operator = (const QueryTermSimple &) = default;
+    QueryTermSimple(QueryTermSimple &&) = default;
+    QueryTermSimple & operator = (QueryTermSimple &&) = default;
     QueryTermSimple();
     QueryTermSimple(const string & term_, SearchTerm type);
-    virtual ~QueryTermSimple() { }
+    virtual ~QueryTermSimple();
     /**
      * Extracts the content of this query term as a range with low and high values.
      */
@@ -87,8 +91,13 @@ class QueryTermBase : public QueryTermSimple
 {
 public:
     typedef std::unique_ptr<QueryTermBase> UP;
+    QueryTermBase(const QueryTermBase &) = default;
+    QueryTermBase & operator = (const QueryTermBase &) = default;
+    QueryTermBase(QueryTermBase &&) = default;
+    QueryTermBase & operator = (QueryTermBase &&) = default;
     QueryTermBase();
     QueryTermBase(const string & term_, SearchTerm type);
+    ~QueryTermBase();
     size_t getTermLen() const { return _cachedTermLen; }
     size_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }
     size_t term(const ucs4_t * & t)   const { t = _termUCS4.begin(); return _cachedTermLen; }
@@ -130,9 +139,9 @@ public:
         size_t getHitOffset()     const { return _hitListOffset; }
         size_t getHitCount()      const { return _hitCount; }
         size_t getFieldLength()   const { return _fieldLength; }
-        void   setHitOffset(size_t v)   { _hitListOffset = v; }
-        void   setHitCount(size_t v)    { _hitCount = v; }
-        void   setFieldLength(size_t v) { _fieldLength = v; }
+        FieldInfo & setHitOffset(size_t v)   { _hitListOffset = v; return *this; }
+        FieldInfo & setHitCount(size_t v)    { _hitCount = v; return *this; }
+        FieldInfo & setFieldLength(size_t v) { _fieldLength = v; return *this; }
     private:
         uint32_t _hitListOffset;
         uint32_t _hitCount;
@@ -141,7 +150,11 @@ public:
     DECLARE_IDENTIFIABLE_NS(search, QueryTerm);
     QueryTerm();
     QueryTerm(const QueryNodeResultBase & org, const string & term, const string & index, SearchTerm type);
-    virtual ~QueryTerm() { }
+    QueryTerm(const QueryTerm &) = default;
+    QueryTerm & operator = (const QueryTerm &) = default;
+    QueryTerm(QueryTerm &&) = default;
+    QueryTerm & operator = (QueryTerm &&) = default;
+    virtual ~QueryTerm();
     virtual bool evaluate() const;
     virtual const HitList & evaluateHits(HitList & hl) const;
     virtual void reset();

@@ -106,8 +106,7 @@ protected:
 public:
     UTF8StringFieldSearcherBase();
     UTF8StringFieldSearcherBase(FieldIdT fId);
-    virtual void prepare(search::QueryTermList & qtl,
-                         const SharedSearcherBuf & buf);
+    void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
     /**
      * Matches the given query term against the given word using suffix match strategy.
      *
@@ -130,49 +129,7 @@ public:
      * Folding is performed. Separator characters are skipped.
      **/
     template <typename T>
-    size_t skipSeparators(const search::byte * p, size_t sz, T & dstbuf) {
-        const search::byte * e(p+sz);
-        const search::byte * b(p);
-
-        for(; p < e; ) {
-            ucs4_t c(*p);
-            const search::byte * oldP(p);
-            if (c < 128) {
-                p++;
-                if (!isSeparatorCharacter(c)) {
-                    dstbuf.onCharacter(_foldCase[c], (oldP - b));
-                }
-            } else {
-                c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
-                const char *repl = ReplacementString(c);
-                if (repl != NULL) {
-                    size_t repllen = strlen(repl);
-                    if (repllen > 0) {
-                        ucs4_t * buf = dstbuf.getBuf();
-                        ucs4_t * newBuf = Fast_UnicodeUtil::ucs4copy(buf, repl);
-                        if (dstbuf.hasOffsets()) {
-                            for (; buf < newBuf; ++buf) {
-                                dstbuf.incBuf(1);
-                                dstbuf.onOffset(oldP - b);
-                            }
-                        } else {
-                            dstbuf.incBuf(newBuf - buf);
-                        }
-                    }
-                } else {
-                    c = ToFold(c);
-                    dstbuf.onCharacter(c, (oldP - b));
-                }
-                if (c == _BadUTF8Char) {
-                    _badUtf8Count++;
-                } else {
-                    _utf8Count[p-oldP-1]++;
-                }
-            }
-        }
-        assert(dstbuf.valid());
-        return dstbuf.size();
-    }
+    size_t skipSeparators(const search::byte * p, size_t sz, T & dstbuf);
 
 };
 

@@ -1,21 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
 #pragma once
 
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchsummary/docsummary/urlresult.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
 namespace search {
+
+class IAttributeManager;
+
 namespace docsummary {
 
 class GetDocsumsState;
-
-using search::IAttributeManager;
 
 class IDocsumFieldWriter
 {

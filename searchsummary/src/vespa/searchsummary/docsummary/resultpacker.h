@@ -36,28 +36,10 @@ private:
     static bool IsBinaryCompatible(ResType a, ResType b)
     { return ResultConfig::IsBinaryCompatible(a, b); }
 
-    void WarnType(ResType type);
+    void WarnType(ResType type) const;
     void SetFormatError(ResType type);
 
-    bool CheckEntry(ResType type)
-    {
-        if (_error)
-            return false;
-
-        bool rc = (_cfgEntry != NULL &&
-                   IsBinaryCompatible(_cfgEntry->_type, type));
-
-        if (rc) {
-            if (_cfgEntry->_type != type) {
-                WarnType(type);
-            }
-            _cfgEntry = _resClass->GetEntry(++_entryIdx);
-        } else {
-            SetFormatError(type);
-        }
-
-        return rc;
-    }
+    bool CheckEntry(ResType type);
 
 public:
     /**

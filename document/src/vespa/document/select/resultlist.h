@@ -16,7 +16,10 @@ public:
     typedef Results::iterator iterator;
     typedef Results::const_iterator const_iterator;
 
-    ResultList() {};
+    ResultList();
+    ResultList(ResultList &&) = default;
+    ResultList & operator = (ResultList &&) = default;
+    ~ResultList();
 
     /**
        Creates a result list with one element with the given result type and no parameters.

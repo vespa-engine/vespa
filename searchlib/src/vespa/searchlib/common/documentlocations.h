@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <memory>
+
 namespace search {
 
     namespace attribute { class IAttributeVector; }

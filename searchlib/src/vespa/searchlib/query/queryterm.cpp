@@ -60,6 +60,8 @@ QueryTermBase::QueryTermBase() :
     _termUCS4.push_back(0);
 }
 
+QueryTermBase::~QueryTermBase() { }
+
 QueryTermBase::QueryTermBase(const string & termS, SearchTerm type) :
     QueryTermSimple(termS, type),
     _cachedTermLen(0),
@@ -84,8 +86,9 @@ QueryTerm::QueryTerm() :
     _weight(100),
     _uniqueId(0),
     _fieldInfo(32)
-{
-}
+{ }
+
+QueryTerm::~QueryTerm() { }
 
 void
 QueryTermSimple::visitMembers(vespalib::ObjectVisitor & visitor) const
@@ -323,8 +326,9 @@ QueryTermSimple::QueryTermSimple() :
     _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
     _diversityCutoffStrict(false),
     _valid(true)
-{
-}
+{ }
+
+QueryTermSimple::~QueryTermSimple() { }
 
 namespace {
 

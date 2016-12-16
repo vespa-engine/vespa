@@ -3,8 +3,9 @@
 // Copyright (C) 2003 Overture Services Norway AS
 
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
+#include <vespa/searchsummary/docsummary/docsumwriter.h>
+#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/rankfeaturesdfw.h>
-#include <vespa/searchsummary/docsummary/summaryfeaturesdfw.h>
 #include <vespa/searchsummary/docsummary/textextractordfw.h>
 #include <vespa/searchsummary/docsummary/geoposdfw.h>
 #include <vespa/searchsummary/docsummary/positionsdfw.h>
@@ -17,6 +18,11 @@ namespace docsummary {
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;
+
+const ResultConfig &
+DynamicDocsumConfig::getResultConfig() const {
+    return *_writer->GetResultConfig();
+}
 
 IDocsumFieldWriter::UP
 DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc)

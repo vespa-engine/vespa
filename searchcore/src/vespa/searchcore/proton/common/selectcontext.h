@@ -2,26 +2,26 @@
 #pragma once
 
 #include <vespa/document/select/context.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 
-namespace proton
-{
-
+namespace proton {
 
 class CachedSelect;
+
+namespace select { class Guards; }
 
 class SelectContext : public document::select::Context
 {
 public:
-    uint32_t _docId;
-
-    std::vector<search::AttributeGuard> _guards;
-    const CachedSelect &_cachedSelect;
-
     SelectContext(const CachedSelect &cachedSelect);
+    ~SelectContext();
 
-    void getAttributeGuards(void);
-    void dropAttributeGuards(void);
+    void getAttributeGuards();
+    void dropAttributeGuards();
+
+    uint32_t _docId;
+private:
+    std::unique_ptr<select::Guards> _guards;
+    const CachedSelect &_cachedSelect;
 };
 
 } // namespace proton

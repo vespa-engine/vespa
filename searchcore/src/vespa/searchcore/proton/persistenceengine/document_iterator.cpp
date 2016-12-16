@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "document_iterator.h"
 #include <vespa/document/select/gid_filter.h>
+#include <vespa/document/select/node.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/persistence/spi/docentry.h>
-#include <algorithm>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.document_iterator");
 

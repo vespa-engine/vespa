@@ -236,7 +236,7 @@ void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPa
 }
 
 uint32_t
-DocsumFilter::getNumDocs()
+DocsumFilter::getNumDocs() const
 {
     return std::numeric_limits<uint32_t>::max();
 }
