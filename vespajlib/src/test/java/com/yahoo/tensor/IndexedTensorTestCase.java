@@ -21,17 +21,15 @@ public class IndexedTensorTestCase {
     @Test
     public void testEmpty() {
         Tensor empty = Tensor.Builder.of(TensorType.empty).build();
-        // assertTrue(empty instanceof IndexedTensor); TODO: Fix that and test these same things for a single-value tensor
+        assertTrue(empty instanceof IndexedTensor);
         assertTrue(empty.cells().isEmpty());
         assertEquals("{}", empty.toString());
         Tensor emptyFromString = Tensor.from(TensorType.empty, "{}");
         assertEquals("{}", Tensor.from(TensorType.empty, "{}").toString());
         assertTrue(emptyFromString.cells().isEmpty());
         assertTrue(emptyFromString instanceof IndexedTensor);
-        // assertEquals(empty, emptyFromString);
+        assertEquals(empty, emptyFromString);
         
-        // TODO: Equality of different tensor types
-
         Tensor singleValue = Tensor.Builder.of(TensorType.empty).cell(TensorAddress.empty, 3.5).build();
         assertEquals("{3.5}", singleValue.toString());
         assertEquals("{3.5}", Tensor.from(TensorType.empty, "{3.5}").toString());

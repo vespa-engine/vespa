@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
@@ -213,24 +214,8 @@ public interface Tensor {
      * @param type the type of the tensor to return
      * @param tensorString the tensor on the standard tensor string format
      */
-    // TODO: Allow type:value syntax also when a type is sent as a separate argument
     static Tensor from(TensorType type, String tensorString) {
-        // TODO: Rewrite next 10 lines to 2
-        boolean containsIndexedDimensions = false;
-        boolean containsMappedDimensions = false;
-        for (TensorType.Dimension dimension : type.dimensions()) {
-            switch (dimension.type()) {
-                case indexedBound: case indexedUnbound: containsIndexedDimensions = true; break;
-                case mapped : containsMappedDimensions = true; break;
-                default: throw new RuntimeException("Unknown dimension type: " + dimension);
-            }
-        }
-        if (containsIndexedDimensions && containsMappedDimensions)
-            throw new IllegalArgumentException("Mixed dimension types are not supported, got: " + type);
-        if (containsMappedDimensions)
-            return MappedTensor.from(type, tensorString);
-        else // indexed or none
-            return IndexedTensor.from(type, tensorString);
+        return from(tensorString, Optional.of(type));
     }
 
     /**
@@ -241,7 +226,7 @@ public interface Tensor {
      * @param tensorString the tensor on the standard tensor string format
      */
     static Tensor from(String tensorType, String tensorString) {
-        return from(TensorType.fromSpec(tensorType), tensorString);
+        return from(tensorString, Optional.of(TensorType.fromSpec(tensorType)));
     }
 
     /**
@@ -249,18 +234,29 @@ public interface Tensor {
      * If a type is not specified it is derived from the first cell of the tensor
      */
     static Tensor from(String tensorString) {
+        return from(tensorString, Optional.empty());
+    }
+    
+    static Tensor from(String tensorString, Optional<TensorType> type) {
         tensorString = tensorString.trim();
         try {
             if (tensorString.startsWith("tensor(")) {
                 int colonIndex = tensorString.indexOf(':');
-                String typeSpec = tensorString.substring(0, colonIndex);
-                String valueSpec = tensorString.substring(colonIndex + 1);
-                return from(TensorTypeParser.fromSpec(typeSpec), valueSpec);
+                String typeString = tensorString.substring(0, colonIndex);
+                String valueString = tensorString.substring(colonIndex + 1);
+                TensorType typeFromString = TensorTypeParser.fromSpec(typeString);
+                if (type.isPresent() && ! type.get().equals(typeFromString))
+                    throw new IllegalArgumentException("Got tensor with type string '" + typeString + "', but was " +
+                                                       "passed type " + type);
+                return fromValueString(valueString, typeFromString);
             }
             else if (tensorString.startsWith("{")) {
-                return from(typeFromCellString(tensorString), tensorString);
+                return fromValueString(tensorString, type.orElse(typeFromValueString(tensorString)));
             }
             else {
+                if (type.isPresent() && ! type.get().equals(TensorType.empty))
+                    throw new IllegalArgumentException("Got zero-dimensional tensor '" + tensorString + 
+                                                       "but type is not empty but " + type.get());
                 return IndexedTensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
             }
         }
@@ -270,12 +266,24 @@ public interface Tensor {
         }
     }
 
+    static Tensor fromValueString(String tensorCellString, TensorType type) {
+        boolean containsIndexedDimensions = type.dimensions().stream().anyMatch(d -> d.isIndexed());
+        boolean containsMappedDimensions = type.dimensions().stream().anyMatch(d -> !d.isIndexed());
+        if (containsIndexedDimensions && containsMappedDimensions)
+            throw new IllegalArgumentException("Mixed dimension types are not supported, got: " + type);
+        if (containsMappedDimensions)
+            return MappedTensor.from(type, tensorCellString);
+        else // indexed or none
+            return IndexedTensor.from(type, tensorCellString);
+    }
+
     /** Derive the tensor type from the first address string in the given tensor string */
-    static TensorType typeFromCellString(String s) {
+    static TensorType typeFromValueString(String s) {
         s = s.substring(1).trim(); // remove tensor start
-        int firstKeyOrEmptyTensorEnd = s.indexOf('}');
-        String addressBody = s.substring(0, firstKeyOrEmptyTensorEnd).trim();
+        int firstKeyOrTensorEnd = s.indexOf('}');
+        String addressBody = s.substring(0, firstKeyOrTensorEnd).trim();
         if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
+        if ( ! addressBody.startsWith("{")) return TensorType.empty; // Single value tensor
 
         addressBody = addressBody.substring(1); // remove key start
         if (addressBody.isEmpty()) return TensorType.empty; // Empty key
@@ -300,10 +308,10 @@ public interface Tensor {
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
             if (containsIndexed && containsMapped)
                 throw new IllegalArgumentException("Combining indexed and mapped dimensions is not supported yet");
-            if (containsIndexed)
-                return IndexedTensor.Builder.of(type);
-            else
+            if (containsMapped)
                 return new MappedTensor.Builder(type);
+            else // indexed or empty
+                return IndexedTensor.Builder.of(type);
         }
         
         /** Return a cell builder */
