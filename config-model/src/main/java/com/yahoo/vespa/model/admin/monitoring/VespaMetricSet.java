@@ -206,12 +206,40 @@ public class VespaMetricSet extends MetricSet {
         metrics.add(new Metric("content.proton.documentdb.ready.document_store.disk_usage.average"));
         metrics.add(new Metric("content.proton.documentdb.ready.document_store.disk_bloat.average"));
         metrics.add(new Metric("content.proton.documentdb.ready.document_store.max_bucket_spread.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.memory_usage.allocated_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.memory_usage.used_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.memory_usage.dead_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.memory_usage.onhold_bytes.average"));
         metrics.add(new Metric("content.proton.documentdb.notready.document_store.disk_usage.average"));
         metrics.add(new Metric("content.proton.documentdb.notready.document_store.disk_bloat.average"));
         metrics.add(new Metric("content.proton.documentdb.notready.document_store.max_bucket_spread.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.memory_usage.allocated_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.memory_usage.used_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.memory_usage.dead_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.memory_usage.onhold_bytes.average"));
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.disk_usage.average"));
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.disk_bloat.average"));
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.max_bucket_spread.average"));
+        metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.allocated_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.used_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.dead_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.onhold_bytes.average"));
+
+        // attribute
+        metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.allocated_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.used_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.dead_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.onhold_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.allocated_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.used_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.dead_bytes.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.attribute.memory_usage.onhold_bytes.average"));
+
+        // index
+        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.allocated_bytes"));
+        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.used_bytes"));
+        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.dead_bytes"));
+        metrics.add(new Metric("content.proton.documentdb.index.memory_usage.onhold_bytes"));
 
         return metrics;
     }
