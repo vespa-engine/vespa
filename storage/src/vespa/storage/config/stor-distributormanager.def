@@ -65,12 +65,12 @@ maximum_nodes_per_merge int default=16
 start_distributor_thread bool default=true restart
 
 ## The number of ticks calls done before a wait is done.  This can be
-## set higher than 1 for the distributor to improve speed of bucket iterations
+## set higher than 10 for the distributor to improve speed of bucket iterations
 ## while still keep CPU load low/moderate.
-ticks_before_wait int default=1
+ticks_before_wait int default=10
 
-## The sleep time between ticks if there are no more queed tasks.
-ticks_wait_time_ms int default=5
+## The sleep time between ticks if there are no more queued tasks.
+ticks_wait_time_ms int default=1
 
 ## Max processing time used by deadlock detector.
 max_process_time_ms int default=5000
