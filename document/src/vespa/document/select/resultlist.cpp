@@ -6,6 +6,10 @@
 namespace document {
 namespace select {
 
+ResultList::ResultList() : _results() { }
+
+ResultList::~ResultList() { }
+
 ResultList::ResultList(const Result& result) {
     add(VariableMap(), result);
 }

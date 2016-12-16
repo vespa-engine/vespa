@@ -2,10 +2,8 @@
 #pragma once
 
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
-#include <vespa/fastlib/text/normwordfolder.h>
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * This class does substring utf8 searches.
@@ -17,8 +15,8 @@ public:
     UTF8SubStringFieldSearcher()             : UTF8StringFieldSearcherBase() { }
     UTF8SubStringFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) { }
 protected:
-    virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt);
-    virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm);
+    size_t matchTerm(const FieldRef & f, search::QueryTerm & qt) override;
+    size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
 };
 
 }

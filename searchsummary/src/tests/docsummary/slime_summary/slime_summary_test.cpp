@@ -69,8 +69,8 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
         EXPECT_GREATER(vespalib::slime::BinaryFormat
                        ::decode(Memory(buf.GetDrainPos(), buf.GetUsedLen()), slime), 0u);
     }
-    virtual uint32_t getNumDocs() { return 2; }
-    virtual DocsumStoreValue getMappedDocsum(uint32_t docid, bool useSlimeInsideFields) {
+    uint32_t getNumDocs() const override { return 2; }
+    DocsumStoreValue getMappedDocsum(uint32_t docid, bool useSlimeInsideFields) override {
         EXPECT_EQUAL(true, useSlimeInsideFields);
         EXPECT_EQUAL(1u, docid);
         EXPECT_TRUE(packer->Init(0));
@@ -99,9 +99,9 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
         return DocsumStoreValue(buf, len);
     }
     uint32_t getSummaryClassId() const override { return 0; }
-    virtual void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) {}
-    virtual void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) {}
-    virtual void ParseLocation(GetDocsumsState *) {}
+    void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
+    void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
+    void ParseLocation(GetDocsumsState *) override { }
 };
 
 } // namespace <unnamed>

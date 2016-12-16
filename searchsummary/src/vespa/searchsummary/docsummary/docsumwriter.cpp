@@ -2,26 +2,21 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include "docsumwriter.h"
-#include "docsumfieldwriter.h"
-#include "docsumstore.h"
-#include "keywordextractor.h"
 #include "docsumformat.h"
 #include "docsumstate.h"
 #include <vespa/searchlib/common/transport.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
+#include <vespa/searchlib/attribute/iattributemanager.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.docsummary.docsumwriter");
 
 using namespace vespalib::slime::convenience;
 
 namespace search {
 namespace docsummary {
-
-LOG_SETUP(".searchlib.docsummary.docsumwriter");
-
 
 uint32_t
 IDocsumWriter::slime2RawBuf(const Slime & slime, RawBuf & buf)

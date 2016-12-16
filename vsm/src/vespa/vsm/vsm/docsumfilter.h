@@ -86,7 +86,7 @@ public:
 
     // Inherit doc from IDocsumStore
     DocsumStoreValue getMappedDocsum(uint32_t id, bool useSlimeInsideFields) override;
-    uint32_t getNumDocs() override;
+    uint32_t getNumDocs() const override;
     uint32_t getSummaryClassId() const override;
 };
 

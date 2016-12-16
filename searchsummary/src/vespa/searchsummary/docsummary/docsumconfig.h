@@ -4,13 +4,15 @@
 
 #pragma once
 
-#include <vespa/searchsummary/docsummary/docsumwriter.h>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
-#include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/config-summarymap.h>
 
 namespace search {
 namespace docsummary {
+
+class IDocsumEnvironment;
+class DynamicDocsumWriter;
+class ResultConfig;
+class IDocsumFieldWriter;
 
 class DynamicDocsumConfig
 {
@@ -18,17 +20,16 @@ public:
     DynamicDocsumConfig(IDocsumEnvironment * env, DynamicDocsumWriter * writer) :
         _env(env),
         _writer(writer)
-    {
-    }
+    { }
     virtual ~DynamicDocsumConfig() { }
     void configure(const vespa::config::search::SummarymapConfig &cfg);
 protected:
-    typedef vespalib::string string;
+    using string = vespalib::string;
     IDocsumEnvironment * getEnvironment() { return _env; }
     const IDocsumEnvironment * getEnvironment() const { return _env; }
-    const ResultConfig & getResultConfig()      const { return *_writer->GetResultConfig(); }
+    const ResultConfig & getResultConfig() const;
 
-    virtual IDocsumFieldWriter::UP
+    virtual std::unique_ptr<IDocsumFieldWriter>
     createFieldWriter(const string & fieldName, const string & overrideName,
                       const string & argument, bool & rc);
 private:

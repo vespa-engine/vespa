@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("searcher_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -13,19 +11,16 @@ LOG_SETUP("searcher_test");
 #include <vespa/vsm/searcher/strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
-#include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
-#include <vespa/vsm/vsm/fieldsearchspec.h>
 
 using namespace document;
 using search::EmptyQueryNodeResult;
 using search::QueryTerm;
 using search::QueryTermList;
-
-namespace vsm {
+using namespace vsm;
 
 template <typename T>
 class Vector : public std::vector<T>
@@ -113,144 +108,132 @@ struct SnippetModifierSetup
     }
 };
 
-class SearcherTest : public vespalib::TestApp
-{
-private:
 
-    // helper functions
-    ArrayFieldValue getFieldValue(const StringList & fv);
-    ArrayFieldValue getFieldValue(const LongList & fv);
-    ArrayFieldValue getFieldValue(const FloatList & fv);
 
-    bool assertMatchTermSuffix(const std::string & term, const std::string & word);
+// helper functions
+ArrayFieldValue getFieldValue(const StringList &fv);
+ArrayFieldValue getFieldValue(const LongList &fv);
+ArrayFieldValue getFieldValue(const FloatList &fv);
 
-    /** string field searcher **/
-    void assertString(StrChrFieldSearcher & fs, const std::string & term, const std::string & field, const Hits & exp) {
-        assertString(fs, StringList().add(term), field, HitsList().add(exp));
-    }
-    void assertString(StrChrFieldSearcher & fs, const StringList & query, const std::string & field, const HitsList & exp) {
-        assertSearch(fs, query, StringFieldValue(field), exp);
-    }
-    void assertString(StrChrFieldSearcher & fs, const std::string & term, const StringList & field, const Hits & exp) {
-        assertString(fs, StringList().add(term), field, HitsList().add(exp));
-    }
-    void assertString(StrChrFieldSearcher & fs, const StringList & query, const StringList & field, const HitsList & exp) {
-        assertSearch(fs, query, getFieldValue(field), exp);
-    }
+bool assertMatchTermSuffix(const std::string &term, const std::string &word);
+void assertSnippetModifier(const StringList &query, const std::string &fv, const std::string &exp);
+void assertSnippetModifier(SnippetModifierSetup &setup, const FieldValue &fv, const std::string &exp);
+void assertQueryTerms(const SnippetModifierManager &man, FieldIdT fId, const StringList &terms);
+void assertNumeric(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const BoolList &exp);
+std::vector<QueryTerm> performSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv);
+void assertSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const HitsList &exp);
+bool assertCountWords(size_t numWords, const std::string &field);
+bool assertFieldInfo(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const FieldInfoList &exp);
 
-    /** int field searcher **/
-    void assertInt(IntFieldSearcher fs, const std::string & term, int64_t field, bool exp) {
-        assertInt(fs, StringList().add(term), field, BoolList().add(exp));
-    }
-    void assertInt(IntFieldSearcher fs, const StringList & query, int64_t field, const BoolList & exp) {
-        assertNumeric(fs, query, LongFieldValue(field), exp);
-    }
-    void assertInt(IntFieldSearcher fs, const std::string & term, const LongList & field, const Hits & exp) {
-        assertInt(fs, StringList().add(term), field, HitsList().add(exp));
-    }
-    void assertInt(IntFieldSearcher fs, const StringList & query, const LongList & field, const HitsList & exp) {
-        assertSearch(fs, query, getFieldValue(field), exp);
-    }
+void assertString(StrChrFieldSearcher &fs, const StringList &query, const std::string &field, const HitsList &exp) {
+    assertSearch(fs, query, StringFieldValue(field), exp);
+}
 
-    /** float field searcher **/
-    void assertFloat(FloatFieldSearcher fs, const std::string & term, float field, bool exp) {
-        assertFloat(fs, StringList().add(term), field, BoolList().add(exp));
-    }
-    void assertFloat(FloatFieldSearcher fs, const StringList & query, float field, const BoolList & exp) {
-        assertNumeric(fs, query, FloatFieldValue(field), exp);
-    }
-    void assertFloat(FloatFieldSearcher fs, const std::string & term, const FloatList & field, const Hits & exp) {
-        assertFloat(fs, StringList().add(term), field, HitsList().add(exp));
-    }
-    void assertFloat(FloatFieldSearcher fs, const StringList & query, const FloatList & field, const HitsList & exp) {
-        assertSearch(fs, query, getFieldValue(field), exp);
-    }
+void assertString(StrChrFieldSearcher &fs, const StringList &query, const StringList &field, const HitsList &exp) {
+    assertSearch(fs, query, getFieldValue(field), exp);
+}
 
-    void assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const BoolList & exp);
-    std::vector<QueryTerm> performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv);
-    void assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const HitsList & exp);
+void assertString(StrChrFieldSearcher &fs, const std::string &term, const std::string &field, const Hits &exp) {
+    assertString(fs, StringList().add(term), field, HitsList().add(exp));
+}
+void assertString(StrChrFieldSearcher &fs, const std::string &term, const StringList &field, const Hits &exp) {
+    assertString(fs, StringList().add(term), field, HitsList().add(exp));
+}
 
-    /** string field searcher **/
-    bool assertFieldInfo(StrChrFieldSearcher & fs, const std::string & term, const std::string & fv, const QTFieldInfo & exp) {
-        return assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
-    }
-    bool assertFieldInfo(StrChrFieldSearcher & fs, const std::string & term, const StringList & fv, const QTFieldInfo & exp) {
-        return assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
-    }
-    bool assertFieldInfo(StrChrFieldSearcher & fs, const StringList & query, const std::string & fv, const FieldInfoList & exp) {
-        return assertFieldInfo(fs, query, StringFieldValue(fv), exp);
-    }
-    bool assertFieldInfo(StrChrFieldSearcher & fs, const StringList & query, const StringList & fv, const FieldInfoList & exp) {
-        return assertFieldInfo(fs, query, getFieldValue(fv), exp);
-    }
+void assertInt(IntFieldSearcher fs, const StringList &query, int64_t field, const BoolList &exp) {
+    assertNumeric(fs, query, LongFieldValue(field), exp);
+}
 
-    /** int field searcher **/
-    void assertFieldInfo(IntFieldSearcher fs, const std::string & term, int64_t fv, const QTFieldInfo & exp) {
-        assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
-    }
-    void assertFieldInfo(IntFieldSearcher fs, const std::string & term, const LongList & fv, const QTFieldInfo & exp) {
-        assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
-    }
-    void assertFieldInfo(IntFieldSearcher fs, const StringList & query, int64_t fv, const FieldInfoList & exp) {
-        assertFieldInfo(fs, query, LongFieldValue(fv), exp);
-    }
-    void assertFieldInfo(IntFieldSearcher fs, const StringList & query, const LongList & fv, const FieldInfoList & exp) {
-        assertFieldInfo(fs, query, getFieldValue(fv), exp);
-    }
+void assertInt(IntFieldSearcher fs, const std::string &term, int64_t field, bool exp) {
+    assertInt(fs, StringList().add(term), field, BoolList().add(exp));
+}
 
-    /** float field searcher **/
-    void assertFieldInfo(FloatFieldSearcher fs, const std::string & term, float fv, const QTFieldInfo & exp) {
-        assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
-    }
-    void assertFieldInfo(FloatFieldSearcher fs, const std::string & term, const FloatList & fv, const QTFieldInfo & exp) {
-        assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
-    }
-    void assertFieldInfo(FloatFieldSearcher fs, const StringList & query, float fv, const FieldInfoList & exp) {
-        assertFieldInfo(fs, query, FloatFieldValue(fv), exp);
-    }
-    void assertFieldInfo(FloatFieldSearcher fs, const StringList & query, const FloatList & fv, const FieldInfoList & exp) {
-        assertFieldInfo(fs, query, getFieldValue(fv), exp);
-    }
+void assertInt(IntFieldSearcher fs, const StringList &query, const LongList &field, const HitsList &exp) {
+    assertSearch(fs, query, getFieldValue(field), exp);
+}
 
-    bool assertFieldInfo(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const FieldInfoList & exp);
+void assertInt(IntFieldSearcher fs, const std::string &term, const LongList &field, const Hits &exp) {
+    assertInt(fs, StringList().add(term), field, HitsList().add(exp));
+}
 
-    /** snippet modifer searcher **/
-    void assertSnippetModifier(const std::string & term, const std::string & fv, const std::string & exp) {
-        assertSnippetModifier(StringList().add(term), fv, exp);
-    }
-    void assertSnippetModifier(const StringList & query, const std::string & fv, const std::string & exp);
-    /** snippet modifier **/
-    void assertSnippetModifier(SnippetModifierSetup & setup, const FieldValue & fv, const std::string & exp);
-    void assertQueryTerms(const SnippetModifierManager & man, FieldIdT fId, const StringList & terms);
-    /** count words **/
-    bool assertCountWords(size_t numWords, const std::string & field);
+void assertFloat(FloatFieldSearcher fs, const StringList &query, float field, const BoolList &exp) {
+    assertNumeric(fs, query, FloatFieldValue(field), exp);
+}
 
-    // test functions
-    void testParseTerm();
-    void testMatchTermSuffix();
-    bool testStrChrFieldSearcher(StrChrFieldSearcher & fs);
-    void testStrChrFieldSearcher();
-    bool testUTF8SubStringFieldSearcher(StrChrFieldSearcher & fs);
-    void testUTF8SubStringFieldSearcher();
-    void testUTF8SuffixStringFieldSearcher();
-    void testUTF8FlexibleStringFieldSearcher();
-    void testUTF8ExactStringFieldSearcher();
-    void testIntFieldSearcher();
-    void testFloatFieldSearcher();
-    bool testStringFieldInfo(StrChrFieldSearcher & fs);
-    void testSnippetModifierSearcher();
-    void testSnippetModifier();
-    void testFieldSearchSpec();
-    void testSnippetModifierManager();
-    void testStripIndexes();
-    void requireThatCountWordsIsWorking();
+void assertFloat(FloatFieldSearcher fs, const std::string &term, float field, bool exp) {
+    assertFloat(fs, StringList().add(term), field, BoolList().add(exp));
+}
 
-public:
-    int Main();
-};
+void assertFloat(FloatFieldSearcher fs, const StringList &query, const FloatList &field, const HitsList &exp) {
+    assertSearch(fs, query, getFieldValue(field), exp);
+}
+
+void assertFloat(FloatFieldSearcher fs, const std::string &term, const FloatList &field, const Hits &exp) {
+    assertFloat(fs, StringList().add(term), field, HitsList().add(exp));
+}
+
+bool
+assertFieldInfo(StrChrFieldSearcher &fs, const StringList &query, const std::string &fv, const FieldInfoList &exp) {
+    return assertFieldInfo(fs, query, StringFieldValue(fv), exp);
+}
+
+bool
+assertFieldInfo(StrChrFieldSearcher &fs, const StringList &query, const StringList &fv, const FieldInfoList &exp) {
+    return assertFieldInfo(fs, query, getFieldValue(fv), exp);
+}
+bool
+assertFieldInfo(StrChrFieldSearcher &fs, const std::string &term, const StringList &fv, const QTFieldInfo &exp) {
+    return assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+}
+
+bool
+assertFieldInfo(StrChrFieldSearcher &fs, const std::string &term, const std::string &fv, const QTFieldInfo &exp) {
+    return assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+}
+
+void assertFieldInfo(IntFieldSearcher fs, const StringList &query, int64_t fv, const FieldInfoList &exp) {
+    assertFieldInfo(fs, query, LongFieldValue(fv), exp);
+}
+
+void assertFieldInfo(IntFieldSearcher fs, const StringList &query, const LongList &fv, const FieldInfoList &exp) {
+    assertFieldInfo(fs, query, getFieldValue(fv), exp);
+}
+
+void assertFieldInfo(IntFieldSearcher fs, const std::string &term, int64_t fv, const QTFieldInfo &exp) {
+    assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+}
+
+void assertFieldInfo(IntFieldSearcher fs, const std::string &term, const LongList &fv, const QTFieldInfo &exp) {
+    assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+}
+
+void assertFieldInfo(FloatFieldSearcher fs, const StringList &query, float fv, const FieldInfoList &exp) {
+    assertFieldInfo(fs, query, FloatFieldValue(fv), exp);
+}
+
+void
+assertFieldInfo(FloatFieldSearcher fs, const StringList &query, const FloatList &fv, const FieldInfoList &exp) {
+    assertFieldInfo(fs, query, getFieldValue(fv), exp);
+}
+
+/** float field searcher **/
+void assertFieldInfo(FloatFieldSearcher fs, const std::string &term, float fv, const QTFieldInfo &exp) {
+    assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+}
+
+void assertFieldInfo(FloatFieldSearcher fs, const std::string &term, const FloatList &fv, const QTFieldInfo &exp) {
+    assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+}
+
+
+/** snippet modifer searcher **/
+void assertSnippetModifier(const std::string &term, const std::string &fv, const std::string &exp) {
+    assertSnippetModifier(StringList().add(term), fv, exp);
+}
+
 
 ArrayFieldValue
-SearcherTest::getFieldValue(const StringList & fv)
+getFieldValue(const StringList & fv)
 {
 
     static ArrayDataType type(*DataType::STRING);
@@ -262,7 +245,7 @@ SearcherTest::getFieldValue(const StringList & fv)
 }
 
 ArrayFieldValue
-SearcherTest::getFieldValue(const LongList & fv)
+getFieldValue(const LongList & fv)
 {
     static ArrayDataType type(*DataType::LONG);
     ArrayFieldValue afv(type);
@@ -273,7 +256,7 @@ SearcherTest::getFieldValue(const LongList & fv)
 }
 
 ArrayFieldValue
-SearcherTest::getFieldValue(const FloatList & fv)
+getFieldValue(const FloatList & fv)
 {
     static ArrayDataType type(*DataType::FLOAT);
     ArrayFieldValue afv(type);
@@ -284,7 +267,7 @@ SearcherTest::getFieldValue(const FloatList & fv)
 }
 
 bool
-SearcherTest::assertMatchTermSuffix(const std::string & term, const std::string & word)
+assertMatchTermSuffix(const std::string & term, const std::string & word)
 {
     EmptyQueryNodeResult eqnr;
     QueryTerm qa(eqnr, term, "index", QueryTerm::WORD);
@@ -297,7 +280,7 @@ SearcherTest::assertMatchTermSuffix(const std::string & term, const std::string 
 }
 
 void
-SearcherTest::assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const BoolList & exp)
+assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const BoolList & exp)
 {
     HitsList hl;
     for (size_t i = 0; i < exp.size(); ++i) {
@@ -307,7 +290,7 @@ SearcherTest::assertNumeric(FieldSearcher & fs, const StringList & query, const 
 }
 
 std::vector<QueryTerm>
-SearcherTest::performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv)
+performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv)
 {
     Query q(query);
 
@@ -328,7 +311,7 @@ SearcherTest::performSearch(FieldSearcher & fs, const StringList & query, const 
 }
 
 void
-SearcherTest::assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const HitsList & exp)
+assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const HitsList & exp)
 {
     std::vector<QueryTerm> qtv = performSearch(fs, query, fv);
     EXPECT_EQUAL(qtv.size(), exp.size());
@@ -344,7 +327,7 @@ SearcherTest::assertSearch(FieldSearcher & fs, const StringList & query, const F
 }
 
 bool
-SearcherTest::assertFieldInfo(FieldSearcher & fs, const StringList & query,
+assertFieldInfo(FieldSearcher & fs, const StringList & query,
                               const FieldValue & fv, const FieldInfoList & exp)
 {
     std::vector<QueryTerm> qtv = performSearch(fs, query, fv);
@@ -359,7 +342,7 @@ SearcherTest::assertFieldInfo(FieldSearcher & fs, const StringList & query,
 }
 
 void
-SearcherTest::assertSnippetModifier(const StringList & query, const std::string & fv, const std::string & exp)
+assertSnippetModifier(const StringList & query, const std::string & fv, const std::string & exp)
 {
     UTF8SubstringSnippetModifier mod;
     performSearch(mod, query, StringFieldValue(fv));
@@ -369,8 +352,7 @@ SearcherTest::assertSnippetModifier(const StringList & query, const std::string 
     EXPECT_EQUAL(actual, exp);
 }
 
-void
-SearcherTest::assertSnippetModifier(SnippetModifierSetup & setup, const FieldValue & fv, const std::string & exp)
+void assertSnippetModifier(SnippetModifierSetup & setup, const FieldValue & fv, const std::string & exp)
 {
     FieldValue::UP mfv = setup.modifier.modify(fv);
     const document::LiteralFieldValueB & lfv = static_cast<const document::LiteralFieldValueB &>(*mfv.get());
@@ -379,8 +361,7 @@ SearcherTest::assertSnippetModifier(SnippetModifierSetup & setup, const FieldVal
     EXPECT_EQUAL(actual, exp);
 }
 
-void
-SearcherTest::assertQueryTerms(const SnippetModifierManager & man, FieldIdT fId, const StringList & terms)
+void assertQueryTerms(const SnippetModifierManager & man, FieldIdT fId, const StringList & terms)
 {
     if (terms.size() == 0) {
         ASSERT_TRUE(man.getModifiers().getModifier(fId) == NULL);
@@ -396,43 +377,42 @@ SearcherTest::assertQueryTerms(const SnippetModifierManager & man, FieldIdT fId,
     }
 }
 
-bool
-SearcherTest::assertCountWords(size_t numWords, const std::string & field)
+bool assertCountWords(size_t numWords, const std::string & field)
 {
     FieldRef ref(field.c_str(), field.size());
     return EXPECT_EQUAL(numWords, FieldSearcher::countWords(ref));
 }
 
-void
-SearcherTest::testParseTerm()
-{
-    ASSERT_TRUE(Query::parseQueryTerm("index:term").first == "index");
-    ASSERT_TRUE(Query::parseQueryTerm("index:term").second == "term");
-    ASSERT_TRUE(Query::parseQueryTerm("term").first == "");
-    ASSERT_TRUE(Query::parseQueryTerm("term").second == "term");
-    ASSERT_TRUE(Query::parseTerm("*substr*").first == "substr");
-    ASSERT_TRUE(Query::parseTerm("*substr*").second == QueryTerm::SUBSTRINGTERM);
-    ASSERT_TRUE(Query::parseTerm("*suffix").first == "suffix");
-    ASSERT_TRUE(Query::parseTerm("*suffix").second == QueryTerm::SUFFIXTERM);
-    ASSERT_TRUE(Query::parseTerm("prefix*").first == "prefix");
-    ASSERT_TRUE(Query::parseTerm("prefix*").second == QueryTerm::PREFIXTERM);
-    ASSERT_TRUE(Query::parseTerm("term").first == "term");
-    ASSERT_TRUE(Query::parseTerm("term").second == QueryTerm::WORD);
-}
-
-void
-SearcherTest::testMatchTermSuffix()
-{
-    EXPECT_EQUAL(assertMatchTermSuffix("a",      "vespa"), true);
-    EXPECT_EQUAL(assertMatchTermSuffix("spa",    "vespa"), true);
-    EXPECT_EQUAL(assertMatchTermSuffix("vespa",  "vespa"), true);
-    EXPECT_EQUAL(assertMatchTermSuffix("vvespa", "vespa"), false);
-    EXPECT_EQUAL(assertMatchTermSuffix("fspa",   "vespa"), false);
-    EXPECT_EQUAL(assertMatchTermSuffix("v",      "vespa"), false);
-}
-
 bool
-SearcherTest::testStrChrFieldSearcher(StrChrFieldSearcher & fs)
+testStringFieldInfo(StrChrFieldSearcher & fs)
+{
+    assertString(fs,    "foo", StringList().add("foo bar baz").add("foo bar").add("baz foo"), Hits().add(0).add(3).add(6));
+    assertString(fs,    StringList().add("foo").add("bar"), StringList().add("foo bar baz").add("foo bar").add("baz foo"),
+                 HitsList().add(Hits().add(0).add(3).add(6)).add(Hits().add(1).add(4)));
+
+    bool retval = true;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo", QTFieldInfo(0, 1, 1)))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "bar", "foo", QTFieldInfo(0, 0, 1)))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "bar", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "baz", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "qux", "foo bar baz", QTFieldInfo(0, 0, 3)))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo foo foo", QTFieldInfo(0, 3, 3)))) retval = false;
+    // query term size > last term size
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "runner", "Road Runner Disco", QTFieldInfo(0, 1, 3)))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("roadrun").add("runner"), "Road Runner Disco",
+                                     FieldInfoList().add(QTFieldInfo(0, 0, 3)).add(QTFieldInfo(0, 1, 3))))) retval = false;
+    // multiple terms
+    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", StringList().add("foo bar baz").add("foo bar"),
+                                     QTFieldInfo(0, 2, 5)))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("foo").add("baz"), "foo bar baz",
+                                     FieldInfoList().add(QTFieldInfo(0, 1, 3)).add(QTFieldInfo(0, 1, 3))))) retval = false;
+    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("foo").add("baz"), StringList().add("foo bar baz").add("foo bar"),
+                                     FieldInfoList().add(QTFieldInfo(0, 2, 5)).add(QTFieldInfo(0, 1, 5))))) retval = false;
+    return retval;
+}
+bool
+testStrChrFieldSearcher(StrChrFieldSearcher & fs)
 {
     std::string field = "operators and operator overloading with utf8 char oe = \xc3\x98";
     assertString(fs, "oper",  field, Hits());
@@ -469,9 +449,31 @@ SearcherTest::testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     return true;
 }
 
-void
-SearcherTest::testStrChrFieldSearcher()
-{
+    TEST("verify correct term parsing") {
+        ASSERT_TRUE(Query::parseQueryTerm("index:term").first == "index");
+        ASSERT_TRUE(Query::parseQueryTerm("index:term").second == "term");
+        ASSERT_TRUE(Query::parseQueryTerm("term").first == "");
+        ASSERT_TRUE(Query::parseQueryTerm("term").second == "term");
+        ASSERT_TRUE(Query::parseTerm("*substr*").first == "substr");
+        ASSERT_TRUE(Query::parseTerm("*substr*").second == QueryTerm::SUBSTRINGTERM);
+        ASSERT_TRUE(Query::parseTerm("*suffix").first == "suffix");
+        ASSERT_TRUE(Query::parseTerm("*suffix").second == QueryTerm::SUFFIXTERM);
+        ASSERT_TRUE(Query::parseTerm("prefix*").first == "prefix");
+        ASSERT_TRUE(Query::parseTerm("prefix*").second == QueryTerm::PREFIXTERM);
+        ASSERT_TRUE(Query::parseTerm("term").first == "term");
+        ASSERT_TRUE(Query::parseTerm("term").second == QueryTerm::WORD);
+    }
+
+    TEST("suffix matching") {
+        EXPECT_EQUAL(assertMatchTermSuffix("a",      "vespa"), true);
+        EXPECT_EQUAL(assertMatchTermSuffix("spa",    "vespa"), true);
+        EXPECT_EQUAL(assertMatchTermSuffix("vespa",  "vespa"), true);
+        EXPECT_EQUAL(assertMatchTermSuffix("vvespa", "vespa"), false);
+        EXPECT_EQUAL(assertMatchTermSuffix("fspa",   "vespa"), false);
+        EXPECT_EQUAL(assertMatchTermSuffix("v",      "vespa"), false);
+    }
+
+TEST("Test basic strchrfield searchers") {
     {
         UTF8StrChrFieldSearcher fs(0);
         EXPECT_TRUE(testStrChrFieldSearcher(fs));
@@ -483,7 +485,7 @@ SearcherTest::testStrChrFieldSearcher()
 }
 
 bool
-SearcherTest::testUTF8SubStringFieldSearcher(StrChrFieldSearcher & fs)
+testUTF8SubStringFieldSearcher(StrChrFieldSearcher & fs)
 {
     std::string field = "operators and operator overloading";
     assertString(fs, "rsand", field, Hits());
@@ -502,9 +504,7 @@ SearcherTest::testUTF8SubStringFieldSearcher(StrChrFieldSearcher & fs)
     return true;
 }
 
-void
-SearcherTest::testUTF8SubStringFieldSearcher()
-{
+TEST("utf8 substring search") {
     {
         UTF8SubStringFieldSearcher fs(0);
         EXPECT_TRUE(testUTF8SubStringFieldSearcher(fs));
@@ -525,9 +525,15 @@ SearcherTest::testUTF8SubStringFieldSearcher()
     }
 }
 
-void
-SearcherTest::testUTF8SuffixStringFieldSearcher()
+TEST("utf8 substring search with empty term")
 {
+    UTF8SubStringFieldSearcher fs(0);
+    EXPECT_TRUE(testUTF8SubStringFieldSearcher(fs));
+    assertString(fs, "", "abc", Hits());
+    assertFieldInfo(fs, "", "abc", QTFieldInfo().setFieldLength(0));
+}
+
+TEST("utf8 suffix search") {
     UTF8SuffixStringFieldSearcher fs(0);
     std::string field = "operators and operator overloading";
     assertString(fs, "rsand", field, Hits());
@@ -540,9 +546,7 @@ SearcherTest::testUTF8SuffixStringFieldSearcher()
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
 
-void
-SearcherTest::testUTF8ExactStringFieldSearcher()
-{
+TEST("utf8 exact match") {
     UTF8ExactStringFieldSearcher fs(0);
     // regular
     TEST_DO(assertString(fs, "vespa", "vespa", Hits().add(0)));
@@ -559,9 +563,7 @@ SearcherTest::testUTF8ExactStringFieldSearcher()
     TEST_DO(assertString(fs, "hütte",  "hütter", Hits()));
 }
 
-void
-SearcherTest::testUTF8FlexibleStringFieldSearcher()
-{
+TEST("utf8 flexible searcher"){
     UTF8FlexibleStringFieldSearcher fs(0);
     // regular
     assertString(fs, "vespa", "vespa", Hits().add(0));
@@ -590,8 +592,7 @@ SearcherTest::testUTF8FlexibleStringFieldSearcher()
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
 
-void
-SearcherTest::testIntFieldSearcher()
+TEST("integer search")
 {
     IntFieldSearcher fs;
     assertInt(fs,     "10",  10, true);
@@ -625,8 +626,7 @@ SearcherTest::testIntFieldSearcher()
                     FieldInfoList().add(QTFieldInfo(0, 2, 4)).add(QTFieldInfo(0, 1, 4)));
 }
 
-void
-SearcherTest::testFloatFieldSearcher()
+TEST("floating point search")
 {
     FloatFieldSearcher fs;
     assertFloat(fs,         "10",    10, true);
@@ -661,38 +661,7 @@ SearcherTest::testFloatFieldSearcher()
                     FieldInfoList().add(QTFieldInfo(0, 2, 4)).add(QTFieldInfo(0, 1, 4)));
 }
 
-bool
-SearcherTest::testStringFieldInfo(StrChrFieldSearcher & fs)
-{
-    assertString(fs,    "foo", StringList().add("foo bar baz").add("foo bar").add("baz foo"), Hits().add(0).add(3).add(6));
-    assertString(fs,    StringList().add("foo").add("bar"), StringList().add("foo bar baz").add("foo bar").add("baz foo"),
-                 HitsList().add(Hits().add(0).add(3).add(6)).add(Hits().add(1).add(4)));
-
-    bool retval = true;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo", QTFieldInfo(0, 1, 1)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "bar", "foo", QTFieldInfo(0, 0, 1)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "bar", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "baz", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "qux", "foo bar baz", QTFieldInfo(0, 0, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo foo foo", QTFieldInfo(0, 3, 3)))) retval = false;
-    // query term size > last term size
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "runner", "Road Runner Disco", QTFieldInfo(0, 1, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("roadrun").add("runner"), "Road Runner Disco",
-                               FieldInfoList().add(QTFieldInfo(0, 0, 3)).add(QTFieldInfo(0, 1, 3))))) retval = false;
-    // multiple terms
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", StringList().add("foo bar baz").add("foo bar"),
-                                    QTFieldInfo(0, 2, 5)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("foo").add("baz"), "foo bar baz",
-                    FieldInfoList().add(QTFieldInfo(0, 1, 3)).add(QTFieldInfo(0, 1, 3))))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("foo").add("baz"), StringList().add("foo bar baz").add("foo bar"),
-                    FieldInfoList().add(QTFieldInfo(0, 2, 5)).add(QTFieldInfo(0, 1, 5))))) retval = false;
-    return retval;
-}
-
-void
-SearcherTest::testSnippetModifierSearcher()
-{
+TEST("Snippet modifier search") {
     // ascii
     assertSnippetModifier("f", "foo", "\x1F""f\x1Foo");
     assertSnippetModifier("o", "foo", "f\x1Fo\x1F\x1Fo\x1F");
@@ -735,9 +704,7 @@ SearcherTest::testSnippetModifierSearcher()
     }
 }
 
-void
-SearcherTest::testSnippetModifier()
-{
+TEST("snippet modifier") {
     { // string field value
         SnippetModifierSetup sms(StringList().add("ab"));
         // multiple invokations
@@ -765,9 +732,7 @@ SearcherTest::testSnippetModifier()
     }
 }
 
-void
-SearcherTest::testFieldSearchSpec()
-{
+TEST("FieldSearchSpec constrution") {
     {
         FieldSearchSpec f;
         EXPECT_FALSE(f.valid());
@@ -785,9 +750,7 @@ SearcherTest::testFieldSearchSpec()
     }
 }
 
-void
-SearcherTest::testSnippetModifierManager()
-{
+TEST("snippet modifier manager") {
     FieldSearchSpecMapT specMap;
     specMap[0] = FieldSearchSpec(0, "f0", VsmfieldsConfig::Fieldspec::AUTOUTF8, "substring", 1000);
     specMap[1] = FieldSearchSpec(1, "f1", VsmfieldsConfig::Fieldspec::AUTOUTF8, "", 1000);
@@ -844,8 +807,7 @@ SearcherTest::testSnippetModifierManager()
     }
 }
 
-void
-SearcherTest::testStripIndexes()
+TEST("Stripping of indexes")
 {
     EXPECT_EQUAL("f", FieldSearchSpecMap::stripNonFields("f"));
     EXPECT_EQUAL("f", FieldSearchSpecMap::stripNonFields("f[0]"));
@@ -857,9 +819,7 @@ SearcherTest::testStripIndexes()
     EXPECT_EQUAL("f.value", FieldSearchSpecMap::stripNonFields("f{\"a 0\"}"));
 }
 
-void
-SearcherTest::requireThatCountWordsIsWorking()
-{
+TEST("counting of words") {
     EXPECT_TRUE(assertCountWords(0, ""));
     EXPECT_TRUE(assertCountWords(0, "?"));
     EXPECT_TRUE(assertCountWords(1, "foo"));
@@ -874,32 +834,6 @@ SearcherTest::requireThatCountWordsIsWorking()
     assertString(fs, StringList().add("bb").add("not"), field, HitsList().add(Hits().add(2)).add(Hits()));
 }
 
-int
-SearcherTest::Main()
-{
-    TEST_INIT("searcher_test");
 
-    testFieldSearchSpec();
-    testParseTerm();
-    testMatchTermSuffix();
-    testStrChrFieldSearcher();
-    testUTF8SubStringFieldSearcher();
-    testUTF8SuffixStringFieldSearcher();
-    testUTF8FlexibleStringFieldSearcher();
-    testUTF8ExactStringFieldSearcher();
-    testIntFieldSearcher();
-    testFloatFieldSearcher();
-
-    testSnippetModifierSearcher();
-    testSnippetModifier();
-    testSnippetModifierManager();
-    testStripIndexes();
-    requireThatCountWordsIsWorking();
-
-    TEST_DONE();
-}
-
-}
-
-TEST_APPHOOK(vsm::SearcherTest);
+TEST_MAIN() { TEST_RUN_ALL(); }
 

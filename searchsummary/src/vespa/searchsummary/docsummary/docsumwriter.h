@@ -5,7 +5,6 @@
 #pragma once
 
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchsummary/docsummary/urlresult.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/docsumstore.h>
@@ -35,7 +34,7 @@ public:
             : mustSkip(false), allGenerated(false), mustRepack(true),
               outputClassId(ResultConfig::NoClassID()),
               outputClass(NULL), outputClassInfo(NULL), inputClass(NULL)
-        {}
+        { }
     };
 
     virtual ~IDocsumWriter() {}

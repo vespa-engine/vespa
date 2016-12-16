@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
-#include <utility>
-
 #include "docsumstorevalue.h"
 
 namespace search {
@@ -28,12 +25,12 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~IDocsumStore(void) { }
+    virtual ~IDocsumStore() { }
 
     /**
      * @return total number of documents.
      **/
-    virtual uint32_t getNumDocs() = 0;
+    virtual uint32_t getNumDocs() const = 0;
 
     /**
      * Get a reference to a docsum blob in memory.  The docsum store

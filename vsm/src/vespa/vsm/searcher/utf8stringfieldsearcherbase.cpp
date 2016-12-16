@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/vsm/searcher/utf8stringfieldsearcherbase.h>
 
 using search::QueryTerm;
 using search::QueryTermList;
 using search::byte;
 
-namespace vsm
-{
+namespace vsm {
 
 const byte *
 UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * dstbuf, size_t & tokenlen)
@@ -160,6 +159,7 @@ UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
 size_t
 UTF8StringFieldSearcherBase::matchTermSubstring(const FieldRef & f, QueryTerm & qt)
 {
+    if (qt.termLen() == 0) { return 0; }
     const byte * n = reinterpret_cast<const byte *> (f.c_str());
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
@@ -267,6 +267,53 @@ UTF8StringFieldSearcherBase::isSeparatorCharacter(ucs4_t c)
     return ((c < 0x20) && (c != '\n') && (c != '\t'));
 }
 
+template <typename T>
+size_t
+UTF8StringFieldSearcherBase::skipSeparators(const search::byte * p, size_t sz, T & dstbuf) {
+    const search::byte * e(p+sz);
+    const search::byte * b(p);
 
+    for(; p < e; ) {
+        ucs4_t c(*p);
+        const search::byte * oldP(p);
+        if (c < 128) {
+            p++;
+            if (!isSeparatorCharacter(c)) {
+                dstbuf.onCharacter(_foldCase[c], (oldP - b));
+            }
+        } else {
+            c = Fast_UnicodeUtil::GetUTF8CharNonAscii(p);
+            const char *repl = ReplacementString(c);
+            if (repl != NULL) {
+                size_t repllen = strlen(repl);
+                if (repllen > 0) {
+                    ucs4_t * buf = dstbuf.getBuf();
+                    ucs4_t * newBuf = Fast_UnicodeUtil::ucs4copy(buf, repl);
+                    if (dstbuf.hasOffsets()) {
+                        for (; buf < newBuf; ++buf) {
+                            dstbuf.incBuf(1);
+                            dstbuf.onOffset(oldP - b);
+                        }
+                    } else {
+                        dstbuf.incBuf(newBuf - buf);
+                    }
+                }
+            } else {
+                c = ToFold(c);
+                dstbuf.onCharacter(c, (oldP - b));
+            }
+            if (c == _BadUTF8Char) {
+                _badUtf8Count++;
+            } else {
+                _utf8Count[p-oldP-1]++;
+            }
+        }
+    }
+    assert(dstbuf.valid());
+    return dstbuf.size();
+}
+
+template unsigned long UTF8StringFieldSearcherBase::skipSeparators<UTF8StringFieldSearcherBase::BufferWrapper>(unsigned char const*, unsigned long, UTF8StringFieldSearcherBase::BufferWrapper&);
+template unsigned long UTF8StringFieldSearcherBase::skipSeparators<UTF8StringFieldSearcherBase::OffsetWrapper>(unsigned char const*, unsigned long, UTF8StringFieldSearcherBase::OffsetWrapper&);
 
 }

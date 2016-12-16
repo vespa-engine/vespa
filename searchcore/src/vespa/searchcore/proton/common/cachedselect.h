@@ -1,19 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/select/node.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/document/select/resultset.h>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace document {
     class DocumentTypeRepo;
+    class Document;
+    namespace select { class Node; }
+}
+namespace search {
+    class AttributeVector;
+    class IAttributeManager;
+    namespace index { class Schema; }
 }
 
 namespace proton {
-
-class AttributeManager;
 
 /**
  * Cached selection expression, to avoid pruning expression for each
@@ -24,7 +26,7 @@ class CachedSelect
 public:
     typedef std::shared_ptr<CachedSelect> SP;
     // Single value attributes referenced from selection expression
-    std::vector<search::AttributeVector::SP> _attributes;
+    std::vector<std::shared_ptr<search::AttributeVector>> _attributes;
 
     // Pruned selection expression, specific for a document type
     std::unique_ptr<document::select::Node> _select;
@@ -44,7 +46,8 @@ public:
      */
     std::unique_ptr<document::select::Node> _attrSelect;
     
-    CachedSelect(void);
+    CachedSelect();
+    ~CachedSelect();
 
     void
     set(const vespalib::string &selection,

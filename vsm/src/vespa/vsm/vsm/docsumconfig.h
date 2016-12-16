@@ -11,14 +11,12 @@ namespace vsm {
 class DynamicDocsumConfig : public search::docsummary::DynamicDocsumConfig
 {
 public:
-    DynamicDocsumConfig(search::docsummary::IDocsumEnvironment * env, search::docsummary::DynamicDocsumWriter * writer) :
-        search::docsummary::DynamicDocsumConfig(env, writer)
-    {
-    }
+    using Parent = search::docsummary::DynamicDocsumConfig;
+    using Parent::Parent;
 private:
-    virtual search::docsummary::IDocsumFieldWriter::UP
+    std::unique_ptr<search::docsummary::IDocsumFieldWriter>
         createFieldWriter(const string & fieldName, const string & overrideName,
-                          const string & cf, bool & rc);
+                          const string & cf, bool & rc) override;
 };
 
 }

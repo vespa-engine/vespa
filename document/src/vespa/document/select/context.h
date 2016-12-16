@@ -4,61 +4,29 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace document
-{
+namespace document{
 
 class Document;
 class DocumentId;
 class DocumentUpdate;
 
-namespace select
-{
-
-class Value;
+namespace select {
 
 class Context
 {
 public:
     typedef vespalib::hash_map<vespalib::string, double> VariableMap;
 
-    Context(void)
-        : _doc(NULL),
-          _docId(NULL),
-          _docUpdate(NULL),
-          _variables()
-    {
-    }
-
-    Context(const Document& doc)
-        : _doc(&doc),
-          _docId(NULL),
-          _docUpdate(NULL),
-          _variables()
-    {
-    }
-    
-    Context(const DocumentId& docId)
-        : _doc(NULL),
-          _docId(&docId),
-          _docUpdate(NULL),
-          _variables()
-    {
-    }
-    
-    Context(const DocumentUpdate& docUpdate)
-        : _doc(NULL),
-          _docId(NULL),
-          _docUpdate(&docUpdate),
-          _variables()
-    {
-    }
-
+    Context();
+    Context(const Document& doc);
+    Context(const DocumentId& docId);
+    Context(const DocumentUpdate& docUpdate);
     virtual ~Context();
 
-    const Document* _doc;
-    const DocumentId* _docId;
-    const DocumentUpdate* _docUpdate;
-    VariableMap _variables;
+    const Document       * _doc;
+    const DocumentId     * _docId;
+    const DocumentUpdate * _docUpdate;
+    VariableMap            _variables;
 };
 
 } // select

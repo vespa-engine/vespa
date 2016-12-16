@@ -2,11 +2,9 @@
 // Copyright (C) 1998-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
-#include <zlib.h>
 
 LOG_SETUP(".searchlib.docsummary.resultpacker");
 
@@ -14,7 +12,7 @@ namespace search {
 namespace docsummary {
 
 void
-ResultPacker::WarnType(ResType type)
+ResultPacker::WarnType(ResType type) const
 {
     LOG(debug,
         "ResultPacker: got '%s', expected '%s' "
@@ -23,6 +21,25 @@ ResultPacker::WarnType(ResType type)
         GetResTypeName(_cfgEntry->_type));
 }
 
+bool ResultPacker::CheckEntry(ResType type)
+{
+    if (_error)
+        return false;
+
+    bool rc = (_cfgEntry != NULL &&
+               IsBinaryCompatible(_cfgEntry->_type, type));
+
+    if (rc) {
+        if (_cfgEntry->_type != type) {
+            WarnType(type);
+        }
+        _cfgEntry = _resClass->GetEntry(++_entryIdx);
+    } else {
+        SetFormatError(type);
+    }
+
+    return rc;
+}
 
 void
 ResultPacker::SetFormatError(ResType type)

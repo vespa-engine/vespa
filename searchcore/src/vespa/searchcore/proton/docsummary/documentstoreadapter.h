@@ -47,7 +47,7 @@ public:
         return _resultClass;
     }
 
-    uint32_t getNumDocs() override { return _docStore.nextId(); }
+    uint32_t getNumDocs() const override { return _docStore.nextId(); }
     search::docsummary::DocsumStoreValue getMappedDocsum(uint32_t docId, bool useSlimeInsideFields) override;
     uint32_t getSummaryClassId() const override { return _resultClass->GetClassID(); }
 
