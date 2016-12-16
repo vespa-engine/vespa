@@ -11,12 +11,10 @@
 #include <vespa/vsm/searcher/strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8flexiblestringfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8exactstringfieldsearcher.h>
-#include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
-#include <vespa/vsm/vsm/fieldsearchspec.h>
 
 using namespace document;
 using search::EmptyQueryNodeResult;
@@ -527,6 +525,14 @@ TEST("utf8 substring search") {
     }
 }
 
+TEST("utf8 substring search with empty term")
+{
+    UTF8SubStringFieldSearcher fs(0);
+    EXPECT_TRUE(testUTF8SubStringFieldSearcher(fs));
+    assertString(fs, "", "abc", Hits());
+    assertFieldInfo(fs, "", "abc", QTFieldInfo().setFieldLength(0));
+}
+
 TEST("utf8 suffix search") {
     UTF8SuffixStringFieldSearcher fs(0);
     std::string field = "operators and operator overloading";
@@ -586,7 +592,7 @@ TEST("utf8 flexible searcher"){
     EXPECT_TRUE(testStringFieldInfo(fs));
 }
 
-TEST("integre search")
+TEST("integer search")
 {
     IntFieldSearcher fs;
     assertInt(fs,     "10",  10, true);
