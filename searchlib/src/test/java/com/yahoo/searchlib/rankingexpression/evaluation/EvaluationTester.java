@@ -84,7 +84,7 @@ public class EvaluationTester {
         else { // convert to indexed
             TensorType.Builder builder = new TensorType.Builder();
             for (TensorType.Dimension dimension : tensor.type().dimensions())
-                builder.indexedUnbound(dimension.name());
+                builder.indexed(dimension.name());
             return builder.build();
         }
     }

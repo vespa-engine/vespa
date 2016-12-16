@@ -2,8 +2,6 @@ package com.yahoo.tensor;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
@@ -34,7 +32,7 @@ public class IndexedTensorTestCase {
         assertEquals("{3.5}", singleValue.toString());
         assertEquals("{3.5}", Tensor.from(TensorType.empty, "{3.5}").toString());
 
-        TensorType type = new TensorType.Builder().indexedUnbound("x").indexedUnbound("y").build();
+        TensorType type = new TensorType.Builder().indexed("x").indexed("y").build();
         Tensor emptyWithDimensions = Tensor.Builder.of(type).build();
         assertTrue(emptyWithDimensions instanceof IndexedTensor);
         assertEquals("tensor(x[],y[]):{}", emptyWithDimensions.toString());
@@ -46,22 +44,22 @@ public class IndexedTensorTestCase {
 
     @Test
     public void testBoundBuilding() {
-        TensorType type = new TensorType.Builder().indexedBound("v", vSize)
-                                                  .indexedBound("w", wSize)
-                                                  .indexedBound("x", xSize)
-                                                  .indexedBound("y", ySize)
-                                                  .indexedBound("z", zSize)
+        TensorType type = new TensorType.Builder().indexed("v", vSize)
+                                                  .indexed("w", wSize)
+                                                  .indexed("x", xSize)
+                                                  .indexed("y", ySize)
+                                                  .indexed("z", zSize)
                                                   .build();
         assertBuildingVWXYZ(type);
     }
 
     @Test
     public void testUnboundBuilding() {
-        TensorType type = new TensorType.Builder().indexedUnbound("w")
-                                                  .indexedUnbound("v")
-                                                  .indexedUnbound("x")
-                                                  .indexedUnbound("y")
-                                                  .indexedUnbound("z").build();
+        TensorType type = new TensorType.Builder().indexed("w")
+                                                  .indexed("v")
+                                                  .indexed("x")
+                                                  .indexed("y")
+                                                  .indexed("z").build();
         assertBuildingVWXYZ(type);
     }
     

@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +148,7 @@ public class TensorType {
 
         public final String name() { return name; }
 
-        /** Returns the size of this dimension if it is indexedUnbound, empty otherwise */
+        /** Returns the size of this dimension if it is bound, empty otherwise */
         public abstract Optional<Integer> size();
 
         public abstract Type type();
@@ -312,12 +311,11 @@ public class TensorType {
             return this;
         }
 
-        // TODO: Rename this and the next to "indexed" as they can be separated parameters (and check system tests)
-        public Builder indexedBound(String name, int size) {
-            return add(new IndexedBoundDimension(name, size));
-        }
+        /** Create a bound indexed dimension */
+        public Builder indexed(String name, int size) { return add(new IndexedBoundDimension(name, size)); }
 
-        public Builder indexedUnbound(String name) {
+        /** Create an unbound indexed dimension */
+        public Builder indexed(String name) {
             return add(new IndexedUnboundDimension(name));
         }
 
@@ -332,7 +330,7 @@ public class TensorType {
         public Builder dimension(String name, Dimension.Type type) {
             switch (type) {
                 case mapped : mapped(name); break;
-                case indexedUnbound : indexedUnbound(name); break;
+                case indexedUnbound : indexed(name); break;
                 default : throw new IllegalArgumentException("This can not create a dimension of type " + type);
             }
             return this;

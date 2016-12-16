@@ -48,9 +48,9 @@ class TensorTypeParser {
             String dimensionName = matcher.group(1);
             String dimensionSize = matcher.group(2);
             if (dimensionSize.isEmpty()) {
-                builder.indexedUnbound(dimensionName);
+                builder.indexed(dimensionName);
             } else {
-                builder.indexedBound(dimensionName, Integer.valueOf(dimensionSize));
+                builder.indexed(dimensionName, Integer.valueOf(dimensionSize));
             }
             return true;
         }
