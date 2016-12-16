@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/base/testdocrepo.h>
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/document/base/documentcalculator.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
-
-#include <fstream>
 
 namespace document {
 
@@ -59,7 +56,7 @@ DocumentCalculatorTest::testConstant() {
 
     Document doc(*_testRepo.getDocumentType("testdoctype1"),
                  DocumentId("doc:test:foo"));
-    CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, variables));
+    CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
 void
@@ -69,7 +66,7 @@ DocumentCalculatorTest::testSimple() {
 
     Document doc(*_testRepo.getDocumentType("testdoctype1"),
                  DocumentId("doc:test:foo"));
-    CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, variables));
+    CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
 void
@@ -81,7 +78,7 @@ DocumentCalculatorTest::testVariables() {
 
     Document doc(*_testRepo.getDocumentType("testdoctype1"),
                  DocumentId("doc:test:foo"));
-    CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, variables));
+    CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
 void
@@ -97,7 +94,7 @@ DocumentCalculatorTest::testFields() {
     doc.setValue(doc.getField("headerval"), IntFieldValue(5));
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
-    CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, variables));
+    CPPUNIT_ASSERT_EQUAL(4.0, calc.evaluate(doc, std::move(variables)));
 }
 
 void
@@ -114,7 +111,7 @@ DocumentCalculatorTest::testFieldsDivZero() {
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(0));
     try {
-        calc.evaluate(doc, variables);
+        calc.evaluate(doc, std::move(variables));
         CPPUNIT_ASSERT(false);
     } catch (const vespalib::IllegalArgumentException& e) {
         // OK
@@ -129,7 +126,7 @@ DocumentCalculatorTest::testDivideByZero() {
     Document doc(*_testRepo.getDocumentType("testdoctype1"),
                  DocumentId("doc:test:foo"));
     try {
-        calc.evaluate(doc, variables);
+        calc.evaluate(doc, std::move(variables));
         CPPUNIT_ASSERT(false);
     } catch (const vespalib::IllegalArgumentException& e) {
         // OK
@@ -144,7 +141,7 @@ DocumentCalculatorTest::testModByZero() {
     Document doc(*_testRepo.getDocumentType("testdoctype1"),
                  DocumentId("doc:test:foo"));
     try {
-        calc.evaluate(doc, variables);
+        calc.evaluate(doc, std::move(variables));
         CPPUNIT_ASSERT(false);
     } catch (const vespalib::IllegalArgumentException& e) {
         // OK
@@ -162,7 +159,7 @@ DocumentCalculatorTest::testFieldNotSet() {
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
     try {
-        calc.evaluate(doc, variables);
+        calc.evaluate(doc, std::move(variables));
         CPPUNIT_ASSERT(false);
     } catch (const vespalib::IllegalArgumentException&) {
         // OK
@@ -181,7 +178,7 @@ DocumentCalculatorTest::testFieldNotFound() {
     doc.setValue(doc.getField("hfloatval"), FloatFieldValue(3.0));
     doc.setValue(doc.getField("headerlongval"), LongFieldValue(2));
     try {
-        calc.evaluate(doc, variables);
+        calc.evaluate(doc, std::move(variables));
         CPPUNIT_ASSERT(false);
     } catch (const vespalib::IllegalArgumentException&) {
         // OK
@@ -196,7 +193,7 @@ DocumentCalculatorTest::testByteSubtractionZeroResult() {
     Document doc(*_testRepo.getDocumentType("testdoctype1"),
                  DocumentId("doc:test:foo"));
     doc.setValue(doc.getField("byteval"), ByteFieldValue(3));
-    CPPUNIT_ASSERT_EQUAL(0.0, calc.evaluate(doc, variables));
+    CPPUNIT_ASSERT_EQUAL(0.0, calc.evaluate(doc, std::move(variables)));
 }
 
 }

@@ -2,6 +2,7 @@
 #include "bucket.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/array.hpp>
 
 
 namespace storage {
@@ -27,8 +28,7 @@ IMPLEMENT_REPLY(SetBucketStateReply)
 CreateBucketCommand::CreateBucketCommand(const document::BucketId& id)
     : MaintenanceCommand(MessageType::CREATEBUCKET, id),
       _active(false)
-{
-}
+{ }
 
 void
 CreateBucketCommand::print(std::ostream& out, bool verbose,
@@ -66,8 +66,7 @@ CreateBucketReply::print(std::ostream& out, bool verbose,
 
 DeleteBucketCommand::DeleteBucketCommand(const document::BucketId& id)
     : MaintenanceCommand(MessageType::DELETEBUCKET, id)
-{
-}
+{ }
 
 void
 DeleteBucketCommand::print(std::ostream& out, bool verbose,
@@ -496,8 +495,9 @@ RequestBucketInfoReply::RequestBucketInfoReply(
         const RequestBucketInfoCommand& cmd)
     : StorageReply(cmd),
       _buckets()
-{
-}
+{ }
+
+RequestBucketInfoReply::~RequestBucketInfoReply() { }
 
 uint32_t
 RequestBucketInfoReply::getMemoryFootprint() const
@@ -618,3 +618,5 @@ SetBucketStateReply::print(std::ostream& out,
 
 } // api
 } // storage
+
+template class vespalib::Array<storage::api::RequestBucketInfoReply::Entry>;

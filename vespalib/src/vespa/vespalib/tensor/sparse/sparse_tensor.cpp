@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
 #include "sparse_tensor_match.h"
@@ -10,6 +9,9 @@
 #include <vespa/vespalib/tensor/tensor_apply.h>
 #include <vespa/vespalib/tensor/tensor_visitor.h>
 #include <vespa/vespalib/eval/operation.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
+#include <vespa/vespalib/util/array_equal.hpp>
 #include <sstream>
 
 using vespalib::eval::TensorSpec;
@@ -306,4 +308,7 @@ SparseTensor::reduce(const eval::BinaryOperation &op,
 }
 
 } // namespace vespalib::tensor
+
 } // namespace vespalib
+
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::tensor::SparseTensorAddressRef, double);

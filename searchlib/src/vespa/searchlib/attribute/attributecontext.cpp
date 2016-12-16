@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".attributecontext");
 #include "attributecontext.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using namespace search;
 using namespace search::attribute;
@@ -37,8 +35,9 @@ AttributeContext::AttributeContext(const IAttributeManager & manager) :
     _attributes(),
     _enumAttributes(),
     _cacheLock()
-{
-}
+{ }
+
+AttributeContext::~AttributeContext() { }
 
 const IAttributeVector *
 AttributeContext::getAttribute(const string & name) const

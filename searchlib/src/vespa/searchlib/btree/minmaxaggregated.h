@@ -3,11 +3,10 @@
 #pragma once
 
 #include <limits>
+#include <stdint.h>
 
-namespace search
-{
-namespace btree
-{
+namespace search {
+namespace btree {
 
 class MinMaxAggregated
 {
@@ -18,26 +17,15 @@ public:
     MinMaxAggregated(void)
         : _min(std::numeric_limits<int32_t>::max()),
           _max(std::numeric_limits<int32_t>::min())
-    {
-    }
+    { }
 
     MinMaxAggregated(int32_t min, int32_t max)
         : _min(min),
           _max(max)
-    {
-    }
+    { }
 
-    int32_t
-    getMin(void) const
-    {
-        return _min;
-    }
-    
-    int32_t
-    getMax(void) const
-    {
-        return _max;
-    }
+    int32_t getMin(void) const { return _min; }
+    int32_t getMax(void) const { return _max; }
 
     void
     add(int32_t val)

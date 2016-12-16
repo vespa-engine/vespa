@@ -58,6 +58,8 @@
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/config/config.h>
 
+template class vespalib::hash_set<metrics::Metric::String>;
+
 namespace metrics {
 
 typedef vespalib::MonitorGuard MetricLockGuard;
@@ -80,7 +82,10 @@ public:
         typedef std::shared_ptr<ConsumerSpec> SP;
 
         vespalib::hash_set<Metric::String> includedMetrics;
-        ConsumerSpec() : includedMetrics() {}
+        ConsumerSpec(ConsumerSpec &&) = default;
+        ConsumerSpec & operator= (ConsumerSpec &&) = default;
+        ConsumerSpec();
+        ~ConsumerSpec();
 
         bool contains(const Metric& m) const {
             return (includedMetrics.find(m.getPath()) != includedMetrics.end());

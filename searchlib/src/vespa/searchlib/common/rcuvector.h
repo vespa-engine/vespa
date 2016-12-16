@@ -16,16 +16,9 @@ class RcuVectorHeld : public vespalib::GenerationHeldBase
     std::unique_ptr<T> _data;
 
 public:
-    RcuVectorHeld(size_t size, std::unique_ptr<T> data)
-        : vespalib::GenerationHeldBase(size),
-          _data(std::move(data))
-    {
-    }
+    RcuVectorHeld(size_t size, std::unique_ptr<T> data);
 
-    virtual
-    ~RcuVectorHeld(void)
-    {
-    }
+    ~RcuVectorHeld();
 };
 
 
@@ -77,14 +70,11 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    RcuVectorBase(size_t initialCapacity, size_t growPercent, size_t growDelta,
-                  GenerationHolder &genHolder);
+    RcuVectorBase(size_t initialCapacity, size_t growPercent, size_t growDelta, GenerationHolder &genHolder);
 
-    RcuVectorBase(GrowStrategy growStrategy, GenerationHolder &genHolder)
-            : RcuVectorBase(growStrategy.getDocsInitialCapacity(),
-                            growStrategy.getDocsGrowPercent(),
-                            growStrategy.getDocsGrowDelta(),
-                            genHolder) {}
+    RcuVectorBase(GrowStrategy growStrategy, GenerationHolder &genHolder);
+
+    ~RcuVectorBase();
 
     /**
      * Return whether all capacity has been used.  If true the next
@@ -101,16 +91,9 @@ public:
     // vector interface
     // no swap method, use reset() to forget old capacity and holds
     // NOTE: Unsafe resize/reserve may invalidate data references held by readers!
-    void unsafe_resize(size_t n) { _data.resize(n); }
-    void unsafe_reserve(size_t n) { _data.reserve(n); }
-    void ensure_size(size_t n, T fill = T()) {
-        if (n > capacity()) {
-            expand(calcSize(n));
-        }
-        while (size() < n) {
-            _data.push_back(fill);
-        }
-    }
+    void unsafe_resize(size_t n);
+    void unsafe_reserve(size_t n);
+    void ensure_size(size_t n, T fill = T());
     void push_back(const T & v) {
         if (_data.size() < _data.capacity()) {
             _data.push_back(v);
@@ -119,9 +102,7 @@ public:
         }
     }
 
-    bool
-    empty(void) const
-    {
+    bool empty() const {
         return _data.empty();
     }
 
@@ -131,97 +112,9 @@ public:
     T & operator[](size_t i) { return _data[i]; }
     const T & operator[](size_t i) const { return _data[i]; }
 
-    void
-    reset(void)
-    {
-        // Assumes no readers at this moment
-        Array().swap(_data);
-        _data.reserve(16);
-    }
-
-    void
-    shrink(size_t newSize) __attribute__((noinline));
+    void reset();
+    void shrink(size_t newSize) __attribute__((noinline));
 };
-
-template <typename T>
-void
-RcuVectorBase<T>::expand(size_t newCapacity) {
-    std::unique_ptr<Array> tmpData(new Array());
-    tmpData->reserve(newCapacity);
-    tmpData->resize(_data.size());
-    memcpy(tmpData->begin(), _data.begin(), _data.size() * sizeof(T));
-    tmpData->swap(_data); // atomic switch of underlying data
-    size_t holdSize = tmpData->size() * sizeof(T);
-    vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(tmpData)));
-    _genHolder.hold(std::move(hold));
-}
-
-template <typename T>
-void
-RcuVectorBase<T>::expandAndInsert(const T & v)
-{
-    expand(calcSize());
-    assert(_data.size() < _data.capacity());
-    _data.push_back(v);
-}
-
-
-template <typename T>
-void
-RcuVectorBase<T>::shrink(size_t newSize)
-{
-    // TODO: Extend Array class to support more optimial shrink when
-    // backing store is memory mapped.
-    assert(newSize <= _data.size());
-    std::unique_ptr<Array> tmpData(new Array());
-    tmpData->reserve(newSize);
-    tmpData->resize(newSize);
-    for (uint32_t i = 0; i < newSize; ++i) {
-        (*tmpData)[i] = _data[i];
-    }
-    // Users of RCU vector must ensure that no readers use old size
-    // after swap.  Attribute vectors uses _committedDocIdLimit for this.
-    tmpData->swap(_data); // atomic switch of underlying data
-    // Use capacity() instead of size() ?
-    size_t holdSize = tmpData->size() * sizeof(T);
-    vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(tmpData)));
-    _genHolder.hold(std::move(hold));
-}
-
-
-template <typename T>
-RcuVectorBase<T>::RcuVectorBase(GenerationHolder &genHolder)
-    : _data(),
-      _growPercent(100),
-      _growDelta(0),
-      _genHolder(genHolder)
-{
-    _data.reserve(16);
-}
-
-template <typename T>
-RcuVectorBase<T>::RcuVectorBase(size_t initialCapacity,
-                                size_t growPercent,
-                                size_t growDelta,
-                                GenerationHolder &genHolder)
-    : _data(),
-      _growPercent(growPercent),
-      _growDelta(growDelta),
-      _genHolder(genHolder)
-{
-    _data.reserve(initialCapacity);
-}
-
-template <typename T>
-MemoryUsage
-RcuVectorBase<T>::getMemoryUsage() const
-{
-    MemoryUsage retval;
-    retval.incAllocatedBytes(_data.capacity() * sizeof(T));
-    retval.incUsedBytes(_data.size() * sizeof(T));
-    return retval;
-}
-
 
 template <typename T>
 class RcuVector : public RcuVectorBase<T>
@@ -233,20 +126,10 @@ private:
     generation_t       _generation;
     GenerationHolder   _genHolderStore;
 
-    void
-    expandAndInsert(const T & v)
-    {
-        RcuVectorBase<T>::expandAndInsert(v);
-        _genHolderStore.transferHoldLists(_generation);
-    }
+    void expandAndInsert(const T & v);
 
 public:
-    RcuVector()
-        : RcuVectorBase<T>(_genHolderStore),
-          _generation(0),
-          _genHolderStore()
-    {
-    }
+    RcuVector();
 
     /**
      * Construct a new vector with the given initial capacity and grow
@@ -255,44 +138,19 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    RcuVector(size_t initialCapacity, size_t growPercent, size_t growDelta)
-        : RcuVectorBase<T>(initialCapacity, growPercent, growDelta,
-                           _genHolderStore),
-          _generation(0),
-          _genHolderStore()
-    {
-    }
+    RcuVector(size_t initialCapacity, size_t growPercent, size_t growDelta);
 
-    RcuVector(GrowStrategy growStrategy)
-            : RcuVectorBase<T>(growStrategy, _genHolderStore), _generation(0), _genHolderStore()
-    {
-    }
+    RcuVector(GrowStrategy growStrategy);
 
-    ~RcuVector()
-    {
-        _genHolderStore.clearHoldLists();
-    }
+    ~RcuVector();
 
-    generation_t
-    getGeneration() const
-    {
-        return _generation;
-    }
-
-    void
-    setGeneration(generation_t generation)
-    {
-        _generation = generation;
-    }
+    generation_t getGeneration() const { return _generation; }
+    void setGeneration(generation_t generation) { _generation = generation; }
 
     /**
      * Remove all old data vectors where generation < firstUsed.
      **/
-    void
-    removeOldGenerations(generation_t firstUsed)
-    {
-        _genHolderStore.trimHoldLists(firstUsed);
-    }
+    void removeOldGenerations(generation_t firstUsed);
 
     void
     push_back(const T & v)
@@ -304,16 +162,8 @@ public:
         }
     }
 
-    MemoryUsage
-    getMemoryUsage() const
-    {
-        MemoryUsage retval(RcuVectorBase<T>::getMemoryUsage());
-        retval.mergeGenerationHeldBytes(_genHolderStore.getHeldBytes());
-        return retval;
-    }
+    MemoryUsage getMemoryUsage() const;
 };
 
-
 }
 }
-

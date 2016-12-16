@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/datatype/structdatatype.h>
+#include "structdatatype.h"
 
 #include <iomanip>
-#include <vespa/log/log.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
-
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/log/log.h>
 LOG_SETUP(".document.datatype.struct");
 
 namespace document {
@@ -32,13 +31,19 @@ StructDataType::StructDataType(const vespalib::stringref &name)
 {
 }
 
-StructDataType::StructDataType(const vespalib::stringref & name,
-                               int32_t dataTypeId)
+StructDataType::StructDataType(const vespalib::stringref & name, int32_t dataTypeId)
     : StructuredDataType(name, dataTypeId),
       _nameFieldMap(),
       _idFieldMap(),
       _idFieldMapV6()
 {
+}
+
+StructDataType::~StructDataType() { }
+
+StructDataType*
+StructDataType::clone() const {
+    return new StructDataType(*this);
 }
 
 void

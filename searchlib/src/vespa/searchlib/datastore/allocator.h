@@ -5,6 +5,7 @@
 #include "datastorebase.h"
 #include "entryref.h"
 #include "handle.h"
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace search {
 namespace datastore {

@@ -23,6 +23,8 @@ public:
     A _additions;
     R _removals;
 
+    PostingChange();
+    ~PostingChange();
     inline void add(uint32_t docId, int32_t weight);
 
     PostingChange & remove(uint32_t docId) {

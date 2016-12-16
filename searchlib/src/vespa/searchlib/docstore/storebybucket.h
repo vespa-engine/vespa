@@ -27,6 +27,8 @@ class StoreByBucket
 public:
     StoreByBucket(vespalib::MemoryDataStore & backingMemory, const document::CompressionConfig & compression);
     StoreByBucket(MemoryDataStore & backingMemory, ThreadExecutor & executor, const CompressionConfig & compression);
+    StoreByBucket(StoreByBucket &&) = default;
+    ~StoreByBucket();
     class IWrite {
     public:
         using BucketId=document::BucketId;

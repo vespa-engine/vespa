@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+#include "processallhandler.h"
+#include "bucketprocessor.h"
 #include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storage/persistence/processallhandler.h>
-#include <vespa/storage/persistence/bucketprocessor.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".persistence.processall");
 
 namespace storage {

@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storageapi/message/batch.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.twophaseupdate");

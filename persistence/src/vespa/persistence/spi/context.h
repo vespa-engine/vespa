@@ -57,12 +57,10 @@ class Context {
     ReadConsistency _readConsistency;
 
 public:
-    Context(const LoadType& loadType, Priority pri, int maxTraceLevel)
-        : _loadType(&loadType),
-          _priority(pri),
-          _trace(maxTraceLevel),
-          _readConsistency(ReadConsistency::STRONG)
-    { }
+    Context(Context &&) = default;
+    Context & operator = (Context &&) = default;
+    Context(const LoadType& loadType, Priority pri, int maxTraceLevel);
+    ~Context();
 
     const LoadType& getLoadType() const { return *_loadType; }
     Priority getPriority() const { return _priority; }

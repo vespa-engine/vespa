@@ -2,31 +2,21 @@
 
 #include "filestormanager.h"
 
-#include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/multioperation.h>
-#include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/state.h>
-#include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/bucketmessages.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/persistencethread.h>
-#include <vespa/storage/persistence/messages.h>
-#include <vespa/storage/storageserver/statemanager.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/storage/common/messagebucketid.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
-#include <vespa/vdslib/state/random.h>
-#include <vespa/vdslib/state/nodestate.h>
-#include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/batch.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 LOG_SETUP(".persistence.filestor.manager");
 

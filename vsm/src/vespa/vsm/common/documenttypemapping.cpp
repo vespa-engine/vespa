@@ -1,26 +1,23 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "documenttypemapping.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.common.documenttypemapping");
 
-#include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/vsm/common/documenttypemapping.h>
-#include <stdexcept>
-
 #define DEBUGMASK 0x00
 
-namespace vsm
-{
+namespace vsm {
 
 DocumentTypeMapping::DocumentTypeMapping() :
     _fieldMap(),
     _defaultDocumentTypeName(),
     _defaultDocumentType(),
     _documentTypeFreq()
-{
-}
+{ }
+
+DocumentTypeMapping::~DocumentTypeMapping() { }
 
 namespace {
 

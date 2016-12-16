@@ -1,21 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "storebybucket.h"
+#include "compacter.h"
 #include "logdatastore.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
-#include <stdexcept>
+#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/searchlib/common/rcuvector.hpp>
+#include <thread>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docstore.logdatastore");
-#include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <thread>
-#include "compacter.h"
 
-namespace search
-{
+namespace search {
 
 using vespalib::LockGuard;
 using vespalib::getLastErrorString;

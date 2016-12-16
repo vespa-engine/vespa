@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "task_runner.h"
 #include <vespa/searchlib/common/lambdatask.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -24,8 +23,7 @@ TaskRunner::~TaskRunner()
 }
 
 void
-TaskRunner::getReadyTasks(const InitializerTask::SP task, TaskList &readyTasks,
-                          TaskSet &checked)
+TaskRunner::getReadyTasks(const InitializerTask::SP task, TaskList &readyTasks, TaskSet &checked)
 {
     if (task->getState() != State::BLOCKED) {
         return; // task running or done, all dependencies done

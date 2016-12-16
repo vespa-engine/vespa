@@ -3,6 +3,7 @@
 #include "binary_format.h"
 #include "inserter.h"
 #include "slime.h"
+#include <vespa/vespalib/util/array.hpp>
 
 namespace vespalib {
 namespace slime {

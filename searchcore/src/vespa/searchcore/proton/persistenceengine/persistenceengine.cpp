@@ -1,16 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "persistenceengine.h"
+#include "ipersistenceengineowner.h"
+#include "transport_latch.h"
+#include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/feedreply.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
-#include "ipersistenceengineowner.h"
-#include "transport_latch.h"
-#include <vespa/vespalib/util/exception.h>
-#include <vespa/vespalib/util/sequence.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.persistenceengine");
 
@@ -55,8 +53,7 @@ public:
     GenericResultHandler(uint32_t waitCnt) :
         ResultHandlerBase(waitCnt),
         _result()
-    {
-    }
+    { }
     virtual void handle(const Result &result) {
         if (result.hasError()) {
             vespalib::LockGuard guard(_lock);
@@ -80,8 +77,7 @@ private:
 public:
     BucketIdListResultHandler()
         : _bucketSet()
-    {
-    }
+    { }
     virtual void handle(const BucketIdListResult &result) {
         const BucketIdListResult::List &buckets = result.getList();
         for (size_t i = 0; i < buckets.size(); ++i) {
@@ -106,8 +102,7 @@ public:
     SynchronizedBucketIdListResultHandler(uint32_t waitCnt)
         : ResultHandlerBase(waitCnt),
           BucketIdListResultHandler()
-    {
-    }
+    { }
     virtual void handle(const BucketIdListResult &result) {
         {
             vespalib::LockGuard guard(_lock);

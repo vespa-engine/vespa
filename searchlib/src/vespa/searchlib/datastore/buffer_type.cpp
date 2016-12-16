@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "buffer_type.h"
+#include <algorithm>
 
 namespace search {
 namespace datastore {
@@ -18,26 +18,24 @@ BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
       _holdBuffers(0),
       _activeUsedElems(0),
       _holdUsedElems(0),
-      _lastUsedElems(NULL)
-{
-}
+      _lastUsedElems(nullptr)
+{ }
 
 
 BufferTypeBase::BufferTypeBase(uint32_t clusterSize,
                                uint32_t minClusters,
                                uint32_t maxClusters)
     : BufferTypeBase(clusterSize, minClusters, maxClusters, 0u)
-{
-}
+{ }
 
 
-BufferTypeBase::~BufferTypeBase(void)
+BufferTypeBase::~BufferTypeBase()
 {
     assert(_activeBuffers == 0);
     assert(_holdBuffers == 0);
     assert(_activeUsedElems == 0);
     assert(_holdUsedElems == 0);
-    assert(_lastUsedElems == NULL);
+    assert(_lastUsedElems == nullptr);
 }
 
 size_t

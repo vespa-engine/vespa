@@ -6,6 +6,7 @@
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/eval/value_type.h>
 #include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/util/arrayref.h>
 
 namespace vespalib {
 namespace tensor {

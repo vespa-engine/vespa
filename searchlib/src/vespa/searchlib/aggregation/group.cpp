@@ -1,21 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/searchlib/aggregation/group.h>
-#include <vespa/searchlib/aggregation/maxaggregationresult.h>
-#include <vespa/searchlib/aggregation/groupinglevel.h>
-#include <vespa/searchlib/aggregation/grouping.h>
-#include <vespa/searchlib/expression/aggregationrefnode.h>
-#include <vespa/vespalib/objects/visit.h>
-#include <vespa/vespalib/objects/objectpredicate.h>
-#include <vespa/vespalib/objects/objectoperation.h>
+#include "group.h"
+#include "maxaggregationresult.h"
+#include "groupinglevel.h"
+#include "grouping.h"
 #include <vespa/vespalib/objects/objectdumper.h>
-#include <vespa/vespalib/util/optimized.h>
 #include <vespa/vespalib/util/vstringfmt.h>
-#include <cmath>
-#include <cstdlib>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 
-LOG_SETUP(".searchlib.aggregation.group");
 
 namespace search {
 namespace aggregation {
@@ -447,7 +438,6 @@ Serializer & Group::onSerialize(Serializer & os) const
             assert(_children[i]->cmpId(*_children[i-1]) > 0);
         }
     }
-    LOG(debug, "%s", _id->asString().c_str());
     os << _id << _rank;
     os << uint32_t(getOrderBySize());
     for (size_t i(0), m(getOrderBySize()); i < m; i++) {
@@ -519,7 +509,6 @@ Deserializer & Group::onDeserialize(Deserializer & is)
         _children[i] = group;
     }
     is >> _tag;
-    LOG(debug, "%s", _id->asString().c_str());
     if (getChildrenSize() > 1) {
         for (size_t i(1), m(getChildrenSize()); i < m; i++) {
             assert(_children[i]->cmpId(*_children[i-1]) > 0);

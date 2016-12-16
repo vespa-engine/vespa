@@ -1,33 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.memoryindex.memoryindex");
-
 #include "memoryindex.h"
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/searchlib/index/indexbuilder.h>
+#include "postingiterator.h"
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/memoryindex/featurestore.h>
-#include <vespa/searchlib/memoryindex/postingiterator.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
-#include <vespa/searchlib/queryeval/split_float.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/searchable.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/queryeval/termasstring.h>
-#include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
-
-#include <algorithm>
-
-#include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreeroot.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.memoryindex");
 
 using document::ArrayFieldValue;
 using document::WeightedSetFieldValue;

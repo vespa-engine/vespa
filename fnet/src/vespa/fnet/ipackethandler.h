@@ -2,6 +2,10 @@
 
 #pragma once
 
+#include "context.h"
+
+class FNET_Packet;
+
 /**
  * Interface implemented by objects that can handle packets.
  **/

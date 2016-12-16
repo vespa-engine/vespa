@@ -1,15 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-
 #include "predicate_index.h"
-
-#include "predicate_tree_annotator.h"
-#include <vespa/searchlib/datastore/entryref.h>
 #include "predicate_hash.h"
-#include <algorithm>
-#include <vespa/log/log.h>
-LOG_SETUP(".predicate_index");
+
 
 using search::datastore::EntryRef;
 using vespalib::DataBuffer;

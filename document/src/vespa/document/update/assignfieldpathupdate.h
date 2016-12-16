@@ -30,6 +30,7 @@ public:
                           stringref fieldPath,
                           stringref whereClause,
                           stringref expression);
+    ~AssignFieldPathUpdate();
 
     void setRemoveIfZero(bool removeIfZero) {
         _removeIfZero = removeIfZero;
@@ -43,7 +44,7 @@ public:
     bool hasValue() const { return _newValue.get() != nullptr; }
     const FieldValue & getValue() const { return *_newValue; }
 
-    FieldPathUpdate* clone() const { return new AssignFieldPathUpdate(*this); }
+    FieldPathUpdate* clone() const;
 
     bool operator==(const FieldPathUpdate& other) const;
 

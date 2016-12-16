@@ -5,5 +5,14 @@
 namespace storage {
 namespace spi {
 
+Context::Context(const LoadType& loadType, Priority pri, int maxTraceLevel)
+    : _loadType(&loadType),
+      _priority(pri),
+      _trace(maxTraceLevel),
+      _readConsistency(ReadConsistency::STRONG)
+{ }
+
+Context::~Context() { }
+
 } // spi
 } // storage

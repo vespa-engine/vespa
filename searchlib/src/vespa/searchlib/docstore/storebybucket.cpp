@@ -2,6 +2,7 @@
 
 #include "storebybucket.h"
 #include <vespa/vespalib/util/closuretask.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 namespace docstore {
@@ -22,6 +23,8 @@ StoreByBucket::StoreByBucket(MemoryDataStore & backingMemory, ThreadExecutor & e
 {
     createChunk().swap(_current);
 }
+
+StoreByBucket::~StoreByBucket() { }
 
 void
 StoreByBucket::add(BucketId bucketId, uint32_t chunkId, uint32_t lid, const void *buffer, size_t sz)

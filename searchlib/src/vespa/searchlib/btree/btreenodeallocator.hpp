@@ -5,6 +5,7 @@
 #include "btreenodeallocator.h"
 #include "btreerootbase.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/array.hpp>
 #include "btreenodestore.hpp"
 
 namespace search {

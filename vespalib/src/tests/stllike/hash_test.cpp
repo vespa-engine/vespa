@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("hash_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
+#include <cstddef>
 
 using namespace vespalib;
 using std::make_pair;

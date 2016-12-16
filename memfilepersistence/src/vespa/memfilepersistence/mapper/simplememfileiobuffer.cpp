@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "simplememfileiobuffer.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/memfilepersistence/common/environment.h>
-#include <vespa/memfilepersistence/mapper/simplememfileiobuffer.h>
 #include <vespa/vespalib/util/crc.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".memfile.simpleiobuffer");

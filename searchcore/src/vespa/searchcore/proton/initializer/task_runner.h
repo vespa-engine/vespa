@@ -18,7 +18,7 @@ class TaskRunner {
     uint32_t                 _runningTasks; // used by context executor
     using State = InitializerTask::State;
     using TaskList = InitializerTask::List;
-    using TaskSet = vespalib::hash_set<void *>;
+    using TaskSet = vespalib::hash_set<const void *>;
 
     class Context {
         InitializerTask::SP _rootTask;
@@ -44,8 +44,7 @@ class TaskRunner {
         const InitializerTask::SP &rootTask() { return _rootTask; }
         void schedulePoll();
     };
-    void getReadyTasks(const InitializerTask::SP task, TaskList &readyTasks,
-                       TaskSet &checked);
+    void getReadyTasks(const InitializerTask::SP task, TaskList &readyTasks, TaskSet &checked);
 
     void setTaskRunning(InitializerTask &task);
 

@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <sys/types.h>
+
 namespace search {
 
 struct CacheStats {
@@ -15,16 +18,14 @@ struct CacheStats {
           misses(0),
           elements(0),
           memory_used(0)
-    {
-    }
+    { }
 
     CacheStats(size_t hit, size_t miss, size_t elem, size_t mem)
         : hits(hit),
           misses(miss),
           elements(elem),
           memory_used(mem)
-    {
-    }
+    { }
 
     CacheStats &
     operator+=(const CacheStats &rhs)

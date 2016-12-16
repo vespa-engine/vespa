@@ -25,8 +25,10 @@ private:
 
     ArrayStore _store;
 public:
+    MultiValueMapping(const MultiValueMapping &) = delete;
+    MultiValueMapping & operator = (const MultiValueMapping &) = delete;
     MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg,
-                       const GrowStrategy &gs = GrowStrategy());
+                      const GrowStrategy &gs = GrowStrategy());
     virtual ~MultiValueMapping();
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }

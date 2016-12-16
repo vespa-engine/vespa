@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/common/mapnames.h>
 
@@ -34,6 +33,9 @@ private:
 
 public:
     typedef PropsMap::const_iterator ITR;
+
+    PropertiesMap();
+    ~PropertiesMap();
 
     /**
      * Obtain a named collection of properties. This method will

@@ -1,17 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vsm/common/docsum.h>
+
+#include "docsum.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #define DEBUGMASK 0x00
 
 using search::DocumentIdT;
 
-namespace vsm
-{
+namespace vsm {
 
 using document::FieldValue;
 using document::StringFieldValue;
@@ -20,12 +20,9 @@ IMPLEMENT_DUPLICATE(DocSumCache);
 
 DocSumCache::DocSumCache() :
   _list()
-{
-}
+{ }
 
-DocSumCache::~DocSumCache()
-{
-}
+DocSumCache::~DocSumCache() { }
 
 const Document & DocSumCache::getDocSum(const DocumentIdT & docId) const
 {

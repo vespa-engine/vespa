@@ -1,18 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-
 #include "document_features_store.h"
 #include "predicate_index.h"
 #include "predicate_range_expander.h"
 #include "predicate_tree_annotator.h"
 #include <vespa/searchlib/btree/btreenode.h>
 #include <vespa/vespalib/data/databuffer.h>
-
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <unordered_map>
 #include <vector>
-#include <vespa/log/log.h>
-LOG_SETUP(".document_features_store");
 
 using search::btree::BTreeNoLeafData;
 using search::datastore::EntryRef;

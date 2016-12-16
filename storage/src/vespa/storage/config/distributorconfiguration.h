@@ -16,6 +16,7 @@ namespace distributor {
 class DistributorConfiguration {
 public: 
     DistributorConfiguration(StorageComponent& component);
+    ~DistributorConfiguration();
 
     struct MaintenancePriorities
     {

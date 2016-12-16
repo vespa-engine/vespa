@@ -4,8 +4,6 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-#include <stdexcept>
-
 namespace storage {
 
 namespace {
@@ -24,7 +22,7 @@ public:
         : _spi(spi),
           _iteratorId(iteratorId),
           _context(context)
-    {}
+    { }
     ~IteratorGuard()
     {
         assert(_iteratorId != 0);

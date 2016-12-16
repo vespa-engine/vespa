@@ -9,19 +9,16 @@
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
-#include <vespa/searchlib/attribute/fixedsourceselector.h>
-#include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/autoclosurecaller.h>
-#include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <sstream>
-#include <vector>
 #include <vespa/searchcorespi/flush/closureflushtask.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/array.hpp>
 #include <vespa/log/log.h>
+
 LOG_SETUP(".searchcorespi.index.indexmaintainer");
 
 using document::Document;

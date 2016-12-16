@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "document.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using search::DocumentIdT;
 using search::TimeT;
@@ -67,17 +68,16 @@ size_t StringFieldIdTMap::highestFieldNo() const
 Document::Document(const DocumentIdT & doc, size_t maxField) :
   _docId(doc),
   _fieldCount(maxField)
-{
-}
+{ }
 
 Document::Document() :
   _docId(0),
   _fieldCount(0)
-{
-}
+{ }
 
-Document::~Document()
-{
-}
+Document::~Document() { }
 
 }
+
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vsm::FieldIdTList);
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vsm::IndexFieldMapT);

@@ -22,7 +22,7 @@ namespace tensor {
 class SparseTensor : public Tensor
 {
 public:
-    typedef vespalib::hash_map<SparseTensorAddressRef, double> Cells;
+    using Cells = vespalib::hash_map<SparseTensorAddressRef, double>;
 
     static constexpr size_t STASH_CHUNK_SIZE = 16384u;
 

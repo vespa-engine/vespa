@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/enumstore.h>
-#include <vespa/searchlib/attribute/enumcomparator.h>
+#include "enumstore.h"
+#include "enumcomparator.h"
 
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
@@ -13,6 +13,7 @@
 #include <vespa/searchlib/btree/btreebuilder.hpp>
 #include <vespa/searchlib/btree/btree.hpp>
 #include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/vespalib/util/array.hpp>
 
 namespace search {
 
@@ -81,6 +82,15 @@ EnumStoreT<EntryType>::printBuffer(vespalib::asciistream & os, uint32_t bufferId
         i += this->getEntrySize(e.getValue());
     }
 }
+
+template <typename EntryType>
+EnumStoreT<EntryType>::Builder::Builder()
+    : _uniques(),
+      _bufferSize(Index::align(1))
+{ }
+
+template <typename EntryType>
+EnumStoreT<EntryType>::Builder::~Builder() { }
 
 template <typename EntryType>
 void

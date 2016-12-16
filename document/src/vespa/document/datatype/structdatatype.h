@@ -24,6 +24,7 @@ public:
     StructDataType();
     StructDataType(const vespalib::stringref &name);
     StructDataType(const vespalib::stringref &name, int32_t id);
+    ~StructDataType();
 
     /**
      * @throws vespalib::IllegalArgumentException if field conflicts with
@@ -61,7 +62,7 @@ public:
     }
 
     virtual Field::Set getFieldSet() const;
-    virtual StructDataType* clone() const { return new StructDataType(*this); }
+    virtual StructDataType* clone() const;
 
     void setCompressionConfig(const CompressionConfig& cfg) { _compressionConfig = cfg; };
     const CompressionConfig& getCompressionConfig() const { return _compressionConfig; }

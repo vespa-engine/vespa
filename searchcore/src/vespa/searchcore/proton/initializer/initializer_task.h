@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <memory>
+#include <vector>
+
 namespace proton {
 
 namespace initializer {
@@ -23,19 +26,12 @@ private:
     List            _dependencies;
 public:
     InitializerTask();
-
     virtual ~InitializerTask();
-
     State getState() const { return _state; }
-
     const List &getDependencies() const { return _dependencies; }
-
     void setRunning() { _state = State::RUNNING; }
-
     void setDone() { _state = State::DONE; }
-
     void addDependency(SP dependency);
-
     virtual void run() = 0;
 };
 

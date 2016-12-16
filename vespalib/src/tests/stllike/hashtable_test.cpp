@@ -1,11 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for hashtable.
 
-#include <vespa/log/log.h>
-LOG_SETUP("hashtable_test");
-#include <vespa/fastos/fastos.h>
-
-#include <vespa/vespalib/stllike/hashtable.h>
+#include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <memory>
 #include <vector>

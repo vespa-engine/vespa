@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fef.properties");
 #include "properties.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_map_equal.hpp>
 
 namespace search {
 namespace fef {
@@ -13,13 +12,11 @@ const Property::Values Property::_emptyValues;
 
 Property::Property(const Property::Values &values)
     : _values(&values)
-{
-}
+{ }
 
 Property::Property()
     : _values(&_emptyValues)
-{
-}
+{ }
 
 bool
 Property::found() const
@@ -82,7 +79,7 @@ Properties::Properties()
 
 Properties::~Properties()
 {
-    LOG_ASSERT(_numValues >= _data.size());
+    assert(_numValues >= _data.size());
 }
 
 Properties &
@@ -267,3 +264,5 @@ void Properties::swap(Properties & rhs)
 
 } // namespace fef
 } // namespace search
+
+VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, search::fef::Property::Values);

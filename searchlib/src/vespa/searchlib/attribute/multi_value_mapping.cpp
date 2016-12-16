@@ -6,6 +6,7 @@
 #include "multivalue.h"
 #include "enumstorebase.h"
 #include "attributevector.h"
+#include <vespa/vespalib/util/array.hpp>
 
 using search::multivalue::Value;
 using search::multivalue::WeightedValue;

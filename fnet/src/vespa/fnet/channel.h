@@ -2,6 +2,14 @@
 
 #pragma once
 
+#include "context.h"
+#include "ipackethandler.h"
+#include <memory>
+
+#define FNET_NOID ((uint32_t)-1)
+
+class FNET_Connection;
+class FNET_IPacketHandler;
 /**
  * A channel object represents an endpoint in a point-to-point packet
  * based virtual connection. Clients open channels by invoking the

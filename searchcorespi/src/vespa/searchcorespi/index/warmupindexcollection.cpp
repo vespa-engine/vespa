@@ -1,9 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/searchcorespi/index/warmupindexcollection.h>
-#include <vespa/searchcorespi/index/idiskindex.h>
+#include "warmupindexcollection.h"
+#include "idiskindex.h"
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/log/log.h>
 

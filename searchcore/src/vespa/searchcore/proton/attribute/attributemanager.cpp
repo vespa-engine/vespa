@@ -1,22 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.attribute.attributemanager");
-#include "attribute_factory.h"
-#include "attribute_initializer.h"
-#include "attributedisklayout.h"
 #include "attributemanager.h"
-#include "flushableattribute.h"
+#include "attribute_factory.h"
+#include "attributedisklayout.h"
 #include "sequential_attributes_initializer.h"
+#include "i_attribute_functor.h"
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/data/fileheader.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
-#include <memory>
-#include "i_attribute_functor.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.attribute.attributemanager");
 
 using search::AttributeContext;
 using search::AttributeEnumGuard;
@@ -244,6 +240,8 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
     addNewAttributes(newSpec, toBeAdded, initializerRegistry);
     transferExtraAttributes(currMgr);
 }
+
+AttributeManager::~AttributeManager() { }
 
 AttributeVector::SP
 AttributeManager::addAttribute(const vespalib::string &name,

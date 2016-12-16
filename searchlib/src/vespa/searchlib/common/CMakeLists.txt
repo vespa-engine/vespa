@@ -19,6 +19,7 @@ vespa_add_library(searchlib_common OBJECT
     mapnames.cpp
     packets.cpp
     partialbitvector.cpp
+    rcuvector.cpp
     resultset.cpp
     sequencedtaskexecutor.cpp
     serialnumfileheadercontext.cpp

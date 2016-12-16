@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "memfilecompactor.h"
+#include "memfile.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/log/log.h>
-#include <vespa/memfilepersistence/memfile/memfile.h>
-#include <vespa/memfilepersistence/memfile/memfilecompactor.h>
-#include <algorithm>
 
 LOG_SETUP(".persistence.memfile.compactor");
 
@@ -19,8 +19,7 @@ struct DocumentVersionInfo {
         : _id(docId),
           _versions(1),
           _tombstoned(tombstoned)
-    {
-    }
+    { }
 
     bool newerVersionExists() const noexcept {
         return (_versions != 1);

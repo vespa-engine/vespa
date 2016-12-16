@@ -25,16 +25,13 @@ template <typename RefT = EntryRefT<22> >
 class DataStoreT : public DataStoreBase
 {
 private:
-    DataStoreT(const DataStoreT &rhs);
-
-    DataStoreT &
-    operator=(const DataStoreT &rhs);
 public:
     typedef RefT RefType;
 
-    DataStoreT(void);
-
-    ~DataStoreT(void);
+    DataStoreT(const DataStoreT &rhs) = delete;
+    DataStoreT &operator=(const DataStoreT &rhs) = delete;
+    DataStoreT();
+    ~DataStoreT();
 
     /**
      * Increase number of dead elements in buffer.

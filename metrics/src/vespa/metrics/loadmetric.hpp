@@ -3,6 +3,7 @@
 
 #include "loadmetric.h"
 #include "memoryconsumption.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace metrics {
 
@@ -65,6 +66,23 @@ LoadMetric<MetricType>::clone(std::vector<Metric::LP>& ownerList,
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
     return new LoadMetric<MetricType>(*this, owner);
+}
+
+template<typename MetricType>
+MetricType&
+LoadMetric<MetricType>::getMetric(const LoadType& type) {
+    MetricType* metric;
+
+    typename vespalib::hash_map<uint32_t, MetricTypeLP>::iterator it(
+            _metrics.find(type.getId()));
+    if (it == _metrics.end()) {
+        it = _metrics.find(0);
+        assert(it != _metrics.end()); // Default should always exist
+    }
+    metric = it->second.get();
+    assert(metric);
+
+    return *metric;
 }
 
 template<typename MetricType>

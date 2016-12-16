@@ -1,19 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include "diskindex.h"
 #include "disktermblueprint.h"
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
-#include <vespa/searchlib/queryeval/split_float.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
-#include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/util/dirtraverse.h>
-#include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/cache.hpp>
 #include "pagedict4randread.h"
 #include "fileheader.h"
-#include "bitvectorkeyscope.h"
+
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.diskindex");
 
@@ -21,11 +20,9 @@ using namespace search::index;
 using namespace search::query;
 using namespace search::queryeval;
 
-namespace search
-{
+namespace search {
 
-namespace diskindex
-{
+namespace diskindex {
 
 void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b)
 {
@@ -333,8 +330,7 @@ DiskIndex::calculateSize()
 }
 
 
-namespace
-{
+namespace {
 
 DiskIndex::LookupResult _G_nothing;
 
@@ -345,8 +341,7 @@ public:
         _diskIndex(diskIndex),
         _fieldIds(fieldIds),
         _cache()
-    {
-    }
+    { }
     const DiskIndex::LookupResult &
     lookup(const vespalib::string & word, uint32_t fieldId) {
         Cache::const_iterator it = _cache.find(word);

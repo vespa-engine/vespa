@@ -3,10 +3,19 @@
 
 #include "judymultimap.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/array.hpp>
 #include <set>
 #include <ostream>
 
 namespace storage {
+
+template<class T0, class T1, class T2, class T3>
+JudyMultiMap<T0, T1, T2, T3>::JudyMultiMap()
+    : _values0(1), _values1(1), _values2(1), _values3(1), _free(4)
+{ }
+
+template<class T0, class T1, class T2, class T3>
+JudyMultiMap<T0, T1, T2, T3>::~JudyMultiMap() { }
 
 template<class T0, class T1, class T2, class T3>
 bool

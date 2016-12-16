@@ -1,30 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".documentretrieverbase");
-
 #include "documentretrieverbase.h"
-#include <vespa/document/base/documentid.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchcore/proton/common/cachedselect.h>
-#include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
+#include <vespa/vespalib/stllike/lrucache_map.hpp>
 
 using document::DocumentId;
 using document::GlobalId;
 using search::index::Schema;
 
-namespace
-{
+namespace {
 
 const DocumentId docId("doc:test:1");
 const Schema emptySchema;
 
 }
 
-namespace proton
-{
+namespace proton {
 
 DocumentRetrieverBase::DocumentRetrieverBase(
         const DocTypeName &docTypeName,
@@ -45,6 +36,8 @@ DocumentRetrieverBase::DocumentRetrieverBase(
     _emptyDoc.reset(new document::Document(*docType, docId));
     _emptyDoc->setRepo(_repo);
 }
+
+DocumentRetrieverBase::~DocumentRetrieverBase() { }
 
 const document::DocumentTypeRepo &
 DocumentRetrieverBase::getDocumentTypeRepo() const {

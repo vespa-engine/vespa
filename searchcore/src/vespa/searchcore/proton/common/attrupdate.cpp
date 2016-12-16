@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+
+#include "attrupdate.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
@@ -13,13 +13,13 @@
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/clearvalueupdate.h>
 #include <vespa/document/base/forcelink.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/common/base.h>
-#include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include "attrupdate.h"
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/changevector.hpp>
+
+#include <vespa/log/log.h>
 LOG_SETUP(".attrupdate");
 
 using namespace document;

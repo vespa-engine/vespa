@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "btreenodeallocator.h"
-#include "btreerootbase.h"
 #include "btreenodeallocator.hpp"
+#include <vespa/vespalib/util/array.hpp>
 
-namespace search
-{
-namespace btree
-{
+template class vespalib::Array<search::datastore::EntryRef>;
+
+namespace search {
+namespace btree {
 
 template class BTreeNodeAllocator<uint32_t, uint32_t,
                                   NoAggregated,

@@ -2,13 +2,14 @@
 // Copyright (C) 2001-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
 #include "sortresults.h"
 #include <vespa/searchlib/util/sort.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/document/base/globalid.h>
+#include <vespa/vespalib/util/array.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".search.attribute.sortresults");
 

@@ -1,26 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/log/log.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/storage/common/statusmetricconsumer.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/visiting/visitormetrics.h>
-#include <vespa/documentapi/loadtypes/loadtype.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
-#include <iostream>
-#include <chrono>
 #include <thread>
 #include <vespa/metrics/metricmanager.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".test.metrics");
 
 namespace storage {

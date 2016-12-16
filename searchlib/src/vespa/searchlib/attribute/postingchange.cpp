@@ -1,17 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "postingchange.h"
 #include "multivalue.h"
 #include "multi_value_mapping.h"
 #include "postinglistattribute.h"
-#include <vespa/searchlib/common/bitvector.h>
-#include <map>
+#include <vespa/vespalib/util/array.hpp>
 
 namespace search {
 
-namespace
-{
+namespace {
 
 void
 removeDupAdditions(PostingChange<AttributePosting>::A &additions)
@@ -126,6 +123,10 @@ PostingChange<AttributeWeightPosting>::removeDups(void)
     removeDupRemovals(_removals);
 }
 
+template <typename P>
+PostingChange<P>::PostingChange() { }
+template <typename P>
+PostingChange<P>::~PostingChange() { }
 
 template <typename P>
 void
@@ -167,16 +168,8 @@ public:
                  const WeightedIndex * entriesOld, size_t szOld,
                  AlwaysWeightedIndexVector & added, AlwaysWeightedIndexVector & changed, AlwaysWeightedIndexVector & removed);
 
-    ActualChangeComputer(const EnumStoreComparator &compare,
-                         const EnumIndexMapper &mapper)
-        : _oldEntries(),
-          _newEntries(),
-          _cachedMapping(),
-          _compare(compare),
-          _mapper(mapper),
-          _hasFold(mapper.hasFold())
-    {
-    }
+    ActualChangeComputer(const EnumStoreComparator &compare, const EnumIndexMapper &mapper);
+    ~ActualChangeComputer();
 
 private:
     WeightedIndexVector _oldEntries;
@@ -265,6 +258,20 @@ public:
         }
     }
 };
+
+template <typename WeightedIndex>
+ActualChangeComputer<WeightedIndex>::ActualChangeComputer(const EnumStoreComparator &compare,
+                                                          const EnumIndexMapper &mapper)
+    : _oldEntries(),
+      _newEntries(),
+      _cachedMapping(),
+      _compare(compare),
+      _mapper(mapper),
+      _hasFold(mapper.hasFold())
+{ }
+
+template <typename WeightedIndex>
+ActualChangeComputer<WeightedIndex>::~ActualChangeComputer() { }
 
 template <typename WeightedIndex>
 void

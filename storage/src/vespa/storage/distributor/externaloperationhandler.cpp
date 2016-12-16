@@ -1,13 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/distributor/externaloperationhandler.h>
-
-#include <vespa/document/bucket/bucketidfactory.h>
+#include "externaloperationhandler.h"
+#include "distributor.h"
 #include <vespa/document/base/documentid.h>
-#include <vespa/log/log.h>
-#include <vespa/storage/config/config-stor-server.h>
-#include <vespa/storage/storageutil/log.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
@@ -20,18 +15,13 @@
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/batch.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".distributor.manager");
 
 namespace storage {

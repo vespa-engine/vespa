@@ -2,12 +2,11 @@
 // Copyright (C) 2001-2003 Fast Search & Transfer ASA
 // Copyright (C) 2003 Overture Services Norway AS
 
+#include "stringenum.h"
+#include <vespa/fastlib/io/bufferedfile.h>
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".seachlib.util.stringenum");
-#include <vespa/searchlib/util/stringenum.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 
 namespace search {
 namespace util {
@@ -34,9 +33,7 @@ StripString(char *str)
     return first;
 }
 
-StringEnum::~StringEnum()
-{
-}
+StringEnum::~StringEnum() { }
 
 void
 StringEnum::CreateReverseMapping() const

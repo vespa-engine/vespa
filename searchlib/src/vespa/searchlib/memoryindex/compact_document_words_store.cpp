@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.compact_document_words_store");
+
 #include "compact_document_words_store.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".memoryindex.compact_document_words_store");
 
 namespace search {
 namespace memoryindex {
@@ -34,6 +36,13 @@ serialize(const Builder &builder, uint32_t *begin)
 }
 
 }
+
+CompactDocumentWordsStore::Builder::Builder(uint32_t docId_)
+    : _docId(docId_),
+      _words()
+{ }
+
+CompactDocumentWordsStore::Builder::~Builder() { }
 
 CompactDocumentWordsStore::Builder &
 CompactDocumentWordsStore::Builder::insert(datastore::EntryRef wordRef)
@@ -122,8 +131,9 @@ CompactDocumentWordsStore::Store::get(datastore::EntryRef ref) const
 CompactDocumentWordsStore::CompactDocumentWordsStore()
     : _docs(),
       _wordsStore()
-{
-}
+{ }
+
+CompactDocumentWordsStore::~CompactDocumentWordsStore() { }
 
 void
 CompactDocumentWordsStore::insert(const Builder &builder)

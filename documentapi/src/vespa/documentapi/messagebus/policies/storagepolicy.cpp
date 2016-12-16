@@ -11,6 +11,8 @@
 
 LOG_SETUP(".storagepolicy");
 
+using vespalib::make_string;
+
 namespace documentapi {
 
 StoragePolicy::StoragePolicy(const string& param)
@@ -207,9 +209,7 @@ StoragePolicy::doSelect(mbus::RoutingContext &context)
     } else {
         context.setError(
                 mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE,
-                vespalib::make_string(
-                    "Could not resolve a distributor to send to in cluster %s",
-                    _clusterName.c_str()));
+                make_string("Could not resolve a distributor to send to in cluster %s", _clusterName.c_str()));
     }
 }
 
@@ -219,8 +219,7 @@ StoragePolicy::getRecipient(mbus::RoutingContext& context, int distributor)
     slobrok::api::IMirrorAPI::SpecList entries = lookup(context, createPattern(_clusterName, distributor));
 
     if (!entries.empty()) {
-        return mbus::Hop::parse(
-                entries[random() % entries.size()].second + "/default");
+        return mbus::Hop::parse(entries[random() % entries.size()].second + "/default");
     }
 
     return mbus::Hop();
@@ -248,21 +247,17 @@ StoragePolicy::updateStateFromReply(WrongDistributionReply& wdr)
             new storage::lib::ClusterState(wdr.getSystemState()));
     if (_state.get() == 0 || newState->getVersion() >= _state->getVersion()) {
         if (_state.get()) {
-            wdr.getTrace().trace(1, vespalib::make_string(
-                    "System state changed from version %u to %u",
-                    _state->getVersion(),
-                    newState->getVersion()));
+            wdr.getTrace().trace(1, make_string("System state changed from version %u to %u",
+                                                _state->getVersion(), newState->getVersion()));
         } else {
-            wdr.getTrace().trace(1, vespalib::make_string(
-                    "System state set to version %u", newState->getVersion()));
+            wdr.getTrace().trace(1, make_string("System state set to version %u", newState->getVersion()));
         }
 
         _state = std::move(newState);
     } else {
-        wdr.getTrace().trace(1, vespalib::make_string(
-                                     "System state cleared because system state returned had version %d, while old state had version %d. New states should not have a lower version than the old.",
-                                     newState->getVersion(),
-                                     _state->getVersion()));
+        wdr.getTrace().trace(1, make_string("System state cleared because system state returned had version %d, "
+                                            "while old state had version %d. New states should not have a lower version than the old.",
+                                            newState->getVersion(), _state->getVersion()));
         _state.reset();
     }
 }

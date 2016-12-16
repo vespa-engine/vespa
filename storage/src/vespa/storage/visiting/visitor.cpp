@@ -2,18 +2,14 @@
 
 #include "visitor.h"
 #include "visitormetrics.h"
-#include <vespa/log/log.h>
 #include <vespa/storageapi/message/datagram.h>
-#include <vespa/storageapi/message/visitor.h>
 #include <vespa/storage/persistence/messages.h>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/documentapi/messagebus/messages/documentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/document/select/node.h>
-#include <sstream>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <unordered_map>
-#include <cmath>
-
+#include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance");
 
 namespace storage {
@@ -560,7 +556,7 @@ Visitor::reportProblem(const std::string& problem)
 void
 Visitor::reportProblem(const api::ReturnCode& problemCode)
 {
-    std::ostringstream os;
+    vespalib::asciistream os;
     os << "[From content node " << _ownNodeIndex << "] ";
     os << api::ReturnCode::getResultString(problemCode.getResult())
        << ": " << problemCode.getMessage();

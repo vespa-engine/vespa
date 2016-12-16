@@ -100,10 +100,8 @@ class StorageBucketDBInitializer : public StorageLink,
         Metrics(framework::Component&);
     };
     struct GlobalState {
-        vespalib::hash_map<api::StorageMessage::Id,
-                           ReadBucketList::SP> _lists;
-        vespalib::hash_map<api::StorageMessage::Id,
-                           InternalBucketJoinCommand::SP> _joins;
+        vespalib::hash_map<api::StorageMessage::Id, ReadBucketList::SP> _lists;
+        vespalib::hash_map<api::StorageMessage::Id, InternalBucketJoinCommand::SP> _joins;
         IdDiskMap _infoRequests;
         std::list<api::StorageMessage::SP> _replies;
         uint64_t _insertedCount;
@@ -121,11 +119,8 @@ class StorageBucketDBInitializer : public StorageLink,
             // This lock protects the reply list.
         vespalib::Monitor _replyLock;
 
-        GlobalState()
-            : _insertedCount(0), _infoReadCount(0),
-              _infoSetByLoad(0), _dirsListed(0), _dirsToList(0),
-              _gottenInitProgress(false), _doneListing(false),
-              _doneInitializing(false) {}
+        GlobalState();
+        ~GlobalState();
     };
 
 

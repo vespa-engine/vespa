@@ -2,7 +2,7 @@
 
 #include "metricset.h"
 #include "memoryconsumption.h"
-#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <list>
 

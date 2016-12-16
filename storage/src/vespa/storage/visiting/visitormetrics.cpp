@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-
 namespace storage {
 
 VisitorMetrics::VisitorMetrics()

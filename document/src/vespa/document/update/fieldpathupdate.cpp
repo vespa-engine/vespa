@@ -49,6 +49,8 @@ FieldPathUpdate::FieldPathUpdate(const DocumentTypeRepo& repo,
     }
 }
 
+FieldPathUpdate::~FieldPathUpdate()  { }
+
 bool
 FieldPathUpdate::operator==(const FieldPathUpdate& other) const
 {

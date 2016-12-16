@@ -2,7 +2,7 @@
 #include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/rusage.h>
-#include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/array.hpp>
 #include <vespa/log/log.h>
 LOG_SETUP("sort_benchmark");
 

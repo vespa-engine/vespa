@@ -30,8 +30,8 @@ private:
     typedef vespalib::PtrHolder<MessageTypeMap> MessageTypeHolder;
     typedef vespalib::PtrHolder<mbus::Route> RouteHolder;
 
-    MessageTypeHolder _map;
-    RouteHolder       _defaultRoute;
+    MessageTypeHolder     _map;
+    RouteHolder           _defaultRoute;
     config::ConfigFetcher _fetcher;
 
 public:

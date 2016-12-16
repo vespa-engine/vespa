@@ -1,18 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "enumstorebase.h"
+#include "enumstore.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <stdexcept>
-#include "enumstore.h"
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/searchlib/common/rcuvector.hpp>
 
-namespace search
-{
+namespace search {
 
 using btree::BTreeNode;
 
@@ -649,5 +646,11 @@ EnumStoreBase::fixupRefCounts<EnumPostingTree>(
 template class EnumStoreDict<EnumTree>;
 
 template class EnumStoreDict<EnumPostingTree>;
+
+namespace attribute {
+
+    template class RcuVectorBase<EnumStoreIndex>;
+
+}
 
 }

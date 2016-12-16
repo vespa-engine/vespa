@@ -1,10 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchsummary/docsummary/getdocsumargs.h>
-#include <vespa/searchsummary/docsummary/resultconfig.h>
+#include "getdocsumargs.h"
+#include "resultconfig.h"
 
 namespace search {
 namespace docsummary {
@@ -20,13 +17,10 @@ GetDocsumArgs::GetDocsumArgs()
       _flags(0u),
       _propertiesMap(),
       _isLocationSet(false)
-{
-}
+{ }
 
 
-GetDocsumArgs::~GetDocsumArgs()
-{
-}
+GetDocsumArgs::~GetDocsumArgs() { }
 
 void
 GetDocsumArgs::setTimeout(const fastos::TimeStamp & timeout)

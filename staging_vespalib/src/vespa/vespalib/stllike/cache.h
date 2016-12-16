@@ -61,21 +61,15 @@ public:
      * @maxBytes is the maximum limit of bytes the store can hold, before eviction starts.
      */
     cache(BackingStore & b, size_t maxBytes);
-
+    ~cache();
     /**
      * Can be used for controlling max number of elements.
      */
-    cache & maxElements(size_t elems) {
-        Lru::maxElements(elems);
-        return *this;
-    }
+    cache & maxElements(size_t elems);
     /**
      * Can be used for reserving space for elements.
      */
-    cache & reserveElements(size_t elems) {
-        Lru::reserve(elems);
-        return *this;
-    }
+    cache & reserveElements(size_t elems);
 
     size_t capacity()                  const { return Lru::capacity(); }
     size_t capacityBytes()             const { return _maxBytes; }
@@ -91,10 +85,7 @@ public:
     /**
      * This simply erases the object from the cache.
      */
-    void invalidate(const K & key) {
-        vespalib::LockGuard guard(_hashLock);
-        invalidate(guard, key);
-    }
+    void invalidate(const K & key);
 
     /**
      * Return the object with the given key. If it does not exist, the backing store will be consulted.
@@ -114,10 +105,7 @@ public:
      * Tell if an object with given key exists in the cache.
      * Does not alter the LRU list.
      */
-    bool hasKey(const K & key) const {
-        vespalib::LockGuard guard(_hashLock);
-        return hasKey(guard, key);
-    }
+    bool hasKey(const K & key) const;
 
     size_t          getHit() const { return _hit; }
     size_t         getMiss() const { return _miss; }
@@ -133,7 +121,7 @@ protected:
     vespalib::LockGuard getGuard();
     void invalidate(const vespalib::LockGuard & guard, const K & key);
     bool hasKey(const vespalib::LockGuard & guard, const K & key) const;
-    bool hasLock()                     const { return TryLock(_hashLock).hasLock(); }
+    bool hasLock() const;
 private:
     /**
      * Called when an object is inserted, to see if the LRU should be removed.
@@ -167,119 +155,4 @@ private:
     vespalib::Lock      _addLocks[113];
 };
 
-template< typename P >
-cache<P>::cache(BackingStore & b, size_t maxBytes) :
-    Lru(Lru::UNLIMITED),
-    _maxBytes(maxBytes),
-    _sizeBytes(0),
-    _hit(0),
-    _miss(0),
-    _noneExisting(0),
-    _race(0),
-    _insert(0),
-    _write(0),
-    _erase(0),
-    _invalidate(0),
-    _lookup(0),
-    _store(b)
-{ }
-
-template< typename P >
-bool
-cache<P>::removeOldest(const value_type & v) {
-    bool remove(Lru::removeOldest(v) || (sizeBytes() >= capacityBytes()));
-    if (remove) {
-        _sizeBytes -= calcSize(v.first, v.second._value);
-    }
-    return remove;
 }
-
-template< typename P >
-vespalib::LockGuard
-cache<P>::getGuard() {
-    return vespalib::LockGuard(_hashLock);
-}
-
-template< typename P >
-typename P::Value
-cache<P>::read(const K & key)
-{
-    {
-        vespalib::LockGuard guard(_hashLock);
-        if (Lru::hasKey(key)) {
-            _hit++;
-            return (*this)[key];
-        } else {
-            _miss++;
-        }
-    }
-
-    vespalib::LockGuard storeGuard(getLock(key));
-    {
-        vespalib::LockGuard guard(_hashLock);
-        if (Lru::hasKey(key)) {
-            // Somebody else just fetched it ahead of me.
-            _race++;
-            return (*this)[key];
-        }
-    }
-    V value;
-    if (_store.read(key, value)) {
-        vespalib::LockGuard guard(_hashLock);
-        Lru::insert(key, value);
-        _sizeBytes += calcSize(key, value);
-        _insert++;
-    } else {
-        vespalib::Atomic::postInc(&_noneExisting);
-    }
-    return value;
-}
-
-template< typename P >
-void
-cache<P>::write(const K & key, const V & value)
-{
-    vespalib::LockGuard storeGuard(getLock(key));
-    {
-        vespalib::LockGuard guard(_hashLock);
-        (*this)[key] = value;
-        _sizeBytes += calcSize(key, value);
-        _write++;
-    }
-    _store.write(key, value);
-}
-
-template< typename P >
-void
-cache<P>::erase(const K & key)
-{
-    vespalib::LockGuard storeGuard(getLock(key));
-    invalidate(key);
-    _store.erase(key);
-}
-
-template< typename P >
-void
-cache<P>::invalidate(const vespalib::LockGuard & guard, const K & key)
-{
-    assert(guard.locks(_hashLock));
-    (void) guard;
-    if (Lru::hasKey(key)) {
-        _sizeBytes -= calcSize(key, (*this)[key]);
-        _invalidate++;
-        Lru::erase(key);
-    }
-}
-
-template< typename P >
-bool
-cache<P>::hasKey(const vespalib::LockGuard & guard, const K & key) const
-{
-    (void) guard;
-    assert(guard.locks(_hashLock));
-    _lookup++;
-    return Lru::hasKey(key);
-}
-
-}
-

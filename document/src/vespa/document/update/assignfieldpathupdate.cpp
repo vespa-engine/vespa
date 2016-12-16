@@ -62,6 +62,13 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(
     }
 }
 
+AssignFieldPathUpdate::~AssignFieldPathUpdate() { }
+
+FieldPathUpdate*
+AssignFieldPathUpdate::clone() const {
+    return new AssignFieldPathUpdate(*this);
+}
+
 std::unique_ptr<FieldValue::IteratorHandler>
 AssignFieldPathUpdate::getIteratorHandler(Document& doc) const
 {
@@ -115,7 +122,7 @@ AssignFieldPathUpdate::AssignExpressionIteratorHandler::doModify(FieldValue& fv)
         vars["value"] = fv.getAsDouble();
 
         try {
-            double res = _calc.evaluate(_doc, vars);
+            double res = _calc.evaluate(_doc, std::move(vars));
             if (_removeIfZero && static_cast<uint64_t>(res) == 0) {
                 return REMOVED;
             } else {

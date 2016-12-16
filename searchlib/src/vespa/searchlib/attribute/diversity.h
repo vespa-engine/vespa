@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/hash_map.h>
 #include "singleenumattribute.h"
 #include "singlenumericattribute.h"
+#include <vespa/vespalib/stllike/hash_map.h>
 
 /**
  * This file contains low-level code used to implement diversified
@@ -113,7 +113,9 @@ public:
                     size_t cutoff_max_groups, bool cutoff_strict,
                     Result &result, size_t max_total)
         : _total_count(0), _max_total(max_total), _diversity(diversity), _max_per_group(max_per_group),
-          _cutoff_max_groups(cutoff_max_groups), _cutoff_strict(cutoff_strict), _seen(std::min(cutoff_max_groups, 10000ul)*3), _result(result) {}
+          _cutoff_max_groups(cutoff_max_groups), _cutoff_strict(cutoff_strict),
+          _seen(std::min(cutoff_max_groups, 10000ul)*3), _result(result)
+    { }
     template <typename Item>
     void push_back(Item item) {
         if (_total_count < _max_total) {

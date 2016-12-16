@@ -1,17 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "communicationmanager.h"
-#include "storagemetricsset.h"
-#include "documentapiconverter.h"
 #include <vespa/storageapi/message/state.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/storageapi/message/persistence.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/messagebus/sourcesessionparams.h>
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".communication.manager");

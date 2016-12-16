@@ -3,6 +3,8 @@
 #pragma once
 
 #include <assert.h>
+#include <cstdint>
+#include <sys/types.h>
 
 namespace search {
 namespace datastore {
@@ -85,14 +87,9 @@ public:
 
     BufferType(const BufferType &rhs) = delete;
     BufferType & operator=(const BufferType &rhs) = delete;
-    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters)
-        : BufferTypeBase(clusterSize, minClusters, maxClusters),
-          _emptyEntry()
-    { }
-    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters, uint32_t numClustersForNewBuffer)
-        : BufferTypeBase(clusterSize, minClusters, maxClusters, numClustersForNewBuffer),
-          _emptyEntry()
-    { }
+    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters);
+    BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters, uint32_t numClustersForNewBuffer);
+    ~BufferType();
     void destroyElements(void *buffer, size_t numElements) override;
     void fallbackCopy(void *newBuffer, const void *oldBuffer, size_t numElements) override;
     void initializeReservedElements(void *buffer, size_t reservedElements) override;
@@ -100,6 +97,20 @@ public:
     size_t elementSize() const override { return sizeof(EntryType); }
 };
 
+template <typename EntryType>
+BufferType<EntryType>::BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters)
+    : BufferTypeBase(clusterSize, minClusters, maxClusters),
+      _emptyEntry()
+{ }
+
+template <typename EntryType>
+BufferType<EntryType>::BufferType(uint32_t clusterSize, uint32_t minClusters, uint32_t maxClusters, uint32_t numClustersForNewBuffer)
+    : BufferTypeBase(clusterSize, minClusters, maxClusters, numClustersForNewBuffer),
+      _emptyEntry()
+{ }
+
+template <typename EntryType>
+BufferType<EntryType>::~BufferType() { }
 
 template <typename EntryType>
 void

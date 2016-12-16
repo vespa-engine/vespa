@@ -3,6 +3,8 @@
 
 #include "lockablemap.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 #include <thread>
 #include <chrono>
 
@@ -13,6 +15,12 @@ LockableMap<Map>::LockIdSet::LockIdSet() : Hash() { }
 
 template<typename Map>
 LockableMap<Map>::LockIdSet::~LockIdSet() { }
+
+template<typename Map>
+size_t
+LockableMap<Map>::LockIdSet::getMemoryUsage() const {
+    return Hash::getMemoryConsumption();
+}
 
 template<typename Map>
 LockableMap<Map>::LockWaiters::LockWaiters() : _id(0), _map() { }
