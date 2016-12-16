@@ -8,9 +8,7 @@
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/result.h>
-#include <persistence/spi/types.h>
 #include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
-#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchcore/proton/common/attrupdate.h>
