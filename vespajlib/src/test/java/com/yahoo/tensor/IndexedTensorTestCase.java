@@ -2,6 +2,10 @@ package com.yahoo.tensor;
 
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
@@ -85,7 +89,7 @@ public class IndexedTensorTestCase {
                 for (int y = 0; y < ySize; y++)
                     for (int x = xSize - 1; x >= 0; x--)
                         for (int z = 0; z < zSize; z++)
-                            builder.cell(v * w + x + y * z, v, w, x, y, z);
+                            builder.cell(value(v, w, x, y, z), v, w, x, y, z);
 
         IndexedTensor tensor = builder.build();
 
@@ -95,7 +99,7 @@ public class IndexedTensorTestCase {
                 for (int y = 0; y < ySize; y++)
                     for (int x = xSize - 1; x >= 0; x--)
                         for (int z = 0; z < zSize; z++)
-                            assertEquals(v * w + x + y * z, (int) tensor.get(v, w, x, y, z));
+                            assertEquals(value(v, w, x, y, z), (int) tensor.get(v, w, x, y, z));
 
 
         // Lookup by TensorAddress argument
@@ -104,7 +108,37 @@ public class IndexedTensorTestCase {
                 for (int y = 0; y < ySize; y++)
                     for (int x = xSize - 1; x >= 0; x--)
                         for (int z = 0; z < zSize; z++)
-                            assertEquals(v * w + x + y * z, (int) tensor.get(new TensorAddress(v, w, x, y, z)));
+                            assertEquals(value(v, w, x, y, z), (int) tensor.get(new TensorAddress(v, w, x, y, z)));
+        
+        // Lookup from cells
+        Map<TensorAddress, Double> cells = tensor.cells();
+        assertEquals(tensor.size(), cells.size());
+        for (int v = 0; v < vSize; v++)
+            for (int w = 0; w < wSize; w++)
+                for (int y = 0; y < ySize; y++)
+                    for (int x = xSize - 1; x >= 0; x--)
+                        for (int z = 0; z < zSize; z++)
+                            assertEquals(value(v, w, x, y, z), cells.get(new TensorAddress(v, w, x, y, z)).intValue());
+
+        // Lookup from iterator
+        Map<TensorAddress, Double> cellsOfIterator = new HashMap<>();
+        for (Iterator<Map.Entry<TensorAddress, Double>> i = tensor.cellIterator(); i.hasNext(); ) {
+            Map.Entry<TensorAddress, Double> cell = i.next();
+            cellsOfIterator.put(cell.getKey(), cell.getValue());
+        }
+        assertEquals(tensor.size(), cellsOfIterator.size());
+        for (int v = 0; v < vSize; v++)
+            for (int w = 0; w < wSize; w++)
+                for (int y = 0; y < ySize; y++)
+                    for (int x = xSize - 1; x >= 0; x--)
+                        for (int z = 0; z < zSize; z++)
+                            assertEquals(value(v, w, x, y, z), cellsOfIterator.get(new TensorAddress(v, w, x, y, z)).intValue());
+
+    }
+
+    /** Returns a unique value for some given cell indexes */
+    private int value(int v, int w, int x, int y, int z) {
+        return v + 3 * w + 7 * x + 11 * y + 13 * z;
     }
     
 }

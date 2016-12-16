@@ -75,7 +75,7 @@ public class TensorTestCase {
                                                                                                ImmutableList.of("y", "x")));
     }
 
-    /** Test the same computation made in various ways which are implemented with special-cvase optimizations */
+    /** Test the same computation made in various ways which are implemented with special-case optimizations */
     @Test
     public void testOptimizedComputation() {
         assertEquals("Mapped vector",          42, (int)dotProduct(vector(Type.mapped), vectors(Type.mapped, 2)));
