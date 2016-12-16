@@ -24,62 +24,6 @@ public class MappedTensor implements Tensor {
         this.cells = ImmutableMap.copyOf(cells);
     }
 
-    static MappedTensor from(TensorType type, String tensorString) {
-        tensorString = tensorString.trim();
-        if ( ! tensorString.startsWith("{"))
-            throw new IllegalArgumentException("Expecting a tensor starting by {, got '" + tensorString+ "'");
-        tensorString = tensorString.substring(1).trim();
-        ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
-        while (tensorString.length() > 1) {
-            int keyEnd = tensorString.indexOf('}');
-            TensorAddress address = addressFrom(type, tensorString.substring(0, keyEnd+1));
-            tensorString = tensorString.substring(keyEnd + 1).trim();
-            if ( ! tensorString.startsWith(":"))
-                throw new IllegalArgumentException("Expecting a ':' after " + address + ", got '" + tensorString+ "'");
-            int valueEnd = tensorString.indexOf(',');
-            if (valueEnd < 0) { // last value
-                valueEnd = tensorString.indexOf("}");
-                if (valueEnd < 0)
-                    throw new IllegalArgumentException("A tensor string must end by '}'");
-            }
-            Double value = asDouble(address, tensorString.substring(1, valueEnd).trim());
-            cells.put(address, value);
-            tensorString = tensorString.substring(valueEnd+1).trim();
-        }
-
-        ImmutableMap<TensorAddress, Double> cellMap = cells.build();
-        return new MappedTensor(type, cellMap);
-    }
-
-    /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
-    private static TensorAddress addressFrom(TensorType type, String mapAddressString) {
-        mapAddressString = mapAddressString.trim();
-        if ( ! (mapAddressString.startsWith("{") && mapAddressString.endsWith("}")))
-            throw new IllegalArgumentException("Expecting a tensor address to be enclosed in {}, got '" + mapAddressString + "'");
-
-        String addressBody = mapAddressString.substring(1, mapAddressString.length() - 1).trim();
-        if (addressBody.isEmpty()) return TensorAddress.empty;
-
-        TensorAddress.Builder builder = new TensorAddress.Builder(type);
-        for (String elementString : addressBody.split(",")) {
-            String[] pair = elementString.split(":");
-            if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
-                                                   "got '" + elementString + "'");
-            builder.add(pair[0].trim(), pair[1].trim());
-        }
-        return builder.build();
-    }
-
-    private static Double asDouble(TensorAddress address, String s) {
-        try {
-            return Double.valueOf(s);
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("At " + address + ": Expected a floating point number, got '" + s + "'");
-        }
-    }
-
     @Override
     public TensorType type() { return type; }
 
