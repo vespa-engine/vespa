@@ -140,7 +140,6 @@ public class IndexedTensor implements Tensor {
             this.type = type;
         }
 
-        // TODO: Let other tensor builders be created by this method as well (and update system tests)
         public static Builder of(TensorType type) {
             if (type.dimensions().stream().allMatch(d -> d instanceof TensorType.IndexedBoundDimension))
                 return new BoundBuilder(type);

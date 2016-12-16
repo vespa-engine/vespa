@@ -30,7 +30,7 @@ class TensorParser {
                 if (type.isPresent() && ! type.get().equals(TensorType.empty))
                     throw new IllegalArgumentException("Got zero-dimensional tensor '" + tensorString +
                                                        "but type is not empty but " + type.get());
-                return IndexedTensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
+                return Tensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
             }
         }
         catch (NumberFormatException e) {

@@ -246,7 +246,7 @@ public interface Tensor {
             if (containsIndexed && containsMapped)
                 throw new IllegalArgumentException("Combining indexed and mapped dimensions is not supported yet");
             if (containsMapped)
-                return new MappedTensor.Builder(type);
+                return MappedTensor.Builder.of(type);
             else // indexed or empty
                 return IndexedTensor.Builder.of(type);
         }

@@ -50,10 +50,12 @@ public class MappedTensor implements Tensor {
         private final TensorType type;
         private final ImmutableMap.Builder<TensorAddress, Double> cells = new ImmutableMap.Builder<>();
     
-        public Builder(TensorType type) {
+        public static Builder of(TensorType type) { return new Builder(type); }
+
+        private Builder(TensorType type) {
             this.type = type;
         }
-    
+        
         public MappedCellBuilder cell() {
             return new MappedCellBuilder();
         }
