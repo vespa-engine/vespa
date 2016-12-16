@@ -89,7 +89,7 @@ public abstract class LowercasingSearcher extends Searcher {
     }
 
     private boolean syntheticLowerCaseCheck(String indexName, IndexFacts.Session indexFacts, boolean isFromQuery) {
-        WordItem w = new WordItem("", indexName, isFromQuery);
+        WordItem w = new WordItem("not-used", indexName, isFromQuery);
         return shouldLowercase(w, indexFacts);
     }
 

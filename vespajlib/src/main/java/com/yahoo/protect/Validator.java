@@ -15,6 +15,12 @@ public abstract class Validator {
             throw new NullPointerException(argumentDescription + " can not be null");
     }
 
+    /** Throws NullPointerException if the argument is null */
+    public static void ensureNonEmpty(String argumentDescription, String argument) {
+        if (argument.isEmpty())
+            throw new IllegalArgumentException(argumentDescription + " can not be empty");
+    }
+
     /**
      * Throws an IllegalStateException if the given field value
      * is initialized (not null)
