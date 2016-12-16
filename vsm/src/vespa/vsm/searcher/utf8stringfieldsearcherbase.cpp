@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/vsm/searcher/utf8stringfieldsearcherbase.h>
 
 using search::QueryTerm;
 using search::QueryTermList;
 using search::byte;
 
-namespace vsm
-{
+namespace vsm {
 
 const byte *
 UTF8StringFieldSearcherBase::tokenize(const byte * p, size_t maxSz, cmptype_t * dstbuf, size_t & tokenlen)
@@ -160,6 +159,7 @@ UTF8StringFieldSearcherBase::matchTermExact(const FieldRef & f, QueryTerm & qt)
 size_t
 UTF8StringFieldSearcherBase::matchTermSubstring(const FieldRef & f, QueryTerm & qt)
 {
+    if (qt.termLen() == 0) { return 0; }
     const byte * n = reinterpret_cast<const byte *> (f.c_str());
     const cmptype_t * term;
     termsize_t tsz = qt.term(term);
