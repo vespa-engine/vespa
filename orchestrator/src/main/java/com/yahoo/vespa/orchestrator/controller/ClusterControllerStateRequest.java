@@ -92,4 +92,5 @@ public class ClusterControllerStateRequest {
     public enum Condition {
         FORCE, SAFE;
     }
+
 }

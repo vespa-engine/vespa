@@ -28,6 +28,7 @@ import static com.yahoo.collections.CollectionUtil.first;
  * @author hakonhall
  */
 public class VespaModelUtil {
+
     private static final Logger log = Logger.getLogger(VespaModelUtil.class.getName());
 
     public static final ClusterId ADMIN_CLUSTER_ID = new ClusterId("admin");
@@ -39,7 +40,7 @@ public class VespaModelUtil {
     public static final ServiceType STORAGENODE_SERVICE_TYPE = new ServiceType("storagenode");
 
     // @return true iff the service cluster refers to a cluster controller service cluster.
-    public static boolean isClusterController(final ServiceCluster<?> cluster) {
+    public static boolean isClusterController(ServiceCluster<?> cluster) {
         return CLUSTER_CONTROLLER_SERVICE_TYPE.equals(cluster.serviceType());
     }
 
@@ -56,7 +57,7 @@ public class VespaModelUtil {
     /**
      * @return true iff the service cluster is a content service cluster.
      */
-    public static boolean isContent(final ServiceCluster<?> cluster) {
+    public static boolean isContent(ServiceCluster<?> cluster) {
         return DISTRIBUTOR_SERVICE_TYPE.equals(cluster.serviceType()) ||
                 SEARCHNODE_SERVICE_TYPE.equals(cluster.serviceType()) ||
                 STORAGENODE_SERVICE_TYPE.equals(cluster.serviceType());
@@ -65,11 +66,10 @@ public class VespaModelUtil {
     /**
      * @return The set of all Cluster Controller service instances for the application.
      */
-    public static <T> Set<ServiceInstance<T>> getClusterControllerInstances(
-            ApplicationInstance<T> application,
-            ClusterId contentClusterId)
+    public static <T> Set<ServiceInstance<T>> getClusterControllerInstances(ApplicationInstance<T> application,
+                                                                            ClusterId contentClusterId)
     {
-        final Set<ServiceCluster<T>> controllerClusters = getClusterControllerServiceClusters(application);
+        Set<ServiceCluster<T>> controllerClusters = getClusterControllerServiceClusters(application);
 
         Collection<ServiceCluster<T>> controllerClustersForContentCluster = filter(controllerClusters, contentClusterId);
 
@@ -88,9 +88,8 @@ public class VespaModelUtil {
         }
     }
 
-    private static <T> Collection<ServiceCluster<T>> filter(
-            Set<ServiceCluster<T>> controllerClusters,
-            ClusterId contentClusterId) {
+    private static <T> Collection<ServiceCluster<T>> filter(Set<ServiceCluster<T>> controllerClusters,
+                                                            ClusterId contentClusterId) {
         ClusterId clusterControllerClusterId = new ClusterId(contentClusterId.s() + "-controllers");
 
         return controllerClusters.stream().
@@ -98,8 +97,7 @@ public class VespaModelUtil {
                 collect(Collectors.toList());
     }
 
-    public static <T> Set<ServiceCluster<T>> getClusterControllerServiceClusters(
-            final ApplicationInstance<T> application) {
+    public static <T> Set<ServiceCluster<T>> getClusterControllerServiceClusters(ApplicationInstance<T> application) {
         return application.serviceClusters().stream()
                     .filter(VespaModelUtil::isClusterController)
                     .collect(Collectors.toSet());
@@ -112,7 +110,7 @@ public class VespaModelUtil {
      */
     public static HostName getControllerHostName(ApplicationInstance<?> application, ClusterId contentClusterId) {
         //  It happens that the master Cluster Controller is the one with the lowest index, if up.
-        final ServiceInstance<?> serviceInstance = getClusterControllerInstances(application, contentClusterId)
+        ServiceInstance<?> serviceInstance = getClusterControllerInstances(application, contentClusterId)
                 .stream()
                 .min(Comparator.comparing(instance -> getClusterControllerIndex(instance.configId())))
                 .orElseThrow(() ->
@@ -169,8 +167,8 @@ public class VespaModelUtil {
         return getStorageNodeIndex(storageNode.get().configId());
     }
 
-    public static <T> Optional<ServiceInstance<T>> getStorageNodeAtHost(
-            ApplicationInstance<T> application, HostName hostName) {
+    public static <T> Optional<ServiceInstance<T>> getStorageNodeAtHost(ApplicationInstance<T> application, 
+                                                                        HostName hostName) {
         Set<ServiceInstance<T>> storageNodesOnHost = application.serviceClusters().stream()
                 .filter(VespaModelUtil::isStorage)
                 .flatMap(cluster -> cluster.serviceInstances().stream())
@@ -191,8 +189,7 @@ public class VespaModelUtil {
     }
 
     // See getClusterControllerIndex()
-    private static final Pattern CONTROLLER_INDEX_PATTERN =
-            Pattern.compile("admin/cluster-controllers/(\\d+)");
+    private static final Pattern CONTROLLER_INDEX_PATTERN = Pattern.compile("admin/cluster-controllers/(\\d+)");
 
     /**
      * @param configId  Must be of the form admin/cluster-controllers/2
@@ -224,4 +221,5 @@ public class VespaModelUtil {
 
         return Integer.valueOf(matcher.group(1));
     }
+
 }

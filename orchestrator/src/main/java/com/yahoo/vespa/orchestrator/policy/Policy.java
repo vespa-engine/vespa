@@ -10,6 +10,7 @@ import com.yahoo.vespa.service.monitor.ServiceMonitorStatus;
  * @author oyving
  */
 public interface Policy {
+
     /**
      * Decide whether to grant a request for temporarily suspending the services on a host.
      *
@@ -29,4 +30,5 @@ public interface Policy {
             ApplicationInstance<ServiceMonitorStatus> applicationInstance,
             HostName hostName,
             MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException;
+
 }

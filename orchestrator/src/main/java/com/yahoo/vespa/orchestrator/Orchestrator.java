@@ -38,7 +38,7 @@ public interface Orchestrator {
      * @return The enum describing the current state.
      * @throws HostNameNotFoundException if hostName is unrecognized (in node repo)
      */
-    HostStatus getNodeStatus(final HostName hostName) throws HostNameNotFoundException;
+    HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException;
 
     /**
      * Resume normal operation for this host.
@@ -47,7 +47,7 @@ public interface Orchestrator {
      * @throws HostStateChangeDeniedException if the request cannot be meet due to policy constraints.
      * @throws HostNameNotFoundException if the hostName is not recognized in the system (node repo)
      */
-    void resume(final HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException;
+    void resume(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException;
 
     /**
      * Suspend normal operations for this host.
@@ -56,7 +56,7 @@ public interface Orchestrator {
      * @throws HostStateChangeDeniedException if the request cannot be meet due to policy constraints.
      * @throws HostNameNotFoundException if the hostName is not recognized in the system (node repo)
      */
-    void suspend(final HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException;
+    void suspend(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException;
 
     /**
      * Get the orchestrator status of the application instance.
@@ -64,7 +64,7 @@ public interface Orchestrator {
      * @param appId Identifier of the application to check
      * @return The enum describing the current state.
      */
-    ApplicationInstanceStatus getApplicationInstanceStatus(final ApplicationId appId) throws ApplicationIdNotFoundException;
+    ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) throws ApplicationIdNotFoundException;
 
     /**
      * Returns all application instances that are suspended. The intention is to use this
@@ -79,7 +79,7 @@ public interface Orchestrator {
      *
      * @param appId Identifier of the application to resume
      */
-    void resume(final ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException;
+    void resume(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException;
 
 
     /**
@@ -88,7 +88,7 @@ public interface Orchestrator {
      *
      * @param appId Identifier of the application to resume
      */
-    void suspend(final ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException;
+    void suspend(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException;
 
     /**
      * Suspend all hosts. On failure, all hosts are resumed before exiting the method with an exception.

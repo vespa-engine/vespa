@@ -9,7 +9,9 @@ import com.yahoo.vespa.applicationmodel.HostName;
  * @author smorgrav
  */
 public class HostNameNotFoundException extends OrchestrationException {
+
     public HostNameNotFoundException(HostName hostName) {
          super("Hostname " + hostName + " not found in any instances");
     }
+
 }

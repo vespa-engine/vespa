@@ -6,10 +6,11 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import java.util.List;
 
 public class BatchHostNameNotFoundException extends OrchestrationException {
+
     public BatchHostNameNotFoundException(HostName parentHostname,
                                           List<HostName> hostNames,
                                           HostNameNotFoundException e) {
-            super("Failed to suspend " + hostNames + " with parent host "
-                    + parentHostname + ": " + e.getMessage(), e);
+        super("Failed to suspend " + hostNames + " with parent host " + parentHostname + ": " + e.getMessage(), e);
     }
+
 }

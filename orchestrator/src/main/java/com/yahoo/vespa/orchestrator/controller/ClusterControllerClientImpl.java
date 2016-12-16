@@ -11,14 +11,14 @@ import java.io.IOException;
  * @author smorgrav
  */
 public class ClusterControllerClientImpl implements ClusterControllerClient{
+
     public static final String REQUEST_REASON = "Orchestrator";
 
     private final JaxRsStrategy<ClusterControllerJaxRsApi> clusterControllerApi;
     private final String clusterName;
 
-    public ClusterControllerClientImpl(
-            final JaxRsStrategy<ClusterControllerJaxRsApi> clusterControllerApi,
-            final String clusterName) {
+    public ClusterControllerClientImpl(JaxRsStrategy<ClusterControllerJaxRsApi> clusterControllerApi,
+                                       String clusterName) {
         this.clusterName = clusterName;
         this.clusterControllerApi = clusterControllerApi;
     }
@@ -29,14 +29,14 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
      * @throws IOException if there was a problem communicating with the cluster controller
      */
     @Override
-    public ClusterControllerStateResponse setNodeState(final int storageNodeIndex, final ClusterControllerState wantedState) throws IOException {
-        final ClusterControllerStateRequest.State state = new ClusterControllerStateRequest.State(wantedState, REQUEST_REASON);
-        final ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.SAFE);
+    public ClusterControllerStateResponse setNodeState(int storageNodeIndex, ClusterControllerState wantedState) throws IOException {
+        ClusterControllerStateRequest.State state = new ClusterControllerStateRequest.State(wantedState, REQUEST_REASON);
+        ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.SAFE);
 
         try {
             return clusterControllerApi.apply(api -> api.setNodeState(clusterName, storageNodeIndex, stateRequest));
         } catch (IOException e) {
-            final String message = String.format(
+            String message = String.format(
                     "Giving up setting %s for storage node with index %d in cluster %s",
                     stateRequest,
                     storageNodeIndex,

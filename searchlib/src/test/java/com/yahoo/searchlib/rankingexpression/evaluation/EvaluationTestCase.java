@@ -196,8 +196,8 @@ public class EvaluationTestCase {
                                "max(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
         tester.assertEvaluates("{ {x:0,y:0}:3, {x:1,y:0}:5 }",
                                "min(tensor0, tensor1)", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
-        tester.assertEvaluates("{ {x:0,y:0,z:0}:7, {x:0,y:0,z:1}:13, {x:1,y:0,z:0}:21, {x:1,y:0,z:1}:39, {x:0,y:1,z:0}:55 }",
-                               "tensor0 * tensor1", "{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5 }", "{ {y:0,z:0}:7, {y:1,z:0}:11, {y:0,z:1}:13 }");
+        tester.assertEvaluates("{ {x:0,y:0,z:0}:7, {x:0,y:0,z:1}:13, {x:1,y:0,z:0}:21, {x:1,y:0,z:1}:39, {x:0,y:1,z:0}:55, {x:0,y:1,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:0 }",
+                               "tensor0 * tensor1", "{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5, {x:1,y:1}:0 }", "{ {y:0,z:0}:7, {y:1,z:0}:11, {y:0,z:1}:13, {y:1,z:1}:0 }");
         tester.assertEvaluates("{ {x:0,y:1,z:0}:35, {x:0,y:1,z:1}:65 }",
                                "tensor0 * tensor1", "tensor(x{},y{}):{ {x:0,y:0}:1, {x:1,y:0}:3, {x:0,y:1}:5 }", "tensor(y{},z{}):{ {y:1,z:0}:7, {y:2,z:0}:11, {y:1,z:1}:13 })");
         tester.assertEvaluates("{{x:0,y:0}:0.0}","tensor1 * tensor2 * tensor3", "{ {x:0}:1 }", "{ {x:1,y:0}:1, {x:0,y:0}:1 }", "{ {x:0,y:0}:1 }");
@@ -253,7 +253,7 @@ public class EvaluationTestCase {
                                "      * tensor3" +                    // - model weights application
                                ") + 1.7",
                                "{ {x:0}:1, {x:1}:2 }", "{ {y:0}:3, {y:1}:4 }", "{ {z:0}:5 }",
-                               "{ {x:0,y:0,z:0}:0.5, {x:1,y:0,z:0}:1.5, {x:0,y:0,z:1}:4.5 }");
+                               "{ {x:0,y:0,z:0}:0.5, {x:1,y:0,z:0}:1.5, {x:0,y:0,z:1}:4.5, {x:0,y:1,z:0}:0, {x:1,y:0,z:1}:0, {x:0,y:1,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:0 }");
         tester.assertEvaluates("1.0", "sum(tensor0 * tensor1 + 0.5)", "{ {x:0}:0, {x:1}:0 }", "{ {x:0}:1, {x:1}:1 }");
         tester.assertEvaluates("0.0", "sum(tensor0 * tensor1 + 0.5)", "{}",                   "{ {x:0}:1, {x:1}:1 }");
 

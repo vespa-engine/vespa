@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
  * @author bakksjo
  */
 public class RetryingClusterControllerClientFactory implements ClusterControllerClientFactory {
+
     // TODO: Figure this port out dynamically.
     public static final int HARDCODED_CLUSTERCONTROLLER_PORT = 19050;
     public static final String CLUSTERCONTROLLER_API_PATH = "/";
@@ -27,26 +28,23 @@ public class RetryingClusterControllerClientFactory implements ClusterController
 
     @Inject
     public RetryingClusterControllerClientFactory() {
-        this(new JerseyJaxRsClientFactory(
-                CLUSTER_CONTROLLER_CONNECT_TIMEOUT_MS,
-                CLUSTER_CONTROLLER_READ_TIMEOUT_MS));
+        this(new JerseyJaxRsClientFactory(CLUSTER_CONTROLLER_CONNECT_TIMEOUT_MS, CLUSTER_CONTROLLER_READ_TIMEOUT_MS));
     }
 
-    public RetryingClusterControllerClientFactory(
-            final JaxRsClientFactory jaxRsClientFactory) {
+    public RetryingClusterControllerClientFactory(JaxRsClientFactory jaxRsClientFactory) {
         this.jaxRsClientFactory = jaxRsClientFactory;
     }
 
     @Override
-    public ClusterControllerClient createClient(
-            final Collection<? extends ServiceInstance<?>> clusterControllers,
-            final String clusterName) {
-        final Set<HostName> hostNames = clusterControllers.stream()
+    public ClusterControllerClient createClient(Collection<? extends ServiceInstance<?>> clusterControllers,
+                                                String clusterName) {
+        Set<HostName> hostNames = clusterControllers.stream()
                 .map(ServiceInstance::hostName)
                 .collect(Collectors.toSet());
-        final JaxRsStrategy<ClusterControllerJaxRsApi> jaxRsApi
+        JaxRsStrategy<ClusterControllerJaxRsApi> jaxRsApi
                 = new JaxRsStrategyFactory(hostNames, HARDCODED_CLUSTERCONTROLLER_PORT, jaxRsClientFactory)
                 .apiWithRetries(ClusterControllerJaxRsApi.class, CLUSTERCONTROLLER_API_PATH);
         return new ClusterControllerClientImpl(jaxRsApi, clusterName);
     }
+
 }

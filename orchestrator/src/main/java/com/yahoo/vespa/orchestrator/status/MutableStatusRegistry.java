@@ -11,6 +11,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
  * @author bakksjo
  */
 public interface MutableStatusRegistry extends ReadOnlyStatusRegistry, AutoCloseable {
+
     /**
      * Sets the state for the given host.
      */
@@ -28,4 +29,5 @@ public interface MutableStatusRegistry extends ReadOnlyStatusRegistry, AutoClose
     @Override
     @NoThrow
     void close();
+
 }

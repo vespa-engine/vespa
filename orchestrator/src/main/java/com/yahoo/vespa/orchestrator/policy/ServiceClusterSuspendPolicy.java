@@ -9,13 +9,14 @@ import com.yahoo.vespa.applicationmodel.ServiceCluster;
  * @author bakksjo
  */
 public final class ServiceClusterSuspendPolicy {
+
     private static final int SUSPENSION_ALLOW_MINIMAL = 0;
     private static final int SUSPENSION_ALLOW_TEN_PERCENT = 10;
     private static final int SUSPENSION_ALLOW_ALL = 100;
 
     private ServiceClusterSuspendPolicy() {} // Disallow instantiation.
 
-    public static int getSuspendPercentageAllowed(final ServiceCluster<?> serviceCluster) {
+    public static int getSuspendPercentageAllowed(ServiceCluster<?> serviceCluster) {
         if (VespaModelUtil.ADMIN_CLUSTER_ID.equals(serviceCluster.clusterId())) {
             if (VespaModelUtil.SLOBROK_SERVICE_TYPE.equals(serviceCluster.serviceType())) {
                 return SUSPENSION_ALLOW_MINIMAL;
@@ -30,4 +31,5 @@ public final class ServiceClusterSuspendPolicy {
 
         return SUSPENSION_ALLOW_TEN_PERCENT;
     }
+
 }

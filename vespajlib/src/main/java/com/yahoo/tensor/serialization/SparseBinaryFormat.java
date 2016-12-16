@@ -61,7 +61,7 @@ class SparseBinaryFormat implements BinaryFormat {
     @Override
     public Tensor decode(GrowableByteBuffer buffer) {
         TensorType type = decodeDimensions(buffer);
-        MappedTensor.Builder builder = new MappedTensor.Builder(type);
+        Tensor.Builder builder = Tensor.Builder.of(type);
         decodeCells(buffer, builder, type);
         return builder.build();
     }
@@ -75,17 +75,16 @@ class SparseBinaryFormat implements BinaryFormat {
         return builder.build();
     }
 
-    private static void decodeCells(GrowableByteBuffer buffer, MappedTensor.Builder builder, TensorType type) {
+    private static void decodeCells(GrowableByteBuffer buffer, Tensor.Builder builder, TensorType type) {
         int numCells = buffer.getInt1_4Bytes();
         for (int i = 0; i < numCells; ++i) {
-            MappedTensor.Builder.CellBuilder cellBuilder = builder.cell();
+            Tensor.Builder.CellBuilder cellBuilder = builder.cell();
             decodeAddress(buffer, cellBuilder, type);
             cellBuilder.value(buffer.getDouble());
         }
     }
 
-    private static void decodeAddress(GrowableByteBuffer buffer, MappedTensor.Builder.CellBuilder builder,
-                                      TensorType type) {
+    private static void decodeAddress(GrowableByteBuffer buffer, Tensor.Builder.CellBuilder builder, TensorType type) {
         for (TensorType.Dimension dimension : type.dimensions()) {
             String label = decodeString(buffer);
             if ( ! label.isEmpty()) {

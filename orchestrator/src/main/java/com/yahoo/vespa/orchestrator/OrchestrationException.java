@@ -4,6 +4,7 @@ package com.yahoo.vespa.orchestrator;
 import java.util.Arrays;
 
 public class OrchestrationException extends Exception {
+
     public OrchestrationException(Throwable cause) {
         super(cause);
     }
@@ -26,4 +27,5 @@ public class OrchestrationException extends Exception {
         Arrays.stream(suppressedThrowables).forEach(t -> builder.append("; With suppressed throwable " + t));
         return builder.toString();
     }
+
 }

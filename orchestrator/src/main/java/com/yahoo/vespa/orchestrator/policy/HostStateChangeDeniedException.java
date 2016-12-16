@@ -9,34 +9,26 @@ import com.yahoo.vespa.orchestrator.OrchestrationException;
  * @author bakksjo
  */
 public class HostStateChangeDeniedException extends OrchestrationException {
+
     private final String constraintName;
     private final ServiceType serviceType;
 
-    public HostStateChangeDeniedException(
-            final HostName hostName,
-            final String constraintName,
-            final ServiceType serviceType,
-            final String message) {
+    public HostStateChangeDeniedException(HostName hostName, String constraintName, 
+                                          ServiceType serviceType, String message) {
         super(createMessage(hostName, constraintName, serviceType, message));
         this.constraintName = constraintName;
         this.serviceType = serviceType;
     }
 
-    public HostStateChangeDeniedException(
-            final HostName hostName,
-            final String constraintName,
-            final ServiceType serviceType,
-            final String message,
-            final Throwable cause) {
+    public HostStateChangeDeniedException(HostName hostName, String constraintName, 
+                                          ServiceType serviceType, String message, Throwable cause) {
         super(createMessage(hostName, constraintName, serviceType, message), cause);
         this.constraintName = constraintName;
         this.serviceType = serviceType;
     }
 
-    private static String createMessage(final HostName hostName,
-                                        final String constraintName,
-                                        final ServiceType serviceType,
-                                        final String message) {
+    private static String createMessage(HostName hostName, String constraintName, 
+                                        ServiceType serviceType, String message) {
         return "Changing the state of host " + hostName + " would violate " + constraintName
                 + " for service type " + serviceType + ": " + message;
     }
@@ -48,4 +40,5 @@ public class HostStateChangeDeniedException extends OrchestrationException {
     public ServiceType getServiceType() {
         return serviceType;
     }
+
 }

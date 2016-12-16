@@ -11,6 +11,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
  * @author bakksjo
  */
 public interface ReadOnlyStatusRegistry {
+
     /**
      * Gets the current state for the given host.
      */
@@ -20,4 +21,5 @@ public interface ReadOnlyStatusRegistry {
      * Gets the current status for the application instance.
      */
     ApplicationInstanceStatus getApplicationInstanceStatus();
+
 }

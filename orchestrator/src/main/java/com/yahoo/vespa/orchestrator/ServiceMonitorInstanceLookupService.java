@@ -20,26 +20,26 @@ import java.util.stream.Collectors;
  * @author bakksjo
  */
 public class ServiceMonitorInstanceLookupService implements InstanceLookupService {
+
     private final SlobrokAndConfigIntersector slobrokAndConfigIntersector;
 
     @Inject
-    public ServiceMonitorInstanceLookupService(final SlobrokAndConfigIntersector slobrokAndConfigIntersector) {
+    public ServiceMonitorInstanceLookupService(SlobrokAndConfigIntersector slobrokAndConfigIntersector) {
         this.slobrokAndConfigIntersector = slobrokAndConfigIntersector;
     }
 
     @Override
-    public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceById(
-            final ApplicationInstanceReference applicationInstanceReference) {
-        final Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap
+    public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceById(ApplicationInstanceReference applicationInstanceReference) {
+        Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap
                 = slobrokAndConfigIntersector.queryStatusOfAllApplicationInstances();
         return Optional.ofNullable(instanceMap.get(applicationInstanceReference));
     }
 
     @Override
     public Optional<ApplicationInstance<ServiceMonitorStatus>> findInstanceByHost(HostName hostName) {
-        final Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap
+        Map<ApplicationInstanceReference, ApplicationInstance<ServiceMonitorStatus>> instanceMap
                 = slobrokAndConfigIntersector.queryStatusOfAllApplicationInstances();
-        final List<ApplicationInstance<ServiceMonitorStatus>> applicationInstancesUsingHost = instanceMap.entrySet().stream()
+        List<ApplicationInstance<ServiceMonitorStatus>> applicationInstancesUsingHost = instanceMap.entrySet().stream()
                 .filter(entry -> applicationInstanceUsesHost(entry.getValue(), hostName))
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toList());
@@ -59,13 +59,13 @@ public class ServiceMonitorInstanceLookupService implements InstanceLookupServic
         return slobrokAndConfigIntersector.queryStatusOfAllApplicationInstances().keySet();
     }
 
-    private static boolean applicationInstanceUsesHost(
-            final ApplicationInstance<ServiceMonitorStatus> applicationInstance,
-            final HostName hostName) {
+    private static boolean applicationInstanceUsesHost(ApplicationInstance<ServiceMonitorStatus> applicationInstance,
+                                                       HostName hostName) {
         return applicationInstance.serviceClusters().stream()
                 .anyMatch(serviceCluster ->
                         serviceCluster.serviceInstances().stream()
                                 .anyMatch(serviceInstance ->
                                         serviceInstance.hostName().equals(hostName)));
     }
+
 }

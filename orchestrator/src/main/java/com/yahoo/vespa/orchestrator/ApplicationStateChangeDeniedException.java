@@ -19,4 +19,5 @@ public class ApplicationStateChangeDeniedException extends Exception {
         super();
         this.reason = reason;
     }
+
 }

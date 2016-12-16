@@ -22,19 +22,15 @@ public class InMemoryStatusService implements StatusService {
     private final Set<ApplicationInstanceReference> applicationStatus = new HashSet<>();
     private final LockService<ApplicationInstanceReference> instanceLockService = new LockService<>();
 
-    private void setHostStatus(
-            HostName hostName,
-            HostStatus status) {
-
+    private void setHostStatus(HostName hostName, HostStatus status) {
         hostServiceStatus.put(hostName, status);
     }
 
     @Override
-    public ReadOnlyStatusRegistry forApplicationInstance(
-            final ApplicationInstanceReference applicationInstanceReference) {
+    public ReadOnlyStatusRegistry forApplicationInstance(ApplicationInstanceReference applicationInstanceReference) {
         return new ReadOnlyStatusRegistry() {
             @Override
-            public HostStatus getHostStatus(final HostName hostName) {
+            public HostStatus getHostStatus(HostName hostName) {
                 return hostServiceStatus.getOrDefault(hostName, HostStatus.NO_REMARKS);
             }
 
@@ -47,9 +43,8 @@ public class InMemoryStatusService implements StatusService {
     }
 
     @Override
-    public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
-            final ApplicationInstanceReference applicationInstanceReference) {
-        final Lock lock = instanceLockService.get(applicationInstanceReference);
+    public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(ApplicationInstanceReference applicationInstanceReference) {
+        Lock lock = instanceLockService.get(applicationInstanceReference);
         return new InMemoryMutableStatusRegistry(lock, applicationInstanceReference);
     }
 
@@ -59,11 +54,11 @@ public class InMemoryStatusService implements StatusService {
     }
 
     private class InMemoryMutableStatusRegistry implements MutableStatusRegistry {
+
         private final Lock lockHandle;
         private final ApplicationInstanceReference ref;
 
-        public InMemoryMutableStatusRegistry(final Lock lockHandle,
-                                             final ApplicationInstanceReference ref) {
+        public InMemoryMutableStatusRegistry(Lock lockHandle, ApplicationInstanceReference ref) {
             this.lockHandle = lockHandle;
             this.ref = ref;
         }
@@ -100,6 +95,7 @@ public class InMemoryStatusService implements StatusService {
     }
 
     private static class LockService<T> {
+
         private final Map<T, Lock> locks;
 
         public LockService() {
@@ -117,4 +113,5 @@ public class InMemoryStatusService implements StatusService {
             }
         }
     }
+
 }

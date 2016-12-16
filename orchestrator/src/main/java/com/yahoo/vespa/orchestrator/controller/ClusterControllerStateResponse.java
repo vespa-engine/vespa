@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author hakonhall
  */
 public class ClusterControllerStateResponse {
+
     @JsonProperty("wasModified")
     public final boolean wasModified;
 
@@ -22,4 +23,5 @@ public class ClusterControllerStateResponse {
         this.wasModified = wasModified;
         this.reason = reason;
     }
+
 }

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
@@ -58,9 +59,11 @@ public interface Tensor {
     default double asDouble() {
         if (type().dimensions().size() > 0)
             throw new IllegalStateException("This tensor is not dimensionless. Dimensions: " + type().dimensions().size());
-        if (cells().size() != 1)
+        Map<TensorAddress, Double> cells = cells();
+        if (cells.size() == 0) return Double.NaN;
+        if (cells.size() > 1)
             throw new IllegalStateException("This tensor does not have a single value, it has " + cells().size());
-        return cells().values().iterator().next();
+        return cells.values().iterator().next();
     }
     
     // ----------------- Primitive tensor functions
@@ -212,21 +215,7 @@ public interface Tensor {
      * @param tensorString the tensor on the standard tensor string format
      */
     static Tensor from(TensorType type, String tensorString) {
-        boolean containsIndexedDimensions = false;
-        boolean containsMappedDimensions = false;
-        for (TensorType.Dimension dimension : type.dimensions()) {
-            switch (dimension.type()) {
-                case indexedBound: case indexedUnbound: containsIndexedDimensions = true; break;
-                case mapped : containsMappedDimensions = true; break;
-                default: throw new RuntimeException("Unknown dimension type: " + dimension);
-            }
-        }
-        if (containsIndexedDimensions && containsMappedDimensions)
-            throw new IllegalArgumentException("Mixed dimension types are not supported, got: " + type);
-        if (containsMappedDimensions)
-            return MappedTensor.from(type, tensorString);
-        else // indexed or none
-            return IndexedTensor.from(type, tensorString);
+        return TensorParser.tensorFrom(tensorString, Optional.of(type));
     }
 
     /**
@@ -237,7 +226,7 @@ public interface Tensor {
      * @param tensorString the tensor on the standard tensor string format
      */
     static Tensor from(String tensorType, String tensorString) {
-        return from(TensorType.fromSpec(tensorType), tensorString);
+        return TensorParser.tensorFrom(tensorString, Optional.of(TensorType.fromSpec(tensorType)));
     }
 
     /**
@@ -245,49 +234,9 @@ public interface Tensor {
      * If a type is not specified it is derived from the first cell of the tensor
      */
     static Tensor from(String tensorString) {
-        tensorString = tensorString.trim();
-        try {
-            if (tensorString.startsWith("tensor(")) {
-                int colonIndex = tensorString.indexOf(':');
-                String typeSpec = tensorString.substring(0, colonIndex);
-                String valueSpec = tensorString.substring(colonIndex + 1);
-                return from(TensorTypeParser.fromSpec(typeSpec), valueSpec);
-            }
-            else if (tensorString.startsWith("{")) {
-                return from(typeFromCellString(tensorString), tensorString);
-            }
-            else {
-                return new IndexedTensor.Builder(TensorType.empty).set(Double.parseDouble(tensorString)).build();
-            }
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" +
-                                               tensorString + "'");
-        }
+        return TensorParser.tensorFrom(tensorString, Optional.empty());
     }
-
-    /** Derive the tensor type from the first address string in the given tensor string */
-    static TensorType typeFromCellString(String s) {
-        s = s.substring(1).trim(); // remove tensor start
-        int firstKeyOrEmptyTensorEnd = s.indexOf('}');
-        String addressBody = s.substring(0, firstKeyOrEmptyTensorEnd).trim();
-        if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
-
-        addressBody = addressBody.substring(1); // remove key start
-        if (addressBody.isEmpty()) return TensorType.empty; // Empty key
-
-        TensorType.Builder builder = new TensorType.Builder();
-        for (String elementString : addressBody.split(",")) {
-            String[] pair = elementString.split(":");
-            if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
-                                                   "got '" + elementString + "'");
-            builder.mapped(pair[0].trim());
-        }
-
-        return builder.build();
-    }
-
+    
     interface Builder {
         
         /** Creates a suitable builder for the given type */
@@ -296,27 +245,48 @@ public interface Tensor {
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
             if (containsIndexed && containsMapped)
                 throw new IllegalArgumentException("Combining indexed and mapped dimensions is not supported yet");
-            if (containsIndexed)
-                return new IndexedTensor.Builder(type);
-            else
-                return new MappedTensor.Builder(type);
+            if (containsMapped)
+                return MappedTensor.Builder.of(type);
+            else // indexed or empty
+                return IndexedTensor.Builder.of(type);
         }
+        
+        /** Returns the type this is building */
+        TensorType type();
         
         /** Return a cell builder */
         CellBuilder cell();
 
-        /** Add a built cell */
+        /** Add a cell */
         Builder cell(TensorAddress address, double value);
+        
+        /** Add a cell */
+        Builder cell(double value, int ... labels);
 
         Tensor build();
 
-        interface CellBuilder {
+        class CellBuilder {
 
-            CellBuilder label(String dimension, String label);
+            private final TensorAddress.Builder addressBuilder;
+            private final Tensor.Builder tensorBuilder;
+            
+            CellBuilder(TensorType type, Tensor.Builder tensorBuilder) {
+                addressBuilder = new TensorAddress.Builder(type);
+                this.tensorBuilder = tensorBuilder;
+            }
 
-            CellBuilder label(String dimension, int label);
+            public CellBuilder label(String dimension, String label) {
+                addressBuilder.add(dimension, label);
+                return this;
+            }
 
-            Builder value(double cellValue);
+            public CellBuilder label(String dimension, int label) {
+                return label(dimension, String.valueOf(label));
+            }
+
+            public Builder value(double cellValue) {
+                return tensorBuilder.cell(addressBuilder.build(), cellValue);
+            }
 
         }
 

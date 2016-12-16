@@ -26,8 +26,15 @@ public final class TensorAddress implements Comparable<TensorAddress> {
 
     private final ImmutableList<String> labels;
 
-    public TensorAddress(String[] labels) {
+    public TensorAddress(String ... labels) {
         this.labels = ImmutableList.copyOf(labels);
+    }
+
+    public TensorAddress(int ... labels) {
+        ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
+        for (int label : labels)
+            builder.add(String.valueOf(label));
+        this.labels = builder.build();
     }
 
     /** Returns the labels of this as an immutable list in the order of the dimensions of the tensor type of this */

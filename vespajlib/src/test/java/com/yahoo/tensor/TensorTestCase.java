@@ -12,16 +12,54 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static com.yahoo.tensor.TensorType.Dimension.Type;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
- * Tests functionality on Tensor
+ * Tests Tensor functionality
  * 
  * @author bratseth
  */
 public class TensorTestCase {
+
+    @Test
+    public void testStringForm() {
+        assertEquals("{}", Tensor.from("{}").toString());
+        assertEquals("{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}", Tensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());
+        assertEquals("{{d1:l1,d2:l1}:-5.3,{d1:l1,d2:l2}:0.0}", Tensor.from("{ {d1:l1,d2:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
+    }
+
+    @Test
+    public void testParseError() {
+        try {
+            Tensor.from("--");
+            fail("Expected parse error");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("Excepted a number or a string starting by { or tensor(, got '--'", expected.getMessage());
+        }
+    }
+
+    @Test
+    public void testDimensions() {
+        Set<String> dimensions1 = Tensor.from("{} ").type().dimensionNames();
+        assertEquals(0, dimensions1.size());
+
+        Set<String> dimensions2 = Tensor.from("{ {d1:l1, d2:l2}:5, {d1:l2, d2:l2}:6.0} ").type().dimensionNames();
+        assertEquals(2, dimensions2.size());
+        assertTrue(dimensions2.contains("d1"));
+        assertTrue(dimensions2.contains("d2"));
+
+        Set<String> dimensions3 = Tensor.from("{ {d1:l1, d2:l1, d3:l1}:5, {d1:l1, d2:l2, d3:l1}:6.0} ").type().dimensionNames();
+        assertEquals(3, dimensions3.size());
+        assertTrue(dimensions3.contains("d1"));
+        assertTrue(dimensions3.contains("d2"));
+        assertTrue(dimensions3.contains("d3"));
+    }
 
     /** All functions are more throughly tested in searchlib EvaluationTestCase */
     @Test
@@ -36,22 +74,24 @@ public class TensorTestCase {
         assertEquals(Tensor.from("{ {y:1,x:1}:8, {x:1,y:2}:12 }"), tensor1.add(tensor2).rename(ImmutableList.of("x", "y"),
                                                                                                ImmutableList.of("y", "x")));
     }
-    
+
     /** Test the same computation made in various ways which are implemented with special-cvase optimizations */
     @Test
     public void testOptimizedComputation() {
-        assertEquals("Mapped vector",  42, (int)dotProduct(vector(Type.mapped), vectors(Type.mapped, 2)));
-        assertEquals("Indexed vector", 42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.indexedUnbound, 2)));
-        assertEquals("Mapped matrix",  42, (int)dotProduct(vector(Type.mapped), matrix(Type.mapped, 2)));
-        assertEquals("Indexed matrix", 42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.indexedUnbound, 2)));
-        assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
-        assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
-        assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.mapped), matrix(Type.indexedUnbound, 2)));
-        assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.mapped), matrix(Type.indexedUnbound, 2)));
-        assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
-        assertEquals("Mixed vector",   42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
-        assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
-        assertEquals("Mixed matrix",   42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
+        assertEquals("Mapped vector",          42, (int)dotProduct(vector(Type.mapped), vectors(Type.mapped, 2)));
+        assertEquals("Indexed unbound vector", 42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.indexedUnbound, 2)));
+        assertEquals("Indexed bound vector",   42, (int)dotProduct(vector(Type.indexedBound), vectors(Type.indexedBound, 2)));
+        assertEquals("Mapped matrix",          42, (int)dotProduct(vector(Type.mapped), matrix(Type.mapped, 2)));
+        assertEquals("Indexed unbound matrix", 42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.indexedUnbound, 2)));
+        assertEquals("Indexed bound matrix",   42, (int)dotProduct(vector(Type.indexedBound), matrix(Type.indexedBound, 2)));
+        assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
+        assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
+        assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.mapped), matrix(Type.indexedUnbound, 2)));
+        assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.mapped), matrix(Type.indexedUnbound, 2)));
+        assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
+        assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.mapped, 2)));
+        assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
+        assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.mapped, 2)));
         
         // Test the unoptimized path by joining in another dimension
         Tensor unitJ = Tensor.Builder.of(new TensorType.Builder().mapped("j").build()).cell().label("j", 0).value(1).build();
@@ -84,7 +124,7 @@ public class TensorTestCase {
     private List<Tensor> vectors(TensorType.Dimension.Type dimensionType, int vectorCount) {
         int vectorSize = 3;
         List<Tensor> tensors = new ArrayList<>();
-        TensorType type = new TensorType.Builder().dimension("x", dimensionType).build();
+        TensorType type = vectorType(new TensorType.Builder(), "x", dimensionType, vectorSize);
         for (int i = 0; i < vectorCount; i++) {
             Tensor.Builder builder = Tensor.Builder.of(type);
             for (int j = 0; j < vectorSize; j++) {
@@ -94,15 +134,17 @@ public class TensorTestCase {
         }
         return tensors;
     }
-
+    
     /** 
      * Create a matrix of vectors (in dimension i) where each vector has the dimension x.
      * This matrix contains the same vectors as returned by createVectors, in a single list element for convenience.
      */
     private List<Tensor> matrix(TensorType.Dimension.Type dimensionType, int vectorCount) {
         int vectorSize = 3;
-        TensorType type = new TensorType.Builder().dimension("i", dimensionType).dimension("x", dimensionType).build();
-        Tensor.Builder builder = Tensor.Builder.of(type);
+        TensorType.Builder typeBuilder = new TensorType.Builder();
+        typeBuilder.dimension("i", dimensionType == Type.indexedBound ? Type.indexedUnbound : dimensionType);
+        vectorType(typeBuilder, "x", dimensionType, vectorSize);
+        Tensor.Builder builder = Tensor.Builder.of(typeBuilder.build());
         for (int i = 0; i < vectorCount; i++) {
             for (int j = 0; j < vectorSize; j++) {
                 builder.cell()
@@ -112,6 +154,16 @@ public class TensorTestCase {
             }
         }
         return Collections.singletonList(builder.build());
+    }
+
+    private TensorType vectorType(TensorType.Builder builder, String name, TensorType.Dimension.Type type, int size) {
+        switch (type) {
+            case mapped: builder.mapped(name); break;
+            case indexedUnbound: builder.indexed(name); break;
+            case indexedBound: builder.indexed(name, size); break;
+            default: throw new IllegalArgumentException("Dimension type " + type + " not supported");
+        }
+        return builder.build();
     }
 
 }

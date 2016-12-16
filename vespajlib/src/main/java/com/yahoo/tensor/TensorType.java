@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +148,7 @@ public class TensorType {
 
         public final String name() { return name; }
 
-        /** Returns the size of this dimension if it is indexedUnbound, empty otherwise */
+        /** Returns the size of this dimension if it is bound, empty otherwise */
         public abstract Optional<Integer> size();
 
         public abstract Type type();
@@ -312,11 +311,11 @@ public class TensorType {
             return this;
         }
 
-        public Builder indexedBound(String name, int size) {
-            return add(new IndexedBoundDimension(name, size));
-        }
+        /** Create a bound indexed dimension */
+        public Builder indexed(String name, int size) { return add(new IndexedBoundDimension(name, size)); }
 
-        public Builder indexedUnbound(String name) {
+        /** Create an unbound indexed dimension */
+        public Builder indexed(String name) {
             return add(new IndexedUnboundDimension(name));
         }
 
@@ -331,34 +330,16 @@ public class TensorType {
         public Builder dimension(String name, Dimension.Type type) {
             switch (type) {
                 case mapped : mapped(name); break;
-                case indexedUnbound : indexedUnbound(name); break;
+                case indexedUnbound : indexed(name); break;
                 default : throw new IllegalArgumentException("This can not create a dimension of type " + type);
             }
             return this;
         }
 
         public TensorType build() {
-            // TODO: Support that
-            if (containsMappedDimension(dimensions.values()) && containsIndexedDimension(dimensions.values()))
-                throw new IllegalArgumentException(dimensions.values() + " contains both indexed and mapped dimensions, " +
-                                                   "this is not supported yet");
             return new TensorType(dimensions.values());
         }
         
-        private boolean containsMappedDimension(Collection<Dimension> dimensions) {
-            for (Dimension dimension : dimensions)
-                if (dimension instanceof MappedDimension) return true;
-            return false;
-        }
-
-        private boolean containsIndexedDimension(Collection<Dimension> dimensions) {
-            for (Dimension dimension : dimensions) {
-                if (dimension instanceof IndexedUnboundDimension) return true;
-                if (dimension instanceof IndexedBoundDimension) return true;
-            }
-            return false;
-        }
-
     }
 
 }

@@ -33,6 +33,7 @@ import java.util.logging.Logger;
  * @author tonytv
  */
 public class ZookeeperStatusService implements StatusService {
+
     private static final Logger log = Logger.getLogger(ZookeeperStatusService.class.getName());
 
     //For debug purposes only: Used to check that operations depending on a lock is done from a single thread,
@@ -59,11 +60,10 @@ public class ZookeeperStatusService implements StatusService {
     }
 
     @Override
-    public ReadOnlyStatusRegistry forApplicationInstance(
-            final ApplicationInstanceReference applicationInstanceReference) {
+    public ReadOnlyStatusRegistry forApplicationInstance(ApplicationInstanceReference applicationInstanceReference) {
         return new ReadOnlyStatusRegistry() {
             @Override
-            public HostStatus getHostStatus(final HostName hostName) {
+            public HostStatus getHostStatus(HostName hostName) {
                 return getInternalHostStatus(applicationInstanceReference, hostName);
             }
 
@@ -85,8 +85,7 @@ public class ZookeeperStatusService implements StatusService {
      *     (i.e. the request is for another applicationInstanceReference)
      */
     @Override
-    public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
-            final ApplicationInstanceReference applicationInstanceReference) {
+    public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(ApplicationInstanceReference applicationInstanceReference) {
         return lockApplicationInstance_forCurrentThreadOnly(applicationInstanceReference, 10, TimeUnit.SECONDS);
     }
 
@@ -112,19 +111,16 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
-            ApplicationInstanceReference applicationInstanceReference,
-            long timeout,
-            TimeUnit timeoutTimeUnit) {
-
-        final Thread currentThread = Thread.currentThread();
+    MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(ApplicationInstanceReference applicationInstanceReference,
+                                                                       long timeout,
+                                                                       TimeUnit timeoutTimeUnit) {
+        Thread currentThread = Thread.currentThread();
 
         //Due to limitations in SessionFailRetryLoop.
-        assertThreadDoesNotHoldLock(currentThread,
-                "Can't lock " + applicationInstanceReference);
+        assertThreadDoesNotHoldLock(currentThread,"Can't lock " + applicationInstanceReference);
 
         try {
-            SessionFailRetryLoop sessionFailRetryLoop =
+            SessionFailRetryLoop sessionFailRetryLoop = 
                     curatorFramework.getZookeeperClient().newSessionFailRetryLoop(Mode.FAIL);
             sessionFailRetryLoop.start();
             try {
@@ -167,10 +163,9 @@ public class ZookeeperStatusService implements StatusService {
         return mutex;
     }
 
-    private void setHostStatus(
-            ApplicationInstanceReference applicationInstanceReference,
-            HostName hostName,
-            HostStatus status) {
+    private void setHostStatus(ApplicationInstanceReference applicationInstanceReference,
+                               HostName hostName,
+                               HostStatus status) {
         assertThreadHoldsLock(applicationInstanceReference);
 
         String path = hostAllowedDownPath(applicationInstanceReference, hostName);
@@ -178,12 +173,11 @@ public class ZookeeperStatusService implements StatusService {
         try {
             switch (status) {
                 case NO_REMARKS:
-                    deleteNode_ignoreNoNodeException(path,
-                            "Host already has state NO_REMARKS, path = " + path);
+                    deleteNode_ignoreNoNodeException(path,"Host already has state NO_REMARKS, path = " + path);
                     break;
                 case ALLOWED_TO_BE_DOWN:
                     createNode_ignoreNodeExistsException(path,
-                            "Host already has state ALLOWED_TO_BE_DOWN, path = " + path);
+                                                         "Host already has state ALLOWED_TO_BE_DOWN, path = " + path);
             }
         } catch (Exception e) {
             //TODO: IOException with explanation

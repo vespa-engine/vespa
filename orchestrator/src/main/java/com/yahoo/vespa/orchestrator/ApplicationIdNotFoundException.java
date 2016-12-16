@@ -15,4 +15,5 @@ public class ApplicationIdNotFoundException extends Exception {
     public ApplicationIdNotFoundException(String reason) {
         super(reason);
     }
+
 }
