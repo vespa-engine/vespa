@@ -1,4 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/base/field.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -16,7 +17,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchcore/proton/server/commit_and_wait_document_retriever.h>
 #include <vespa/vespalib/objects/nbostream.h>
-
+#include <vespa/searchcommon/common/schema.h>
 
 using document::DocumentType;
 using document::Field;
