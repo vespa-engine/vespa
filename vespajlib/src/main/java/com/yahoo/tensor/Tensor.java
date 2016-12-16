@@ -215,7 +215,7 @@ public interface Tensor {
      * @param tensorString the tensor on the standard tensor string format
      */
     static Tensor from(TensorType type, String tensorString) {
-        return from(tensorString, Optional.of(type));
+        return TensorParser.tensorFrom(tensorString, Optional.of(type));
     }
 
     /**
@@ -226,7 +226,7 @@ public interface Tensor {
      * @param tensorString the tensor on the standard tensor string format
      */
     static Tensor from(String tensorType, String tensorString) {
-        return from(tensorString, Optional.of(TensorType.fromSpec(tensorType)));
+        return TensorParser.tensorFrom(tensorString, Optional.of(TensorType.fromSpec(tensorType)));
     }
 
     /**
@@ -234,72 +234,9 @@ public interface Tensor {
      * If a type is not specified it is derived from the first cell of the tensor
      */
     static Tensor from(String tensorString) {
-        return from(tensorString, Optional.empty());
+        return TensorParser.tensorFrom(tensorString, Optional.empty());
     }
     
-    static Tensor from(String tensorString, Optional<TensorType> type) {
-        tensorString = tensorString.trim();
-        try {
-            if (tensorString.startsWith("tensor(")) {
-                int colonIndex = tensorString.indexOf(':');
-                String typeString = tensorString.substring(0, colonIndex);
-                String valueString = tensorString.substring(colonIndex + 1);
-                TensorType typeFromString = TensorTypeParser.fromSpec(typeString);
-                if (type.isPresent() && ! type.get().equals(typeFromString))
-                    throw new IllegalArgumentException("Got tensor with type string '" + typeString + "', but was " +
-                                                       "passed type " + type);
-                return fromValueString(valueString, typeFromString);
-            }
-            else if (tensorString.startsWith("{")) {
-                return fromValueString(tensorString, type.orElse(typeFromValueString(tensorString)));
-            }
-            else {
-                if (type.isPresent() && ! type.get().equals(TensorType.empty))
-                    throw new IllegalArgumentException("Got zero-dimensional tensor '" + tensorString + 
-                                                       "but type is not empty but " + type.get());
-                return IndexedTensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
-            }
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Excepted a number or a string starting by { or tensor(, got '" +
-                                               tensorString + "'");
-        }
-    }
-
-    static Tensor fromValueString(String tensorCellString, TensorType type) {
-        boolean containsIndexedDimensions = type.dimensions().stream().anyMatch(d -> d.isIndexed());
-        boolean containsMappedDimensions = type.dimensions().stream().anyMatch(d -> !d.isIndexed());
-        if (containsIndexedDimensions && containsMappedDimensions)
-            throw new IllegalArgumentException("Mixed dimension types are not supported, got: " + type);
-        if (containsMappedDimensions)
-            return MappedTensor.from(type, tensorCellString);
-        else // indexed or none
-            return IndexedTensor.from(type, tensorCellString);
-    }
-
-    /** Derive the tensor type from the first address string in the given tensor string */
-    static TensorType typeFromValueString(String s) {
-        s = s.substring(1).trim(); // remove tensor start
-        int firstKeyOrTensorEnd = s.indexOf('}');
-        String addressBody = s.substring(0, firstKeyOrTensorEnd).trim();
-        if (addressBody.isEmpty()) return TensorType.empty; // Empty tensor
-        if ( ! addressBody.startsWith("{")) return TensorType.empty; // Single value tensor
-
-        addressBody = addressBody.substring(1); // remove key start
-        if (addressBody.isEmpty()) return TensorType.empty; // Empty key
-
-        TensorType.Builder builder = new TensorType.Builder();
-        for (String elementString : addressBody.split(",")) {
-            String[] pair = elementString.split(":");
-            if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements to be on the form dimension:label, " +
-                                                   "got '" + elementString + "'");
-            builder.mapped(pair[0].trim());
-        }
-
-        return builder.build();
-    }
-
     interface Builder {
         
         /** Creates a suitable builder for the given type */
