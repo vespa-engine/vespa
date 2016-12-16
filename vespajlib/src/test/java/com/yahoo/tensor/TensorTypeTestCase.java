@@ -54,11 +54,6 @@ public class TensorTypeTestCase {
     }
 
     @Test
-    public void requireThatDimensionsAreOfSameType() {
-        assertIllegalTensorType("tensor(x[],y{})", "[x[], y{}] contains both indexed and mapped dimensions, this is not supported yet");
-    }
-
-    @Test
     public void requireThatIllegalSyntaxInSpecThrowsException() {
         assertIllegalTensorType("foo(x[10])", "Tensor type spec must start with 'tensor(' and end with ')', but was 'foo(x[10])'");
         assertIllegalTensorType("tensor(x_@[10])", "Failed parsing element 'x_@[10]' in type spec 'tensor(x_@[10])'");

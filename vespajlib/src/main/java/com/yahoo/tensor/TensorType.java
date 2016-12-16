@@ -339,27 +339,9 @@ public class TensorType {
         }
 
         public TensorType build() {
-            // TODO: Support that
-            if (containsMappedDimension(dimensions.values()) && containsIndexedDimension(dimensions.values()))
-                throw new IllegalArgumentException(dimensions.values() + " contains both indexed and mapped dimensions, " +
-                                                   "this is not supported yet");
             return new TensorType(dimensions.values());
         }
         
-        private boolean containsMappedDimension(Collection<Dimension> dimensions) {
-            for (Dimension dimension : dimensions)
-                if (dimension instanceof MappedDimension) return true;
-            return false;
-        }
-
-        private boolean containsIndexedDimension(Collection<Dimension> dimensions) {
-            for (Dimension dimension : dimensions) {
-                if (dimension instanceof IndexedUnboundDimension) return true;
-                if (dimension instanceof IndexedBoundDimension) return true;
-            }
-            return false;
-        }
-
     }
 
 }
