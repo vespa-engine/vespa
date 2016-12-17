@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multinumericenumattribute.h>
+#include "multinumericenumattribute.h"
 #include "postinglistattribute.h"
 #include "i_document_weight_attribute.h"
 
@@ -48,10 +48,8 @@ private:
     typedef typename B::DocId DocId;
     typedef typename B::LoadedVector    LoadedVector;
     typedef attribute::LoadedEnumAttributeVector LoadedEnumAttributeVector;
-    typedef PostingListAttributeSubBase<AttributeWeightPosting,
-                                        LoadedVector,
-                                        typename B::LoadedValueType,
-                                        EnumStore> PostingParent;
+    typedef PostingListAttributeSubBase<AttributeWeightPosting, LoadedVector,
+            typename B::LoadedValueType, EnumStore> PostingParent;
     typedef typename PostingParent::PostingList PostingList;
     typedef typename PostingParent::PostingMap  PostingMap;
     typedef typename PostingParent::Posting     Posting;
@@ -69,14 +67,9 @@ private:
     typedef typename MultiValueNumericEnumAttribute<B, M>::SetSearchContext   SetSearchContext;
     typedef ArraySearchContext       ArrayNumericSearchContext;
     typedef SetSearchContext         SetNumericSearchContext;
-    typedef attribute::NumericPostingSearchContext<ArrayNumericSearchContext,
-                                                   SelfType,
-                                                   int32_t>
-    ArrayPostingSearchContext;
-    typedef attribute::NumericPostingSearchContext<SetNumericSearchContext,
-                                                   SelfType,
-                                                   int32_t>
-    SetPostingSearchContext;
+    using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
+    typedef attribute::NumericPostingSearchContext<ArrayNumericSearchContext, SelfType, int32_t> ArrayPostingSearchContext;
+    typedef attribute::NumericPostingSearchContext<SetNumericSearchContext, SelfType, int32_t> SetPostingSearchContext;
     using PostingParent::_postingList;
     using PostingParent::clearAllPostings;
     using PostingParent::handleFillPostings;
@@ -89,41 +82,29 @@ private:
 
 public:
     MultiValueNumericPostingAttribute(const vespalib::string & name, const AttributeVector::Config & cfg);
-
-    virtual
-    ~MultiValueNumericPostingAttribute();
+    virtual~MultiValueNumericPostingAttribute();
 
     virtual void removeOldGenerations(generation_t firstUsed);
     virtual void onGenerationChange(generation_t generation);
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
 
     virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
 
-    virtual bool
-    onAddDoc(DocId doc)
-    {
-        return forwardedOnAddDoc(doc,
-                                 this->_mvMapping.getNumKeys(),
-                                 this->_mvMapping.getCapacityKeys());
+    virtual bool onAddDoc(DocId doc) {
+        return forwardedOnAddDoc(doc, this->_mvMapping.getNumKeys(), this->_mvMapping.getCapacityKeys());
     }
     
-    virtual void
-    fillPostings(LoadedVector & loaded)
-    {
+    virtual void fillPostings(LoadedVector & loaded) {
         handleFillPostings(loaded);
     }
 
-    virtual attribute::IPostingListAttributeBase *
-    getIPostingListAttributeBase(void)
-    {
+    virtual attribute::IPostingListAttributeBase *getIPostingListAttributeBase() {
         return this;
     }
 
-    virtual void
-    fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded)
-    {
+    virtual void fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded) {
         fillPostingsFixupEnumBase(loaded);
     }
 };

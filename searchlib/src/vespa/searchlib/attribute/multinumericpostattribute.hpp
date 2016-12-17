@@ -73,7 +73,7 @@ MultiValueNumericPostingAttribute<B, M>::onGenerationChange(generation_t generat
 
 template <typename B, typename M>
 AttributeVector::SearchContext::UP
-MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
+MultiValueNumericPostingAttribute<B, M>::getSearch(QueryTermSimpleUP qTerm,
                                                    const AttributeVector::SearchContext::Params & params) const
 {
     std::unique_ptr<search::AttributeVector::SearchContext> sc;

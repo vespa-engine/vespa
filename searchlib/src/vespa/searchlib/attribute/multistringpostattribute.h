@@ -57,6 +57,7 @@ private:
     typedef typename PostingParent::PostingList PostingList;
     typedef typename PostingParent::PostingMap  PostingMap;
     typedef typename PostingParent::Posting     Posting;
+    using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
     typedef typename MultiValueStringAttributeT<B, T>::StringSetImplSearchContext StringSetImplSearchContext;
     typedef typename MultiValueStringAttributeT<B, T>::StringArrayImplSearchContext StringArrayImplSearchContext;
@@ -90,7 +91,7 @@ public:
     void onGenerationChange(generation_t generation) override;
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
 
     const IDocumentWeightAttribute *asDocumentWeightAttribute() const override;
 

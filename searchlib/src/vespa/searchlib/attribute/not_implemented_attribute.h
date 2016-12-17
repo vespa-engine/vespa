@@ -34,7 +34,7 @@ struct NotImplementedAttribute : AttributeVector {
     void getEnumValue(const EnumHandle *, uint32_t *, uint32_t) const override;
     bool addDoc(DocId &) override;
 
-    SearchContext::UP getSearch(QueryTermSimple::UP, const SearchContext::Params &) const override;
+    SearchContext::UP getSearch(QueryTermSimpleUP, const SearchContext::Params &) const override;
 };
 
 }  // namespace search

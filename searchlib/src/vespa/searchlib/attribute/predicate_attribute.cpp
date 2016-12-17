@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP(".predicate_attribute");
-#include <vespa/fastos/fastos.h>
-
 #include "predicate_attribute.h"
-#include <vespa/searchlib/predicate/predicate_tree_annotator.h>
+#include <vespa/searchlib/util/fileutil.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
-#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".predicate_attribute");
 
 using document::Predicate;
 using document::PredicateFieldValue;
@@ -178,7 +176,7 @@ struct DummyObserver : SimpleIndexDeserializeObserver<> {
 
 bool PredicateAttribute::onLoad()
 {
-    FileUtil::LoadedBuffer::UP loaded_buffer = loadDAT();
+    fileutil::LoadedBuffer::UP loaded_buffer = loadDAT();
     char *rawBuffer = const_cast<char *>(static_cast<const char *>(loaded_buffer->buffer()));
     size_t size = loaded_buffer->size();
     DataBuffer buffer(rawBuffer, size);

@@ -9,6 +9,8 @@
 
 namespace search {
 
+class ReaderBase;
+
 class NumericAttribute : public AttributeVector
 {
 protected:
@@ -16,32 +18,16 @@ protected:
     typedef EnumStoreBase::IndexVector EnumIndexVector;
     typedef EnumStoreBase::EnumVector  EnumVector;
 
-    NumericAttribute(const vespalib::string & name,
-                     const AttributeVector::Config & cfg)
+    NumericAttribute(const vespalib::string & name, const AttributeVector::Config & cfg)
         : AttributeVector(name, cfg)
-    {
-    }
+    { }
 
-    virtual void
-    fillEnum0(const void *src,
-              size_t srcLen,
-              EnumIndexVector &eidxs);
-
-    virtual void
-    fillEnumIdx(ReaderBase &attrReader,
-                const EnumIndexVector &eidxs,
-                attribute::LoadedEnumAttributeVector &loaded);
-
-    virtual void
-    fillEnumIdx(ReaderBase &attrReader,
-                const EnumIndexVector &eidxs,
-                EnumVector &enumHist);
-
-    virtual void
-    fillPostingsFixupEnum(const attribute::LoadedEnumAttributeVector &loaded);
-
-    virtual void
-    fixupEnumRefCounts(const EnumVector &enumHist);
+    virtual void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs);
+    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs,
+                             attribute::LoadedEnumAttributeVector &loaded);
+    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist);
+    virtual void fillPostingsFixupEnum(const attribute::LoadedEnumAttributeVector &loaded);
+    virtual void fixupEnumRefCounts(const EnumVector &enumHist);
 
     template<typename T>
     class Equal
@@ -50,15 +36,7 @@ protected:
         T _value;
         bool _valid;
     protected:
-        Equal(QueryTermSimple &queryTerm, bool avoidUndefinedInRange = false)
-            : _value(0),
-              _valid(false)
-        {
-            (void) avoidUndefinedInRange;
-            QueryTermSimple::RangeResult<T> res = queryTerm.getRange<T>();
-            _valid = res.valid && res.isEqual() && !res.adjusted;
-            _value = res.high;
-        }
+        Equal(const QueryTermSimple &queryTerm, bool avoidUndefinedInRange);
         bool isValid() const { return _valid; }
         bool match(T v) const { return v == _value; }
         Int64Range getRange() const {
@@ -77,26 +55,8 @@ protected:
         int _limit;
         size_t _max_per_group;
     protected:
-        Range(const QueryTermSimple & queryTerm,
-              bool avoidUndefinedInRange=false)
-            : _low(0),
-              _high(0),
-              _valid(false)
-        {
-            QueryTermSimple::RangeResult<T> res = queryTerm.getRange<T>();
-            _valid = res.isEqual() ? (res.valid && !res.adjusted) : res.valid;
-            _low = res.low;
-            _high = res.high;
-            _limit = queryTerm.getRangeLimit();
-            _max_per_group = queryTerm.getMaxPerGroup();
-            if (_valid && avoidUndefinedInRange &&
-                _low == std::numeric_limits<T>::min()) {
-                _low += 1;
-            }
-        }
-        Int64Range
-        getRange() const
-        {
+        Range(const QueryTermSimple & queryTerm, bool avoidUndefinedInRange=false);
+        Int64Range getRange() const {
             return Int64Range(static_cast<int64_t>(_low),
                               static_cast<int64_t>(_high));
         }

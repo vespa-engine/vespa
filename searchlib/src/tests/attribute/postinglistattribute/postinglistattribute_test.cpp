@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("postinglistattribute_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -12,11 +10,13 @@ LOG_SETUP("postinglistattribute_test");
 #include <vespa/searchlib/attribute/multinumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
 #include <vespa/searchlib/attribute/multistringpostattribute.h>
-
+#include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/vespalib/util/compress.h>
 #include <iostream>
+#include <vespa/log/log.h>
+LOG_SETUP("postinglistattribute_test");
 
 using std::shared_ptr;
 

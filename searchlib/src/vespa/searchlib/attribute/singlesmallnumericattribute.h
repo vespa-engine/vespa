@@ -2,19 +2,17 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/attributeiterators.h>
+#include "integerbase.h"
+#include "floatbase.h"
+#include "attributeiterators.hpp"
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/query/query.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <limits>
-#include <string>
 
 namespace search {
 
-class SingleValueSmallNumericAttribute :
-        public IntegerAttributeTemplate<int8_t>
+class SingleValueSmallNumericAttribute : public IntegerAttributeTemplate<int8_t>
 {
 private:
 //    friend class AttributeVector::SearchContext;
@@ -76,82 +74,38 @@ public:
         uint32_t _valueShiftMask;
         uint32_t _wordShift;
 
-        virtual bool
-        onCmp(DocId docId, int32_t & weight) const
-        {
+        bool onCmp(DocId docId, int32_t & weight) const override {
             return cmp(docId, weight);
         }
 
-        virtual bool
-        onCmp(DocId docId) const
-        {
+        bool onCmp(DocId docId) const override {
             return cmp(docId);
         }
 
-        virtual bool valid() const { return this->isValid(); }
+        bool valid() const override;
 
     public:
-        SingleSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched)
-            : NumericAttribute::Range<T>(*qTerm),
-              SearchContext(toBeSearched),
-              _wordData(&static_cast<const SingleValueSmallNumericAttribute &>
-                        (toBeSearched)._wordData[0]),
-              _valueMask(static_cast<const SingleValueSmallNumericAttribute &>
-                        (toBeSearched)._valueMask),
-              _valueShiftShift(
-                      static_cast<const SingleValueSmallNumericAttribute &>
-                      (toBeSearched)._valueShiftShift),
-              _valueShiftMask(
-                      static_cast<const SingleValueSmallNumericAttribute &>
-                      (toBeSearched)._valueShiftMask),
-              _wordShift(static_cast<const SingleValueSmallNumericAttribute &>
-                         (toBeSearched)._wordShift)
-        {
-        }
+        SingleSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched);
 
-        bool
-        cmp(DocId docId, int32_t & weight) const
-        {
+        bool cmp(DocId docId, int32_t & weight) const {
             const Word &word = _wordData[docId >> _wordShift];
-            uint32_t valueShift =
-                (docId & _valueShiftMask) << _valueShiftShift;
+            uint32_t valueShift = (docId & _valueShiftMask) << _valueShiftShift;
             T v = (word >> valueShift) & _valueMask;
             weight = 1;
             return match(v);
         }
 
-        bool
-        cmp(DocId docId) const
-        {
+        bool cmp(DocId docId) const {
             const Word &word = _wordData[docId >> _wordShift];
-            uint32_t valueShift =
-                (docId & _valueShiftMask) << _valueShiftShift;
+            uint32_t valueShift = (docId & _valueShiftMask) << _valueShiftShift;
             T v = (word >> valueShift) & _valueMask;
             return match(v);
         }
 
-        virtual Int64Range getAsIntegerTerm() const {
-            return this->getRange();
-        }
+        Int64Range getAsIntegerTerm() const override;
 
-        virtual std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-        {
-            if (!valid()) {
-                return queryeval::SearchIterator::UP(
-                        new queryeval::EmptySearch());
-            }
-            if (getIsFilter()) {
-                return queryeval::SearchIterator::UP
-                    (strict
-                     ? new FilterAttributeIteratorStrict<SingleSearchContext>(*this, matchData)
-                     : new FilterAttributeIteratorT<SingleSearchContext>(*this, matchData));
-            }
-            return queryeval::SearchIterator::UP
-                (strict
-                 ? new AttributeIteratorStrict<SingleSearchContext>(*this, matchData)
-                 : new AttributeIteratorT<SingleSearchContext>(*this, matchData));
-        }
+        std::unique_ptr<queryeval::SearchIterator>
+        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
     };
 
     SingleValueSmallNumericAttribute(const vespalib::string & baseFileName,
@@ -161,8 +115,7 @@ public:
                                      uint32_t valueShiftMask,
                                      uint32_t wordShift);
 
-    virtual
-    ~SingleValueSmallNumericAttribute(void);
+    virtual ~SingleValueSmallNumericAttribute(void);
 
     virtual uint32_t
     getValueCount(DocId doc) const

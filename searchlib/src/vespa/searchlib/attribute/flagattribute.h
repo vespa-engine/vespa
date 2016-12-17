@@ -34,8 +34,7 @@ private:
     };
     virtual bool onLoad();
 
-    virtual bool
-    onLoadEnumerated(typename B::ReaderBase &attrReader);
+    virtual bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
     getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;

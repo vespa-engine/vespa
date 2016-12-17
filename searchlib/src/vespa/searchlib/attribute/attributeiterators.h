@@ -98,8 +98,7 @@ protected:
     const SC & _searchContext;
 
 public:
-    FilterAttributeIteratorT(const SC &searchContext,
-                             fef::TermFieldMatchData *matchData);
+    FilterAttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData);
     bool seekFast(uint32_t docId) const { return _searchContext.cmp(docId); }
 };
 
@@ -127,8 +126,7 @@ private:
 public:
     AttributeIteratorStrict(const SC &searchContext, fef::TermFieldMatchData * matchData)
         : AttributeIteratorT<SC>(searchContext, matchData)
-    {
-    }
+    { }
 };
 
 
@@ -146,8 +144,7 @@ private:
 public:
     FilterAttributeIteratorStrict(const SC &searchContext, fef::TermFieldMatchData * matchData)
         : FilterAttributeIteratorT<SC>(searchContext, matchData)
-    {
-    }
+    { }
 };
 
 
@@ -198,40 +195,6 @@ FilterAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
     }
     setAtEnd();
 }
-
-template <typename SC>
-void
-AttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
-    AttributeIterator::visitMembers(visitor);
-    visit(visitor, "searchcontext.attribute", _searchContext.attribute().getName());
-    visit(visitor, "searchcontext.queryterm", _searchContext.queryTerm());
-}
-
-template <typename SC>
-void
-FilterAttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
-    FilterAttributeIterator::visitMembers(visitor);
-    visit(visitor, "searchcontext.attribute", _searchContext.attribute().getName());
-    visit(visitor, "searchcontext.queryterm", _searchContext.queryTerm());
-}
-
-template <typename SC>
-AttributeIteratorT<SC>::AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
-    : AttributeIterator(matchData, searchContext._attr.getCommittedDocIdLimit()),
-      _searchContext(searchContext)
-{
-}
-
-
-template <typename SC>
-FilterAttributeIteratorT<SC>::FilterAttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
-    : FilterAttributeIterator(matchData, searchContext._attr.getCommittedDocIdLimit()),
-      _searchContext(searchContext)
-{
-}
-
 
 /**
  * This class acts as an iterator over documents that are results for
@@ -463,8 +426,7 @@ class FlagAttributeIterator : public AttributeIteratorBase
 public:
     FlagAttributeIterator(fef::TermFieldMatchData * matchData)
         : AttributeIteratorBase(matchData)
-    {
-    }
+    { }
 protected:
     void doUnpack(uint32_t docId) override;
 };
@@ -485,8 +447,7 @@ public:
           _sc(sc),
           _docIdLimit(static_cast<const typename SC::Attribute &>
                       (sc.attribute()).getCommittedDocIdLimit())
-    {
-    }
+    { }
 
     void initRange(uint32_t begin, uint32_t end) override {
         FlagAttributeIterator::initRange(begin, end);
@@ -510,11 +471,9 @@ private:
     Trinary is_strict() const override { return Trinary::True; }
 
 public:
-    FlagAttributeIteratorStrict(const SC &sc,
-                                fef::TermFieldMatchData *matchData)
+    FlagAttributeIteratorStrict(const SC &sc, fef::TermFieldMatchData *matchData)
         : FlagAttributeIteratorT<SC>(sc, matchData)
-    {
-    }
+    { }
 };
 
 template <typename SC>

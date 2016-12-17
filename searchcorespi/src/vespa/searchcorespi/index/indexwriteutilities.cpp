@@ -4,7 +4,7 @@
 #include "indexreadutilities.h"
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <sstream>
 

@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/stringattribute.h>
-#include <vespa/searchlib/attribute/multistringpostattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.hpp>
+#include "stringattribute.h"
+#include "multistringpostattribute.h"
+#include "multistringattribute.hpp"
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <set>
-#include <string>
+#include <vespa/searchlib/query/queryterm.h>
+
 
 namespace search {
 
@@ -88,7 +88,7 @@ MultiValueStringPostingAttributeT<B, T>::onGenerationChange(generation_t generat
 
 template <typename B, typename T>
 AttributeVector::SearchContext::UP
-MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimple::UP qTerm,
+MultiValueStringPostingAttributeT<B, T>::getSearch(QueryTermSimpleUP qTerm,
                                                    const AttributeVector::SearchContext::Params & params) const
 {
     std::unique_ptr<search::AttributeVector::SearchContext> sc;

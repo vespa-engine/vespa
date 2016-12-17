@@ -4,19 +4,21 @@
 
 #include "multinumericenumattribute.h"
 #include "loadednumericvalue.h"
+#include "attributeiterators.hpp"
 #include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/fastlib/io/bufferedfile.h>
-
+#include <vespa/searchlib/query/queryterm.h>
 
 namespace search {
+
+using fileutil::LoadedBuffer;
 
 template <typename B, typename M>
 MultiValueNumericEnumAttribute<B, M>::
 MultiValueNumericEnumAttribute(const vespalib::string & baseFileName,
                                const AttributeVector::Config & cfg)
     : MultiValueEnumAttribute<B, M>(baseFileName, cfg)
-{
-}
+{ }
 
 template <typename B, typename M>
 void
@@ -48,10 +50,9 @@ MultiValueNumericEnumAttribute<B, M>::loadAllAtOnce(AttributeReader & attrReader
 
 template <typename B, typename M>
 bool
-MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(typename B::ReaderBase &
-                                                       attrReader)
+MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
 {
-    FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    LoadedBuffer::UP udatBuffer(this->loadUDAT());
 
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     uint64_t numValues = attrReader.getNumValues();
@@ -140,6 +141,70 @@ MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
     }
 }
 
+template <typename B, typename M>
+MultiValueNumericEnumAttribute<B, M>::SetSearchContext::SetSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
+    NumericAttribute::Range<T>(*qTerm),
+    SearchContext(toBeSearched),
+    _toBeSearched(static_cast<const MultiValueNumericEnumAttribute<B, M> &>(toBeSearched))
+{ }
+
+template <typename B, typename M>
+Int64Range
+MultiValueNumericEnumAttribute<B, M>::SetSearchContext::getAsIntegerTerm() const {
+    return this->getRange();
+}
+
+template <typename B, typename M>
+std::unique_ptr<queryeval::SearchIterator>
+MultiValueNumericEnumAttribute<B, M>::SetSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
+{
+    if (!valid()) {
+        return queryeval::SearchIterator::UP(
+                new queryeval::EmptySearch());
+    }
+    if (getIsFilter()) {
+        return queryeval::SearchIterator::UP
+                (strict
+                 ? new FilterAttributeIteratorStrict<SetSearchContext>(*this, matchData)
+                 : new FilterAttributeIteratorT<SetSearchContext>(*this, matchData));
+    }
+    return queryeval::SearchIterator::UP
+            (strict
+             ? new AttributeIteratorStrict<SetSearchContext>(*this, matchData)
+             : new AttributeIteratorT<SetSearchContext>(*this, matchData));
+}
+
+template <typename B, typename M>
+std::unique_ptr<queryeval::SearchIterator>
+MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
+{
+    if (!valid()) {
+        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+    }
+    if (getIsFilter()) {
+        return queryeval::SearchIterator::UP
+                (strict
+                 ? new FilterAttributeIteratorStrict<ArraySearchContext>(*this, matchData)
+                 : new FilterAttributeIteratorT<ArraySearchContext>(*this, matchData));
+    }
+    return queryeval::SearchIterator::UP
+            (strict
+             ? new AttributeIteratorStrict<ArraySearchContext>(*this, matchData)
+             : new AttributeIteratorT<ArraySearchContext>(*this, matchData));
+}
+
+template <typename B, typename M>
+MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::ArraySearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
+        NumericAttribute::Range<T>(*qTerm),
+        SearchContext(toBeSearched),
+        _toBeSearched(static_cast<const MultiValueNumericEnumAttribute<B, M> &>(toBeSearched))
+{ }
+
+template <typename B, typename M>
+Int64Range
+MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::getAsIntegerTerm() const {
+    return this->getRange();
+}
 
 } // namespace search
 

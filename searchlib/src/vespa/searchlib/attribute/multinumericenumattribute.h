@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multienumattribute.h>
-#include <vespa/searchlib/attribute/attributeiterators.h>
+#include "multienumattribute.h"
+#include "attributeiterators.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/searchlib/attribute/numericbase.h>
+#include "numericbase.h"
+#include "primitivereader.h"
 
 namespace search {
 
@@ -42,6 +43,7 @@ protected:
     typedef EnumStoreBase::IndexVector             EnumIndexVector;
     typedef EnumStoreBase::EnumVector              EnumVector;
     typedef EnumStoreBase::Index                   EnumIndex;
+    using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
 protected:
     /*
@@ -52,27 +54,18 @@ protected:
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
 
-        virtual bool
-        onCmp(DocId docId, int32_t & weight) const
-        {
+        bool onCmp(DocId docId, int32_t & weight) const override {
             return cmp(docId, weight);
         }
 
-        virtual bool
-        onCmp(DocId docId) const
-        {
+        bool onCmp(DocId docId) const override {
             return cmp(docId);
         }
 
-        virtual bool valid() const { return this->isValid(); }
+        bool valid() const override { return this->isValid(); }
 
     public:
-        SetSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
-            NumericAttribute::Range<T>(*qTerm),
-            SearchContext(toBeSearched),
-            _toBeSearched(static_cast<const MultiValueNumericEnumAttribute<B, M> &>(toBeSearched))
-        {
-        }
+        SetSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched);
 
         bool
         cmp(DocId doc, int32_t & weight) const
@@ -100,28 +93,10 @@ protected:
             }
             return false;
         }
-        virtual Int64Range getAsIntegerTerm() const {
-            return this->getRange();
-        }
+        Int64Range getAsIntegerTerm() const override;
 
-        virtual std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-        {
-            if (!valid()) {
-                return queryeval::SearchIterator::UP(
-                        new queryeval::EmptySearch());
-            }
-            if (getIsFilter()) {
-                return queryeval::SearchIterator::UP
-                    (strict
-                     ? new FilterAttributeIteratorStrict<SetSearchContext>(*this, matchData)
-                     : new FilterAttributeIteratorT<SetSearchContext>(*this, matchData));
-            }
-            return queryeval::SearchIterator::UP
-                (strict
-                 ? new AttributeIteratorStrict<SetSearchContext>(*this, matchData)
-                 : new AttributeIteratorT<SetSearchContext>(*this, matchData));
-        }
+        std::unique_ptr<queryeval::SearchIterator>
+        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
     };
 
     /*
@@ -132,31 +107,19 @@ protected:
     protected:
         const MultiValueNumericEnumAttribute<B, M> & _toBeSearched;
 
-        virtual bool
-        onCmp(DocId docId, int32_t & weight) const
-        {
+        bool onCmp(DocId docId, int32_t & weight) const override {
             return cmp(docId, weight);
         }
 
-        virtual bool
-        onCmp(DocId docId) const
-        {
+        bool onCmp(DocId docId) const override {
             return cmp(docId);
         }
 
-        virtual bool valid() const { return this->isValid(); }
+        bool valid() const override { return this->isValid(); }
 
     public:
-        ArraySearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
-            NumericAttribute::Range<T>(*qTerm),
-            SearchContext(toBeSearched),
-            _toBeSearched(static_cast<const MultiValueNumericEnumAttribute<B, M> &>(toBeSearched))
-        {
-        }
-
-        virtual Int64Range getAsIntegerTerm() const {
-            return this->getRange();
-        }
+        ArraySearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched);
+        Int64Range getAsIntegerTerm() const override;
 
         bool
         cmp(DocId doc, int32_t & weight) const
@@ -188,24 +151,8 @@ protected:
             return false;
         }
 
-        virtual std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-        {
-            if (!valid()) {
-                return queryeval::SearchIterator::UP(
-                        new queryeval::EmptySearch());
-            }
-            if (getIsFilter()) {
-                return queryeval::SearchIterator::UP
-                    (strict
-                     ? new FilterAttributeIteratorStrict<ArraySearchContext>(*this, matchData)
-                     : new FilterAttributeIteratorT<ArraySearchContext>(*this, matchData));
-            }
-            return queryeval::SearchIterator::UP
-                (strict
-                 ? new AttributeIteratorStrict<ArraySearchContext>(*this, matchData)
-                 : new AttributeIteratorT<ArraySearchContext>(*this, matchData));
-        }
+        std::unique_ptr<queryeval::SearchIterator>
+        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
     };
 
 
@@ -214,11 +161,10 @@ public:
 
     virtual bool onLoad();
 
-    bool
-    onLoadEnumerated(typename B::ReaderBase &attrReader);
+    bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
 
     //-------------------------------------------------------------------------
     // Attribute read API
@@ -277,7 +223,7 @@ public:
     }
 
 private:
-    typedef typename B::template PrimitiveReader<typename B::LoadedValueType> AttributeReader;
+    using AttributeReader = PrimitiveReader<typename B::LoadedValueType>;
     void loadAllAtOnce(AttributeReader & attrReader, size_t numDocs, size_t numValues);
 };
 

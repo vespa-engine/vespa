@@ -47,6 +47,7 @@ protected:
     typedef StringAttribute::EnumModifier      EnumModifier;
     typedef StringAttribute::WeightedEnum      WeightedEnum;
     typedef attribute::EnumHintSearchContext   EnumHintSearchContext;
+    using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
 private:
     friend class StringAttributeTest;
@@ -109,7 +110,7 @@ public:
      */
     class StringImplSearchContext : public StringAttribute::StringSearchContext {
     public:
-        StringImplSearchContext(QueryTermSimple::UP qTerm, const StringAttribute & toBeSearched) :
+        StringImplSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
             StringAttribute::StringSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
@@ -127,7 +128,7 @@ public:
      */
     class StringSetImplSearchContext : public StringImplSearchContext {
     public:
-        StringSetImplSearchContext(QueryTermSimple::UP qTerm, const StringAttribute & toBeSearched) :
+        StringSetImplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
             StringImplSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
@@ -139,7 +140,7 @@ public:
      */
     class StringArrayImplSearchContext : public StringImplSearchContext {
     public:
-        StringArrayImplSearchContext(QueryTermSimple::UP qTerm, const StringAttribute & toBeSearched) :
+        StringArrayImplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
             StringImplSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
@@ -154,16 +155,15 @@ public:
         typedef MultiValueStringAttributeT<B, M> AttrType;
         typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
     public:
-        StringTemplSearchContext(QueryTermSimple::UP qTerm, const AttrType & toBeSearched);
+        StringTemplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
     };
 
     SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
 };
 
 
 typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<EnumStoreBase::Index> > ArrayStringAttribute;
 typedef MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<EnumStoreBase::Index> > WeightedSetStringAttribute;
 
-} // namespace search
-
+}

@@ -5,6 +5,8 @@
 #include "tensor_attribute.hpp"
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/dense/mutable_dense_tensor_view.h>
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/attribute/readerbase.h>
 
 using vespalib::eval::ValueType;
 using vespalib::tensor::MutableDenseTensorView;
@@ -20,7 +22,7 @@ namespace {
 constexpr uint32_t DENSE_TENSOR_ATTRIBUTE_VERSION = 1;
 const vespalib::string tensorTypeTag("tensortype");
 
-class TensorReader : public AttributeVector::ReaderBase
+class TensorReader : public ReaderBase
 {
 private:
     static constexpr uint8_t tensorIsNotPresent = 0;
@@ -31,7 +33,7 @@ private:
     std::vector<uint32_t> _unboundDimSizes;
 public:
     TensorReader(AttributeVector &attr)
-        : AttributeVector::ReaderBase(attr),
+        : ReaderBase(attr),
           _tensorType(vespalib::eval::ValueType::from_spec(getDatHeader().getTag(tensorTypeTag).asString())),
           _numUnboundDims(0),
           _numBoundCells(1),

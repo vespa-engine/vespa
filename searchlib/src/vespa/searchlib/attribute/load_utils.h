@@ -3,6 +3,7 @@
 #pragma once
 
 #include "attributevector.h"
+#include "readerbase.h"
 #include <vespa/vespalib/util/arrayref.h>
 
 namespace search {
@@ -15,7 +16,7 @@ namespace attribute {
 template <class MvMapping, class Saver>
 uint32_t
 loadFromEnumeratedMultiValue(MvMapping &mapping,
-                             AttributeVector::ReaderBase &attrReader,
+                             ReaderBase &attrReader,
                              vespalib::ConstArrayRef<typename MvMapping::MultiValueType::ValueType> enumValueToValueMap,
                              Saver saver) __attribute((noinline));
 
@@ -27,7 +28,7 @@ template <class Vector, class Saver>
 void
 loadFromEnumeratedSingleValue(Vector &vector,
                               vespalib::GenerationHolder &genHolder,
-                              AttributeVector::ReaderBase &attrReader,
+                              ReaderBase &attrReader,
                               vespalib::ConstArrayRef<typename Vector::ValueType> enumValueToValueMap,
                               Saver saver) __attribute((noinline));
 

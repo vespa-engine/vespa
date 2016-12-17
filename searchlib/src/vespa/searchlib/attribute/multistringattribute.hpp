@@ -2,16 +2,15 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/stringattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/enumattribute.hpp>
-#include <vespa/searchlib/attribute/multienumattribute.hpp>
+#include "stringattribute.h"
+#include "multistringattribute.h"
+#include "enumattribute.hpp"
+#include "multienumattribute.hpp"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
-#include <set>
-#include <string>
+#include <vespa/searchlib/query/queryterm.h>
 
 namespace search {
 
@@ -23,13 +22,10 @@ MultiValueStringAttributeT<B, M>::
 MultiValueStringAttributeT(const vespalib::string &name,
                            const AttributeVector::Config &c)
     : MultiValueEnumAttribute<B, M>(name, c)
-{
-}
+{ }
 
 template <typename B, typename M>
-MultiValueStringAttributeT<B, M>::~MultiValueStringAttributeT()
-{
-}
+MultiValueStringAttributeT<B, M>::~MultiValueStringAttributeT() { }
 
 
 template <typename B, typename M>
@@ -42,17 +38,14 @@ MultiValueStringAttributeT<B, M>::freezeEnumDictionary(void)
 
 template <typename B, typename M>
 AttributeVector::SearchContext::UP
-MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimple::UP qTerm,
-                                            const AttributeVector::SearchContext::Params & params) const
+MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP qTerm,
+                                            const AttributeVector::SearchContext::Params &) const
 {
-    (void) params;
-    std::unique_ptr<search::AttributeVector::SearchContext> sc;
     if (this->getCollectionType() == attribute::CollectionType::WSET) {
-        sc.reset(new StringTemplSearchContext<StringSetImplSearchContext>(std::move(qTerm), *this));
+        return std::make_unique<StringTemplSearchContext<StringSetImplSearchContext>>(std::move(qTerm), *this);
     } else {
-        sc.reset(new StringTemplSearchContext<StringArrayImplSearchContext>(std::move(qTerm), *this));
+        return std::make_unique<StringTemplSearchContext<StringArrayImplSearchContext>>(std::move(qTerm), *this);
     }
-    return sc;
 }
 
 namespace {
@@ -115,7 +108,7 @@ MultiValueStringAttributeT<B, M>::StringImplSearchContext::onCmp(DocId doc) cons
 template <typename B, typename M>
 template <typename BT>
 MultiValueStringAttributeT<B, M>::StringTemplSearchContext<BT>::
-StringTemplSearchContext(QueryTermSimple::UP qTerm, const AttrType & toBeSearched) :
+StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched) :
     BT(std::move(qTerm), toBeSearched),
     EnumHintSearchContext(toBeSearched.getEnumStore().getEnumStoreDict(),
                           toBeSearched.getCommittedDocIdLimit(),

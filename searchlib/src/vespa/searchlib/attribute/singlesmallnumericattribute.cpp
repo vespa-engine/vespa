@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "singlesmallnumericattribute.h"
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include "attributevector.hpp"
+#include "primitivereader.h"
 
-namespace search
-{
+namespace search {
 
 SingleValueSmallNumericAttribute::
 SingleValueSmallNumericAttribute(const vespalib::string & baseFileName,
@@ -96,7 +95,7 @@ SingleValueSmallNumericAttribute::onGenerationChange(generation_t generation)
 bool
 SingleValueSmallNumericAttribute::onLoad()
 {
-    B::PrimitiveReader<Word> attrReader(*this);
+    PrimitiveReader<Word> attrReader(*this);
     bool ok(attrReader.hasData());
     if (ok) {
         setCreateSerialNum(attrReader.getCreateSerialNum());
@@ -185,6 +184,42 @@ SingleValueSmallNumericAttribute::getEstimatedSaveByteSize() const
     return headerSize + sz;
 }
 
+bool SingleValueSmallNumericAttribute::SingleSearchContext::valid() const { return this->isValid(); }
+
+
+SingleValueSmallNumericAttribute::SingleSearchContext::SingleSearchContext(QueryTermSimple::UP qTerm,
+                                                                           const NumericAttribute & toBeSearched)
+    : NumericAttribute::Range<T>(*qTerm),
+      SearchContext(toBeSearched), _wordData(&static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._wordData[0]),
+      _valueMask(static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._valueMask),
+      _valueShiftShift(static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._valueShiftShift),
+      _valueShiftMask(static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._valueShiftMask),
+      _wordShift(static_cast<const SingleValueSmallNumericAttribute &>(toBeSearched)._wordShift)
+{ }
+
+Int64Range
+SingleValueSmallNumericAttribute::SingleSearchContext::getAsIntegerTerm() const {
+    return this->getRange();
+}
+
+std::unique_ptr<queryeval::SearchIterator>
+SingleValueSmallNumericAttribute::SingleSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData,
+                                                                            bool strict)
+{
+    if (!valid()) {
+        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+    }
+    if (getIsFilter()) {
+        return queryeval::SearchIterator::UP
+                (strict
+                 ? new FilterAttributeIteratorStrict<SingleSearchContext>(*this, matchData)
+                 : new FilterAttributeIteratorT<SingleSearchContext>(*this, matchData));
+    }
+    return queryeval::SearchIterator::UP
+            (strict
+             ? new AttributeIteratorStrict<SingleSearchContext>(*this, matchData)
+             : new AttributeIteratorT<SingleSearchContext>(*this, matchData));
+}
 
 namespace
 {

@@ -7,6 +7,7 @@
 
 namespace search {
 
+class ReaderBase;
 /*
  * Implementation of single value enum attribute that uses an underlying enum store
  * to store unique values.
@@ -29,15 +30,13 @@ public:
     EnumStoreBase::Index getEnumIndex(DocId docId) const { return _enumIndices[docId]; }
     EnumHandle getE(DocId doc) const { return _enumIndices[doc].ref(); }
 protected:
-    SingleValueEnumAttributeBase(const attribute::Config & c,
-                                 GenerationHolder &genHolder);
+    SingleValueEnumAttributeBase(const attribute::Config & c, GenerationHolder &genHolder);
     ~SingleValueEnumAttributeBase();
     AttributeVector::DocId addDoc(bool & incGeneration);
 
     EnumIndexVector _enumIndices;
 
-    EnumIndexCopyVector
-    getIndicesCopy(uint32_t size) const;
+    EnumIndexCopyVector getIndicesCopy(uint32_t size) const;
 };
 
 template <typename B>
@@ -55,7 +54,6 @@ protected:
     typedef typename B::EnumStore               EnumStore;
     typedef typename B::LoadedVector            LoadedVector;
     typedef typename B::UniqueSet               UniqueSet;
-    typedef AttributeVector::ReaderBase     ReaderBase;
     typedef attribute::LoadedEnumAttributeVector LoadedEnumAttributeVector;
     typedef attribute::LoadedEnumAttribute LoadedEnumAttribute;
     using B::getGenerationHolder;

@@ -8,6 +8,8 @@
 
 namespace search {
 
+class ReaderBase;
+
 /*
  * Implementation of multi value enum attribute that uses an underlying enum store
  * to store unique values and a multi value mapping to store enum indices for each document.
@@ -37,7 +39,6 @@ protected:
     typedef typename MultiValueAttribute<B, M>::ValueVector    WeightedIndexVector;
     using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
     typedef typename MultiValueAttribute<B, M>::DocumentValues DocIndices;
-    typedef AttributeVector::ReaderBase     ReaderBase;
     typedef attribute::LoadedEnumAttributeVector  LoadedEnumAttributeVector;
     typedef attribute::LoadedEnumAttribute        LoadedEnumAttribute;
 
@@ -53,24 +54,13 @@ protected:
     void incRefCount(const WeightedIndex & idx) { this->_enumStore.incRefCount(idx); }
     void decRefCount(const WeightedIndex & idx) { this->_enumStore.decRefCount(idx); }
 
-    virtual void
-    freezeEnumDictionary()
-    {
+    virtual void freezeEnumDictionary() {
         this->getEnumStore().freezeTree();
     }
 
     virtual void fillValues(LoadedVector & loaded);
-
-    virtual void
-    fillEnumIdx(ReaderBase &attrReader,
-                const EnumIndexVector &eidxs,
-                LoadedEnumAttributeVector &loaded);
-
-    virtual void
-    fillEnumIdx(ReaderBase &attrReader,
-                const EnumIndexVector &eidxs,
-                EnumVector &enumHist);
-
+    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded);
+    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist);
     virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }
 
 public:

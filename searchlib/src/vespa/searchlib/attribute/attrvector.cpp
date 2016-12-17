@@ -111,7 +111,7 @@ bool StringDirectAttribute::onLoad()
         setCommittedDocIdLimit(0);
     }
 
-    FileUtil::LoadedBuffer::UP tmpBuffer(loadDAT());
+    fileutil::LoadedBuffer::UP tmpBuffer(loadDAT());
     bool rc(tmpBuffer.get());
     if (rc) {
         if ( ! tmpBuffer->empty()) {
@@ -146,7 +146,7 @@ bool StringDirectAttribute::onLoad()
         }
 
         if (hasMultiValue()) {
-            FileUtil::LoadedBuffer::UP tmpIdx(loadIDX());
+            fileutil::LoadedBuffer::UP tmpIdx(loadIDX());
             size_t tmpIdxLen(tmpIdx->size(sizeof(uint32_t)));
             _idx.clear();
             _idx.reserve(tmpIdxLen);

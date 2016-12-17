@@ -73,35 +73,22 @@ public:
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
 
-        virtual bool
-        onCmp(DocId docId, int32_t & weight) const
-        {
+        bool onCmp(DocId docId, int32_t & weight) const override {
             return cmp(docId, weight);
         }
 
-        virtual bool
-        onCmp(DocId docId) const
-        {
+        bool onCmp(DocId docId) const override {
             return cmp(docId);
         }
 
-        virtual bool valid() const { return this->isValid(); }
+        bool valid() const override;
 
     public:
-        SetSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
-            NumericAttribute::Range<T>(*qTerm),
-            AttributeVector::SearchContext(toBeSearched),
-            _toBeSearched(static_cast<const MultiValueNumericAttribute<B, M> &>(toBeSearched))
-        {
-        }
+        SetSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched);
 
-        virtual Int64Range getAsIntegerTerm() const {
-            return this->getRange();
-        }
+        Int64Range getAsIntegerTerm() const override;
 
-        bool
-        cmp(DocId doc, int32_t & weight) const
-        {
+        bool cmp(DocId doc, int32_t & weight) const {
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
             for (const MultiValueType &mv : values) {
                 if (this->match(mv.value())) {
@@ -112,9 +99,7 @@ public:
             return false;
         }
 
-        bool
-        cmp(DocId doc) const
-        {
+        bool cmp(DocId doc) const {
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
             for (const MultiValueType &mv : values) {
                 if (this->match(mv.value())) {
@@ -124,24 +109,8 @@ public:
             return false;
         }
 
-        virtual std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-        {
-            if (!valid()) {
-                return queryeval::SearchIterator::UP(
-                        new queryeval::EmptySearch());
-            }
-            if (getIsFilter()) {
-                return queryeval::SearchIterator::UP
-                    (strict
-                     ? new FilterAttributeIteratorStrict<SetSearchContext>(*this, matchData)
-                 : new FilterAttributeIteratorT<SetSearchContext>(*this, matchData));
-            }
-            return queryeval::SearchIterator::UP
-                (strict
-                 ? new AttributeIteratorStrict<SetSearchContext>(*this, matchData)
-                 : new AttributeIteratorT<SetSearchContext>(*this, matchData));
-        }
+        std::unique_ptr<queryeval::SearchIterator>
+        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
     };
 
     /*
@@ -152,32 +121,20 @@ public:
     private:
         const MultiValueNumericAttribute<B, M> & _toBeSearched;
 
-        virtual bool
-        onCmp(DocId docId, int32_t & weight) const
-        {
+        bool onCmp(DocId docId, int32_t & weight) const override {
             return cmp(docId, weight);
         }
 
-        virtual bool
-        onCmp(DocId docId) const
-        {
+        bool onCmp(DocId docId) const override {
             return cmp(docId);
         }
 
     protected:
-        virtual bool valid() const { return this->isValid(); }
+        bool valid() const override;
 
     public:
-        ArraySearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
-            NumericAttribute::Range<T>(*qTerm),
-            AttributeVector::SearchContext(toBeSearched),
-            _toBeSearched(static_cast<const MultiValueNumericAttribute<B, M> &>(toBeSearched))
-        {
-        }
-
-        bool
-        cmp(DocId doc, int32_t & weight) const
-        {
+        ArraySearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched);
+        bool cmp(DocId doc, int32_t & weight) const {
             uint32_t hitCount = 0;
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
             for (const MultiValueType &mv : values) {
@@ -190,9 +147,7 @@ public:
             return hitCount != 0;
         }
 
-        bool
-        cmp(DocId doc) const
-        {
+        bool cmp(DocId doc) const {
             MultiValueArrayRef values(_toBeSearched._mvMapping.get(doc));
             for (const MultiValueType &mv : values) {
                 if (this->match(mv.value())) {
@@ -202,28 +157,10 @@ public:
             return false;
         }
 
-        virtual Int64Range getAsIntegerTerm() const {
-            return this->getRange();
-        }
+        Int64Range getAsIntegerTerm() const override;
 
-        virtual std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-        {
-            if (!valid()) {
-                return queryeval::SearchIterator::UP(
-                        new queryeval::EmptySearch());
-            }
-            if (getIsFilter()) {
-                return queryeval::SearchIterator::UP
-                    (strict
-                     ? new FilterAttributeIteratorStrict<ArraySearchContext>(*this, matchData)
-                     : new FilterAttributeIteratorT<ArraySearchContext>(*this, matchData));
-            }
-            return queryeval::SearchIterator::UP
-                (strict
-                 ? new AttributeIteratorStrict<ArraySearchContext>(*this, matchData)
-                 : new AttributeIteratorT<ArraySearchContext>(*this, matchData));
-        }
+        std::unique_ptr<queryeval::SearchIterator>
+        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
     };
 
     MultiValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c =
@@ -235,11 +172,8 @@ public:
     virtual void removeOldGenerations(generation_t firstUsed);
 
     virtual void onGenerationChange(generation_t generation);
-
     virtual bool onLoad();
-
-    virtual bool
-    onLoadEnumerated(typename B::ReaderBase &attrReader);
+    virtual bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
     getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;

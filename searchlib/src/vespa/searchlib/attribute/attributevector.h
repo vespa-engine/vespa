@@ -4,7 +4,6 @@
 
 #include "address_space_usage.h"
 #include "iattributesavetarget.h"
-#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
@@ -14,10 +13,9 @@
 #include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/range.h>
+#include <vespa/searchlib/common/identifiable.h>
 #include <vespa/searchlib/common/rcuvector.h>
-#include <vespa/searchlib/query/query.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/rwlock.h>
@@ -25,7 +23,8 @@
 #include <cmath>
 #include <mutex>
 #include <shared_mutex>
-#include <string>
+
+class Fast_BufferedFile;
 
 namespace document {
     class ArithmeticValueUpdate;
@@ -37,7 +36,6 @@ namespace vespalib {
     class GenericHeader;
 }
 
- 
 namespace search {
 
     template <typename T> class ComponentGuard;
@@ -46,6 +44,8 @@ namespace search {
     class AttributeSaver;
     class EnumStoreBase;
     class IDocumentWeightAttribute;
+    class QueryTermSimple;
+    class QueryTermBase;
 
     namespace fef {
         class TermFieldMatchData;
@@ -57,6 +57,10 @@ namespace search {
         class Interlock;
         class InterlockGuard;
         class MultiValueMappingBase;
+    }
+
+    namespace fileutil {
+        class LoadedBuffer;
     }
 }
 
@@ -104,9 +108,12 @@ class AttributeVector : public vespalib::Identifiable,
                         public attribute::IAttributeVector
 {
 protected:
-    typedef search::attribute::Config Config;
-    typedef search::attribute::CollectionType CollectionType;
-    typedef search::attribute::BasicType BasicType;
+    using Config = search::attribute::Config;
+    using CollectionType = search::attribute::CollectionType;
+    using BasicType = search::attribute::BasicType;
+    using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
+    using QueryPacketT = vespalib::stringref;
+    using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
 public:
     typedef std::shared_ptr<AttributeVector> SP;
     class BaseName : public vespalib::string
@@ -116,8 +123,7 @@ public:
         BaseName(const vespalib::stringref &s)
             : string(s),
               _name(createAttributeName(s))
-        {
-        }
+        { }
         BaseName & operator = (const vespalib::stringref & s) {
             BaseName n(s);
             std::swap(*this, n);
@@ -135,104 +141,6 @@ public:
     private:
         static string createAttributeName(const vespalib::stringref & s);
         string _name;
-    };
-
-    class ReaderBase
-    {
-    public:
-        ReaderBase(AttributeVector & attr);
-
-        virtual ~ReaderBase();
-
-        void rewind();
-
-        bool hasWeight() const {
-            return _weightFile.get() && _weightFile->IsOpened();
-        }
-
-        bool hasIdx() const {
-            return _idxFile.get() && _idxFile->IsOpened();
-        }
-
-        bool hasData() const {
-            return _datFile.get() && _datFile->IsOpened();
-        }
-
-        bool hasUData() const {
-            return _udatFile.get() && _udatFile->IsOpened();
-        }
-
-        uint32_t getNumIdx() const {
-            return (_idxFileSize - _idxHeaderLen) /sizeof(uint32_t);
-        }
-
-        size_t getEnumCount(void) const {
-            size_t dataSize(_datFileSize - _datHeaderLen);
-            assert((dataSize % sizeof(uint32_t)) == 0);
-            return dataSize / sizeof(uint32_t);
-        }
-
-        static bool
-        extractFileSize(const vespalib::GenericHeader &header,
-                        FastOS_FileInterface &file, uint64_t &fileSize);
-
-        size_t getNumValues();
-        int32_t getNextWeight() { return _weightReader.readHostOrder(); }
-        uint32_t getNextEnum(void) { return _enumReader.readHostOrder(); }
-        bool getEnumerated(void) const { return _enumerated; }
-        uint32_t getNextValueCount();
-        int64_t getCreateSerialNum(void) const { return _createSerialNum; }
-        bool getHasLoadData(void) const { return _hasLoadData; }
-        uint32_t getVersion() const { return _version; }
-        uint32_t getDocIdLimit() const { return _docIdLimit; }
-        const vespalib::GenericHeader &getDatHeader() const {
-            return _datHeader;
-        }
-    protected:
-        std::unique_ptr<Fast_BufferedFile>  _datFile;
-    private:
-        std::unique_ptr<Fast_BufferedFile>  _weightFile;
-        std::unique_ptr<Fast_BufferedFile>  _idxFile;
-        std::unique_ptr<Fast_BufferedFile>  _udatFile;
-        FileReader<int32_t>   _weightReader;
-        FileReader<uint32_t>  _idxReader;
-        FileReader<uint32_t>  _enumReader;
-        uint32_t              _currIdx;
-        uint32_t	      _datHeaderLen;
-        uint32_t              _idxHeaderLen;
-        uint32_t              _weightHeaderLen;
-        uint32_t              _udatHeaderLen;
-        uint64_t              _createSerialNum;
-        size_t                _fixedWidth;
-        bool                  _enumerated;
-        bool                  _hasLoadData;
-        uint32_t              _version;
-        uint32_t              _docIdLimit;
-        vespalib::FileHeader  _datHeader;
-        uint64_t              _datFileSize;
-        uint64_t              _idxFileSize;
-    protected:
-        size_t getDataCountHelper(size_t elemSize) const {
-            size_t dataSize(_datFileSize - _datHeaderLen);
-            return dataSize / elemSize;
-        }
-    };
-
-    template <typename T>
-    class PrimitiveReader : public ReaderBase
-    {
-    public:
-        PrimitiveReader(AttributeVector &attr)
-            : ReaderBase(attr),
-              _datReader(*_datFile)
-        {
-        }
-
-        virtual ~PrimitiveReader() { }
-        T getNextData() { return _datReader.readHostOrder(); }
-        size_t getDataCount() const { return getDataCountHelper(sizeof(T)); }
-    private:
-        FileReader<T> _datReader;
     };
 
     using GenerationHandler = vespalib::GenerationHandler;
@@ -301,21 +209,10 @@ protected:
     void setNumDocs(uint32_t n)          { _status.setNumDocs(n); }
     void incNumDocs()                    { _status.incNumDocs(); }
 
-    std::unique_ptr<Fast_BufferedFile> openDAT();
-
-    std::unique_ptr<Fast_BufferedFile> openIDX();
-
-    std::unique_ptr<Fast_BufferedFile> openWeight();
-
-    std::unique_ptr<Fast_BufferedFile> openUDAT();
-
-    FileUtil::LoadedBuffer::UP loadDAT();
-
-    FileUtil::LoadedBuffer::UP loadIDX();
-
-    FileUtil::LoadedBuffer::UP loadWeight();
-
-    FileUtil::LoadedBuffer::UP loadUDAT();
+    LoadedBufferUP loadDAT();
+    LoadedBufferUP loadIDX();
+    LoadedBufferUP loadWeight();
+    LoadedBufferUP loadUDAT();
 
     class ValueModifier
     {
@@ -345,16 +242,13 @@ protected:
         }
         EnumModifier(EnumModifier &&rhs)
             : _enumLock(std::move(rhs._enumLock))
-        {
-        }
+        { }
         EnumModifier &operator=(EnumModifier &&rhs)
         {
             _enumLock = std::move(rhs._enumLock);
             return *this;
         }
-        virtual ~EnumModifier()
-        {
-        }
+        virtual ~EnumModifier() { }
     };
 
     EnumModifier getEnumModifier();
@@ -366,7 +260,7 @@ protected:
         }
     }
 
-    void updateCommittedDocIdLimit(void) {
+    void updateCommittedDocIdLimit() {
         if (_uncommittedDocIdLimit != 0) {
             if (_uncommittedDocIdLimit > _committedDocIdLimit) {
                 std::atomic_thread_fence(std::memory_order_release);
@@ -377,6 +271,10 @@ protected:
     }
     
 public:
+    std::unique_ptr<FastOS_FileInterface> openDAT();
+    std::unique_ptr<FastOS_FileInterface> openIDX();
+    std::unique_ptr<FastOS_FileInterface> openWeight();
+    std::unique_ptr<FastOS_FileInterface> openUDAT();
     void incGeneration();
     void removeAllOldGenerations();
 
@@ -472,7 +370,6 @@ protected:
     }
 
     virtual AddressSpace getEnumStoreAddressSpaceUsage() const;
-
     virtual AddressSpace getMultiValueAddressSpaceUsage() const;
 
 public:
@@ -480,7 +377,7 @@ public:
     bool isLoaded() const { return _loaded; }
 
     /** Return the fixed length of the attribute. If 0 then you must inquire each document. */
-    virtual size_t getFixedWidth() const override { return _config.basicType().fixedSize(); }
+    virtual size_t getFixedWidth() const override;
     const Config &getConfig() const { return _config; }
     BasicType getInternalBasicType() const { return _config.basicType(); }
     CollectionType getInternalCollectionType() const { return _config.collectionType(); }
@@ -488,27 +385,17 @@ public:
     void setBaseFileName(const vespalib::stringref & name) { _baseFileName = name; }
 
     // Implements IAttributeVector
-    virtual const vespalib::string & getName(void) const {
-        return _baseFileName.getAttributeName();
-    }
-
-    virtual bool hasMultiValue() const {
-        return _config.collectionType().isMultiValue();
-    }
-
-    virtual bool hasWeightedSetType() const {
-        return _config.collectionType().isWeightedSet();
-    }
+    virtual const vespalib::string & getName() const override;
 
     bool hasArrayType() const { return _config.collectionType().isArray(); }
-    virtual bool hasEnum() const { return _hasEnum; }
+    virtual bool hasEnum() const;
     bool hasSortedEnum() const { return _hasSortedEnum; }
-    virtual bool hasEnum2Value() const { return false; }
-    virtual uint32_t getMaxValueCount() const { return _highestValueCount; }
+    virtual bool hasEnum2Value() const;
+    virtual uint32_t getMaxValueCount() const;
     uint32_t getEnumMax() const { return _enumMax; }
 
     // Implements IAttributeVector
-    virtual uint32_t getNumDocs(void) const { return _status.getNumDocs(); }
+    virtual uint32_t getNumDocs(void) const;
     uint32_t getCommittedDocIdLimit(void) const { return _committedDocIdLimit; }
     uint32_t & getCommittedDocIdLimitRef(void) { return _committedDocIdLimit; }
     void setCommittedDocIdLimit(uint32_t committedDocIdLimit) {
@@ -521,13 +408,8 @@ public:
     AddressSpaceUsage getAddressSpaceUsage() const;
 
     // Implements IAttributeVector
-    virtual BasicType::Type getBasicType() const {
-        return getInternalBasicType().type();
-    }
-
-    virtual CollectionType::Type getCollectionType() const {
-        return getInternalCollectionType().type();
-    }
+    virtual BasicType::Type getBasicType() const override;
+    virtual CollectionType::Type getCollectionType() const override;
 
     /**
      * Updates the base file name of this attribute vector and saves
@@ -539,8 +421,7 @@ public:
      * Updates the base file name of this attribute vector and saves
      * it using the given saveTarget
      */
-    bool saveAs(const vespalib::stringref &baseFileName,
-                IAttributeSaveTarget &saveTarget);
+    bool saveAs(const vespalib::stringref &baseFileName, IAttributeSaveTarget &saveTarget);
 
     /** Saves this attribute vector to file(s) **/
     bool save();
@@ -600,11 +481,7 @@ public:
     virtual int32_t getWeight(DocId doc, uint32_t idx) const;
 
     // Implements IAttributeVector
-    virtual bool findEnum(const char *value, EnumHandle &e) const {
-        (void) value;
-        (void) e;
-        return false;
-    }
+    virtual bool findEnum(const char *value, EnumHandle &e) const override;
 
 ///// Modify API
     virtual void onCommit() = 0;
@@ -616,20 +493,24 @@ public:
 ////// Search API
 
     // type-safe down-cast to attribute supporting direct document weight iterators
-    virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const { return nullptr; }
+    virtual const IDocumentWeightAttribute *asDocumentWeightAttribute() const;
 
     /**
        - Search for equality
        - Range search
     */
 
-    class SearchContext : public vespalib::noncopyable
+    class SearchContext
     {
         template <class SC> friend class AttributeIteratorT;
         template <class SC> friend class FilterAttributeIteratorT;
         template <class PL> friend class AttributePostingListIteratorT;
         template <class PL> friend class FilterAttributePostingListIteratorT;
+    protected:
+        using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
     public:
+        SearchContext(const SearchContext &) = delete;
+        SearchContext & operator = (const SearchContext &) = delete;
         class Params {
             using IAttributeVector = attribute::IAttributeVector;
         public:
@@ -664,7 +545,7 @@ public:
         typedef std::unique_ptr<SearchContext> UP;
         virtual ~SearchContext();
         virtual unsigned int approximateHits() const;
-        static QueryTermSimple::UP decodeQuery(const QueryPacketT & searchSpec);
+        static QueryTermSimpleUP decodeQuery(QueryPacketT searchSpec);
 
         /**
          * Creates an attribute search iterator associated with this
@@ -721,21 +602,20 @@ public:
     protected:
         attribute::IPostingListSearchContext *_plsc;
 
-        bool getIsFilter(void) const { return _attr.getConfig().getIsFilter(); }
+        bool getIsFilter() const { return _attr.getConfig().getIsFilter(); }
     };
 
-    SearchContext::UP getSearch(const QueryPacketT &searchSpec, const SearchContext::Params & params) const;
-    virtual SearchContext::UP getSearch(QueryTermSimple::UP term, const SearchContext::Params & params) const = 0;
-    virtual const EnumStoreBase *getEnumStoreBase() const { return nullptr; }
-    virtual const attribute::MultiValueMappingBase *getMultiValueBase() const { return nullptr; }
+    SearchContext::UP getSearch(QueryPacketT searchSpec, const SearchContext::Params & params) const;
+    virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const SearchContext::Params & params) const = 0;
+    virtual const EnumStoreBase *getEnumStoreBase() const;
+    virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
 private:
     void divideByZeroWarning();
     virtual bool applyWeight(DocId doc, const FieldValue &fv, const ArithmeticValueUpdate &wAdjust);
     virtual void onSave(IAttributeSaveTarget & saveTarget);
     virtual bool onLoad();
-    bool headerTypeOK(const vespalib::GenericHeader &header) const;
-    std::unique_ptr<Fast_BufferedFile> openFile(const char *suffix);
-    FileUtil::LoadedBuffer::UP loadFile(const char *suffix);
+    std::unique_ptr<FastOS_FileInterface> openFile(const char *suffix);
+    LoadedBufferUP loadFile(const char *suffix);
 
 
     BaseName               _baseFileName;
@@ -767,8 +647,8 @@ private:
     GenerationHandler::Guard takeGenerationGuard() { return _genHandler.takeGuard(); }
 
     /// Clean up [0, firstUsed>
-    virtual void removeOldGenerations(generation_t firstUsed) { (void) firstUsed; }
-    virtual void onGenerationChange(generation_t generation) { (void) generation; }
+    virtual void removeOldGenerations(generation_t firstUsed);
+    virtual void onGenerationChange(generation_t generation);
     virtual void onUpdateStat() = 0;
     /**
      * Used to regulate access to critical resources. Apply the
@@ -782,10 +662,13 @@ private:
     friend class AttributeTest;
     friend class AttributeManagerTest;
 public:
+    bool headerTypeOK(const vespalib::GenericHeader &header) const;
+    bool hasMultiValue() const override;
+    bool hasWeightedSetType() const override;
     /**
      * Should be called by the writer thread.
      */
-    void updateFirstUsedGeneration(void) {
+    void updateFirstUsedGeneration() {
         _genHandler.updateFirstUsedGeneration();
     }
 
@@ -794,47 +677,38 @@ public:
      * are possible if writer hasn't updated first used generation
      * after last reader left.
      */
-    bool hasReaders(void) const { return _genHandler.hasReaders(); }
+    bool hasReaders() const { return _genHandler.hasReaders(); }
 
     /**
      * Add reserved initial document with docId 0 and undefined value.
      */
-    void addReservedDoc(void);
-
+    void addReservedDoc();
     void enableEnumeratedSave(bool enable = true);
-
-    /*
-     * Temporary method, used by unit tests to enable enumerated load
-     * until it can be enabled by default.
-     */
-    static void enableEnumeratedLoad(void);
-
-    bool getEnumeratedSave(void) const { return _hasEnum && _enableEnumeratedSave; }
+    bool getEnumeratedSave() const { return _hasEnum && _enableEnumeratedSave; }
 
     virtual attribute::IPostingListAttributeBase * getIPostingListAttributeBase();
-    bool hasPostings(void);
-    virtual uint64_t getUniqueValueCount(void) const;
-    virtual uint64_t getTotalValueCount(void) const;
+    bool hasPostings();
+    virtual uint64_t getUniqueValueCount() const;
+    virtual uint64_t getTotalValueCount() const;
     virtual void compactLidSpace(uint32_t wantedLidLimit);
     virtual void clearDocs(DocId lidLow, DocId lidLimit);
     bool wantShrinkLidSpace(void) const { return _committedDocIdLimit < getNumDocs(); }
-    virtual bool canShrinkLidSpace(void) const;
-    void shrinkLidSpace(void);
-    virtual void onShrinkLidSpace(void);
+    virtual bool canShrinkLidSpace() const;
+    void shrinkLidSpace();
+    virtual void onShrinkLidSpace();
 
     void setInterlock(const std::shared_ptr<attribute::Interlock> &interlock);
 
-    const std::shared_ptr<attribute::Interlock> &getInterlock() const
-    {
+    const std::shared_ptr<attribute::Interlock> &getInterlock() const {
         return _interlock;
     }
 
     std::unique_ptr<AttributeSaver> initSave();
 
     virtual std::unique_ptr<AttributeSaver> onInitSave();
-
     virtual uint64_t getEstimatedSaveByteSize() const;
+
+    static bool isEnumerated(const vespalib::GenericHeader &header);
 };
 
 }
-

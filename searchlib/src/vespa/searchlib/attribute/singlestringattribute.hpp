@@ -2,16 +2,15 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/stringattribute.h>
-#include <vespa/searchlib/attribute/singleenumattribute.hpp>
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include "singlestringattribute.h"
+#include "stringattribute.h"
+#include "singleenumattribute.hpp"
+#include "attributevector.hpp"
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
-#include <set>
-#include <string>
+#include <vespa/searchlib/query/queryterm.h>
 
 namespace search {
 
@@ -23,29 +22,24 @@ SingleValueStringAttributeT<B>::
 SingleValueStringAttributeT(const vespalib::string &name,
                             const AttributeVector::Config & c)
     : SingleValueEnumAttribute<B>(name, c)
-{
-}
+{ }
 
 template <typename B>
-SingleValueStringAttributeT<B>::~SingleValueStringAttributeT()
-{
-}
+SingleValueStringAttributeT<B>::~SingleValueStringAttributeT() { }
 
 template <typename B>
 void
-SingleValueStringAttributeT<B>::freezeEnumDictionary(void)
-{
+SingleValueStringAttributeT<B>::freezeEnumDictionary(void) {
     this->getEnumStore().freezeTree();
 }
 
 
 template <typename B>
 AttributeVector::SearchContext::UP
-SingleValueStringAttributeT<B>::getSearch(QueryTermSimple::UP qTerm,
-                                          const AttributeVector::SearchContext::Params & params) const
+SingleValueStringAttributeT<B>::getSearch(QueryTermSimpleUP qTerm,
+                                          const AttributeVector::SearchContext::Params &) const
 {
-    (void) params;
-    return std::unique_ptr<search::AttributeVector::SearchContext>
+    return std::unique_ptr<AttributeVector::SearchContext>
         (new StringTemplSearchContext(std::move(qTerm), *this));
 }
 
@@ -74,6 +68,4 @@ SingleValueStringAttributeT<B>::StringTemplSearchContext::StringTemplSearchConte
     }
 }
 
-
-} // namespace search
-
+}

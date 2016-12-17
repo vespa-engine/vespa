@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("tensorattribute_test");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
@@ -10,6 +8,9 @@ LOG_SETUP("tensorattribute_test");
 #include <vespa/vespalib/tensor/tensor_factory.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/log/log.h>
+LOG_SETUP("tensorattribute_test");
 
 using search::tensor::TensorAttribute;
 using search::tensor::DenseTensorAttribute;

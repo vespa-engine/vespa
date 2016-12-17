@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stringbase.h"
-#include <vespa/vespalib/util/array.hpp>
-#include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/text/lowercase.h>
-#include <vespa/searchlib/common/sort.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include "attributevector.hpp"
+#include "readerbase.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/util/fileutil.hpp>
+#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.stringbase");
@@ -235,6 +234,15 @@ StringAttribute::StringSearchContext::~StringSearchContext()
     }
 }
 
+bool
+StringAttribute::StringSearchContext::valid() const {
+    return (_queryTerm.get() && (!_queryTerm->empty()));
+}
+
+const QueryTermBase &
+StringAttribute::StringSearchContext::queryTerm() const {
+    return static_cast<const QueryTermBase &>(*_queryTerm);
+}
 
 uint32_t StringAttribute::clearDoc(DocId doc)
 {
@@ -296,7 +304,7 @@ bool StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
 }
 
 template <typename T>
-void StringAttribute::loadAllAtOnce(T & loaded, FileUtil::LoadedBuffer::UP dataBuffer, uint32_t numDocs, ReaderBase & attrReader, bool hasWeight, bool hasIdx)
+void StringAttribute::loadAllAtOnce(T & loaded, fileutil::LoadedBuffer::UP dataBuffer, uint32_t numDocs, ReaderBase & attrReader, bool hasWeight, bool hasIdx)
 {
     if (dataBuffer->c_str()) {
         const char *value = dataBuffer->c_str();
@@ -328,7 +336,7 @@ void StringAttribute::loadAllAtOnce(T & loaded, FileUtil::LoadedBuffer::UP dataB
 bool
 StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
 {
-    FileUtil::LoadedBuffer::UP udatBuffer(loadUDAT());
+    fileutil::LoadedBuffer::UP udatBuffer(loadUDAT());
 
     bool hasIdx(attrReader.hasIdx());
     size_t numDocs(0);
@@ -431,7 +439,7 @@ bool StringAttribute::onLoad()
     if (attrReader.getEnumerated())
         return onLoadEnumerated(attrReader);
     
-    FileUtil::LoadedBuffer::UP dataBuffer(loadDAT());
+    fileutil::LoadedBuffer::UP dataBuffer(loadDAT());
 
     bool hasIdx(attrReader.hasIdx());
     size_t numDocs(0);
@@ -451,12 +459,10 @@ bool StringAttribute::onLoad()
     }
 
     LoadedVectorR loaded(numValues);
-    loadAllAtOnce(loaded, std::move(dataBuffer), numDocs, attrReader,
-                  hasWeightedSetType(), hasIdx);
+    loadAllAtOnce(loaded, std::move(dataBuffer), numDocs, attrReader, hasWeightedSetType(), hasIdx);
 
     return true;
 }
-
 
 bool
 StringAttribute::onAddDoc(DocId doc)

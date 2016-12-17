@@ -11,12 +11,9 @@
 #include <vespa/vespalib/util/regexp.h>
 #include <cstdlib>
 
-namespace search
-{
+namespace search {
 
-namespace attribute
-{
-
+namespace attribute {
 
 /**
  * Search context helper for posting list attributes, used to instantiate
@@ -187,11 +184,12 @@ class PostingSearchContext: public BaseSC,
 {
 public:
     typedef typename AttrT::EnumStore EnumStore;
+    using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
 protected:
     const AttrT           &_toBeSearched;
     const EnumStore       &_enumStore;
     
-    PostingSearchContext(QueryTermSimple::UP qTerm, bool useBitVector, const AttrT &toBeSearched);
+    PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
 };
 
 template <typename BaseSC, typename AttrT, typename DataT>
@@ -203,11 +201,11 @@ private:
     typedef typename AggregationTraits::PostingList PostingList;
     typedef typename PostingList::Iterator PostingIterator;
     typedef typename PostingList::ConstIterator PostingConstIterator;
-    typedef PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>
-    Parent;
+    typedef PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT> Parent;
     typedef typename Parent::EnumStore EnumStore;
     typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
     typedef vespalib::Regexp Regexp;
+    using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
     using Parent::_toBeSearched;
     using Parent::_enumStore;
     using Parent::getRegex;
@@ -215,7 +213,7 @@ private:
         return getRegex() ? getRegex()->match(_enumStore.getValue(it.getKey())) : true;
     }
 public:
-    StringPostingSearchContext(QueryTermSimple::UP qTerm, bool useBitVector, const AttrT &toBeSearched);
+    StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
 };
 
 template <typename BaseSC, typename AttrT, typename DataT>
@@ -232,6 +230,7 @@ private:
     typedef typename EnumStore::ComparatorType ComparatorType;
     typedef typename AttrT::T BaseType;
     typedef typename Parent::Params Params;
+    using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
     using Parent::_low;
     using Parent::_high;
     using Parent::_toBeSearched;
@@ -266,14 +265,14 @@ private:
     }
 
 public:
-    NumericPostingSearchContext(QueryTermSimple::UP qTerm, const Params & params, const AttrT &toBeSearched);
+    NumericPostingSearchContext(QueryTermSimpleUP qTerm, const Params & params, const AttrT &toBeSearched);
     const Params &params() const { return _params; }
 };
     
     
 template <typename BaseSC, typename BaseSC2, typename AttrT>
 PostingSearchContext<BaseSC, BaseSC2, AttrT>::
-PostingSearchContext(QueryTermSimple::UP qTerm, bool useBitVector, const AttrT &toBeSearched)
+PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched)
     : BaseSC(std::move(qTerm), toBeSearched),
       BaseSC2(toBeSearched.getEnumStore().getPostingDictionary(),
               toBeSearched.getCommittedDocIdLimit(),
@@ -292,7 +291,7 @@ PostingSearchContext(QueryTermSimple::UP qTerm, bool useBitVector, const AttrT &
 
 template <typename BaseSC, typename AttrT, typename DataT>
 StringPostingSearchContext<BaseSC, AttrT, DataT>::
-StringPostingSearchContext(QueryTermSimple::UP qTerm, bool useBitVector, const AttrT &toBeSearched)
+StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched)
     : Parent(std::move(qTerm), useBitVector, toBeSearched)
 {
     // after benchmarking prefix search performance on single, array, and weighted set fast-aggregate string attributes
@@ -324,7 +323,7 @@ StringPostingSearchContext(QueryTermSimple::UP qTerm, bool useBitVector, const A
 
 template <typename BaseSC, typename AttrT, typename DataT>
 NumericPostingSearchContext<BaseSC, AttrT, DataT>::
-NumericPostingSearchContext(QueryTermSimple::UP qTerm, const Params & params_in, const AttrT &toBeSearched)
+NumericPostingSearchContext(QueryTermSimpleUP qTerm, const Params & params_in, const AttrT &toBeSearched)
     : Parent(std::move(qTerm), params_in.useBitVector(), toBeSearched),
       _params(params_in)
 {
