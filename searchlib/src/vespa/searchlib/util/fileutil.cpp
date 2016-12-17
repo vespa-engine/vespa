@@ -72,7 +72,7 @@ LoadedMmap::~LoadedMmap() {
 
 }
 
-std::unique_ptr<Fast_BufferedFile>
+std::unique_ptr<FastOS_FileInterface>
 FileUtil::openFile(const vespalib::string &fileName)
 {
     std::unique_ptr<Fast_BufferedFile> file(new Fast_BufferedFile());

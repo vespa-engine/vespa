@@ -4,14 +4,12 @@
 #include "search_context.h"
 #include "documentmetastoresaver.h"
 #include <vespa/searchlib/attribute/attributevector.hpp>
+#include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/btree/btree.hpp>
-#include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreenodestore.hpp>
 #include <vespa/searchlib/btree/btreenodeallocator.hpp>
-#include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreeroot.hpp>
 #include <vespa/searchlib/btree/btreebuilder.hpp>
-#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
@@ -48,7 +46,7 @@ vespalib::string DOCID_LIMIT("docIdLimit");
 
 class Reader {
 private:
-    std::unique_ptr<Fast_BufferedFile> _datFile;
+    std::unique_ptr<FastOS_FileInterface> _datFile;
     FileReader<uint32_t> _lidReader;
     FileReader<GlobalId> _gidReader;
     FileReader<uint8_t> _bucketUsedBitsReader;
@@ -59,7 +57,7 @@ private:
     uint64_t _datFileSize;
 
 public:
-    Reader(std::unique_ptr<Fast_BufferedFile> datFile)
+    Reader(std::unique_ptr<FastOS_FileInterface> datFile)
             : _datFile(std::move(datFile)),
               _lidReader(*_datFile),
               _gidReader(*_datFile),
@@ -71,7 +69,7 @@ public:
               _datFileSize(0u) {
         _headerLen = _header.readFile(*_datFile);
         _datFile->SetPosition(_headerLen);
-        if (!AttributeVector::ReaderBase::extractFileSize(_header, *_datFile,
+        if (!search::ReaderBase::extractFileSize(_header, *_datFile,
                                                           _datFileSize)) {
             abort();
         }

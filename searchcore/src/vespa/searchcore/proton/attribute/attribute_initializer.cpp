@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.attribute.attribute_initializer");
 #include "attribute_initializer.h"
 #include "attributedisklayout.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/searchlib/util/fileutil.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.attribute.attribute_initializer");
 
 using search::attribute::Config;
 using search::AttributeVector;
@@ -34,8 +34,7 @@ extractCreateSerialNum(const vespalib::GenericHeader &header)
 }
 
 bool
-extractHeaderTypeOK(const vespalib::GenericHeader &header,
-                    const Config &cfg)
+extractHeaderTypeOK(const vespalib::GenericHeader &header, const Config &cfg)
 {
     return header.hasTag(dataTypeTag) &&
         header.hasTag(collectionTypeTag) &&
@@ -49,8 +48,8 @@ AttributeHeader
 extractHeader(const AttributeVector::SP &attr,
               const vespalib::string &attrFileName)
 {
-    std::unique_ptr<Fast_BufferedFile> df;
-    df = search::FileUtil::openFile(attrFileName + ".dat");
+
+    auto df = search::FileUtil::openFile(attrFileName + ".dat");
     vespalib::FileHeader datHeader;
     datHeader.readFile(*df);
     AttributeHeader retval;

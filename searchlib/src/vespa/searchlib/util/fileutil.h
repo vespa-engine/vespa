@@ -62,7 +62,7 @@ public:
      * Opens and returns the file with the given name for reading.
      * Enables direct IO on the file.
      **/
-    static std::unique_ptr<Fast_BufferedFile> openFile(const vespalib::string &fileName);
+    static std::unique_ptr<FastOS_FileInterface> openFile(const vespalib::string &fileName);
 
     /**
      * Loads and returns the file with the given name.
