@@ -20,6 +20,7 @@
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 #include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/searchlib/queryeval/isourceselector.h>
 
 #include <vespa/searchlib/fef/fef.h>
 
@@ -61,16 +62,16 @@ class ISourceSelectorDummy : public ISourceSelector
     static SourceStore _sourceStoreDummy;
 
 public:
-    static Iterator::UP
+    static std::unique_ptr<sourceselector::Iterator>
     makeDummyIterator()
     {
-        return Iterator::UP(new Iterator(_sourceStoreDummy));
+        return std::make_unique<sourceselector::Iterator>(_sourceStoreDummy);
     }
 };
 
 ISourceSelector::SourceStore ISourceSelectorDummy::_sourceStoreDummy("foo");
 
-ISourceSelector::Iterator::UP selector() {
+std::unique_ptr<sourceselector::Iterator> selector() {
     return ISourceSelectorDummy::makeDummyIterator();
 }
 

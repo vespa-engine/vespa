@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".queryeval.intermediate_blueprints");
 #include "intermediate_blueprints.h"
 #include "andnotsearch.h"
 #include "andsearch.h"
@@ -13,7 +10,9 @@ LOG_SETUP(".queryeval.intermediate_blueprints");
 #include "equivsearch.h"
 #include "termwise_blueprint_helper.h"
 #include "termwise_search.h"
+#include "isourceselector.h"
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
+
 
 namespace search {
 namespace queryeval {

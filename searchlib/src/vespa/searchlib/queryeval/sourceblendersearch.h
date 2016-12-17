@@ -5,11 +5,11 @@
 #include <vespa/vespalib/util/array.h>
 #include "searchiterator.h"
 #include "emptysearch.h"
-#include "isourceselector.h"
 
 namespace search {
 namespace queryeval {
 
+    namespace sourceselector { class Iterator; }
 /**
  * A simple implementation of the source blender operation. This class
  * is used to blend results from multiple sources. Each source is
@@ -41,17 +41,19 @@ private:
     virtual bool isSourceBlender() const { return true; }
     static EmptySearch _emptySearch;
 protected:
+    using Iterator = sourceselector::Iterator;
+    using Source = uint8_t;
     typedef std::vector<Source> SourceIndex;
-    SearchIterator                * _matchedChild;
-    ISourceSelector::Iterator::UP   _sourceSelector;
-    SourceIndex                     _children;
-    uint32_t                        _docIdLimit;
-    SearchIterator                * _sources[256];
+    SearchIterator            * _matchedChild;
+    std::unique_ptr<Iterator>   _sourceSelector;
+    SourceIndex                 _children;
+    uint32_t                    _docIdLimit;
+    SearchIterator            * _sources[256];
 
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
     Trinary is_strict() const override { return Trinary::False; }
-    SourceBlenderSearch(ISourceSelector::Iterator::UP sourceSelector, const Children &children);
+    SourceBlenderSearch(std::unique_ptr<Iterator> sourceSelector, const Children &children);
     SearchIterator * getSearch(Source source) const { return _sources[source]; }
 public:
     /**
@@ -67,7 +69,7 @@ public:
      * @param strict whether this search is strict
      * (a strict search will locate its next hit when seeking fails)
      **/
-    static SourceBlenderSearch * create(ISourceSelector::Iterator::UP sourceSelector,
+    static SourceBlenderSearch * create(std::unique_ptr<Iterator> sourceSelector,
                         const Children &children, bool strict);
     virtual ~SourceBlenderSearch();
     size_t getNumChildren() const { return _children.size(); }

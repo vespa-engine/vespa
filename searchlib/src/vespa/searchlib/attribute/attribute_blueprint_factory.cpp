@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
-
 #include "attribute_blueprint_factory.h"
 #include "attribute_weighted_set_blueprint.h"
 #include "i_document_weight_attribute.h"
@@ -14,29 +10,24 @@ LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
-#include <vespa/searchlib/queryeval/dot_product_blueprint.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
-#include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/termasstring.h>
-#include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
-#include <vespa/searchlib/queryeval/wand/weak_and_heap.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
+#include <vespa/searchlib/query/queryterm.h>
 #include <sstream>
-#include <utility>
 #include <vespa/vespalib/util/regexp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
 
 using search::AttributeVector;
 using search::fef::TermFieldMatchData;

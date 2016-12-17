@@ -119,7 +119,7 @@ SourceSelector::extractLoadInfo(const vespalib::string & baseFileName)
 SourceSelector::Histogram SourceSelector::getDistribution() const
 {
     Histogram h;
-    ISourceSelector::Iterator::UP it = createIterator();
+    auto it = createIterator();
     for (size_t i(0), m(getDocIdLimit()); i < m; i++) {
         h.inc(it->getSource(i));
     }

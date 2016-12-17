@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/searchcorespi/index/iindexcollection.h>
-#include <vespa/searchcorespi/index/idiskindex.h>
+#include "iindexcollection.h"
+#include "idiskindex.h"
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/searchlib/queryeval/isourceselector.h>
 
 namespace searchcorespi {
 

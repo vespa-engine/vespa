@@ -3,9 +3,12 @@
 #pragma once
 
 #include "indexsearchable.h"
-#include <vespa/searchlib/queryeval/isourceselector.h>
-#include <vespa/searchlib/util/searchable_stats.h>
 
+namespace search {
+    namespace queryeval {
+        class ISourceSelector;
+    }
+}
 namespace searchcorespi {
 
 /**
@@ -14,7 +17,7 @@ namespace searchcorespi {
  */
 class IIndexCollection {
 protected:
-    typedef search::queryeval::ISourceSelector ISourceSelector;
+    using ISourceSelector = search::queryeval::ISourceSelector;
 public:
     typedef std::unique_ptr<IIndexCollection> UP;
     typedef std::shared_ptr<IIndexCollection> SP;

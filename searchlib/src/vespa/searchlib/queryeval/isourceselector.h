@@ -10,55 +10,48 @@ namespace queryeval {
 
 typedef uint8_t Source;
 
+namespace sourceselector {
+
+class Iterator {
+public:
+    using SourceStore = SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t> >;
+
+    Iterator(const SourceStore & source) : _source(source) { }
+    Iterator(const Iterator &) = delete;
+    Iterator & operator = (const Iterator &) = delete;
+    virtual ~Iterator() { }
+    /**
+     * Obtain the source to be used for the given document. This
+     * function should always be called with increasing document
+     * ids.
+     *
+     * @return source id
+     * @param docId document id
+     **/
+    queryeval::Source getSource(uint32_t docId) const {
+        return _source.getFast(docId);
+    }
+
+    uint32_t getDocIdLimit(void) const {
+        return _source.getCommittedDocIdLimit();
+    }
+private:
+    const SourceStore & _source;
+};
+
+}
+
 /**
  * Component used to select between sources during result blending.
  **/
 class ISourceSelector
 {
 protected:
-    typedef SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t> > SourceStore;
+    using SourceStore = sourceselector::Iterator::SourceStore;
 public:
     typedef std::unique_ptr<ISourceSelector> UP;
     typedef std::shared_ptr<ISourceSelector> SP;
     static const Source SOURCE_LIMIT = 254u;
-
-    /**
-     * Read-only interface to the data held by the parent source
-     * selector.
-     **/
-    class Iterator {
-    public:
-        Iterator(const SourceStore & source)
-            : _source(source)
-        {
-        }
-        typedef std::unique_ptr<Iterator> UP;
-
-        /**
-         * Obtain the source to be used for the given document. This
-         * function should always be called with increasing document
-         * ids.
-         *
-         * @return source id
-         * @param docId document id
-         **/
-        queryeval::Source getSource(uint32_t docId) const {
-            return _source.getFast(docId);
-        }
-
-        /**
-         * empty; defined for safe subclassing.
-         **/
-        virtual ~Iterator() {}
-
-        uint32_t
-        getDocIdLimit(void) const
-        {
-            return _source.getCommittedDocIdLimit();
-        } 
-    private:
-        const SourceStore & _source;
-    };
 
 protected:
     ISourceSelector(Source defaultSource);
@@ -87,7 +80,7 @@ public:
      *
      * @return source selection iterator
      **/
-    virtual Iterator::UP createIterator() const = 0;
+    virtual std::unique_ptr<sourceselector::Iterator> createIterator() const = 0;
 
     /**
      * empty; defined for safe subclassing.

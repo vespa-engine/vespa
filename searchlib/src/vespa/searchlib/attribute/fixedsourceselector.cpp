@@ -11,10 +11,9 @@ namespace {
 }
 
 FixedSourceSelector::Iterator::Iterator(const FixedSourceSelector & sourceSelector) :
-    ISourceSelector::Iterator(sourceSelector._source),
+    IIterator(sourceSelector._source),
     _attributeGuard(sourceSelector._realSource)
-{
-}
+{ }
 
 FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource,
                                          const vespalib::string & attrBaseFileName,

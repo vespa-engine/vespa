@@ -118,11 +118,12 @@ class ISourceSelectorDummy : public ISourceSelector
 {
 public:
     static SourceStore _sourceStoreDummy;
+    using Iterator = search::queryeval::sourceselector::Iterator;
 
-    static Iterator::UP
+    static std::unique_ptr<Iterator>
     makeDummyIterator()
     {
-        return Iterator::UP(new Iterator(_sourceStoreDummy));
+        return std::make_unique<Iterator>(_sourceStoreDummy);
     }
 };
 

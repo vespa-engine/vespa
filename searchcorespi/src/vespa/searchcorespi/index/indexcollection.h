@@ -3,7 +3,6 @@
 #pragma once
 
 #include "isearchableindexcollection.h"
-#include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/util/searchable_stats.h>
 #include <memory>
 #include <set>
@@ -29,12 +28,13 @@ class IndexCollection : public ISearchableIndexCollection
     };
 
     // Selector shared across memory dumps, replaced on disk fusion operations
-    ISourceSelector::SP _source_selector;
+    using ISourceSelectorSP = std::shared_ptr<ISourceSelector>;
+    ISourceSelectorSP         _source_selector;
     std::vector<SourceWithId> _sources;
 
 public:
-    IndexCollection(const ISourceSelector::SP & selector);
-    IndexCollection(const ISourceSelector::SP & selector,
+    IndexCollection(const ISourceSelectorSP & selector);
+    IndexCollection(const ISourceSelectorSP & selector,
                     const ISearchableIndexCollection &sources);
 
     virtual void append(uint32_t id, const IndexSearchable::SP &source);
@@ -65,7 +65,7 @@ public:
     virtual void accept(IndexSearchableVisitor &visitor) const override;
 
     static ISearchableIndexCollection::UP replaceAndRenumber(
-            const ISourceSelector::SP & selector,
+            const ISourceSelectorSP & selector,
             const ISearchableIndexCollection &fsc,
             uint32_t id_diff,
             const IndexSearchable::SP &new_source);
