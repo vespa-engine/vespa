@@ -2,7 +2,6 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
@@ -41,8 +40,23 @@ public class IndexedTensor implements Tensor {
         return values.length;
     }
 
+    /**
+     * Returns an iterator over the cells of this. 
+     * Cells are returned in order of increasing indexes in each dimension, increasing 
+     * indexes of later dimensions in the dimension type before earlier.
+     */
     @Override
     public Iterator<Map.Entry<TensorAddress, Double>> cellIterator() {
+        return new CellIterator();
+    }
+
+    /**
+     * Returns an iterator over the values of this.
+     * Values are returned in order of increasing indexes in each dimension, increasing 
+     * indexes of later dimensions in the dimension type before earlier.
+     */
+    @Override
+    public Iterator<Double> valueIterator() {
         return new ValueIterator();
     }
 
@@ -383,7 +397,7 @@ public class IndexedTensor implements Tensor {
 
     }
     
-    private class ValueIterator implements Iterator<Map.Entry<TensorAddress, Double>> {
+    private final class CellIterator implements Iterator<Map.Entry<TensorAddress, Double>> {
 
         private int cursor = 0;
         private final int[] tensorIndexes = new int[dimensionSizes.length];
@@ -427,6 +441,27 @@ public class IndexedTensor implements Tensor {
                 throw new UnsupportedOperationException("A tensor cannot be modified");
             }
 
+        }
+
+    }
+
+    private final class ValueIterator implements Iterator<Double> {
+
+        private int cursor = 0;
+
+        @Override
+        public boolean hasNext() {
+            return cursor < values.length;
+        }
+
+        @Override
+        public Double next() {
+            try {
+                return values[cursor++];
+            }
+            catch (IndexOutOfBoundsException e) {
+                throw new NoSuchElementException("No element at position " + cursor);
+            }
         }
 
     }

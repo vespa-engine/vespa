@@ -142,8 +142,8 @@ public class Reduce extends PrimitiveTensorFunction {
     
     private Tensor reduceAllGeneral(Tensor argument) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = argument.cellIterator(); i.hasNext(); )
-            valueAggregator.aggregate(i.next().getValue());
+        for (Iterator<Double> i = argument.valueIterator(); i.hasNext(); )
+            valueAggregator.aggregate(i.next());
         return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
     }
 

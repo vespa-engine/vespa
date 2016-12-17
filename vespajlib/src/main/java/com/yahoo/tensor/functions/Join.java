@@ -83,9 +83,11 @@ public class Join extends PrimitiveTensorFunction {
     
     private Tensor indexedVectorJoin(IndexedTensor a, IndexedTensor b, TensorType type) {
         int joinedLength = Math.min(a.length(0), b.length(0));
+        Iterator<Double> aIterator = a.valueIterator();
+        Iterator<Double> bIterator = b.valueIterator();
         IndexedTensor.Builder builder = IndexedTensor.Builder.of(type, new int[] { joinedLength});
         for (int i = 0; i < joinedLength; i++)
-            builder.cell(combinator.applyAsDouble(a.get(i), b.get(i)), i);
+            builder.cell(combinator.applyAsDouble(aIterator.next(), bIterator.next()), i);
         return builder.build();
     }
 
@@ -114,8 +116,7 @@ public class Join extends PrimitiveTensorFunction {
                              reversedArgumentOrder ? combinator.applyAsDouble(supercell.getValue(), subspaceValue)
                                                    : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
         }
-        Tensor result = builder.build();
-        return result;
+        return builder.build();
     }
     
     /** Returns the indexes in the superspace type which should be retained to create the subspace type */

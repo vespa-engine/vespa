@@ -38,6 +38,9 @@ public class MappedTensor implements Tensor {
     public Iterator<Map.Entry<TensorAddress, Double>> cellIterator() { return cells.entrySet().iterator(); }
 
     @Override
+    public Iterator<Double> valueIterator() { return cells.values().iterator(); }
+
+    @Override
     public Map<TensorAddress, Double> cells() { return cells; }
 
     @Override

@@ -59,6 +59,8 @@ public interface Tensor {
 
     Iterator<Map.Entry<TensorAddress, Double>> cellIterator();
 
+    Iterator<Double> valueIterator();
+
     /** Returns an immutable map of the cells of this. This may be expensive for some implementations - avoid when possible */
     Map<TensorAddress, Double> cells();
 
@@ -73,7 +75,7 @@ public interface Tensor {
         if (size() == 0) return Double.NaN;
         if (size() > 1)
             throw new IllegalStateException("This tensor does not have a single value, it has " + size());
-        return cellIterator().next().getValue();
+        return valueIterator().next();
     }
     
     // ----------------- Primitive tensor functions
@@ -250,6 +252,7 @@ public interface Tensor {
     interface Builder {
         
         /** Creates a suitable builder for the given type */
+        // TODO: Create version of this which takes size info and use it when possible
         static Builder of(TensorType type) {
             boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
