@@ -5,6 +5,7 @@
 #include "sync.h"
 #include "runnable.h"
 #include "active.h"
+#include <vespa/fastos/thread.h>
 
 namespace vespalib {
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vector>
+#include <functional>
 #include <algorithm>
 #include "left_right_heap.h"
 

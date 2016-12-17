@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
+#include <stdio.h>
 
 namespace vespalib {
 

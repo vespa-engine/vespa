@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
+#include <vespa/fastos/process.h>
 #ifndef FASTOS_NO_THREADS
 #include <string>
 #include <queue>

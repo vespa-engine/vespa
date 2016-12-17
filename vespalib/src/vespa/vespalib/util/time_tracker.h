@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <vespa/fastos/timestamp.h>
 
 namespace vespalib {
 

@@ -8,7 +8,6 @@
  * @date 2006/03/16
  **/
 
-#include <vespa/fastos/fastos.h>
 #include "hashmap.h"
 
 namespace vespalib {

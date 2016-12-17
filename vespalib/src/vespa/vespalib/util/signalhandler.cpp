@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "signalhandler.h"
+#include <cassert>
 
 namespace vespalib {
 
@@ -69,7 +69,7 @@ SignalHandler::hook()
     act.sa_handler = handleSignal;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    sigaction(_signal, &act, NULL);
+    sigaction(_signal, &act, nullptr);
 }
 
 void
@@ -79,7 +79,7 @@ SignalHandler::ignore()
     act.sa_handler = SIG_IGN;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    sigaction(_signal, &act, NULL);
+    sigaction(_signal, &act, nullptr);
 }
 
 bool
@@ -101,7 +101,7 @@ SignalHandler::unhook()
     act.sa_handler = SIG_DFL;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    sigaction(_signal, &act, NULL);
+    sigaction(_signal, &act, nullptr);
 }
 
 
@@ -112,7 +112,7 @@ SignalHandler::shutdown(void)
              it = _handlers.begin(), ite = _handlers.end();
          it != ite;
          ++it) {
-        if (*it != NULL)
+        if (*it != nullptr)
             (*it)->unhook();
     }
     std::vector<SignalHandler *>().swap(_handlers);
