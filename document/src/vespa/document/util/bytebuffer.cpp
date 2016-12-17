@@ -10,6 +10,7 @@
 #include "stringutil.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <sstream>
+#include <arpa/inet.h>
 
 #define LOG_DEBUG1(a)
 // Enable this macros instead to see what bytebuffer calls come

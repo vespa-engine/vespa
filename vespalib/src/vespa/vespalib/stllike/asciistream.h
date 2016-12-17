@@ -1,9 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/fastos.h>
-#include <string>
 #include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace vespalib {
 
@@ -40,7 +39,7 @@ public:
     asciistream & operator << (bool v)                { if (v) { *this << '1'; } else { *this << '0'; } return *this; }
     asciistream & operator << (char v)                { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }
-    asciistream & operator << (const char * v)        { if (v != NULL) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
+    asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
     asciistream & operator << (const string & v)      { doFill(v.size()); write(v.c_str(), v.size()); return *this; }
     asciistream & operator << (const stringref & v)   { doFill(v.size()); write(v.c_str(), v.size()); return *this; }
     asciistream & operator << (const std::string & v) { doFill(v.size()); write(v.c_str(), v.size()); return *this; }

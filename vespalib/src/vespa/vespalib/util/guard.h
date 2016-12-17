@@ -4,6 +4,8 @@
 #pragma once
 
 #include <stdio.h>
+#include <dirent.h>
+#include <unistd.h>
 
 namespace vespalib {
 

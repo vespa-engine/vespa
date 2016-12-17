@@ -6,6 +6,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <algorithm>
 #include <iostream>
+#include <sys/stat.h>
 
 namespace proton {
 

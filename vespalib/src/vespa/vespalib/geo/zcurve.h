@@ -1,15 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @file zcurve.h
- * @author Tor Egge
- *
- * $Id$
- */
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
+#include <cstdint>
 #include <cassert>
+#include <vector>
 
 namespace vespalib {
 namespace geo {
@@ -34,38 +29,14 @@ public:
         int64_t _zMaxy;		/* Max Y coordinate, interleaved (Z curve) */
 
     public:
-        BoundingBox(int32_t minx,
-                    int32_t maxx,
-                    int32_t miny,
-                    int32_t maxy);
+        BoundingBox(int32_t minx, int32_t maxx, int32_t miny, int32_t maxy);
 
-        ~BoundingBox(void)
-        {
-        }
+        ~BoundingBox() { }
 
-        int64_t
-        getzMinx(void) const
-        {
-            return _zMinx;
-        }
-
-        int64_t
-        getzMaxx(void) const
-        {
-            return _zMaxx;
-        }
-
-        int64_t
-        getzMiny(void) const
-        {
-            return _zMiny;
-        }
-
-        int64_t
-        getzMaxy(void) const
-        {
-            return _zMaxy;
-        }
+        int64_t getzMinx() const { return _zMinx; } 
+        int64_t getzMaxx() const { return _zMaxx; } 
+        int64_t getzMiny() const { return _zMiny; } 
+        int64_t getzMaxy() const { return _zMaxy; }
 
         /**
          * Returns true if the given z-encoded xy coordinate is
