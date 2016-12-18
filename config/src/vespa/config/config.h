@@ -7,7 +7,6 @@
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/config/helper/configfetcher.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/retriever/configretriever.h>
 
