@@ -1,16 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+#include "storagedocument.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/vsm/common/storagedocument.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.storagedocument");
 
-#define DEBUGMASK 0x00
-
-namespace vsm
-{
+namespace vsm {
 
 StorageDocument::StorageDocument(const SharedFieldPathMap & fim) :
     Document(),
@@ -18,8 +15,7 @@ StorageDocument::StorageDocument(const SharedFieldPathMap & fim) :
     _fieldMap(fim),
     _cachedFields(),
     _backedFields()
-{
-}
+{ }
 
 StorageDocument::StorageDocument(document::Document::UP doc) :
     Document(),
@@ -27,12 +23,9 @@ StorageDocument::StorageDocument(document::Document::UP doc) :
     _fieldMap(),
     _cachedFields(),
     _backedFields()
-{
-}
+{ }
 
-StorageDocument::~StorageDocument()
-{
-}
+StorageDocument::~StorageDocument() { }
 
 void StorageDocument::init()
 {

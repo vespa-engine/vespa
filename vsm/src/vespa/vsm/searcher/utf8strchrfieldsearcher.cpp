@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
+#include "utf8strchrfieldsearcher.h"
 
 using search::QueryTerm;
 using search::QueryTermList;
 using search::byte;
 
-namespace vsm
-{
+namespace vsm {
 
 IMPLEMENT_DUPLICATE(UTF8StrChrFieldSearcher);
 

@@ -1,10 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".vsm.vsm-adapter");
 
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/vsm/vsm/docsumconfig.h>
@@ -12,6 +6,9 @@ LOG_SETUP(".vsm.vsm-adapter");
 
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".vsm.vsm-adapter");
 
 using search::docsummary::ResConfigEntry;
 using search::docsummary::KeywordExtractor;
@@ -22,8 +19,7 @@ namespace vsm {
 GetDocsumsStateCallback::GetDocsumsStateCallback() :
     _summaryFeatures(),
     _rankFeatures()
-{
-}
+{ }
 
 void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env)
 {
@@ -54,29 +50,23 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
 }
 
 
-GetDocsumsStateCallback::~GetDocsumsStateCallback(void)
-{
-}
+GetDocsumsStateCallback::~GetDocsumsStateCallback(void) { }
 
 DocsumTools::FieldSpec::FieldSpec() :
     _outputName(),
     _inputNames(),
     _command(VsmsummaryConfig::Fieldmap::NONE)
-{
-}
+{ }
 
 DocsumTools::DocsumTools(std::unique_ptr<DynamicDocsumWriter> writer) :
     _writer(std::move(writer)),
     _juniper(),
     _resultClass(),
     _fieldSpecs()
-{
-}
+{ }
 
 
-DocsumTools::~DocsumTools()
-{
-}
+DocsumTools::~DocsumTools() { }
 
 bool
 DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)

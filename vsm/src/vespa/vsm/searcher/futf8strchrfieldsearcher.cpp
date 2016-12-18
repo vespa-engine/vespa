@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
-#include <vespa/vsm/searcher/fold.h>
+#include "futf8strchrfieldsearcher.h"
+#include "fold.h"
 #include <vespa/vespalib/util/optimized.h>
 
 using vespalib::Optimized;
@@ -9,8 +8,7 @@ using search::byte;
 using search::QueryTerm;
 using search::v16qi;
 
-namespace vsm
-{
+namespace vsm {
 
 IMPLEMENT_DUPLICATE(FUTF8StrChrFieldSearcher);
 

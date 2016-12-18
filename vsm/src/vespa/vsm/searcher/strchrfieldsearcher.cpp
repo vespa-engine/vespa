@@ -1,17 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vsm/searcher/strchrfieldsearcher.h>
+#include "strchrfieldsearcher.h"
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".vsm.searcher.strchrfieldmatcher");
-
-#define DEBUGMASK 0x00
 
 using search::QueryTerm;
 using search::QueryTermList;
 
-namespace vsm
-{
+namespace vsm {
 
 void StrChrFieldSearcher::prepare(QueryTermList & qtl, const SharedSearcherBuf & buf)
 {
@@ -29,7 +23,6 @@ void StrChrFieldSearcher::onValue(const document::FieldValue & fv)
 bool StrChrFieldSearcher::matchDoc(const FieldRef & fieldRef)
 {
   bool retval(true);
-  LOG(debug, "Matching %zu bytes in %s", fieldRef.size(), fieldRef.c_str());
   if (_qtl.size() > 1) {
     size_t mintsz = shortestTerm();
     if (fieldRef.size() >= mintsz) {

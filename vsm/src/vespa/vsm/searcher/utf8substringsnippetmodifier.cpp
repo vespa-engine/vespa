@@ -1,15 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searcher.utf8substringsnippetmodifier");
-#include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
+#include "utf8substringsnippetmodifier.h"
 
 using search::byte;
 using search::QueryTerm;
 using search::QueryTermList;
 
-namespace vsm
-{
+namespace vsm {
 
 IMPLEMENT_DUPLICATE(UTF8SubstringSnippetModifier);
 
@@ -18,7 +14,6 @@ UTF8SubstringSnippetModifier::matchTerms(const FieldRef & f, const size_t mintsz
 {
     _modified->reset();
     _readPtr = f.c_str();
-    LOG(spam, "matchTerm: FieldRef.size = %zd", f.size());
     const byte * src = reinterpret_cast<const byte *> (f.c_str());
     // resize ucs4 buffer
     if (f.size() >= _buf->size()) {
@@ -52,9 +47,6 @@ UTF8SubstringSnippetModifier::matchTerms(const FieldRef & f, const size_t mintsz
             if (titr == tend) {
                 const char * mbegin = f.c_str() + (*_offsets)[ditr - dbegin];
                 const char * mend = f.c_str() + ((dtmp < dend) ? ((*_offsets)[dtmp - dbegin]) : f.size());
-                LOG(spam, "match: ditr = %d(%zd), dtmp = %d(%zd), mbegin = %d(%zd), mend = %d(%zd)",
-                    *ditr, (ditr - dbegin), *dtmp, (dtmp - dbegin),
-                    (int)*mbegin, (mbegin - f.c_str()), (int)*mend, (mend - f.c_str()));
                 if (_readPtr <= mbegin) {
                     // We will only copy from the field ref once.
                     // If we have overlapping matches only the first one will be considered.
