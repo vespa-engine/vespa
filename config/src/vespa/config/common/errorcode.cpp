@@ -1,11 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @author  Gunnar Gauslaa Bergem
- * @date    2008-05-22
- * @version $Id: errorcode.cpp 119439 2011-04-19 09:32:27Z arnej $
- */
 
-#include <vespa/fastos/fastos.h>
 #include "errorcode.h"
 
 namespace config {

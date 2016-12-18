@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".config.frt.frtconfigresponse");
 #include "frtconfigresponse.h"
 #include <vespa/config/common/misc.h>
 #include <vespa/fnet/frt/frt.h>
@@ -68,9 +65,6 @@ void
 FRTConfigResponseV1::fill()
 {
     const std::vector<vespalib::string> payload(getPayLoad());
-    for (size_t i = 0; i < payload.size(); i++) {
-        LOG(spam, "payload(%lu): %s", i, payload[i].c_str());
-    }
     _value = ConfigValue(payload, calculateContentMd5(payload));
     _key = readKey();
     _state = ConfigState(vespalib::string((*_returnValues)[4]._string._str), (*_returnValues)[6]._intval64);

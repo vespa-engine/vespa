@@ -1,13 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".config.common.configmanager");
 #include "configmanager.h"
 #include "exceptions.h"
 #include "configholder.h"
-#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <memory>
+#include <thread>
+#include <chrono>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".config.common.configmanager");
+
+using namespace std::chrono_literals;
 
 namespace config {
 
@@ -42,7 +45,7 @@ ConfigManager::subscribe(const ConfigKey & key, uint64_t timeoutInMillis)
     while (timer.MilliSecsToNow() < timeoutInMillis) {
         if (holder->poll())
             break;
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     if (!holder->poll()) {
         std::ostringstream oss;

@@ -1,13 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/config/common/exceptions.h>
-LOG_SETUP(".config.retriever.configretriever");
 #include "configretriever.h"
+#include <vespa/config/common/exceptions.h>
 
 namespace config {
-
 
 ConfigRetriever::ConfigRetriever(const ConfigKeySet & bootstrapSet,
                                  const IConfigContext::SP & context,

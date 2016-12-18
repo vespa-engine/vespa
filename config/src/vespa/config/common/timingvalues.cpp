@@ -1,11 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @author  Gunnar Gauslaa Bergem
- * @date    2008-05-22
- * @version $Id: timingvalues.cpp 119439 2011-04-19 09:32:27Z arnej $
- */
 
-#include <vespa/fastos/fastos.h>
 #include "timingvalues.h"
 
 namespace config {
@@ -22,8 +16,7 @@ TimingValues::TimingValues()
       maxDelayMultiplier(10),
       transientDelay(10000),
       fatalDelay(60000)
-{
-}
+{ }
 
 
 TimingValues::TimingValues(uint64_t initSuccessTimeout,
@@ -48,7 +41,6 @@ TimingValues::TimingValues(uint64_t initSuccessTimeout,
       maxDelayMultiplier(initMaxDelayMultiplier),
       transientDelay(initTransientDelay),
       fatalDelay(initFatalDelay)
-{
-}
+{ }
 
 }

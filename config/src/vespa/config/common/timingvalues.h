@@ -1,13 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @author  Gunnar Gauslaa Bergem
- * @date    2008-05-22
- * @version $Id: timingvalues.h 119465 2011-04-20 15:21:46Z arnej $
- */
 
 #pragma once
 
-
+#include <cstdint>
 namespace config {
 
 static const uint64_t DEFAULT_NEXTCONFIG_TIMEOUT = 55000;
