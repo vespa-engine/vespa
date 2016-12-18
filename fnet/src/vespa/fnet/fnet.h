@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/fastos/mutex.h>
+#include <vespa/fastos/cond.h>
 
 // FEATURES
 

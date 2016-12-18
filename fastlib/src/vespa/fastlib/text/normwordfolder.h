@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/fastlib/text/wordfolder.h>
+#include <cstdint>
 
 /**
  * WordFolder that both lowercases, removes accents, and converts
@@ -12,7 +13,6 @@ class Fast_NormalizeWordFolder : public Fast_WordFolder
 {
 private:
   static bool _isInitialized;
-  static FastOS_Mutex _initMutex;
 
   /** Features */
   static bool _doAccentRemoval;
@@ -81,7 +81,7 @@ public:
 public:
   static const char *ReplacementString(ucs4_t testchar) {
     if (testchar < 0xc4 || testchar > 0x1f3) {
-      return NULL;
+      return nullptr;
     }
     if (testchar == 0xdf && _doSharpSSubstitution) {
       return "ss";
@@ -147,12 +147,12 @@ public:
           return "th";
 
         default:
-          return NULL;
+          return nullptr;
 
       }
 
     }
-    return NULL;
+    return nullptr;
   }
  private:
   /**

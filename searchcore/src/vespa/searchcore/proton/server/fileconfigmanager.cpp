@@ -12,6 +12,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <fstream>
+#include <vespa/fastos/file.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fileconfigmanager");
 

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/fastos/socket.h>
+
 /**
  * This is the common superclass of all components that may be part of
  * the transport layer event based I/O framework. Note that all IO

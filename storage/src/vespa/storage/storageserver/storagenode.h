@@ -13,7 +13,6 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/fastos/fastos.h>
 #include <memory>
 #include <string>
 #include <vespa/storage/config/config-stor-server.h>

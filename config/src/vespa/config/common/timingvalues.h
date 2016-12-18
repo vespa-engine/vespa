@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 
 namespace config {
 

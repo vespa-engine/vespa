@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/common/fslimits.h>
 #include <vespa/searchcore/fdispatch/common/stdincl.h>
 #include <vespa/searchcore/config/config-partitions.h>

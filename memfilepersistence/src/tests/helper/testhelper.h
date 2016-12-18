@@ -5,7 +5,6 @@
 
 
 #include <fstream>
-#include <vespa/fastos/fastos.h>
 #include <sstream>
 
 #define ASSERT_REPLY_COUNT(count, dummylink) \

@@ -2,6 +2,7 @@
 #include <vespa/fnet/fnet.h>
 #include <vespa/slobrok/server/sbenv.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("slobrok");

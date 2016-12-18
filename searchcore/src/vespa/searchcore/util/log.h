@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 
 /*
  * Define FastS_abort and FastS_assert macro's.

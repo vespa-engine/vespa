@@ -57,7 +57,6 @@
 
 #include <cassert>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/fastos/fastos.h>
 #include <list>
 #include <memory>
 #include <stdexcept>

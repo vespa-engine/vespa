@@ -6,7 +6,7 @@
  */
 #pragma once
 
-#include <vespa/fastos/fastos.h>
+#include <cstdint>
 
 namespace storage {
 namespace api {
@@ -16,6 +16,5 @@ typedef uint32_t VisitorId;
 
 const Timestamp MAX_TIMESTAMP = (Timestamp)-1ll;
 
-} // api
-} // storage
-
+}
+}

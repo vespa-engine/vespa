@@ -18,7 +18,6 @@
 
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/fastos/fastos.h>
 #include <Judy.h>
 
 namespace storage {

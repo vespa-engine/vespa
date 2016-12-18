@@ -1121,7 +1121,7 @@ Fast_HTTPConnection::~Fast_HTTPConnection(void)
 
 
 
-void Fast_HTTPConnection::OutputFile(FastOS_File *file)
+void Fast_HTTPConnection::OutputFile(FastOS_FileInterface *file)
 {
    const int bufferSize = 2048;
    char buffer[bufferSize];

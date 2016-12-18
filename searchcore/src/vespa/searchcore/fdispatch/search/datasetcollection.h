@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/referencecounter.h>
 #include <vespa/searchcore/fdispatch/common/appcontext.h>
 #include <vespa/searchcore/fdispatch/search/configdesc.h>

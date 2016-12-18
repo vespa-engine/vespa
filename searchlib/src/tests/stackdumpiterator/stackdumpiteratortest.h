@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 
 class StackDumpIteratorTest : public FastOS_Application

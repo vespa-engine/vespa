@@ -28,7 +28,7 @@ void operator delete[](void* ptr, std::size_t sz, const std::nothrow_t&) noexcep
 void* operator new(std::size_t sz) throw (std::bad_alloc)
 {
     void * ptr(vespamalloc::createAllocator()->malloc(sz));
-    if (ptr == NULL) {
+    if (ptr == nullptr) {
         throw std::bad_alloc();
     }
     return ptr;
@@ -90,7 +90,7 @@ void * realloc(void * ptr, size_t sz)
 void* memalign(size_t align, size_t sz) __attribute__((visibility ("default")));
 void* memalign(size_t align, size_t sz)
 {
-    void *ptr(NULL);
+    void *ptr(nullptr);
     size_t align_1(align - 1);
     if ((align & (align_1)) == 0) {
         ptr = vespamalloc::_GmemP->malloc(vespamalloc::_GmemP->getMinSizeForAlignment(align, sz));
@@ -151,13 +151,13 @@ extern "C" VESPA_DLL_EXPORT void * local_dlopen(const char *filename, int flag) 
 VESPA_DLL_EXPORT void * local_dlopen(const char *filename, int flag)
 {
     // A pointer to the library version of dlopen.
-    static dlopen_function real_dlopen = NULL;
+    static dlopen_function real_dlopen = nullptr;
 
     const char * dlopenName = "dlopen";
 
-    if (real_dlopen == NULL) {
+    if (real_dlopen == nullptr) {
         real_dlopen = (dlopen_function) dlsym (RTLD_NEXT, dlopenName);
-        if (real_dlopen == NULL) {
+        if (real_dlopen == nullptr) {
             fprintf (stderr, "Could not find the dlopen function!\n");
             abort();
         }
@@ -174,13 +174,13 @@ extern "C" VESPA_DLL_EXPORT int local_dlclose(void * handle) __asm__("dlclose");
 VESPA_DLL_EXPORT int local_dlclose(void * handle)
 {
     // A pointer to the library version of dlclose.
-    static dlclose_function real_dlclose = NULL;
+    static dlclose_function real_dlclose = nullptr;
 
     const char * dlcloseName = "dlclose";
 
-    if (real_dlclose == NULL) {
+    if (real_dlclose == nullptr) {
         real_dlclose = (dlclose_function) dlsym (RTLD_NEXT, dlcloseName);
-        if (real_dlclose == NULL) {
+        if (real_dlclose == nullptr) {
             fprintf (stderr, "Could not find the dlclose function!\n");
             abort();
         }
@@ -195,13 +195,13 @@ extern "C" VESPA_DLL_EXPORT void * local_dlsym(void * handle, const char * symbo
 VESPA_DLL_EXPORT void * local_dlsym(void * handle, const char * symbol)
 {
     // A pointer to the library version of dlsym.
-    static dlsym_function real_dlsym = NULL;
+    static dlsym_function real_dlsym = nullptr;
 
     const char * dlsymName = "dlsym";
 
-    if (real_dlsym == NULL) {
+    if (real_dlsym == nullptr) {
         real_dlsym = (dlsym_function) dlvsym (RTLD_NEXT, dlsymName, "GLIBC_2.2.5");
-        if (real_dlsym == NULL) {
+        if (real_dlsym == nullptr) {
             fprintf (stderr, "Could not find the dlsym function!\n");
             abort();
         }

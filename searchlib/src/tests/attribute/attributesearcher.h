@@ -3,7 +3,6 @@
 #pragma once
 
 #include "runnable.h"
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>

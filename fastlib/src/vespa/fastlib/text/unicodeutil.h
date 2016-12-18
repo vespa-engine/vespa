@@ -4,9 +4,10 @@
  */
 #pragma once
 
+#include <sys/types.h>
+
 #define FASTLIB_UNICODEUTIL_USES_WORDCHARPROP
 
-#include <vespa/fastos/fastos.h>
 
 /** utf8_t is the type of the multi-byte UTF-8 character components */
 typedef unsigned char utf8_t;

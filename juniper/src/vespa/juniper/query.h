@@ -7,7 +7,6 @@
 #define JUNIPER_RPIF 1
 #endif
 
-#include <vespa/fastos/fastos.h>
 
 /** @file query.h
  *  This file describes describes Juniper's expected interface for

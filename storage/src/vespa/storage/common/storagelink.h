@@ -20,7 +20,6 @@
 #pragma once
 
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/fastos/fastos.h>
 #include <memory>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>

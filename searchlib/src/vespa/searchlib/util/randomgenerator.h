@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>

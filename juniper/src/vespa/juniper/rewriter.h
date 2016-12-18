@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include "query.h"
 
 /** @file rewriter.h

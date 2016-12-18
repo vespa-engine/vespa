@@ -3,7 +3,6 @@
 
 /* Include most of the stuff that we might need */
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/juniper/query.h>

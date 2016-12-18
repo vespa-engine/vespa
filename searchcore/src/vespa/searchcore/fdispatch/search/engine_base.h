@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchcore/fdispatch/common/timestat.h>
 #include "plain_dataset.h"
 #include "poss_count.h"

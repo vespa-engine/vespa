@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include "handler.h"
 #include "server_socket.h"
 #include <thread>

@@ -6,7 +6,6 @@
 
 #include <list>
 
-#include <vespa/fastos/fastos.h>
 #include "child_info.h"
 #include <vespa/searchcore/fdispatch/search/dataset_base.h>
 #include <vespa/searchlib/util/rand48.h>
