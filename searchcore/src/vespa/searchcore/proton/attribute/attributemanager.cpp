@@ -10,6 +10,7 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attributemanager");
@@ -44,9 +45,7 @@ AttributeManager::internalAddAttribute(const vespalib::string &name,
 void
 AttributeManager::addAttribute(const AttributeWrap &attribute)
 {
-    LOG(debug,
-        "Adding attribute vector '%s'",
-        attribute->getBaseFileName().c_str());
+    LOG(debug, "Adding attribute vector '%s'", attribute->getBaseFileName().c_str());
     _attributes[attribute->getName()] = attribute;
     assert(attribute->getInterlock() == _interlock);
     if ( ! attribute.isExtra() ) {
@@ -91,12 +90,8 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
     for (const auto &aspec : newSpec.getAttributes()) {
         AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
         if (av.get() != NULL) { // transfer attribute
-            LOG(debug,
-                "Transferring attribute vector '%s' with %u docs and "
-                "serial number %" PRIu64 " from current manager",
-                av->getName().c_str(),
-                av->getNumDocs(),
-                av->getStatus().getLastSyncToken());
+            LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %lu from current manager",
+                       av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
             addAttribute(av);
         } else {
             toBeAdded.push_back(aspec);
@@ -118,12 +113,8 @@ AttributeManager::flushRemovedAttributes(const AttributeManager &currMgr,
             vespalib::Executor::Task::UP flushTask =
                 flushable->initFlush(newSpec.getCurrentSerialNum());
             if (flushTask.get() != NULL) {
-                LOG(debug,
-                    "Flushing removed attribute vector '%s' with %u docs "
-                    "and serial number %" PRIu64,
-                    kv.first.c_str(),
-                    kv.second->getNumDocs(),
-                    kv.second->getStatus().getLastSyncToken());
+                LOG(debug, "Flushing removed attribute vector '%s' with %u docs and serial number %lu",
+                           kv.first.c_str(), kv.second->getNumDocs(), kv.second->getStatus().getLastSyncToken());
                 flushTask->run();
             }
         }
@@ -136,10 +127,8 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
                                    IAttributeInitializerRegistry &initializerRegistry)
 {
     for (const auto &aspec : toBeAdded) {
-        LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%" PRIu64,
-            aspec.getName().c_str(),
-            newSpec.getDocIdLimit(),
-            newSpec.getCurrentSerialNum());
+        LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%lu",
+                   aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
 
         AttributeInitializer::UP initializer =
                 std::make_unique<AttributeInitializer>(_baseDir, _documentSubDbName, aspec.getName(),

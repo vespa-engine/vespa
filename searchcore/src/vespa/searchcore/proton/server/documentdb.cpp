@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "documentdb.h"
 #include "combiningfeedview.h"
 #include "configvalidator.h"
@@ -9,10 +8,12 @@
 #include "idocumentdbowner.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include "searchcontext.h"
 #include "summaryadapter.h"
 #include "tlcproxy.h"
+#include "commit_and_wait_document_retriever.h"
+#include "documentdbconfigscout.h"
+#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
@@ -37,10 +38,9 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <sstream>
-#include "documentdbconfigscout.h"
-#include "commit_and_wait_document_retriever.h"
-#include <vespa/log/log.h>
+#include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdb");
 
 

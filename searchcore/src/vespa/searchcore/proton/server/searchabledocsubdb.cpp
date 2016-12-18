@@ -12,6 +12,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/tensor/default_tensor_engine.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::RankProfilesConfig;

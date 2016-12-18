@@ -17,6 +17,7 @@
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/query/query.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");

@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <assert.h>
 #include "utf8.h"
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <assert.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.utf8");
@@ -12,7 +12,7 @@ namespace vespalib {
 
 void Utf8::throwX(const char *msg, unsigned int number)
 {
-    vespalib::string what = make_vespa_string("%s: \\x%02X", msg, number);
+    vespalib::string what = make_string("%s: \\x%02X", msg, number);
     throw IllegalArgumentException(what);
 }
 

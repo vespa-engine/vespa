@@ -4,7 +4,6 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 namespace vespalib {
 
