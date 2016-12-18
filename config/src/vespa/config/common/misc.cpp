@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include "exceptions.h"
 
 namespace config {
 
@@ -47,7 +48,6 @@ isGenerationNewer(int64_t newGen, int64_t oldGen)
 
 void
 throwInvalid(const char *format, ...)
-    throw(InvalidConfigException)
 {
     char buf[4000];
     va_list args;

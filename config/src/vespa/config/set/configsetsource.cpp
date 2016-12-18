@@ -1,13 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".config.set.configsetsource");
 #include "configsetsource.h"
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/common/misc.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".config.set.configsetsource");
 
 namespace config {
 
