@@ -4,8 +4,7 @@
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".config.common.misc");
+#include <vespa/vespalib/data/slime/slime.h>
 
 namespace config {
 
@@ -56,7 +55,6 @@ throwInvalid(const char *format, ...)
     va_start(args, format);
     vsnprintf(buf, sizeof buf, format, args);
     va_end(args);
-    LOG(warning, "Error in configuration: %s", buf);
 
     throw InvalidConfigException(buf);
 }

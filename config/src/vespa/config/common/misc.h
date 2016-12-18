@@ -1,11 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vector>
 #include "exceptions.h"
 #include "configkey.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <vector>
+
+namespace vespalib {
+    class Slime;
+    namespace slime {
+        class Inspector;
+        class Cursor;
+    }
+}
 
 namespace config {
 
@@ -27,5 +34,4 @@ typedef std::shared_ptr<const vespalib::Slime> SlimePtr;
  */
 void copySlimeObject(const vespalib::slime::Inspector & src, vespalib::slime::Cursor & dest);
 
-} // namespace config
-
+}
