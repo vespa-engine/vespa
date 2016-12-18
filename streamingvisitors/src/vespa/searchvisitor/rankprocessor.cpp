@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchvisitor.rankprocessor");
+#include "querytermdata.h"
+#include "rankprocessor.h"
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/simpletermfielddata.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
-#include "querytermdata.h"
-#include "rankprocessor.h"
 #include <cmath>
+#include <vespa/log/log.h>
+LOG_SETUP(".searchvisitor.rankprocessor");
 
 using search::FeatureSet;
 using search::HitList;

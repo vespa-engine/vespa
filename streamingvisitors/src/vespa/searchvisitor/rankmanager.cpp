@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchvisitor.rankmanager");
+#include "rankmanager.h"
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/vespalib/util/vstringfmt.h>
-#include "rankmanager.h"
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchvisitor.rankmanager");
 
 using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::vsm::VsmfieldsConfig;
