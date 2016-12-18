@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/document/util/xmlserializable.h>
 #include <vespa/vdslib/state/diskstate.h>
 #include <vespa/vdslib/state/state.h>
 #include <vespa/vdslib/state/random.h>
