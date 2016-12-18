@@ -9,6 +9,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config/config.h>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 
 LOG_SETUP(".bucketintegritychecker");
 

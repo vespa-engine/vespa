@@ -7,8 +7,9 @@
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
 #include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
 #include <vespa/document/update/assignvalueupdate.h>
-#include <sys/time.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <sys/time.h>
 
 using document::DocumentType;
 

@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/printable.h>
 #include <Judy.h>
 
@@ -226,26 +225,6 @@ inline bool
 JudyArray::ConstIterator::operator==(const JudyArray::ConstIterator &cp) const
 {
     return (_data == cp._data);
-}
-
-inline void
-JudyArray::Iterator::setValue(data_type val)
-{
-    if (_data == 0) {
-        throw vespalib::IllegalArgumentException(
-            "Cannot set value of end() iterator", VESPA_STRLOC);
-    }
-    *_data = val;
-}
-
-inline void
-JudyArray::Iterator::remove()
-{
-    if (_data == 0) {
-        throw vespalib::IllegalArgumentException(
-            "Cannot erase end() iterator", VESPA_STRLOC);
-    }
-    _parent->erase(_key);
 }
 
 } // storage

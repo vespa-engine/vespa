@@ -9,12 +9,12 @@
 #include <vespa/metrics/metrics.h>
 #include <vespa/config/config.h>
 #include <vespa/config-persistence.h>
+#include <vespa/storage/common/servicelayercomponent.h>
+#include <vespa/storage/persistence/messages.h>
 #include <atomic>
 #include <vector>
 
 namespace storage {
-
-class ServiceLayerComponent;
 
 /**
  * The changed bucket ownership handler is a storage link that synchronously

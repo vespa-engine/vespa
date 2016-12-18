@@ -7,6 +7,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".persistence.mergehandler");

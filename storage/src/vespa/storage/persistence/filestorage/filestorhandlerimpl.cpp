@@ -18,6 +18,7 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.handler.impl");

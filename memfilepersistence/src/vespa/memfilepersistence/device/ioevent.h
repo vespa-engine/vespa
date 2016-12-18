@@ -7,9 +7,9 @@
  */
 #pragma once
 
-#include <vespa/memfilepersistence/device/device.h>
-#include <vespa/vespalib/util/exceptions.h>
+#include "device.h"
 
+namespace vespalib { class IoException; }
 namespace storage {
 
 namespace memfile {
