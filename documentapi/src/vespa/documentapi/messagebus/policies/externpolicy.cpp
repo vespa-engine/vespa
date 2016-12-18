@@ -1,15 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".externpolicy");
-
+#include "externpolicy.h"
 #include <boost/tokenizer.hpp>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/routing/route.h>
 #include <vespa/messagebus/routing/routingcontext.h>
-#include "externpolicy.h"
+#include <vespa/slobrok/sbmirror.h>
+#include <vespa/fnet/frt/frt.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".externpolicy");
 
 using slobrok::api::IMirrorAPI;
 using slobrok::api::MirrorAPI;
@@ -21,7 +22,7 @@ namespace documentapi {
 
 ExternPolicy::ExternPolicy(const string &param) :
     _lock(),
-    _orb(),
+    _orb(std::make_unique<FRT_Supervisor>()),
     _mirror(),
     _pattern(),
     _session(),
@@ -56,8 +57,8 @@ ExternPolicy::ExternPolicy(const string &param) :
     }
 
     slobrok::ConfiguratorFactory config(spec);
-    _mirror.reset(new MirrorAPI(_orb, config));
-    _started = _orb.Start();
+    _mirror.reset(new MirrorAPI(*_orb, config));
+    _started = _orb->Start();
     if (!_started) {
         _error = "Failed to start FNET supervisor.";
         return;
@@ -82,7 +83,7 @@ ExternPolicy::~ExternPolicy()
 {
     _mirror.reset();
     if (_started) {
-        _orb.ShutDown(true);
+        _orb->ShutDown(true);
     }
 }
 

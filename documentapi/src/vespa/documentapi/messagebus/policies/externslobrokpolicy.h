@@ -4,8 +4,11 @@
 #include <vespa/documentapi/messagebus/policies/asyncinitializationpolicy.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/slobrok/sbmirror.h>
+#include <vespa/slobrok/imirrorapi.h>
 #include <vespa/documentapi/common.h>
+#include <vespa/config/subscription/sourcespec.h>
+
+class FRT_Supervisor;
 
 namespace documentapi {
 
@@ -17,12 +20,12 @@ class ExternSlobrokPolicy : public AsyncInitializationPolicy
 {
 protected:
     bool   _firstTry;
-    config::ServerSpec::HostSpecList        _configSources;
-    vespalib::Lock                          _lock;
-    FRT_Supervisor                          _orb;
-    std::unique_ptr<slobrok::api::MirrorAPI>  _mirror;
-    slobrok::api::MirrorAPI::StringList     _slobroks;
-    string                                  _slobrokConfigId;
+    config::ServerSpec::HostSpecList          _configSources;
+    vespalib::Lock                            _lock;
+    std::unique_ptr<FRT_Supervisor>           _orb;
+    std::unique_ptr<slobrok::api::IMirrorAPI> _mirror;
+    std::vector<std::string>                  _slobroks;
+    string                                    _slobrokConfigId;
 
 public:
     ExternSlobrokPolicy(const std::map<string, string>& params);
@@ -32,9 +35,9 @@ public:
      * @return a pointer to the slobrok mirror owned by this policy, if any.
      * If the policy uses the default mirror API, NULL is returned.
      */
-    const slobrok::api::MirrorAPI* getMirror() const { return _mirror.get(); }
+    const slobrok::api::IMirrorAPI* getMirror() const { return _mirror.get(); }
 
-    slobrok::api::MirrorAPI::SpecList lookup(mbus::RoutingContext &context, const string& pattern);
+    slobrok::api::IMirrorAPI::SpecList lookup(mbus::RoutingContext &context, const string& pattern);
 
     /**
      * Initializes the policy

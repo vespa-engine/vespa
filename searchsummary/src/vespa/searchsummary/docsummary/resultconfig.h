@@ -5,7 +5,6 @@
 #pragma once
 
 #include <vespa/config-summary.h>
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/util/stringenum.h>
 #include <vespa/searchsummary/docsummary/resultclass.h>

@@ -4,7 +4,10 @@
 #include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/fnet/fnet.h>
+#include <vespa/fastos/thread.h>
+#include <vector>
+
+class FNET_Transport;
 
 namespace vespalib {
 

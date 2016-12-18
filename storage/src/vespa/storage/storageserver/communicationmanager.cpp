@@ -1,5 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "communicationmanager.h"
+#include "fnetlistener.h"
+#include "rpcrequestwrapper.h"
 #include <vespa/storageapi/message/state.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/storage/config/config-stor-server.h>
@@ -70,6 +72,20 @@ PriorityQueue::size()
     vespalib::MonitorGuard sync(_queueMonitor);
     return _queue.size();
 }
+
+StorageTransportContext::StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg)
+    : _docAPIMsg(std::move(msg))
+{ }
+
+StorageTransportContext::StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg)
+    : _storageProtocolMsg(std::move(msg))
+{ }
+
+StorageTransportContext::StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request)
+    : _request(std::move(request))
+{ }
+
+StorageTransportContext::~StorageTransportContext() { }
 
 const framework::MemoryAllocationType&
 CommunicationManager::getAllocationType(api::StorageMessage& msg) const
@@ -301,7 +317,7 @@ CommunicationManager::onOpen()
     framework::MilliSecTime maxProcessingTime(60 * 1000);
     _thread = _component.startThread(*this, maxProcessingTime);
 
-    if (_listener.get()) {
+    if (_listener) {
         _listener->registerHandle(_component.getIdentity());
     }
 }
@@ -344,7 +360,7 @@ void CommunicationManager::onClose()
         }
     }
 
-    if (_listener.get()) {
+    if (_listener) {
         _listener->close();
     }
 

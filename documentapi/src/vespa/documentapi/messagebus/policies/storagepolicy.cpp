@@ -5,8 +5,11 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/documentapi/documentapi.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config/helper/configfetcher.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".storagepolicy");
