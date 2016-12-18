@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/floatbase.h>
@@ -11,7 +9,9 @@
 #include "docsumstate.h"
 #include <vespa/vespalib/tensor/tensor.h>
 #include <vespa/vespalib/tensor/serialization/slime_binary_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.attributedfw");
 
 using namespace search;

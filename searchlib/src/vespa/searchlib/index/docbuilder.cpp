@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "docbuilder.h"
 #include "doctypebuilder.h"
 #include <vespa/document/datatype/annotationtype.h>
@@ -12,6 +11,7 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/tensor/tensor.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using namespace document;
 using namespace search::index;

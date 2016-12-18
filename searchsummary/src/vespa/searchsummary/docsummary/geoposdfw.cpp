@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.docsummary.geoposdfw");
 #include "geoposdfw.h"
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+#include <vespa/vespalib/data/slime/cursor.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.docsummary.geoposdfw");
 
 namespace search {
 namespace docsummary {
@@ -17,8 +18,7 @@ using attribute::IAttributeContext;
 
 GeoPositionDFW::GeoPositionDFW(const vespalib::string & attrName) :
     AttrDFW(attrName)
-{
-}
+{ }
 
 namespace {
 

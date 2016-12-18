@@ -2,6 +2,7 @@
 #include "configvalue.h"
 #include "payload_converter.h"
 #include "misc.h"
+#include <vespa/vespalib/data/slime/slime.h>
 
 namespace config {
 
@@ -9,20 +10,19 @@ ConfigValue::ConfigValue(const std::vector<vespalib::string> & lines, const vesp
     : _payload(),
       _lines(lines),
       _md5sum(md5sum)
-{}
+{ }
 
 ConfigValue::ConfigValue()
     : _payload(),
       _lines(),
       _md5sum()
-{}
+{ }
 
 ConfigValue::ConfigValue(const PayloadPtr & payload, const vespalib::string & md5)
     : _payload(payload),
       _lines(),
       _md5sum(md5)
-{
-}
+{ }
 
 ConfigValue::~ConfigValue() { }
 
