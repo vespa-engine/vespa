@@ -3,6 +3,7 @@
 #include "communicationmanager.h"
 #include "rpcrequestwrapper.h"
 #include <vespa/storageapi/message/state.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 

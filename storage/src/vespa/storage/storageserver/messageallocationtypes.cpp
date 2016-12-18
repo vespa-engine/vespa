@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/storageserver/messageallocationtypes.h>
-
+#include "messageallocationtypes.h"
 #include <vespa/storageapi/messageapi/storagemessage.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 namespace storage {
 
@@ -85,6 +85,16 @@ MessageAllocationTypes::MessageAllocationTypes(framework::MemoryManagerInterface
     _types[MessageType::BATCHPUTREMOVE_REPLY_ID] = &manager.registerAllocationType(MemoryAllocationType("MessageType::BATCHPUTREMOVE_REPLY", framework::MemoryAllocationType::EXTERNAL_LOAD));
     _types[MessageType::BATCHDOCUMENTUPDATE_ID] = &manager.registerAllocationType(MemoryAllocationType("MessageType::BATCHDOCUMENTUPDATE", framework::MemoryAllocationType::EXTERNAL_LOAD));
     _types[MessageType::BATCHDOCUMENTUPDATE_REPLY_ID] = &manager.registerAllocationType(MemoryAllocationType("MessageType::BATCHDOCUMENTUPDATE_REPLY", framework::MemoryAllocationType::EXTERNAL_LOAD));
+}
+
+const framework::MemoryAllocationType&
+MessageAllocationTypes::getType(uint32_t type) const {
+    if (_types.size() > size_t(type) && _types[type] != 0) {
+        return *_types[type];
+    }
+    vespalib::asciistream ost;
+    ost << "No type registered with value " << type << ".";
+    throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
 }
 
 } // storage
