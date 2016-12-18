@@ -12,9 +12,7 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <memory>
-#include <vespa/vespalib/util/linkedptr.h>
 
 namespace storage {
 namespace framework {
@@ -23,7 +21,6 @@ class MemoryToken {
 protected:
 public:
     typedef std::unique_ptr<MemoryToken> UP;
-    typedef vespalib::LinkedPtr<MemoryToken> LP;
     virtual ~MemoryToken();
 
     virtual uint64_t getSize() const = 0;

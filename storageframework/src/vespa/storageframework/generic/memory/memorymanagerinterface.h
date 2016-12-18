@@ -11,9 +11,10 @@
 
 #pragma once
 
-#include <vespa/storageframework/generic/memory/memoryallocationtype.h>
-#include <vespa/storageframework/generic/memory/memorytoken.h>
-#include <vespa/storageframework/generic/memory/reducememoryusageinterface.h>
+#include "memoryallocationtype.h"
+#include "memorytoken.h"
+#include "reducememoryusageinterface.h"
+#include <vector>
 
 namespace storage {
 namespace framework {

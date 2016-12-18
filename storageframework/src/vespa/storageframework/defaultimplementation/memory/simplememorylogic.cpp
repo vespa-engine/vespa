@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageframework/defaultimplementation/memory/simplememorylogic.h>
+#include "simplememorylogic.h"
 
-#include <vespa/log/log.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".memory.logic.simple");
 
 namespace storage {
@@ -18,8 +17,7 @@ SimpleMemoryLogic::SimpleMemoryLogic(Clock& c, uint64_t maxMemory)
       _state(c, maxMemory),
       _reducers()
 {
-    LOG(debug, "Setup simple memory logic with max memory of %" PRIu64 " bytes",
-        maxMemory);
+    LOG(debug, "Setup simple memory logic with max memory of %" PRIu64 " bytes", maxMemory);
 }
 
 void
