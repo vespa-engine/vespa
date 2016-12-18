@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "replygate.h"
 
 namespace mbus {
@@ -8,9 +7,7 @@ ReplyGate::ReplyGate(IMessageHandler &sender) :
     vespalib::ReferenceCounter(),
     _sender(sender),
     _open(true)
-{
-    // empty
-}
+{ }
 
 void
 ReplyGate::handleMessage(Message::UP msg)

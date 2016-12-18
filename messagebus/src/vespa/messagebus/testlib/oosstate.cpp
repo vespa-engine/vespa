@@ -1,14 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "oosstate.h"
 
 namespace mbus {
 
 OOSState::OOSState()
     : _data()
-{
-}
+{ }
 
 OOSState &
 OOSState::add(const string &service, bool oos)

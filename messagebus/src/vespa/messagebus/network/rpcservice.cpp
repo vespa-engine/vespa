@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "rpcservice.h"
 #include "rpcserviceaddress.h"
 #include "rpcnetwork.h"
@@ -14,9 +13,7 @@ RPCService::RPCService(const Mirror &mirror,
     _addressIdx(random()),
     _addressGen(0),
     _addressList()
-{
-    // empty
-}
+{ }
 
 RPCServiceAddress::UP
 RPCService::resolve()

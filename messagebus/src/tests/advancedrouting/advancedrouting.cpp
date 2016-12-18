@@ -1,8 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("routing_test");
-
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/messagebus.h>
@@ -75,22 +71,18 @@ TestData::start()
 {
     _srcSession = _srcServer.mb.createSourceSession(SourceSessionParams().setReplyHandler(_srcHandler));
     if (_srcSession.get() == NULL) {
-        LOG(error, "Could not create source session.");
         return false;
     }
     _fooSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("foo").setMessageHandler(_fooHandler));
     if (_fooSession.get() == NULL) {
-        LOG(error, "Could not create foo session.");
         return false;
     }
     _barSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("bar").setMessageHandler(_barHandler));
     if (_barSession.get() == NULL) {
-        LOG(error, "Could not create bar session.");
         return false;
     }
     _bazSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("baz").setMessageHandler(_bazHandler));
     if (_bazSession.get() == NULL) {
-        LOG(error, "Could not create baz session.");
         return false;
     }
     if (!_srcServer.waitSlobrok("dst/*", 3u)) {

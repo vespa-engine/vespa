@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageapi/message/searchresult.h>
+
+#include "searchresult.h"
 
 using vdslib::SearchResult;
 
@@ -29,8 +29,7 @@ SearchResultCommand::print(std::ostream& out, bool verbose,
 
 SearchResultReply::SearchResultReply(const SearchResultCommand& cmd)
     : StorageReply(cmd)
-{
-}
+{ }
 
 void
 SearchResultReply::print(std::ostream& out, bool verbose,

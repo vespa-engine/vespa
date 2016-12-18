@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "simplemessage.h"
 #include "simpleprotocol.h"
 
@@ -11,23 +10,16 @@ SimpleMessage::SimpleMessage(const string &str) :
     _value(str),
     _hasSeqId(false),
     _seqId(0)
-{
-    // empty
-}
+{ }
 
 SimpleMessage::SimpleMessage(const string &str, bool hasSeqId, uint64_t seqId) :
     Message(),
     _value(str),
     _hasSeqId(hasSeqId),
     _seqId(seqId)
-{
-    // empty
-}
+{ }
 
-SimpleMessage::~SimpleMessage()
-{
-    // empty
-}
+SimpleMessage::~SimpleMessage() { }
 
 void
 SimpleMessage::setValue(const string &value)

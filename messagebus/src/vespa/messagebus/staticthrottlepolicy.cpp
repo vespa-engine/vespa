@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "staticthrottlepolicy.h"
 
 namespace mbus {
@@ -8,9 +7,7 @@ StaticThrottlePolicy::StaticThrottlePolicy() :
     _maxPendingCount(0),
     _maxPendingSize(0),
     _pendingSize(0)
-{
-    // empty
-}
+{ }
 
 uint32_t
 StaticThrottlePolicy::getMaxPendingCount() const

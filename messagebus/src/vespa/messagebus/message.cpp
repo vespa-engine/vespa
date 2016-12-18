@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".message");
 
-#include <vespa/vespalib/util/backtrace.h>
 #include "message.h"
 #include "reply.h"
 #include "ireplyhandler.h"
 #include "emptyreply.h"
 #include "error.h"
 #include "errorcode.h"
+#include <vespa/vespalib/util/backtrace.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".message");
 
 namespace mbus {
 
@@ -19,9 +19,7 @@ Message::Message() :
     _timeRemaining(0),
     _retryEnabled(true),
     _retry(0)
-{
-    // empty
-}
+{ }
 
 Message::~Message()
 {

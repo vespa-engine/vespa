@@ -23,6 +23,7 @@
 #include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vdslib/container/mutabledocumentlist.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include "testframe.h"
 #include <vespa/log/log.h>
@@ -34,7 +35,7 @@ using document::DocumentId;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::readDocumenttypesConfig;
-using slobrok::api::MirrorAPI;
+using slobrok::api::IMirrorAPI;
 using namespace documentapi;
 
 class Test : public vespalib::TestApp {
@@ -53,8 +54,8 @@ private:
     StoragePolicy &setupStoragePolicy(TestFrame &frame, const string &param,
                                       const string &pattern = "", int32_t numEntries = -1);
     bool isErrorPolicy(const string &name, const string &param);
-    void assertMirrorReady(const slobrok::api::MirrorAPI &mirror);
-    void assertMirrorContains(const slobrok::api::MirrorAPI &mirror, const string &pattern,
+    void assertMirrorReady(const IMirrorAPI &mirror);
+    void assertMirrorContains(const IMirrorAPI &mirror, const string &pattern,
                               uint32_t numEntries);
     mbus::Message::UP newPutDocumentMessage(const string &documentId);
 
@@ -286,7 +287,7 @@ Test::setupExternPolicy(TestFrame &frame, mbus::Slobrok &slobrok, const string &
 }
 
 void
-Test::assertMirrorReady(const slobrok::api::MirrorAPI &mirror)
+Test::assertMirrorReady(const slobrok::api::IMirrorAPI &mirror)
 {
     for (uint32_t i = 0; i < 6000; ++i) {
         if (mirror.ready()) {
@@ -298,7 +299,7 @@ Test::assertMirrorReady(const slobrok::api::MirrorAPI &mirror)
 }
 
 void
-Test::assertMirrorContains(const slobrok::api::MirrorAPI &mirror, const string &pattern,
+Test::assertMirrorContains(const slobrok::api::IMirrorAPI &mirror, const string &pattern,
                            uint32_t numEntries)
 {
     for (uint32_t i = 0; i < 6000; ++i) {
@@ -927,10 +928,10 @@ namespace {
 void Test::testLoadBalancer() {
     LoadBalancer lb("foo", "");
 
-    MirrorAPI::SpecList entries;
-    entries.push_back(MirrorAPI::Spec("foo/0/default", "tcp/bar:1"));
-    entries.push_back(MirrorAPI::Spec("foo/1/default", "tcp/bar:2"));
-    entries.push_back(MirrorAPI::Spec("foo/2/default", "tcp/bar:3"));
+    IMirrorAPI::SpecList entries;
+    entries.push_back(IMirrorAPI::Spec("foo/0/default", "tcp/bar:1"));
+    entries.push_back(IMirrorAPI::Spec("foo/1/default", "tcp/bar:2"));
+    entries.push_back(IMirrorAPI::Spec("foo/2/default", "tcp/bar:3"));
 
     const std::vector<LoadBalancer::NodeInfo>& nodeInfo = lb.getNodeInfo();
 

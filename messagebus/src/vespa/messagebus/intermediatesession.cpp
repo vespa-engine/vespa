@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 #include "intermediatesession.h"
 #include "messagebus.h"
 #include "replygate.h"
@@ -14,9 +12,7 @@ IntermediateSession::IntermediateSession(MessageBus &mbus, const IntermediateSes
     _msgHandler(params.getMessageHandler()),
     _replyHandler(params.getReplyHandler()),
     _gate(new ReplyGate(_mbus))
-{
-    // empty
-}
+{ }
 
 IntermediateSession::~IntermediateSession()
 {

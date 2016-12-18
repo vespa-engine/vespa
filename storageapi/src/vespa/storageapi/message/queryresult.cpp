@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageapi/message/queryresult.h>
+
+#include "queryresult.h"
 
 namespace storage {
 namespace api {
@@ -12,8 +12,7 @@ QueryResultCommand::QueryResultCommand()
     : StorageCommand(MessageType::QUERYRESULT),
       _searchResult(),
       _summary()
-{
-}
+{ }
 
 void
 QueryResultCommand::print(std::ostream& out, bool verbose,
@@ -28,8 +27,7 @@ QueryResultCommand::print(std::ostream& out, bool verbose,
 
 QueryResultReply::QueryResultReply(const QueryResultCommand& cmd)
     : StorageReply(cmd)
-{
-}
+{ }
 
 void
 QueryResultReply::print(std::ostream& out, bool verbose,
