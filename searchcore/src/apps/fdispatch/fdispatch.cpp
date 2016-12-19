@@ -1,23 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("fdispatch");
 
 #include <vespa/searchcore/fdispatch/program/fdispatch.h>
-
 #include <vespa/searchcore/fdispatch/common/perftask.h>
-
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/net/simple_health_producer.h>
 #include <vespa/vespalib/net/simple_metrics_producer.h>
-
 #include <vespa/searchlib/expression/forcelink.hpp>
 #include <vespa/searchlib/aggregation/forcelink.hpp>
-
 #include <vespa/vespalib/util/signalhandler.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("fdispatch");
 
 
 using fdispatch::Fdispatch;
@@ -89,40 +82,6 @@ FastS_FDispatchApp::Main()
     }
 
     try {
-#ifdef RLIMIT_NOFILE
-    struct rlimit  curlim;
-    getrlimit(RLIMIT_NOFILE, &curlim);
-    if (curlim.rlim_cur != (rlim_t)RLIM_INFINITY) {
-        LOG(debug, "Max number of open files = %d", (int) curlim.rlim_cur);
-    } else {
-        LOG(debug, "Max number of open files = unlimited");
-    }
-    if (curlim.rlim_cur >= 64) {
-    } else {
-        LOG(error, "CRITICAL: Too few file descriptors available: %d", (int)curlim.rlim_cur);
-        throw std::runtime_error("CRITICAL: Too few file descriptors available");
-    }
-#endif
-#ifdef RLIMIT_DATA
-    getrlimit(RLIMIT_DATA, &curlim);
-    if (curlim.rlim_cur != (rlim_t)RLIM_INFINITY &&
-        curlim.rlim_cur < (rlim_t) (400 * 1024 * 1024)) {
-        if (curlim.rlim_max == (rlim_t)RLIM_INFINITY) {
-            curlim.rlim_cur = (rlim_t) (400 * 1024 * 1024);
-        } else {
-            curlim.rlim_cur = curlim.rlim_max;
-        }
-        setrlimit(RLIMIT_DATA, &curlim);
-        getrlimit(RLIMIT_DATA, &curlim);
-    }
-    if (curlim.rlim_cur != (rlim_t)RLIM_INFINITY) {
-        LOG(debug,
-            "VERBOSE: Max data segment size = %dM",
-            (int) ((curlim.rlim_cur + 512 * 1024) / (1024 * 1024)));
-    } else {
-        LOG(debug, "VERBOSE: Max data segment size = unlimited");
-    }
-#endif
 
         if (!myfdispatch->Init()) {
             throw std::runtime_error("myfdispatch->Init(" + _configId + ") failed");
@@ -140,10 +99,8 @@ FastS_FDispatchApp::Main()
                     throw std::runtime_error("myfdispatch->Failed()");
                 }
                 std::this_thread::sleep_for(100ms);
-#ifndef NO_MONITOR_LATENCY_CHECK
                 if (!myfdispatch->CheckTempFail())
                     break;
-#endif
             }
         } // main loop scope
         if (myfdispatch->Failed()) {

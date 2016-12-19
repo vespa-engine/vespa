@@ -17,8 +17,7 @@
 class FastS_NodeManager;
 class FastS_fdispatch_RPC;
 
-namespace fdispatch
-{
+namespace fdispatch {
 
 class EngineAdapter;
 

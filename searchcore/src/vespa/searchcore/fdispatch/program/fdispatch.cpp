@@ -1,24 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright (C) 1998-2003 Fast Search & Transfer ASA
-// Copyright (C) 2003 Overture Services Norway AS
-
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".fdispatch");
 
 #include "fdispatch.h" 
 
 #include <vespa/searchcore/util/log.h>
 #include <vespa/searchcore/util/eventloop.h>
-
 #include <vespa/searchcore/fdispatch/search/querycacheutil.h>
-
 #include <vespa/searchcore/fdispatch/search/nodemanager.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include "engineadapter.h"
 #include "rpc.h"
 
-#include <vespa/fnet/frt/frt.h>
-#include <vespa/searchlib/common/packets.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".fdispatch");
 
 #ifndef V_TAG
 #define V_TAG "NOTAG"
@@ -42,8 +35,7 @@ FastS_FNETAdapter::FastS_FNETAdapter(FastS_AppContext *appCtx)
       _last_now(0.0),
       _live_counter(0),
       _task()
-{
-}
+{ }
 
 FastS_FNETAdapter::~FastS_FNETAdapter()
 {
@@ -83,7 +75,6 @@ FastS_FNETAdapter::fini()
     }
 }
 
-
 Fdispatch::~Fdispatch(void)
 {
     if (_transportServer) {
@@ -111,20 +102,17 @@ Fdispatch::~Fdispatch(void)
     _mypool.reset();
 }
 
-
 FNET_Transport *
 Fdispatch::GetFNETTransport()
 {
     return _transport.get();
 }
 
-
 FNET_Scheduler *
 Fdispatch::GetFNETScheduler()
 {
-    return ( ! _transport) ? NULL : _transport->GetScheduler();
+    return (_transport) ? _transport->GetScheduler() : nullptr;
 }
-
 
 FastS_NodeManager *
 Fdispatch::GetNodeManager()
@@ -132,15 +120,11 @@ Fdispatch::GetNodeManager()
     return _nodeManager.get();
 }
 
-
 FastS_DataSetCollection *
 Fdispatch::GetDataSetCollection()
 {
-    if ( ! _nodeManager)
-        return NULL;
-    return _nodeManager->GetDataSetCollection();
+    return ( _nodeManager) ? _nodeManager->GetDataSetCollection() : nullptr;
 }
-
 
 FastOS_ThreadPool *
 Fdispatch::GetThreadPool()
@@ -148,13 +132,11 @@ Fdispatch::GetThreadPool()
     return _mypool.get();
 }
 
-
 bool
 Fdispatch::Failed(void)
 {
     return ( (_transportServer && _transportServer->isFailed())) || _needRestart;
 }
-
 
 bool
 Fdispatch::CheckTempFail(void)
@@ -173,21 +155,17 @@ Fdispatch::CheckTempFail(void)
             _FNETLiveCounterDanger = true;
             _FNETLiveCounterDangerStart.SetNow();
         } else if (_FNETLiveCounterDangerStart.MilliSecsToNow() >= 6000) {
-            LOG(error, "fdispatch::Fdispatch::CheckTempFail: "
-                "FNET inactive for 6 seconds, deadlock ?");
+            LOG(error, "fdispatch::Fdispatch::CheckTempFail: FNET inactive for 6 seconds, deadlock ?");
             _FNETLiveCounterFailed = true;		// Note that we failed
             failflag = true;				// Force temporary failure
         } else if (_FNETLiveCounterDangerStart.MilliSecsToNow() >= 3000 &&
                    !_FNETLiveCounterWarned) {
             _FNETLiveCounterWarned = true;
-            LOG(warning,
-                "fdispatch::Fdispatch::CheckTempFail: "
-                "FNET inactive for 3 seconds");
+            LOG(warning, "fdispatch::Fdispatch::CheckTempFail: FNET inactive for 3 seconds");
         }
     } else {
         if (_FNETLiveCounterFailed || _FNETLiveCounterWarned) {
-            LOG(warning,
-                "fdispatch::Fdispatch::CheckTempFail: FNET active again");
+            LOG(warning, "fdispatch::Fdispatch::CheckTempFail: FNET active again");
         }
         _FNETLiveCounterFailed = false;
         _FNETLiveCounterWarned = false;
@@ -332,12 +310,10 @@ Fdispatch::Init(void)
     _mypool = std::make_unique<FastOS_ThreadPool>(256 * 1024, maxthreads);
 
     // Max interval betw read from socket.
-    FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent] =
-        _config->maxsocksilent;
+    FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent] = _config->maxsocksilent;
 
     if (_transport) {
-        _transport->SetIOCTimeOut((uint32_t)
-                                  (FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent] * 1000.0));
+        _transport->SetIOCTimeOut((uint32_t) (FastS_TimeOut::_val[FastS_TimeOut::maxSockSilent] * 1000.0));
     }
 
     char timestr[40];
@@ -367,7 +343,9 @@ Fdispatch::Init(void)
     GetFNETTransport()->SetTCPNoDelay(_config->transportnodelay);
     GetFNETTransport()->SetDirectWrite(_config->transportdirectwrite);
 
-    assert (ptportnum != 0);
+    if (ptportnum == 0) {
+        throw vespalib::IllegalArgumentException("fdispatchrc.ptportnum must be non-zero, most likely an issue with config delivery.");
+    }
 
     _engineAdapter = std::make_unique<fdispatch::EngineAdapter>(this, _mypool.get());
     _transportServer = std::make_unique<TransportServer>(*_engineAdapter, *_engineAdapter, *_engineAdapter, ptportnum, search::engine::TransportServer::DEBUG_ALL);
@@ -424,7 +402,5 @@ Fdispatch::getDispatchLevel()
 {
     return _config->dispatchlevel;
 }
-
-
+    
 }
-
