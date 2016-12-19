@@ -13,6 +13,7 @@ LOG_SETUP("documentdb_test");
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/server/document_db_explorer.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/metrics/job_tracked_flush_target.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>

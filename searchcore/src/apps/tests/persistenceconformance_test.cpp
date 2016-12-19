@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("persistenceconformance_test");
 #include <vespa/vespalib/testkit/testapp.h>
@@ -13,6 +13,7 @@ LOG_SETUP("persistenceconformance_test");
 #include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -20,6 +21,7 @@ LOG_SETUP("persistenceconformance_test");
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+
 
 using namespace config;
 using namespace proton;

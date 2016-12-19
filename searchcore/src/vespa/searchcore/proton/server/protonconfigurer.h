@@ -11,11 +11,13 @@
 
 namespace proton {
 
+class BootstrapConfig;
+
 class IBootstrapOwner
 {
 public:
     virtual ~IBootstrapOwner() { }
-    virtual void reconfigure(const BootstrapConfig::SP & config) = 0;
+    virtual void reconfigure(const std::shared_ptr<BootstrapConfig> & config) = 0;
     virtual bool addExtraConfigs(DocumentDBConfigManager & dbCfgMan) = 0;
 };
 
@@ -33,9 +35,9 @@ public:
 class ProtonConfigurer : public FastOS_Runnable
 {
 public:
-    ProtonConfigurer(const config::ConfigUri & configUri,
-                     IBootstrapOwner * owner,
-                     uint64_t subscribeTimeout);
+    using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
+
+    ProtonConfigurer(const config::ConfigUri & configUri, IBootstrapOwner * owner, uint64_t subscribeTimeout);
     ~ProtonConfigurer();
     /**
      * Register a new document db that should receive config updates.
@@ -83,9 +85,9 @@ private:
 
     void fetchConfigs();
     void reconfigureBootstrap(const config::ConfigSnapshot & snapshot);
-    bool updateDocumentDBConfigs(const BootstrapConfig::SP & config, const config::ConfigSnapshot & snapshot);
+    bool updateDocumentDBConfigs(const BootstrapConfigSP & config, const config::ConfigSnapshot & snapshot);
     void reconfigureDocumentDBs();
-    const config::ConfigKeySet pruneManagerMap(const BootstrapConfig::SP & config);
+    const config::ConfigKeySet pruneManagerMap(const BootstrapConfigSP & config);
 };
 
 

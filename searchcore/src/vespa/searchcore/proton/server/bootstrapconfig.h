@@ -26,12 +26,12 @@ public:
     typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
 
 private:
-    DocumenttypesConfigSP _documenttypes;
+    DocumenttypesConfigSP          _documenttypes;
     document::DocumentTypeRepo::SP _repo;
-    ProtonConfigSP _proton;
-    FiledistributorrpcConfigSP _fileDistributorRpc;
+    ProtonConfigSP                 _proton;
+    FiledistributorrpcConfigSP     _fileDistributorRpc;
     search::TuneFileDocumentDB::SP _tuneFileDocumentDB;
-    int64_t _generation;
+    int64_t                        _generation;
 
 public:
     BootstrapConfig(int64_t generation,
@@ -41,12 +41,10 @@ public:
                     const FiledistributorrpcConfigSP &filedistRpcConfSP,
                     const search::TuneFileDocumentDB::SP &
                     _tuneFileDocumentDB);
+    ~BootstrapConfig();
 
     const document::DocumenttypesConfig &
-    getDocumenttypesConfig(void) const
-    {
-        return *_documenttypes;
-    }
+    getDocumenttypesConfig() const { return *_documenttypes; }
 
     const cloud::config::filedistribution::FiledistributorrpcConfig &
     getFiledistributorrpcConfig() const { return *_fileDistributorRpc; }
@@ -55,10 +53,7 @@ public:
     getFiledistributorrpcConfigSP() const { return _fileDistributorRpc; }
 
     const DocumenttypesConfigSP &
-    getDocumenttypesConfigSP(void) const
-    {
-        return _documenttypes;
-    }
+    getDocumenttypesConfigSP() const { return _documenttypes; }
 
     const document::DocumentTypeRepo::SP &
     getDocumentTypeRepoSP() const

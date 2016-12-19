@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "bootstrapconfig.h"
 
 using namespace vespa::config::search;
@@ -35,8 +34,9 @@ BootstrapConfig::BootstrapConfig(
       _fileDistributorRpc(filedistRpcConfSP),
       _tuneFileDocumentDB(tuneFileDocumentDB),
       _generation(generation)
-{
-}
+{ }
+
+BootstrapConfig::~BootstrapConfig() { }
 
 bool
 BootstrapConfig::operator==(const BootstrapConfig &rhs) const

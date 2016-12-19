@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fileconfigmanager.h"
+#include "bootstrapconfig.h"
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/config/print/fileconfigsnapshotreader.h>
 #include <vespa/config/print/fileconfigsnapshotwriter.h>
@@ -31,11 +32,9 @@ using vespalib::nbostream;
 
 typedef IndexMetaInfo::SnapshotList SnapshotList;
 
-namespace proton
-{
+namespace proton {
 
-namespace
-{
+namespace {
 
 vespalib::string
 makeSnapDirBaseName(SerialNum serialNum)
