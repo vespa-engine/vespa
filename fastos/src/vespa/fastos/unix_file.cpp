@@ -102,7 +102,7 @@ FastOS_UNIX_File::getCurrentDirectory(void)
 
     char *currentDir = new char [maxPathLen + 1];
 
-    if (getcwd(currentDir, maxPathLen) != NULL) {
+    if (getcwd(currentDir, maxPathLen) != nullptr) {
         res = currentDir;
     }
     delete [] currentDir;
@@ -153,6 +153,8 @@ FastOS_UNIX_File::CalcAccessFlags(unsigned int openFlags)
     return accessFlags;
 }
 
+constexpr int SUPPORTED_MMAP_FLAGS = ~MAP_HUGETLB;
+
 bool
 FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
 {
@@ -179,7 +181,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
             break;
 
         default:
-            file = NULL;
+            file = nullptr;
             fprintf(stderr, "Invalid open-flags %08X\n", openFlags);
             abort();
         }
@@ -188,7 +190,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
         _openFlags = openFlags;
         rc = true;
     } else {
-        if (filename != NULL) {
+        if (filename != nullptr) {
             SetFileName(filename);
         }
         unsigned int accessFlags = CalcAccessFlags(openFlags);
@@ -202,9 +204,12 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
             if (_mmapEnabled) {
                 int64_t filesize = GetSize();
                 size_t mlen = static_cast<size_t>(filesize);
-                if (static_cast<int64_t>(mlen) == filesize && mlen > 0) {
-                    void *mbase = mmap(NULL, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, static_cast<off_t>(0));
-                    if (static_cast<void *>(mbase) != reinterpret_cast<void *>(-1)) {
+                if ((static_cast<int64_t>(mlen) == filesize) && (mlen > 0)) {
+                    void *mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, 0);
+                    if (mbase == reinterpret_cast<void *>(-1)) {
+                        mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | (_mmapFlags & SUPPORTED_MMAP_FLAGS), _filedes, 0);
+                    }
+                    if (mbase != reinterpret_cast<void *>(-1)) {
                         int fadviseOptions = getFAdviseOptions();
                         int eCode(0);
                         if (POSIX_FADV_RANDOM == fadviseOptions) {
@@ -218,6 +223,8 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
                         _mmapbase = mbase;
                         _mmaplen = mlen;
                     } else {
+                        close(_filedes);
+                        _filedes = -1;
                         std::ostringstream os;
                         os << "mmap of file '" << GetFileName() << "' with flags '" << std::hex << (MAP_SHARED | _mmapFlags) << std::dec
                            << "' failed with error :'" << getErrorString(GetLastOSError()) << "'";
@@ -252,10 +259,10 @@ FastOS_UNIX_File::Close(void)
             } while (!ok && errno == EINTR);
         }
 
-        if (_mmapbase != NULL) {
+        if (_mmapbase != nullptr) {
             madvise(_mmapbase, _mmaplen, MADV_DONTNEED);
             munmap(static_cast<char *>(_mmapbase), _mmaplen);
-            _mmapbase = NULL;
+            _mmapbase = nullptr;
             _mmaplen = 0;
         }
 
@@ -313,7 +320,7 @@ bool
 FastOS_UNIX_File::Delete(void)
 {
     assert(!IsOpened());
-    assert(_filename != NULL);
+    assert(_filename != nullptr);
 
     return (unlink(_filename) == 0);
 }
@@ -413,10 +420,10 @@ FastOS_UNIX_DirectoryScan::FastOS_UNIX_DirectoryScan(const char *searchPath)
       _statRun(false),
       _isDirectory(false),
       _isRegular(false),
-      _statName(NULL),
-      _statFilenameP(NULL),
-      _dir(NULL),
-      _dp(NULL)
+      _statName(nullptr),
+      _statFilenameP(nullptr),
+      _dir(nullptr),
+      _dp(nullptr)
 {
     _dir = opendir(searchPath);
 
@@ -445,9 +452,9 @@ FastOS_UNIX_DirectoryScan::FastOS_UNIX_DirectoryScan(const char *searchPath)
 
 FastOS_UNIX_DirectoryScan::~FastOS_UNIX_DirectoryScan(void)
 {
-    if (_dir != NULL) {
+    if (_dir != nullptr) {
         closedir(_dir);
-        _dir = NULL;
+        _dir = nullptr;
     }
     delete [] _statName;
 }
@@ -460,9 +467,9 @@ FastOS_UNIX_DirectoryScan::ReadNext(void)
 
     _statRun = false;
 
-    if (_dir != NULL) {
+    if (_dir != nullptr) {
         _dp = readdir(_dir);
-        rc = _dp != NULL;
+        rc = _dp != nullptr;
     }
 
     return rc;
@@ -474,7 +481,7 @@ FastOS_UNIX_DirectoryScan::DoStat(void)
 {
     struct stat stbuf;
 
-    assert(_dp != NULL);
+    assert(_dp != nullptr);
 
     strcpy(_statFilenameP, _dp->d_name);
 
@@ -516,7 +523,7 @@ FastOS_UNIX_DirectoryScan::IsRegular(void)
 const char *
 FastOS_UNIX_DirectoryScan::GetName(void)
 {
-    assert(_dp != NULL);
+    assert(_dp != nullptr);
 
     return static_cast<const char *>(_dp->d_name);
 }
@@ -525,5 +532,5 @@ FastOS_UNIX_DirectoryScan::GetName(void)
 bool
 FastOS_UNIX_DirectoryScan::IsValidScan(void) const
 {
-    return _dir != NULL;
+    return _dir != nullptr;
 }
