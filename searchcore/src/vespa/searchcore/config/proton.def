@@ -382,7 +382,7 @@ writefilter.memorylimit double default = 0.8
 
 ## Portion of space on disk partition that can be used or reserved before
 ## put and update portion of feed is blocked.
-writefilter.disklimit double default = 0.9
+writefilter.disklimit double default = 0.8
 
 ## Interval between sampling of disk and memory usage. Default is 60 seconds.
 writefilter.sampleinterval double default = 60.0
