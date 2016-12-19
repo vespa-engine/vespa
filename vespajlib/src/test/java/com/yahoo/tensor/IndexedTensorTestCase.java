@@ -56,10 +56,10 @@ public class IndexedTensorTestCase {
         assertEquals(emptyWithDimensions, emptyWithDimensionsFromString);
 
         IndexedTensor emptyWithDimensionsIndexed = (IndexedTensor)emptyWithDimensions;
-        assertEquals(0, emptyWithDimensionsIndexed.length(0));
-        assertEquals(0, emptyWithDimensionsIndexed.length(1));
+        assertEquals(0, emptyWithDimensionsIndexed.size(0));
+        assertEquals(0, emptyWithDimensionsIndexed.size(1));
     }
-
+    
     @Test
     public void testBoundBuilding() {
         TensorType type = new TensorType.Builder().indexed("v", vSize)

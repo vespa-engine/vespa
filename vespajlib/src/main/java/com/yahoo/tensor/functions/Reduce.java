@@ -2,9 +2,7 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.tensor.IndexedTensor;
-import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -149,7 +147,7 @@ public class Reduce extends PrimitiveTensorFunction {
 
     private Tensor reduceIndexedVector(IndexedTensor argument) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
-        for (int i = 0; i < argument.length(0); i++)
+        for (int i = 0; i < argument.size(0); i++)
             valueAggregator.aggregate(argument.get(i));
         return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
     }
