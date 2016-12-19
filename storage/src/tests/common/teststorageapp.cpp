@@ -11,6 +11,7 @@
 #include <vespa/config-fleetcontroller.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/config.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".test.servicelayerapp");

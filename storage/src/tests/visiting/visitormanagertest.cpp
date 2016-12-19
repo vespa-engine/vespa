@@ -22,6 +22,7 @@
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 
 LOG_SETUP(".visitormanagertest");

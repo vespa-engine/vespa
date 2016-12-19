@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("docsummary_test");
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/bucketfactory.h>
@@ -27,6 +24,9 @@ LOG_SETUP("docsummary_test");
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/log/log.h>
+LOG_SETUP("docsummary_test");
 
 using namespace document;
 using namespace search;

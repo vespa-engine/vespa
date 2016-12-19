@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <memory>
 #include <iterator>
@@ -16,6 +15,7 @@
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using namespace document;
 using namespace storage::api;

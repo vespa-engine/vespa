@@ -23,6 +23,7 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/memfileservicelayerprocess.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".storageservertest");
 

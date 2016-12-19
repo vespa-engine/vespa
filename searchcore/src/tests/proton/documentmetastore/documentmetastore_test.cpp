@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("documentmetastore_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
@@ -16,8 +13,11 @@ LOG_SETUP("documentmetastore_test");
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/log/log.h>
+LOG_SETUP("documentmetastore_test");
 
 using namespace document;
 using search::AttributeVector;
