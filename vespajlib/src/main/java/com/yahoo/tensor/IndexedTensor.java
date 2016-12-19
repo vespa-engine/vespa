@@ -103,7 +103,6 @@ public class IndexedTensor implements Tensor {
         return values[toValueIndex(indexes.indexesForReading(), dimensionSizes)];
     }
 
-    // TODO: Change to get
     private static int toValueIndex(int[] indexes, int[] dimensionSizes) {
         if (indexes.length == 1) return indexes[0]; // for speed
         if (indexes.length == 0) return 0; // for speed
@@ -114,7 +113,6 @@ public class IndexedTensor implements Tensor {
         return valueIndex;
     }
 
-    // TODO: Change to get
     private static int toValueIndex(TensorAddress address, int[] dimensionSizes) {
         if (address.isEmpty()) return 0;
 
@@ -414,7 +412,7 @@ public class IndexedTensor implements Tensor {
         public Map.Entry<TensorAddress, Double> next() {
             if ( ! hasNext()) throw new NoSuchElementException("No cell at " + indexes);
             
-            Map.Entry<TensorAddress, Double> current = new Cell(indexes.toAddress(), values[count]); // TODO: Correct to get(indexes)
+            Map.Entry<TensorAddress, Double> current = new Cell(indexes.toAddress(), get(indexes));
             
             count++;
             if (hasNext())
