@@ -403,8 +403,37 @@ void RawResultNode::setBuffer(const void *buf, size_t sz)
     _value.resize(sz);
 }
 
-ResultNode::ConstBufferRef RawResultNode::onGetString(size_t index, ResultNode::BufferRef ) const { (void) index; return ConstBufferRef(&_value[0], _value.size()); }
+ResultNode::ConstBufferRef RawResultNode::onGetString(size_t index, BufferRef ) const { (void) index; return ConstBufferRef(&_value[0], _value.size()); }
 
+ResultNode::ConstBufferRef EnumResultNode::onGetString(size_t index, BufferRef buf) const {
+    (void) index;
+    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%ld", getValue()))));
+    return ConstBufferRef(buf.str(), numWritten);
+}
+
+ResultNode::ConstBufferRef Int8ResultNode::onGetString(size_t index, BufferRef buf) const {
+    (void) index;
+    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
+    return ConstBufferRef(buf.str(), numWritten);
+}
+
+ResultNode::ConstBufferRef Int16ResultNode::onGetString(size_t index, BufferRef buf) const {
+    (void) index;
+    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
+    return ConstBufferRef(buf.str(), numWritten);
+}
+
+ResultNode::ConstBufferRef Int32ResultNode::onGetString(size_t index, BufferRef buf) const {
+    (void) index;
+    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
+    return ConstBufferRef(buf.str(), numWritten);
+}
+
+ResultNode::ConstBufferRef Int64ResultNode::onGetString(size_t index, BufferRef buf) const {
+    (void) index;
+    int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%ld", getValue()))));
+    return ConstBufferRef(buf.str(), numWritten);
+}
 
 }
 }

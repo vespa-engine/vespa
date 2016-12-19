@@ -86,11 +86,7 @@ public:
     DECLARE_RESULTNODE(Int8ResultNode);
     Int8ResultNode(int8_t v=0) : Base(v) { }
 private:
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const {
-        (void) index;
-        int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
-        return ConstBufferRef(buf.str(), numWritten);
-    }
+    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
 };
 
 class Int16ResultNode : public IntegerResultNodeT<int16_t>
@@ -101,11 +97,7 @@ public:
     DECLARE_RESULTNODE(Int16ResultNode);
     Int16ResultNode(int16_t v=0) : Base(v) { }
 private:
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const {
-        (void) index;
-        int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
-        return ConstBufferRef(buf.str(), numWritten);
-    }
+    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
 };
 
 class Int32ResultNode : public IntegerResultNodeT<int32_t>
@@ -116,11 +108,7 @@ public:
     DECLARE_RESULTNODE(Int32ResultNode);
     Int32ResultNode(int32_t v=0) : Base(v) { }
 private:
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const {
-        (void) index;
-        int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%d", getValue()))));
-        return ConstBufferRef(buf.str(), numWritten);
-    }
+    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
 };
 
 class Int64ResultNode : public IntegerResultNodeT<int64_t>
@@ -131,11 +119,7 @@ public:
     DECLARE_RESULTNODE(Int64ResultNode);
     Int64ResultNode(int64_t v=0) : Base(v) { }
 private:
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const {
-        (void) index;
-        int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%" PRId64, getValue()))));
-        return ConstBufferRef(buf.str(), numWritten);
-    }
+    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
 };
 
 }

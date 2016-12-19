@@ -18,11 +18,7 @@ public:
 
 private:
     virtual int64_t onGetEnum(size_t index) const { (void) index; return getValue(); }
-    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const {
-        (void) index;
-        int numWritten(std::min(buf.size(), (size_t)std::max(0, snprintf(buf.str(), buf.size(), "%" PRId64, getValue()))));
-        return ConstBufferRef(buf.str(), numWritten);
-    }
+    virtual ConstBufferRef onGetString(size_t index, BufferRef buf) const;
 };
 
 }
