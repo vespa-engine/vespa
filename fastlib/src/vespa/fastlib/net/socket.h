@@ -1,38 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
-*******************************************************************************
-*
-* @author          Stein Hardy Danielsen
-* @date            Creation date: 2000-9-28
-* @version         $Id$
-*
-* @file
-*
-* Socket class with input and output stream interfaces
-*
-* Copyright (c)  : 1997-2000 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/fastlib/io/inputstream.h>
 #include <vespa/fastlib/io/outputstream.h>
+#include <vespa/fastos/socket.h>
 
-/**
-********************************************************************************
-*
-* Socket class with input and output stream interfaces
-* @author          Stein Hardy Danielsen
-* @date            Creation date: 2000-9-28
-* @version         $Id$
-*
-*
-* Copyright (c)  : 1997-1999 Fast Search & Transfer ASA
-*                  ALL RIGHTS RESERVED
-*
-******************************************************************************/
 class Fast_Socket : public FastOS_Socket,
                     public Fast_InputStream,
                     public Fast_OutputStream

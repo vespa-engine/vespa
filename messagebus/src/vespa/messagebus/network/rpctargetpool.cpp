@@ -1,34 +1,27 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/messagebus/systemtimer.h>
 #include "rpctargetpool.h"
+#include <vespa/messagebus/systemtimer.h>
 
 namespace mbus {
 
 RPCTargetPool::Entry::Entry(RPCTarget::SP target, uint64_t lastUse) :
     _target(target),
     _lastUse(lastUse)
-{
-    // empty
-}
+{ }
 
 RPCTargetPool::RPCTargetPool(double expireSecs) :
     _lock(),
     _targets(),
     _timer(new SystemTimer()),
     _expireMillis(static_cast<uint64_t>(expireSecs * 1000))
-{
-    // empty
-}
+{ }
 
 RPCTargetPool::RPCTargetPool(ITimer::UP timer, double expireSecs) :
     _lock(),
     _targets(),
     _timer(std::move(timer)),
     _expireMillis(static_cast<uint64_t>(expireSecs * 1000))
-{
-    // empty
-}
+{ }
 
 RPCTargetPool::~RPCTargetPool()
 {

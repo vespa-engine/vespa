@@ -4,6 +4,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/memfilepersistence/common/environment.h>
 #include <vespa/vespalib/util/crc.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".memfile.simpleiobuffer");

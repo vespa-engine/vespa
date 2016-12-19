@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageframework/generic/component/component.h>
-
-#include <vespa/storageframework/generic/component/componentregister.h>
+#include "component.h"
+#include "componentregister.h"
 #include <vespa/storageframework/generic/metric/metricregistrator.h>
 #include <vespa/storageframework/generic/thread/threadpool.h>
 #include <vespa/vespalib/util/sync.h>

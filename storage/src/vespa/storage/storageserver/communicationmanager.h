@@ -29,9 +29,7 @@
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/storage/storageserver/communicationmanagermetrics.h>
-#include <vespa/storage/storageserver/fnetlistener.h>
 #include <vespa/storage/storageserver/messageallocationtypes.h>
-#include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include "documentapiconverter.h"
 #include <vespa/storageframework/storageframework.h>
 
@@ -40,6 +38,8 @@ namespace storage {
 class VisitorMbusSession;
 class Visitor;
 class VisitorThread;
+class FNetListener;
+class RPCRequestWrapper;
 
 class PriorityQueue {
 private:
@@ -110,14 +110,10 @@ public:
 
 class StorageTransportContext : public api::TransportContext {
 public:
-    StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg)
-        : _docAPIMsg(std::move(msg)) {};
-
-    StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg)
-        : _storageProtocolMsg(std::move(msg)) {};
-
-    StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request)
-        : _request(std::move(request)) {};
+    StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg);
+    StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg);
+    StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request);
+    ~StorageTransportContext();
 
     std::unique_ptr<documentapi::DocumentMessage> _docAPIMsg;
     std::unique_ptr<mbusprot::StorageCommand> _storageProtocolMsg;

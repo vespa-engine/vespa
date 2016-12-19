@@ -4,18 +4,13 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <utility>
 #include <vespa/searchlib/util/filealign.h>
 #include <vespa/searchlib/util/comprbuffer.h>
 
-namespace vespalib
-{
+class FastOS_FileInterface;
 
-class nbostream;
-
-}
-
+namespace vespalib { class nbostream; }
 
 namespace search {
 

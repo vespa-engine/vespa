@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("maintenancecontroller_test");
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -28,6 +25,10 @@ LOG_SETUP("maintenancecontroller_test");
 #include <vespa/searchcore/proton/test/buckethandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/data/slime/slime.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("maintenancecontroller_test");
 
 using namespace proton;
 using namespace vespalib::slime;

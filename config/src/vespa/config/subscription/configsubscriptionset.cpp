@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "configsubscriptionset.h"
+#include <vespa/config/common/exceptions.h>
+#include <thread>
+#include <chrono>
 #include <vespa/log/log.h>
 LOG_SETUP(".config.subscription.configsubscriptionset");
 
-#include "configsubscriptionset.h"
-#include <vespa/config/common/exceptions.h>
+using namespace std::chrono_literals;
 
 namespace config {
 
@@ -80,7 +82,7 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
         lastGeneration = generation;
         timeLeft = timeoutInMillis - static_cast<uint64_t>(timer.MilliSecsToNow());
         if (!inSync && timeLeft > 0) {
-            FastOS_Thread::Sleep(10);
+            std::this_thread::sleep_for(10ms);
         }
     }
 

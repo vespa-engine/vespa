@@ -20,6 +20,7 @@
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/fastos/app.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
 

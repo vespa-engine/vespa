@@ -7,6 +7,7 @@
 #include "attributefile.h"
 #include "interlock.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attributemanager");

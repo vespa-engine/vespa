@@ -1,27 +1,21 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/packets.h>
 #include "rankfeaturesdfw.h"
 #include <vespa/searchlib/common/feature.h>
 #include "docsumformat.h"
 #include "docsumstate.h"
-
-LOG_SETUP(".searchlib.docsummary.rankfeaturesdfw");
+#include <vespa/vespalib/data/slime/cursor.h>
 
 namespace search {
 namespace docsummary {
 
 RankFeaturesDFW::RankFeaturesDFW() :
     _env(NULL)
-{
-}
+{ }
 
-RankFeaturesDFW::~RankFeaturesDFW()
-{
-}
+RankFeaturesDFW::~RankFeaturesDFW() { }
 
 void
 RankFeaturesDFW::init(IDocsumEnvironment * env)

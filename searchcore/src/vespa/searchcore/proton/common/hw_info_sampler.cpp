@@ -7,6 +7,7 @@
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/fastos/file.h>
 
 using config::ConfigHandle;
 using config::ConfigSubscriber;

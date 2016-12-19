@@ -3,7 +3,6 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     SOURCES
     bits.cpp
     clock.cpp
-    cpu.cpp
     crc.cpp
     doom.cpp
     growablebytebuffer.cpp

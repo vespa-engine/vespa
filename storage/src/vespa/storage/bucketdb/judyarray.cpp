@@ -1,6 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/bucketdb/judyarray.h>
+#include "judyarray.h"
+#include <vespa/vespalib/util/exceptions.h>
 #include <iostream>
 #include <sstream>
 
@@ -9,6 +9,26 @@ namespace storage {
 JudyArray::~JudyArray()
 {
     clear();
+}
+
+void
+JudyArray::Iterator::setValue(data_type val)
+{
+    if (_data == 0) {
+        throw vespalib::IllegalArgumentException(
+            "Cannot set value of end() iterator", VESPA_STRLOC);
+    }
+    *_data = val;
+}
+
+void
+JudyArray::Iterator::remove()
+{
+    if (_data == 0) {
+        throw vespalib::IllegalArgumentException(
+            "Cannot erase end() iterator", VESPA_STRLOC);
+    }
+    _parent->erase(_key);
 }
 
 bool

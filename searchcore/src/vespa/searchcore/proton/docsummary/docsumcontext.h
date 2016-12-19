@@ -28,7 +28,7 @@ private:
 
     void initState();
     search::engine::DocsumReply::UP createReply();
-    vespalib::Slime::UP createSlimeReply();
+    std::unique_ptr<vespalib::Slime> createSlimeReply();
 
 public:
     typedef std::unique_ptr<DocsumContext> UP;

@@ -4,7 +4,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <vespa/fastos/fastos.h>
 
 #include "log-target.h"
 

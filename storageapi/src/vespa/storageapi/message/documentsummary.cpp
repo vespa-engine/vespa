@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageapi/message/documentsummary.h>
+#include "documentsummary.h"
 
 namespace storage {
 namespace api {
@@ -11,8 +10,7 @@ IMPLEMENT_REPLY(DocumentSummaryReply)
 DocumentSummaryCommand::DocumentSummaryCommand()
     : StorageCommand(MessageType::DOCUMENTSUMMARY),
       DocumentSummary()
-{
-}
+{ }
 
 void
 DocumentSummaryCommand::print(std::ostream& out, bool verbose,
@@ -27,8 +25,7 @@ DocumentSummaryCommand::print(std::ostream& out, bool verbose,
 
 DocumentSummaryReply::DocumentSummaryReply(const DocumentSummaryCommand& cmd)
     : StorageReply(cmd)
-{
-}
+{ }
 
 void
 DocumentSummaryReply::print(std::ostream& out, bool verbose,

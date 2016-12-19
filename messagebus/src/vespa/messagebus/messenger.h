@@ -1,14 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/arrayqueue.hpp>
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
 #include "message.h"
 #include "reply.h"
+#include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/arrayqueue.hpp>
+#include <vespa/fastos/thread.h>
 
 namespace mbus {
 

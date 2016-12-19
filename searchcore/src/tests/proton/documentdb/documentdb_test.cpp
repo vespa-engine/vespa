@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("documentdb_test");
 
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/messagebus/emptyreply.h>
@@ -23,6 +20,7 @@ LOG_SETUP("documentdb_test");
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using document::DocumentType;
 using document::DocumentTypeRepo;

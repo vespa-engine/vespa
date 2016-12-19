@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <algorithm>
 #include "stream.h"
+#include <algorithm>
+#include <stdio.h>
 
 namespace vespamalloc {
 
@@ -15,7 +16,7 @@ asciistream::asciistream() :
 asciistream::~asciistream()
 {
     free(_buffer);
-    _buffer = NULL;
+    _buffer = nullptr;
 }
 
 asciistream::asciistream(const asciistream & rhs) :
@@ -64,7 +65,7 @@ asciistream & asciistream::operator << (uint32_t v)
 asciistream & asciistream::operator << (int64_t v)
 {
     char tmp[32];
-    int len = snprintf(tmp, sizeof(tmp), "%" PRId64, v);
+    int len = snprintf(tmp, sizeof(tmp), "%ld", v);
     write(tmp, len);
     return *this;
 }
@@ -72,7 +73,7 @@ asciistream & asciistream::operator << (int64_t v)
 asciistream & asciistream::operator << (uint64_t v)
 {
     char tmp[32];
-    int len = snprintf(tmp, sizeof(tmp), "%" PRIu64, v);
+    int len = snprintf(tmp, sizeof(tmp), "%lu", v);
     write(tmp, len);
     return *this;
 }

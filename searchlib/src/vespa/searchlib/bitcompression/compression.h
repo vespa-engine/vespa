@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/util/comprfile.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/vespalib/stllike/string.h>

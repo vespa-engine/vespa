@@ -1,8 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <cppunit/extensions/HelperMacros.h>
-#include <vespa/log/log.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
@@ -11,7 +9,9 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/testhelper.h>
 #include <tests/common/dummystoragelink.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".test.statereporter");
 
 namespace storage {

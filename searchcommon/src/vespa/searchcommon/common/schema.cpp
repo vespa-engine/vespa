@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vespa/config/common/configparser.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".index.schema");

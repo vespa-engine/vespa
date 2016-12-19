@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 class FNET_Scheduler;
 
 /**

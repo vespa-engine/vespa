@@ -1,6 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespamalloc/malloc/threadproxy.h>
 #include <dlfcn.h>
+#include <pthread.h>
+#include <cstdio>
+#include <cerrno>
 
 namespace vespamalloc {
 

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/fastos/time.h>
+
 /**
  * An object of this class handles scheduling of @ref FNET_Task
  * objects. A task may be scheduled to be performed in a given number

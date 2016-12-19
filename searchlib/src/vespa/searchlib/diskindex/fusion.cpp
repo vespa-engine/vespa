@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Copyright (C) 2003 Fast Search & Transfer ASA
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include "fusion.h"
+#include "fieldreader.h"
+#include "fieldwriter.h"
+#include "dictionarywordreader.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/common/fslimits.h>
-
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -14,10 +14,9 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <vespa/searchlib/util/postingpriorityqueue.h>
-#include "fieldreader.h"
-#include "fieldwriter.h"
-#include "dictionarywordreader.h"
+#include <vespa/vespalib/util/error.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".diskindex.fusion");
 
 using search::FileKit;

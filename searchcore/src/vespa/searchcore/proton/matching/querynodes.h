@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/fef/itermdata.h>

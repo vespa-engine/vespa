@@ -4,9 +4,14 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <memory>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/config/frt/protocol.h>
 #include <vespa/config/configgen/configpayload.h>
+
+namespace vespalib {
+    namespace slime {
+        class Cursor;
+    }
+}
 
 namespace config {
 

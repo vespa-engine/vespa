@@ -9,6 +9,7 @@
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.docsumwriter");

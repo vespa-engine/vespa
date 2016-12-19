@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/searchcore/fdispatch/common/appcontext.h>
 #include <vespa/vespalib/stllike/string.h>

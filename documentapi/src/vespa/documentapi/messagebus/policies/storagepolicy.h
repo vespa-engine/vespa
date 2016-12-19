@@ -1,12 +1,25 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "externslobrokpolicy.h"
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
 #include <vespa/messagebus/reply.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/documentapi/messagebus/policies/externslobrokpolicy.h>
+#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/config/helper/configfetcher.h>
+
+namespace config {
+    class ICallback;
+    class ConfigFetcher;
+}
+
+namespace storage {
+namespace lib {
+    class Distribution;
+    class ClusterState;
+}
+}
 
 namespace documentapi {
 

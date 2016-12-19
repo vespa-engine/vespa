@@ -2,9 +2,9 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
-namespace vsm
-{
+namespace vsm {
 
 /**
  * Simple growable char buffer.

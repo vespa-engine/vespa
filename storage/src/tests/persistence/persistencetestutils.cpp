@@ -6,6 +6,7 @@
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using document::DocumentType;
 using storage::framework::defaultimplementation::AllocationLogic;

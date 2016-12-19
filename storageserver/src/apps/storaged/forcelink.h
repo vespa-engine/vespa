@@ -8,7 +8,6 @@
 #pragma once
 
 #include <vespa/documentapi/documentapi.h>
-#include <vespa/fastos/fastos.h>
 #include <vespa/config-rank-profiles.h>
 
 namespace storage {

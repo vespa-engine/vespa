@@ -16,7 +16,6 @@
 ******************************************************************************/
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/fastlib/io/outputstream.h>
 
 

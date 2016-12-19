@@ -2,7 +2,6 @@
 #pragma once
 
 #include <string>
-#include <vespa/fastos/fastos.h>
 #include <vespa/fastlib/text/wordfolder.h>
 
 class SummaryConfig;

@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.attribute.filter_attribute_manager");
-
 #include "filter_attribute_manager.h"
-#include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include "i_attribute_functor.h"
+#include <vespa/searchlib/common/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 using search::AttributeGuard;
 
@@ -29,6 +26,46 @@ FilterAttributeManager::FilterAttributeManager(const AttributeSet &acceptedAttri
             _acceptedWritableAttributes.push_back(attr);
         }
     }
+}
+
+FilterAttributeManager::~FilterAttributeManager() { }
+
+search::AttributeGuard::UP
+FilterAttributeManager::getAttributeStableEnum(const vespalib::string &) const {
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+search::attribute::IAttributeContext::UP
+FilterAttributeManager::createContext() const {
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+
+IAttributeManager::SP
+FilterAttributeManager::create(const AttributeCollectionSpec &) const {
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+std::vector<searchcorespi::IFlushTarget::SP>
+FilterAttributeManager::getFlushTargets() const {
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+search::SerialNum
+FilterAttributeManager::getOldestFlushedSerialNumber() const {
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+search::SerialNum
+FilterAttributeManager::getNewestFlushedSerialNumber() const {
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+void
+FilterAttributeManager::getAttributeListAll(std::vector<search::AttributeGuard> &) const {
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+void
+FilterAttributeManager::wipeHistory(const search::index::Schema &) {
+    throw vespalib::IllegalArgumentException("Not implemented");
+}
+const IAttributeFactory::SP &
+FilterAttributeManager::getFactory() const {
+    throw vespalib::IllegalArgumentException("Not implemented");
 }
 
 AttributeGuard::UP

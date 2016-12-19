@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include "searchiterator.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/matchdata.h>

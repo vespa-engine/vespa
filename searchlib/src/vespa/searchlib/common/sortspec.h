@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>

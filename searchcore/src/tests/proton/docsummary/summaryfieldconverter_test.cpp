@@ -1,10 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for summaryfieldconverter.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("summaryfieldconverter_test");
-
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spanlist.h>
@@ -50,6 +46,7 @@ LOG_SETUP("summaryfieldconverter_test");
 #include <vespa/vespalib/tensor/types.h>
 #include <vespa/vespalib/tensor/default_tensor.h>
 #include <vespa/vespalib/tensor/tensor_factory.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::SummarymapConfigBuilder;

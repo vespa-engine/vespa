@@ -30,7 +30,8 @@
 #include <unistd.h>
 #include <string>
 #include <memory>
-#include <vespa/vespalib/util/exceptions.h>
+#include <vector>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memory.h>
 
 namespace vespalib {

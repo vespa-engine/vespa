@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/optimized.h>
 #include <new>
@@ -12,6 +11,8 @@ using vespalib::Atomic;
 extern "C" void MallocRecurseOnSuspend(bool recurse) __attribute__ ((noinline));
 
 namespace vespamalloc {
+
+#define VESPA_DLL_EXPORT __attribute__ ((visibility("default")))
 
 #define NELEMS(a) sizeof(a)/sizeof(a[0])
 

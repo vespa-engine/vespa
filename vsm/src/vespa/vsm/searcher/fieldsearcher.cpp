@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/vsm/searcher/fieldsearcher.h>
+#include "fieldsearcher.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.searcher.fieldsearcher");
-
-#define DEBUGMASK 0x0
 
 using search::byte;
 using search::QueryTerm;

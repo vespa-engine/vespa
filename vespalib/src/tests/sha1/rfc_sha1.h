@@ -4,7 +4,6 @@
 /*
   Modifications:
   - renamed file from "sha1.h" to "rfc_sha1.h"
-  - include "fastos/fastos.h" instead of <stdint.h>
   - use 'uint32_t' instead of 'int_least16_t'
 */
 
@@ -24,15 +23,8 @@
  *
  */
 #pragma once
-/*
- * If you do not have the ISO standard stdint.h header file, then you
- * must typdef the following:
- *    name              meaning
- *  uint32_t         unsigned 32 bit integer
- *  uint8_t          unsigned 8 bit integer (i.e., unsigned char)
- *
- */
-#include <vespa/fastos/fastos.h>
+
+#include <cstdint>
 
 #ifndef _SHA_enum_
 #define _SHA_enum_

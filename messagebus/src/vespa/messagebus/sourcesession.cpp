@@ -1,18 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/messagebus/routing/routingtable.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include "sourcesession.h"
+#include "sourcesessionparams.h"
 #include "error.h"
 #include "errorcode.h"
 #include "messagebus.h"
 #include "replygate.h"
-#include "sourcesession.h"
-#include "sourcesessionparams.h"
 #include "tracelevel.h"
 #include <algorithm>
-#include <vespa/log/log.h>
-LOG_SETUP(".sourcesession");
-
+#include <vespa/messagebus/routing/routingtable.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace mbus {
 
@@ -28,7 +24,7 @@ SourceSession::SourceSession(MessageBus &mbus, const SourceSessionParams &params
       _closed(false),
       _done(false)
 {
-    LOG_ASSERT(params.hasReplyHandler());
+    assert(params.hasReplyHandler());
 }
 
 SourceSession::~SourceSession()
@@ -117,7 +113,7 @@ SourceSession::handleReply(Reply::UP reply)
     bool done;
     {
         vespalib::MonitorGuard guard(_monitor);
-        LOG_ASSERT(_pendingCount > 0);
+        assert(_pendingCount > 0);
         --_pendingCount;
         if (_throttlePolicy.get() != NULL) {
             _throttlePolicy->processReply(*reply);
@@ -134,8 +130,8 @@ SourceSession::handleReply(Reply::UP reply)
     handler.handleReply(std::move(reply));
     if (done) {
         vespalib::MonitorGuard guard(_monitor);
-        LOG_ASSERT(_pendingCount == 0);
-        LOG_ASSERT(_closed);
+        assert(_pendingCount == 0);
+        assert(_closed);
         _done = true;
         guard.broadcast();
     }

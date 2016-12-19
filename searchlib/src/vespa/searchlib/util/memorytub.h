@@ -10,7 +10,6 @@
 
 #include <new>
 
-#include <vespa/fastos/fastos.h>
 
 namespace search {
 namespace util {

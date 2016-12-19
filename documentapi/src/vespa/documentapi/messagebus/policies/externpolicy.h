@@ -1,13 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fnet/frt/frt.h>
 #include <vespa/messagebus/routing/hop.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
-#include <vespa/slobrok/sbmirror.h>
-#include <string>
+#include <vespa/slobrok/imirrorapi.h>
 #include <vector>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/documentapi/common.h>
+
+class FRT_Supervisor;
 
 namespace documentapi {
 
@@ -17,16 +18,17 @@ namespace documentapi {
  */
 class ExternPolicy : public mbus::IRoutingPolicy {
 private:
-    vespalib::Lock                         _lock;
-    FRT_Supervisor                         _orb;
-    std::unique_ptr<slobrok::api::MirrorAPI> _mirror;
-    string                            _pattern;
-    string                            _session;
-    string                            _error;
-    uint32_t                               _offset;
-    uint32_t                               _gen;
-    std::vector<mbus::Hop>                 _recipients;
-    bool                                   _started;
+    using IMirrorAPI = slobrok::api::IMirrorAPI;
+    vespalib::Lock                   _lock;
+    std::unique_ptr<FRT_Supervisor>  _orb;
+    std::unique_ptr<IMirrorAPI>      _mirror;
+    string                           _pattern;
+    string                           _session;
+    string                           _error;
+    uint32_t                         _offset;
+    uint32_t                         _gen;
+    std::vector<mbus::Hop>           _recipients;
+    bool                             _started;
 
 private:
     /**
@@ -71,7 +73,7 @@ public:
      *
      * @return The mirror pointer.
      */
-    slobrok::api::MirrorAPI &getMirror() { return *_mirror; }
+    slobrok::api::IMirrorAPI &getMirror() { return *_mirror; }
 
     // Overrides IRoutingPolicy.
     void select(mbus::RoutingContext &ctx);

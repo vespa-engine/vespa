@@ -16,6 +16,7 @@ vespa_add_library(memfilepersistence_testspi
     shared_data_location_tracker_test.cpp
     buffered_file_writer_test.cpp
     buffer_test.cpp
+    simulatedfailurefile.cpp
     DEPENDS
     memfilepersistence_testhelper
     memfilepersistence

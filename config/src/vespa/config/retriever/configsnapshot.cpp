@@ -3,6 +3,7 @@
 #include "configsnapshot.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/config/common/misc.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 using vespalib::Slime;
 using vespalib::slime::Cursor;

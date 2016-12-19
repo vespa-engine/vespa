@@ -9,6 +9,7 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/longfieldvalue.h>
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 namespace document {
 

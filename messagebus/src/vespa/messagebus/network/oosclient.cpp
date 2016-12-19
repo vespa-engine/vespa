@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "oosclient.h"
-#include <vespa/log/log.h>
-LOG_SETUP(".oosclient");
 
 namespace mbus {
 
@@ -44,7 +41,7 @@ OOSClient::handleConnect()
 void
 OOSClient::handleInvoke()
 {
-    LOG_ASSERT(_target != 0);
+    assert(_target != 0);
     _req = _orb.AllocRPCRequest(_req);
     _req->SetMethodName("fleet.getOOSList");
     _req->GetParams()->AddInt32(_reqGen); // gencnt
@@ -67,7 +64,7 @@ OOSClient::PerformTask()
 void
 OOSClient::RequestDone(FRT_RPCRequest *req)
 {
-    LOG_ASSERT(req == _req && !_reqDone);
+    assert(req == _req && !_reqDone);
     (void) req;
     _reqDone = true;
     ScheduleNow();

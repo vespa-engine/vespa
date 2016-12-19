@@ -8,6 +8,7 @@
 #include <vespa/metrics/state_api_adapter.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <fstream>
 #include <sstream>
 #include <vespa/log/log.h>

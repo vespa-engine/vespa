@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 
 class FastS_TimeOut
 {

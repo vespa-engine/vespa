@@ -2,8 +2,9 @@
 
 #pragma once
 
-namespace vespalib
-{
+#include <cstdint>
+
+namespace vespalib {
 
 /*
  * Class for linux specific way to get memory stats for current process.

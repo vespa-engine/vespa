@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageserver/app/process.h>
+#include "process.h"
+#include <vespa/vespalib/util/exceptions.h>
 
-//#include <vespa/config/helper/legacy.h>
 #include <vespa/log/log.h>
-
 LOG_SETUP(".process");
 
 namespace storage {
@@ -13,8 +11,7 @@ namespace storage {
 Process::Process(const config::ConfigUri & configUri)
     : _configUri(configUri),
       _configSubscriber(_configUri.getContext())
-{
-}
+{ }
 
 void
 Process::setupConfig(uint64_t subscribeTimeout)

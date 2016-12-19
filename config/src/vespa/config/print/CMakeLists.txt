@@ -10,5 +10,6 @@ vespa_add_library(config_print OBJECT
     fileconfigsnapshotreader.cpp
     asciiconfigsnapshotwriter.cpp
     asciiconfigsnapshotreader.cpp
+    configdatabuffer.cpp
     DEPENDS
 )

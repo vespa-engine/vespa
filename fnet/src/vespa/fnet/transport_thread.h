@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <vespa/fastos/thread.h>
+#include <vespa/fastos/socketevent.h>
+
 /**
  * This class represents a transport thread and handles a subset of
  * the network related work for the application in both client and

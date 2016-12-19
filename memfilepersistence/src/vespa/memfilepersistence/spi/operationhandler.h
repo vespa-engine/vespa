@@ -10,7 +10,6 @@
  */
 #pragma once
 
-#include <vespa/memfilepersistence/common/exceptions.h>
 #include <vespa/memfilepersistence/common/filespecification.h>
 #include <vespa/memfilepersistence/common/types.h>
 #include <vespa/memfilepersistence/memfile/memfile.h>

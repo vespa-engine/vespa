@@ -16,7 +16,6 @@
  * mytest.h:
  * ----
  * #include <iosfwd>
- * #include <vespa/fastos/fastos.h>
  * #include <vespa/fastlib/testsuite/test.h>
  *
  * class MyTest : public Test

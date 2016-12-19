@@ -6,6 +6,7 @@
 #include <vespa/storageframework/defaultimplementation/memory/prioritymemorylogic.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <boost/lexical_cast.hpp>
 
 namespace storage {

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/fastos/serversocket.h>
+
 /**
  * Class used to listen for incoming connections on a single TCP/IP
  * port.

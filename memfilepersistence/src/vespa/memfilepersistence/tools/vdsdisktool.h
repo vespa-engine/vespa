@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <iosfwd>
 
 namespace storage {

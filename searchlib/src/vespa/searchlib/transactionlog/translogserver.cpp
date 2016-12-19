@@ -1,18 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/transactionlog/translogserver.h>
+#include "translogserver.h"
 #include <fstream>
-#include <vespa/vespalib/util/vstringfmt.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <stdexcept>
 #include <vespa/log/log.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 LOG_SETUP(".transactionlog.server");
 
 using vespalib::make_string;
 using vespalib::stringref;
-using vespalib::make_vespa_string;
 using vespalib::IllegalArgumentException;
 using search::common::FileHeaderContext;
 
@@ -414,13 +412,13 @@ void TransLogServer::deleteDomain(FRT_RPCRequest *req)
                 domainDir << it->first << std::endl;
             }
         } catch (const std::exception & e) {
-            msg = make_vespa_string("Failed deleting %s domain. Exception = %s", domainName, e.what());
+            msg = make_string("Failed deleting %s domain. Exception = %s", domainName, e.what());
             retval = -1;
             LOG(warning, "%s", msg.c_str());
         }
     } else {
         retval = -2;
-        msg = vespalib::make_vespa_string("Domain '%s' is open. Can not delete open domains.", domainName);
+        msg = vespalib::make_string("Domain '%s' is open. Can not delete open domains.", domainName);
         LOG(warning, "%s", msg.c_str());
     }
     ret.AddInt32(retval);

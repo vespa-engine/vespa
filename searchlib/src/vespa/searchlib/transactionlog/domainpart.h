@@ -5,23 +5,15 @@
 #include <map>
 #include <vector>
 #include <atomic>
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/memory.h>
+#include <vespa/fastos/file.h>
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
+namespace common { class FileHeaderContext; }
 
-class FileHeaderContext;
-
-}
-
-
-namespace transactionlog
-{
+namespace transactionlog {
 
 class DomainPart {
 private:

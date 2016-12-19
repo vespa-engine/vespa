@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "generationhandler.h"
 
 namespace vespalib {
 
 GenerationHandler::Guard::Guard()
-    : _hold(NULL)
+    : _hold(nullptr)
 {
 }
 
@@ -63,7 +62,7 @@ GenerationHandler::updateFirstUsedGeneration()
             break;			// First element still in use
         }
         GenerationHold *toFree = _first;
-        assert(toFree->_next != NULL);
+        assert(toFree->_next != nullptr);
         _first = toFree->_next;
         // Must ensure _first is updated before changing next pointer to
         // avoid temporarily inconsistent state (breaks hasReaders())
@@ -78,9 +77,9 @@ GenerationHandler::updateFirstUsedGeneration()
 GenerationHandler::GenerationHandler()
     : _generation(0),
       _firstUsedGeneration(0),
-      _last(NULL),
-      _first(NULL),
-      _free(NULL),
+      _last(nullptr),
+      _first(nullptr),
+      _free(nullptr),
       _numHolds(0u)
 {
     _last = _first = new GenerationHold;
@@ -95,7 +94,7 @@ GenerationHandler::~GenerationHandler(void)
 
     updateFirstUsedGeneration();
     assert(_first == _last);
-    while (_free != NULL) {
+    while (_free != nullptr) {
         GenerationHold *toFree = _free;
         _free = toFree->_next;
         --_numHolds;
@@ -139,8 +138,8 @@ GenerationHandler::incGeneration()
         updateFirstUsedGeneration();
         return;
     }
-    GenerationHold *nhold = NULL;
-    if (_free == NULL) {
+    GenerationHold *nhold = nullptr;
+    if (_free == nullptr) {
         nhold = new GenerationHold;
         ++_numHolds;
     } else {
@@ -148,7 +147,7 @@ GenerationHandler::incGeneration()
         _free = nhold->_next;
     }
     nhold->_generation = ngen;
-    nhold->_next = NULL;
+    nhold->_next = nullptr;
     nhold->setValid();
 
     // new hold must be updated before next pointer is updated
@@ -173,7 +172,7 @@ GenerationHandler::getGenerationRefCount(generation_t gen) const
         return 0u;
     if (static_cast<sgeneration_t>(_firstUsedGeneration - gen) > 0)
         return 0u;
-    for (GenerationHold *hold = _first; hold != NULL; hold = hold->_next) {
+    for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {
         if (hold->_generation == gen)
             return hold->getRefCount();
     }
@@ -185,7 +184,7 @@ uint64_t
 GenerationHandler::getGenerationRefCount(void) const
 {
     uint64_t ret = 0;
-    for (GenerationHold *hold = _first; hold != NULL; hold = hold->_next) {
+    for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {
         ret += hold->getRefCount();
     }
     return ret;

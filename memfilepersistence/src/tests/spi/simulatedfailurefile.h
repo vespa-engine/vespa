@@ -17,15 +17,8 @@ public:
         Factory()
             : _readOpsBeforeFailure(-1),
               _writeOpsBeforeFailure(0)
-        {
-        }
-        vespalib::LazyFile::UP createFile(const std::string& fileName) const {
-            return vespalib::LazyFile::UP(
-                    new SimulatedFailureLazyFile(fileName,
-                            vespalib::File::DIRECTIO,
-                            _readOpsBeforeFailure,
-                            _writeOpsBeforeFailure));
-        }
+        { }
+        vespalib::LazyFile::UP createFile(const std::string& fileName) const;
 
         void setReadOpsBeforeFailure(int ops) {
             _readOpsBeforeFailure = ops;
@@ -43,34 +36,10 @@ public:
             const std::string& filename,
             int flags,
             int readOpsBeforeFailure,
-            int writeOpsBeforeFailure)
-        : LazyFile(filename, flags),
-          _readOpsBeforeFailure(readOpsBeforeFailure),
-          _writeOpsBeforeFailure(writeOpsBeforeFailure)
-    {
-    }
+            int writeOpsBeforeFailure);
 
-    off_t write(const void *buf, size_t bufsize, off_t offset)
-    {
-        if (_writeOpsBeforeFailure == 0) {
-            throw vespalib::IoException(
-                    "A simulated I/O write exception was triggered",
-                    vespalib::IoException::CORRUPT_DATA, VESPA_STRLOC);
-        }
-        --_writeOpsBeforeFailure;
-        return vespalib::LazyFile::write(buf, bufsize, offset);
-    }
-
-    size_t read(void *buf, size_t bufsize, off_t offset) const
-    {
-        if (_readOpsBeforeFailure == 0) {
-            throw vespalib::IoException(
-                    "A simulated I/O read exception was triggered",
-                    vespalib::IoException::CORRUPT_DATA, VESPA_STRLOC);
-        }
-        --_readOpsBeforeFailure;
-        return vespalib::LazyFile::read(buf, bufsize, offset);
-    }
+    off_t write(const void *buf, size_t bufsize, off_t offset);
+    size_t read(void *buf, size_t bufsize, off_t offset) const;
 };
 
 } // ns memfile

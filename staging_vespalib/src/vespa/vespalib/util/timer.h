@@ -1,11 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/linkedptr.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/fnet/fnet.h>
+#include <vespa/fastos/thread.h>
+#include <vector>
+
+class FNET_Transport;
 
 namespace vespalib {
 

@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
-
-#include <vespa/fastos/fastos.h>
-
-/** @file IJuniperProperties.h Defining the IJuniperProperties class */
 
 /** An abstract interface to configuration file settings used by Juniper to process
  *  it's preconfigured parameter sets.
@@ -18,9 +15,7 @@ public:
      *  @param def A default value for the property if not found in configuration
      *  @return The value of the property or @param def if no such property is set
      */
-    virtual const char* GetProperty(const char* name, const char* def = NULL) = 0;
+    virtual const char* GetProperty(const char* name, const char* def = nullptr) = 0;
 
     virtual ~IJuniperProperties() {};
 };
-
-

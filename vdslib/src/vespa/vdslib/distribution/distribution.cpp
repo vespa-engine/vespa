@@ -12,6 +12,7 @@
 #include <vespa/config/print/asciiconfigreader.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config-stor-distribution.h>
+#include <list>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vdslib.distribution");

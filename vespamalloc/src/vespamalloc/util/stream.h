@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/fastos.h>
-#include <string>
+#include <cstring>
+#include <cstdint>
 
 namespace vespamalloc {
 
@@ -16,7 +16,7 @@ public:
     void swap(asciistream & rhs);
     asciistream & operator << (char v)                { write(&v, 1); return *this; }
     asciistream & operator << (unsigned char v)       { write(&v, 1); return *this; }
-    asciistream & operator << (const char * v)        { if (v != NULL) { write(v, strlen(v)); } return *this; }
+    asciistream & operator << (const char * v)        { if (v != nullptr) { write(v, strlen(v)); } return *this; }
     asciistream & operator << (int32_t v);
     asciistream & operator << (uint32_t v);
     asciistream & operator << (int64_t v);
@@ -38,7 +38,7 @@ private:
 class string : public asciistream
 {
 public:
-    string(const char * v = NULL) : asciistream() { *this << v; }
+    string(const char * v = nullptr) : asciistream() { *this << v; }
     string & operator += (const char * v) { *this << v; return *this; }
     string & operator += (const asciistream & v) { *this << v.c_str(); return *this; }
 };

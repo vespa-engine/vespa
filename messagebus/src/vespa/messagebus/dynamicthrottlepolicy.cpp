@@ -1,12 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".dynamicthrottlepolicy");
-
 #include <vespa/vespalib/util/atomic.h>
 #include "dynamicthrottlepolicy.h"
 #include "systemtimer.h"
 #include <climits>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".dynamicthrottlepolicy");
 
 namespace mbus {
 
@@ -26,9 +25,7 @@ DynamicThrottlePolicy::DynamicThrottlePolicy() :
     _windowSizeBackOff(0.9),
     _weight(1),
     _localMaxThroughput(0)
-{
-    // empty
-}
+{ }
 
 DynamicThrottlePolicy::DynamicThrottlePolicy(double windowSizeIncrement) :
     _timer(new SystemTimer()),
@@ -46,9 +43,7 @@ DynamicThrottlePolicy::DynamicThrottlePolicy(double windowSizeIncrement) :
     _windowSizeBackOff(0.9),
     _weight(1),
     _localMaxThroughput(0)
-{
-    // empty
-}
+{ }
 
 DynamicThrottlePolicy::DynamicThrottlePolicy(ITimer::UP timer) :
     _timer(std::move(timer)),
@@ -66,9 +61,7 @@ DynamicThrottlePolicy::DynamicThrottlePolicy(ITimer::UP timer) :
     _windowSizeBackOff(0.9),
     _weight(1),
     _localMaxThroughput(0)
-{
-    // empty
-}
+{ }
 
 DynamicThrottlePolicy &
 DynamicThrottlePolicy::setEfficiencyThreshold(double efficiencyThreshold)

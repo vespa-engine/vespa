@@ -6,10 +6,8 @@
  */
 #pragma once
 
-#include <sstream>
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vector>
-#include <vespa/vespalib/util/exceptions.h>
 
 namespace storage {
 
@@ -19,14 +17,7 @@ class MessageAllocationTypes {
 public:
     MessageAllocationTypes(framework::MemoryManagerInterface& manager);
 
-    const framework::MemoryAllocationType& getType(uint32_t type) const {
-        if (_types.size() > size_t(type) && _types[type] != 0) {
-            return *_types[type];
-        }
-        std::ostringstream ost;
-        ost << "No type registered with value " << type << ".";
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
-    }
+    const framework::MemoryAllocationType& getType(uint32_t type) const;
 };
 
 }

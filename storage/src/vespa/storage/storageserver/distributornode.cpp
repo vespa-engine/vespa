@@ -1,17 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/storageserver/distributornode.h>
-
+#include "distributornode.h"
+#include "bouncer.h"
+#include "communicationmanager.h"
+#include "opslogger.h"
+#include "statemanager.h"
 #include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/storageserver/bouncer.h>
-#include <vespa/storage/storageserver/communicationmanager.h>
-#include <vespa/storage/storageserver/opslogger.h>
-#include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".node.distributor");
 
 namespace storage {

@@ -5,7 +5,6 @@
 
 
 #include <fstream>
-#include <vespa/fastos/fastos.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <sstream>
 

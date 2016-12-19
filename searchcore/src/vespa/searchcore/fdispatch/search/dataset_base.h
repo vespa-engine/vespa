@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include "child_info.h"
 #include <vespa/searchcore/fdispatch/common/timestat.h>
 #include <vespa/searchcore/util/log.h>

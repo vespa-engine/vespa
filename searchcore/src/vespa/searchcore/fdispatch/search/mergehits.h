@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/base/globalid.h>
 
 //-----------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <queue>
+#include <cstdint>
 
 namespace mbus {
 

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "queue.h"
+#include <vespa/fastos/thread.h>
 
 namespace vespalib {
 

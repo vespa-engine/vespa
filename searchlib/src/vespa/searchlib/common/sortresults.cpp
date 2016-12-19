@@ -73,7 +73,6 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
     memset(cnt, 0, 256*sizeof(uint32_t));
     // Count occurrences [NB: will fail with n < 3]
     for(i = 0; i < n - 3; i += 4) {
-        FastOS_Prefetch::NT(((char *)(&a[i])) + PREFETCH);
         cnt[(R(a[i]._rankValue) >> SHIFT) & 0xFF]++;
         cnt[(R(a[i + 1]._rankValue) >> SHIFT) & 0xFF]++;
         cnt[(R(a[i + 2]._rankValue) >> SHIFT) & 0xFF]++;

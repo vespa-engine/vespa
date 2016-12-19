@@ -44,7 +44,6 @@ private:
     framework::Component::UP _component;
     FakeClock::UP _clock;
     framework::defaultimplementation::MemoryManager::UP _memoryManager;
-    std::vector<framework::MemoryToken::LP> _stolenMemory;
     std::unique_ptr<MemFilePersistenceMetrics> _metrics;
 
     std::unique_ptr<MemFileCache> _cache;
@@ -132,7 +131,6 @@ private:
 
 public:
     void tearDown() {
-        _stolenMemory.clear();
         _cache.reset(0);
         _metrics.reset(0);
         _component.reset(0);

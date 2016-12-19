@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/util/sync.h>
 
 namespace search {

@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <algorithm>
-#include <vespa/storageapi/message/batch.h>
+//
+#include "batch.h"
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <algorithm>
 
 using namespace storage::api;
 

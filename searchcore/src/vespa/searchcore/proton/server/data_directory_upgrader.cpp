@@ -4,8 +4,10 @@
 
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
 #include <iostream>
+#include <sys/stat.h>
 
 namespace proton {
 

@@ -18,7 +18,6 @@
  * -----
  *
  * #include <iosfwd>
- * #include <vespa/fastos/fastos.h>
  * #include <vespa/fastlib/testsuite/suite.h>
  *
  * class MySuite : public Suite

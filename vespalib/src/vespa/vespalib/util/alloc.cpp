@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "alloc.h"
 #include <stdlib.h>
 #include <errno.h>
@@ -14,6 +13,7 @@
 #include <map>
 #include <atomic>
 #include <unordered_map>
+#include <vespa/fastos/file.h>
 
 LOG_SETUP(".vespalib.alloc");
 

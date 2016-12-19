@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/util/filealign.h>
 
 namespace search {

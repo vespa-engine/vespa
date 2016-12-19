@@ -1,17 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/fnet/frt/frt.h>
-#include <iostream>
-#include <vespa/log/log.h>
 #include <vespa/memfilepersistence/device/mountpointlist.h>
 #include <vespa/memfilepersistence/tools/vdsdisktool.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/programoptions.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <sstream>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".vdsdiskapp");
 
 using std::vector;

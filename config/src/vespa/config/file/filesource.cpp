@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".config.file.filesource");
 #include "filesource.h"
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using vespalib::asciistream;
 
@@ -18,8 +18,7 @@ FileSource::FileSource(const IConfigHolder::SP & holder, const vespalib::string 
       _fileName(fileName),
       _lastLoaded(-1),
       _generation(1)
-{
-}
+{ }
 
 void
 FileSource::getConfig()

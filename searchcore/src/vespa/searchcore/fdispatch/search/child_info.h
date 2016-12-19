@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 
 #include "poss_count.h"
 

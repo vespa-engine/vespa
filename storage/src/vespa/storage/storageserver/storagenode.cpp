@@ -1,7 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storage/storageserver/storagenode.h>
+#include "storagenode.h"
+#include "bouncer.h"
+#include "bucketintegritychecker.h"
+#include "communicationmanager.h"
+#include "mergethrottler.h"
+#include "opslogger.h"
+#include "statemanager.h"
+#include "statereporter.h"
+#include "storagemetricsset.h"
 
 #include <vespa/storage/bucketdb/bucketmanager.h>
 #include <vespa/storage/bucketdb/storagebucketdbinitializer.h>
@@ -14,20 +21,13 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storage/storageserver/bouncer.h>
-#include <vespa/storage/storageserver/bucketintegritychecker.h>
-#include <vespa/storage/storageserver/communicationmanager.h>
-#include <vespa/storage/storageserver/mergethrottler.h>
-#include <vespa/storage/storageserver/opslogger.h>
-#include <vespa/storage/storageserver/statemanager.h>
-#include <vespa/storage/storageserver/statereporter.h>
-#include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storage/storageutil/functor.h>
 #include <vespa/storage/storageutil/log.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storage/visiting/messagebusvisitormessagesession.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/metrics/metricmanager.h>
 #include <fstream>
 #include <sstream>

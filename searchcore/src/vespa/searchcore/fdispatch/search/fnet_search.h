@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/fnet/fnet.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchcore/fdispatch/common/search.h>

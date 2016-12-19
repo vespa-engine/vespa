@@ -15,7 +15,6 @@
 #pragma once
 
 #include <vespa/document/util/printable.h>
-#include <vespa/fastos/fastos.h>
 
 namespace document {
 

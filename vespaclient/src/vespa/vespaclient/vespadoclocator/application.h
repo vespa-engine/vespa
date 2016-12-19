@@ -2,6 +2,7 @@
 #pragma once
 
 #include "locator.h"
+#include <vespa/fastos/app.h>
 
 class Application : public FastOS_Application {
 private:

@@ -8,7 +8,6 @@
  */
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/vdstestlib/cppunit/macros.h>

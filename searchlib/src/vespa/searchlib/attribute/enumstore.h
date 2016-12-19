@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include "enumstorebase.h"
 #include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/util/buffer.h>

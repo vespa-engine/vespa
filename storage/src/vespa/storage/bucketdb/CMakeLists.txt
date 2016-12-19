@@ -11,6 +11,7 @@ vespa_add_library(storage_bucketdb OBJECT
     lockablemap.cpp
     storagebucketdbinitializer.cpp
     storbucketdb.cpp
+    bucketmanagermetrics.cpp
     DEPENDS
     AFTER
     storage_storageconfig

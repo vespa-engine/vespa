@@ -2,15 +2,11 @@
 
 #pragma once
 
-namespace vespalib
-{
+class FastOS_FileInterface;
 
-class nbostream;
+namespace vespalib { class nbostream; }
 
-}
-
-namespace search
-{
+namespace search {
 
 class FileAlign
 {

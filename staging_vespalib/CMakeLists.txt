@@ -12,7 +12,6 @@ vespa_define_module(
     src/tests/benchmark
     src/tests/bits
     src/tests/clock
-    src/tests/cpu
     src/tests/crc
     src/tests/databuffer
     src/tests/directio

@@ -13,14 +13,13 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vespalib/util/noncopyable.hpp>
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/fastos/file.h>
 
 /**
  * Provides buffered file access.
  */
-class Fast_BufferedFile : public FastOS_FileInterface, public vespalib::noncopyable
+class Fast_BufferedFile : public FastOS_FileInterface
 {
 private:
     using Alloc = vespalib::alloc::Alloc;
@@ -56,6 +55,8 @@ public:
     Fast_BufferedFile(FastOS_FileInterface *file);
     Fast_BufferedFile();
     Fast_BufferedFile(size_t bufferSize);
+    Fast_BufferedFile(const Fast_BufferedFile &) = delete;
+    Fast_BufferedFile & operator = (const Fast_BufferedFile &) = delete;
 
     /**
      * Delete the file instance used for low-level file access.

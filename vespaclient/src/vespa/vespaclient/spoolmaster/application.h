@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <vespa/fastos/fastos.h>
 
 namespace spoolmaster {
 /**

@@ -2,7 +2,6 @@ tests/array
 tests/benchmark
 tests/bits
 tests/clock
-tests/cpu
 tests/crc
 tests/databuffer
 tests/directio

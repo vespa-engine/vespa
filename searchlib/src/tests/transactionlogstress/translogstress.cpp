@@ -6,6 +6,7 @@
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/fastos/app.h>
 #include <iostream>
 #include <stdexcept>
 

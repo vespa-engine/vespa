@@ -7,7 +7,6 @@
 #include <iosfwd>
 #include <iterator>
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/fastos/types.h>
 #include <vespa/fnet/frt/frt.h>
 

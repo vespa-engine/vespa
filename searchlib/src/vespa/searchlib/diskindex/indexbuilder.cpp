@@ -7,6 +7,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/error.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.indexbuilder");

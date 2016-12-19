@@ -12,10 +12,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/log/log.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".state.manager");
 
 namespace storage {
@@ -388,8 +389,8 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
             && (*cmd->getExpectedState() == *_nodeState || sentReply))
         {
             LOG(debug, "Received get node state request with timeout of "
-                       "%" PRIu32 " milliseconds. Scheduling to be answered in "
-                       "%" PRIu32 " milliseconds unless a node state change "
+                       "%u milliseconds. Scheduling to be answered in "
+                       "%u milliseconds unless a node state change "
                        "happens before that time.",
                 cmd->getTimeout(), cmd->getTimeout() * 800 / 1000);
             TimeStatePair pair(
@@ -473,7 +474,7 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime,
             if (node != 0xffff && node != it->second->getSourceIndex()) {
                 ++it;
             } else if (!olderThanTime.isSet() || it->first < olderThanTime) {
-                LOG(debug, "Sending reply to msg with id %" PRIu64,
+                LOG(debug, "Sending reply to msg with id %lu",
                     it->second->getMsgId());
 
                 std::shared_ptr<api::GetNodeStateReply> reply(

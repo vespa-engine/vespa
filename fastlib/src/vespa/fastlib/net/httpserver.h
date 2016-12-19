@@ -18,13 +18,16 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/fastlib/io/inputstream.h>
 #include <vespa/fastlib/io/outputstream.h>
 #include <vespa/fastlib/net/socket.h>
 #include <vespa/fastlib/util/bag.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/fastos/thread.h>
+#include <vespa/fastos/cond.h>
+#include <vespa/fastos/serversocket.h>
 
+class FastOS_FileInterface;
 class Fast_HTTPServer;
 
 #define FASTLIB_SUCCESS (0)
@@ -92,7 +95,7 @@ private:
     void Run (FastOS_ThreadInterface *thisThread, void *params);
     void Output(const char *outputString);
     void OutputData(const void *data, size_t len);
-    void OutputFile(FastOS_File *file);
+    void OutputFile(FastOS_FileInterface *file);
 
     const Fast_InputStream *GetInputStream() const {return _input;}
     Fast_InputStream *GetInputStream() {return _input;}

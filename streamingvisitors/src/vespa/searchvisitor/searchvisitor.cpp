@@ -26,8 +26,9 @@
 #include <vespa/vsm/vsm/docsumfilter.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/log/log.h>
+#include <vespa/vespalib/util/exceptions.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
 
 namespace storage {

@@ -10,6 +10,7 @@
 #include <vespa/storage/common/bucketoperationlogger.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.thread");
 

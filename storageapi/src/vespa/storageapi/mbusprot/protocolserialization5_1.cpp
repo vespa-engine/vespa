@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageapi/mbusprot/protocolserialization5_1.h>
+#include "protocolserialization5_1.h"
+#include "serializationhelper.h"
+#include "storagecommand.h"
+#include "storagereply.h"
+#include "storageprotocol.h"
 
-#include <vespa/log/log.h>
 #include <vespa/messagebus/blob.h>
 #include <vespa/messagebus/blobref.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
@@ -11,15 +13,9 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/multioperation.h>
-#include <vespa/storageapi/mbusprot/serializationhelper.h>
-#include <vespa/storageapi/mbusprot/storagecommand.h>
-#include <vespa/storageapi/mbusprot/storagereply.h>
-#include <vespa/storageapi/mbusprot/storageprotocol.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/document/select/orderingspecification.h>
 #include <vespa/storageapi/messageapi/returncode.h>
-
-LOG_SETUP(".storage.api.mbusprot.serialization.5_1");
 
 namespace storage {
 namespace mbusprot {

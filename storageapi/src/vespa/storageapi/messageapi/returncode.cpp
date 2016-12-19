@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/storageapi/messageapi/returncode.h>
+#include "returncode.h"
 #include <vespa/messagebus/errorcode.h>
 
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/fnet/frt/error.h>
-#include <iostream>
-#include <vector>
+#include <ostream>
 
 namespace storage {
 namespace api {

@@ -1,10 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "docsumcontext.h"
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/transport.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.docsumcontext");
 

@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
-#include <vespa/log/log.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
@@ -20,10 +18,12 @@
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vector>
 #include <thread>
 #include <chrono>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".visitortest");
 
 using namespace std::chrono_literals;

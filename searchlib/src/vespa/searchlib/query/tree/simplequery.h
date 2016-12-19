@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <vespa/fastos/fastos.h>
 #include "intermediatenodes.h"
 #include "termnodes.h"
 
