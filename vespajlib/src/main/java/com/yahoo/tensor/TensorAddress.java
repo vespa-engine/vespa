@@ -20,27 +20,27 @@ import java.util.Set;
  * @author bratseth
  */
 @Beta
-public interface TensorAddress extends Comparable<TensorAddress> {
+public abstract class TensorAddress implements Comparable<TensorAddress> {
 
-    TensorAddress empty = new TensorAddress.Builder(TensorType.empty).build();
+    public static final TensorAddress empty = new TensorAddress.Builder(TensorType.empty).build();
 
-    static TensorAddress of(String[] labels) {
+    public static TensorAddress of(String[] labels) {
         return new StringTensorAddress(labels);
     }
 
-    static TensorAddress of(int ... labels) {
+    public static TensorAddress of(int ... labels) {
         return new IntTensorAddress(labels);
     }
 
     /** Returns the number of labels in this */
-    int size();
+    public abstract int size();
     
     /**
      * Returns the i'th label in this 
      * 
      * @throws IllegalArgumentException if there is no label at this index
      */
-    String label(int i);
+    public abstract String label(int i);
 
     /**
      * Returns the i'th label in this as an int.
@@ -48,12 +48,42 @@ public interface TensorAddress extends Comparable<TensorAddress> {
      *
      * @throws IllegalArgumentException if there is no label at this index
      */
-    int intLabel(int i);
+    public abstract int intLabel(int i);
 
-    default boolean isEmpty() { return size() == 0; }
+    public final boolean isEmpty() { return size() == 0; }
+
+    @Override
+    public int compareTo(TensorAddress other) {
+        // TODO: Formal issue (only): Ordering with different address sizes
+        for (int i = 0; i < size(); i++) {
+            int elementComparison = this.label(i).compareTo(other.label(i));
+            if (elementComparison != 0) return elementComparison;
+        }
+        return 0;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 1;
+        for (int i = 0; i < size(); i++)
+            result = 31 * result + label(i).hashCode();
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if ( ! (o instanceof TensorAddress)) return false;
+        TensorAddress other = (TensorAddress)o;
+        if (other.size() != this.size()) return false;
+        for (int i = 0; i < this.size(); i++)
+            if ( ! this.label(i).equals(other.label(i)))
+                return false;
+        return true;
+    }
 
     /** Returns this as a string on the appropriate form given the type */
-    default String toString(TensorType type) {
+    public final String toString(TensorType type) {
         StringBuilder b = new StringBuilder("{");
         for (int i = 0; i < size(); i++) {
             b.append(type.dimensions().get(i).name()).append(":").append(label(i));
@@ -65,7 +95,7 @@ public interface TensorAddress extends Comparable<TensorAddress> {
         return b.toString();
     }
 
-    final class StringTensorAddress implements TensorAddress {
+    private static final class StringTensorAddress extends TensorAddress {
 
         private final String[] labels;
 
@@ -90,43 +120,13 @@ public interface TensorAddress extends Comparable<TensorAddress> {
         }
 
         @Override
-        public int compareTo(TensorAddress other) {
-            // TODO: Formal issue (only): Ordering with different address sizes
-            for (int i = 0; i < size(); i++) {
-                int elementComparison = this.label(i).compareTo(other.label(i));
-                if (elementComparison != 0) return elementComparison;
-            }
-            return 0;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = 1;
-            for (int i = 0; i < labels.length; i++)
-                result = 31 * result + label(i).hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            if ( ! (o instanceof TensorAddress)) return false;
-            TensorAddress other = (TensorAddress)o;
-            if (other.size() != this.size()) return false;
-            for (int i = 0; i < this.size(); i++)
-                if ( ! this.label(i).equals(other.label(i)))
-                    return false;
-            return true;
-        }
-
-        @Override
         public String toString() {
             return Arrays.toString(labels);
         }
 
     }
 
-    final class IntTensorAddress implements TensorAddress {
+    private static final class IntTensorAddress extends TensorAddress {
 
         private final int[] labels;
 
@@ -144,36 +144,6 @@ public interface TensorAddress extends Comparable<TensorAddress> {
         public int intLabel(int i) { return labels[i]; }
 
         @Override
-        public int compareTo(TensorAddress other) {
-            // TODO: Formal issue (only): Ordering with different address sizes
-            for (int i = 0; i < size(); i++) {
-                int elementComparison = this.label(i).compareTo(other.label(i));
-                if (elementComparison != 0) return elementComparison;
-            }
-            return 0;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = 1;
-            for (int i = 0; i < labels.length; i++)
-                result = 31 * result + label(i).hashCode();
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            if ( ! (o instanceof TensorAddress)) return false;
-            TensorAddress other = (TensorAddress)o;
-            if (other.size() != this.size()) return false;
-            for (int i = 0; i < this.size(); i++)
-                if ( ! this.label(i).equals(other.label(i)))
-                    return false;
-            return true;
-        }
-
-        @Override
         public String toString() {
             return Arrays.toString(labels);
         }
@@ -181,7 +151,7 @@ public interface TensorAddress extends Comparable<TensorAddress> {
     }
 
     /** Supports building of a tensor address */
-    class Builder {
+    public static class Builder {
 
         private final TensorType type;
         private final String[] labels;
