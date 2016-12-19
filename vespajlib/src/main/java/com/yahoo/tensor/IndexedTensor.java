@@ -116,11 +116,11 @@ public class IndexedTensor implements Tensor {
 
     // TODO: Change to get
     private static int toValueIndex(TensorAddress address, int[] dimensionSizes) {
-        if (address.labels().isEmpty()) return 0;
+        if (address.isEmpty()) return 0;
 
         int valueIndex = 0;
-        for (int i = 0; i < address.labels().size(); i++)
-            valueIndex += productOfDimensionsAfter(i, dimensionSizes) * Integer.parseInt(address.labels().get(i));
+        for (int i = 0; i < address.size(); i++)
+            valueIndex += productOfDimensionsAfter(i, dimensionSizes) * Integer.parseInt(address.label(i));
         return valueIndex;
     }
 
@@ -349,13 +349,13 @@ public class IndexedTensor implements Tensor {
 
         @Override
         public Builder cell(TensorAddress address, double value) {
-            int[] indexes = new int[address.labels().size()];
-            for (int i = 0; i < address.labels().size(); i++) {
+            int[] indexes = new int[address.size()];
+            for (int i = 0; i < address.size(); i++) {
                 try {
-                    indexes[i] = Integer.parseInt(address.labels().get(i));
+                    indexes[i] = Integer.parseInt(address.label(i));
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException("Labels in an indexed tensor must be integers, not '" +
-                                                       address.labels().get(i) + "'");
+                                                       address.label(i) + "'");
                 }
             }
             cell(value, indexes);
@@ -636,7 +636,7 @@ public class IndexedTensor implements Tensor {
         /** Returns the address of the current position of these indexes */
         private TensorAddress toAddress() {
             // TODO: We may avoid the array copy by issuing a one-time-use address?
-            return new TensorAddress(indexes);
+            return TensorAddress.of(indexes);
         }
         
         private int[] indexesCopy() {

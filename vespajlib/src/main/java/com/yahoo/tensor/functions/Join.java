@@ -185,8 +185,8 @@ public class Join extends PrimitiveTensorFunction {
     private TensorAddress mapAddressToSubspace(TensorAddress superAddress, int[] subspaceIndexes) {
         String[] subspaceLabels = new String[subspaceIndexes.length];
         for (int i = 0; i < subspaceIndexes.length; i++)
-            subspaceLabels[i] = superAddress.labels().get(subspaceIndexes[i]);
-        return new TensorAddress(subspaceLabels);
+            subspaceLabels[i] = superAddress.label(subspaceIndexes[i]);
+        return TensorAddress.of(subspaceLabels);
     }
 
     /** Slow join which works for any two tensors */
@@ -224,10 +224,10 @@ public class Join extends PrimitiveTensorFunction {
     private TensorAddress combineAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes, 
                                            TensorType joinedType) {
         String[] joinedLabels = new String[joinedType.dimensions().size()];
-        mapContent(a.labels(), joinedLabels, aToIndexes);
-        boolean compatible = mapContent(b.labels(), joinedLabels, bToIndexes);
+        mapContent(a, joinedLabels, aToIndexes);
+        boolean compatible = mapContent(b, joinedLabels, bToIndexes);
         if ( ! compatible) return null;
-        return new TensorAddress(joinedLabels);
+        return TensorAddress.of(joinedLabels);
     }
 
     /** 
@@ -236,11 +236,11 @@ public class Join extends PrimitiveTensorFunction {
      * @return true if the mapping was successful, false if one of the destination positions was
      *         occupied by a different value
      */
-    private boolean mapContent(List<String> from, String[] to, int[] indexMap) {
+    private boolean mapContent(TensorAddress from, String[] to, int[] indexMap) {
         for (int i = 0; i < from.size(); i++) {
             int toIndex = indexMap[i];
-            if (to[toIndex] != null && ! to[toIndex].equals(from.get(i))) return false;
-            to[toIndex] = from.get(i);
+            if (to[toIndex] != null && ! to[toIndex].equals(from.label(i))) return false;
+            to[toIndex] = from.label(i);
         }
         return true;
     }

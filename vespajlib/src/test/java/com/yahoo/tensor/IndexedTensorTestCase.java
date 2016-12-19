@@ -108,7 +108,7 @@ public class IndexedTensorTestCase {
                 for (int y = 0; y < ySize; y++)
                     for (int x = xSize - 1; x >= 0; x--)
                         for (int z = 0; z < zSize; z++)
-                            assertEquals(value(v, w, x, y, z), (int) tensor.get(new TensorAddress(v, w, x, y, z)));
+                            assertEquals(value(v, w, x, y, z), (int) tensor.get(TensorAddress.of(v, w, x, y, z)));
         
         // Lookup from cells
         Map<TensorAddress, Double> cells = tensor.cells();
@@ -118,7 +118,7 @@ public class IndexedTensorTestCase {
                 for (int y = 0; y < ySize; y++)
                     for (int x = xSize - 1; x >= 0; x--)
                         for (int z = 0; z < zSize; z++)
-                            assertEquals(value(v, w, x, y, z), cells.get(new TensorAddress(v, w, x, y, z)).intValue());
+                            assertEquals(value(v, w, x, y, z), cells.get(TensorAddress.of(v, w, x, y, z)).intValue());
 
         // Lookup from iterator
         Map<TensorAddress, Double> cellsOfIterator = new HashMap<>();
@@ -132,7 +132,7 @@ public class IndexedTensorTestCase {
                 for (int y = 0; y < ySize; y++)
                     for (int x = xSize - 1; x >= 0; x--)
                         for (int z = 0; z < zSize; z++)
-                            assertEquals(value(v, w, x, y, z), cellsOfIterator.get(new TensorAddress(v, w, x, y, z)).intValue());
+                            assertEquals(value(v, w, x, y, z), cellsOfIterator.get(TensorAddress.of(v, w, x, y, z)).intValue());
 
     }
 

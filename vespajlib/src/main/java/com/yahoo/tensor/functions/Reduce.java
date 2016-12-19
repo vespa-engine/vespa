@@ -132,10 +132,10 @@ public class Reduce extends PrimitiveTensorFunction {
 
         String[] reducedLabels = new String[reducedType.dimensions().size()];
         int reducedLabelIndex = 0;
-        for (int i = 0; i < address.labels().size(); i++)
+        for (int i = 0; i < address.size(); i++)
             if ( ! indexesToRemove.contains(i))
-                reducedLabels[reducedLabelIndex++] = address.labels().get(i);
-        return new TensorAddress(reducedLabels);
+                reducedLabels[reducedLabelIndex++] = address.label(i);
+        return TensorAddress.of(reducedLabels);
     }
     
     private Tensor reduceAllGeneral(Tensor argument) {
