@@ -89,8 +89,8 @@ public class Rename extends PrimitiveTensorFunction {
     private TensorAddress rename(TensorAddress address, int[] toIndexes) {
         String[] reorderedLabels = new String[toIndexes.length];
         for (int i = 0; i < toIndexes.length; i++)
-            reorderedLabels[toIndexes[i]] = address.label(i);
-        return TensorAddress.of(reorderedLabels);
+            reorderedLabels[toIndexes[i]] = address.labels().get(i);
+        return new TensorAddress(reorderedLabels);
     }
 
     @Override

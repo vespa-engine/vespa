@@ -53,9 +53,6 @@ public class TensorType {
         return TensorTypeParser.fromSpec(specString);
     }
 
-    /** Returns true if all dimensions of this are indexed */
-    public boolean isIndexed() { return dimensions().stream().allMatch(d -> d.isIndexed()); }
-    
     private static final boolean supportsMixedTypes = false;
     
     /** 
@@ -179,7 +176,7 @@ public class TensorType {
             // both are indexed bound
             IndexedBoundDimension thisIb = (IndexedBoundDimension)this;
             IndexedBoundDimension otherIb = (IndexedBoundDimension)other.get();
-            return thisIb.size().get() < otherIb.size().get() ? thisIb : otherIb;
+            return thisIb.size().get() > otherIb.size().get() ? thisIb : otherIb;
         }
         
         @Override

@@ -23,9 +23,16 @@ public class TensorValue extends Value {
 
     /** The tensor value of this */
     private final Tensor value;
-    
+    private final Optional<TensorType> type;
+
     public TensorValue(Tensor value) {
         this.value = value;
+        this.type = Optional.empty();
+    }
+
+    public TensorValue(Tensor value, TensorType type) {
+        this.value = value;
+        this.type = Optional.of(type);
     }
 
     @Override
@@ -90,6 +97,10 @@ public class TensorValue extends Value {
 
     public Tensor asTensor() { return value; }
 
+    public Optional<TensorType> getType() {
+        return type;
+    }
+
     @Override
     public Value compare(TruthOperator operator, Value argument) {
         return new TensorValue(compareTensor(operator, asTensor(argument, operator.toString())));
@@ -139,13 +150,18 @@ public class TensorValue extends Value {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TensorValue other = (TensorValue) o;
-        return value.equals(other.value);
+        TensorValue that = (TensorValue) o;
+
+        if (!type.equals(that.type)) return false;
+        if (!value.equals(that.value)) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        int result = value.hashCode();
+        result = 31 * result + type.hashCode();
+        return result;
     }
-
 }
