@@ -79,15 +79,11 @@ public class TensorTestCase {
     @Test
     public void testOptimizedComputation() {
         assertEquals("Mapped vector",          42, (int)dotProduct(vector(Type.mapped), vectors(Type.mapped, 2)));
-        assertEquals("Indexed unbound vector", 42, (int)dotProduct(vector(3, Type.indexedUnbound), vectors(5, Type.indexedUnbound, 2)));
-        assertEquals("Indexed unbound vector", 42, (int)dotProduct(vector(5, Type.indexedUnbound), vectors(3, Type.indexedUnbound, 2)));
-        assertEquals("Indexed bound vector",   42, (int)dotProduct(vector(3, Type.indexedBound), vectors(5, Type.indexedBound, 2)));
-        assertEquals("Indexed bound vector",   42, (int)dotProduct(vector(5, Type.indexedBound), vectors(3, Type.indexedBound, 2)));
+        assertEquals("Indexed unbound vector", 42, (int)dotProduct(vector(Type.indexedUnbound), vectors(Type.indexedUnbound, 2)));
+        assertEquals("Indexed bound vector",   42, (int)dotProduct(vector(Type.indexedBound), vectors(Type.indexedBound, 2)));
         assertEquals("Mapped matrix",          42, (int)dotProduct(vector(Type.mapped), matrix(Type.mapped, 2)));
-        assertEquals("Indexed unbound matrix", 42, (int)dotProduct(vector(3, Type.indexedUnbound), matrix(5, Type.indexedUnbound, 2)));
-        assertEquals("Indexed unbound matrix", 42, (int)dotProduct(vector(5, Type.indexedUnbound), matrix(3, Type.indexedUnbound, 2)));
-        assertEquals("Indexed bound matrix",   42, (int)dotProduct(vector(3, Type.indexedBound), matrix(5, Type.indexedBound, 2)));
-        assertEquals("Indexed bound matrix",   42, (int)dotProduct(vector(5, Type.indexedBound), matrix(3, Type.indexedBound, 2)));
+        assertEquals("Indexed unbound matrix", 42, (int)dotProduct(vector(Type.indexedUnbound), matrix(Type.indexedUnbound, 2)));
+        assertEquals("Indexed bound matrix",   42, (int)dotProduct(vector(Type.indexedBound), matrix(Type.indexedBound, 2)));
         assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
         assertEquals("Mixed vector",           42, (int)dotProduct(vector(Type.mapped), vectors(Type.indexedUnbound, 2)));
         assertEquals("Mixed matrix",           42, (int)dotProduct(vector(Type.mapped), matrix(Type.indexedUnbound, 2)));
@@ -104,7 +100,7 @@ public class TensorTestCase {
         Tensor matrixInKSpace = matrix(Type.mapped, 2).get(0).multiply(unitK);
         assertEquals("Generic computation implementation", 42, (int)dotProduct(vectorInJSpace, Collections.singletonList(matrixInKSpace)));
     }
-    
+
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
         double sum = 0;
         TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor),
@@ -123,17 +119,10 @@ public class TensorTestCase {
     private Tensor vector(TensorType.Dimension.Type dimensionType) {
         return vectors(dimensionType, 1).get(0);
     }
-
-    private Tensor vector(int vectorSize, TensorType.Dimension.Type dimensionType) {
-        return vectors(vectorSize, dimensionType, 1).get(0);
-    }
     
     /** Create a list of vectors having a single dimension x */
     private List<Tensor> vectors(TensorType.Dimension.Type dimensionType, int vectorCount) {
-        return vectors(3, dimensionType, vectorCount);
-    }
-
-    private List<Tensor> vectors(int vectorSize, TensorType.Dimension.Type dimensionType, int vectorCount) {
+        int vectorSize = 3;
         List<Tensor> tensors = new ArrayList<>();
         TensorType type = vectorType(new TensorType.Builder(), "x", dimensionType, vectorSize);
         for (int i = 0; i < vectorCount; i++) {
@@ -151,10 +140,7 @@ public class TensorTestCase {
      * This matrix contains the same vectors as returned by createVectors, in a single list element for convenience.
      */
     private List<Tensor> matrix(TensorType.Dimension.Type dimensionType, int vectorCount) {
-        return matrix(3, dimensionType, vectorCount);
-    }
-
-    private List<Tensor> matrix(int vectorSize, TensorType.Dimension.Type dimensionType, int vectorCount) {
+        int vectorSize = 3;
         TensorType.Builder typeBuilder = new TensorType.Builder();
         typeBuilder.dimension("i", dimensionType == Type.indexedBound ? Type.indexedUnbound : dimensionType);
         vectorType(typeBuilder, "x", dimensionType, vectorSize);

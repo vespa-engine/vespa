@@ -73,6 +73,8 @@ public interface Tensor {
         if (type().dimensions().size() > 0)
             throw new IllegalStateException("This tensor is not dimensionless. Dimensions: " + type().dimensions().size());
         if (size() == 0) return Double.NaN;
+        if (size() > 1)
+            throw new IllegalStateException("This tensor does not have a single value, it has " + size());
         return valueIterator().next();
     }
     
@@ -211,7 +213,9 @@ public interface Tensor {
 
     /** Returns true if the two given tensors are mathematically equivalent, that is whether both have the same content */
     static boolean equals(Tensor a, Tensor b) {
-        return a == b || a.cells().equals(b.cells());
+        if (a == b) return true;
+        if ( ! a.cells().equals(b.cells())) return false;
+        return true;
     }
 
     // ----------------- Factories
@@ -246,8 +250,9 @@ public interface Tensor {
     }
     
     interface Builder {
-
+        
         /** Creates a suitable builder for the given type */
+        // TODO: Create version of this which takes size info and use it when possible
         static Builder of(TensorType type) {
             boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
@@ -258,19 +263,7 @@ public interface Tensor {
             else // indexed or empty
                 return IndexedTensor.Builder.of(type);
         }
-
-        /** Creates a suitable builder for the given type */
-        static Builder of(TensorType type, int[] dimensionSizes) {
-            boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
-            boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
-            if (containsIndexed && containsMapped)
-                throw new IllegalArgumentException("Combining indexed and mapped dimensions is not supported yet");
-            if (containsMapped)
-                return MappedTensor.Builder.of(type);
-            else // indexed or empty
-                return IndexedTensor.Builder.of(type, dimensionSizes);
-        }
-
+        
         /** Returns the type this is building */
         TensorType type();
         

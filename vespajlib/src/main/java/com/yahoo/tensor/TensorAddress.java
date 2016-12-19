@@ -20,134 +20,61 @@ import java.util.Set;
  * @author bratseth
  */
 @Beta
-public abstract class TensorAddress implements Comparable<TensorAddress> {
+public final class TensorAddress implements Comparable<TensorAddress> {
 
     public static final TensorAddress empty = new TensorAddress.Builder(TensorType.empty).build();
 
-    public static TensorAddress of(String[] labels) {
-        return new StringTensorAddress(labels);
+    private final ImmutableList<String> labels;
+
+    public TensorAddress(String ... labels) {
+        this.labels = ImmutableList.copyOf(labels);
     }
 
-    public static TensorAddress of(int ... labels) {
-        return new IntTensorAddress(labels);
+    public TensorAddress(int ... labels) {
+        ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
+        for (int label : labels)
+            builder.add(String.valueOf(label));
+        this.labels = builder.build();
     }
 
-    /** Returns the number of labels in this */
-    public abstract int size();
-    
-    /**
-     * Returns the i'th label in this 
-     * 
-     * @throws IllegalArgumentException if there is no label at this index
-     */
-    public abstract String label(int i);
-
-    /**
-     * Returns the i'th label in this as an int.
-     * Prefer this if you know that this is an integer address, but not otherwise.
-     *
-     * @throws IllegalArgumentException if there is no label at this index
-     */
-    public abstract int intLabel(int i);
-
-    public final boolean isEmpty() { return size() == 0; }
+    /** Returns the labels of this as an immutable list in the order of the dimensions of the tensor type of this */
+    public List<String> labels() { return labels; }
 
     @Override
     public int compareTo(TensorAddress other) {
-        // TODO: Formal issue (only): Ordering with different address sizes
-        for (int i = 0; i < size(); i++) {
-            int elementComparison = this.label(i).compareTo(other.label(i));
+        for (int i = 0; i < labels.size(); i++) {
+            int elementComparison = this.labels.get(i).compareTo(other.labels.get(i));
             if (elementComparison != 0) return elementComparison;
         }
         return 0;
     }
 
     @Override
-    public int hashCode() {
-        int result = 1;
-        for (int i = 0; i < size(); i++)
-            result = 31 * result + label(i).hashCode();
-        return result;
+    public int hashCode() { return labels.hashCode(); }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof TensorAddress)) return false;
+        return ((TensorAddress)other).labels.equals(this.labels);
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof TensorAddress)) return false;
-        TensorAddress other = (TensorAddress)o;
-        if (other.size() != this.size()) return false;
-        for (int i = 0; i < this.size(); i++)
-            if ( ! this.label(i).equals(other.label(i)))
-                return false;
-        return true;
+    public String toString() {
+        return labels.toString();
     }
 
-    /** Returns this as a string on the appropriate form given the type */
-    public final String toString(TensorType type) {
+    /** Returns this on the appropriate form given the type */
+    public String toString(TensorType type) {
         StringBuilder b = new StringBuilder("{");
-        for (int i = 0; i < size(); i++) {
-            b.append(type.dimensions().get(i).name()).append(":").append(label(i));
+        for (int i = 0; i < labels.size(); i++) {
+            b.append(type.dimensions().get(i).name()).append(":").append(labels.get(i));
             b.append(",");
         }
         if (b.length() > 1)
             b.setLength(b.length() - 1);
         b.append("}");
         return b.toString();
-    }
-
-    private static final class StringTensorAddress extends TensorAddress {
-
-        private final String[] labels;
-
-        private StringTensorAddress(String ... labels) {
-            this.labels = Arrays.copyOf(labels, labels.length);
-        }
-        
-        @Override
-        public int size() { return labels.length; }
-        
-        @Override
-        public String label(int i) { return labels[i]; }
-        
-        @Override
-        public int intLabel(int i) { 
-            try {
-                return Integer.parseInt(labels[i]);
-            } 
-            catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Expected an int label in " + this + " at position " + i);
-            }
-        }
-
-        @Override
-        public String toString() {
-            return Arrays.toString(labels);
-        }
-
-    }
-
-    private static final class IntTensorAddress extends TensorAddress {
-
-        private final int[] labels;
-
-        private IntTensorAddress(int ... labels) {
-            this.labels = Arrays.copyOf(labels, labels.length);
-        }
-
-        @Override
-        public int size() { return labels.length; }
-
-        @Override
-        public String label(int i) { return String.valueOf(labels[i]); }
-
-        @Override
-        public int intLabel(int i) { return labels[i]; }
-
-        @Override
-        public String toString() {
-            return Arrays.toString(labels);
-        }
-
     }
 
     /** Supports building of a tensor address */
@@ -190,7 +117,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
                 if (labels[i] == null)
                     throw new IllegalArgumentException("Missing a value for dimension " + 
                                                        type.dimensions().get(i).name() + " for " + type);
-            return TensorAddress.of(labels);
+            return new TensorAddress(labels);
         }
 
     }

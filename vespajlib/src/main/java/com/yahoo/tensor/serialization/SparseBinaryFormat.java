@@ -48,8 +48,9 @@ class SparseBinaryFormat implements BinaryFormat {
     }
 
     private static void encodeAddress(GrowableByteBuffer buffer, TensorAddress address) {
-        for (int i = 0; i < address.size(); i++)
-            encodeString(buffer, address.label(i));
+        for (String label : address.labels()) {
+            encodeString(buffer, label);
+        }
     }
 
     private static void encodeString(GrowableByteBuffer buffer, String value) {
