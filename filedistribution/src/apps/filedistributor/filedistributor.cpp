@@ -309,7 +309,7 @@ FileDistributorApplication::Main() {
         return 7;
     } catch(const config::InvalidConfigException & e) {
         EV_STOPPING(programName, e.what());
-        return 4;
+        return 8;
     } catch(const ZKGenericException & e) {
         EV_STOPPING(programName, e.what());
         return 99;
