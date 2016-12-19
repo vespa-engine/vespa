@@ -281,8 +281,8 @@ public class DockerImpl implements Docker {
             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
             statsCallback.awaitCompletion(10, TimeUnit.SECONDS);
 
-            return Optional.of(new ContainerStatsImpl(statsCallback.stats.getNetworks(), statsCallback.stats.getCpuStats(),
-                    statsCallback.stats.getMemoryStats(), statsCallback.stats.getBlkioStats()));
+            return statsCallback.stats.map(stats -> new ContainerStatsImpl(
+                    stats.getNetworks(), stats.getCpuStats(), stats.getMemoryStats(), stats.getBlkioStats()));
         } catch (NotFoundException ignored) {
             return Optional.empty();
         } catch (DockerException | InterruptedException e) {
@@ -448,12 +448,12 @@ public class DockerImpl implements Docker {
     }
 
     private class DockerStatsCallback extends ResultCallbackTemplate<DockerStatsCallback, Statistics> {
-        private Statistics stats;
+        private Optional<Statistics> stats = Optional.empty();
 
         @Override
         public void onNext(Statistics stats) {
             if (stats != null) {
-                this.stats = stats;
+                this.stats = Optional.of(stats);
                 onComplete();
             }
         }
