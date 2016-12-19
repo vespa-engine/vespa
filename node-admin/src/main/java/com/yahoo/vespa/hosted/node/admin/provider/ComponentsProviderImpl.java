@@ -75,7 +75,10 @@ public class ComponentsProviderImpl implements ComponentsProvider {
                 new Environment(),
                 config.isRunningLocally() ? Optional.empty() : Optional.of(new StorageMaintainer(new Environment())));
 
-        if (! config.isRunningLocally()) initializeNodeAgentSecretAgent(docker);
+        if (! config.isRunningLocally()) {
+            setCorePattern(docker);
+            initializeNodeAgentSecretAgent(docker);
+        }
     }
 
     @Override
@@ -88,6 +91,11 @@ public class ComponentsProviderImpl implements ComponentsProvider {
         return metricReceiverWrapper;
     }
 
+
+    private void setCorePattern(Docker docker) {
+        ContainerName nodeAdminName = new ContainerName("node-admin");
+        docker.executeInContainer(nodeAdminName, Defaults.getDefaults().underVespaHome("bin/vespa-yinst-post-activate.sh"));
+    }
 
     private void initializeNodeAgentSecretAgent(Docker docker) {
         final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
