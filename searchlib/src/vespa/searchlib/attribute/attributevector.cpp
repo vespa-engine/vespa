@@ -1,29 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "attributevector.h"
 #include "attributevector.hpp"
-#include <vespa/searchlib/attribute/attributefilesavetarget.h>
-#include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/attributeiterators.h>
+#include "attributeiterators.hpp"
+#include "attributefilesavetarget.h"
+#include "stringbase.h"
+#include "floatbase.h"
+#include "interlock.h"
+#include "attributesaver.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/util/filekit.h>
-#include <vespa/searchlib/util/filesizecalculator.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/error.h>
-#include <vespa/vespalib/data/fileheader.h>
-#include <functional>
-#include <stdexcept>
 #include "ipostinglistsearchcontext.h"
 #include "ipostinglistattributebase.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
-#include "interlock.h"
-#include "attributesaver.h"
 #include <vespa/document/update/mapvalueupdate.h>
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/query/query.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");
@@ -43,28 +36,9 @@ namespace {
 const vespalib::string enumeratedTag = "enumerated";
 const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
-const vespalib::string createSerialNumTag = "createSerialNum";
-const vespalib::string versionTag = "version";
 const vespalib::string docIdLimitTag = "docIdLimit";
 
-bool allowEnumeratedLoad = true;
-const size_t DIRECTIO_ALIGNMENT(4096);
-
-bool
-isEnumerated(const vespalib::GenericHeader &header)
-{
-    return header.hasTag(enumeratedTag) &&
-        header.getTag(enumeratedTag).asInteger() != 0;
-}
-
-uint64_t
-extractCreateSerialNum(const vespalib::GenericHeader &header)
-{
-    if (header.hasTag(createSerialNumTag))
-        return header.getTag(createSerialNumTag).asInteger();
-    else
-        return 0u;
-}
+constexpr size_t DIRECTIO_ALIGNMENT(4096);
 
 template <typename T>
 struct FuncMax : public std::binary_function<T, T, T> {
@@ -162,26 +136,22 @@ AttributeVector::BaseName::getDirName() const
 
 AttributeVector::ValueModifier::ValueModifier(AttributeVector &attr)
     : _attr(&attr)
-{
-}
+{ }
 
 
 AttributeVector::ValueModifier::ValueModifier(const ValueModifier &rhs)
     : _attr(rhs.stealAttr())
-{
-}
+{ }
 
 
-AttributeVector::ValueModifier::~ValueModifier()
-{
+AttributeVector::ValueModifier::~ValueModifier() {
     if (_attr) {
         _attr->incGeneration();
     }
 }
 
 
-AttributeVector::AttributeVector(const vespalib::stringref &baseFileName,
-                                 const Config &c)
+AttributeVector::AttributeVector(const vespalib::stringref &baseFileName, const Config &c)
     : _baseFileName(baseFileName),
       _config(c),
       _interlock(std::make_shared<attribute::Interlock>()),
@@ -204,16 +174,12 @@ AttributeVector::AttributeVector(const vespalib::stringref &baseFileName,
       _hasSortedEnum(false),
       _loaded(false),
       _enableEnumeratedSave(false)
-{
-}
+{ }
 
 
-AttributeVector::~AttributeVector()
-{
-}
+AttributeVector::~AttributeVector() { }
 
-void AttributeVector::updateStat(bool force)
-{
+void AttributeVector::updateStat(bool force) {
     if (force) {
         onUpdateStat();
     } else if (_nextStatUpdateTime < fastos::ClockSystem::now()) {
@@ -223,6 +189,18 @@ void AttributeVector::updateStat(bool force)
     }
 }
 
+size_t AttributeVector::getFixedWidth() const { return _config.basicType().fixedSize(); }
+bool AttributeVector::hasEnum() const { return _hasEnum; }
+bool AttributeVector::hasEnum2Value() const { return false; }
+uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount; }
+uint32_t AttributeVector::getNumDocs(void) const { return _status.getNumDocs(); }
+
+bool
+AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
+{
+    return header.hasTag(enumeratedTag) &&
+           header.getTag(enumeratedTag).asInteger() != 0;
+}
 
 void
 AttributeVector::commit(bool forceUpdateStat)
@@ -307,6 +285,16 @@ AttributeVector::getEnumStoreAddressSpaceUsage() const
     return AddressSpaceUsage::defaultEnumStoreUsage();
 }
 
+bool
+AttributeVector::hasMultiValue() const {
+    return _config.collectionType().isMultiValue();
+}
+
+bool
+AttributeVector::hasWeightedSetType() const {
+    return _config.collectionType().isWeightedSet();
+}
+
 AddressSpace
 AttributeVector::getMultiValueAddressSpaceUsage() const
 {
@@ -318,6 +306,20 @@ AttributeVector::getAddressSpaceUsage() const
 {
     return AddressSpaceUsage(getEnumStoreAddressSpaceUsage(),
                              getMultiValueAddressSpaceUsage());
+}
+
+const vespalib::string &
+AttributeVector::getName() const {
+    return _baseFileName.getAttributeName();
+}
+
+attribute::BasicType::Type
+AttributeVector::getBasicType() const {
+    return getInternalBasicType().type();
+}
+attribute::CollectionType::Type
+AttributeVector::getCollectionType() const {
+    return getInternalCollectionType().type();
 }
 
 bool
@@ -332,8 +334,12 @@ AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
         getConfig().collectionType().asString();
 }
 
+void AttributeVector::removeOldGenerations(generation_t firstUsed) { (void) firstUsed; }
+void AttributeVector::onGenerationChange(generation_t generation) { (void) generation; }
+const EnumStoreBase * AttributeVector::getEnumStoreBase() const { return nullptr; }
+const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }
 
-std::unique_ptr<Fast_BufferedFile>
+std::unique_ptr<FastOS_FileInterface>
 AttributeVector::openFile(const char *suffix)
 {
     BaseName::string fileName(getBaseFileName());
@@ -342,219 +348,62 @@ AttributeVector::openFile(const char *suffix)
 }
 
 
-std::unique_ptr<Fast_BufferedFile>
+std::unique_ptr<FastOS_FileInterface>
 AttributeVector::openDAT()
 {
     return openFile(".dat");
 }
 
 
-std::unique_ptr<Fast_BufferedFile>
+std::unique_ptr<FastOS_FileInterface>
 AttributeVector::openIDX()
 {
     return openFile(".idx");
 }
 
 
-std::unique_ptr<Fast_BufferedFile>
+std::unique_ptr<FastOS_FileInterface>
 AttributeVector::openWeight()
 {
     return openFile(".weight");
 }
 
 
-std::unique_ptr<Fast_BufferedFile>
+std::unique_ptr<FastOS_FileInterface>
 AttributeVector::openUDAT()
 {
     return openFile(".dat");
 }
 
-
-AttributeVector::ReaderBase::ReaderBase(AttributeVector &attr)
-    : _datFile(attr.openDAT()),
-      _weightFile(attr.hasWeightedSetType() ?
-                  attr.openWeight() : std::unique_ptr<Fast_BufferedFile>()),
-      _idxFile(attr.hasMultiValue() ?
-               attr.openIDX() : std::unique_ptr<Fast_BufferedFile>()),
-      _udatFile(),
-      _weightReader(*_weightFile),
-      _idxReader(*_idxFile),
-      _enumReader(*_datFile),
-      _currIdx(0),
-      _datHeaderLen(0u),
-      _idxHeaderLen(0u),
-      _weightHeaderLen(0u),
-      _udatHeaderLen(0u),
-      _createSerialNum(0u),
-      _fixedWidth(attr.getFixedWidth()),
-      _enumerated(false),
-      _hasLoadData(false),
-      _version(0),
-      _docIdLimit(0),
-      _datHeader(DIRECTIO_ALIGNMENT),
-      _datFileSize(0),
-      _idxFileSize(0)
-{
-    _datHeaderLen = _datHeader.readFile(*_datFile);
-    _datFile->SetPosition(_datHeaderLen);
-    if (!attr.headerTypeOK(_datHeader) ||
-        !extractFileSize(_datHeader, *_datFile, _datFileSize)) {
-        _datFile->Close();
-    }
-    _createSerialNum = extractCreateSerialNum(_datHeader);
-    if (_datHeader.hasTag(versionTag)) {
-        _version = _datHeader.getTag(versionTag).asInteger();
-    }
-    _docIdLimit = _datHeader.getTag(docIdLimitTag).asInteger();
-    if (hasIdx()) {
-        vespalib::FileHeader idxHeader(DIRECTIO_ALIGNMENT);
-        _idxHeaderLen = idxHeader.readFile(*_idxFile);
-        _idxFile->SetPosition(_idxHeaderLen);
-        if (!attr.headerTypeOK(idxHeader) ||
-            !extractFileSize(idxHeader, *_idxFile, _idxFileSize)) {
-            _idxFile->Close();
-        } else  {
-            _currIdx = _idxReader.readHostOrder();
-        }
-    }
-    if (hasWeight()) {
-        vespalib::FileHeader weightHeader(DIRECTIO_ALIGNMENT);
-        _weightHeaderLen = weightHeader.readFile(*_weightFile);
-        _weightFile->SetPosition(_weightHeaderLen);
-        if (!attr.headerTypeOK(weightHeader))
-            _weightFile->Close();
-    }
-    if (hasData() && isEnumerated(_datHeader)) {
-#if 1
-        if (!allowEnumeratedLoad) {
-            /*
-             * Block loading of enumerated attribute vector files until we have
-             * working unit tests in place.
-             */
-            vespalib::string s;
-            s = vespalib::make_string("Attribute vector file '%s' is"
-                                      " enumerated."
-                                      " Install a newer version of vespa that"
-                                      " supports enumerated"
-                                      " attribute vector files, or ask" 
-                                      " vespa team to help "
-                                      " converting attribute vector to "
-                                      " non-enumerated form.",
-                                      _datFile->GetFileName());
-            LOG(error, "%s", s.c_str());
-            throw IllegalStateException(s);
-        }
-#endif
-        _enumerated = true;
-        _udatFile = attr.openUDAT();
-        vespalib::FileHeader udatHeader(DIRECTIO_ALIGNMENT);
-        _udatHeaderLen = udatHeader.readFile(*_udatFile);
-        _udatFile->SetPosition(_udatHeaderLen);
-        if (!attr.headerTypeOK(udatHeader))
-            _udatFile->Close();
-    }
-    _hasLoadData = hasData() &&
-                   (!attr.hasMultiValue() || hasIdx()) &&
-                   (!attr.hasWeightedSetType() || hasWeight()) &&
-                   (!getEnumerated() || hasUData());
-}
-
-
-AttributeVector::ReaderBase::~ReaderBase()
-{
-}
-
-
-bool
-AttributeVector::ReaderBase::
-extractFileSize(const vespalib::GenericHeader &header,
-                FastOS_FileInterface &file, uint64_t &fileSize)
-{
-    fileSize = file.GetSize();
-    return FileSizeCalculator::extractFileSize(header, header.getSize(),
-                                               file.GetFileName(), fileSize);
-}
-
-
-void
-AttributeVector::ReaderBase::rewind()
-{
-    _datFile->SetPosition(_datHeaderLen);
-    _currIdx = 0;
-    if (hasIdx()) {
-        _idxFile->SetPosition(_idxHeaderLen);
-        _currIdx = _idxReader.readHostOrder();
-    }
-    if (hasWeight()) {
-        _weightFile->SetPosition(_weightHeaderLen);
-    }
-    if (getEnumerated()) {
-        _udatFile->SetPosition(_udatHeaderLen);
-    }
-}
-
-
-size_t
-AttributeVector::ReaderBase::getNumValues()
-{
-    if (getEnumerated()) {
-       return getEnumCount();
-    } else {
-       if (_fixedWidth > 0) {
-           size_t dataSize(_datFileSize - _datHeaderLen);
-           assert((dataSize % _fixedWidth) == 0);
-           return dataSize / _fixedWidth;
-        } else {
-            // TODO. This limits the number of multivalues to 2^32-1
-            // This is assert during write, so this should never be a problem here.
-            _idxFile->SetPosition(_idxFileSize - 4);
-            size_t numValues = _idxReader.readHostOrder();
-            rewind();
-            return numValues;
-        }
-    }
-}
-
-
-uint32_t
- AttributeVector::ReaderBase::getNextValueCount()
-{
-    uint32_t nextIdx = _idxReader.readHostOrder();
-    uint32_t numValues = nextIdx - _currIdx;
-    _currIdx = nextIdx;
-    return numValues;
-}
-
-
-FileUtil::LoadedBuffer::UP
+fileutil::LoadedBuffer::UP
 AttributeVector::loadDAT()
 {
     return loadFile(".dat");
 }
 
 
-FileUtil::LoadedBuffer::UP
+fileutil::LoadedBuffer::UP
 AttributeVector::loadIDX()
 {
     return loadFile(".idx");
 }
 
 
-FileUtil::LoadedBuffer::UP
+fileutil::LoadedBuffer::UP
 AttributeVector::loadWeight()
 {
     return loadFile(".weight");
 }
 
 
-FileUtil::LoadedBuffer::UP
+fileutil::LoadedBuffer::UP
 AttributeVector::loadUDAT()
 {
     return loadFile(".udat");
 }
 
 
-FileUtil::LoadedBuffer::UP
+fileutil::LoadedBuffer::UP
 AttributeVector::loadFile(const char *suffix)
 {
     BaseName::string fileName(getBaseFileName());
@@ -610,17 +459,14 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget)
     return true;
 }
 
-
 IAttributeSaveTarget::Config
-AttributeVector::createSaveTargetConfig() const
-{
+AttributeVector::createSaveTargetConfig() const {
     return IAttributeSaveTarget::Config(getBaseFileName(),
                                    getConfig().basicType().asString(),
                                    getConfig().collectionType().asString(),
-                                   getConfig().basicType().type() ==
-                                   BasicType::Type::TENSOR ?
-                                   getConfig().tensorType().to_spec() :
-                                   "",
+                                   getConfig().basicType().type() == BasicType::Type::TENSOR
+                                       ? getConfig().tensorType().to_spec()
+                                       : "",
                                    hasMultiValue(),
                                    hasWeightedSetType(),
                                    getEnumeratedSave(),
@@ -632,42 +478,26 @@ AttributeVector::createSaveTargetConfig() const
                                    getVersion());
 }
 
-
-void
-AttributeVector::onSave(IAttributeSaveTarget & saveTarget)
-{
-    (void) saveTarget;
-    assert(false);
-}
-
+void AttributeVector::onSave(IAttributeSaveTarget &) { abort(); }
 
 bool
-AttributeVector::hasLoadData() const
-{
+AttributeVector::hasLoadData() const {
     FastOS_StatInfo statInfo;
-    if (!FastOS_File::Stat(vespalib::make_string("%s.dat",
-                                   getBaseFileName().c_str()).c_str(),
-                           &statInfo)) {
+    if (!FastOS_File::Stat(make_string("%s.dat", getBaseFileName().c_str()).c_str(), &statInfo)) {
         return false;
     }
     if (hasMultiValue() &&
-        !FastOS_File::Stat(vespalib::make_string("%s.idx",
-                                   getBaseFileName().c_str()).c_str(),
-                           &statInfo))
+        !FastOS_File::Stat(make_string("%s.idx", getBaseFileName().c_str()).c_str(), &statInfo))
     {
         return false;
     }
     if (hasWeightedSetType() &&
-        !FastOS_File::Stat(vespalib::make_string("%s.weight",
-                                   getBaseFileName().c_str()).c_str(),
-                           &statInfo))
+        !FastOS_File::Stat(make_string("%s.weight", getBaseFileName().c_str()).c_str(), &statInfo))
     {
         return false;
     }
     if (isEnumeratedSaveFormat() &&
-        !FastOS_File::Stat(vespalib::make_string("%s.udat",
-                                   getBaseFileName().c_str()).c_str(),
-                           &statInfo))
+        !FastOS_File::Stat(make_string("%s.udat", getBaseFileName().c_str()).c_str(), &statInfo))
     {
         return false;
     }
@@ -678,17 +508,13 @@ AttributeVector::hasLoadData() const
 bool
 AttributeVector::isEnumeratedSaveFormat(void) const
 {
-    vespalib::string datName(vespalib::make_string("%s.dat",
-                                                   getBaseFileName().c_str()));
+    vespalib::string datName(vespalib::make_string("%s.dat", getBaseFileName().c_str()));
     Fast_BufferedFile   datFile;
     vespalib::FileHeader datHeader(DIRECTIO_ALIGNMENT);
     if ( ! datFile.OpenReadOnly(datName.c_str()) ) {
-        LOG(error, "could not open %s: %s",
-            datFile.GetFileName(), getLastErrorString().c_str());
-        throw IllegalStateException(
-                vespalib::make_string(
-                        "Failed opening attribute data file '%s' for reading",
-                        datFile.GetFileName()));
+        LOG(error, "could not open %s: %s", datFile.GetFileName(), getLastErrorString().c_str());
+        throw IllegalStateException(make_string("Failed opening attribute data file '%s' for reading",
+                                                datFile.GetFileName()));
     }
     datHeader.readFile(datFile);
     
@@ -706,47 +532,30 @@ AttributeVector::load() {
     return _loaded;
 }
 
+bool AttributeVector::onLoad() { return false; }
+int32_t AttributeVector::getWeight(DocId, uint32_t) const { return 1; }
 
-bool
-AttributeVector::onLoad()
-{
-    return false;
-}
-
-
-int32_t
-AttributeVector::getWeight(DocId doc, uint32_t idx) const
-{
-    (void) doc;
-    (void) idx;
-    return 1;
-}
+bool AttributeVector::findEnum(const char *, EnumHandle &) const { return false; }
 
 AttributeVector::SearchContext::Params::Params() :
     _diversityAttribute(nullptr),
     _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
     _useBitVector(false),
     _diversityCutoffStrict(false)
-{
-}
+{ }
 
 AttributeVector::SearchContext::SearchContext(const AttributeVector &attr) :
     _attr(attr),
     _plsc(NULL)
-{
-}
+{ }
 
 AttributeVector::SearchContext::UP
-AttributeVector::getSearch(const QueryPacketT & searchSpec,
-                           const SearchContext::Params & params) const
+AttributeVector::getSearch(QueryPacketT searchSpec, const SearchContext::Params & params) const
 {
     return getSearch(SearchContext::decodeQuery(searchSpec), params);
 }
 
-AttributeVector::SearchContext::~SearchContext()
-{
-}
-
+AttributeVector::SearchContext::~SearchContext() { }
 
 unsigned int
 AttributeVector::SearchContext::approximateHits() const
@@ -758,9 +567,8 @@ AttributeVector::SearchContext::approximateHits() const
                     _attr.getStatus().getNumValues());
 }
 
-
 QueryTermSimple::UP
-AttributeVector::SearchContext::decodeQuery(const QueryPacketT &searchSpec)
+AttributeVector::SearchContext::decodeQuery(QueryPacketT searchSpec)
 {
     QueryTermSimple::UP qt;
     EmptyQueryNodeResult qnb;
@@ -810,16 +618,14 @@ createFilterIterator(fef::TermFieldMatchData *matchData, bool strict)
 
 
 void
-AttributeVector::SearchContext::fetchPostings(bool strict)
-{
+AttributeVector::SearchContext::fetchPostings(bool strict) {
     if (_plsc != NULL)
         _plsc->fetchPostings(strict);
 }
 
 
 bool
-AttributeVector::apply(DocId doc, const MapValueUpdate &map)
-{
+AttributeVector::apply(DocId doc, const MapValueUpdate &map) {
     bool retval(doc < getNumDocs());
     if (retval) {
         const ValueUpdate & vu(map.getUpdate());
@@ -835,25 +641,18 @@ AttributeVector::apply(DocId doc, const MapValueUpdate &map)
 }
 
 
-bool
-AttributeVector::applyWeight(DocId, const FieldValue &,
-                             const ArithmeticValueUpdate &)
-{
-    return false;
-}
+bool AttributeVector::applyWeight(DocId, const FieldValue &, const ArithmeticValueUpdate &) { return false; }
 
 
 void
-AttributeVector::removeAllOldGenerations()
-{
+AttributeVector::removeAllOldGenerations() {
     _genHandler.updateFirstUsedGeneration();
     removeOldGenerations(_genHandler.getFirstUsedGeneration());
 }
 
 
 void
-AttributeVector::divideByZeroWarning()
-{
+AttributeVector::divideByZeroWarning() {
     LOG(warning,
         "applyArithmetic(): "
         "Divide by zero is an illegal operation on integer attributes "
@@ -899,69 +698,22 @@ AttributeVector::addReservedDoc(void)
 
 
 void
-AttributeVector::enableEnumeratedSave(bool enable)
-{
+AttributeVector::enableEnumeratedSave(bool enable) {
     if (hasEnum() || !enable)
         _enableEnumeratedSave = enable;
 }
 
+attribute::IPostingListAttributeBase *AttributeVector::getIPostingListAttributeBase() { return nullptr; }
+const IDocumentWeightAttribute * AttributeVector::asDocumentWeightAttribute() const { return nullptr; }
+bool AttributeVector::hasPostings() { return getIPostingListAttributeBase() != nullptr; }
+uint64_t AttributeVector::getUniqueValueCount() const { return getTotalValueCount(); }
+uint64_t AttributeVector::getTotalValueCount() const { return getNumDocs(); }
+void AttributeVector::setCreateSerialNum(uint64_t createSerialNum) { _createSerialNum = createSerialNum; }
+uint64_t AttributeVector::getCreateSerialNum(void) const { return _createSerialNum; }
+uint32_t AttributeVector::getVersion() const { return 0; }
 
 void
-AttributeVector::enableEnumeratedLoad(void)
-{
-    allowEnumeratedLoad = true;
-}
-
-
-attribute::IPostingListAttributeBase *
-AttributeVector::getIPostingListAttributeBase(void)
-{
-    return NULL;
-}
-
-
-bool
-AttributeVector::hasPostings(void)
-{
-    return getIPostingListAttributeBase() != NULL;
-}
-
-
-uint64_t
-AttributeVector::getUniqueValueCount(void) const
-{
-    return getTotalValueCount();
-}
-
-
-uint64_t
-AttributeVector::getTotalValueCount(void) const
-{
-    return getNumDocs();
-}
-
-
-void
-AttributeVector::setCreateSerialNum(uint64_t createSerialNum)
-{
-    _createSerialNum = createSerialNum;
-}
-
-
-uint64_t
-AttributeVector::getCreateSerialNum(void) const
-{
-    return _createSerialNum;
-}
-
-uint32_t
-AttributeVector::getVersion() const {
-    return 0;
-}
-
-void
-AttributeVector::compactLidSpace(uint32_t wantedLidLimit)
-{
+AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
     commit();
     assert(_uncommittedDocIdLimit <= wantedLidLimit);
     if (wantedLidLimit < _committedDocIdLimit) {
@@ -975,8 +727,7 @@ AttributeVector::compactLidSpace(uint32_t wantedLidLimit)
 
 
 bool
-AttributeVector::canShrinkLidSpace(void) const
-{
+AttributeVector::canShrinkLidSpace(void) const {
     return wantShrinkLidSpace() &&
         _compactLidSpaceGeneration < getFirstUsedGeneration();
 }
@@ -1000,12 +751,7 @@ AttributeVector::shrinkLidSpace(void)
     updateStat(true);
 }
 
-
-void
-AttributeVector::onShrinkLidSpace(void)
-{
-}
-
+void AttributeVector::onShrinkLidSpace(void) {}
 
 void
 AttributeVector::clearDocs(DocId lidLow, DocId lidLimit)
@@ -1025,10 +771,7 @@ AttributeVector::getEnumModifier()
 }
 
 
-void
-AttributeVector::setInterlock(const std::shared_ptr<attribute::Interlock> &
-                              interlock)
-{
+void AttributeVector::setInterlock(const std::shared_ptr<attribute::Interlock> &interlock) {
     _interlock = interlock;
 }
 
@@ -1046,12 +789,7 @@ AttributeVector::onInitSave()
     return std::unique_ptr<AttributeSaver>();
 }
 
-
-IExtendAttribute *
-AttributeVector::getExtendInterface()
-{
-    return nullptr;
-}
+IExtendAttribute *AttributeVector::getExtendInterface() { return nullptr; }
 
 uint64_t
 AttributeVector::getEstimatedSaveByteSize() const

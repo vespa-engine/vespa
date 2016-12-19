@@ -9,8 +9,8 @@ namespace attribute {
 
 template <class MvMapping, class Saver>
 uint32_t
-loadFromEnumeratedMultiValue(MvMapping &mapping,
-                             AttributeVector::ReaderBase &attrReader,
+loadFromEnumeratedMultiValue(MvMapping & mapping,
+                             ReaderBase & attrReader,
                              vespalib::ConstArrayRef<typename MvMapping::MultiValueType::ValueType> enumValueToValueMap,
                              Saver saver)
 {
@@ -49,7 +49,7 @@ template <class Vector, class Saver>
 void
 loadFromEnumeratedSingleValue(Vector &vector,
                               vespalib::GenerationHolder &genHolder,
-                              AttributeVector::ReaderBase &attrReader,
+                              ReaderBase &attrReader,
                               vespalib::ConstArrayRef<typename Vector::ValueType> enumValueToValueMap,
                               Saver saver)
 {

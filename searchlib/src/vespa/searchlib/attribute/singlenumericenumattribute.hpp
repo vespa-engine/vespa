@@ -2,10 +2,13 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/singlenumericenumattribute.h>
+#include "singlenumericenumattribute.h"
 #include <vespa/searchlib/common/sort.h>
-#include <vespa/searchlib/attribute/singleenumattribute.hpp>
-#include <vespa/searchlib/attribute/loadednumericvalue.h>
+#include "singleenumattribute.hpp"
+#include "loadednumericvalue.h"
+#include "primitivereader.h"
+#include "attributeiterators.hpp"
+#include <vespa/searchlib/query/queryterm.h>
 
 namespace search {
 
@@ -59,7 +62,6 @@ SingleValueNumericEnumAttribute(const vespalib::string & baseFileName,
 {
 }
 
-
 template <typename B>
 void
 SingleValueNumericEnumAttribute<B>::onCommit()
@@ -68,13 +70,11 @@ SingleValueNumericEnumAttribute<B>::onCommit()
     _currDocValues.clear();
 }
 
-
 template <typename B>
 bool
-SingleValueNumericEnumAttribute<B>::onLoadEnumerated(typename B::ReaderBase &
-                                                     attrReader)
+SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 {
-    FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
 
     uint64_t numValues = attrReader.getEnumCount();
     uint32_t numDocs = numValues;
@@ -87,14 +87,10 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(typename B::ReaderBase &
     EnumVector enumHist;
     if (this->hasPostings()) {
         loaded.reserve(numValues);
-        this->fillEnumIdx(attrReader,
-                          eidxs,
-                          loaded);
+        this->fillEnumIdx(attrReader, eidxs, loaded);
     } else {
         EnumVector(eidxs.size(), 0).swap(enumHist);
-        this->fillEnumIdx(attrReader,
-                          eidxs,
-                          enumHist);
+        this->fillEnumIdx(attrReader, eidxs, enumHist);
     }
     EnumIndexVector().swap(eidxs);
     if (this->hasPostings()) {
@@ -114,7 +110,7 @@ template <typename B>
 bool
 SingleValueNumericEnumAttribute<B>::onLoad()
 {
-    typename B::template PrimitiveReader<T> attrReader(*this);
+    PrimitiveReader<T> attrReader(*this);
     bool ok(attrReader.getHasLoadData());
     
     if (!ok)
@@ -126,7 +122,7 @@ SingleValueNumericEnumAttribute<B>::onLoad()
         return onLoadEnumerated(attrReader);
 
     const uint32_t numDocs(attrReader.getDataCount());
-    LoadedVectorR loaded(numDocs);
+    SequentialReadModifyWriteVector<LoadedNumericValueT> loaded(numDocs);
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
@@ -165,6 +161,40 @@ SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
     }
 }
 
+template <typename B>
+bool SingleValueNumericEnumAttribute<B>::SingleSearchContext::valid() const { return this->isValid(); }
+
+template <typename B>
+SingleValueNumericEnumAttribute<B>::SingleSearchContext::SingleSearchContext(QueryTermSimpleUP qTerm, const NumericAttribute & toBeSearched) :
+    NumericAttribute::Range<T>(*qTerm, true),
+    AttributeVector::SearchContext(toBeSearched),
+    _toBeSearched(static_cast<const SingleValueNumericEnumAttribute<B> &>(toBeSearched))
+{ }
+
+template <typename B>
+Int64Range SingleValueNumericEnumAttribute<B>::SingleSearchContext::getAsIntegerTerm() const {
+    return this->getRange();
+}
+
+template <typename B>
+std::unique_ptr<queryeval::SearchIterator>
+SingleValueNumericEnumAttribute<B>::SingleSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData,
+                                                                              bool strict)
+{
+    if (!valid()) {
+        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+    }
+    if (getIsFilter()) {
+        return queryeval::SearchIterator::UP
+                (strict
+                 ? new FilterAttributeIteratorStrict<SingleSearchContext>(*this, matchData)
+                 : new FilterAttributeIteratorT<SingleSearchContext>(*this, matchData));
+    }
+    return queryeval::SearchIterator::UP
+            (strict
+             ? new AttributeIteratorStrict<SingleSearchContext>(*this, matchData)
+             : new AttributeIteratorT<SingleSearchContext>(*this, matchData));
+}
 
 }
 

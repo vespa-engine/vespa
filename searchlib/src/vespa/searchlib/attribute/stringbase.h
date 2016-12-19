@@ -15,6 +15,7 @@
 namespace search {
 
 class StringEntryType;
+class ReaderBase;
 
 class StringAttribute : public AttributeVector
 {
@@ -75,52 +76,33 @@ private:
     virtual void fillEnum(LoadedVector & loaded);
     virtual void fillValues(LoadedVector & loaded);
 
-    virtual void
-    fillEnum0(const void *src,
-              size_t srcLen,
-              EnumIndexVector &eidxs);
+    virtual void fillEnum0(const void *src, size_t srcLen, EnumIndexVector &eidxs);
+    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, attribute::LoadedEnumAttributeVector &loaded);
+    virtual void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist);
+    virtual void fillPostingsFixupEnum(const attribute::LoadedEnumAttributeVector &loaded);
+    virtual void fixupEnumRefCounts(const EnumVector &enumHist);
 
-    virtual void
-    fillEnumIdx(ReaderBase &attrReader,
-                const EnumIndexVector &eidxs,
-                attribute::LoadedEnumAttributeVector &loaded);
+    largeint_t getInt(DocId doc)  const override { return strtoll(get(doc), NULL, 0); }
+    double getFloat(DocId doc)    const override { return strtod(get(doc), NULL); }
+    const char * getString(DocId doc, char * v, size_t sz) const override { (void) v; (void) sz; return get(doc); }
 
-    virtual void
-    fillEnumIdx(ReaderBase &attrReader,
-                const EnumIndexVector &eidxs,
-                EnumVector &enumHist);
-
-    virtual void
-    fillPostingsFixupEnum(const attribute::LoadedEnumAttributeVector &loaded);
-
-    virtual void
-    fixupEnumRefCounts(const EnumVector &enumHist);
-
-    virtual largeint_t getInt(DocId doc)  const { return strtoll(get(doc), NULL, 0); }
-    virtual double getFloat(DocId doc)    const { return strtod(get(doc), NULL); }
-    virtual const char * getString(DocId doc, char * v, size_t sz) const { (void) v; (void) sz; return get(doc); }
-
-    virtual long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const;
-    virtual long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const;
+    long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
+    long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 
     template <typename T>
-    void loadAllAtOnce(T & loaded, FileUtil::LoadedBuffer::UP dataBuffer, uint32_t numDocs, ReaderBase & attrReader, bool hasWeight, bool hasIdx);
+    void loadAllAtOnce(T & loaded, LoadedBufferUP dataBuffer, uint32_t numDocs, ReaderBase & attrReader, bool hasWeight, bool hasIdx);
 
     class StringSearchContext : public SearchContext {
     public:
-        StringSearchContext(QueryTermSimple::UP qTerm, const StringAttribute & toBeSearched);
+        StringSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched);
         virtual ~StringSearchContext();
     private:
         bool                        _isPrefix;
         bool                        _isRegex;
     protected:
-        bool valid() const override {
-            return (_queryTerm.get() && (!_queryTerm->empty()));
-        }
+        bool valid() const override;
 
-        const QueryTermBase & queryTerm() const override {
-            return static_cast<const QueryTermBase &>(*_queryTerm);
-        }
+        const QueryTermBase & queryTerm() const override;
         bool isMatch(const char *src) const {
             if (__builtin_expect(isRegex(), false)) {
                 return getRegex()->match(src);
@@ -178,7 +160,7 @@ private:
 
         bool isPrefix() const { return _isPrefix; }
         bool  isRegex() const { return _isRegex; }
-        QueryTermSimple::UP         _queryTerm;
+        QueryTermSimpleUP         _queryTerm;
         const ucs4_t              * _termUCS4;
         const vespalib::Regexp * getRegex() const { return _regex.get(); }
     private:
@@ -192,7 +174,7 @@ private:
         mutable WeightedConstChar * _buffer;
         std::unique_ptr<vespalib::Regexp>   _regex;
     };
-    SearchContext::UP getSearch(QueryTermSimple::UP term, const SearchContext::Params & params) const override;
+    SearchContext::UP getSearch(QueryTermSimpleUP term, const SearchContext::Params & params) const override;
 };
 
 }

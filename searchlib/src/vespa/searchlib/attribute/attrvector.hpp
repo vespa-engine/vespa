@@ -19,7 +19,7 @@ NumericDirectAttribute(const vespalib::string & baseFileName, const Config & c)
 template <typename B>
 bool NumericDirectAttribute<B>::onLoad()
 {
-    FileUtil::LoadedBuffer::UP dataBuffer(B::loadDAT());
+    fileutil::LoadedBuffer::UP dataBuffer(B::loadDAT());
     bool rc(dataBuffer.get());
     if (rc) {
         const BaseType * tmpData(static_cast <const BaseType *>(dataBuffer->buffer()));
@@ -52,7 +52,7 @@ bool NumericDirectAttribute<B>::onLoad()
         }
         dataBuffer.reset();
         if (this->hasMultiValue()) {
-            FileUtil::LoadedBuffer::UP idxBuffer(B::loadIDX());
+            fileutil::LoadedBuffer::UP idxBuffer(B::loadIDX());
             rc = idxBuffer.get();
             if (rc) {
                 const uint32_t * tmpIdx(static_cast<const uint32_t *>(idxBuffer->buffer()));

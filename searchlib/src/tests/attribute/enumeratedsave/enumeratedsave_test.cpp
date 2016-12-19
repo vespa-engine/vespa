@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -22,10 +22,7 @@
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
 
-#include <vespa/log/log.h>
-LOG_SETUP("enumeratedsave_test");
 #include <limits>
-#include <string>
 #include <iostream>
 #include <cmath>
 
@@ -940,6 +937,5 @@ TEST_F("Test enumerated save with weighted set value string",
 
 TEST_MAIN()
 {
-    AttributeVector::enableEnumeratedLoad();
     TEST_RUN_ALL();
 }

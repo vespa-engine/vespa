@@ -4,9 +4,10 @@
 
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
+#include "attributeiterators.h"
+#include <vespa/searchlib/query/queryterm.h>
 
-namespace search
-{
+namespace search {
 
 
 template <typename PL>
@@ -58,5 +59,35 @@ FilterAttributePostingListIteratorT<PL>::doUnpack(uint32_t docId)
     _matchData->resetOnlyDocId(docId);
 }
 
+template <typename SC>
+void
+AttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) const
+{
+    AttributeIterator::visitMembers(visitor);
+    visit(visitor, "searchcontext.attribute", _searchContext.attribute().getName());
+    visit(visitor, "searchcontext.queryterm", _searchContext.queryTerm());
+}
+
+template <typename SC>
+void
+FilterAttributeIteratorT<SC>::visitMembers(vespalib::ObjectVisitor &visitor) const
+{
+    FilterAttributeIterator::visitMembers(visitor);
+    visit(visitor, "searchcontext.attribute", _searchContext.attribute().getName());
+    visit(visitor, "searchcontext.queryterm", _searchContext.queryTerm());
+}
+
+template <typename SC>
+AttributeIteratorT<SC>::AttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
+        : AttributeIterator(matchData, searchContext._attr.getCommittedDocIdLimit()),
+          _searchContext(searchContext)
+{ }
+
+
+template <typename SC>
+FilterAttributeIteratorT<SC>::FilterAttributeIteratorT(const SC &searchContext, fef::TermFieldMatchData *matchData)
+        : FilterAttributeIterator(matchData, searchContext._attr.getCommittedDocIdLimit()),
+          _searchContext(searchContext)
+{ }
 
 } // namespace search

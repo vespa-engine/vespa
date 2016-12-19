@@ -14,11 +14,11 @@ namespace search {
 namespace attribute {
 
 #define INSTANTIATE_ARRAY(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<Value<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<Value<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 #define INSTANTIATE_WSET(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver) \
-template void loadFromEnumeratedSingleValue(RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, AttributeVector::ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
+template void loadFromEnumeratedSingleValue(RcuVectorBase<ValueType> &, vespalib::GenerationHolder &, ReaderBase &, vespalib::ConstArrayRef<ValueType>, Saver)
 
 #define INSTANTIATE_SINGLE_ARRAY_WSET(ValueType, Saver) \
 INSTANTIATE_SINGLE(ValueType, Saver); \

@@ -21,25 +21,13 @@ private:
     EnumStoreBase::Index _idx;
     const EnumStoreComparator *_cmp;
 public:
-    // EnumPostingPair() : _itr() {}
-    EnumPostingPair(EnumStoreBase::Index idx,
-                    const EnumStoreComparator *cmp)
+    EnumPostingPair(EnumStoreBase::Index idx, const EnumStoreComparator *cmp)
         : _idx(idx),
           _cmp(cmp)
-    {
-    }
+    { }
 
-    bool
-    operator<(const EnumPostingPair &rhs) const
-    {
-        return (*_cmp)(_idx, rhs._idx);
-    }
-
-    EnumStoreBase::Index
-    getEnumIdx() const
-    {
-        return _idx;
-    }
+    bool operator<(const EnumPostingPair &rhs) const { return (*_cmp)(_idx, rhs._idx); }
+    EnumStoreBase::Index getEnumIdx() const { return _idx; }
 };
 
 
@@ -61,50 +49,27 @@ protected:
     EnumPostingTree &_dict;
     EnumStoreBase   &_esb;
 
-    PostingListAttributeBase(AttributeVector &attr,
-                             EnumStoreBase &enumStore);
+    PostingListAttributeBase(AttributeVector &attr, EnumStoreBase &enumStore);
     virtual ~PostingListAttributeBase();
 
-    virtual void
-    updatePostings(PostingMap & changePost) = 0;
+    virtual void updatePostings(PostingMap & changePost) = 0;
 
-    void
-    updatePostings(PostingMap &changePost,
-                   EnumStoreComparator &cmp);
-
-    void
-    clearAllPostings(void);
-
+    void updatePostings(PostingMap &changePost, EnumStoreComparator &cmp);
+    void clearAllPostings(void);
     void disableFreeLists() { _postingList.disableFreeLists(); }
+    void disableElemHoldList() { _postingList.disableElemHoldList(); }
+    void fillPostingsFixupEnumBase(const LoadedEnumAttributeVector &loaded);
+    bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 
-    void
-    disableElemHoldList()
-    {
-        _postingList.disableElemHoldList();
-    }
+    void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid,
+                       uint32_t toLid, EnumStoreComparator &cmp);
 
-    void
-    fillPostingsFixupEnumBase(const LoadedEnumAttributeVector &loaded);
-
-    bool
-    forwardedOnAddDoc(DocId doc,
-                      size_t wantSize,
-                      size_t wantCapacity);
-
-    void
-    clearPostings(attribute::IAttributeVector::EnumHandle eidx,
-                  uint32_t fromLid,
-                  uint32_t toLid,
-                  EnumStoreComparator &cmp);
-
-    virtual void
-    forwardedShrinkLidSpace(uint32_t newSize);
+    void forwardedShrinkLidSpace(uint32_t newSize) override;
 
 public:
     const PostingList & getPostingList() const { return _postingList; }
     PostingList & getPostingList()             { return _postingList; }
 };
-
 
 template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
@@ -133,33 +98,18 @@ public:
 
 private:
     EnumStore &_es;
-    
 
 public:
-    PostingListAttributeSubBase(AttributeVector &attr,
-                                EnumStore &enumStore);
+    PostingListAttributeSubBase(AttributeVector &attr, EnumStore &enumStore);
+    virtual ~PostingListAttributeSubBase(void);
 
-    virtual
-    ~PostingListAttributeSubBase(void);
-
-    void
-    handleFillPostings(LoadedVector &loaded);
-
-    virtual void
-    updatePostings(PostingMap &changePost);
-
-    void
-    printPostingListContent(vespalib::asciistream & os) const;
-
-    virtual void
-    clearPostings(attribute::IAttributeVector::EnumHandle eidx,
-                  uint32_t fromLid,
-                  uint32_t toLid);
+    void handleFillPostings(LoadedVector &loaded);
+    void updatePostings(PostingMap &changePost) override;
+    void printPostingListContent(vespalib::asciistream & os) const;
+    void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid) override;
 };
-
 
 extern template class PostingListAttributeBase<AttributePosting>;
 extern template class PostingListAttributeBase<AttributeWeightPosting>;
 
 } // namespace search
-

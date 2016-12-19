@@ -59,7 +59,7 @@ TEST_F("Test that we can write empty attribute file", Fixture)
 {
     EXPECT_TRUE(f._writer.open(testFileName));
     f._writer.close();
-    FileUtil::LoadedBuffer::UP loaded(FileUtil::loadFile(testFileName));
+    fileutil::LoadedBuffer::UP loaded(FileUtil::loadFile(testFileName));
     EXPECT_EQUAL(0u, loaded->size());
 }
 
@@ -87,7 +87,7 @@ TEST_F("Test that buffer writer passes on written data", Fixture)
     writer->flush();
     writer.reset();
     f._writer.close();
-    FileUtil::LoadedBuffer::UP loaded(FileUtil::loadFile(testFileName));
+    fileutil::LoadedBuffer::UP loaded(FileUtil::loadFile(testFileName));
     EXPECT_EQUAL(a.size() * sizeof(int), loaded->size());
     EXPECT_TRUE(memcmp(&a[0], loaded->buffer(), loaded->size()) == 0);
 }
@@ -101,7 +101,7 @@ TEST_F("Test that we can pass buffer directly", Fixture)
     EXPECT_TRUE(f._writer.open(testFileName));
     f._writer.writeBuf(std::move(buf));
     f._writer.close();
-    FileUtil::LoadedBuffer::UP loaded(FileUtil::loadFile(testFileName));
+    fileutil::LoadedBuffer::UP loaded(FileUtil::loadFile(testFileName));
     EXPECT_EQUAL(hello.size(), loaded->size());
     EXPECT_TRUE(memcmp(hello.c_str(), loaded->buffer(), loaded->size()) == 0);
 }

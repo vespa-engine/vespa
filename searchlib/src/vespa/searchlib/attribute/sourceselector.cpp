@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sourceselector.h"
-#include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/util/sync.h>
-#include <memory>
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 
 using search::queryeval::Source;
@@ -25,12 +23,10 @@ class AddMyHeaderTags : public FileHeaderContext
     const FileHeaderContext &_parent;
 
 public:
-    AddMyHeaderTags(const SourceSelector::HeaderInfo &hi,
-                    const FileHeaderContext &parent)
+    AddMyHeaderTags(const SourceSelector::HeaderInfo &hi, const FileHeaderContext &parent)
         : _hi(hi),
           _parent(parent)
-    {
-    }
+    { }
 
     virtual void
     addTags(GenericHeader &header, const vespalib::string &name) const
@@ -53,8 +49,7 @@ SourceSelector::HeaderInfo::HeaderInfo(const vespalib::string & baseFileName,
     _defaultSource(defaultSource),
     _baseId(baseId),
     _docIdLimit(docIdLimit)
-{
-}
+{ }
 
 SourceSelector::SaveInfo::SaveInfo(const vespalib::string & baseFileName,
                                    Source defaultSource,
@@ -79,8 +74,7 @@ SourceSelector::SaveInfo::save(const TuneFileAttributes &tuneFileAttributes,
 
 SourceSelector::LoadInfo::LoadInfo(const vespalib::string &baseFileName)
     : _header(baseFileName, 0, 0, 0)
-{
-}
+{ }
 
 void
 SourceSelector::LoadInfo::load()
@@ -107,8 +101,7 @@ SourceSelector::LoadInfo::load()
 SourceSelector::SourceSelector(Source defaultSource, AttributeVector::SP realSource) :
     ISourceSelector(defaultSource),
     _realSource(realSource)
-{
-}
+{ }
 
 SourceSelector::SaveInfo::UP
 SourceSelector::extractSaveInfo(const vespalib::string & baseFileName)
@@ -126,7 +119,7 @@ SourceSelector::extractLoadInfo(const vespalib::string & baseFileName)
 SourceSelector::Histogram SourceSelector::getDistribution() const
 {
     Histogram h;
-    ISourceSelector::Iterator::UP it = createIterator();
+    auto it = createIterator();
     for (size_t i(0), m(getDocIdLimit()); i < m; i++) {
         h.inc(it->getSource(i));
     }

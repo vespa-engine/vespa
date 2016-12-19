@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("bitvector_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/attribute/attribute.h>
@@ -16,6 +14,10 @@ LOG_SETUP("bitvector_test");
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/test/initrange.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/searchlib/parsequery/parse.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("bitvector_test");
 
 using search::attribute::BasicType;
 using search::attribute::CollectionType;

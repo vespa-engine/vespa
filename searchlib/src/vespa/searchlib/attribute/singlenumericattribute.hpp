@@ -1,10 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include "singlenumericattribute.h"
+#include "attributevector.hpp"
 #include "singlenumericattributesaver.h"
 #include "load_utils.h"
+#include "primitivereader.h"
+#include "attributeiterators.hpp"
 
 namespace search {
 
@@ -16,16 +18,13 @@ SingleValueNumericAttribute(const vespalib::string & baseFileName, const Attribu
           c.getGrowStrategy().getDocsGrowPercent(),
           c.getGrowStrategy().getDocsGrowDelta(),
           getGenerationHolder())
-{
-}
-
+{ }
 
 template <typename B>
 SingleValueNumericAttribute<B>::~SingleValueNumericAttribute(void)
 {
     getGenerationHolder().clearHoldLists();
 }
-
 
 template <typename B>
 void
@@ -82,23 +81,19 @@ SingleValueNumericAttribute<B>::onGenerationChange(generation_t generation)
 
 template <typename B>
 bool
-SingleValueNumericAttribute<B>::onLoadEnumerated(typename B::ReaderBase &
-                                                 attrReader)
+SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
 {
     uint32_t numDocs = attrReader.getEnumCount();
 
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
 
-    FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
     assert((udatBuffer->size() % sizeof(T)) == 0);
     vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
                                    udatBuffer->size() / sizeof(T));
-    attribute::loadFromEnumeratedSingleValue(_data,
-                                             getGenerationHolder(),
-                                             attrReader,
-                                             map,
-                                             attribute::NoSaveLoadedEnum());
+    attribute::loadFromEnumeratedSingleValue(_data, getGenerationHolder(), attrReader,
+                                             map, attribute::NoSaveLoadedEnum());
     return true;
 }
 
@@ -107,7 +102,7 @@ template <typename B>
 bool
 SingleValueNumericAttribute<B>::onLoad()
 {
-    typename B::template PrimitiveReader<T> attrReader(*this);
+    PrimitiveReader<T> attrReader(*this);
     bool ok(attrReader.getHasLoadData());
 
     if (!ok)
@@ -180,6 +175,46 @@ SingleValueNumericAttribute<B>::onInitSave()
         (this->createSaveTargetConfig(), &_data[0], numDocs * sizeof(T));
 }
 
+template <typename B>
+template <typename M>
+bool SingleValueNumericAttribute<B>::SingleSearchContext<M>::valid() const { return M::isValid(); }
 
+template <typename B>
+template <typename M>
+SingleValueNumericAttribute<B>::SingleSearchContext<M>::SingleSearchContext(QueryTermSimple::UP qTerm,
+                                                                            const NumericAttribute & toBeSearched) :
+    M(*qTerm, true),
+    AttributeVector::SearchContext(toBeSearched),
+    _data(&static_cast<const SingleValueNumericAttribute<B> &>(toBeSearched)._data[0])
+{ }
+
+
+template <typename B>
+template <typename M>
+Int64Range
+SingleValueNumericAttribute<B>::SingleSearchContext<M>::getAsIntegerTerm() const {
+    return M::getRange();
+}
+
+template <typename B>
+template <typename M>
+std::unique_ptr<queryeval::SearchIterator>
+SingleValueNumericAttribute<B>::SingleSearchContext<M>::createFilterIterator(fef::TermFieldMatchData * matchData,
+                                                                             bool strict)
+{
+    if (!valid()) {
+        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+    }
+    if (getIsFilter()) {
+        return queryeval::SearchIterator::UP
+                (strict
+                 ? new FilterAttributeIteratorStrict<SingleSearchContext<M> >(*this, matchData)
+                 : new FilterAttributeIteratorT<SingleSearchContext<M> >(*this, matchData));
+    }
+    return queryeval::SearchIterator::UP
+            (strict
+             ? new AttributeIteratorStrict<SingleSearchContext<M> >(*this, matchData)
+             : new AttributeIteratorT<SingleSearchContext<M> >(*this, matchData));
+}
 }
 

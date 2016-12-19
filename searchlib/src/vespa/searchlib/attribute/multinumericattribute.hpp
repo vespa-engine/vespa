@@ -1,15 +1,19 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multivalueattribute.hpp>
-#include <vespa/searchlib/attribute/attributevector.hpp>
+#include "multinumericattribute.h"
+#include "multivalueattribute.hpp"
+#include "attributevector.hpp"
+#include "attributeiterators.hpp"
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include "multinumericattributesaver.h"
 #include "load_utils.h"
+#include "primitivereader.h"
 
 namespace search {
+
+using fileutil::LoadedBuffer;
 
 template <typename B, typename M>
 typename MultiValueNumericAttribute<B, M>::T
@@ -103,14 +107,13 @@ void MultiValueNumericAttribute<B, M>::onGenerationChange(generation_t generatio
 
 template <typename B, typename M>
 bool
-MultiValueNumericAttribute<B, M>::onLoadEnumerated(typename B::ReaderBase &
-                                                   attrReader)
+MultiValueNumericAttribute<B, M>::onLoadEnumerated(ReaderBase & attrReader)
 {
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     this->setNumDocs(numDocs);
     this->setCommittedDocIdLimit(numDocs);
 
-    FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    LoadedBuffer::UP udatBuffer(this->loadUDAT());
     assert((udatBuffer->size() % sizeof(T)) == 0);
     vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
                                    udatBuffer->size() / sizeof(T));
@@ -124,7 +127,7 @@ template <typename B, typename M>
 bool
 MultiValueNumericAttribute<B, M>::onLoad()
 {
-    typename B::template PrimitiveReader<MValueType> attrReader(*this);
+    PrimitiveReader<MValueType> attrReader(*this);
     bool ok(attrReader.getHasLoadData());
 
     if (!ok)
@@ -183,6 +186,75 @@ MultiValueNumericAttribute<B, M>::onInitSave()
                                              takeGuard());
     return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType>>
         (std::move(guard), this->createSaveTargetConfig(), this->_mvMapping);
+}
+
+template <typename B, typename M>
+bool MultiValueNumericAttribute<B, M>::SetSearchContext::valid() const { return this->isValid(); }
+
+template <typename B, typename M>
+MultiValueNumericAttribute<B, M>::SetSearchContext::SetSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
+    NumericAttribute::Range<T>(*qTerm),
+    AttributeVector::SearchContext(toBeSearched),
+    _toBeSearched(static_cast<const MultiValueNumericAttribute<B, M> &>(toBeSearched))
+{ }
+
+template <typename B, typename M>
+Int64Range MultiValueNumericAttribute<B, M>::SetSearchContext::getAsIntegerTerm() const {
+    return this->getRange();
+}
+
+template <typename B, typename M>
+std::unique_ptr<queryeval::SearchIterator>
+MultiValueNumericAttribute<B, M>::SetSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
+{
+    if (!valid()) {
+        return queryeval::SearchIterator::UP(
+                new queryeval::EmptySearch());
+    }
+    if (getIsFilter()) {
+        return queryeval::SearchIterator::UP
+                (strict
+                 ? new FilterAttributeIteratorStrict<SetSearchContext>(*this, matchData)
+                 : new FilterAttributeIteratorT<SetSearchContext>(*this, matchData));
+    }
+    return queryeval::SearchIterator::UP
+            (strict
+             ? new AttributeIteratorStrict<SetSearchContext>(*this, matchData)
+             : new AttributeIteratorT<SetSearchContext>(*this, matchData));
+}
+
+template <typename B, typename M>
+bool MultiValueNumericAttribute<B, M>::ArraySearchContext::valid() const { return this->isValid(); }
+
+template <typename B, typename M>
+MultiValueNumericAttribute<B, M>::ArraySearchContext::ArraySearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
+    NumericAttribute::Range<T>(*qTerm),
+    AttributeVector::SearchContext(toBeSearched),
+    _toBeSearched(static_cast<const MultiValueNumericAttribute<B, M> &>(toBeSearched))
+{ }
+
+template <typename B, typename M>
+Int64Range MultiValueNumericAttribute<B, M>::ArraySearchContext::getAsIntegerTerm() const {
+    return this->getRange();
+}
+
+template <typename B, typename M>
+std::unique_ptr<queryeval::SearchIterator>
+MultiValueNumericAttribute<B, M>::ArraySearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
+{
+    if (!valid()) {
+        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+    }
+    if (getIsFilter()) {
+        return queryeval::SearchIterator::UP
+                (strict
+                 ? new FilterAttributeIteratorStrict<ArraySearchContext>(*this, matchData)
+                 : new FilterAttributeIteratorT<ArraySearchContext>(*this, matchData));
+    }
+    return queryeval::SearchIterator::UP
+            (strict
+             ? new AttributeIteratorStrict<ArraySearchContext>(*this, matchData)
+             : new AttributeIteratorT<ArraySearchContext>(*this, matchData));
 }
 
 } // namespace search

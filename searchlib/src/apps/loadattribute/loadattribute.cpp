@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
+
 #include <iostream>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -9,7 +8,7 @@
 #include <fstream>
 
 #include <vespa/searchlib/attribute/attributevector.hpp>
-LOG_SETUP("loadattribute");
+#include <vespa/fastlib/io/bufferedfile.h>
 
 namespace search {
 
@@ -169,9 +168,9 @@ LoadAttribute::Main()
     c.setFastSearch(doFastSearch);
     c.setHuge(doHuge);
     AttributePtr ptr = AttributeFactory::createAttribute(fileName, c);
-    if (doEnableEnumeratedSave)
+    if (doEnableEnumeratedSave) {
         ptr->enableEnumeratedSave();
-    AttributeVector::enableEnumeratedLoad();
+    }
     FastOS_Time timer;
     timer.SetNow();
     load(ptr);

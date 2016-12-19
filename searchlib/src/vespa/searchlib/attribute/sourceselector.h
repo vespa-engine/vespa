@@ -78,7 +78,7 @@ public:
 
     // Inherit doc from ISourceSelector
     virtual void setSource(uint32_t docId, queryeval::Source source) = 0;
-    virtual ISourceSelector::Iterator::UP createIterator() const = 0;
+    virtual std::unique_ptr<queryeval::sourceselector::Iterator> createIterator() const = 0;
 };
 
 } // namespace search

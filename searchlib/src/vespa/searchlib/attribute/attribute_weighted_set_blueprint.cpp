@@ -3,6 +3,7 @@
 
 #include "attribute_weighted_set_blueprint.h"
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
+#include <vespa/searchlib/query/queryterm.h>
 
 namespace search {
 

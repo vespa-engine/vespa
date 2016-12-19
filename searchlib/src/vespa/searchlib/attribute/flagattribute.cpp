@@ -78,7 +78,7 @@ void FlagAttributeT<B>::clearOldValues(DocId doc)
 
 template <typename B>
 bool
-FlagAttributeT<B>::onLoadEnumerated(typename B::ReaderBase &attrReader)
+FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
 {
     typedef typename B::WType::ValueType TT;
 
@@ -94,10 +94,9 @@ FlagAttributeT<B>::onLoadEnumerated(typename B::ReaderBase &attrReader)
     if (numValues > 0)
         _bitVectorSize = numDocs;
 
-    FileUtil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
+    fileutil::LoadedBuffer::UP udatBuffer(this->loadUDAT());
     assert((udatBuffer->size() % sizeof(TT)) == 0);
-    vespalib::ConstArrayRef<TT> map(reinterpret_cast<const TT *>
-                                    (udatBuffer->buffer()),
+    vespalib::ConstArrayRef<TT> map(reinterpret_cast<const TT *>(udatBuffer->buffer()),
                                     udatBuffer->size() / sizeof(TT));
     SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, saver);

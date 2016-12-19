@@ -4,6 +4,7 @@
 #include "filesizecalculator.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/guard.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.util.fileutil");
 
@@ -15,7 +16,9 @@ using vespalib::getLastErrorString;
 
 namespace search {
 
-FileUtil::LoadedMmap::LoadedMmap(const vespalib::string &fileName)
+namespace fileutil {
+
+LoadedMmap::LoadedMmap(const vespalib::string &fileName)
     : LoadedBuffer(NULL, 0),
       _mapBuffer(NULL),
       _mapSize(0)
@@ -36,7 +39,7 @@ FileUtil::LoadedMmap::LoadedMmap(const vespalib::string &fileName)
                     if (sz >= hl) {
                         GenericHeader::MMapReader rd(static_cast<const char *>(tmpBuffer), sz);
                         _header = std::make_unique<GenericHeader>();
-                        size_t headerLen =  _header->read(rd);
+                        size_t headerLen = _header->read(rd);
                         if ((headerLen <= _mapSize) &&
                             FileSizeCalculator::extractFileSize(*_header, headerLen, fileName, sz)) {
                             _size = sz - headerLen;
@@ -57,20 +60,19 @@ FileUtil::LoadedMmap::LoadedMmap(const vespalib::string &fileName)
                                                     fileName.c_str(), fd.fd(), res));
         }
     } else {
-        throw IllegalStateException(make_string("Failed opening '%s' for reading errno(%d)", fileName.c_str(), errno));
+        throw IllegalStateException(
+                make_string("Failed opening '%s' for reading errno(%d)", fileName.c_str(), errno));
     }
 }
 
-
-
-FileUtil::LoadedMmap::~LoadedMmap()
-{
+LoadedMmap::~LoadedMmap() {
     madvise(_mapBuffer, _mapSize, MADV_DONTNEED);
     munmap(_mapBuffer, _mapSize);
 }
 
+}
 
-std::unique_ptr<Fast_BufferedFile>
+std::unique_ptr<FastOS_FileInterface>
 FileUtil::openFile(const vespalib::string &fileName)
 {
     std::unique_ptr<Fast_BufferedFile> file(new Fast_BufferedFile());
@@ -83,8 +85,10 @@ FileUtil::openFile(const vespalib::string &fileName)
     return file;
 }
 
+using fileutil::LoadedBuffer;
+using fileutil::LoadedMmap;
 
-FileUtil::LoadedBuffer::UP
+LoadedBuffer::UP
 FileUtil::loadFile(const vespalib::string &fileName)
 {
     LoadedBuffer::UP data(new LoadedMmap(fileName));

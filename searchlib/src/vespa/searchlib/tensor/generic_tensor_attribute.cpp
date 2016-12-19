@@ -4,7 +4,10 @@
 #include "generic_tensor_attribute_saver.h"
 #include "tensor_attribute.hpp"
 #include <vespa/vespalib/tensor/tensor.h>
-#include <vespa/searchlib/common/rcuvector.cpp>
+#include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/attribute/readerbase.h>
+#include <vespa/searchlib/util/fileutil.h>
 
 using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
@@ -18,24 +21,22 @@ namespace {
 
 constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 
-class TensorReader : public AttributeVector::ReaderBase
+class TensorReader : public ReaderBase
 {
 private:
     FileReader<uint32_t> _tensorSizeReader;
 public:
     TensorReader(AttributeVector &attr)
-        : AttributeVector::ReaderBase(attr),
+        : ReaderBase(attr),
           _tensorSizeReader(*_datFile)
-    {
-    }
+    { }
     uint32_t getNextTensorSize() { return _tensorSizeReader.readHostOrder(); }
     void readTensor(void *buf, size_t len) { _datFile->ReadBuf(buf, len); }
 };
 
 }
 
-GenericTensorAttribute::GenericTensorAttribute(const vespalib::stringref &baseFileName,
-                                 const Config &cfg)
+GenericTensorAttribute::GenericTensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg)
     : TensorAttribute(baseFileName, cfg, _genericTensorStore)
 {
 }

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sourceblendersearch.h"
+#include "isourceselector.h"
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/util/array.hpp>
 
@@ -12,7 +13,7 @@ EmptySearch SourceBlenderSearch::_emptySearch;
 class SourceBlenderSearchStrict : public SourceBlenderSearch
 {
 public:
-    SourceBlenderSearchStrict(ISourceSelector::Iterator::UP sourceSelector, const Children &children);
+    SourceBlenderSearchStrict(std::unique_ptr<Iterator> sourceSelector, const Children &children);
 private:
     VESPA_DLL_LOCAL void advance() __attribute__((noinline));
     vespalib::Array<SearchIterator *>  _nextChildren;
@@ -22,7 +23,7 @@ private:
 };
 
 SourceBlenderSearchStrict::SourceBlenderSearchStrict(
-        ISourceSelector::Iterator::UP sourceSelector,
+        std::unique_ptr<Iterator> sourceSelector,
         const Children &children)
     : SourceBlenderSearch(std::move(sourceSelector), children),
       _nextChildren()
@@ -107,7 +108,7 @@ SourceBlenderSearch::doUnpack(uint32_t docid)
 }
 
 SourceBlenderSearch::SourceBlenderSearch(
-        ISourceSelector::Iterator::UP sourceSelector,
+        std::unique_ptr<sourceselector::Iterator> sourceSelector,
         const Children &children) :
     _matchedChild(NULL),
     _sourceSelector(std::move(sourceSelector)),
@@ -160,10 +161,9 @@ SourceBlenderSearch::~SourceBlenderSearch()
     }
 }
 
-SourceBlenderSearch * SourceBlenderSearch::create(
-        ISourceSelector::Iterator::UP sourceSelector,
-        const Children &children,
-        bool strict)
+SourceBlenderSearch *
+SourceBlenderSearch::create(std::unique_ptr<sourceselector::Iterator> sourceSelector,
+                            const Children &children, bool strict)
 {
     if (strict) {
         return new SourceBlenderSearchStrict(std::move(sourceSelector), children);

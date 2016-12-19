@@ -49,6 +49,7 @@ private:
 
     typedef StringAttribute::Change       Change;
     typedef StringAttribute::ChangeVector ChangeVector;
+    using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
     typedef typename PostingParent::PostingList PostingList;
     typedef typename PostingParent::PostingMap  PostingMap;
@@ -91,7 +92,7 @@ public:
     virtual void onGenerationChange(generation_t generation);
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
 
     virtual bool
     onAddDoc(DocId doc)
@@ -108,7 +109,7 @@ public:
     }
 
     virtual attribute::IPostingListAttributeBase *
-    getIPostingListAttributeBase(void)
+    getIPostingListAttributeBase()
     {
         return this;
     }

@@ -5,10 +5,8 @@
 #include "attributefactory.h"
 #include "attrvector.h"
 #include "attributefile.h"
-#include "multistringattribute.h"
 #include "interlock.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
-
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attributemanager");
@@ -18,8 +16,7 @@ using vespalib::string;
 using vespalib::IllegalStateException;
 using search::attribute::IAttributeContext;
 
-namespace
-{
+namespace {
 
 vespalib::Monitor baseDirMonitor("attributemanagerbasedir", false);
 typedef std::set<string> BaseDirSet;
@@ -28,8 +25,7 @@ BaseDirSet baseDirSet;
 static void
 waitBaseDir(const string &baseDir)
 {
-    if (baseDir.empty())
-        return;
+    if (baseDir.empty()) { return; }
     vespalib::MonitorGuard guard(baseDirMonitor);
     bool waited = false;
 
@@ -37,19 +33,16 @@ waitBaseDir(const string &baseDir)
     while (it != baseDirSet.end()) {
         if (!waited) {
             waited = true;
-            LOG(debug,
-                "AttributeManager: Waiting for basedir %s to be available",
-                baseDir.c_str());
+            LOG(debug, "AttributeManager: Waiting for basedir %s to be available", baseDir.c_str());
         }
         guard.wait();
         it = baseDirSet.find(baseDir);
     }
 
     baseDirSet.insert(baseDir);
-    if (waited)
-        LOG(debug,
-            "AttributeManager: basedir %s available",
-            baseDir.c_str());
+    if (waited) {
+        LOG(debug, "AttributeManager: basedir %s available", baseDir.c_str());
+    }
 }
 
 
@@ -62,14 +55,12 @@ dropBaseDir(const string &baseDir)
 
     BaseDirSet::iterator it = baseDirSet.find(baseDir);
     if (it == baseDirSet.end()) {
-        LOG(error,
-            "AttributeManager: Cannot drop basedir %s, already dropped",
-            baseDir.c_str());
-    } else
+        LOG(error, "AttributeManager: Cannot drop basedir %s, already dropped", baseDir.c_str());
+    } else {
         baseDirSet.erase(it);
+    }
     guard.broadcast();
 }
-
 
 }
 

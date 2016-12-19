@@ -16,9 +16,10 @@ private:
     }
     void reserve(uint32_t numDocs);
 
+    using IIterator = queryeval::sourceselector::Iterator;
 public:
     typedef std::unique_ptr<FixedSourceSelector> UP;
-    class Iterator : public ISourceSelector::Iterator {
+    class Iterator : public IIterator {
     private:
         AttributeGuard _attributeGuard;
     public:
@@ -29,18 +30,18 @@ public:
     FixedSourceSelector(queryeval::Source defaultSource,
                         const vespalib::string & attrBaseFileName,
                         uint32_t initialNumDocs = 0);
-    virtual ~FixedSourceSelector();
+    ~FixedSourceSelector();
 
     FixedSourceSelector::UP cloneAndSubtract(const vespalib::string & attrBaseFileName, uint32_t diff);
     static FixedSourceSelector::UP load(const vespalib::string & baseFileName);
 
     // Inherit doc from ISourceSelector
-    virtual void setSource(uint32_t docId, queryeval::Source source);
-    virtual uint32_t getDocIdLimit() const {
+    void setSource(uint32_t docId, queryeval::Source source) final override;
+    uint32_t getDocIdLimit() const final override {
         return _source.getNumDocs() - 1;
     }
-    virtual ISourceSelector::Iterator::UP createIterator() const {
-        return ISourceSelector::Iterator::UP(new Iterator(*this));
+    std::unique_ptr<IIterator> createIterator() const final override {
+        return std::make_unique<Iterator>(*this);
     }
 };
 

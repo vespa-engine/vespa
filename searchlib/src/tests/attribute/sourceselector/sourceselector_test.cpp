@@ -89,13 +89,13 @@ void Test::testSourceSelector(const DocSource *docSource, size_t sz,
                               uint8_t defaultSource, ISourceSelector &selector)
 {
     {
-        ISourceSelector::Iterator::UP it(selector.createIterator());
+        auto it(selector.createIterator());
         for (size_t i = 0; i < sz; ++i) {
             EXPECT_EQUAL(docSource[i].source, it->getSource(docSource[i].docId));
         }
     }
     {
-        ISourceSelector::Iterator::UP it(selector.createIterator());
+        auto it(selector.createIterator());
         for (size_t i = 0, j = 0; i <= docSource[sz - 1].docId; ++i) {
             if (i != docSource[j].docId) {
                 EXPECT_EQUAL(defaultSource, it->getSource(i));
@@ -122,7 +122,7 @@ Test::requireThatSelectorCanCloneAndSubtract()
     EXPECT_EQUAL(base_id + diff, new_selector->getBaseId());
     EXPECT_EQUAL(maxDocId+1, new_selector->getDocIdLimit());
 
-    ISourceSelector::Iterator::UP it(new_selector->createIterator());
+    auto it(new_selector->createIterator());
     for(size_t i = 0; i < arraysize(docs); ++i) {
         if (docs[i].source > diff) {
             EXPECT_EQUAL(docs[i].source - diff, it->getSource(docs[i].docId));
@@ -176,7 +176,7 @@ Test::requireThatCompleteSourceRangeIsHandled()
     for (uint32_t i = 0; i < ISourceSelector::SOURCE_LIMIT; ++i) {
         selector.setSource(i, i);
     }
-    ISourceSelector::Iterator::UP itr = selector.createIterator();
+    auto itr = selector.createIterator();
     for (uint32_t i = 0; i < ISourceSelector::SOURCE_LIMIT; ++i) {
         EXPECT_EQUAL((queryeval::Source)i, itr->getSource(i));
     }

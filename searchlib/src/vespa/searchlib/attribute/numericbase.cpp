@@ -1,16 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include "numericbase.h"
-#include <vespa/fastlib/io/bufferedfile.h>
-#include "enumstorebase.h"
-#include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/log/log.h>
 
-LOG_SETUP(".searchlib.attribute.numericbase");
+#include "numericbase.hpp"
 
-namespace search
-{
+namespace search {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(NumericAttribute, AttributeVector);
 
@@ -66,5 +59,19 @@ NumericAttribute::fixupEnumRefCounts(const EnumVector &enumHist)
     (void) enumHist;
     fprintf(stderr, "NumericAttribute::fixupEnumRefCounts\n");
 }
+
+template class NumericAttribute::Range<int8_t>;
+template class NumericAttribute::Range<int16_t>;
+template class NumericAttribute::Range<int32_t>;
+template class NumericAttribute::Range<int64_t>;
+template class NumericAttribute::Range<float>;
+template class NumericAttribute::Range<double>;
+
+template class NumericAttribute::Equal<int8_t>;
+template class NumericAttribute::Equal<int16_t>;
+template class NumericAttribute::Equal<int32_t>;
+template class NumericAttribute::Equal<int64_t>;
+template class NumericAttribute::Equal<float>;
+template class NumericAttribute::Equal<double>;
 
 }

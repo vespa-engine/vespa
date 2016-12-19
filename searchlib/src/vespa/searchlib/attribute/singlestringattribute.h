@@ -36,6 +36,7 @@ protected:
     typedef typename SingleValueEnumAttributeBase::EnumIndex       EnumIndex;
     typedef typename SingleValueEnumAttributeBase::EnumIndexVector EnumIndexVector;
     typedef attribute::EnumHintSearchContext    EnumHintSearchContext;
+    using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
 public:
     SingleValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
@@ -78,11 +79,11 @@ public:
     }
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
 
     class StringSingleImplSearchContext : public StringAttribute::StringSearchContext {
     public:
-        StringSingleImplSearchContext(QueryTermSimple::UP qTerm, const StringAttribute & toBeSearched) :
+        StringSingleImplSearchContext(QueryTermSimpleUP qTerm, const StringAttribute & toBeSearched) :
             StringSearchContext(std::move(qTerm), toBeSearched)
         { }
     protected:
@@ -105,7 +106,7 @@ public:
         typedef SingleValueStringAttributeT<B> AttrType;
         typedef typename EnumStore::FoldedComparatorType FoldedComparatorType;
     public:
-        StringTemplSearchContext(QueryTermSimple::UP qTerm, const AttrType & toBeSearched);
+        StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
     };
 };
 

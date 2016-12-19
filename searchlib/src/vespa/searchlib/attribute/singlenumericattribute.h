@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/attributeiterators.h>
+#include "integerbase.h"
+#include "floatbase.h"
+#include "attributeiterators.h"
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/searchlib/query/query.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
@@ -44,65 +44,33 @@ private:
     private:
         const T * _data;
 
-        virtual bool
-        onCmp(DocId docId, int32_t & weight) const
-        {
+        bool onCmp(DocId docId, int32_t & weight) const override {
             return cmp(docId, weight);
         }
 
-        virtual bool
-        onCmp(DocId docId) const
-        {
+        bool onCmp(DocId docId) const override {
             return cmp(docId);
         }
 
-        virtual bool valid() const { return M::isValid(); }
+        bool valid() const override;
 
     public:
-        SingleSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched) :
-            M(*qTerm, true),
-            AttributeVector::SearchContext(toBeSearched),
-            _data(&static_cast<const SingleValueNumericAttribute<B> &>(toBeSearched)._data[0])
-        {
-        }
-
-        bool
-        cmp(DocId docId, int32_t & weight) const
-        {
+        SingleSearchContext(QueryTermSimple::UP qTerm, const NumericAttribute & toBeSearched);
+        bool cmp(DocId docId, int32_t & weight) const {
             const T v = _data[docId];
             weight = 1;
             return this->match(v);
         }
 
-        bool
-        cmp(DocId docId) const
-        {
+        bool cmp(DocId docId) const {
             const T v = _data[docId];
             return this->match(v);
         }
 
-        virtual Int64Range getAsIntegerTerm() const {
-            return M::getRange();
-        }
+        Int64Range getAsIntegerTerm() const override;
 
-        virtual std::unique_ptr<queryeval::SearchIterator>
-        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-        {
-            if (!valid()) {
-                return queryeval::SearchIterator::UP(
-                        new queryeval::EmptySearch());
-            }
-            if (getIsFilter()) {
-                return queryeval::SearchIterator::UP
-                    (strict
-                     ? new FilterAttributeIteratorStrict<SingleSearchContext<M> >(*this, matchData)
-                     : new FilterAttributeIteratorT<SingleSearchContext<M> >(*this, matchData));
-            }
-            return queryeval::SearchIterator::UP
-                (strict
-                 ? new AttributeIteratorStrict<SingleSearchContext<M> >(*this, matchData)
-                 : new AttributeIteratorT<SingleSearchContext<M> >(*this, matchData));
-        }
+        std::unique_ptr<queryeval::SearchIterator>
+        createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
     };
 
 
@@ -148,8 +116,7 @@ public:
     }
     virtual bool onLoad();
 
-    bool
-    onLoadEnumerated(typename B::ReaderBase &attrReader);
+    bool onLoadEnumerated(ReaderBase &attrReader);
 
     AttributeVector::SearchContext::UP
     getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;

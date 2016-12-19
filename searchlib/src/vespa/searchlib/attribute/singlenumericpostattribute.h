@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/singlenumericenumattribute.h>
-#include <vespa/searchlib/attribute/postinglistattribute.h>
+#include "singlenumericenumattribute.h"
+#include "postinglistattribute.h"
 #include "postinglistsearchcontext.h"
 
 namespace search {
@@ -42,12 +42,10 @@ public:
     typedef typename SingleValueNumericEnumAttribute<B>::T             T;
 private:
 
+    using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     typedef typename SingleValueNumericEnumAttribute<B>::SingleSearchContext SingleSearchContext;
     typedef SingleSearchContext     SingleNumericSearchContext;
-    typedef attribute::NumericPostingSearchContext<SingleNumericSearchContext,
-                                                   SelfType,
-                                                   btree::BTreeNoLeafData>
-        SinglePostingSearchContext;
+    typedef attribute::NumericPostingSearchContext<SingleNumericSearchContext, SelfType, btree::BTreeNoLeafData> SinglePostingSearchContext;
 
     typedef typename PostingParent::PostingMap            PostingMap;
     typedef typename B::BaseClass::Change                 Change;
@@ -88,33 +86,15 @@ public:
     virtual void onGenerationChange(generation_t generation);
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override;
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override;
 
-    virtual bool
-    onAddDoc(DocId doc)
-    {
-        return forwardedOnAddDoc(doc,
-                                 this->_enumIndices.size(),
-                                 this->_enumIndices.capacity());
+    bool onAddDoc(DocId doc) override {
+        return forwardedOnAddDoc(doc, this->_enumIndices.size(), this->_enumIndices.capacity());
     }
     
-    virtual void
-    fillPostings(LoadedVector & loaded)
-    {
-        handleFillPostings(loaded);
-    }
-
-    virtual attribute::IPostingListAttributeBase *
-    getIPostingListAttributeBase(void)
-    {
-        return this;
-    }
-
-    virtual void
-    fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded)
-    {
-        fillPostingsFixupEnumBase(loaded);
-    }
+    virtual void fillPostings(LoadedVector & loaded) override { handleFillPostings(loaded); }
+    attribute::IPostingListAttributeBase *getIPostingListAttributeBase() override { return this; }
+    void fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded) override { fillPostingsFixupEnumBase(loaded); }
 };
 
 } // namespace search

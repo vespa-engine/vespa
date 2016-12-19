@@ -34,12 +34,13 @@ class SingleExtAttribute
                                      typename AttributeTemplate<T>::Type>,
       public IExtendAttribute
 {
-    typedef typename SingleExtAttribute<T>::NumDirectAttrVec Super;
-    typedef typename Super::Config Config;
-    typedef typename Super::BasicType BasicType;
+    using Super = typename SingleExtAttribute<T>::NumDirectAttrVec;
+    using Config =  typename Super::Config;
+    using BasicType = typename Super::BasicType;
+    using QueryTermSimpleUP = typename Super::QueryTermSimpleUP;
 
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override
     {
         (void) term;
         (void) params;
@@ -93,25 +94,28 @@ public:
 
 template <typename T>
 class MultiExtAttribute
-    : public NumericDirectAttrVector<AttrVector::Features<true>,
-                                     typename AttributeTemplate<T>::Type>,
+    : public NumericDirectAttrVector<AttrVector::Features<true>, typename AttributeTemplate<T>::Type>,
       public IExtendAttribute
 {
+protected:
     typedef typename MultiExtAttribute<T>::NumDirectAttrVec Super;
     typedef typename Super::Config Config;
     typedef typename Super::BasicType BasicType;
+    using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
+    MultiExtAttribute(const vespalib::string &name, const attribute::CollectionType &ctype)
+            : Super(name, Config(BasicType::fromType(T()), ctype))
+    { }
+private:
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override
     {
         (void) term;
         (void) params;
         return AttributeVector::SearchContext::UP();
     }
     IExtendAttribute * getExtendInterface() override { return this; }
-protected:
-    MultiExtAttribute(const vespalib::string &name, const attribute::CollectionType &ctype)
-        : Super(name, Config(BasicType::fromType(T()), ctype)) {}
+
 public:
     MultiExtAttribute(const vespalib::string &name)
         : Super(name, Config(BasicType::fromType(static_cast<T>(0)),
@@ -188,7 +192,7 @@ class WeightedSetIntegerExtAttribute
     : public WeightedSetExtAttributeBase<MultiIntegerExtAttribute>
 {
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override
     {
         (void) term;
         (void) params;
@@ -204,7 +208,7 @@ class WeightedSetFloatExtAttribute
     : public WeightedSetExtAttributeBase<MultiFloatExtAttribute>
 {
     AttributeVector::SearchContext::UP
-    getSearch(QueryTermSimple::UP term, const AttributeVector::SearchContext::Params & params) const override
+    getSearch(QueryTermSimpleUP term, const AttributeVector::SearchContext::Params & params) const override
     {
         (void) term;
         (void) params;
