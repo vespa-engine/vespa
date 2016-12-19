@@ -38,13 +38,13 @@ public class TensorValue extends Value {
     @Override
     public double asDouble() {
         if (hasDouble())
-            return value.cells().get(TensorAddress.empty);
+            return value.get(TensorAddress.empty);
         throw new UnsupportedOperationException("Requires a double value, but " + this.value + " cannot be " +
                                                 "used as a double");
     }
 
     @Override
-    public boolean hasDouble() { return value.type().dimensions().isEmpty() && ! value.cells().isEmpty(); }
+    public boolean hasDouble() { return value.type().dimensions().isEmpty() && ! value.isEmpty(); }
 
     @Override
     public boolean asBoolean() {

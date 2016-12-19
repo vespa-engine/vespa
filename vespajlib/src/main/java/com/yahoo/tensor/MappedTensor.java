@@ -4,6 +4,7 @@ package com.yahoo.tensor;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -26,12 +27,21 @@ public class MappedTensor implements Tensor {
 
     @Override
     public TensorType type() { return type; }
-
+    
     @Override
-    public Map<TensorAddress, Double> cells() { return cells; }
+    public int size() { return cells.size(); }
 
     @Override
     public double get(TensorAddress address) { return cells.getOrDefault(address, Double.NaN); }
+
+    @Override
+    public Iterator<Map.Entry<TensorAddress, Double>> cellIterator() { return cells.entrySet().iterator(); }
+
+    @Override
+    public Iterator<Double> valueIterator() { return cells.values().iterator(); }
+
+    @Override
+    public Map<TensorAddress, Double> cells() { return cells; }
 
     @Override
     public int hashCode() { return cells.hashCode(); }

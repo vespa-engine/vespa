@@ -8,6 +8,7 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.DoubleUnaryOperator;
@@ -52,8 +53,10 @@ public class Map extends PrimitiveTensorFunction {
     public Tensor evaluate(EvaluationContext context) {
         Tensor argument = argument().evaluate(context);
         Tensor.Builder builder = Tensor.Builder.of(argument.type());
-        for (java.util.Map.Entry<TensorAddress, Double> cell : argument.cells().entrySet())
+        for (Iterator<java.util.Map.Entry<TensorAddress, Double>> i = argument.cellIterator(); i.hasNext(); ) {
+            java.util.Map.Entry<TensorAddress, Double> cell = i.next();
             builder.cell(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
+        }
         return builder.build();
     }
 

@@ -28,7 +28,7 @@ class SparseBinaryFormat implements BinaryFormat {
     @Override
     public void encode(GrowableByteBuffer buffer, Tensor tensor) {
         encodeDimensions(buffer, tensor.type().dimensions());
-        encodeCells(buffer, tensor.cells());
+        encodeCells(buffer, tensor);
     }
 
     private static void encodeDimensions(GrowableByteBuffer buffer, List<TensorType.Dimension> sortedDimensions) {
@@ -38,11 +38,12 @@ class SparseBinaryFormat implements BinaryFormat {
         }
     }
 
-    private static void encodeCells(GrowableByteBuffer buffer, Map<TensorAddress, Double> cells) {
-        buffer.putInt1_4Bytes(cells.size());
-        for (Map.Entry<TensorAddress, Double> cellEntry : cells.entrySet()) {
-            encodeAddress(buffer, cellEntry.getKey());
-            buffer.putDouble(cellEntry.getValue());
+    private static void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
+        buffer.putInt1_4Bytes(tensor.size());
+        for (Iterator<Map.Entry<TensorAddress, Double>> i = tensor.cellIterator(); i.hasNext(); ) {
+            Map.Entry<TensorAddress, Double> cell = i.next();
+            encodeAddress(buffer, cell.getKey());
+            buffer.putDouble(cell.getValue());
         }
     }
 

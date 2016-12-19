@@ -15,6 +15,7 @@ import com.yahoo.tensor.functions.Softmax;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,13 +44,25 @@ import java.util.function.Function;
 @Beta
 public interface Tensor {
 
+    // ----------------- Accessors
+    
     TensorType type();
 
-    /** Returns an immutable map of the cells of this */
-    Map<TensorAddress, Double> cells();
+    /** Returns whether this have any cells */
+    default boolean isEmpty() { return size() == 0; }
+
+    /** Returns the number of cells in this */
+    int size();
 
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
+
+    Iterator<Map.Entry<TensorAddress, Double>> cellIterator();
+
+    Iterator<Double> valueIterator();
+
+    /** Returns an immutable map of the cells of this. This may be expensive for some implementations - avoid when possible */
+    Map<TensorAddress, Double> cells();
 
     /** 
      * Returns the value of this as a double if it has no dimensions and one value
@@ -59,11 +72,10 @@ public interface Tensor {
     default double asDouble() {
         if (type().dimensions().size() > 0)
             throw new IllegalStateException("This tensor is not dimensionless. Dimensions: " + type().dimensions().size());
-        Map<TensorAddress, Double> cells = cells();
-        if (cells.size() == 0) return Double.NaN;
-        if (cells.size() > 1)
-            throw new IllegalStateException("This tensor does not have a single value, it has " + cells().size());
-        return cells.values().iterator().next();
+        if (size() == 0) return Double.NaN;
+        if (size() > 1)
+            throw new IllegalStateException("This tensor does not have a single value, it has " + size());
+        return valueIterator().next();
     }
     
     // ----------------- Primitive tensor functions
@@ -163,7 +175,7 @@ public interface Tensor {
      * @return the tensor on the standard string format
      */
     static String toStandardString(Tensor tensor) {
-        if (tensor.cells().isEmpty() && ! tensor.type().dimensions().isEmpty()) // explicitly output type TODO: Never do that?
+        if (tensor.isEmpty() && ! tensor.type().dimensions().isEmpty()) // explicitly output type TODO: Never do that?
             return tensor.type() + ":" + contentToString(tensor);
         else
             return contentToString(tensor);
@@ -240,6 +252,7 @@ public interface Tensor {
     interface Builder {
         
         /** Creates a suitable builder for the given type */
+        // TODO: Create version of this which takes size info and use it when possible
         static Builder of(TensorType type) {
             boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
