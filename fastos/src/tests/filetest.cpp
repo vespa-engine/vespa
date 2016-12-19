@@ -245,7 +245,7 @@ public:
         PrintSeparator();
     }
 
-    void MemoryMapTest ()
+    void MemoryMapTest (int mmap_flags)
     {
         TestHeader ("Memory Map Test");
 
@@ -268,7 +268,7 @@ public:
 
             file.Close();
 
-            file.enableMemoryMap(0);
+            file.enableMemoryMap(mmap_flags);
 
             rc = file.OpenReadOnly();
 
@@ -809,7 +809,8 @@ public:
         ReadWriteTest();
         ScanDirectoryTest();
         ReadBufTest();
-        MemoryMapTest();
+        MemoryMapTest(0);
+        MemoryMapTest(MAP_HUGETLB);
 
         PrintSeparator();
         printf("END OF TEST (%s)\n", _argv[0]);
