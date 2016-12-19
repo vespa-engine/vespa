@@ -120,7 +120,7 @@ public class IndexedTensor implements Tensor {
 
         int valueIndex = 0;
         for (int i = 0; i < address.size(); i++)
-            valueIndex += productOfDimensionsAfter(i, dimensionSizes) * Integer.parseInt(address.label(i));
+            valueIndex += productOfDimensionsAfter(i, dimensionSizes) * address.intLabel(i);
         return valueIndex;
     }
 
@@ -351,12 +351,7 @@ public class IndexedTensor implements Tensor {
         public Builder cell(TensorAddress address, double value) {
             int[] indexes = new int[address.size()];
             for (int i = 0; i < address.size(); i++) {
-                try {
-                    indexes[i] = Integer.parseInt(address.label(i));
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Labels in an indexed tensor must be integers, not '" +
-                                                       address.label(i) + "'");
-                }
+                indexes[i] = address.intLabel(i);
             }
             cell(value, indexes);
             return this;

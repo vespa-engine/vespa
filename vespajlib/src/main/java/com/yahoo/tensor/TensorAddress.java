@@ -80,7 +80,14 @@ public interface TensorAddress extends Comparable<TensorAddress> {
         public String label(int i) { return labels[i]; }
         
         @Override
-        public int intLabel(int i) { return Integer.parseInt(labels[i]); }
+        public int intLabel(int i) { 
+            try {
+                return Integer.parseInt(labels[i]);
+            } 
+            catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Expected an int label in " + this + " at position " + i);
+            }
+        }
 
         @Override
         public int compareTo(TensorAddress other) {
