@@ -205,11 +205,11 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
                 int64_t filesize = GetSize();
                 size_t mlen = static_cast<size_t>(filesize);
                 if ((static_cast<int64_t>(mlen) == filesize) && (mlen > 0)) {
-                    void *mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, static_cast<off_t>(0));
-                    if (static_cast<void *>(mbase) == reinterpret_cast<void *>(-1)) {
-                        mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | (_mmapFlags & SUPPORTED_MMAP_FLAGS), _filedes, static_cast<off_t>(0));
+                    void *mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | _mmapFlags, _filedes, 0);
+                    if (mbase == reinterpret_cast<void *>(-1)) {
+                        mbase = mmap(nullptr, mlen, PROT_READ, MAP_SHARED | (_mmapFlags & SUPPORTED_MMAP_FLAGS), _filedes, 0);
                     }
-                    if (static_cast<void *>(mbase) != reinterpret_cast<void *>(-1)) {
+                    if (mbase != reinterpret_cast<void *>(-1)) {
                         int fadviseOptions = getFAdviseOptions();
                         int eCode(0);
                         if (POSIX_FADV_RANDOM == fadviseOptions) {
