@@ -3,12 +3,14 @@
 #include "protonconfigurer.h"
 #include "bootstrapconfig.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <thread>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.protonconfigurer");
 
 using namespace vespa::config::search;
 using namespace vespa::config::search::core;
 using namespace config;
+using namespace std::chrono_literals;
 
 namespace proton {
 
@@ -34,7 +36,12 @@ ProtonConfigurer::Run(FastOS_ThreadInterface * thread, void *arg)
     (void) arg;
     (void) thread;
     while (!_retriever.isClosed()) {
-        fetchConfigs();
+        try {
+            fetchConfigs();
+        } catch (const config::InvalidConfigException & e) {
+            LOG(warning, "Invalid config received. Ignoring and continuing with old config : %s", e.what());
+            std::this_thread::sleep_for(100ms);
+        }
     }
 }
 
