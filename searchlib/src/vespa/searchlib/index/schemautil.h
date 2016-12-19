@@ -21,16 +21,16 @@ public:
         bool _positions;
 
     public:
-        const schema::DataType & getDataType(void) const {
+        const schema::DataType & getDataType() const {
             return _dataType;
         }
 
-        bool hasError(void) const { return _error; }
-        bool hasPrefix(void) const { return _prefix; }
-        bool hasPhrases(void) const { return _phrases; }
-        bool hasPositions(void) const { return _positions; }
+        bool hasError() const { return _error; }
+        bool hasPrefix() const { return _prefix; }
+        bool hasPhrases() const { return _phrases; }
+        bool hasPositions() const { return _positions; }
 
-        IndexSettings(void)
+        IndexSettings()
             : _dataType(schema::STRING),
               _error(false),
               _prefix(false),
@@ -97,30 +97,30 @@ public:
             _index = schema.getIndexFieldId(name);
         }
 
-        const Schema & getSchema(void) const {
+        const Schema & getSchema() const {
             return _schema;
         }
 
-        uint32_t getIndex(void) const {
+        uint32_t getIndex() const {
             return _index;
         }
 
-        const vespalib::string &getName(void) const {
+        const vespalib::string &getName() const {
             return _schema.getIndexField(_index).getName();
         }
 
-        IndexIterator &operator++(void) {
+        IndexIterator &operator++() {
             if (_index < _schema.getNumIndexFields()) {
                 ++_index;
             }
             return *this;
         }
 
-        bool isValid(void) const {
+        bool isValid() const {
             return _index < _schema.getNumIndexFields();
         }
 
-        IndexSettings getIndexSettings(void) const {
+        IndexSettings getIndexSettings() const {
             return SchemaUtil::getIndexSettings(_schema, _index);
         }
 
