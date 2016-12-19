@@ -8,6 +8,7 @@
 #include <vespa/searchlib/expression/forcelink.hpp>
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("fdispatch");
