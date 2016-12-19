@@ -9,7 +9,6 @@
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
-#include <vespa/vespalib/util/cpu.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <sys/sysctl.h>
 
@@ -18,7 +17,6 @@ LOG_SETUP(".vsm.fieldsearchspec");
 
 #define DEBUGMASK 0x01
 
-using vespalib::X86CpuInfo;
 using search::Query;
 using search::ConstQueryTermList;
 

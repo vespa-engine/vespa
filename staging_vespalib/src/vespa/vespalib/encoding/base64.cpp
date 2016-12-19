@@ -6,10 +6,9 @@
  *
  */
 
-#include <vespa/fastos/fastos.h>
-#include <assert.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <assert.h>
 
 namespace vespalib {
 

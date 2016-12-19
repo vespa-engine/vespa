@@ -1,8 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include "rusage.h"
 #include <stdexcept>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib {
 
@@ -45,7 +44,7 @@ RUsage RUsage::createSelf(const fastos::TimeStamp & since)
     RUsage r;
     r._time = fastos::TimeStamp(fastos::ClockSystem::now()) - since;
     if (getrusage(RUSAGE_SELF, &r) != 0) {
-        throw std::runtime_error(vespalib::make_vespa_string("getrusage failed with errno = %d", errno).c_str());
+        throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
     }
     return r;
 }
@@ -55,7 +54,7 @@ RUsage RUsage::createChildren(const fastos::TimeStamp & since)
     RUsage r;
     r._time = fastos::TimeStamp(fastos::ClockSystem::now()) - since;
     if (getrusage(RUSAGE_CHILDREN, &r) != 0) {
-        throw std::runtime_error(vespalib::make_vespa_string("getrusage failed with errno = %d", errno).c_str());
+        throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
     }
     return r;
 }
@@ -63,23 +62,23 @@ RUsage RUsage::createChildren(const fastos::TimeStamp & since)
 vespalib::string RUsage::toString()
 {
     vespalib::string s;
-    if (_time.sec() != 0.0) s += make_vespa_string("duration = %1.6f\n", _time.sec());
-    if (fastos::TimeStamp(ru_utime).sec() != 0.0) s += make_vespa_string("user time = %1.6f\n", fastos::TimeStamp(ru_utime).sec());
-    if (fastos::TimeStamp(ru_stime).sec() != 0.0) s += make_vespa_string("system time = %1.6f\n", fastos::TimeStamp(ru_stime).sec());
-    if (ru_maxrss != 0) s += make_vespa_string("ru_maxrss = %ld\n", ru_maxrss);
-    if (ru_ixrss != 0) s += make_vespa_string("ru_ixrss = %ld\n", ru_ixrss);
-    if (ru_idrss != 0) s += make_vespa_string("ru_idrss = %ld\n", ru_idrss);
-    if (ru_isrss != 0) s += make_vespa_string("ru_isrss = %ld\n", ru_isrss);
-    if (ru_minflt != 0) s += make_vespa_string("ru_minflt = %ld\n", ru_minflt);
-    if (ru_majflt != 0) s += make_vespa_string("ru_majflt = %ld\n", ru_majflt);
-    if (ru_nswap != 0) s += make_vespa_string("ru_nswap = %ld\n", ru_nswap);
-    if (ru_inblock != 0) s += make_vespa_string("ru_inblock = %ld\n", ru_inblock);
-    if (ru_oublock != 0) s += make_vespa_string("ru_oublock = %ld\n", ru_oublock);
-    if (ru_msgsnd != 0) s += make_vespa_string("ru_msgsnd = %ld\n", ru_msgsnd);
-    if (ru_msgrcv != 0) s += make_vespa_string("ru_msgrcv = %ld\n", ru_msgrcv);
-    if (ru_nsignals != 0) s += make_vespa_string("ru_nsignals = %ld\n", ru_nsignals);
-    if (ru_nvcsw != 0) s += make_vespa_string("ru_nvcsw = %ld\n", ru_nvcsw);
-    if (ru_nivcsw != 0) s += make_vespa_string("ru_nivcsw = %ld", ru_nivcsw);
+    if (_time.sec() != 0.0) s += make_string("duration = %1.6f\n", _time.sec());
+    if (fastos::TimeStamp(ru_utime).sec() != 0.0) s += make_string("user time = %1.6f\n", fastos::TimeStamp(ru_utime).sec());
+    if (fastos::TimeStamp(ru_stime).sec() != 0.0) s += make_string("system time = %1.6f\n", fastos::TimeStamp(ru_stime).sec());
+    if (ru_maxrss != 0) s += make_string("ru_maxrss = %ld\n", ru_maxrss);
+    if (ru_ixrss != 0) s += make_string("ru_ixrss = %ld\n", ru_ixrss);
+    if (ru_idrss != 0) s += make_string("ru_idrss = %ld\n", ru_idrss);
+    if (ru_isrss != 0) s += make_string("ru_isrss = %ld\n", ru_isrss);
+    if (ru_minflt != 0) s += make_string("ru_minflt = %ld\n", ru_minflt);
+    if (ru_majflt != 0) s += make_string("ru_majflt = %ld\n", ru_majflt);
+    if (ru_nswap != 0) s += make_string("ru_nswap = %ld\n", ru_nswap);
+    if (ru_inblock != 0) s += make_string("ru_inblock = %ld\n", ru_inblock);
+    if (ru_oublock != 0) s += make_string("ru_oublock = %ld\n", ru_oublock);
+    if (ru_msgsnd != 0) s += make_string("ru_msgsnd = %ld\n", ru_msgsnd);
+    if (ru_msgrcv != 0) s += make_string("ru_msgrcv = %ld\n", ru_msgrcv);
+    if (ru_nsignals != 0) s += make_string("ru_nsignals = %ld\n", ru_nsignals);
+    if (ru_nvcsw != 0) s += make_string("ru_nvcsw = %ld\n", ru_nvcsw);
+    if (ru_nivcsw != 0) s += make_string("ru_nivcsw = %ld", ru_nivcsw);
     return s;
 }
 

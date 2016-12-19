@@ -5,6 +5,7 @@
 #include "json_get_handler.h"
 #include <mutex>
 #include <memory>
+#include <vector>
 
 namespace vespalib {
 
