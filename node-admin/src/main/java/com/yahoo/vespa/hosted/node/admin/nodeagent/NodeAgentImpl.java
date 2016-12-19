@@ -158,6 +158,12 @@ public class NodeAgentImpl implements NodeAgent {
         if (loopThread != null) {
             throw new RuntimeException("Can not restart a node agent.");
         }
+
+        // If the container is already running, initialize vespaVersion
+        vespaVersion = dockerOperations.getContainer(hostname)
+                .filter(container -> container.isRunning)
+                .flatMap(container -> dockerOperations.getVespaVersion(container.name));
+
         loopThread = new Thread(this::loop);
         loopThread.setName("loop-" + hostname);
         loopThread.start();
@@ -568,7 +574,7 @@ public class NodeAgentImpl implements NodeAgent {
                         .withTag("clustertype", membership.clusterType)
                         .withTag("clusterid", membership.clusterId));
 
-        nodeSpec.vespaVersion.ifPresent(version -> scheduleMaker.withTag("vespaVersion", version));
+        vespaVersion.ifPresent(version -> scheduleMaker.withTag("vespaVersion", version));
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);

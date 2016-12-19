@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
