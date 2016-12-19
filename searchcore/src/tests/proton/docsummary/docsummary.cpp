@@ -9,6 +9,7 @@ LOG_SETUP("docsummary_test");
 #include <vespa/searchcore/proton/docsummary/documentstoreadapter.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>

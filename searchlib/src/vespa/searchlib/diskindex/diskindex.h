@@ -76,7 +76,7 @@ private:
     std::vector<DiskPostingFile::SP>       _postingFiles;
     std::vector<BitVectorDictionary::SP>   _bitVectorDicts;
     std::vector<std::unique_ptr<index::DictionaryFileRandRead>> _dicts;
-    TuneFileSearch			   _tuneFileSearch;
+    TuneFileSearch                         _tuneFileSearch;
     Cache                                  _cache;
     uint64_t                               _size;
 

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdbconfigmanager.h"
+#include "bootstrapconfig.h"
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/config/helper/legacy.h>
@@ -307,6 +308,43 @@ forwardConfig(const BootstrapConfig::SP & config)
         _bootstrapConfig = config;
         _ignoreForwardedConfig = false;
     }
+}
+
+
+DocumentDBConfigHelper::DocumentDBConfigHelper(const config::DirSpec &spec,
+                                               const vespalib::string &docTypeName,
+                                               const config::ConfigKeySet &extraConfigKeys)
+        : _mgr("", docTypeName),
+          _retriever()
+{
+    _mgr.setExtraConfigKeys(extraConfigKeys);
+    _retriever.reset(new config::ConfigRetriever(_mgr.createConfigKeySet(),
+                                                 config::IConfigContext::SP(new config::ConfigContext(spec))));
+}
+
+DocumentDBConfigHelper::~DocumentDBConfigHelper() { }
+
+bool
+DocumentDBConfigHelper::nextGeneration(int timeoutInMillis)
+{
+    config::ConfigSnapshot
+            snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
+    if (snapshot.empty())
+        return false;
+    _mgr.update(snapshot);
+    return true;
+}
+
+DocumentDBConfig::SP
+DocumentDBConfigHelper::getConfig(void) const
+{
+    return _mgr.getConfig();
+}
+
+void
+DocumentDBConfigHelper::forwardConfig(const std::shared_ptr<BootstrapConfig> & config)
+{
+    _mgr.forwardConfig(config);
 }
 
 } // namespace proton

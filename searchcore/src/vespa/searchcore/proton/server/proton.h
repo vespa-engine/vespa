@@ -1,8 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
 
 #include "health_adapter.h"
 #include "idocumentdbowner.h"
+#include "bootstrapconfigmanager.h"
+#include "documentdb.h"
+#include "memory_flush_config_updater.h"
+#include "protonconfigurer.h"
+#include "rpc_hooks.h"
+#include "bootstrapconfig.h"
 #include <vespa/persistence/proxy/providerstub.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
@@ -10,11 +17,6 @@
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
-#include <vespa/searchcore/proton/server/bootstrapconfigmanager.h>
-#include <vespa/searchcore/proton/server/documentdb.h>
-#include <vespa/searchcore/proton/server/memory_flush_config_updater.h>
-#include <vespa/searchcore/proton/server/protonconfigurer.h>
-#include <vespa/searchcore/proton/server/rpc_hooks.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchcorespi/plugin/factoryloader.h>
@@ -32,8 +34,7 @@
 #include <vespa/vespalib/util/rwlock.h>
 #include <vespa/vespalib/util/varholder.h>
 
-namespace proton
-{
+namespace proton {
 
 class DiskMemUsageSampler;
 class HwInfoSampler;

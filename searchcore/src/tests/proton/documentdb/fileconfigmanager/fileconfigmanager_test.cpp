@@ -2,6 +2,7 @@
 
 #include "config-mycfg.h"
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
+#include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/test_kit.h>

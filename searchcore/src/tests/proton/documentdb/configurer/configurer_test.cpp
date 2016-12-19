@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("configurer_test");
 #include <vespa/vespalib/testkit/testapp.h>
@@ -39,7 +39,6 @@ using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace vespalib;
 
-using document::DocumenttypesConfig;
 using fastos::TimeStamp;
 using proton::matching::SessionManager;
 using searchcorespi::IndexSearchable;

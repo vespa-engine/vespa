@@ -4,24 +4,24 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/config/config.h>
-#include "bootstrapconfig.h"
 #include "documentdbconfig.h"
 
 namespace proton {
 
-
+class BootstrapConfig;
 /**
  * This class manages the subscription for documentdb configs.
  */
 class DocumentDBConfigManager
 {
 public:
-    typedef std::shared_ptr<DocumentDBConfigManager> SP;
+    using SP = std::shared_ptr<DocumentDBConfigManager>;
+    using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
 
 private:
     vespalib::string     _configId;
     vespalib::string     _docTypeName;
-    BootstrapConfig::SP  _bootstrapConfig;
+    BootstrapConfigSP    _bootstrapConfig;
     DocumentDBConfig::SP _pendingConfigSnapshot;
     bool                 _ignoreForwardedConfig;
     vespalib::Lock       _pendingConfigLock;
@@ -44,7 +44,7 @@ public:
 
     DocumentDBConfig::SP getConfig() const;
 
-    void forwardConfig(const BootstrapConfig::SP & config);
+    void forwardConfig(const BootstrapConfigSP & config);
     const config::ConfigKeySet createConfigKeySet(void) const;
     void setExtraConfigKeys(const config::ConfigKeySet & extraConfigKeys) { _extraConfigKeys = extraConfigKeys; }
     const config::ConfigKeySet & getExtraConfigKeys() const { return _extraConfigKeys; }
@@ -59,37 +59,12 @@ class DocumentDBConfigHelper
 public:
     DocumentDBConfigHelper(const config::DirSpec &spec,
                            const vespalib::string &docTypeName,
-                           const config::ConfigKeySet &extraConfigKeys = config::ConfigKeySet())
-        : _mgr("", docTypeName),
-          _retriever()
-    {
-        _mgr.setExtraConfigKeys(extraConfigKeys);
-        _retriever.reset(new config::ConfigRetriever(_mgr.createConfigKeySet(),
-                                                     config::IConfigContext::SP(new config::ConfigContext(spec))));
-    }
+                           const config::ConfigKeySet &extraConfigKeys = config::ConfigKeySet());
 
-    bool
-    nextGeneration(int timeoutInMillis)
-    {
-        config::ConfigSnapshot
-            snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
-        if (snapshot.empty())
-            return false;
-        _mgr.update(snapshot);
-        return true;
-    }
-
-    DocumentDBConfig::SP
-    getConfig(void) const
-    {
-        return _mgr.getConfig();
-    }
-
-    void
-    forwardConfig(const BootstrapConfig::SP & config)
-    {
-        _mgr.forwardConfig(config);
-    }
+    ~DocumentDBConfigHelper();
+    bool nextGeneration(int timeoutInMillis);
+    DocumentDBConfig::SP getConfig() const;
+    void forwardConfig(const std::shared_ptr<BootstrapConfig> & config);
 private:
     DocumentDBConfigManager _mgr;
     std::unique_ptr<config::ConfigRetriever> _retriever;

@@ -1,14 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "protonconfigurer.h"
+#include "bootstrapconfig.h"
+#include <vespa/vespalib/util/exceptions.h>
+#include <thread>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.protonconfigurer");
-#include <vespa/vespalib/util/exceptions.h>
-#include "protonconfigurer.h"
 
 using namespace vespa::config::search;
 using namespace vespa::config::search::core;
 using namespace config;
+using namespace std::chrono_literals;
 
 namespace proton {
 
@@ -34,7 +36,12 @@ ProtonConfigurer::Run(FastOS_ThreadInterface * thread, void *arg)
     (void) arg;
     (void) thread;
     while (!_retriever.isClosed()) {
-        fetchConfigs();
+        try {
+            fetchConfigs();
+        } catch (const config::InvalidConfigException & e) {
+            LOG(warning, "Invalid config received. Ignoring and continuing with old config : %s", e.what());
+            std::this_thread::sleep_for(100ms);
+        }
     }
 }
 
