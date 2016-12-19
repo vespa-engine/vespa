@@ -159,7 +159,7 @@ public class NodeAgentImpl implements NodeAgent {
             throw new RuntimeException("Can not restart a node agent.");
         }
 
-        // If the container is already learning, initialize vespaVersion
+        // If the container is already running, initialize vespaVersion
         vespaVersion = dockerOperations.getContainer(hostname)
                 .filter(container -> container.isRunning)
                 .flatMap(container -> dockerOperations.getVespaVersion(container.name));
