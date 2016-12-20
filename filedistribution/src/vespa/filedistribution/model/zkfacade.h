@@ -24,6 +24,7 @@ VESPA_DEFINE_EXCEPTION(ZKNodeDoesNotExistsException, ZKException);
 VESPA_DEFINE_EXCEPTION(ZKConnectionLossException, ZKException);
 VESPA_DEFINE_EXCEPTION(ZKNodeExistsException, ZKException);
 VESPA_DEFINE_EXCEPTION(ZKFailedConnecting, ZKException);
+VESPA_DEFINE_EXCEPTION(ZKOperationTimeoutException, ZKException);
 VESPA_DEFINE_EXCEPTION(ZKSessionExpired, ZKException);
 
 class ZKGenericException : public ZKException {

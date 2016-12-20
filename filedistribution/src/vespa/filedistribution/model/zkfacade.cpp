@@ -132,6 +132,8 @@ public:
             throw fd::ZKNodeExistsException(path.string(), VESPA_STRLOC);
           case ZCONNECTIONLOSS:
             throw fd::ZKConnectionLossException(path.string(), VESPA_STRLOC);
+          case ZOPERATIONTIMEOUT:
+              throw fd::ZKOperationTimeoutException(path.string(), VESPA_STRLOC);
           default:
             if (_lastStatus != ZOK) {
                 throw fd::ZKGenericException(_lastStatus, toErrorMsg(_lastStatus) + " : " + path.string(), VESPA_STRLOC);
@@ -187,6 +189,7 @@ VESPA_IMPLEMENT_EXCEPTION(ZKConnectionLossException, ZKException);
 VESPA_IMPLEMENT_EXCEPTION(ZKNodeExistsException, ZKException);
 VESPA_IMPLEMENT_EXCEPTION(ZKFailedConnecting, ZKException);
 VESPA_IMPLEMENT_EXCEPTION(ZKSessionExpired, ZKException);
+VESPA_IMPLEMENT_EXCEPTION(ZKOperationTimeoutException, ZKException);
 VESPA_IMPLEMENT_EXCEPTION_SPINE(ZKGenericException);
 
 }
