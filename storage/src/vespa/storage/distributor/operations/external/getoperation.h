@@ -90,6 +90,7 @@ private:
     api::Timestamp _lastModified;
 
     PersistenceOperationMetricSet& _metric;
+    framework::MilliSecTimer _operationTimer;
 
     void sendReply(DistributorMessageSender& sender);
     bool sendForChecksum(DistributorMessageSender& sender, const document::BucketId& id, GroupVector& res);

@@ -54,7 +54,8 @@ GetOperation::GetOperation(DistributorComponent& manager,
       _returnCode(api::ReturnCode::OK),
       _doc((document::Document*)NULL),
       _lastModified(0),
-      _metric(metric)
+      _metric(metric),
+      _operationTimer(manager.getClock())
 {
     assignTargetNodeGroups();
 }
@@ -222,8 +223,7 @@ GetOperation::sendReply(DistributorMessageSender& sender)
             ++_metric.failures.notfound;
         }
 
-        framework::MilliSecTime currTime(_manager.getClock().getTimeInMillis());
-        _metric.latency.addValue((currTime - _startTime).getTime());
+        _metric.latency.addValue(_operationTimer.getElapsedTimeAsDouble());
 
         sender.sendReply(repl);
         _msg.reset();
