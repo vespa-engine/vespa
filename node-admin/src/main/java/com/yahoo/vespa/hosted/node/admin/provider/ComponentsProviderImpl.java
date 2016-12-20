@@ -36,6 +36,7 @@ import java.util.function.Function;
  * @author dybis
  */
 public class ComponentsProviderImpl implements ComponentsProvider {
+    private static final ContainerName NODE_ADMIN_CONTAINER_NAME = new ContainerName("node-admin");
 
     private final NodeAdminStateUpdater nodeAdminStateUpdater;
     private final MetricReceiverWrapper metricReceiverWrapper;
@@ -93,14 +94,13 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
 
     private void setCorePattern(Docker docker) {
-        ContainerName nodeAdminName = new ContainerName("node-admin");
-        docker.executeInContainer(nodeAdminName, Defaults.getDefaults().underVespaHome("bin/vespa-yinst-post-activate.sh"));
+        final String[] sysctlCorePattern = {"sysctl", "-w", "kernel.core_pattern=/home/y/var/crash/%e.core.%p"};
+        docker.executeInContainer(NODE_ADMIN_CONTAINER_NAME, sysctlCorePattern);
     }
 
     private void initializeNodeAgentSecretAgent(Docker docker) {
         final Path yamasAgentFolder = Paths.get("/etc/yamas-agent/");
-        ContainerName nodeAdminName = new ContainerName("node-admin");
-        docker.executeInContainer(nodeAdminName, "sudo", "chmod", "a+w", yamasAgentFolder.toString());
+        docker.executeInContainer(NODE_ADMIN_CONTAINER_NAME, "sudo", "chmod", "a+w", yamasAgentFolder.toString());
 
         Path nodeAdminCheckPath = Paths.get("/usr/bin/curl");
         SecretAgentScheduleMaker scheduleMaker = new SecretAgentScheduleMaker("node-admin", 60, nodeAdminCheckPath,
@@ -108,7 +108,7 @@ public class ComponentsProviderImpl implements ComponentsProvider {
 
         try {
             scheduleMaker.writeTo(yamasAgentFolder);
-            docker.executeInContainer(nodeAdminName, "service", "yamas-agent", "restart");
+            docker.executeInContainer(NODE_ADMIN_CONTAINER_NAME, "service", "yamas-agent", "restart");
         } catch (IOException e) {
             throw new RuntimeException("Failed to write secret-agent schedules for node-admin", e);
         }
