@@ -5,8 +5,9 @@
 #include "idocsumenvironment.h"
 #include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/log/log.h>
+#include <cmath>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.positionsdfw");
 
 namespace search {
