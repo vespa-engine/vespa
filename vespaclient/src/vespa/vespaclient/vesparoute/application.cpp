@@ -1,25 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vesparoute");
 
 #include "application.h"
 
-#include "params.h"
-#include <vespa/config/helper/configgetter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/configagent.h>
-#include <vespa/messagebus/network/rpcsendv1.h>
-#include <vespa/messagebus/routing/policydirective.h>
+#include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/routing/routedirective.h>
 #include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/messagebus/config-messagebus.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <algorithm>
-#include <vector>
+#include <vespa/config/helper/configgetter.hpp>
+
 
 using config::ConfigGetter;
 using document::DocumenttypesConfig;

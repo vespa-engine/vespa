@@ -3,8 +3,11 @@
 
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/sync.h>
 
 namespace search {
 
@@ -20,10 +23,10 @@ public:
     typedef std::vector<string> StringVector;
     typedef search::IndexMetaInfo::Snapshot Snapshot;
     typedef std::vector<AttributeGuard> AttributeList;
-    typedef AttributeVector::SP VectorHolder;
+    using VectorHolder = std::shared_ptr<AttributeVector>;
     AttributeManager();
     AttributeManager(const string & base);
-    ~AttributeManager(void);
+    ~AttributeManager();
 
     /**
      * This will give you a handle to an attributevector. It

@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.searchable_doc_subdb_configurer");
 #include "searchable_doc_subdb_configurer.h"
+#include "reconfig_params.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
-#include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 
 using namespace vespa::config::search;
@@ -112,8 +109,9 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
     _clock(clock),
     _subDbName(subDbName),
     _distributionKey(distributionKey)
-{
-}
+{ }
+
+SearchableDocSubDBConfigurer::~SearchableDocSubDBConfigurer() { }
 
 Matchers::UP
 SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
@@ -127,7 +125,6 @@ SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
             properties.add(property.name,
                            property.value);
         }
-        LOG(debug, "Adding matcher for rankprofile '%s'", name.c_str());
         // schema instance only used during call.
         Matcher::SP profptr(new Matcher(*schema, properties, _clock, _queryLimiter, _constantValueRepo, _distributionKey));
         newMatchers->add(name, profptr);
@@ -153,8 +150,7 @@ reconfigure(const DocumentDBConfig &newConfig,
             const ReconfigParams &params)
 {
     assert(!params.shouldAttributeManagerChange());
-    AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(),
-                                    0, 0);
+    AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
     reconfigure(newConfig, oldConfig, attrSpec, params);
 }
 

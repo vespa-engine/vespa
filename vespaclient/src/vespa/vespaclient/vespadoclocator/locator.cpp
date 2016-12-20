@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <boost/tokenizer.hpp>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/configagent.h>
@@ -8,6 +8,8 @@
 #include <vespa/vdslib/bucketdistribution.h>
 #include <vespa/messagebus/config-messagebus.h>
 #include <vespa/config/helper/configgetter.h>
+#include <vespa/config/helper/configgetter.hpp>
+
 
 #include "locator.h"
 

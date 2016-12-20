@@ -2,8 +2,8 @@
 
 #include "configsubscriptionset.h"
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/common/misc.h>
 #include <thread>
-#include <chrono>
 #include <vespa/log/log.h>
 LOG_SETUP(".config.subscription.configsubscriptionset");
 

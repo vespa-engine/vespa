@@ -1,23 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
-#include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
-#include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
-#include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storage/storageutil/utils.h>
 #include <tests/distributor/distributortestutil.h>
-#include <vespa/storage/distributor/statecheckers.h>
-#include <vespa/storageapi/message/state.h>
+
+
 
 namespace storage {
 namespace distributor {

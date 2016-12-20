@@ -385,7 +385,7 @@ IReprocessingTask::List
 StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                const DocumentDBConfig &oldConfigSnapshot,
                                SerialNum serialNum,
-                               const ReconfigParams params)
+                               const ReconfigParams & params)
 {
     (void) oldConfigSnapshot;
     assert(_writeService.master().isCurrentThread());

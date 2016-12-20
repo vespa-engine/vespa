@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+//
 #pragma once
-#include <memory>
-#include <map>
+
 #include <vespa/config/common/iconfigholder.h>
 #include <vespa/config/common/configcontext.h>
 #include "confighandle.h"
 #include "subscriptionid.h"
 #include "configsubscription.h"
 #include "configprovider.h"
-#include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/priority_queue.h>
 
 namespace config {
 

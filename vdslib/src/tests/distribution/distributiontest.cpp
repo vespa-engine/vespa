@@ -3,20 +3,19 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/idealnodecalculator.h>
 #include <vespa/config/helper/configfetcher.h>
-#include <cmath>
 #include <chrono>
 #include <thread>
 #include <fstream>
-#include <stdlib.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/config/helper/configgetter.hpp>
+
 
 namespace storage {
 namespace lib {

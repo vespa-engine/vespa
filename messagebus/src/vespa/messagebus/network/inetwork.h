@@ -2,11 +2,12 @@
 #pragma once
 
 #include <memory>
-#include <vespa/messagebus/routing/routingnode.h>
 #include <vespa/slobrok/imirrorapi.h>
 #include "inetworkowner.h"
 
 namespace mbus {
+
+class RoutingNode;
 
 /**
  * This interface is used to hide away the implementation details of the network

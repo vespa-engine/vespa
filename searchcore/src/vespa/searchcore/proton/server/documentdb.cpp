@@ -2,47 +2,31 @@
 
 #include "documentdb.h"
 #include "combiningfeedview.h"
-#include "configvalidator.h"
 #include "document_meta_store_read_guards.h"
 #include "document_subdb_collection_explorer.h"
 #include "idocumentdbowner.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
-#include "searchcontext.h"
-#include "summaryadapter.h"
-#include "tlcproxy.h"
 #include "commit_and_wait_document_retriever.h"
 #include "documentdbconfigscout.h"
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
+#include "reconfig_params.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/schemautil.h>
-#include <vespa/searchcore/proton/feedoperation/newconfigoperation.h>
-#include <vespa/searchcore/proton/feedoperation/noopoperation.h>
-#include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
-#include <vespa/searchcore/proton/matching/matching_stats.h>
-#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
-#include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/engine/docsumreply.h>
-#include <vespa/searchlib/common/serialnum.h>
-#include <vespa/searchlib/common/lambdatask.h>
-#include <vespa/vespalib/data/fileheader.h>
+
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/jsonwriter.h>
-#include <sstream>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdb");
-
 
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::core::ProtonConfig;

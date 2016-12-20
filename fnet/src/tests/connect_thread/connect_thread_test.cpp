@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/connect_thread.h>
+#include <vespa/fnet/ext_connectable.h>
 
 struct MyConn : public fnet::ExtConnectable {
     bool connected = false;

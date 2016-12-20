@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "geoposdfw.h"
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.geoposdfw");
@@ -47,10 +47,8 @@ void fmtZcurve(int64_t zval, vespalib::JSONWriter json)
     json.endObject();
 }
 
-} // namespace <unnamed>
-
 vespalib::asciistream
-GeoPositionDFW::formatField(const IAttributeVector & attribute, uint32_t docid)
+formatField(const IAttributeVector & attribute, uint32_t docid)
 {
     vespalib::asciistream target;
     vespalib::JSONWriter json(target);
@@ -93,12 +91,11 @@ GeoPositionDFW::formatField(const IAttributeVector & attribute, uint32_t docid)
     return target;
 }
 
+}
+
 void
-GeoPositionDFW::insertField(uint32_t docid,
-                            GeneralResult *,
-                            GetDocsumsState * dsState,
-                            ResType,
-                            vespalib::slime::Inserter &target)
+GeoPositionDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * dsState,
+                            ResType, vespalib::slime::Inserter &target)
 {
     using vespalib::slime::Cursor;
     using vespalib::slime::ObjectInserter;

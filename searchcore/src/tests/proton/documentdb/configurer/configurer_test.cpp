@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
-LOG_SETUP("configurer_test");
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -20,11 +18,11 @@ LOG_SETUP("configurer_test");
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
+#include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/searchcore/proton/common/hw_info.h>
 
 using namespace config;
 using namespace document;

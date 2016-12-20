@@ -1,13 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/memfilepersistence/tools/dumpslotfile.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/util/programoptions_testutils.h>
 #include <tests/spi/memfiletestutils.h>
-
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/config-documenttypes.h>
 
 namespace storage {

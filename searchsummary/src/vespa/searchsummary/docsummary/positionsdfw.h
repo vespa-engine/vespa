@@ -14,49 +14,31 @@ private:
 public:
     AbsDistanceDFW(const vespalib::string & attrName);
 
-    virtual bool IsGenerated() const { return true; }
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult *gres,
-                                GetDocsumsState *state,
-                                ResType type,
-                                search::RawBuf *target);
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target);
+    bool IsGenerated() const override { return true; }
+    uint32_t WriteField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+                        ResType type, search::RawBuf *target) override;
+    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+                     ResType type, vespalib::slime::Inserter &target) override;
 };
 
 //--------------------------------------------------------------------------
 
 class PositionsDFW : public AttrDFW
 {
-private:
-    vespalib::asciistream formatField(const attribute::IAttributeVector & v, uint32_t docid, ResType type);
-
 public:
     typedef std::unique_ptr<PositionsDFW> UP;
 
     PositionsDFW(const vespalib::string & attrName);
 
-    virtual bool IsGenerated() const { return true; }
-    virtual uint32_t WriteField(uint32_t docid,
-                                GeneralResult *gres,
-                                GetDocsumsState *state,
-                                ResType type,
-                                search::RawBuf *target);
-    virtual void insertField(uint32_t docid,
-                             GeneralResult *gres,
-                             GetDocsumsState *state,
-                             ResType type,
-                             vespalib::slime::Inserter &target);
+    bool IsGenerated() const override { return true; }
+    uint32_t WriteField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+                        ResType type, search::RawBuf *target) override;
+    void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+                     ResType type, vespalib::slime::Inserter &target) override ;
 };
 
-PositionsDFW::UP createPositionsDFW(const char *attribute_name,
-                                    IAttributeManager *index_man);
-
-AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name,
-                                        IAttributeManager *index_man);
+PositionsDFW::UP createPositionsDFW(const char *attribute_name, IAttributeManager *index_man);
+AbsDistanceDFW::UP createAbsDistanceDFW(const char *attribute_name, IAttributeManager *index_man);
 
 }  // namespace docsummary
 }  // namespace search

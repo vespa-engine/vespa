@@ -1,14 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "routingnode.h"
 #include "errordirective.h"
-#include "policydirective.h"
 #include "routedirective.h"
+#include "routingtable.h"
+#include "policydirective.h"
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/tracelevel.h>
-#include <stack>
 #include <vespa/vespalib/util/atomic.h>
-#include <vespa/vespalib/util/vstringfmt.h>
+#include <vespa/messagebus/network/inetwork.h>
+#include <stack>
 
 namespace mbus {
 

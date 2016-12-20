@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "positionsdfw.h"
-#include <cmath>
 #include "docsumstate.h"
 #include "idocsumenvironment.h"
 #include <vespa/searchlib/common/location.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.docsummary.positionsdfw");
@@ -20,12 +19,10 @@ using search::common::Location;
 
 AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName) :
     AttrDFW(attrName)
-{
-}
+{ }
 
 uint64_t
-AbsDistanceDFW::findMinDistance(uint32_t docid,
-                                GetDocsumsState *state)
+AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state)
 {
     search::common::Location &location = *state->_parsedLocation;
     const IAttributeVector & attribute(vec(*state));
@@ -68,11 +65,8 @@ AbsDistanceDFW::findMinDistance(uint32_t docid,
 }
 
 void
-AbsDistanceDFW::insertField(uint32_t docid,
-                            GeneralResult *,
-                            GetDocsumsState *state,
-                            ResType type,
-                            vespalib::slime::Inserter &target)
+AbsDistanceDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState *state,
+                            ResType type, vespalib::slime::Inserter &target)
 {
     bool forceEmpty = true;
 
@@ -112,11 +106,8 @@ AbsDistanceDFW::insertField(uint32_t docid,
 
 
 uint32_t
-AbsDistanceDFW::WriteField(uint32_t docid,
-                           GeneralResult *gres,
-                           GetDocsumsState *state,
-                           ResType type,
-                           search::RawBuf *target)
+AbsDistanceDFW::WriteField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
+                           ResType type, search::RawBuf *target)
 {
     (void) gres;
 
@@ -198,9 +189,9 @@ PositionsDFW::PositionsDFW(const vespalib::string & attrName) :
 {
 }
 
+namespace {
 vespalib::asciistream
-PositionsDFW::formatField(const attribute::IAttributeVector & attribute, uint32_t docid, ResType type)
-{
+formatField(const attribute::IAttributeVector &attribute, uint32_t docid, ResType type) {
     vespalib::asciistream target;
     int32_t docx = 0;
     int32_t docy = 0;
@@ -214,7 +205,7 @@ PositionsDFW::formatField(const attribute::IAttributeVector & attribute, uint32_
     }
     LOG(debug, "docid=%d, numValues=%d", docid, numValues);
 
-    bool isShort = ! IsBinaryCompatible(type, RES_LONG_STRING);
+    bool isShort = !IDocsumFieldWriter::IsBinaryCompatible(type, RES_LONG_STRING);
     for (uint32_t i = 0; i < numValues; i++) {
         int64_t docxy(pos[i]);
         vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
@@ -222,9 +213,11 @@ PositionsDFW::formatField(const attribute::IAttributeVector & attribute, uint32_
             LOG(spam, "skipping empty zcurve value");
             continue;
         }
-        double degrees_ns = docy; degrees_ns /= 1000000.0;
-        double degrees_ew = docx; degrees_ew /= 1000000.0;
-  
+        double degrees_ns = docy;
+        degrees_ns /= 1000000.0;
+        double degrees_ew = docx;
+        degrees_ew /= 1000000.0;
+
         target << "<position x=\"" << docx << "\" y=\"" << docy << "\"";
         target << " latlong=\"";
         target << vespalib::FloatSpec::fixed;
@@ -247,14 +240,11 @@ PositionsDFW::formatField(const attribute::IAttributeVector & attribute, uint32_
     }
     return target;
 }
-
+}
 
 uint32_t
-PositionsDFW::WriteField(uint32_t docid,
-                         GeneralResult *,
-                         GetDocsumsState * dsState,
-                         ResType type,
-                         search::RawBuf *target)
+PositionsDFW::WriteField(uint32_t docid, GeneralResult *, GetDocsumsState * dsState,
+                         ResType type, search::RawBuf *target)
 {
     int str_len_ofs = target->GetUsedLen();
 
@@ -277,11 +267,8 @@ PositionsDFW::WriteField(uint32_t docid,
 
 
 void
-PositionsDFW::insertField(uint32_t docid,
-                          GeneralResult *,
-                          GetDocsumsState * dsState,
-                          ResType type,
-                          vespalib::slime::Inserter &target)
+PositionsDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState * dsState,
+                          ResType type, vespalib::slime::Inserter &target)
 {
     vespalib::asciistream val(formatField(vec(*dsState), docid, type));
     target.insertString(vespalib::slime::Memory(val.c_str(), val.size()));

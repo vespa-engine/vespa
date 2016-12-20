@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "documentdbconfig.h"
 #include "searchable_doc_subdb_configurer.h"
 #include "executorthreadingservice.h"
 #include "fast_access_doc_subdb.h"
@@ -26,11 +25,11 @@
 #include <vespa/vespalib/util/varholder.h>
 
 
-namespace proton
-{
+namespace proton {
 
 class MetricsWireService;
 class DocumentDBMetrics;
+class DocumentDBConfig;
 
 /**
  * The searchable sub database supports searching and keeps all attribute fields in memory and
@@ -110,83 +109,56 @@ protected:
     void updateLidReuseDelayer(const LidReuseDelayerConfig &config) override;
 public:
     SearchableDocSubDB(const Config &cfg, const Context &ctx);
-
     ~SearchableDocSubDB();
 
     std::unique_ptr<DocumentSubDbInitializer>
     createInitializer(const DocumentDBConfig &configSnapshot,
                       SerialNum configSerialNum,
-                      const search::index::Schema::SP &unionSchema,
+                      const Schema::SP &unionSchema,
                       const vespa::config::search::core::
                       ProtonConfig::Summary &protonSummaryCfg,
                       const vespa::config::search::core::
                       ProtonConfig::Index &indexCfg) const override;
 
-    virtual void setup(const DocumentSubDbInitializerResult &initResult)
-        override;
+    void setup(const DocumentSubDbInitializerResult &initResult) override;
 
-    virtual void
+    void
     initViews(const DocumentDBConfig &configSnapshot,
-              const matching::SessionManager::SP &sessionManager);
+              const matching::SessionManager::SP &sessionManager)  override;
 
-    virtual IReprocessingTask::List
+    IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot,
                 const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum,
-                const ReconfigParams params);
+                const ReconfigParams & params) override;
 
-    virtual void
-    clearViews()
+    void clearViews() override
     {
         _rFeedView.clear();
         _rSearchView.clear();
         Parent::clearViews();
     }
 
-    virtual proton::IAttributeManager::SP
-    getAttributeManager() const
-    {
+    proton::IAttributeManager::SP getAttributeManager() const override {
         return _rSearchView.get()->getAttributeManager();
     }
 
-    virtual const IIndexManager::SP &
-    getIndexManager() const
-    {
+    const IIndexManager::SP &getIndexManager() const override {
         return _indexMgr;
     }
 
-    virtual const IIndexWriter::SP &
-    getIndexWriter() const
-    {
+    const IIndexWriter::SP &getIndexWriter() const override {
         return _indexWriter;
     }
 
-    virtual SerialNum
-    getOldestFlushedSerial();
-
-    virtual SerialNum
-    getNewestFlushedSerial();
-
-    virtual void
-    wipeHistory(SerialNum wipeSerial,
-                const search::index::Schema &newHistorySchema,
-                const search::index::Schema &wipeSchema);
-
-    virtual void
-    setIndexSchema(const search::index::Schema::SP &schema,
-                   const search::index::Schema::SP &fusionSchema);
-
-    virtual size_t
-    getNumActiveDocs() const override;
-
-    virtual search::SearchableStats
-    getSearchableStats() const;
-
-    virtual IDocumentRetriever::UP
-    getDocumentRetriever();
-
-    virtual matching::MatchingStats
-    getMatcherStats(const vespalib::string &rankProfile) const;
+    SerialNum getOldestFlushedSerial() override;
+    SerialNum getNewestFlushedSerial() override;
+    void wipeHistory(SerialNum wipeSerial, const Schema &newHistorySchema, const Schema &wipeSchema) override;
+    void setIndexSchema(const Schema::SP &schema, const Schema::SP &fusionSchema) override;
+    size_t getNumActiveDocs() const override;
+    search::SearchableStats getSearchableStats() const override ;
+    IDocumentRetriever::UP getDocumentRetriever() override;
+    matching::MatchingStats getMatcherStats(const vespalib::string &rankProfile) const override;
 };
 
 } // namespace proton

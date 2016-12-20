@@ -2,24 +2,25 @@
 
 #pragma once
 
-#include <vespa/config/config.h>
+
+#include "idealstatemanager.h"
+#include "bucketdbupdater.h"
+#include "pendingmessagetracker.h"
+#include "externaloperationhandler.h"
+#include "maintenancebucket.h"
+#include "min_replica_provider.h"
+#include "distributorinterface.h"
+
+#include "statusreporterdelegate.h"
+#include "distributor_host_info_reporter.h"
+#include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
+#include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/storage/distributor/externaloperationhandler.h>
-#include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
-#include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storage/distributor/maintenancebucket.h>
-#include <vespa/storage/distributor/min_replica_provider.h>
-#include <vespa/storage/distributor/distributorinterface.h>
-#include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
-#include <vespa/storage/distributor/statusreporterdelegate.h>
-#include <vespa/storage/distributor/distributor_host_info_reporter.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+#include <vespa/config/config.h>
 #include <vespa/vespalib/util/sync.h>
 
 #include <unordered_map>

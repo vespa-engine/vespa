@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include "connect_thread.h"
-
+#include "ext_connectable.h"
 /**
  * Interface implemented by objects that want to perform connection
  * cleanup. Use the SetCleanupHandler method to register with a

@@ -21,6 +21,9 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/routing/routingcontext.h>
+#include <vespa/messagebus/routing/routingnode.h>
+#include <vespa/messagebus/routing/routingtable.h>
+#include <vespa/messagebus/routing/policydirective.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vdslib/container/mutabledocumentlist.h>
 #include <vespa/vdslib/state/clusterstate.h>

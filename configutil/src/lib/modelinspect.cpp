@@ -1,13 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <ctype.h>
-#include <vespa/log/log.h>
-LOG_SETUP("vespa-model-inspect");
 #include <iostream>
 #include "modelinspect.h"
-#include <set>
 #include <lib/tags.h>
+#include <vespa/config/helper/configgetter.hpp>
+
 
 using configdefinitions::tagsContain;
 using configdefinitions::upcase;
@@ -20,8 +17,7 @@ ModelInspect::ModelInspect(Flags flags, const config::ConfigUri uri, std::ostrea
     }
 
     try {
-        _cfg = config::ConfigGetter<cloud::config::ModelConfig>::getConfig(uri.getConfigId(),
-                                                                    uri.getContext());
+        _cfg = config::ConfigGetter<cloud::config::ModelConfig>::getConfig(uri.getConfigId(), uri.getContext());
     } catch(config::ConfigRuntimeException &e) {
         std::cerr << e.getMessage() << "\n";
     }

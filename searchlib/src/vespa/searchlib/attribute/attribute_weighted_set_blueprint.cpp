@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include "attribute_weighted_set_blueprint.h"
+#include "isearchcontext.h"
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/query/queryterm.h>
 
@@ -9,6 +9,8 @@ namespace search {
 
 namespace {
 
+using attribute::ISearchContext;
+using attribute::IAttributeVector;
 //-----------------------------------------------------------------------------
 
 class UseAttr
@@ -29,10 +31,9 @@ public:
 class UseStringEnum : public UseAttr
 {
 public:
-    UseStringEnum(const AttributeVector & attr)
+    UseStringEnum(const IAttributeVector & attr)
         : UseAttr(attr) {}
-    bool mapToken(const AttributeVector::SearchContext &context,
-                  int64_t &token) const
+    bool mapToken(const ISearchContext &context, int64_t &token) const
     {
         attribute::IAttributeVector::EnumHandle handle;
         if (attribute().findEnum(context.queryTerm().getTerm(), handle)) {
@@ -51,9 +52,8 @@ public:
 class UseInteger : public UseAttr
 {
 public:
-    UseInteger(const AttributeVector & attr) : UseAttr(attr) {}
-    bool mapToken(const AttributeVector::SearchContext &context,
-                  int64_t &token) const
+    UseInteger(const IAttributeVector & attr) : UseAttr(attr) {}
+    bool mapToken(const ISearchContext &context, int64_t &token) const
     {
         Int64Range range(context.getAsIntegerTerm());
         if (range.isPoint()) {
@@ -83,9 +83,9 @@ private:
 
 public:
     AttributeFilter(fef::TermFieldMatchData &tfmd,
-                    const AttributeVector & attr,
+                    const IAttributeVector & attr,
                     const std::vector<int32_t> weights,
-                    const std::vector<AttributeVector::SearchContext*> contexts)
+                    const std::vector<ISearchContext*> contexts)
         : _tfmd(tfmd), _attr(attr), _map(), _weight(0)
     {
         for (size_t i = 0; i < contexts.size(); ++i) {
@@ -115,7 +115,7 @@ public:
 
 } // namespace search::<unnamed>
 
-AttributeWeightedSetBlueprint::AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const AttributeVector & attr)
+AttributeWeightedSetBlueprint::AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const IAttributeVector & attr)
     : queryeval::ComplexLeafBlueprint(field),
       _numDocs(attr.getNumDocs()),
       _estHits(0),
@@ -134,7 +134,7 @@ AttributeWeightedSetBlueprint::~AttributeWeightedSetBlueprint()
 }
 
 void
-AttributeWeightedSetBlueprint::addToken(AttributeVector::SearchContext::UP context, int32_t weight)
+AttributeWeightedSetBlueprint::addToken(std::unique_ptr<ISearchContext> context, int32_t weight)
 {
     _estHits = std::min(_estHits + context->approximateHits(), _numDocs);
     setEstimate(HitEstimate(_estHits, (_estHits == 0)));

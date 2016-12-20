@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.server.documentsubdbcollection");
-
 #include "combiningfeedview.h"
 #include "commit_and_wait_document_retriever.h"
 #include "document_subdb_collection_initializer.h"
@@ -266,7 +262,7 @@ void
 DocumentSubDBCollection::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                      const DocumentDBConfig &oldConfigSnapshot,
                                      SerialNum serialNum,
-                                     const ReconfigParams params)
+                                     const ReconfigParams & params)
 {
     _reprocessingRunner.reset();
     for (auto subDb : _subDBs) {

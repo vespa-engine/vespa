@@ -6,7 +6,6 @@
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/messagebus/message.h>
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/messagebus/network/inetwork.h>
 #include <vespa/messagebus/network/iserviceaddress.h>
 #include <vespa/messagebus/reply.h>
 #include <string>
@@ -19,6 +18,9 @@
 #include "routingnodeiterator.h"
 
 namespace mbus {
+
+class HopBlueprint;
+class INetwork;
 
 /**
  * This class represents a node in the routing tree that is created when a route

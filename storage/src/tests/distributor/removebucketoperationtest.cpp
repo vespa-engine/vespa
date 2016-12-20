@@ -1,13 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/storage/storageutil/utils.h>
+#include <vespa/storage/distributor/distributor.h>
 #include <tests/distributor/distributortestutil.h>
 
 namespace storage {

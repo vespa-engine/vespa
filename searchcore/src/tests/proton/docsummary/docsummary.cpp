@@ -25,6 +25,8 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");
 

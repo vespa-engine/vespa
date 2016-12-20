@@ -48,7 +48,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     virtual DocumentSubDbInitializer::UP
     createInitializer(const DocumentDBConfig &,
                       SerialNum,
-                      const search::index::Schema::SP &,
+                      const Schema::SP &,
                       const vespa::config::search::core::ProtonConfig::
                       Summary &,
                       const vespa::config::search::core::
@@ -63,7 +63,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     virtual IReprocessingTask::List applyConfig(const DocumentDBConfig &,
                                                 const DocumentDBConfig &,
                                                 SerialNum,
-                                                const ReconfigParams) override {
+                                                const ReconfigParams &) override {
         return IReprocessingTask::List();
     }
     virtual ISearchHandler::SP getSearchView() const override { return ISearchHandler::SP(); }
@@ -85,12 +85,9 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     virtual void onReprocessDone(SerialNum) override { }
     virtual SerialNum getOldestFlushedSerial() override { return 0; }
     virtual SerialNum getNewestFlushedSerial() override { return 0; }
-    virtual void wipeHistory(SerialNum,
-                             const search::index::Schema &,
-                             const search::index::Schema &) override {}
-    virtual void setIndexSchema(const search::index::Schema::SP &,
-                                const search::index::Schema::SP &) override {}
-    virtual search::SearchableStats getSearchableStats(void) const override {
+    virtual void wipeHistory(SerialNum, const Schema &, const Schema &) override { }
+    virtual void setIndexSchema(const Schema::SP &, const Schema::SP &) override { }
+    virtual search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats();
     }
     virtual IDocumentRetriever::UP getDocumentRetriever() override {

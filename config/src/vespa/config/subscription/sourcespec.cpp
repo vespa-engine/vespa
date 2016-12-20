@@ -6,17 +6,18 @@
 #include <vespa/config/file/filesourcefactory.h>
 #include <vespa/config/frt/frtsourcefactory.h>
 #include <vespa/config/frt/frtconnectionpool.h>
-#include <vespa/config/frt/protocol.h>
-#include <vespa/config/frt/connectionfactory.h>
 #include <vespa/config/set/configsetsourcefactory.h>
 #include <vespa/config/set/configinstancesourcefactory.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".config.subscription.sourcespec");
 
 namespace config {
+
+class BuilderMap : public std::map<ConfigKey, ConfigInstance *> {
+    using Parent = std::map<ConfigKey, ConfigInstance *>;
+    using Parent::Parent;
+};
 
 RawSpec::RawSpec(const vespalib::string & config)
     : _config(config)

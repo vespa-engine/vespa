@@ -13,6 +13,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/config.h>
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".test.servicelayerapp");
 

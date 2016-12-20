@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
-#include <vespa/document/base/testdocman.h>
+#include <vespa/storage/distributor/distributor.h>
 
 namespace storage {
 namespace distributor {

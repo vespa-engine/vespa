@@ -6,7 +6,6 @@
 #include "isummaryadapter.h"
 #include "matchers.h"
 #include "matchview.h"
-#include "reconfig_params.h"
 #include "searchable_feed_view.h"
 #include "searchview.h"
 #include <vespa/searchcore/proton/attribute/i_attribute_writer.h>
@@ -26,6 +25,7 @@
 
 namespace proton {
 
+class ReconfigParams;
 /**
  * Class used to reconfig the feed view and search view used in a searchable sub database.
  */
@@ -80,6 +80,7 @@ public:
                                  const vespalib::Clock &clock,
                                  const vespalib::string &subDbName,
                                  uint32_t distributionKey);
+    ~SearchableDocSubDBConfigurer();
 
     Matchers::UP
     createMatchers(const search::index::Schema::SP &schema,

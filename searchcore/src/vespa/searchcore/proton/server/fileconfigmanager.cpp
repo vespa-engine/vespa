@@ -13,6 +13,8 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <fstream>
 #include <vespa/fastos/file.h>
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fileconfigmanager");
 

@@ -3,6 +3,7 @@
 #include "searchabledocsubdb.h"
 #include "fast_access_document_retriever.h"
 #include "document_subdb_initializer.h"
+#include "reconfig_params.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
@@ -167,7 +168,7 @@ IReprocessingTask::List
 SearchableDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot,
                                 const DocumentDBConfig &oldConfigSnapshot,
                                 SerialNum serialNum,
-                                const ReconfigParams params)
+                                const ReconfigParams & params)
 {
     IReprocessingTask::List tasks;
     updateLidReuseDelayer(&newConfigSnapshot);

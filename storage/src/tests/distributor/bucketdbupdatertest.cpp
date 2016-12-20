@@ -1,26 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <iomanip>
-#include <iostream>
-#include <memory>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storage/distributor/pendingclusterstate.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
-#include <vespa/storageframework/storageframework.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/distributor/messagesenderstub.h>
 #include <vespa/storage/distributor/simpleclusterinformation.h>
+#include <vespa/storage/distributor/distributor.h>
 
 #include <iostream>
 #include <fstream>

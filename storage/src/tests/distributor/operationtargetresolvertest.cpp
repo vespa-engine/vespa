@@ -1,21 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 
 #include <iomanip>
 #include <iostream>
-#include <memory>
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/state.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/common/dummystoragelink.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
-#include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/storage/distributor/operationtargetresolverimpl.h>
+#include <vespa/storage/distributor/externaloperationhandler.h>
 
 using document::BucketId;
 

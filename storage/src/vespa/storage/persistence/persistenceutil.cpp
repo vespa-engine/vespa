@@ -2,12 +2,12 @@
 
 #include "persistenceutil.h"
 #include <vespa/config/config.h>
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <vespa/log/log.h>
-
-namespace storage {
-
 LOG_SETUP(".persistence.util");
 
+namespace storage {
 namespace {
     std::string generateName(void* p) {
         std::ostringstream ost;

@@ -1,11 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.attribute.document_field_populator");
 #include "document_field_populator.h"
 #include "document_field_retriever.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".proton.attribute.document_field_populator");
 
 using document::Document;
 using search::index::Schema;
@@ -25,7 +25,7 @@ getFieldName(const vespalib::string &subDbName,
 }
 
 DocumentFieldPopulator::DocumentFieldPopulator(const Schema::AttributeField &field,
-                                               search::AttributeVector::SP attr,
+                                               AttributeVectorSP attr,
                                                const vespalib::string &subDbName)
     : _field(field),
       _attr(attr),

@@ -117,7 +117,7 @@ public:
     applyConfig(const DocumentDBConfig &newConfigSnapshot,
                 const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum,
-                const ReconfigParams params);
+                const ReconfigParams & params);
 
     IFeedView::SP getFeedView();
     IFlushTarget::List getFlushTargets();

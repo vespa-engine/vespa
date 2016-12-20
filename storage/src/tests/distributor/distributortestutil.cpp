@@ -2,12 +2,19 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
 #include <tests/distributor/distributortestutil.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/storage/distributor/distributor.h>
 #include <vespa/config-stor-distribution.h>
 
 namespace storage {
 
 namespace distributor {
+
+DistributorTestUtil::DistributorTestUtil()
+        : _messageSender(_sender, _senderDown)
+{
+    _config = getStandardConfig(false);
+}
+DistributorTestUtil::~DistributorTestUtil() { }
 
 void
 DistributorTestUtil::createLinks()
@@ -303,6 +310,51 @@ DistributorTestUtil::disableBucketActivationInConfig(bool disable)
     vespa::config::content::core::StorDistributormanagerConfigBuilder config;
     config.disableBucketActivation = disable;
     getConfig().configure(config);
+}
+
+BucketDBUpdater&
+DistributorTestUtil::getBucketDBUpdater() {
+    return _distributor->_bucketDBUpdater;
+}
+IdealStateManager&
+DistributorTestUtil::getIdealStateManager() {
+    return _distributor->_idealStateManager;
+}
+ExternalOperationHandler&
+DistributorTestUtil::getExternalOperationHandler() {
+    return _distributor->_externalOperationHandler;
+}
+
+bool
+DistributorTestUtil::tick() {
+    framework::ThreadWaitInfo res(
+            framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN);
+    {
+        framework::TickingLockGuard lock(
+                _distributor->_threadPool.freezeCriticalTicks());
+        res.merge(_distributor->doCriticalTick(0));
+    }
+    res.merge(_distributor->doNonCriticalTick(0));
+    return !res.waitWanted();
+}
+
+DistributorConfiguration&
+DistributorTestUtil::getConfig() {
+    return const_cast<DistributorConfiguration&>(_distributor->getConfig());
+}
+
+BucketDatabase&
+DistributorTestUtil::getBucketDatabase() {
+    return _distributor->getDefaultBucketSpace().getBucketDatabase();
+}
+const BucketDatabase&
+DistributorTestUtil::getBucketDatabase() const {
+    return _distributor->getDefaultBucketSpace().getBucketDatabase();
+}
+
+const lib::Distribution&
+DistributorTestUtil::getDistribution() const {
+    return _distributor->getDefaultBucketSpace().getDistribution();
 }
 
 }

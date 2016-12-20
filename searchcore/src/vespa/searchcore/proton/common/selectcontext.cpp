@@ -32,7 +32,7 @@ void
 SelectContext::getAttributeGuards(void)
 {
     _guards->resize(_cachedSelect._attributes.size());
-    std::vector<AttributeVector::SP>::const_iterator j(_cachedSelect._attributes.begin());
+    auto j(_cachedSelect._attributes.begin());
     for (std::vector<AttributeGuard>::iterator i(_guards->begin()), ie(_guards->end()); i != ie; ++i, ++j) {
         *i = AttributeGuard(*j);
     }

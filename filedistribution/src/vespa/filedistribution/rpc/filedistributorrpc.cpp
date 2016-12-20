@@ -1,11 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include "filedistributorrpc.h"
-
-#include <boost/optional.hpp>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".filedistributorrpc");
+#include <mutex>
 
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/frtstream/frtserverstream.h>
@@ -13,6 +9,8 @@ LOG_SETUP(".filedistributorrpc");
 
 #include "fileprovider.h"
 #include <vespa/filedistribution/model/filedbmodel.h>
+#include <vespa/log/log.h>
+LOG_SETUP(".filedistributorrpc");
 
 using filedistribution::FileDistributorRPC;
 using filedistribution::FileProvider;

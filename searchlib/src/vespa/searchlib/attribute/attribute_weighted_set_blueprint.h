@@ -10,26 +10,29 @@
 
 namespace search {
 
+namespace attribute { class ISearchContext; }
+
 class AttributeWeightedSetBlueprint : public queryeval::ComplexLeafBlueprint
 {
 private:
+    using ISearchContext = attribute::ISearchContext;
+    using IAttributeVector = attribute::IAttributeVector;
     size_t                     _numDocs;
     size_t                     _estHits;
     std::vector<int32_t>       _weights;
-    const AttributeVector    & _attr;
-    std::vector<AttributeVector::SearchContext*> _contexts;
+    const IAttributeVector    & _attr;
+    std::vector<ISearchContext*> _contexts;
 
     AttributeWeightedSetBlueprint(const AttributeWeightedSetBlueprint &); // disabled
     AttributeWeightedSetBlueprint &operator=(const AttributeWeightedSetBlueprint &); // disabled
 
 public:
-    AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const AttributeVector & attr);
+    AttributeWeightedSetBlueprint(const queryeval::FieldSpec &field, const IAttributeVector & attr);
     virtual ~AttributeWeightedSetBlueprint();
-    void addToken(AttributeVector::SearchContext::UP context, int32_t weight);
+    void addToken(std::unique_ptr<ISearchContext> context, int32_t weight);
     virtual queryeval::SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const;
 
-    virtual void
-    fetchPostings(bool strict);
+    virtual void fetchPostings(bool strict);
 };
 
 } // namespace search
