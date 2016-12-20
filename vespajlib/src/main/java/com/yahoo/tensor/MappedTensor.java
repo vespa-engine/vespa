@@ -81,7 +81,7 @@ public class MappedTensor implements Tensor {
 
         @Override
         public Builder cell(double value, int... labels) {
-            cells.put(new TensorAddress(labels), value);
+            cells.put(TensorAddress.of(labels), value);
             return this;
         }
 
