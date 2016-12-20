@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include "filedistributortrackerimpl.h"
 #include <cmath>
 #include <libtorrent/tracker_manager.hpp>
@@ -166,6 +166,9 @@ void asioWorker(asio::io_service& ioService)
             ioService.run();
         } catch (const ZKConnectionLossException & e) {
             LOG(info, "Connection loss in asioWorker thread, resuming. %s", e.what());
+        } catch (const ZKOperationTimeoutException & e) {
+            LOG(warning, "Operation timed out in asioWorker thread, will do quick exit to start a clean sheet. %s", e.what());
+            std::quick_exit(31);
         }
     }
 }
