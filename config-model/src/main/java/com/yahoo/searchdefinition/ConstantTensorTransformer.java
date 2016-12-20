@@ -65,7 +65,7 @@ class ConstantTensorTransformer extends ExpressionTransformer {
         }
         TensorValue tensorValue = (TensorValue)value;
         String featureName = "constant(" + node.getName() + ")";
-        String tensorType = (tensorValue.getType().isPresent() ? tensorValue.getType().get().toString() : "tensor");
+        String tensorType = tensorValue.asTensor().type().toString();
         rankPropertiesOutput.put(featureName + ".value", tensorValue.toString());
         rankPropertiesOutput.put(featureName + ".type", tensorType);
         return new ReferenceNode("constant", Arrays.asList(new NameNode(node.getName())), null);

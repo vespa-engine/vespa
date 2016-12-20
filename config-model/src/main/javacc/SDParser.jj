@@ -2321,7 +2321,7 @@ void constantTensor(RankProfile profile, String name) :
          tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.getName(), name)) ) (<NL>)* )* <RBRACE>
     {
         if (tensorType != null) {
-            profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorString), tensorType));
+            profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorType, tensorString)));
         } else {
             profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorString)));
         }
