@@ -10,6 +10,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <iomanip>
 #include <iostream>
 #include <memory>

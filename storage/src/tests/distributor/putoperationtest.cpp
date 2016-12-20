@@ -13,6 +13,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <iomanip>
 
 using std::shared_ptr;

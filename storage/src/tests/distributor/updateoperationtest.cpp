@@ -10,6 +10,7 @@
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/config/helper/configgetter.hpp>
 
 using std::shared_ptr;
 using namespace document;
