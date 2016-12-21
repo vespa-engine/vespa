@@ -8,6 +8,7 @@
 #include <vespa/documentapi/messagebus/messages/removedocumentreply.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentreply.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/fastos/thread.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.persistenceengine");

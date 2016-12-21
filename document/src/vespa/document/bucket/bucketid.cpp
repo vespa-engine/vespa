@@ -59,11 +59,14 @@ void fillStripMasks(BucketId::Type * masks, uint8_t maxBits)
 }
 
 
-    struct Initialize {
-        Initialize() {
-            BucketId::initialize();
-        }
-    };
+struct Initialize {
+    Initialize() {
+        BucketId::initialize();
+    }
+};
+
+Initialize _initializeUsedMasks;
+
 }
 
 void BucketId::initialize() {

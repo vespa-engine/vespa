@@ -4,10 +4,10 @@
 
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
 #include <vespa/searchlib/util/memoryusage.h>
 #include "data_store_file_chunk_stats.h"
+#include <vespa/fastos/timestamp.h>
 
 namespace search {
 

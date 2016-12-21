@@ -31,9 +31,8 @@ private:
     static std::vector<Task> &find_tasks(std::vector<Task> &tasks, uint32_t level);
 
 public:
-    explicit TimeTracker(uint32_t max_level_in)
-        : _tasks(), _current_level(0), _max_level(max_level_in) {}
-    ~TimeTracker() { assert(_current_level == 0); }
+    explicit TimeTracker(uint32_t max_level_in);
+    ~TimeTracker();
     uint32_t level() const { return _current_level; }
     uint32_t max_level() const { return _max_level; }
     void open_task(const char *name);

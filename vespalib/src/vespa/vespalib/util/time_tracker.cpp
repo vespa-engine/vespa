@@ -2,8 +2,19 @@
 
 #include "time_tracker.h"
 #include "stringfmt.h"
+#include <cassert>
 
 namespace vespalib {
+
+TimeTracker::TimeTracker(uint32_t max_level_in)
+    : _tasks(),
+      _current_level(0),
+      _max_level(max_level_in)
+{ }
+
+TimeTracker::~TimeTracker() {
+    assert(_current_level == 0);
+}
 
 void
 TimeTracker::build_stats_string(const std::vector<Task> &tasks, uint32_t level,

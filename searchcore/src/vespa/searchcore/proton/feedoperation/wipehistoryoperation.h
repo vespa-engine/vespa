@@ -2,6 +2,7 @@
 #pragma once
 
 #include "feedoperation.h"
+#include <vespa/fastos/timestamp.h>
 
 namespace proton {
 
