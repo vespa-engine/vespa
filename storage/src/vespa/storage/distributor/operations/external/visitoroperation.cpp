@@ -1001,9 +1001,9 @@ VisitorOperation::updateReplyMetrics(const api::ReturnCode& result)
         return;
     }
     _metrics.latency.addValue(_operationTimer.getElapsedTimeAsDouble());
-    _metrics.buckets_per_visitor.inc(_visitorStatistics.getBucketsVisited());
-    _metrics.docs_per_visitor.inc(_visitorStatistics.getDocumentsVisited());
-    _metrics.bytes_per_visitor.inc(_visitorStatistics.getBytesVisited());
+    _metrics.buckets_per_visitor.addValue(_visitorStatistics.getBucketsVisited());
+    _metrics.docs_per_visitor.addValue(_visitorStatistics.getDocumentsVisited());
+    _metrics.bytes_per_visitor.addValue(_visitorStatistics.getBytesVisited());
 }
 
 void
