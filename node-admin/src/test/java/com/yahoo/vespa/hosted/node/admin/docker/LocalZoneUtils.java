@@ -237,11 +237,12 @@ public class LocalZoneUtils {
         return getContainersForApp(TENANT_NAME, APPLICATION_NAME, "default");
     }
 
+    @SuppressWarnings("unchecked")
     public static Set<String> getContainersForApp(String tenant, String application, String instance) {
         String app = String.join(".", tenant, application, instance);
-        Map response = requestExecutor.get("/nodes/v2/node/?recursive=true&clusterType=container&application=" + app,
+        Map<String, Object> response = requestExecutor.get("/nodes/v2/node/?recursive=true&clusterType=container&application=" + app,
                 CONFIG_SERVER_WEB_SERVICE_PORT, Map.class);
-        List<Map> nodes = (List<Map>) response.get("nodes");
+        List<Map<String, Object>> nodes = (List<Map<String, Object>>) response.get("nodes");
         return nodes.stream().map(nodeMap -> (String) nodeMap.get("hostname")).collect(Collectors.toSet());
     }
 

@@ -45,7 +45,7 @@ To start a local zone, simply run:
 Package and deploy vespa application by running:
 
 ```
-    Path pathToApp = Paths.get("node-admin/src/test/resources/basic-search-for-docker");
+    Path pathToApp = Paths.get("node-admin/basic-search-for-docker");
     runVespaLocal.deployApplication(pathToApp);
 ```
 If the deployment is successful, the final log entry should be something like 
