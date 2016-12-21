@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/fastos/timestamp.h>
+#include <sys/resource.h>
 
 namespace vespalib {
 

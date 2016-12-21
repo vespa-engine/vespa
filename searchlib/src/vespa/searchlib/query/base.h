@@ -1,19 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/thread.h>
-#include <vespa/fastos/time.h>
-#include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/fastlib/text/unicodeutil.h>
 #include <vector>
-#include <queue>
-#include <functional>
-#include <algorithm>
-#include <map>
-#include <vespa/vespalib/util/sync.h>
 
-namespace search
-{
+namespace search {
 
 /// Type of general unsigned 8 bit data.
 typedef unsigned char byte;

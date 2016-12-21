@@ -815,8 +815,7 @@ DocumentMetaStore::getLids(const BucketId &bucketId, std::vector<DocId> &lids)
         assert(validLid(lid));
         const RawDocumentMetaData &metaData = getRawMetaData(lid);
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
-        assert(bucketUsedBits >= BucketId::minNumBits() &&
-               bucketUsedBits <= BucketId::maxNumBits());
+        assert(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits != bucketId.getUsedBits())
             continue;	// Skip document belonging to overlapping bucket
         lids.push_back(lid);
@@ -847,8 +846,7 @@ DocumentMetaStore::handleSplit(const bucketdb::SplitBucketSession &session)
         assert(validLid(lid));
         RawDocumentMetaData &metaData = _metaDataStore[lid];
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
-        assert(bucketUsedBits >= BucketId::minNumBits() &&
-               bucketUsedBits <= BucketId::maxNumBits());
+        assert(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits == source.getUsedBits()) {
             BucketId t1(metaData.getGid().convertToBucketId());
             BucketId t2(t1);
@@ -890,19 +888,14 @@ DocumentMetaStore::handleJoin(const bucketdb::JoinBucketsSession &session)
         DocId lid = itr.getKey();
         assert(validLid(lid));
         RawDocumentMetaData &metaData = _metaDataStore[lid];
-        uint8_t bucketUsedBits = metaData.getBucketUsedBits();
-        (void) bucketUsedBits;
-        assert(bucketUsedBits >= BucketId::minNumBits() &&
-               bucketUsedBits <= BucketId::maxNumBits());
+        assert(BucketId::validUsedBits(metaData.getBucketUsedBits()));
         BucketId s(metaData.getBucketId());
         if (source1.valid() && s == source1) {
             metaData.setBucketUsedBits(target.getUsedBits());
-            deltas._delta1.add(metaData.getGid(), metaData.getTimestamp(),
-                             _subDbType);
+            deltas._delta1.add(metaData.getGid(), metaData.getTimestamp(), _subDbType);
         } else if (source2.valid() && s == source2) {
             metaData.setBucketUsedBits(target.getUsedBits());
-            deltas._delta2.add(metaData.getGid(), metaData.getTimestamp(),
-                             _subDbType);
+            deltas._delta2.add(metaData.getGid(), metaData.getTimestamp(), _subDbType);
         }
     }
     if (_subDbType == SubDbType::READY) {

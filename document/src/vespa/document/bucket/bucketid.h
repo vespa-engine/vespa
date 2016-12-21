@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include <vector>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 
@@ -47,8 +46,8 @@ public:
      * The primitive type used to store bucket identifiers. If you use the
      * typedef when needed we can alter this later with less code changes.
      */
-    typedef uint64_t Type;
-    typedef vespalib::Array<BucketId> List;
+    using Type = uint64_t;
+    using List = vespalib::Array<BucketId>;
     /** Create an initially unset bucket id. */
     BucketId() : _id(0) {}
     /** Create a bucket id with the given raw unchecked content. */
@@ -65,8 +64,11 @@ public:
     vespalib::string toString() const;
 
     bool valid() const {
-        uint32_t usedBits(getUsedBits());
-        return (usedBits >= minNumBits() && usedBits <= maxNumBits());
+        return validUsedBits(getUsedBits());
+    }
+
+    static bool validUsedBits(uint32_t usedBits) {
+        return (usedBits >= minNumBits) && (usedBits <= maxNumBits);
     }
 
     bool isSet() const {
@@ -92,13 +94,13 @@ public:
     /** Number of MSB bits used to count LSB bits used. */
     enum { CountBits = 6 };
 
-    static uint32_t maxNumBits() { return (8 * sizeof(Type) - CountBits);}
-    static uint32_t minNumBits() { return 1u; }	// See comment above.
+    static constexpr uint32_t maxNumBits = (8 * sizeof(Type) - CountBits);
+    static constexpr uint32_t minNumBits = 1u;   // See comment above.
 
-    uint32_t getUsedBits() const { return _id >> maxNumBits(); }
+    uint32_t getUsedBits() const { return _id >> maxNumBits; }
 
     void setUsedBits(uint32_t used) {
-        uint32_t availBits = maxNumBits();
+        uint32_t availBits = maxNumBits;
         if (used > availBits) {
             throwFailedSetUsedBits(used, availBits);
         }
@@ -129,7 +131,7 @@ public:
     static Type bucketIdToKey(Type id) {
         Type retVal = reverse(id);
 
-        Type usedCountLSB = id >> maxNumBits();
+        Type usedCountLSB = id >> maxNumBits;
         retVal >>= CountBits;
         retVal <<= CountBits;
         retVal |= usedCountLSB;
@@ -158,11 +160,10 @@ public:
         return (_id & ((Type)1 << n)) == 0 ? 0 : 1;
     }
 
+    static void initialize();
 private:
-    static std::vector<Type> _usedMasks;
-    static std::vector<Type> _stripMasks;
-    static std::vector<BucketId::Type> getUsedMasks();
-    static std::vector<BucketId::Type> getStripMasks();
+    static Type _usedMasks[maxNumBits+1];
+    static Type _stripMasks[maxNumBits+1];
 
     Type _id;
 
@@ -175,7 +176,7 @@ private:
     }
 
     static Type createUsedBits(uint32_t used, Type id) {
-        uint32_t availBits = maxNumBits();
+        uint32_t availBits = maxNumBits;
         Type usedCount(used);
         usedCount <<= availBits;
 

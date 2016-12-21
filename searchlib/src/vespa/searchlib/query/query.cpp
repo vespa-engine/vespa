@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/searchlib/query/query.h>
+#include "query.h"
 #include <vespa/vespalib/objects/visit.hpp>
 
 using vespalib::Identifiable;
@@ -269,8 +268,7 @@ bool ONearQueryNode::evaluate() const
 Query::Query() :
   Identifiable(),
   _root()
-{
-}
+{ }
 
 Query::Query(const QueryNodeResultBase & org, const QueryPacketT & queryRep) :
   Identifiable(),

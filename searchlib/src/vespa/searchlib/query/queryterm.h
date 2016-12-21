@@ -1,15 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/query/posocc.h>
-#include <vespa/searchlib/query/querynode.h>
+#include "posocc.h"
+#include "querynode.h"
+#include "querynoderesultbase.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/fastlib/text/unicodeutil.h>
 
 #include "weight.h"
 
-namespace search
-{
+namespace search {
 
 /// An stl based ucs4 string identical to a char string.
 typedef vespalib::Array<ucs4_t> UCS4StringT;

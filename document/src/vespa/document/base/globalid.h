@@ -24,7 +24,7 @@
  */
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/document/bucket/bucketid.h>
 

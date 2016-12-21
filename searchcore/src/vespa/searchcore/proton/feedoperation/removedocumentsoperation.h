@@ -3,6 +3,7 @@
 
 #include "feedoperation.h"
 #include "lidvectorcontext.h"
+#include <map>
 
 namespace proton {
 

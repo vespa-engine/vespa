@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/log/log.h>
 #include <vespa/document/base/documentid.h>
+#include <vespa/log/log.h>
+#include <vector>
 
 namespace proton {
 

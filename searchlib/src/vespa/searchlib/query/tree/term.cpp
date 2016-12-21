@@ -1,17 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".term");
-
 #include "term.h"
 
 namespace search {
 namespace query {
 
-Term::~Term()
-{
-}
+Term::~Term() { }
 
 Term::Term(const vespalib::stringref &view, int32_t id, Weight weight) :
     _view(view),
@@ -20,8 +14,7 @@ Term::Term(const vespalib::stringref &view, int32_t id, Weight weight) :
     _term_index(-1),
     _ranked(true),
     _position_data(true)
-{
-}
+{ }
 
 }  // namespace query
 }  // namespace search

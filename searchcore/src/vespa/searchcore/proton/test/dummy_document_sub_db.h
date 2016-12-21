@@ -43,9 +43,9 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     {
     }
     void close() override { }
-    virtual uint32_t getSubDbId() const override { return _subDbId; }
-    virtual vespalib::string getName() const override { return "dummysubdb"; }
-    virtual DocumentSubDbInitializer::UP
+    uint32_t getSubDbId() const override { return _subDbId; }
+    vespalib::string getName() const override { return "dummysubdb"; }
+    DocumentSubDbInitializer::UP
     createInitializer(const DocumentDBConfig &,
                       SerialNum,
                       const Schema::SP &,
@@ -57,43 +57,42 @@ struct DummyDocumentSubDb : public IDocumentSubDB
             (const_cast<DummyDocumentSubDb &>(*this),
              _writeService->master());
     }
-    virtual void setup(const DocumentSubDbInitializerResult &) override {}
-    virtual void initViews(const DocumentDBConfig &,
-                           const proton::matching::SessionManager::SP &) override {}
-    virtual IReprocessingTask::List applyConfig(const DocumentDBConfig &,
-                                                const DocumentDBConfig &,
-                                                SerialNum,
-                                                const ReconfigParams &) override {
+    void setup(const DocumentSubDbInitializerResult &) override {}
+    void initViews(const DocumentDBConfig &,
+                   const proton::matching::SessionManager::SP &) override {}
+    IReprocessingTask::List applyConfig(const DocumentDBConfig &, const DocumentDBConfig &,
+                                        SerialNum, const ReconfigParams &) override
+    {
         return IReprocessingTask::List();
     }
-    virtual ISearchHandler::SP getSearchView() const override { return ISearchHandler::SP(); }
-    virtual IFeedView::SP getFeedView() const override { return IFeedView::SP(); }
-    virtual void clearViews() override {}
-    virtual const ISummaryManager::SP &getSummaryManager() const override { return _summaryManager; }
-    virtual proton::IAttributeManager::SP getAttributeManager() const override {
+    ISearchHandler::SP getSearchView() const override { return ISearchHandler::SP(); }
+    IFeedView::SP getFeedView() const override { return IFeedView::SP(); }
+    void clearViews() override {}
+    const ISummaryManager::SP &getSummaryManager() const override { return _summaryManager; }
+    proton::IAttributeManager::SP getAttributeManager() const override {
         return proton::IAttributeManager::SP();
     }
-    virtual const IIndexManager::SP &getIndexManager() const override { return _indexManager; }
-    virtual const ISummaryAdapter::SP &getSummaryAdapter() const override { return _summaryAdapter; }
-    virtual const IIndexWriter::SP &getIndexWriter() const override { return _indexWriter; }
-    virtual IDocumentMetaStoreContext &getDocumentMetaStoreContext() override { return _metaStoreCtx; }
-    virtual IFlushTarget::List getFlushTargets() override { return IFlushTarget::List(); }
-    virtual size_t getNumDocs() const override { return 0; }
-    virtual size_t getNumActiveDocs() const override { return 0; }
-    virtual bool hasDocument(const document::DocumentId &) override { return false; }
-    virtual void onReplayDone() override {}
-    virtual void onReprocessDone(SerialNum) override { }
-    virtual SerialNum getOldestFlushedSerial() override { return 0; }
-    virtual SerialNum getNewestFlushedSerial() override { return 0; }
-    virtual void wipeHistory(SerialNum, const Schema &, const Schema &) override { }
-    virtual void setIndexSchema(const Schema::SP &, const Schema::SP &) override { }
-    virtual search::SearchableStats getSearchableStats() const override {
+    const IIndexManager::SP &getIndexManager() const override { return _indexManager; }
+    const ISummaryAdapter::SP &getSummaryAdapter() const override { return _summaryAdapter; }
+    const IIndexWriter::SP &getIndexWriter() const override { return _indexWriter; }
+    IDocumentMetaStoreContext &getDocumentMetaStoreContext() override { return _metaStoreCtx; }
+    IFlushTarget::List getFlushTargets() override { return IFlushTarget::List(); }
+    size_t getNumDocs() const override { return 0; }
+    size_t getNumActiveDocs() const override { return 0; }
+    bool hasDocument(const document::DocumentId &) override { return false; }
+    void onReplayDone() override {}
+    void onReprocessDone(SerialNum) override { }
+    SerialNum getOldestFlushedSerial() override { return 0; }
+    SerialNum getNewestFlushedSerial() override { return 0; }
+    void wipeHistory(SerialNum, const Schema &, const Schema &) override { }
+    void setIndexSchema(const Schema::SP &, const Schema::SP &) override { }
+    search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats();
     }
-    virtual IDocumentRetriever::UP getDocumentRetriever() override {
+    IDocumentRetriever::UP getDocumentRetriever() override {
         return IDocumentRetriever::UP();
     }
-    virtual matching::MatchingStats getMatcherStats(const vespalib::string &) const override {
+    matching::MatchingStats getMatcherStats(const vespalib::string &) const override {
         return matching::MatchingStats();
     }
 

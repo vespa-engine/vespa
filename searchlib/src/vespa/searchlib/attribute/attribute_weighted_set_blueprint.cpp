@@ -84,8 +84,8 @@ private:
 public:
     AttributeFilter(fef::TermFieldMatchData &tfmd,
                     const IAttributeVector & attr,
-                    const std::vector<int32_t> weights,
-                    const std::vector<ISearchContext*> contexts)
+                    const std::vector<int32_t> & weights,
+                    const std::vector<ISearchContext*> & contexts)
         : _tfmd(tfmd), _attr(attr), _map(), _weight(0)
     {
         for (size_t i = 0; i < contexts.size(); ++i) {

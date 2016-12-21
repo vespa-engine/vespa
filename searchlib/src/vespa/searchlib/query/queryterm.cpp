@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <cmath>
-#include <limits>
-#include <vespa/searchlib/query/queryterm.h>
+#include "queryterm.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/classname.h>
+#include <cmath>
+#include <limits>
 
 namespace {
 
