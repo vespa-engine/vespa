@@ -42,13 +42,17 @@ To start a local zone, simply run:
 
 ### Deploying a Local Application
 
-To deploy an application, check out `vespa/basic-search-for-docker` to `~`, and 
-package it with ```mvn package```, then deploy it with:
+Package and deploy vespa application by running:
 
 ```
-    Path pathToApp = Paths.get("/home/<username>/basic-search-for-docker/target/application.zip");
+    Path pathToApp = Paths.get("node-admin/src/test/resources/basic-search-for-docker");
     runVespaLocal.deployApplication(pathToApp);
 ```
+If the deployment is successful, the final log entry should be something like 
+```
+INFO: Endpoint http://cnode-1:4080/ is now ready
+```
+use this endpoint URL to feed or query your application.
 
 You can delete application with
 
@@ -56,14 +60,37 @@ You can delete application with
     runVespaLocal.deleteApplication();
 ```
 
+### Feed and search
+ 1. **Feed** the data that is to be searched
+ ```sh
+
+ # Feeding two documents
+ curl -X POST --data-binary  @music-data-1.json <endpoint url>/document/v1/music/music/docid/1 | python -m json.tool
+ curl -X POST --data-binary  @music-data-2.json <endpoint url>/document/v1/music/music/docid/2 | python -m json.tool
+
+  ```
+
+ 2. **Visit documents**
+
+ Since we do not have many documents we can list them all
+ ```sh
+
+ # All documents
+ curl <endpoint url>/document/v1/music/music/docid | python -m json.tool
+
+ # Document with id 1
+ curl <endpoint url>/document/v1/music/music/docid/1 | python -m json.tool
+
+  ```
+
+ 3. **Search**
+ We can also search for documents:
+    ```sh
+
+    curl '<endpoint url>/search/?query=bad' | python -m json.tool
 
 
-## Using
-
-Trigger the incredibly rich and complex `node-admin` REST API(s)
-```
-curl localhost:4080/rest/info
-```
+    ```
 
 ## Troubleshooting
 

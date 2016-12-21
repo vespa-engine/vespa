@@ -44,7 +44,7 @@ public class NodeAdminStateUpdater extends AbstractComponent {
             Orchestrator orchestrator,
             String dockerHostHostName) {
         scheduler.scheduleWithFixedDelay(
-                ()-> fetchContainersToRunFromNodeRepository(),
+                this::fetchContainersToRunFromNodeRepository,
                 initialSchedulerDelayMillis,
                 intervalSchedulerInMillis,
                 MILLISECONDS);

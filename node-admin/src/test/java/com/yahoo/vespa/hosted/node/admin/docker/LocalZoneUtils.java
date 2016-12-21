@@ -13,7 +13,10 @@ import com.yahoo.vespa.hosted.node.admin.util.ConfigServerHttpRequestExecutor;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -61,7 +64,6 @@ public class LocalZoneUtils {
         docker.createContainerCommand(VESPA_LOCAL_IMAGE, CONFIG_SERVER_CONTAINER_NAME, CONFIG_SERVER_HOSTNAME)
                 .withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
                 .withIpAddress(environment.getInetAddressForHost(CONFIG_SERVER_HOSTNAME))
-                .withVolume("/etc/hosts", "/etc/hosts")
                 .withEnvironment("HOSTED_VESPA_ENVIRONMENT", environment.getEnvironment())
                 .withEnvironment("HOSTED_VESPA_REGION", environment.getRegion())
                 .withEnvironment("CONFIG_SERVER_HOSTNAME", CONFIG_SERVER_HOSTNAME)
@@ -176,6 +178,7 @@ public class LocalZoneUtils {
             provisionNodeRequest.put("type", "tenant");
             provisionNodeRequest.put("flavor", "docker");
             provisionNodeRequest.put("hostname", hostname);
+            provisionNodeRequest.put("ipAddress", "172.18.2." + i);
             provisionNodeRequest.put("openStackId", "fake-" + hostname);
             nodesToAdd.add(provisionNodeRequest);
         }
@@ -227,6 +230,32 @@ public class LocalZoneUtils {
                 tenantName, "-a", applicationName, "activate");
         if (! execProcess.isSuccess()) {
             throw new RuntimeException("Could not activate application\n" + copyProcess.getOutput() + "\n" + copyProcess.getErrors());
+        }
+    }
+
+    public static Set<String> getContainersForApp() {
+        return getContainersForApp(TENANT_NAME, APPLICATION_NAME, "default");
+    }
+
+    public static Set<String> getContainersForApp(String tenant, String application, String instance) {
+        String app = String.join(".", tenant, application, instance);
+        Map response = requestExecutor.get("/nodes/v2/node/?recursive=true&clusterType=container&application=" + app,
+                CONFIG_SERVER_WEB_SERVICE_PORT, Map.class);
+        List<Map> nodes = (List<Map>) response.get("nodes");
+        return nodes.stream().map(nodeMap -> (String) nodeMap.get("hostname")).collect(Collectors.toSet());
+    }
+
+    public static void packageApp(Path pathToApp) {
+        try {
+            InputStream is = Runtime.getRuntime().exec("mvn package", null, pathToApp.toFile()).getInputStream();
+
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader buff = new BufferedReader (isr);
+
+            String line;
+            while((line = buff.readLine()) != null) System.out.println(line);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to package application", e);
         }
     }
 
