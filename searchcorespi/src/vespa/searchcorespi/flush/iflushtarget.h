@@ -3,6 +3,7 @@
 
 #include "flushstats.h"
 #include "flushtask.h"
+#include <vespa/fastos/timestamp.h>
 
 namespace searchcorespi {
 
