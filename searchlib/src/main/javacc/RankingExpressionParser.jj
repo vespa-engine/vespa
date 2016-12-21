@@ -236,7 +236,7 @@ IfNode ifExpression() :
 }
 {
     ( <IF> <LBRACE> ( condition =  expression() )
-      <COMMA> ifTrue = expression() <COMMA> ifFalse = expression() ( <COMMA> trueProbability = number() )? <RBRACE> )
+      <COMMA> ifTrue = expression() <COMMA> ifFalse = expression() ( <COMMA> trueProbability = doubleNumber() )? <RBRACE> )
     {
         return new IfNode(condition, ifTrue, ifFalse, trueProbability);
     }
@@ -420,15 +420,37 @@ ExpressionNode tensorRename() :
     { return new TensorFunctionNode(new Rename(TensorFunctionNode.wrapArgument(tensor), fromDimensions, toDimensions)); }
 }
 
-// TODO: Notice that null is parsed below
 ExpressionNode tensorGenerate() :
 {
     TensorType type;
-    LambdaFunctionNode generator;
+    ExpressionNode generator;
 }
 {
-    <TENSOR> <LBRACE> <RBRACE> <LBRACE>
-    { return new TensorFunctionNode(new Generate(null, null)); }
+    type = tensorType() <LBRACE> generator = expression() <RBRACE>
+    { return new TensorFunctionNode(new Generate(type, new GeneratorLambdaFunctionNode(type, generator).asIntegerListToDoubleOperator())); }
+}
+
+TensorType tensorType() :
+{
+    TensorType.Builder builder = new TensorType.Builder();
+}
+{
+    <TENSOR> <LBRACE> 
+    ( tensorTypeDimension(builder) ) ? 
+    ( <COMMA> tensorTypeDimension(builder) ) *
+    <RBRACE>
+    { return builder.build(); }
+}
+
+// NOTE: Only indexed bound dimensions are parsed currently, as that is what we need
+void tensorTypeDimension(TensorType.Builder builder) :
+{
+    String name;
+    int size;
+}
+{
+    name = identifier() <LSQUARE> size = integerNumber() <RSQUARE> 
+    { builder.indexed(name, size); }
 }
 
 ExpressionNode tensorL1Normalize() :
@@ -574,13 +596,22 @@ List<ExpressionNode> expressionList() :
     { return list; }
 }
 
-double number() :
+double doubleNumber() :
 {
     String sign = "";
 }
 {
     ( <SUB> { sign = "-";} )? ( <FLOAT> | <INTEGER> )
     { return Double.parseDouble(sign + token.image); }
+}
+
+int integerNumber() :
+{
+    String sign = "";
+}
+{
+    ( <SUB> { sign = "-";} )? ( <INTEGER> )
+    { return Integer.parseInt(sign + token.image); }
 }
 
 String identifier() :

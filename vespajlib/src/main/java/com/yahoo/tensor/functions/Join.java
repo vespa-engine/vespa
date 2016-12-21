@@ -143,6 +143,7 @@ public class Join extends PrimitiveTensorFunction {
                           subspaceInSuper, subspaceInSuper.size(),
                           reversedArgumentOrder, builder);
         }
+        
         return builder.build();
     }
 
