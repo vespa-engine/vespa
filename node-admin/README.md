@@ -42,13 +42,17 @@ To start a local zone, simply run:
 
 ### Deploying a Local Application
 
-To deploy an application, check out `vespa/basic-search-for-docker` to `~`, and 
-package it with ```mvn package```, then deploy it with:
+Package and deploy vespa application by running:
 
 ```
-    Path pathToApp = Paths.get("/home/<username>/basic-search-for-docker/target/application.zip");
     runVespaLocal.deployApplication(pathToApp);
 ```
+where `pathToApp` is for example [vespa/sample-apps/basic-search-for-docker](../sample-apps/basic-search-for-docker).
+If the deployment is successful, the final log entry should be something like 
+```
+INFO: Endpoint http://cnode-1:4080/ is now ready
+```
+use this endpoint URL to feed or query your application as described in [basic-search-for-docker/README](../sample-apps/basic-search-for-docker/README.md).
 
 You can delete application with
 

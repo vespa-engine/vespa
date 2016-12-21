@@ -124,18 +124,20 @@ public class RunVespaLocal {
     }
 
     /**
-     * Deploys an app and waits for the node to come up
-     * @param pathToAppToDeploy Path to .zip file of the application to deploy
+     * Packages, deploys an app and waits for the node to come up
+     * @param pathToApp Path to the directory of the application to deploy
      */
-    void deployApplication(Path pathToAppToDeploy) {
+    void deployApplication(Path pathToApp) {
+        logger.info("Packaging application");
+        LocalZoneUtils.packageApp(pathToApp);
         logger.info("Deploying application");
-        LocalZoneUtils.deployApp(docker, pathToAppToDeploy);
+        LocalZoneUtils.deployApp(docker, pathToApp.resolve("target/application.zip"));
 
-        // TODO: Automatically find correct node to send request to
+        Set<String> containers = LocalZoneUtils.getContainersForApp();
         try {
-            URL nodeUrl = new URL("http://cnode-1:" + System.getenv("VESPA_WEB_SERVICE_PORT") + "/");
+            URL nodeUrl = new URL("http://" + containers.iterator().next() + ":" + System.getenv("VESPA_WEB_SERVICE_PORT") + "/");
             assertTrue(LocalZoneUtils.isReachableURL(nodeUrl, Duration.ofSeconds(120)));
-            logger.info("Ready");
+            logger.info("Endpoint " + nodeUrl + " is now ready");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
