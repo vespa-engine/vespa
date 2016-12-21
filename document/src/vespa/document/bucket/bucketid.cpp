@@ -8,8 +8,7 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 using vespalib::nbostream;
-
-template class vespalib::Array<document::BucketId>;
+using vespalib::asciistream;
 
 namespace document {
 
@@ -34,39 +33,43 @@ const unsigned char reverseBitTable[256] =
   0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF, 0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF
 };
 
-std::vector<BucketId::Type>
-BucketId::getUsedMasks()
+BucketId::Type BucketId::_usedMasks[BucketId::maxNumBits+1];
+BucketId::Type BucketId::_stripMasks[BucketId::maxNumBits+1];
+
+namespace {
+
+void fillUsedMasks(BucketId::Type * masks, uint8_t maxBits)
 {
     typedef BucketId::Type Type;
-    uint8_t maxBits = BucketId::maxNumBits();
-    std::vector<Type> masks(maxBits + 1);
     for (uint32_t usedBits = 0; usedBits <= maxBits; ++usedBits) {
         uint8_t notused = 8 * sizeof(Type) - usedBits;
-        masks[usedBits] = (std::numeric_limits<Type>::max() << notused)
-                          >> notused;
+        masks[usedBits] = (std::numeric_limits<Type>::max() << notused) >> notused;
     }
-    return masks;
 }
 
-std::vector<BucketId::Type>
-BucketId::getStripMasks()
+void fillStripMasks(BucketId::Type * masks, uint8_t maxBits)
 {
     typedef BucketId::Type Type;
-    uint8_t maxBits = BucketId::maxNumBits();
-    std::vector<Type> masks(maxBits + 1);
     for (uint32_t usedBits = 0; usedBits <= maxBits; ++usedBits) {
         uint8_t notused = 8 * sizeof(Type) - usedBits;
-        Type usedMask = (std::numeric_limits<Type>::max() << notused)
-                        >> notused;
-        Type countMask = (std::numeric_limits<Type>::max() >> maxBits)
-                         << maxBits;
+        Type usedMask = (std::numeric_limits<Type>::max() << notused) >> notused;
+        Type countMask = (std::numeric_limits<Type>::max() >> maxBits) << maxBits;
         masks[usedBits] = usedMask | countMask;
     }
-    return masks;
 }
 
-std::vector<BucketId::Type> BucketId::_usedMasks = getUsedMasks();
-std::vector<BucketId::Type> BucketId::_stripMasks = getStripMasks();
+
+    struct Initialize {
+        Initialize() {
+            BucketId::initialize();
+        }
+    };
+}
+
+void BucketId::initialize() {
+    fillUsedMasks(BucketId::_usedMasks, BucketId::maxNumBits);
+    fillStripMasks(BucketId::_stripMasks, BucketId::maxNumBits);
+}
 
 vespalib::string
 BucketId::toString() const
@@ -100,7 +103,7 @@ BucketId::keyToBucketId(Type key)
 {
     Type retVal = reverse(key);
 
-    Type usedCountMSB = key << maxNumBits();
+    Type usedCountMSB = key << maxNumBits;
     retVal <<= CountBits;
     retVal >>= CountBits;
     retVal |= usedCountMSB;
@@ -118,13 +121,12 @@ BucketId::contains(const BucketId& id) const
     return (copy.getId() == getId());
 }
 
-vespalib::asciistream& operator<<(vespalib::asciistream& os, const BucketId& id)
+vespalib::asciistream& operator<<(asciistream& os, const BucketId& id)
 {
-    vespalib::asciistream::StateSaver stateSaver(os);
+    asciistream::StateSaver stateSaver(os);
     return os << "BucketId(0x"
               << vespalib::hex << vespalib::setw(sizeof(BucketId::Type)*2) << vespalib::setfill('0')
-              << id.getId()
-              << ")";
+              << id.getId() << ")";
 }
 
 std::ostream& operator<<(std::ostream& os, const BucketId& id)
@@ -148,4 +150,5 @@ operator>>(nbostream &is, BucketId &bucketId)
 
 } // document
 
+template class vespalib::Array<document::BucketId>;
 VESPALIB_HASH_SET_INSTANTIATE_H(document::BucketId, document::BucketId::hash);

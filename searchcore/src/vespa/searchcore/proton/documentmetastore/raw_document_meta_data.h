@@ -13,23 +13,20 @@ namespace proton {
  */
 struct RawDocumentMetaData
 {
-    typedef document::GlobalId GlobalId;
-    typedef document::BucketId BucketId;
-    typedef storage::spi::Timestamp Timestamp;
-    GlobalId _gid;
-    uint8_t _bucketUsedBits;
+    using GlobalId = document::GlobalId;
+    using BucketId = document::BucketId;
+    using Timestamp = storage::spi::Timestamp;
+    GlobalId  _gid;
+    uint8_t   _bucketUsedBits;
     Timestamp _timestamp;
 
     RawDocumentMetaData(void)
         : _gid(),
-          _bucketUsedBits(BucketId::minNumBits()),
+          _bucketUsedBits(BucketId::minNumBits),
           _timestamp()
-    {
-    }
+    { }
 
-    RawDocumentMetaData(const GlobalId &gid,
-             const BucketId &bucketId,
-             const Timestamp &timestamp)
+    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp)
         : _gid(gid),
           _bucketUsedBits(bucketId.getUsedBits()),
           _timestamp(timestamp)
@@ -41,73 +38,28 @@ struct RawDocumentMetaData
                bucketId.getRawId() == verId.getId());
     }
 
-    bool
-    operator<(const GlobalId &rhs) const
-    {
-        return _gid < rhs;
-    }
+    bool operator<(const GlobalId &rhs) const { return _gid < rhs; }
+    bool operator==(const GlobalId &rhs) const { return _gid == rhs; }
+    bool operator<(const RawDocumentMetaData &rhs) const { return _gid < rhs._gid; }
+    bool operator==(const RawDocumentMetaData &rhs) const { return _gid == rhs._gid; }
 
-    bool
-    operator==(const GlobalId &rhs) const
-    {
-        return _gid == rhs;
-    }
+    const GlobalId &getGid() const { return _gid; }
+    GlobalId &getGid() { return _gid; }
+    void setGid(const GlobalId &rhs) { _gid = rhs; }
+    uint8_t getBucketUsedBits() const { return _bucketUsedBits; }
 
-    bool
-    operator<(const RawDocumentMetaData &rhs) const
-    {
-        return _gid < rhs._gid;
-    }
-
-    bool
-    operator==(const RawDocumentMetaData &rhs) const
-    {
-        return _gid == rhs._gid;
-    }
-
-    const GlobalId &
-    getGid(void) const
-    {
-        return _gid;
-    }
-
-    GlobalId &
-    getGid(void)
-    {
-        return _gid;
-    }
-
-    void
-    setGid(const GlobalId &rhs)
-    {
-        _gid = rhs;
-    }
-
-    uint8_t
-    getBucketUsedBits(void) const
-    {
-        return _bucketUsedBits;
-    }
-
-    BucketId
-    getBucketId(void) const
-    {
+    BucketId getBucketId() const {
         BucketId ret(_gid.convertToBucketId());
         ret.setUsedBits(_bucketUsedBits);
         return ret;
     }
 
-    void
-    setBucketUsedBits(uint8_t bucketUsedBits)
-    {
-        assert(bucketUsedBits >= BucketId::minNumBits() &&
-               bucketUsedBits <= BucketId::maxNumBits());
+    void setBucketUsedBits(uint8_t bucketUsedBits) {
+        assert(BucketId::validateUsedBits(bucketUsedBits));
         _bucketUsedBits = bucketUsedBits;
     }
 
-    void
-    setBucketId(const BucketId &bucketId)
-    {
+    void setBucketId(const BucketId &bucketId) {
         assert(bucketId.valid());
         uint8_t bucketUsedBits = bucketId.getUsedBits();
         BucketId verId(_gid.convertToBucketId());
@@ -117,17 +69,9 @@ struct RawDocumentMetaData
         _bucketUsedBits = bucketUsedBits;
     }
 
-    Timestamp
-    getTimestamp(void) const
-    {
-        return _timestamp;
-    }
+    Timestamp getTimestamp(void) const { return _timestamp; }
 
-    void
-    setTimestamp(const Timestamp &timestamp)
-    {
-        _timestamp = timestamp;
-    }
+    void setTimestamp(const Timestamp &timestamp) { _timestamp = timestamp; }
 };
 
 } // namespace proton

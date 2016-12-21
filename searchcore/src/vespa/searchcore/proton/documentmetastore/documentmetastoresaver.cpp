@@ -1,8 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.documentmetastore.documentmetastoresaver");
 #include "documentmetastoresaver.h"
 #include <vespa/searchlib/util/bufferwriter.h>
 
@@ -29,13 +26,11 @@ class WriteMetaData
     using BucketId = documentmetastore::IStore::BucketId;
     using Timestamp = documentmetastore::IStore::Timestamp;
 public:
-    WriteMetaData(search::BufferWriter &datWriter,
-                 const MetaDataStore &metaDataStore)
+    WriteMetaData(search::BufferWriter &datWriter, const MetaDataStore &metaDataStore)
         : _datWriter(datWriter),
           _metaDataStore(&metaDataStore[0]),
           _metaDataStoreSize(metaDataStore.size())
-    {
-    }
+    { }
 
     void operator()(uint32_t lid) {
         assert(lid < _metaDataStoreSize);
@@ -43,8 +38,7 @@ public:
         const GlobalId &gid = metaData.getGid();
         // 6 bits used for bucket bits
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
-        assert(bucketUsedBits >= BucketId::minNumBits() &&
-               bucketUsedBits <= BucketId::maxNumBits());
+        assert(BucketId::validateUsedBits(bucketUsedBits));
         assert((bucketUsedBits >> BucketId::CountBits) == 0);
         Timestamp::Type timestamp = metaData.getTimestamp();
         search::BufferWriter &datWriter(_datWriter);
@@ -67,13 +61,10 @@ DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
     : AttributeSaver(std::move(guard), cfg),
       _gidIterator(gidIterator),
       _metaDataStore(metaDataStore)
-{
-}
+{ }
 
 
-DocumentMetaStoreSaver::~DocumentMetaStoreSaver()
-{
-}
+DocumentMetaStoreSaver::~DocumentMetaStoreSaver() { }
 
 
 bool
