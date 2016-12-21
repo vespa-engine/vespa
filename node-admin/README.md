@@ -70,7 +70,7 @@ You can delete application with
 
   ```
 
- 2. **Visit documents
+ 2. **Visit documents**
 
  Since we do not have many documents we can list them all
  ```sh
