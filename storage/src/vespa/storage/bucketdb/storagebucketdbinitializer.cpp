@@ -11,6 +11,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/config.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/config/helper/configgetter.hpp>
 #include <iomanip>
 
 #include <vespa/log/log.h>

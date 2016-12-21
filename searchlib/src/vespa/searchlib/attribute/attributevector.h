@@ -4,12 +4,13 @@
 
 #include "address_space_usage.h"
 #include "iattributesavetarget.h"
+#include "changevector.h"
+#include "isearchcontext.h"
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/searchlib/attribute/changevector.h>
 #include <vespa/searchlib/common/address_space.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/range.h>
@@ -500,7 +501,7 @@ public:
        - Range search
     */
 
-    class SearchContext
+    class SearchContext : public attribute::ISearchContext
     {
         template <class SC> friend class AttributeIteratorT;
         template <class SC> friend class FilterAttributeIteratorT;
@@ -543,8 +544,8 @@ public:
             bool                     _diversityCutoffStrict;
         };
         typedef std::unique_ptr<SearchContext> UP;
-        virtual ~SearchContext();
-        virtual unsigned int approximateHits() const;
+        ~SearchContext();
+        unsigned int approximateHits() const override;
         static QueryTermSimpleUP decodeQuery(QueryPacketT searchSpec);
 
         /**
@@ -560,8 +561,8 @@ public:
          *
          * @param useBitVector whether bitvectors should be used when available
          **/
-        virtual queryeval::SearchIterator::UP
-        createIterator(fef::TermFieldMatchData *matchData, bool strict);
+        queryeval::SearchIterator::UP
+        createIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
         /**
          * Creates an attribute search iterator associated with this
@@ -574,8 +575,8 @@ public:
          *
          * @param strict whether the iterator should be strict or not
          **/
-        virtual queryeval::SearchIterator::UP
-        createFilterIterator(fef::TermFieldMatchData *matchData, bool strict);
+        queryeval::SearchIterator::UP
+        createFilterIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
         /*
          * Create temporary posting lists.  Should be called before

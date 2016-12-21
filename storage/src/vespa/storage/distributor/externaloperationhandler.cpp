@@ -32,16 +32,12 @@ ExternalOperationHandler::ExternalOperationHandler(
         ManagedBucketSpace& bucketSpace,
         const MaintenanceOperationGenerator& gen,
         DistributorComponentRegister& compReg)
-    : ManagedBucketSpaceComponent(owner, bucketSpace, compReg,
-                                  "External operation handler"),
+    : ManagedBucketSpaceComponent(owner, bucketSpace, compReg, "External operation handler"),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached() // At epoch
-{
-}
+{ }
 
-ExternalOperationHandler::~ExternalOperationHandler()
-{
-}
+ExternalOperationHandler::~ExternalOperationHandler() { }
 
 bool
 ExternalOperationHandler::handleMessage(

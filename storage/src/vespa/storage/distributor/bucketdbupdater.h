@@ -1,27 +1,27 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <set>
+#include "bucketlistmerger.h"
+#include "messageguard.h"
+#include "distributorcomponent.h"
+#include "distributormessagesender.h"
+#include "pendingclusterstate.h"
+#include "managed_bucket_space_component.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageframework/storageframework.h>
-#include <vespa/storage/distributor/bucketlistmerger.h>
-#include <vespa/storage/distributor/messageguard.h>
-#include <vespa/storage/distributor/distributorcomponent.h>
-#include <vespa/storage/distributor/distributormessagesender.h>
-#include <vespa/storage/distributor/pendingclusterstate.h>
-#include <vespa/storage/distributor/managed_bucket_space_component.h>
+
 #include <vespa/storageframework/generic/memory/memorymanagerinterface.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
+#include <set>
+#include <deque>
 
-namespace storage
-{
+namespace storage {
 
-namespace distributor
-{
+namespace distributor {
 
 class Distributor;
 

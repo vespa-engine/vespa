@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/fnet/fnet.h>
+
+#include "fnet.h"
+#include "connect_thread.h"
 #include <vespa/vespalib/xxhash/xxhash.h>
-#include <chrono>
 
 namespace {
 
@@ -22,12 +22,18 @@ struct HashState {
 
 FNET_Transport::FNET_Transport(size_t num_threads)
     : _threads(),
-      _connect_thread()
+      _connect_thread(std::make_unique<fnet::ConnectThread>())
 {
     assert(num_threads >= 1);
     for (size_t i = 0; i < num_threads; ++i) {
         _threads.emplace_back(new FNET_TransportThread(*this));
     }
+}
+
+FNET_Transport::~FNET_Transport() { }
+
+void FNET_Transport::connect_later(fnet::ExtConnectable *conn) {
+    _connect_thread->connect_later(conn);
 }
 
 FNET_TransportThread *

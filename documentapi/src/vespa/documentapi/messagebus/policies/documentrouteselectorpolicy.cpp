@@ -1,20 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".documentrouteselectorpolicy");
 
 #include "documentrouteselectorpolicy.h"
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/batchdocumentupdatemessage.h>
-#include <vespa/documentapi/messagebus/messages/feedmessage.h>
 #include <vespa/documentapi/messagebus/messages/multioperationmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/documentignoredreply.h>
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/routing/routingcontext.h>
+#include <vespa/messagebus/routing/routingtable.h>
+#include <vespa/messagebus/messagebus.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".documentrouteselectorpolicy");
 
 using document::select::Result;
 

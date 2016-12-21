@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/storage/bucketdb/bucketcopy.h>
+#include <cassert>
 
 namespace storage {
 namespace distributor {

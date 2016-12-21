@@ -1,7 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".test.bucketdb.bucketmanager");
 
 #include <vespa/config/helper/configgetter.h>
 #include <cppunit/extensions/HelperMacros.h>
@@ -10,24 +7,20 @@ LOG_SETUP(".test.bucketdb.bucketmanager");
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <thread>
+#include <vespa/config/helper/configgetter.hpp>
 #include <future>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".test.bucketdb.bucketmanager");
 
 using config::ConfigGetter;
 using document::DocumenttypesConfig;

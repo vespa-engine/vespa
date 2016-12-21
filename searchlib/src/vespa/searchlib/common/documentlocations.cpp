@@ -2,6 +2,7 @@
 
 #include "documentlocations.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 
 namespace search {
 namespace common {

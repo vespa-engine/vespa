@@ -3,6 +3,7 @@
 #include "properties.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
+#include <cassert>
 
 namespace search {
 namespace fef {

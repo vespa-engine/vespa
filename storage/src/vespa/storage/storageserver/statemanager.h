@@ -13,8 +13,6 @@
  */
 #pragma once
 
-#include <map>
-#include <atomic>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/storagelink.h>
@@ -23,6 +21,9 @@
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
+#include <deque>
+#include <map>
+#include <atomic>
 
 namespace metrics {
     class MetricManager;

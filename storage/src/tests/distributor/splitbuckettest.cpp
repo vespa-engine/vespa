@@ -1,18 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <iomanip>
-#include <iostream>
-#include <memory>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storage/distributor/operations/idealstate/splitoperation.h>
-#include <vespa/storage/common/bucketmessages.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storageapi/message/multioperation.h>
 #include <tests/distributor/distributortestutil.h>
+#include <vespa/storage/distributor/distributor.h>
 
 using std::shared_ptr;
 using namespace document;

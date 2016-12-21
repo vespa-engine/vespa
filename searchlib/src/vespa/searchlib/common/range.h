@@ -24,7 +24,7 @@ private:
     T _upper;
 };
 
-typedef Range<int64_t> Int64Range;
+using Int64Range = Range<int64_t>;
 
 } // namespace search
 

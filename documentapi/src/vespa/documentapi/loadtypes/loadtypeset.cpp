@@ -4,6 +4,8 @@
 #include <vespa/config-load-type.h>
 #include <vespa/config/config.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/config/helper/configgetter.hpp>
+
 
 namespace documentapi {
 

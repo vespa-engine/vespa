@@ -3,6 +3,7 @@
 
 #include <vespa/fastos/app.h>
 #include <vespa/messagebus/messagebus.h>
+#include <vespa/messagebus/routing/hopblueprint.h>
 #include "mynetwork.h"
 #include "params.h"
 #include <vespa/documentapi/loadtypes/loadtypeset.h>

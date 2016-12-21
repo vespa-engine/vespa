@@ -3,7 +3,7 @@
 #include "utf8.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <assert.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.utf8");

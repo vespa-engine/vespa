@@ -3,6 +3,7 @@
 #pragma once
 
 #include "sourcespec.h"
+#include <vespa/config/common/configkey.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace config {
@@ -14,7 +15,7 @@ class ConfigInstanceSpec : public SourceSpec
 {
 public:
     ConfigInstanceSpec(const ConfigInstance & instance);
-    SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const;
+    std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const;
 private:
     const ConfigKey _key;
     vespalib::asciistream _buffer;

@@ -2,7 +2,12 @@
 
 #pragma once
 
-#include "connect_thread.h"
+#include "ext_connectable.h"
+
+namespace fnet {
+    class ConnectThread;
+    class ExtConnectable;
+}
 
 /**
  * This class represents the transport layer and handles a collection
@@ -16,7 +21,7 @@ private:
     using Threads = std::vector<Thread>;
 
     Threads _threads;
-    fnet::ConnectThread _connect_thread;
+    std::unique_ptr<fnet::ConnectThread> _connect_thread;
 
 public:
     /**
@@ -27,13 +32,14 @@ public:
      * be called for single-threaded transports.
      **/
     FNET_Transport(size_t num_threads = 1);
+    ~FNET_Transport();
 
     /**
      * Calling this function gives away 1 reference to 'conn' and
      * ensures that the 'ext_connect' function will be called on it
      * from another thread some time in the future.
      **/
-    void connect_later(fnet::ExtConnectable *conn) { _connect_thread.connect_later(conn); }
+    void connect_later(fnet::ExtConnectable *conn);
 
     /**
      * Select one of the underlying transport threads. The selection

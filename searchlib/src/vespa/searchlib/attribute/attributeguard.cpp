@@ -1,7 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "attributeguard.h"
+#include "componentguard.hpp"
+#include "attributevector.h"
 
 namespace search {
 
@@ -37,5 +38,7 @@ void AttributeEnumGuard::takeLock() {
         _lock.lock();
     }
 }
+
+template class ComponentGuard<AttributeVector>;
 
 }

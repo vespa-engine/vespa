@@ -19,6 +19,7 @@
 #include <vespa/storage/distributor/statecheckers.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/storage/distributor/distributor.h>
 
 using namespace std::literals::string_literals;
 

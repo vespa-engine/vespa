@@ -11,8 +11,6 @@
  * application, but as little as possible else.
  */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 #include <signal.h>
 #include <vespa/persistence/spi/exceptions.h>
 #include <vespa/storage/storageutil/utils.h>
@@ -23,9 +21,11 @@
 #include <vespa/storageserver/app/rpcservicelayerprocess.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/shutdownguard.h>
-#include <vespa/config/config.h>
 #include <iostream>
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/fastos/app.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP("vds.application");
 
 namespace storage {

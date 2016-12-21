@@ -1,16 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".localservicepolicy");
 
+#include "localservicepolicy.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/routing/route.h>
-#include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
+#include <vespa/messagebus/messagebus.h>
 #include <vespa/vespalib/util/hashmap.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include "localservicepolicy.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".localservicepolicy");
 
 namespace documentapi {
 

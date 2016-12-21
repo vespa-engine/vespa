@@ -7,6 +7,7 @@
 #include <vespa/config/config.h>
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <iostream>
 #include <sstream>
 

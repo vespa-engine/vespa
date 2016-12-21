@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/messagebus/routing/routingnode.h>
-#include <vespa/messagebus/routing/routingspec.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/vstringfmt.h>
 #include "messagebus.h"
-#include "imessagehandler.h"
+#include "messenger.h"
 #include "emptyreply.h"
 #include "errorcode.h"
 #include "sendproxy.h"
+#include "protocolrepository.h"
+#include <vespa/messagebus/network/inetwork.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".messagebus");
@@ -61,9 +60,7 @@ public:
           _msn(msn),
           _done(done),
           _gate(gate)
-    {
-        // empty
-    }
+    { }
 
     ~ShutdownTask() {
         _gate.countDown();
@@ -88,8 +85,8 @@ MessageBus::MessageBus(INetwork &net, ProtocolSet protocols) :
     _lock("mbus::MessageBus::_lock", false),
     _routingTables(),
     _sessions(),
-    _protocolRepository(),
-    _msn(),
+    _protocolRepository(std::make_unique<ProtocolRepository>()),
+    _msn(std::make_unique<Messenger>()),
     _resender(),
     _maxPendingCount(0),
     _maxPendingSize(0),
@@ -111,8 +108,8 @@ MessageBus::MessageBus(INetwork &net, const MessageBusParams &params) :
     _lock("mbus::MessageBus::_lock", false),
     _routingTables(),
     _sessions(),
-    _protocolRepository(),
-    _msn(),
+    _protocolRepository(std::make_unique<ProtocolRepository>()),
+    _msn(std::make_unique<Messenger>()),
     _resender(),
     _maxPendingCount(params.getMaxPendingCount()),
     _maxPendingSize(params.getMaxPendingSize()),
@@ -126,14 +123,14 @@ MessageBus::~MessageBus()
 {
     // all sessions must have been destroyed prior to this,
     // so no more traffic from clients
-    _msn.discardRecurrentTasks(); // no more traffic from recurrent tasks
+    _msn->discardRecurrentTasks(); // no more traffic from recurrent tasks
     _network.shutdown(); // no more traffic from network
 
     bool done = false;
     while (!done) {
         vespalib::Gate gate;
-        Messenger::ITask::UP task(new ShutdownTask(_network, _msn, done, gate));
-        _msn.enqueue(std::move(task));
+        Messenger::ITask::UP task(new ShutdownTask(_network, *_msn, done, gate));
+        _msn->enqueue(std::move(task));
         gate.await();
     }
 }
@@ -143,7 +140,7 @@ MessageBus::setup(const MessageBusParams &params)
 {
     // Add all known protocols to the repository.
     for (uint32_t i = 0, len = params.getNumProtocols(); i < len; ++i) {
-        _protocolRepository.putProtocol(params.getProtocol(i));
+        _protocolRepository->putProtocol(params.getProtocol(i));
     }
 
     // Attach and start network.
@@ -161,9 +158,9 @@ MessageBus::setup(const MessageBusParams &params)
         _resender.reset(new Resender(retryPolicy));
 
         Messenger::ITask::UP task(new ResenderTask(*_resender));
-        _msn.addRecurrentTask(std::move(task));
+        _msn->addRecurrentTask(std::move(task));
     }
-    if (!_msn.start()) {
+    if (!_msn->start()) {
         throw vespalib::NetworkSetupFailureException("Failed to start messenger.");
     }
 }
@@ -260,13 +257,13 @@ MessageBus::getRoutingPolicy(const string &protocolName,
                              const string &policyName,
                              const string &policyParam)
 {
-    return _protocolRepository.getRoutingPolicy(protocolName, policyName, policyParam);
+    return _protocolRepository->getRoutingPolicy(protocolName, policyName, policyParam);
 }
 
 void
 MessageBus::sync()
 {
-    _msn.sync();
+    _msn->sync();
     _network.sync(); // should not be necessary, as msn is intermediate
 }
 
@@ -279,7 +276,7 @@ MessageBus::handleMessage(Message::UP msg)
         return;
     }
     SendProxy &proxy = *(new SendProxy(*this, _network, _resender.get())); // deletes self
-    _msn.deliverMessage(std::move(msg), proxy);
+    _msn->deliverMessage(std::move(msg), proxy);
 }
 
 bool
@@ -301,20 +298,20 @@ MessageBus::setupRouting(const RoutingSpec &spec)
         LockGuard guard(_lock);
         std::swap(_routingTables, rtm);
     }
-    _protocolRepository.clearPolicyCache();
+    _protocolRepository->clearPolicyCache();
     return true;
 }
 
 IProtocol::SP
 MessageBus::getProtocol(const string &name)
 {
-    return _protocolRepository.getProtocol(name);
+    return _protocolRepository->getProtocol(name);
 }
 
 IProtocol::SP
 MessageBus::putProtocol(const IProtocol::SP & protocol)
 {
-    return _protocolRepository.putProtocol(protocol);
+    return _protocolRepository->putProtocol(protocol);
 }
 
 bool
@@ -373,16 +370,16 @@ MessageBus::deliverMessage(Message::UP msg, const string &session)
     }
     if (msgHandler == NULL) {
         deliverError(std::move(msg), ErrorCode::UNKNOWN_SESSION,
-                     vespalib::make_vespa_string(
+                     vespalib::make_string(
                              "Session '%s' does not exist.",
                              session.c_str()));
     } else if (!checkPending(*msg)) {
         deliverError(std::move(msg), ErrorCode::SESSION_BUSY,
-                     vespalib::make_vespa_string(
+                     vespalib::make_string(
                              "Session '%s' is busy, try again later.",
                              session.c_str()));
     } else {
-        _msn.deliverMessage(std::move(msg), *msgHandler);
+        _msn->deliverMessage(std::move(msg), *msgHandler);
     }
 }
 
@@ -400,7 +397,7 @@ MessageBus::deliverError(Message::UP msg, uint32_t errCode, const string &errMsg
 void
 MessageBus::deliverReply(Reply::UP reply, IReplyHandler &handler)
 {
-    _msn.deliverReply(std::move(reply), handler);
+    _msn->deliverReply(std::move(reply), handler);
 }
 
 const string

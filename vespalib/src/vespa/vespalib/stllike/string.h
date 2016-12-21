@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <assert.h>
 #include <string>
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdint>
+#include <cstdlib>
 #include <vespa/vespalib/util/alloc.h>
 
 namespace vespalib {
@@ -75,20 +74,7 @@ public:
      * @return index from the start of the string at which the character
      *     was found, or npos if the character could not be located
      */
-    size_type find(const stringref & s, size_type start=0) const {
-        const char *buf = begin()+start;
-        const char *e = end() - s.size();
-        while (buf <= e) {
-            size_t i(0);
-            for (; (i < s.size()) && (buf[i] == s[i]); i++);
-            if (i == s.size()) {
-                return buf - begin();
-            } else {
-                buf++;
-            }
-        }
-        return npos;
-    }
+    size_type find(const stringref & s, size_type start=0) const;
     /**
      * Find the first occurrence of a character, searching from @c start
      *
@@ -132,25 +118,7 @@ public:
      * @return index from the start of the string at which the substring
      *     was found, or npos if the substring could not be located
      */
-    size_type rfind(const char * s, size_type e=npos) const {
-        size_type n = strlen(s);
-        if (n <= size()) {
-            size_type sz = std::min(size()-n, e);
-            const char *b = begin();
-            do {
-                if (s[0] == b[sz]) {
-                    bool found(true);
-                    for(size_t i(1); found && (i < n); i++) {
-                        found = s[i] == b[sz+i];
-                    }
-                    if (found) {
-                        return sz;
-                    }
-                }
-            } while (sz-- > 0);
-        }
-        return npos;
-    }
+    size_type rfind(const char * s, size_type e=npos) const;
     int compare(const stringref & s) const { return compare(s.c_str(), s.size()); }
     int compare(const char *s, size_type sz) const {
         int diff(memcmp(_s, s, std::min(sz, size())));
@@ -282,25 +250,7 @@ public:
      * @return index from the start of the string at which the substring
      *     was found, or npos if the substring could not be located
      */
-    size_type rfind(const char * s, size_type e=npos) const {
-        size_type n = strlen(s);
-        if (n <= size()) {
-            size_type sz = std::min(size()-n, e);
-            const char *b = buffer();
-            do {
-                if (s[0] == b[sz]) {
-                    bool found(true);
-                    for(size_t i(1); found && (i < n); i++) {
-                        found = s[i] == b[sz+i];
-                    }
-                    if (found) {
-                        return sz;
-                    }
-                }
-            } while (sz-- > 0);
-        }
-        return npos;
-    }
+    size_type rfind(const char * s, size_type e=npos) const;
 
     /**
      * Find the last occurrence of a character, starting at e and
@@ -369,17 +319,7 @@ public:
         return (found != NULL) ? (found - buffer()) : (size_type)npos;
     }
     small_string & assign(const char * s) { return assign(s, strlen(s)); }
-    small_string & assign(const void * s, size_type sz) {
-        if (__builtin_expect(capacity() >= sz, true)) {
-            char *buf = buffer();
-            memmove(buf, s, sz);
-            buf[sz] = '\0';
-            _sz = sz;
-        } else {
-            assign_slower(s, sz);
-        }
-        return *this;
-    }
+    small_string & assign(const void * s, size_type sz);
     small_string & assign(const stringref &s, size_type pos, size_type sz) {
         return assign(s.c_str() + pos, sz);
     }
@@ -478,10 +418,7 @@ public:
      * @param p2 position in s where replacement content starts
      * @param n2 how many new characters to use
      **/
-    small_string& replace (size_t p1, size_t n1, const small_string& s, size_t p2, size_t n2 ) {
-        assert(s.size() >= (p2+n2));
-        return replace(p1, n1, s.c_str()+p2, n2);
-    }
+    small_string& replace (size_t p1, size_t n1, const small_string& s, size_t p2, size_t n2);
 
     /**
      * at position p1, replace n1 characters with
@@ -492,18 +429,7 @@ public:
      * @param s  pointer to new content
      * @param n2 how many new characters to use
      **/
-    small_string& replace (size_t p1, size_t n1, const char *s, size_t n2 ) {
-        assert (size() >= (p1 + n1));
-        const size_t newSz = n2 + size() - n1;
-        if (n1 < n2) {
-            reserve(newSz);
-        }
-        size_t rest = size()-(p1+n1);
-        memmove(buffer()+p1+n2, buffer()+p1+n1, rest);
-        memcpy(buffer()+p1, s, n2);
-        _resize(newSz);
-        return *this;
-    }
+    small_string& replace (size_t p1, size_t n1, const char *s, size_t n2);
 
     /**
      * at position p1, replace n1 characters with the contents of s
@@ -576,14 +502,11 @@ public:
     /**
      * Will extend the string within its current buffer. Assumes memory is already initialized.
      * Can not extend beyond capacity.
-     * Not this is non-STL.
+     * Note this is non-STL.
      *
      * @param newSz new size of string.
      */
-    void append_from_reserved(size_type sz) {
-        assert(size() + sz <= capacity());
-        _resize(size() + sz);
-    }
+    void append_from_reserved(size_type sz);
 
     /**
      * Ensure string has at least newCapacity characters of available
@@ -598,17 +521,10 @@ public:
 private:
     void assign_slower(const void * s, size_type sz) __attribute((noinline));
     void init_slower(const void *s) __attribute((noinline));
+    void _reserveBytes(size_type newBufferSize);
     void reserveBytes(size_type newBufferSize) {
         if (newBufferSize > _bufferSize) {
-            if (isAllocated()) {
-                 _buf = (char *) realloc(_buf, newBufferSize);
-            } else {
-                char *tmp = (char *) malloc(newBufferSize);
-                memcpy(tmp, _stack, _sz);
-                tmp[_sz] = '\0';
-                _buf = tmp;
-            }
-            _bufferSize = newBufferSize;
+            _reserveBytes(newBufferSize);
         }
     }
     typedef uint32_t isize_type;

@@ -14,14 +14,15 @@ namespace proton {
 class DocumentFieldPopulator : public IReprocessingRewriter
 {
 private:
+    using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     search::index::Schema::AttributeField _field;
-    search::AttributeVector::SP _attr;
+    AttributeVectorSP _attr;
     vespalib::string _subDbName;
     int64_t _documentsPopulated;
 
 public:
     DocumentFieldPopulator(const search::index::Schema::AttributeField &field,
-                           search::AttributeVector::SP attr,
+                           AttributeVectorSP attr,
                            const vespalib::string &subDbName);
 
     ~DocumentFieldPopulator();

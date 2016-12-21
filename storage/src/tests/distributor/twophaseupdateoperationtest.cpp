@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/config/helper/configgetter.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <vespa/document/config/config-documenttypes.h>
@@ -7,17 +7,13 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <iomanip>
-#include <iostream>
-#include <memory>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
-#include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/batch.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <tests/distributor/distributortestutil.h>
-#include <tests/distributor/messagesenderstub.h>
+#include <vespa/storage/distributor/distributor.h>
 
 namespace storage {
 namespace distributor {

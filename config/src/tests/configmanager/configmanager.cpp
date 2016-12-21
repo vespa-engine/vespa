@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("configmanager");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/noncopyable.hpp>
 #include <vespa/config/common/configmanager.h>
 #include <vespa/config/common/exceptions.h>
+#include <vespa/config/common/timingvalues.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/raw/rawsource.h>
 #include "config-my.h"
@@ -41,7 +40,6 @@ namespace {
         {
             _data->numGetConfig++;
             if (_data->respond) {
-                LOG(info, "put into holder");
                 _holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), true, _data->generation)));
             }
         }

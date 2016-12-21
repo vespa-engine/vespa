@@ -2,12 +2,13 @@
 
 #pragma once
 
+#include "rankmanager.h"
 #include <vespa/searchsummary/docsummary/juniperproperties.h>
 #include <vespa/storage/visiting/visitor.h>
 #include <vespa/config/retriever/simpleconfigurer.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
-#include "rankmanager.h"
+#include <vespa/fastlib/text/normwordfolder.h>
 
 namespace storage {
 

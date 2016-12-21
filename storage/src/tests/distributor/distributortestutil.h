@@ -4,7 +4,6 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
-#include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/frameworkimpl/component/distributorcomponentregisterimpl.h>
 #include <vespa/storage/storageutil/utils.h>
 #include <tests/common/teststorageapp.h>
@@ -13,18 +12,21 @@
 #include <tests/common/testhelper.h>
 
 namespace storage {
+    namespace framework { class TickingThreadPool; }
 
 namespace distributor {
+
+class BucketDBUpdater;
+class Distributor;
+class IdealStateManager;
+class ExternalOperationHandler;
+class Operation;
 
 class DistributorTestUtil : private DoneInitializeHandler
 {
 public:
-    DistributorTestUtil()
-        : _messageSender(_sender, _senderDown)
-    {
-        _config = getStandardConfig(false);
-    }
-    virtual ~DistributorTestUtil() {};
+    DistributorTestUtil();
+    ~DistributorTestUtil();
 
     /**
      * Sets up the storage link chain.
@@ -101,51 +103,27 @@ public:
                    int idx = -1,
                    api::ReturnCode::Result result = api::ReturnCode::OK);
 
-    BucketDBUpdater& getBucketDBUpdater() {
-        return _distributor->_bucketDBUpdater;
-    }
-    IdealStateManager& getIdealStateManager() {
-        return _distributor->_idealStateManager;
-    }
-    ExternalOperationHandler& getExternalOperationHandler() {
-        return _distributor->_externalOperationHandler;
-    }
+    BucketDBUpdater& getBucketDBUpdater();
+    IdealStateManager& getIdealStateManager();
+    ExternalOperationHandler& getExternalOperationHandler();
 
     Distributor& getDistributor() {
         return *_distributor;
     }
 
-    bool tick() {
-        framework::ThreadWaitInfo res(
-                framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN);
-        {
-            framework::TickingLockGuard lock(
-                    _distributor->_threadPool.freezeCriticalTicks());
-            res.merge(_distributor->doCriticalTick(0));
-        }
-        res.merge(_distributor->doNonCriticalTick(0));
-        return !res.waitWanted();
-    }
+    bool tick();
 
-    DistributorConfiguration& getConfig() {
-        return const_cast<DistributorConfiguration&>(_distributor->getConfig());
-    }
+    DistributorConfiguration& getConfig();
 
     vdstestlib::DirConfig& getDirConfig() {
         return _config;
     }
 
     // TODO explicit notion of bucket spaces for tests
-    BucketDatabase& getBucketDatabase() {
-        return _distributor->getDefaultBucketSpace().getBucketDatabase();
-    }
-    const BucketDatabase& getBucketDatabase() const {
-        return _distributor->getDefaultBucketSpace().getBucketDatabase();
-    }
+    BucketDatabase& getBucketDatabase();
+    const BucketDatabase& getBucketDatabase() const;
 
-    const lib::Distribution& getDistribution() const {
-        return _distributor->getDefaultBucketSpace().getDistribution();
-    }
+    const lib::Distribution& getDistribution() const;
     // "End to end" distribution change trigger, which will invoke the bucket
     // DB updater as expected based on the previous and new cluster state
     // and config.
@@ -185,7 +163,7 @@ public:
 protected:
     vdstestlib::DirConfig _config;
     std::unique_ptr<TestDistributorApp> _node;
-    framework::TickingThreadPool::UP _threadPool;
+    std::unique_ptr<framework::TickingThreadPool> _threadPool;
     std::unique_ptr<Distributor> _distributor;
     std::unique_ptr<storage::DistributorComponent> _component;
     MessageSenderStub _sender;

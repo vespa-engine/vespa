@@ -4,7 +4,7 @@
 #include "environment.h"
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/vstringfmt.h>
-#include <vespa/config/config.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 using config::ConfigGetter;

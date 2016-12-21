@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/document/base/globalid.h>
@@ -308,7 +308,7 @@ struct MyWorld {
         owned_objects.search_handler.reset(new MySearchHandler(matcher));
         owned_objects.context.reset(new MatchContext(
                         IAttributeContext::UP(new MyAttributeContext),
-                        ISearchContext::UP(new FakeSearchContext)));
+                        matching::ISearchContext::UP(new FakeSearchContext)));
         vespalib::SimpleThreadBundle threadBundle(threads);
         SearchReply::UP reply =
             matcher->match(*req, threadBundle, searchContext, attributeContext,

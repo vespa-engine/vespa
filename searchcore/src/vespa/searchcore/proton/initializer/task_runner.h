@@ -4,6 +4,7 @@
 #include "initializer_task.h"
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <cassert>
 
 namespace proton {
 

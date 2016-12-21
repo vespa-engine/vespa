@@ -1,27 +1,28 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <map>
-#include <vespa/messagebus/network/inetworkowner.h>
-#include <vespa/messagebus/routing/resender.h>
-#include <vespa/messagebus/routing/routingspec.h>
-#include <vespa/messagebus/routing/routingtable.h>
-#include <vespa/vespalib/util/sync.h>
 #include "destinationsession.h"
 #include "iconfighandler.h"
 #include "idiscardhandler.h"
 #include "intermediatesession.h"
 #include "messagebusparams.h"
-#include "messenger.h"
 #include "protocolset.h"
-#include "protocolrepository.h"
 #include "sourcesession.h"
+#include <vespa/messagebus/network/inetworkowner.h>
+#include <vespa/messagebus/routing/routingspec.h>
+#include <vespa/vespalib/util/sync.h>
+#include <map>
 #include <string>
 #include <atomic>
 
 namespace mbus {
 
 class SendProxy;
+class Messenger;
+class Resender;
+class INetwork;
+class RoutingTable;
+class ProtocolRepository;
 
 /**
  * A MessageBus object combined with an INetwork implementation makes up the central part of a messagebus setup. It is
@@ -35,17 +36,18 @@ class MessageBus : public IMessageHandler,
                    public IReplyHandler
 {
 private:
-    INetwork                          &_network;
-    vespalib::Lock                     _lock;
-    std::map<string, RoutingTable::SP> _routingTables;
-    std::map<string, IMessageHandler*> _sessions;
-    ProtocolRepository                 _protocolRepository;
-    Messenger                          _msn;
-    Resender::UP                       _resender;
-    std::atomic<uint32_t>              _maxPendingCount;
-    std::atomic<uint32_t>              _maxPendingSize;
-    std::atomic<uint32_t>              _pendingCount;
-    std::atomic<uint32_t>              _pendingSize;
+    using RoutingTableSP = std::shared_ptr<RoutingTable>;
+    INetwork                            &_network;
+    vespalib::Lock                       _lock;
+    std::map<string, RoutingTableSP>     _routingTables;
+    std::map<string, IMessageHandler*>   _sessions;
+    std::unique_ptr<ProtocolRepository>  _protocolRepository;
+    std::unique_ptr<Messenger>           _msn;
+    std::unique_ptr<Resender>            _resender;
+    std::atomic<uint32_t>                _maxPendingCount;
+    std::atomic<uint32_t>                _maxPendingSize;
+    std::atomic<uint32_t>                _pendingCount;
+    std::atomic<uint32_t>                _pendingSize;
 
     /**
      * This method performs the common constructor tasks.
@@ -185,7 +187,7 @@ public:
      * @return shared pointer to routing table
      * @param protocol the protocol name
      **/
-    RoutingTable::SP getRoutingTable(const string &protocol);
+    RoutingTableSP getRoutingTable(const string &protocol);
 
     /**
      * Returns a routing policy that corresponds to the argument protocol name, policy name and policy parameter. This
@@ -279,7 +281,7 @@ public:
      *
      * @return The underlying {@link Messenger} object.
      */
-    Messenger & getMessenger() { return _msn; }
+    Messenger & getMessenger() { return *_msn; }
 
     // Implements IReplyHandler.
     void handleReply(Reply::UP reply);

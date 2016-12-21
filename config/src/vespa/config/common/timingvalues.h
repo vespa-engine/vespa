@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdint>
+
 namespace config {
 
 static const uint64_t DEFAULT_NEXTCONFIG_TIMEOUT = 55000;

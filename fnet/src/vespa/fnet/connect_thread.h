@@ -3,23 +3,13 @@
 
 #pragma once
 
+#include "ext_connectable.h"
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 
 namespace fnet {
-
-/**
- * Interface implemented by objects that want to perform synchronous
- * connect initiated by an external thread.
- **/
-class ExtConnectable {
-protected:
-    virtual ~ExtConnectable() {}
-public:
-    virtual void ext_connect() = 0;
-};
 
 /**
  * An object encapsulating a thread responsible for doing synchronous

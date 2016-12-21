@@ -7,7 +7,7 @@
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/rwlock.h>
 
 namespace proton {
 

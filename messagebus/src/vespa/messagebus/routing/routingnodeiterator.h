@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/messagebus/reply.h>
 #include "route.h"
 
 namespace mbus {
 
 class RoutingNode;
+class Reply;
 
 /**
  * Implements an iterator for the child routing contexts of this. Use {@link
@@ -66,7 +66,7 @@ public:
      *
      * @return The reply.
      */
-    Reply::UP removeReply();
+    std::unique_ptr<Reply> removeReply();
 
     /**
      * Returns the reply of the current child.

@@ -13,6 +13,7 @@
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/config/helper/configgetter.hpp>
 
 
 using namespace config;

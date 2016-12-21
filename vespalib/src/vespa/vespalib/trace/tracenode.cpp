@@ -2,9 +2,8 @@
 
 #include <vespa/vespalib/trace/tracenode.h>
 #include <vespa/vespalib/trace/tracevisitor.h>
-
 #include <algorithm>
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".tracenode");
@@ -48,9 +47,7 @@ TraceNode::TraceNode() :
     _note(""),
     _children(),
     _timestamp(0)
-{
-    // empty
-}
+{ }
 
 TraceNode::TraceNode(const TraceNode &rhs) :
     _parent(NULL),
@@ -72,9 +69,7 @@ TraceNode::TraceNode(const string &note, int64_t timestamp) :
     _note(note),
     _children(),
     _timestamp(timestamp)
-{
-    // empty
-}
+{ }
 
 TraceNode::TraceNode(int64_t timestamp) :
     _parent(NULL),
@@ -83,9 +78,7 @@ TraceNode::TraceNode(int64_t timestamp) :
     _note(""),
     _children(),
     _timestamp(timestamp)
-{
-    // empty
-}
+{ }
 
 TraceNode &
 TraceNode::swap(TraceNode &other)

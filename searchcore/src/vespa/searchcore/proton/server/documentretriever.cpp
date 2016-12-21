@@ -1,21 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+#include "documentretriever.h"
+#include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/searchcore/proton/attribute/document_field_retriever.h>
+#include <vespa/vespalib/geo/zcurve.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentretriever");
-
-#include "documentretriever.h"
-#include <vespa/document/base/field.h>
-#include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/document/fieldvalue/structfieldvalue.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/attribute/document_field_retriever.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchlib/docstore/idocumentstore.h>
-#include <vespa/searchlib/query/base.h>
-#include <vespa/vespalib/geo/zcurve.h>
 
 using document::Document;
 using document::DocumentType;

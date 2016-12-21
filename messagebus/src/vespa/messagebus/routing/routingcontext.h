@@ -1,17 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "routingnodeiterator.h"
 #include <vespa/messagebus/context.h>
-#include <vespa/messagebus/messagebus.h>
 #include <vespa/slobrok/imirrorapi.h>
 #include <set>
-#include "hop.h"
-#include "policydirective.h"
-#include "routingnodeiterator.h"
 
 namespace mbus {
 
 class RoutingNode;
+class PolicyDirective;
+class MessageBus;
+class Message;
+class Error;
 
 /**
  * This context object is what is seen by {@link RoutingPolicy} when doing both select() and merge(). It
@@ -192,7 +193,7 @@ public:
      * @param reply The reply to set.
      * @return This, to allow chaining.
      */
-    RoutingContext &setReply(Reply::UP reply);
+    RoutingContext &setReply(std::unique_ptr<Reply> reply);
 
     /**
      * This is a convenience method to call {@link #setError(Error)}.

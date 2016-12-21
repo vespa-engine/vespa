@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <cppunit/extensions/HelperMacros.h>
 #include <iomanip>
-#include <iostream>
-#include <memory>
 #include <tests/common/dummystoragelink.h>
-#include <vespa/storage/distributor/externaloperationhandler.h>
+#include <vespa/storage/distributor/distributor.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/operations/external/removeoperation.h>

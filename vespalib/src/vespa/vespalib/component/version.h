@@ -59,15 +59,8 @@ public:
      *         the qualifier string contains non-word/digit-characters
      */
 
-    Version(int major = 0, int minor = 0, int micro = 0, const string & qualifier = "")
-        : _major(major),
-          _minor(minor),
-          _micro(micro),
-          _qualifier(qualifier),
-          _stringValue()
-    {
-        initialize();
-    }
+    Version(int major = 0, int minor = 0, int micro = 0, const string & qualifier = "");
+    ~Version();
 
     /**
      * @brief Creates a version identifier from the specified string.

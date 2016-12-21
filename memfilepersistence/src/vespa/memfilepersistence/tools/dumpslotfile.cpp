@@ -1,25 +1,22 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
+
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/document.h>
-#include <vespa/log/log.h>
 #include <vespa/memfilepersistence/common/environment.h>
-#include <vespa/memfilepersistence/device/devicemanager.h>
 #include <vespa/memfilepersistence/mapper/memfilemapper.h>
 #include <vespa/memfilepersistence/memfile/memfilecache.h>
 #include <vespa/memfilepersistence/spi/memfilepersistenceprovidermetrics.h>
 #include <vespa/memfilepersistence/tools/dumpslotfile.h>
-#include <string>
-#include <vespa/persistence/spi/bucketinfo.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/memory/nomemorymanager.h>
 #include <vespa/vespalib/util/programoptions.h>
+#include <vespa/config/helper/configgetter.hpp>
+#include <sstream>
 
-LOG_SETUP(".vds.dumpslotfile");
 
 using config::ConfigGetter;
 using document::DocumenttypesConfig;
@@ -171,7 +168,6 @@ namespace {
             _compReg.setClock(_clock);
             _compReg.setMemoryManager(_memoryMan);
             _cache.reset(new MemFileCache(_compReg, _metrics._cache));
-            LOG(debug, "Setting up document repo");
             if (documentConfigId == 0) {
                 _repo.reset(new DocumentTypeRepo(_docType));
             } else {

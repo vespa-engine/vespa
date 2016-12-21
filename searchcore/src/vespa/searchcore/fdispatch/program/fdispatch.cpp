@@ -7,8 +7,10 @@
 #include <vespa/searchcore/fdispatch/search/querycacheutil.h>
 #include <vespa/searchcore/fdispatch/search/nodemanager.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include "engineadapter.h"
 #include "rpc.h"
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fdispatch");

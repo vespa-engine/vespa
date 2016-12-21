@@ -3,17 +3,13 @@
 #include <boost/lexical_cast.hpp>
 #include <cppunit/extensions/HelperMacros.h>
 #include <iomanip>
-#include <iostream>
-#include <memory>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <tests/distributor/distributortestutil.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/storage/distributor/distributor.h>
 
 using std::shared_ptr;
 

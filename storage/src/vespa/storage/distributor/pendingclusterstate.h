@@ -9,6 +9,7 @@
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/distributor/clusterinformation.h>
 #include <unordered_set>
+#include <deque>
 
 namespace storage {
 

@@ -2,15 +2,15 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/config/common/sourcefactory.h>
-#include <vespa/config/common/timingvalues.h>
 #include <vespa/config/common/compressiontype.h>
-#include <vespa/config/set/configsetsourcefactory.h>
-#include <vespa/config/configgen/configinstance.h>
+#include <vector>
 
 namespace config {
+
+class ConfigInstance;
+class SourceFactory;
+class TimingValues;
 
 typedef vespalib::string SourceSpecKey;
 
@@ -21,7 +21,8 @@ typedef vespalib::string SourceSpecKey;
 class SourceSpec
 {
 public:
-    typedef std::unique_ptr<SourceSpec> UP; /// Convenience typedef
+    using SourceFactorySP = std::unique_ptr<SourceFactory>;
+    using UP = std::unique_ptr<SourceSpec>; /// Convenience typedef
 
     /**
      * Creates a source factory from which to create config sources for new
@@ -34,7 +35,7 @@ public:
      * @param timingValues Timing values to be used for this source.
      * @return An std::unique_ptr<Source> that can be used to ask for config.
      */
-    virtual SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const = 0;
+    virtual SourceFactorySP createSourceFactory(const TimingValues & timingValues) const = 0;
     virtual ~SourceSpec() { }
 };
 
@@ -53,7 +54,7 @@ public:
     RawSpec(const vespalib::string & config);
 
     // Implements SourceSpec
-    SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
 
     /**
      * Returns the string representation of this config.
@@ -88,7 +89,7 @@ public:
     const vespalib::string & getFileName() const { return _fileName; }
 
     // Implements SourceSpec
-    SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
 private:
     void verifyName(const vespalib::string & fileName);
     vespalib::string _fileName;
@@ -116,7 +117,7 @@ public:
     const vespalib::string & getDirName() const { return _dirName; }
 
     // Implements SourceSpec
-    SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
 private:
     vespalib::string _dirName;
 };
@@ -153,7 +154,7 @@ public:
     ServerSpec(const vespalib::string & hostSpec);
 
     // Implements SourceSpec
-    virtual SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const;
+    virtual SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
 
     /**
      * Add another host to this source spec, allowing failover.
@@ -205,15 +206,16 @@ private:
  * A ConfigSet gives the ability to serve config from a set of ConfigInstance
  * builders.
  */
+
+class BuilderMap;
+
 class ConfigSet : public SourceSpec
 {
 public:
     /// Constructs a new empty ConfigSet
     ConfigSet();
 
-    /// Mapping of config keys to builders
-    typedef ConfigSetSourceFactory::BuilderMap BuilderMap;
-    typedef ConfigSetSourceFactory::BuilderMapSP BuilderMapSP;
+    using BuilderMapSP = std::shared_ptr<BuilderMap>;
     /**
      * Add a builder to serve config from. The builder must be of a
      * 'ConfigType'Builder, and the configId must be the id to which you want to
@@ -227,7 +229,7 @@ public:
     void addBuilder(const vespalib::string & configId, ConfigInstance * builder);
 
     // Implements SourceSpec
-    SourceFactory::UP createSourceFactory(const TimingValues & timingValues) const;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const;
 private:
     BuilderMapSP _builderMap;
 };
