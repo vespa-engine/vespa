@@ -6,7 +6,6 @@
 #include "querynodemixin.h"
 #include "term.h"
 #include <vespa/searchlib/query/weight.h>
-#include <string>
 
 namespace search {
 namespace query {
