@@ -56,7 +56,7 @@ struct RawDocumentMetaData
     }
 
     void setBucketUsedBits(uint8_t bucketUsedBits) {
-        assert(BucketId::validateUsedBits(bucketUsedBits));
+        assert(BucketId::validUsedBits(bucketUsedBits));
         _bucketUsedBits = bucketUsedBits;
     }
 

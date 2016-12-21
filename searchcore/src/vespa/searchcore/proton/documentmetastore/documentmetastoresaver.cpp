@@ -38,7 +38,7 @@ public:
         const GlobalId &gid = metaData.getGid();
         // 6 bits used for bucket bits
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
-        assert(BucketId::validateUsedBits(bucketUsedBits));
+        assert(BucketId::validUsedBits(bucketUsedBits));
         assert((bucketUsedBits >> BucketId::CountBits) == 0);
         Timestamp::Type timestamp = metaData.getTimestamp();
         search::BufferWriter &datWriter(_datWriter);

@@ -815,7 +815,7 @@ DocumentMetaStore::getLids(const BucketId &bucketId, std::vector<DocId> &lids)
         assert(validLid(lid));
         const RawDocumentMetaData &metaData = getRawMetaData(lid);
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
-        assert(BucketId::validateUsedBits(bucketUsedBits));
+        assert(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits != bucketId.getUsedBits())
             continue;	// Skip document belonging to overlapping bucket
         lids.push_back(lid);
@@ -846,7 +846,7 @@ DocumentMetaStore::handleSplit(const bucketdb::SplitBucketSession &session)
         assert(validLid(lid));
         RawDocumentMetaData &metaData = _metaDataStore[lid];
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
-        assert(BucketId::validateUsedBits(bucketUsedBits));
+        assert(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits == source.getUsedBits()) {
             BucketId t1(metaData.getGid().convertToBucketId());
             BucketId t2(t1);
@@ -888,7 +888,7 @@ DocumentMetaStore::handleJoin(const bucketdb::JoinBucketsSession &session)
         DocId lid = itr.getKey();
         assert(validLid(lid));
         RawDocumentMetaData &metaData = _metaDataStore[lid];
-        assert(BucketId::validateUsedBits(metaData.getBucketUsedBits()));
+        assert(BucketId::validUsedBits(metaData.getBucketUsedBits()));
         BucketId s(metaData.getBucketId());
         if (source1.valid() && s == source1) {
             metaData.setBucketUsedBits(target.getUsedBits());

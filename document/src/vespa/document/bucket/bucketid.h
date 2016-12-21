@@ -64,10 +64,10 @@ public:
     vespalib::string toString() const;
 
     bool valid() const {
-        return validateUsedBits(getUsedBits());
+        return validUsedBits(getUsedBits());
     }
 
-    static bool validateUsedBits(uint32_t usedBits) {
+    static bool validUsedBits(uint32_t usedBits) {
         return (usedBits >= minNumBits) && (usedBits <= maxNumBits);
     }
 
