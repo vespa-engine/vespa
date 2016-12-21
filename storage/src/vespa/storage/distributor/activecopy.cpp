@@ -4,8 +4,9 @@
 
 #include <vespa/storage/storageutil/utils.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <algorithm>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <algorithm>
+#include <cassert>
 
 namespace std {
     template<typename T>

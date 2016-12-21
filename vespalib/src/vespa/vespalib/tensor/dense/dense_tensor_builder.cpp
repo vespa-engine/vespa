@@ -2,6 +2,7 @@
 
 #include "dense_tensor_builder.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;

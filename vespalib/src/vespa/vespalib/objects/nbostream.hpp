@@ -2,6 +2,7 @@
 #pragma once
 
 #include "nbostream.h"
+#include <cassert>
 
 namespace vespalib {
 

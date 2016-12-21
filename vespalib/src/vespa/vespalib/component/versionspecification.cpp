@@ -1,15 +1,26 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "version.h"
 #include "versionspecification.h"
-#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <ctype.h>
+#include <cctype>
+#include <climits>
 
 namespace vespalib {
+
+VersionSpecification::VersionSpecification(int major, int minor, int micro, const string & qualifier)
+    : _major(major),
+      _minor(minor),
+      _micro(micro),
+      _qualifier(qualifier),
+      _stringValue()
+{
+    initialize();
+}
+
+VersionSpecification::~VersionSpecification() { }
 
 void
 VersionSpecification::initialize()

@@ -7,6 +7,7 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <cassert>
 
 namespace vespalib {
 

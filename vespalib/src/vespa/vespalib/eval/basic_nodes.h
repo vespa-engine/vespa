@@ -2,12 +2,13 @@
 
 #pragma once
 
-#include <memory>
-#include <map>
-#include <vector>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/string_hash.h>
+#include <memory>
+#include <map>
+#include <vector>
+#include <cassert>
 
 namespace vespalib {
 namespace eval {

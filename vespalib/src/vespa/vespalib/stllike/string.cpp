@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/stllike/string.hpp>
 #include <ostream>
 #include <istream>
@@ -8,6 +7,43 @@
 namespace vespalib {
 
 const stringref::size_type stringref::npos;
+
+stringref::size_type
+stringref::rfind(const char * s, size_type e) const {
+    size_type n = strlen(s);
+    if (n <= size()) {
+        size_type sz = std::min(size()-n, e);
+        const char *b = begin();
+        do {
+            if (s[0] == b[sz]) {
+                bool found(true);
+                for(size_t i(1); found && (i < n); i++) {
+                    found = s[i] == b[sz+i];
+                }
+                if (found) {
+                    return sz;
+                }
+            }
+        } while (sz-- > 0);
+    }
+    return npos;
+}
+
+stringref::size_type
+stringref::find(const stringref & s, size_type start) const {
+    const char *buf = begin()+start;
+    const char *e = end() - s.size();
+    while (buf <= e) {
+        size_t i(0);
+        for (; (i < s.size()) && (buf[i] == s[i]); i++);
+        if (i == s.size()) {
+            return buf - begin();
+        } else {
+            buf++;
+        }
+    }
+    return npos;
+}
 
 std::ostream & operator << (std::ostream & os, const stringref & v)
 {

@@ -4,6 +4,7 @@
 #include "clock.h"
 #include <iomanip>
 #include <vector>
+#include <cassert>
 
 namespace storage {
 namespace framework {

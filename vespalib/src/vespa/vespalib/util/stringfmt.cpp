@@ -2,6 +2,7 @@
 
 #include "stringfmt.h"
 #include "vstringfmt.h"
+#include <cassert>
 
 namespace vespalib {
 

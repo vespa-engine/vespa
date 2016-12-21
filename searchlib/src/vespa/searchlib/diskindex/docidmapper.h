@@ -3,14 +3,13 @@
 
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <cassert>
 
-namespace search
-{
+namespace search {
 
 class BitVector;
 
-namespace diskindex
-{
+namespace diskindex {
 
 typedef vespalib::Array<uint8_t> SelectorArray;
 
@@ -21,21 +20,11 @@ public:
     const SelectorArray *_selector;	// External ownership
     uint8_t _selectorId;
 
-    DocIdMapping(void);
-
-    void
-    clear(void);
-
-    void
-    setup(uint32_t docIdLimit);
-
-    void
-    setup(uint32_t docIdLimit,
-          const SelectorArray *selector,
-          uint8_t selectorId);
-
-    bool
-    readDocIdLimit(const vespalib::string &dir);
+    DocIdMapping();
+    void clear();
+    void setup(uint32_t docIdLimit);
+    void setup(uint32_t docIdLimit, const SelectorArray *selector, uint8_t selectorId);
+    bool readDocIdLimit(const vespalib::string &dir);
 };
 
 
@@ -47,17 +36,14 @@ public:
     uint32_t _selectorLimit; // Limit on output
     uint8_t _selectorId;
 
-    DocIdMapper(void)
+    DocIdMapper()
         : _selector(NULL),
           _docIdLimit(0u),
           _selectorLimit(0),
           _selectorId(0u)
-    {
-    }
+    { }
 
-    void
-    setup(const DocIdMapping &mapping)
-    {
+    void setup(const DocIdMapping &mapping) {
         _selector = (mapping._selector != NULL) ?
                     &((*mapping._selector)[0]) : NULL;
         _docIdLimit = mapping._docIdLimit;
@@ -67,15 +53,11 @@ public:
         _selectorId = mapping._selectorId;
     }
 
-    static uint32_t
-    noDocId(void)
-    {
+    static uint32_t noDocId() {
         return static_cast<uint32_t>(-1);
     }
 
-    uint32_t
-    mapDocId(uint32_t docId) const
-    {
+    uint32_t mapDocId(uint32_t docId) const {
         assert(docId < _docIdLimit);
         if (_selector != NULL &&
             (docId >= _selectorLimit || _selector[docId] != _selectorId)) {

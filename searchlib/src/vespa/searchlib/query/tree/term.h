@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/query/weight.h>
+#include <cassert>
 
 namespace search {
 namespace query {

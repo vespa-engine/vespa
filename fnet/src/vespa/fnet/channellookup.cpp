@@ -5,6 +5,7 @@
 #include "controlpacket.h"
 #include "ipackethandler.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <cassert>
 
 namespace fnet {
 

@@ -65,18 +65,9 @@ public:
      *         an earlier component is not specified but a later one is
      */
 
-    VersionSpecification(int major = UNSPECIFIED,
-                         int minor = UNSPECIFIED,
-                         int micro = UNSPECIFIED,
-                         const string & qualifier = "")
-        : _major(major),
-          _minor(minor),
-          _micro(micro),
-          _qualifier(qualifier),
-          _stringValue()
-    {
-        initialize();
-    }
+    VersionSpecification(int major = UNSPECIFIED, int minor = UNSPECIFIED,
+                         int micro = UNSPECIFIED, const string & qualifier = "");
+    ~VersionSpecification();
 
     /**
      * @brief Creates a version specification from the specified string.

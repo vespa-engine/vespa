@@ -2,6 +2,7 @@
 #include "jsonwriter.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cmath>
+#include <cassert>
 
 namespace vespalib {
 

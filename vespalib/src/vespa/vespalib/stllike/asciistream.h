@@ -35,6 +35,8 @@ public:
     ~asciistream();
     asciistream(const asciistream & rhs);
     asciistream & operator = (const asciistream & rhs);
+    asciistream(asciistream &&) = default;
+    asciistream & operator = (asciistream &&) = default;
     void swap(asciistream & rhs);
     asciistream & operator << (bool v)                { if (v) { *this << '1'; } else { *this << '0'; } return *this; }
     asciistream & operator << (char v)                { doFill(1); write(&v, 1); return *this; }
@@ -139,8 +141,8 @@ public:
     asciistream & operator >> (Width v)      { _width = v.getWidth(); return *this; }
     asciistream & operator << (Fill v)       { _fill = v.getFill(); return *this; }
     asciistream & operator >> (Fill v)       { _fill = v.getFill(); return *this; }
-    asciistream & operator << (Precision v)  { assert(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION); _precision = v.getPrecision(); return *this; }
-    asciistream & operator >> (Precision v)  { assert(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION); _precision = v.getPrecision(); return *this; }
+    asciistream & operator << (Precision v);
+    asciistream & operator >> (Precision v);
     void eatWhite();
     static asciistream createFromFile(const vespalib::stringref & fileName);
     static asciistream createFromDevice(const vespalib::stringref & fileName);

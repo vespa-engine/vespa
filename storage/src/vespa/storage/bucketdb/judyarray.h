@@ -18,6 +18,7 @@
 
 #include <vespa/vespalib/util/printable.h>
 #include <Judy.h>
+#include <cassert>
 
 namespace storage {
 

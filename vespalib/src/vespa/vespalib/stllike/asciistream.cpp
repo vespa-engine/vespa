@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <algorithm>
@@ -8,6 +7,7 @@
 #include <stdexcept>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/memory.h>
+#include <vespa/fastos/file.h>
 
 namespace vespalib {
 
@@ -28,6 +28,20 @@ namespace {
     std::vector<string> autoPrecisions = getPrecisions('g');
 }
 
+asciistream &
+asciistream::operator << (Precision v) {
+    assert(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION);
+    _precision = v.getPrecision();
+    return *this;
+}
+
+asciistream &
+asciistream::operator >> (Precision v) {
+    assert(v.getPrecision() <= VESPALIB_ASCIISTREAM_MAX_PRECISION);
+    _precision = v.getPrecision();
+    return *this;
+}
+
 asciistream::asciistream() :
     _rPos(0),
     _wbuf(),
@@ -38,8 +52,7 @@ asciistream::asciistream() :
     _width(0),
     _fill(' '),
     _precision(6)
-{
-}
+{ }
 
 asciistream::asciistream(const stringref & buf) :
     _rPos(0),
