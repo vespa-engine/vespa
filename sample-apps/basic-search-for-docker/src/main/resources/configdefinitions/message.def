@@ -1,0 +1,3 @@
+version=1
+namespace=example
+message string default="Hello, World!"
