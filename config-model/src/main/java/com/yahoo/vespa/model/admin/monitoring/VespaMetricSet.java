@@ -287,9 +287,6 @@ public class VespaMetricSet extends MetricSet {
 
 
         //Distributor
-        metrics.add(new Metric("vds.visitor.sum.latency.average"));
-        metrics.add(new Metric("vds.visitor.sum.failed.rate"));
-
         metrics.add(new Metric("vds.idealstate.buckets_rechecking.average"));
         metrics.add(new Metric("vds.idealstate.idealstate_diff.average"));
         metrics.add(new Metric("vds.idealstate.buckets_toofewcopies.average"));
@@ -324,6 +321,10 @@ public class VespaMetricSet extends MetricSet {
         metrics.add(new Metric("vds.distributor.gets.sum.latency.average"));
         metrics.add(new Metric("vds.distributor.gets.sum.ok.rate"));
         metrics.add(new Metric("vds.distributor.gets.sum.failures.total.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.latency.average"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.ok.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.total.rate"));
+
         metrics.add(new Metric("vds.distributor.docsstored.average"));
         metrics.add(new Metric("vds.distributor.bytesstored.average"));
 
