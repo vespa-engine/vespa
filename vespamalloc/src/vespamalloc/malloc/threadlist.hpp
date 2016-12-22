@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespamalloc/malloc/threadlist.h>
+#include "threadlist.h"
 
 namespace vespamalloc {
 
@@ -48,7 +48,7 @@ bool ThreadListT<MemBlockPtrT, ThreadStatT>::quitThisThread()
 {
     ThreadPool & tp = getCurrent();
     tp.quit();
-    Atomic::postDec(&_threadCount);
+    _threadCount.fetch_sub(1);
     return true;
 }
 
@@ -56,8 +56,8 @@ template <typename MemBlockPtrT, typename ThreadStatT>
 bool ThreadListT<MemBlockPtrT, ThreadStatT>::initThisThread()
 {
     bool retval(true);
-    Atomic::postInc(&_threadCount);
-    size_t lidAccum = Atomic::postInc(&_threadCountAccum);
+    _threadCount.fetch_add(1);
+    size_t lidAccum = _threadCountAccum.fetch_add(1);
     long localId(-1);
     for(size_t i = 0; (localId < 0) && (i < getMaxNumThreads()); i++) {
         ThreadPool & tp = _threadVector[i];
