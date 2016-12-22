@@ -108,6 +108,11 @@ public class TensorType {
     public Set<String> dimensionNames() {
         return dimensions.stream().map(Dimension::name).collect(Collectors.toSet());
     }
+    
+    /** Returns the dimension with this name, or empty if not present */
+    public Optional<Dimension> dimension(String name) {
+        return indexOfDimension(name).map(i -> dimensions.get(i));
+    }
 
     /** Returns the 0-base index of this dimension, or empty if it is not present */
     public Optional<Integer> indexOfDimension(String dimension) {

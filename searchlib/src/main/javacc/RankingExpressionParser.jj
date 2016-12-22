@@ -122,6 +122,7 @@ TOKEN :
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
     <RENAME: "rename"> |
+    <CONCAT: "concat"> |
     <TENSOR: "tensor"> |
     <RANGE: "range"> |
     <DIAG: "diag"> |
@@ -356,6 +357,7 @@ ExpressionNode tensorFunction() :
         tensorExpression = tensorReduceComposites() |
         tensorExpression = tensorJoin() |
         tensorExpression = tensorRename() |
+        tensorExpression = tensorConcat() |
         tensorExpression = tensorGenerate() |
         tensorExpression = tensorRange() |
         tensorExpression = tensorDiag() |
@@ -428,6 +430,18 @@ ExpressionNode tensorRename() :
                       toDimensions = bracedIdentifierList() 
              <RBRACE>
     { return new TensorFunctionNode(new Rename(TensorFunctionNode.wrapArgument(tensor), fromDimensions, toDimensions)); }
+}
+
+ExpressionNode tensorConcat() :
+{
+    ExpressionNode tensor1, tensor2;
+    String dimension;
+}
+{
+    <CONCAT> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> dimension = tag() <RBRACE>
+    { return new TensorFunctionNode(new Concat(TensorFunctionNode.wrapArgument(tensor1), 
+                                               TensorFunctionNode.wrapArgument(tensor2), 
+                                               dimension)); }
 }
 
 ExpressionNode tensorGenerate() :
@@ -597,6 +611,7 @@ String tensorFunctionName() :
     ( <REDUCE>       { return token.image; } ) |
     ( <JOIN>         { return token.image; } ) |
     ( <RENAME>       { return token.image; } ) |
+    ( <CONCAT>       { return token.image; } ) |
     ( <TENSOR>       { return token.image; } ) |
     ( <RANGE>        { return token.image; } ) |
     ( <DIAG>         { return token.image; } ) |
