@@ -1,19 +1,17 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/document/fieldvalue/mapfieldvalue.h>
 
+#include "mapfieldvalue.h"
+#include "arrayfieldvalue.h"
+#include "weightedsetfieldvalue.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/util/bytebuffer.h>
-//#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/vespalib/objects/identifiable.h>
 
-using vespalib::Identifiable;
-
+#include <vespa/log/log.h>
 LOG_SETUP(".document.fieldvalue.map");
+
+using vespalib::Identifiable;
 
 /// \todo TODO (was warning):
 // Find a way to search through internal map without

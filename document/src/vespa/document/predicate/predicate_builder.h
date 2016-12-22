@@ -21,11 +21,7 @@ class PredicateBuilder : private PredicateSlimeVisitor {
     virtual void visitFalse(const vespalib::slime::Inspector &i);
 
 public:
-    std::unique_ptr<PredicateNode> build(const vespalib::slime::Inspector &i) {
-        visit(i);
-        assert(_nodes.size() == 1);
-        return std::unique_ptr<PredicateNode>(_nodes.front());
-    }
+    std::unique_ptr<PredicateNode> build(const vespalib::slime::Inspector &i);
 };
 
 }  // namespace document

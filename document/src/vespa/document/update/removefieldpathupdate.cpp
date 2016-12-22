@@ -1,8 +1,8 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
+#include "removefieldpathupdate.h"
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/select/parser.h>
-#include <vespa/document/update/removefieldpathupdate.h>
 
 namespace document {
 

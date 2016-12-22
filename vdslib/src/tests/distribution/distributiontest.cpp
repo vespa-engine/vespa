@@ -15,6 +15,7 @@
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/fastos/file.h>
 
 
 namespace storage {

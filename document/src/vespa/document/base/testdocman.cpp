@@ -1,11 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/base/testdocman.h>
-
-#include <boost/random.hpp>
-#include <vespa/document/base/exceptions.h>
+#include "testdocman.h"
+#include "exceptions.h"
 #include <vespa/document/datatype/datatypes.h>
+#include <boost/random.hpp>
 #include <sstream>
 
 namespace document {
@@ -60,11 +58,9 @@ TestDocMan::TestDocMan()
     : _test_repo(),
       _repo(_test_repo.getTypeRepoSp()),
       _typeCfg(&_test_repo.getTypeConfig())
-{
-}
+{ }
 
-TestDocMan::~TestDocMan() {
-}
+TestDocMan::~TestDocMan() { }
 
 void
 TestDocMan::setTypeRepo(const DocumentTypeRepo::SP &repo)

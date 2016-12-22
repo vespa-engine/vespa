@@ -1,12 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/datatype/structureddatatype.h>
-#include <stdexcept>
-#include <vespa/document/base/exceptions.h>
+#include "structureddatatype.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".document.datatype.structured");
 
 namespace document {
 
@@ -86,7 +81,6 @@ StructuredDataType::onBuildFieldPath(const vespalib::stringref & remainFieldName
         fieldPath->insert(fieldPath->begin(), FieldPathEntry(fp));
         return fieldPath;
     } else {
-        LOG(debug, "Could not find field %s", currFieldName.c_str());
         return FieldPath::UP();
     }
 }

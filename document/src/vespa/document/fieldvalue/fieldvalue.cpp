@@ -1,21 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
+#include "fieldvalue.h"
+#include "arrayfieldvalue.h"
+#include "intfieldvalue.h"
+#include "floatfieldvalue.h"
+#include "stringfieldvalue.h"
+#include "rawfieldvalue.h"
+#include "longfieldvalue.h"
+#include "doublefieldvalue.h"
+#include "bytefieldvalue.h"
+#include "predicatefieldvalue.h"
 
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/numericdatatype.h>
 #include <vespa/document/datatype/primitivedatatype.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/floatfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
-#include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/fieldbase.h>

@@ -1,19 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "parser.h"
-
-#include <boost/spirit/include/classic_chset.hpp>
-#include <boost/spirit/include/classic_core.hpp>
-#include <boost/spirit/include/classic_escape_char.hpp>
-#include <boost/spirit/include/classic_grammar_def.hpp>
-#include <boost/spirit/include/classic_parse_tree.hpp>
-#include <boost/spirit/include/classic_tree_to_xml.hpp>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <iostream>
-#include <map>
-#include <sstream>
-#include <vespa/document/base/exceptions.h>
 #include "branch.h"
 #include "compare.h"
 #include "constant.h"
@@ -21,8 +8,20 @@
 #include "doctype.h"
 #include "valuenode.h"
 #include "simpleparser.h"
+
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <boost/spirit/include/classic_chset.hpp>
+#include <boost/spirit/include/classic_core.hpp>
+#include <boost/spirit/include/classic_escape_char.hpp>
+#include <boost/spirit/include/classic_grammar_def.hpp>
+#include <boost/spirit/include/classic_parse_tree.hpp>
+#include <boost/spirit/include/classic_tree_to_xml.hpp>
+#include <iostream>
+#include <map>
+#include <sstream>
 
 using boost::spirit::classic::tree_node;
 using document::DocumentTypeRepo;

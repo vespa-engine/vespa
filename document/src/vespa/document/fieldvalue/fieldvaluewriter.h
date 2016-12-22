@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <sys/types.h>
+
 namespace document {
 class FieldValue;
 

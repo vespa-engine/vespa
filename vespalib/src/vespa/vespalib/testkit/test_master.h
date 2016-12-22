@@ -3,12 +3,13 @@
 #pragma once
 
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/vespalib/util/barrier.h>
-#include <vespa/vespalib/util/linkedptr.h>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace vespalib {
+
+class Barrier;
 
 #ifndef IAM_DOXYGEN
 /**
@@ -71,7 +72,7 @@ private:
     std::string                                    _name;
     std::string                                    _path_prefix;
     SharedState                                    _state;
-    std::vector<vespalib::LinkedPtr<ThreadState> > _threadStorage;
+    std::vector<std::unique_ptr<ThreadState> > _threadStorage;
 
 private:
     ThreadState &threadState(const vespalib::LockGuard &);

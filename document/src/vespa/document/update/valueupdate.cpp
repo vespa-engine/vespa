@@ -1,19 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <stdexcept>
-#include <vespa/document/base/field.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/update/addvalueupdate.h>
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/clearvalueupdate.h>
-#include <vespa/document/update/mapvalueupdate.h>
-#include <vespa/document/update/removevalueupdate.h>
-#include <vespa/document/util/serializable.h>
 
-namespace document
-{
+#include "valueupdate.h"
+#include <vespa/vespalib/util/stringfmt.h>
+#include <stdexcept>
+
+namespace document {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(ValueUpdate, Identifiable);
 

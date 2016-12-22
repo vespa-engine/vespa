@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/fastos/file.h>
 
 using namespace search;
 using namespace vespalib;

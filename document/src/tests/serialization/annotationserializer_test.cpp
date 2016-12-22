@@ -4,20 +4,17 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
-#include <vespa/document/annotation/span.h>
-#include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/document/serialization/annotationdeserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
 #include <vespa/document/serialization/vespadocumentdeserializer.h>
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/fastos/file.h>
 #include <fstream>
-#include <sstream>
-#include <vector>
+
 
 using document::DocumenttypesConfig;
 using std::fstream;

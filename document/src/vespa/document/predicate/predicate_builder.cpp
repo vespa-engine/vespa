@@ -1,10 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-
 #include "predicate.h"
 #include "predicate_builder.h"
 #include <vespa/vespalib/data/slime/inspector.h>
+#include <cassert>
 
 using vespalib::slime::Inspector;
 
@@ -45,6 +44,13 @@ void PredicateBuilder::visitTrue(const Inspector &) {
 
 void PredicateBuilder::visitFalse(const Inspector &) {
     _nodes.push_back(new FalsePredicate);
+}
+
+std::unique_ptr<PredicateNode>
+PredicateBuilder::build(const vespalib::slime::Inspector &i) {
+    visit(i);
+    assert(_nodes.size() == 1);
+    return std::unique_ptr<PredicateNode>(_nodes.front());
 }
 
 }  // namespace document

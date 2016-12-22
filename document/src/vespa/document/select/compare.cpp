@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include "compare.h"
 
-#include <ostream>
-#include <vespa/document/datatype/datatype.h>
+#include "compare.h"
 #include "valuenode.h"
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/util/stringutil.h>
 #include "compare.h"
 #include "visitor.h"
+#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/util/stringutil.h>
+#include <ostream>
 
 namespace document {
 namespace select {

@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/lrucache_map.hpp>
+#include <vespa/vespalib/util/linkedptr.h>
 
 using namespace vespalib;
 

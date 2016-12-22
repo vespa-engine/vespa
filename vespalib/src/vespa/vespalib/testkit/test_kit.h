@@ -3,7 +3,6 @@
 #pragma once
 
 #include <memory>
-#include <vespa/fastos/fastos.h>
 #include "test_macros.h"
 #include "test_comparators.h"
 #include "test_master.h"

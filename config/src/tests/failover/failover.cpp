@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("failover");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/frt/protocol.h>
@@ -9,6 +7,8 @@ LOG_SETUP("failover");
 #include <vespa/fnet/frt/frt.h>
 #include "config-my.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/log/log.h>
+LOG_SETUP("failover");
 
 using namespace config;
 using vespalib::Barrier;
@@ -86,7 +86,7 @@ void verifyConfig(std::unique_ptr<MyConfig> config)
 }
 
 struct ServerFixture {
-    typedef vespalib::LinkedPtr<ServerFixture> LP;
+    using UP = std::unique_ptr<ServerFixture>;
     FRT_Supervisor * supervisor;
     RPCServer server;
     Barrier b;
@@ -130,14 +130,14 @@ struct ServerFixture {
 };
 
 struct NetworkFixture {
-    std::vector<ServerFixture::LP> serverList;
+    std::vector<ServerFixture::UP> serverList;
     ServerSpec spec;
     bool running;
     NetworkFixture(const std::vector<vespalib::string> & serverSpecs)
         : spec(serverSpecs), running(true)
     {
         for (size_t i = 0; i < serverSpecs.size(); i++) {
-            serverList.push_back(ServerFixture::LP(new ServerFixture(serverSpecs[i])));
+            serverList.push_back(std::make_unique<ServerFixture>(serverSpecs[i]));
         }
     }
     void start(size_t i) {
