@@ -3,11 +3,10 @@
 #include "storagebucketdbinitializer.h"
 #include "lockablemap.hpp"
 #include "config-stor-bucket-init.h"
-#include "bucketdb/storbucketdb.h"
+#include "storbucketdb.h"
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/config-stor-filestor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/config.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -31,6 +30,7 @@ struct BucketReadState {
     BucketReadState() : _done(false) {}
 };
 
+using vespa::config::content::core::StorBucketInitConfig;
 
 StorageBucketDBInitializer::Config::Config(const config::ConfigUri & configUri)
     : _listPriority(0),
@@ -38,9 +38,8 @@ StorageBucketDBInitializer::Config::Config(const config::ConfigUri & configUri)
       _minPendingInfoReadsPerDisk(16),
       _maxPendingInfoReadsPerDisk(32)
 {
-    std::unique_ptr<vespa::config::content::core::StorBucketInitConfig> config =
-        config::ConfigGetter<vespa::config::content::core::StorBucketInitConfig>::getConfig(configUri.getConfigId(),
-                                                                      configUri.getContext());
+    auto config = config::ConfigGetter<StorBucketInitConfig>::getConfig(configUri.getConfigId(),
+                                                                        configUri.getContext());
     _maxPendingInfoReadsPerDisk = config->maxPendingInfoReadsPerDisk;
     _minPendingInfoReadsPerDisk = config->minPendingInfoReadsPerDisk;
     _infoReadPriority = config->infoReadPriority;
@@ -286,22 +285,15 @@ StorageBucketDBInitializer::reportHtmlStatus(
         << "    Dirs to list " << _state._dirsToList << "<br/>\n";
     if (!_state._joins.empty()) {
         out << "\n  <h2>Pending internal bucket joins</h2>\n";
-        for (vespalib::hash_map<
-                api::StorageMessage::Id,
-                InternalBucketJoinCommand::SP>::const_iterator it
-                    = _state._joins.begin();
-             it != _state._joins.end();
-             ++it)
-        {
-            out << "    " << it->first << " - " << *it->second << "<br/>\n";
+        for (const auto & e : _state._joins) {
+            out << "    " << e.first << " - " << *e.second << "<br/>\n";
         }
     }
     out << "\n  <h2>Info read state</h2>\n";
     std::map<Disk, uint32_t> pendingCounts;
-    for (IdDiskMap::const_iterator it = _state._infoRequests.begin();
-         it != _state._infoRequests.end(); ++it)
+    for (const auto & e : _state._infoRequests)
     {
-        ++pendingCounts[it->second];
+        ++pendingCounts[e.second];
     }
     for (uint32_t i=0; i<_readState.size(); ++i) {
         if (_readState[i].get() == 0) {
