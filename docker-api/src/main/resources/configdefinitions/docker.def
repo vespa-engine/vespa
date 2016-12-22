@@ -12,5 +12,4 @@ maxTotalConnections int default = 100
 connectTimeoutMillis int default = 100000 # 100 sec
 readTimeoutMillis int default = 1800000 # 30 min
 
-imageGCEnabled bool default = true
 imageGCMinTimeToLiveMinutes int default = 45

@@ -55,23 +55,20 @@ import static com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator.NetworkAddre
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
+    public static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
 
     private final int SECONDS_TO_WAIT_BEFORE_KILLING;
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
+    private Optional<DockerImageGarbageCollector> dockerImageGC = Optional.empty();
+    private CounterWrapper numberOfDockerDaemonFails;
 
-    public static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
-
-    public final Object monitor = new Object();
+    private final Object monitor = new Object();
     @GuardedBy("monitor")
     private final Map<DockerImage, CompletableFuture<DockerImage>> scheduledPulls = new HashMap<>();
 
     // Exposed for testing.
-    DockerClient dockerClient;
-
-    private CounterWrapper numberOfDockerDaemonFails;
-
-    private Optional<DockerImageGarbageCollector> dockerImageGC = Optional.empty();
+    final DockerClient dockerClient;
 
     // For testing
     DockerImpl(final DockerClient dockerClient) {
@@ -82,25 +79,11 @@ public class DockerImpl implements Docker {
     DockerImpl(
             final DockerConfig config,
             boolean fallbackTo123OnErrors,
-            boolean trySetupNetwork,
             MetricReceiverWrapper metricReceiverWrapper) {
-        if (config.imageGCEnabled()) {
-            Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
-            dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
-        }
-
         SECONDS_TO_WAIT_BEFORE_KILLING = config.secondsToWaitBeforeKillingContainer();
 
         dockerClient = initDockerConnection(config, fallbackTo123OnErrors);
         setMetrics(metricReceiverWrapper);
-
-        if (trySetupNetwork) {
-            try {
-                setupDockerNetworkIfNeeded();
-            } catch (Exception e) {
-                throw new RuntimeException("Could not setup docker network", e);
-            }
-        }
     }
 
     @Inject
@@ -108,8 +91,16 @@ public class DockerImpl implements Docker {
         this(
                 config,
                 true, /* fallback to 1.23 on errors */
-                true, /* try setup network */
                 metricReceiver);
+
+        Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
+        dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
+
+        try {
+            setupDockerNetworkIfNeeded();
+        } catch (Exception e) {
+            throw new RuntimeException("Could not setup docker network", e);
+        }
     }
 
     static DefaultDockerClientConfig.Builder buildDockerClientConfig(DockerConfig config) {
