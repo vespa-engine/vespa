@@ -2,6 +2,8 @@
 package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.tensor.functions.Argmax;
+import com.yahoo.tensor.functions.Argmin;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Diag;
 import com.yahoo.tensor.functions.Generate;
@@ -138,6 +140,12 @@ public interface Tensor {
     default Tensor xwPlusB(Tensor w, Tensor b, String dimension) {
         return new XwPlusB(new ConstantTensor(this), new ConstantTensor(w), new ConstantTensor(b), dimension).evaluate();
     }
+
+    default Tensor argmax(String dimension) {
+        return new Argmax(new ConstantTensor(this), dimension).evaluate();
+    }
+
+    default Tensor argmin(String dimension) { return new Argmin(new ConstantTensor(this), dimension).evaluate(); }
 
     static Tensor diag(TensorType type) { return new Diag(type).evaluate(); }
 

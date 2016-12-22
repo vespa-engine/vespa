@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoubleBinaryOperator;
-import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -24,16 +23,13 @@ public class ScalarFunctions {
     public static DoubleBinaryOperator add() { return new Addition(); }
     public static DoubleBinaryOperator multiply() { return new Multiplication(); }
     public static DoubleBinaryOperator divide() { return new Division(); }
+    public static DoubleBinaryOperator equal() { return new Equal(); }
     public static DoubleUnaryOperator square() { return new Square(); }
     public static DoubleUnaryOperator sqrt() { return new Sqrt(); }
     public static DoubleUnaryOperator exp() { return new Exponent(); }
     public static Function<List<Integer>, Double> random() { return new Random(); }
-    public static Function<List<Integer>, Double> equalArguments(List<String> argumentNames) { 
-        return new EqualArguments(argumentNames); 
-    }
-    public static Function<List<Integer>, Double> sumArguments(List<String> argumentNames) {
-        return new SumArguments(argumentNames);
-    }
+    public static Function<List<Integer>, Double> equal(List<String> argumentNames) { return new EqualElements(argumentNames); }
+    public static Function<List<Integer>, Double> sum(List<String> argumentNames) { return new SumElements(argumentNames); }
 
     public static class Addition implements DoubleBinaryOperator {
 
@@ -62,6 +58,15 @@ public class ScalarFunctions {
 
         @Override
         public String toString() { return "f(a,b)(a / b)"; }
+    }
+
+    public static class Equal implements DoubleBinaryOperator {
+
+        @Override
+        public double applyAsDouble(double left, double right) { return left == right ? 1 : 0; }
+
+        @Override
+        public String toString() { return "f(a,b)(a==b)"; }
     }
 
     public static class Square implements DoubleUnaryOperator {
@@ -106,11 +111,11 @@ public class ScalarFunctions {
 
     }
 
-    public static class EqualArguments implements Function<List<Integer>, Double> {
+    public static class EqualElements implements Function<List<Integer>, Double> {
         
         private final ImmutableList<String> argumentNames;
         
-        private EqualArguments(List<String> argumentNames) {
+        private EqualElements(List<String> argumentNames) {
             this.argumentNames = ImmutableList.copyOf(argumentNames);
         }
 
@@ -140,11 +145,11 @@ public class ScalarFunctions {
 
     }
 
-    public static class SumArguments implements Function<List<Integer>, Double> {
+    public static class SumElements implements Function<List<Integer>, Double> {
 
         private final ImmutableList<String> argumentNames;
 
-        private SumArguments(List<String> argumentNames) {
+        private SumElements(List<String> argumentNames) {
             this.argumentNames = ImmutableList.copyOf(argumentNames);
         }
 

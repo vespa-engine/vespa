@@ -1,12 +1,6 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.functions.CompositeTensorFunction;
-import com.yahoo.tensor.functions.Generate;
-import com.yahoo.tensor.functions.PrimitiveTensorFunction;
-import com.yahoo.tensor.functions.ScalarFunctions;
-import com.yahoo.tensor.functions.TensorFunction;
-import com.yahoo.tensor.functions.ToStringContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +20,7 @@ public class Diag extends CompositeTensorFunction {
     
     public Diag(TensorType type) {
         this.type = type;
-        this.diagFunction = ScalarFunctions.equalArguments(dimensionNames().collect(Collectors.toList()));
+        this.diagFunction = ScalarFunctions.equal(dimensionNames().collect(Collectors.toList()));
     }
     
     @Override

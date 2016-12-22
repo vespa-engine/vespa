@@ -21,7 +21,7 @@ public class Range extends CompositeTensorFunction {
     
     public Range(TensorType type) {
         this.type = type;
-        this.rangeFunction = ScalarFunctions.sumArguments(dimensionNames().collect(Collectors.toList()));
+        this.rangeFunction = ScalarFunctions.sum(dimensionNames().collect(Collectors.toList()));
     }
     
     @Override
