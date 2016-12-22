@@ -125,11 +125,11 @@ public class ScalarFunctions {
 
         @Override
         public String toString() { 
-            if (argumentNames.size() == 0) return "(1)";
-            if (argumentNames.size() == 1) return "(1)";
-            if (argumentNames.size() == 2) return "(" + argumentNames.get(0) + "==" + argumentNames.get(1) + ")";
+            if (argumentNames.size() == 0) return "1";
+            if (argumentNames.size() == 1) return "1";
+            if (argumentNames.size() == 2) return argumentNames.get(0) + "==" + argumentNames.get(1);
             
-            StringBuilder b = new StringBuilder("(");
+            StringBuilder b = new StringBuilder();
             for (int i = 0; i < argumentNames.size() -1; i++) {
                 b.append("(").append(argumentNames.get(i)).append("==").append(argumentNames.get(i+1)).append(")");
                 if ( i < argumentNames.size() -2)
@@ -158,7 +158,7 @@ public class ScalarFunctions {
 
         @Override
         public String toString() {
-            return "(" + argumentNames.stream().collect(Collectors.joining("+")) + ")";
+            return argumentNames.stream().collect(Collectors.joining("+"));
         }
 
     }

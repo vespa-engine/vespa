@@ -50,7 +50,7 @@ public class Diag extends CompositeTensorFunction {
     }
     
     private Stream<String> dimensionNames() {
-        return type.dimensions().stream().map(TensorType.Dimension::toString);
+        return type.dimensions().stream().map(TensorType.Dimension::name);
     }
 
 }
