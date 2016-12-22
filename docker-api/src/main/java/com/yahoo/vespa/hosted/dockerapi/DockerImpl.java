@@ -93,13 +93,15 @@ public class DockerImpl implements Docker {
                 true, /* fallback to 1.23 on errors */
                 metricReceiver);
 
-        Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
-        dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
+        if (! config.isRunningLocally()) {
+            Duration minAgeToDelete = Duration.ofMinutes(config.imageGCMinTimeToLiveMinutes());
+            dockerImageGC = Optional.of(new DockerImageGarbageCollector(minAgeToDelete));
 
-        try {
-            setupDockerNetworkIfNeeded();
-        } catch (Exception e) {
-            throw new RuntimeException("Could not setup docker network", e);
+            try {
+                setupDockerNetworkIfNeeded();
+            } catch (Exception e) {
+                throw new RuntimeException("Could not setup docker network", e);
+            }
         }
     }
 

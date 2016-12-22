@@ -12,6 +12,7 @@
 
     <config name='vespa.hosted.dockerapi.docker'>
       <uri>tcp://localhost:2376</uri>
+      <isRunningLocally>false</isRunningLocally>
     </config>
 
     <config name='vespa.hosted.node.admin.node-admin'>
