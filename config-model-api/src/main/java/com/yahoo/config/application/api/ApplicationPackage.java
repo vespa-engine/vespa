@@ -217,7 +217,17 @@ public interface ApplicationPackage {
         throw new UnsupportedOperationException("This application package cannot return file references");
     }
 
+    // TODO: Remove when no version older than 6.33 is in use
+    default void validateXML(DeployLogger logger) throws IOException {
+        throw new UnsupportedOperationException("This application package cannot validate XML");
+    }
+
     default void validateXML() throws IOException {
+        throw new UnsupportedOperationException("This application package cannot validate XML");
+    }
+
+    // TODO: Remove when no version older than 6.33 is in use
+    default void validateXML(DeployLogger logger, Optional<Version> vespaVersion) throws IOException {
         throw new UnsupportedOperationException("This application package cannot validate XML");
     }
 
