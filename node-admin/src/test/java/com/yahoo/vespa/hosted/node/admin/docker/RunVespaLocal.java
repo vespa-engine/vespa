@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 public class RunVespaLocal {
     private static final Environment.Builder environmentBuilder = new Environment.Builder()
             .configServerHosts(LocalZoneUtils.CONFIG_SERVER_HOSTNAME)
-            .environment("prod")
+            .environment("dev")
             .region("vespa-local")
             .parentHostHostname(HostName.getLocalhost())
             .inetAddressResolver(new InetAddressResolver());
@@ -144,6 +144,7 @@ public class RunVespaLocal {
     }
 
     void deleteApplication() {
+        logger.info("Deleting application");
         LocalZoneUtils.deleteApplication();
     }
 }

@@ -59,6 +59,7 @@ public class CoredumpHandler {
                 .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
                 .forEach(coredumpPath -> {
                     try {
+                        coredumpPath.toFile().setReadable(true, false);
                         coredumpPath = startProcessing(coredumpPath, processingCoredumpsPath);
 
                         Path metadataPath = coredumpPath.getParent().resolve(METADATA_FILE_NAME);

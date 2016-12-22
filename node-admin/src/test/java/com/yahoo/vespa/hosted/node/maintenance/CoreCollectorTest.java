@@ -105,11 +105,11 @@ public class CoreCollectorTest {
 
     @Test
     public void extractsBacktraceUsingGdb() throws IOException, InterruptedException {
-        mockExec(new String[]{"/home/y/bin64/gdb -n -ex bt -batch /usr/bin/program /tmp/core.1234"},
+        mockExec(new String[]{"/home/y/bin64/gdb", "-n", "-ex", "bt", "-batch", "/usr/bin/program", "/tmp/core.1234"},
                 String.join("\n", GDB_BACKTRACE));
         assertEquals(GDB_BACKTRACE, coreCollector.readBacktrace(TEST_CORE_PATH, TEST_BIN_PATH, false));
 
-        mockExec(new String[]{"/home/y/bin64/gdb -n -ex bt -batch /usr/bin/program /tmp/core.1234"},
+        mockExec(new String[]{"/home/y/bin64/gdb", "-n", "-ex", "bt", "-batch", "/usr/bin/program", "/tmp/core.1234"},
                 "", "Failure");
         try {
             coreCollector.readBacktrace(TEST_CORE_PATH, TEST_BIN_PATH, false);
@@ -121,7 +121,8 @@ public class CoreCollectorTest {
 
     @Test
     public void extractsBacktraceFromAllThreadsUsingGdb() throws IOException, InterruptedException {
-        mockExec(new String[]{"/home/y/bin64/gdb -n -ex thread apply all bt -batch /usr/bin/program /tmp/core.1234"},
+        mockExec(new String[]{"/home/y/bin64/gdb", "-n", "-ex", "thread apply all bt", "-batch",
+                        "/usr/bin/program", "/tmp/core.1234"},
                 String.join("\n", GDB_BACKTRACE));
         assertEquals(GDB_BACKTRACE, coreCollector.readBacktrace(TEST_CORE_PATH, TEST_BIN_PATH, true));
     }
@@ -131,9 +132,10 @@ public class CoreCollectorTest {
         mockExec(new String[]{"file", TEST_CORE_PATH.toString()},
                 "/tmp/core.1234: ELF 64-bit LSB core file x86-64, version 1 (SYSV), SVR4-style, from " +
                         "'/usr/bin/program'");
-        mockExec(new String[]{"/home/y/bin64/gdb -n -ex bt -batch /usr/bin/program /tmp/core.1234"},
+        mockExec(new String[]{"/home/y/bin64/gdb", "-n", "-ex", "bt", "-batch", "/usr/bin/program", "/tmp/core.1234"},
                 String.join("\n", GDB_BACKTRACE));
-        mockExec(new String[]{"/home/y/bin64/gdb -n -ex thread apply all bt -batch /usr/bin/program /tmp/core.1234"},
+        mockExec(new String[]{"/home/y/bin64/gdb", "-n", "-ex", "thread apply all bt", "-batch",
+                        "/usr/bin/program", "/tmp/core.1234"},
                 String.join("\n", GDB_BACKTRACE));
 
         Map<String, Object> expectedData = new HashMap<>();
