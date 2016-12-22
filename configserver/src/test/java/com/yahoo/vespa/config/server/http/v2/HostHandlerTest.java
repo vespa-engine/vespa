@@ -62,14 +62,14 @@ public class HostHandlerTest {
         assertThat(hostRegistries, is(hostHandler.hostRegistries));
         long sessionId = 1;
         ApplicationId id = ApplicationId.from(mytenant, ApplicationName.defaultName(), InstanceName.defaultName());
-        ApplicationHandlerTest.addMockApplication(tenants.tenantsCopy().get(mytenant), id, sessionId);
+        ApplicationHandlerTest.addMockApplication(tenants.getTenant(mytenant), id, sessionId);
         assertApplicationForHost(hostname, mytenant, id, Zone.defaultZone());
     }
 
     @Test
     public void require_that_handler_gives_error_for_unknown_hostname() throws Exception {
         long sessionId = 1;
-        ApplicationHandlerTest.addMockApplication(tenants.tenantsCopy().get(mytenant), ApplicationId.defaultId(), sessionId);
+        ApplicationHandlerTest.addMockApplication(tenants.getTenant(mytenant), ApplicationId.defaultId(), sessionId);
         final String hostname = "unknown";
         assertErrorForHost(hostname,
                 Response.Status.NOT_FOUND,
