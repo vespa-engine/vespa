@@ -20,7 +20,6 @@ AllocPoolT<MemBlockPtrT>::AllocPoolT(DataSegment<MemBlockPtrT> & ds)
       _getChunksSum(0),
       _allocChunkList(0)
 {
-    ChunkSList::init();
     memset(_scList, 0, sizeof(_scList));
 }
 
@@ -32,7 +31,6 @@ AllocPoolT<MemBlockPtrT>::~AllocPoolT()
 template <typename MemBlockPtrT>
 void AllocPoolT<MemBlockPtrT>::enableThreadSupport()
 {
-    ChunkSList::enableThreadSupport();
     _mutex.init();
 }
 

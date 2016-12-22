@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <vespa/defaults.h>
 #include <vespamalloc/malloc/malloc.h>
 #include <vespamalloc/util/callstack.h>
 

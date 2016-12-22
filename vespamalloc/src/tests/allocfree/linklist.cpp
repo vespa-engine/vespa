@@ -127,8 +127,6 @@ int Test::Main() {
     FastOS_ThreadPool      pool(128000);
     List::HeadPtr    sharedList;
     sharedList._tag = 1;
-    List::init();
-    List::enableThreadSupport();
     fprintf(stderr, "Start populating list\n");
     for (size_t i=0; i < NumBlocks; i++) {
         List * l(&globalList[i]);
