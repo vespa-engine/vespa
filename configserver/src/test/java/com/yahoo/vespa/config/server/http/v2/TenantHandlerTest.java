@@ -32,7 +32,7 @@ public class TenantHandlerTest extends TenantTest {
 
     @Test
     public void testTenantCreate() throws Exception {
-        assertFalse(tenants.tenantsCopy().containsKey(a));
+        assertNull(tenants.getTenant(a));
         TenantCreateResponse response = (TenantCreateResponse) putSync(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant a created.\"}");
@@ -41,7 +41,7 @@ public class TenantHandlerTest extends TenantTest {
     @Test
     public void testTenantCreateWithAllPossibleCharactersInName() throws Exception {
         TenantName tenantName = TenantName.from("aB-9999_foo");
-        assertFalse(tenants.tenantsCopy().containsKey(tenantName));
+        assertNull(tenants.getTenant(tenantName));
         TenantCreateResponse response = (TenantCreateResponse) putSync(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + tenantName, Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant " + tenantName + " created.\"}");
@@ -65,29 +65,28 @@ public class TenantHandlerTest extends TenantTest {
 
     @Test(expected=BadRequestException.class)
     public void testCreateExisting() throws Exception {
-        assertFalse(tenants.tenantsCopy().containsKey(a));
+        assertNull(tenants.getTenant(a));
         TenantCreateResponse response = (TenantCreateResponse) putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
         assertResponseEquals(response, "{\"message\":\"Tenant a created.\"}");
-        Tenant ta = tenants.tenantsCopy().get(a);
-        assertEquals(ta.getName(), a);
+        assertEquals(tenants.getTenant(a).getName(), a);
         handler.handlePUT(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
     }
 
     @Test
     public void testDelete() throws IOException, InterruptedException {
         putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
-        assertEquals(tenants.tenantsCopy().get(a).getName(), a);
+        assertEquals(tenants.getTenant(a).getName(), a);
         TenantDeleteResponse delResp = (TenantDeleteResponse) handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.DELETE));
         assertResponseEquals(delResp, "{\"message\":\"Tenant a deleted.\"}");
-        assertFalse(tenants.tenantsCopy().containsKey(a));
+        assertNull(tenants.getTenant(a));
     }
 
     @Test
     public void testDeleteTenantWithActiveApplications() throws Exception {
         putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.PUT));
-        assertEquals(tenants.tenantsCopy().get(a).getName(), a);
+        final Tenant tenant = tenants.getTenant(a);
+        assertEquals(a, tenant.getName());
 
-        final Tenant tenant = tenants.tenantsCopy().get(a);
         final int sessionId = 1;
         ApplicationId app = ApplicationId.from(a,
                                                ApplicationName.from("foo"), InstanceName.defaultName());

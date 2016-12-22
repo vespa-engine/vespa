@@ -83,7 +83,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      */
     @Override
     public Optional<com.yahoo.config.provision.Deployment> deployFromLocalActive(ApplicationId application, Duration timeout) {
-        Tenant tenant = tenants.tenantsCopy().get(application.tenant());
+        Tenant tenant = tenants.getTenant(application.tenant());
         LocalSession activeSession = tenant.getLocalSessionRepo().getActiveSession(application);
         if (activeSession == null) return Optional.empty();
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
@@ -114,7 +114,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the remove transaction fails. This method is exception safe.
      */
     public boolean remove(ApplicationId applicationId) {
-        Optional<Tenant> owner = Optional.ofNullable(tenants.tenantsCopy().get(applicationId.tenant()));
+        Optional<Tenant> owner = Optional.ofNullable(tenants.getTenant(applicationId.tenant()));
         if ( ! owner.isPresent()) return false;
 
         TenantApplications tenantApplications = owner.get().getApplicationRepo();

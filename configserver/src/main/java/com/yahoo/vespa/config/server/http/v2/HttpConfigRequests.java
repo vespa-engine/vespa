@@ -46,7 +46,7 @@ public class HttpConfigRequests {
 
 
     static RequestHandler getRequestHandler(Tenants tenants, TenantRequest request) {
-        Tenant tenant = tenants.tenantsCopy().get(request.getApplicationId().tenant());
+        Tenant tenant = tenants.getTenant(request.getApplicationId().tenant());
         if (tenant==null) throw new NotFoundException("No such tenant: "+request.getApplicationId().tenant());
         return tenant.getRequestHandler();
     }

@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
@@ -194,17 +195,6 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     /**
-     * The registered tenants. Creates a copy of the map to avoid it being modified outside, since it can
-     * change after this method has been called.
-     *
-     * @return tenant list
-     */
-    // TODO: Replace by something idiomatic
-    public synchronized Map<TenantName, Tenant> tenantsCopy() {
-        return new LinkedHashMap<>(tenants);
-    }
-
-    /**
      * Returns a default (compatibility with single tenant config requests) tenant
      *
      * @return default tenant
@@ -295,7 +285,7 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     public static String logPre(TenantName tenant) {
         if (DEFAULT_TENANT.equals(tenant)) return "";
         StringBuilder ret = new StringBuilder()
-            .append("tenant:"+tenant.value())
+            .append("tenant:" + tenant.value())
             .append(" ");
         return ret.toString();
     }
@@ -337,21 +327,26 @@ public class Tenants implements ConnectionStateListener, PathChildrenCacheListen
     }
 
     public void redeployApplications(Deployer deployer) {
-        int totalNumberOfApplications = tenantsCopy().values().stream()
+        Set<Tenant> allTenants = ImmutableSet.copyOf(tenants.values());
+        int totalNumberOfApplications = allTenants.stream()
                 .mapToInt(tenant -> tenant.getApplicationRepo().listApplications().size()).sum();
         int applicationsRedeployed = 0;
-        for (Tenant tenant : tenantsCopy().values()) {
+        for (Tenant tenant : allTenants) {
             tenant.redeployApplications(deployer);
             applicationsRedeployed += redeployProgress(tenant, applicationsRedeployed, totalNumberOfApplications);
         }
     }
 
     public boolean checkThatTenantExists(TenantName tenant) {
-        return tenantsCopy().containsKey(tenant);
+        return tenants.containsKey(tenant);
     }
 
     public Tenant getTenant(TenantName tenantName) {
-        return tenantsCopy().get(tenantName);
+        return tenants.get(tenantName);
+    }
+
+    public Set<TenantName> getAllTenants() {
+        return ImmutableSet.copyOf(tenants.keySet());
     }
 
     private static int redeployProgress(Tenant tenant, int applicationsRedeployed, int totalNumberOfApplications) {

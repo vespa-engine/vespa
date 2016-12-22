@@ -11,9 +11,8 @@ import com.yahoo.vespa.config.server.tenant.Tenants;
 
 /**
  * Handler to list tenants in the configserver
- * 
- * @author vegardh
  *
+ * @author vegardh
  */
 public class ListTenantsHandler extends HttpHandler {
 
@@ -25,12 +24,10 @@ public class ListTenantsHandler extends HttpHandler {
         this.tenants = tenants;
     }
 
-    
+
     @Override
     protected HttpResponse handleGET(HttpRequest request) {
-        return new ListTenantsResponse(tenants.tenantsCopy().keySet());
+        return new ListTenantsResponse(tenants.getAllTenants());
     }
-    
-    
-    
+
 }

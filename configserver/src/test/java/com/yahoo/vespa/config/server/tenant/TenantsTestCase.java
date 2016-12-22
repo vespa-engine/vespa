@@ -25,14 +25,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -65,13 +63,13 @@ public class TenantsTestCase extends TestWithCurator {
 
     @Test
     public void testStartUp() {
-        assertEquals(tenants.tenantsCopy().get(tenant1).getName(), tenant1);
-        assertEquals(tenants.tenantsCopy().get(tenant2).getName(), tenant2);
+        assertEquals(tenants.getTenant(tenant1).getName(), tenant1);
+        assertEquals(tenants.getTenant(tenant2).getName(), tenant2);
     }
 
     @Test
     public void testListenersAdded() throws IOException, SAXException {
-        tenants.tenantsCopy().get(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(new Application(new VespaModel(MockApplicationPackage.createEmpty()), new ServerCache(), 4l, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), ApplicationId.defaultId())));
+        tenants.getTenant(tenant1).getReloadHandler().reloadConfig(ApplicationSet.fromSingle(new Application(new VespaModel(MockApplicationPackage.createEmpty()), new ServerCache(), 4l, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), ApplicationId.defaultId())));
         assertThat(listener.reloaded.get(), is(1));
     }
 
@@ -82,22 +80,22 @@ public class TenantsTestCase extends TestWithCurator {
     @Test
     public void testTenantListenersNotified() throws Exception {
         tenants.writeTenantPath(tenant3);
-        assertThat("tenant3 not the last created tenant. Tenants: " + tenants.tenantsCopy().keySet() + ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"), tenantListener.tenantCreatedName, is(tenant3));
+        assertThat("tenant3 not the last created tenant. Tenants: " + tenants.getAllTenants() + ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"), tenantListener.tenantCreatedName, is(tenant3));
         tenants.deleteTenant(tenant2);
-        assertFalse(tenants.tenantsCopy().containsKey(tenant2));
+        assertFalse(tenants.getAllTenants().contains(tenant2));
         assertThat(tenantListener.tenantDeletedName, is(tenant2));
     }
 
     @Test
     public void testAddTenant() throws Exception {
-        Map<TenantName, Tenant> tenantsCopy = tenants.tenantsCopy();
-        assertEquals(tenantsCopy.get(tenant1).getName(), tenant1);
-        assertEquals(tenantsCopy.get(tenant2).getName(), tenant2);
+        Set<TenantName> allTenants = tenants.getAllTenants();
+        assertTrue(allTenants.contains(tenant1));
+        assertTrue(allTenants.contains(tenant2));
         tenants.writeTenantPath(tenant3);
-        tenantsCopy = tenants.tenantsCopy();
-        assertEquals(tenantsCopy.get(tenant1).getName(), tenant1);
-        assertEquals(tenantsCopy.get(tenant2).getName(), tenant2);
-        assertEquals(tenantsCopy.get(tenant3).getName(), tenant3);
+        allTenants = tenants.getAllTenants();
+        assertTrue(allTenants.contains(tenant1));
+        assertTrue(allTenants.contains(tenant2));
+        assertTrue(allTenants.contains(tenant3));
     }
 
     @Test
@@ -110,7 +108,7 @@ public class TenantsTestCase extends TestWithCurator {
     public void testRemove() throws Exception {
         assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenants.tenantZkPath(tenant1)));
         tenants.deleteTenant(tenant1);
-        assertFalse(tenants.tenantsCopy().containsKey(tenant1));
+        assertFalse(tenants.getAllTenants().contains(tenant1));
     }
     
     @Test
@@ -122,16 +120,17 @@ public class TenantsTestCase extends TestWithCurator {
         newTenants.add(tenant2);
         newTenants.add(defaultTenant);
         tenants.tenantsChanged(newTenants);
-        Map<TenantName, Tenant> tenantsCopy = tenants.tenantsCopy();
-        assertEquals(tenantsCopy.get(tenant2).getName(), tenant2);
-        assertEquals(tenantsCopy.get(defaultTenant).getName().value(), "default");
-        assertNull(tenantsCopy.get(tenant1));
+        Set<TenantName> allTenants = tenants.getAllTenants();
+        assertTrue(allTenants.contains(tenant2));
+        assertEquals("default", defaultTenant.value());
+        assertTrue(allTenants.contains(defaultTenant));
+        assertFalse(allTenants.contains(tenant1));
         newTenants.clear();
         tenants.tenantsChanged(newTenants);
-        tenantsCopy = tenants.tenantsCopy();
-        assertNull(tenantsCopy.get(tenant1));
-        assertNull(tenantsCopy.get(tenant2));
-        assertNull(tenantsCopy.get(defaultTenant));
+        allTenants = tenants.getAllTenants();
+        assertFalse(allTenants.contains(tenant1));
+        assertFalse(allTenants.contains(tenant2));
+        assertFalse(allTenants.contains(defaultTenant));
         newTenants.clear();
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
@@ -139,13 +138,10 @@ public class TenantsTestCase extends TestWithCurator {
         newTenants.add(foo);
         newTenants.add(bar);
         tenants.tenantsChanged(newTenants);
-        tenantsCopy = tenants.tenantsCopy();
-        assertNotNull(tenantsCopy.get(tenant2));
-        assertNotNull(tenantsCopy.get(foo));
-        assertNotNull(tenantsCopy.get(bar));
-        assertEquals(tenantsCopy.get(tenant2).getName(), tenant2);
-        assertEquals(tenantsCopy.get(foo).getName(), foo);
-        assertEquals(tenantsCopy.get(bar).getName(), bar);
+        allTenants = tenants.getAllTenants();
+        assertTrue(allTenants.contains(tenant2));
+        assertTrue(allTenants.contains(foo));
+        assertTrue(allTenants.contains(bar));
     }
     
     @Test
@@ -153,15 +149,13 @@ public class TenantsTestCase extends TestWithCurator {
         TestComponentRegistry reg = new TestComponentRegistry.Builder().curator(curator).build();
         Tenants t = new Tenants(reg, Metrics.createTestMetrics());
         try {
-            assertEquals(t.tenantsCopy().get(TenantName.defaultName()).getName(), TenantName.defaultName());
+            assertTrue(t.getAllTenants().contains(TenantName.defaultName()));
             reg.getCurator().framework().create().forPath(tenants.tenantZkPath(TenantName.from("newTenant")));
             // Poll for the watcher to pick up the tenant from zk, and add it
             int tries=0;
             while(true) {
                 if (tries > 500) fail("Didn't react on watch");
-                Tenant nt = t.tenantsCopy().get(TenantName.from("newTenant"));
-                if (nt != null) {
-                    assertEquals(nt.getName().value(), "newTenant");
+                if (t.getAllTenants().contains(TenantName.from("newTenant"))) {
                     return;
                 }
                 tries++;
@@ -175,7 +169,7 @@ public class TenantsTestCase extends TestWithCurator {
     @Test
     public void testTenantRedeployment() throws Exception {
         MockDeployer deployer = new MockDeployer();
-        Tenant tenant = tenants.tenantsCopy().get(tenant1);
+        Tenant tenant = tenants.getTenant(tenant1);
         ApplicationId id = ApplicationId.from(tenant1, ApplicationName.defaultName(), InstanceName.defaultName());
         tenant.getApplicationRepo().createPutApplicationTransaction(id, 3).commit();
         tenants.redeployApplications(deployer);

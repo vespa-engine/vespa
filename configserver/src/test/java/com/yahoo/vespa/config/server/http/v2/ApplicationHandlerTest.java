@@ -128,7 +128,7 @@ public class ApplicationHandlerTest {
             //       as login is moved from the HTTP layer into ApplicationRepository
             Tenants tenants = addApplication(defaultId, sessionId);
             ApplicationHandler handler = createApplicationHandler(tenants);
-            Tenant mytenant = tenants.tenantsCopy().get(defaultId.tenant());
+            Tenant mytenant = tenants.getTenant(defaultId.tenant());
             LocalSession applicationData = mytenant.getLocalSessionRepo().getSession(sessionId);
             assertNotNull(applicationData);
             assertNotNull(applicationData.getApplicationId());
@@ -145,7 +145,7 @@ public class ApplicationHandlerTest {
         
         sessionId++;
         {
-            addMockApplication(tenants.tenantsCopy().get(mytenantName), defaultId, sessionId);
+            addMockApplication(tenants.getTenant(mytenantName), defaultId, sessionId);
             deleteAndAssertOKResponseMocked(defaultId, true);
 
             ApplicationId fooId = new ApplicationId.Builder()
@@ -154,8 +154,8 @@ public class ApplicationHandlerTest {
 
             sessionId++;
 
-            addMockApplication(tenants.tenantsCopy().get(mytenantName), fooId, sessionId);
-            addMockApplication(tenants.tenantsCopy().get(foobar), fooId, sessionId);
+            addMockApplication(tenants.getTenant(mytenantName), fooId, sessionId);
+            addMockApplication(tenants.getTenant(foobar), fooId, sessionId);
             assertApplicationExists(mytenantName, fooId, Zone.defaultZone());
             assertApplicationExists(foobar, fooId, Zone.defaultZone());
             deleteAndAssertOKResponseMocked(fooId, true);
@@ -170,7 +170,7 @@ public class ApplicationHandlerTest {
             ApplicationId baliId = new ApplicationId.Builder()
                     .tenant(mytenantName)
                     .applicationName("bali").instanceName("quux").build();
-            addMockApplication(tenants.tenantsCopy().get(mytenantName), baliId, sessionId);
+            addMockApplication(tenants.getTenant(mytenantName), baliId, sessionId);
             deleteAndAssertOKResponseMocked(baliId, true);
             assertApplicationExists(mytenantName, null, Zone.defaultZone());
         }
@@ -180,7 +180,7 @@ public class ApplicationHandlerTest {
     public void testGet() throws Exception {
         long sessionId = 1;
         ApplicationId defaultId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.tenantsCopy().get(mytenantName), defaultId, sessionId);
+        addMockApplication(tenants.getTenant(mytenantName), defaultId, sessionId);
         assertApplicationGeneration(defaultId, Zone.defaultZone(), 1, true);
         assertApplicationGeneration(defaultId, Zone.defaultZone(), 1, false);
     }
@@ -189,7 +189,7 @@ public class ApplicationHandlerTest {
     public void testRestart() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.tenantsCopy().get(mytenantName), application, sessionId);
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
         assertFalse(provisioner.restarted);
         restart(application, Zone.defaultZone());
         assertTrue(provisioner.restarted);
@@ -200,7 +200,7 @@ public class ApplicationHandlerTest {
     public void testConverge() throws Exception {
         long sessionId = 1;
         ApplicationId application = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
-        addMockApplication(tenants.tenantsCopy().get(mytenantName), application, sessionId);
+        addMockApplication(tenants.getTenant(mytenantName), application, sessionId);
         assertFalse(stateApiFactory.createdApi);
         converge(application, Zone.defaultZone());
         assertTrue(stateApiFactory.createdApi);
@@ -218,7 +218,7 @@ public class ApplicationHandlerTest {
         mockHandler = createMockApplicationHandler(
                 provisioner, new ApplicationConvergenceChecker(stateApiFactory), new LogServerLogGrabber());
         final ApplicationId applicationId = ApplicationId.defaultId();
-        addMockApplication(tenants.tenantsCopy().get(mytenantName), applicationId, 1);
+        addMockApplication(tenants.getTenant(mytenantName), applicationId, 1);
         assertApplicationExists(mytenantName, applicationId, Zone.defaultZone());
         provisioner.activated = true;
 
@@ -292,9 +292,9 @@ public class ApplicationHandlerTest {
     }
 
     private void deleteAndAssertOKResponseMocked(ApplicationId applicationId, boolean fullAppIdInUrl) throws IOException {
-        long sessionId = tenants.tenantsCopy().get(applicationId.tenant()).getApplicationRepo().getSessionIdForApplication(applicationId);
+        long sessionId = tenants.getTenant(applicationId.tenant()).getApplicationRepo().getSessionIdForApplication(applicationId);
         deleteAndAssertResponse(mockHandler, applicationId, Zone.defaultZone(), Response.Status.OK, null, fullAppIdInUrl);
-        assertNull(tenants.tenantsCopy().get(applicationId.tenant()).getLocalSessionRepo().getSession(sessionId));
+        assertNull(tenants.getTenant(applicationId.tenant()).getLocalSessionRepo().getSession(sessionId));
     }
 
     private void deleteAndAssertOKResponse(ApplicationHandler handler, Tenant tenant, ApplicationId applicationId) throws IOException {
