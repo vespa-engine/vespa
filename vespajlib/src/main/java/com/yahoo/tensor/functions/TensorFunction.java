@@ -53,6 +53,6 @@ public abstract class TensorFunction {
     public abstract String toString(ToStringContext context);
     
     @Override
-    public final String toString() { return toString(ToStringContext.empty()); }
+    public String toString() { return toString(ToStringContext.empty()); }
 
 }

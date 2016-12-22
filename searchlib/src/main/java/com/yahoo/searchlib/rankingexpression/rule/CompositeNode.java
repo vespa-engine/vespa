@@ -4,7 +4,7 @@ package com.yahoo.searchlib.rankingexpression.rule;
 import java.util.List;
 
 /**
- * <p>The parent of all node types which contains child nodes.</p>
+ * The parent of all node types which contains child nodes.
  *
  * @author bratseth
  */

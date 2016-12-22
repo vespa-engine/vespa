@@ -1,5 +1,6 @@
 # Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search tensor {
+
   document tensor {
     field f1 type tensor {
       indexing: summary
@@ -15,4 +16,21 @@ search tensor {
       attribute: tensor(x[10],y[20])
     }
   }
+  
+  rank-profile profile1 {
+
+    first-phase {
+      expression: map(attribute(f4),f(x)(x*x)) + reduce(random(x[2],y[3]), count) * rename(attribute(f4), (x, y), (y, x))
+    }
+  
+  }
+
+  rank-profile profile2 {
+
+    first-phase {
+      expression: matmul(attribute(f4), diag(x[2],y[2],z[3]), x)
+    }
+  
+  }
+
 }

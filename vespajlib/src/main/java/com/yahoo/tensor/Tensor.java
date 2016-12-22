@@ -3,14 +3,18 @@ package com.yahoo.tensor;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.tensor.functions.ConstantTensor;
+import com.yahoo.tensor.functions.Diag;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.L1Normalize;
 import com.yahoo.tensor.functions.L2Normalize;
 import com.yahoo.tensor.functions.Matmul;
+import com.yahoo.tensor.functions.Random;
+import com.yahoo.tensor.functions.Range;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
+import com.yahoo.tensor.functions.XwPlusB;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,11 +61,16 @@ public interface Tensor {
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
 
+    /** Returns the cell of this in some undefined order */
     Iterator<Map.Entry<TensorAddress, Double>> cellIterator();
 
+    /** Returns the values of this in some undefined order */
     Iterator<Double> valueIterator();
 
-    /** Returns an immutable map of the cells of this. This may be expensive for some implementations - avoid when possible */
+    /** 
+     * Returns an immutable map of the cells of this in no particular order.
+     * This may be expensive for some implementations - avoid when possible 
+     */
     Map<TensorAddress, Double> cells();
 
     /** 
@@ -104,7 +113,7 @@ public interface Tensor {
         return new Rename(new ConstantTensor(this), fromDimensions, toDimensions).evaluate();
     }
     
-    static Tensor from(TensorType type, Function<List<Integer>, Double> valueSupplier) {
+    static Tensor generate(TensorType type, Function<List<Integer>, Double> valueSupplier) {
         return new Generate(type, valueSupplier).evaluate();
     }
     
@@ -125,6 +134,16 @@ public interface Tensor {
     default Tensor softmax(String dimension) {
         return new Softmax(new ConstantTensor(this), dimension).evaluate();
     }
+
+    default Tensor xwPlusB(Tensor w, Tensor b, String dimension) {
+        return new XwPlusB(new ConstantTensor(this), new ConstantTensor(w), new ConstantTensor(b), dimension).evaluate();
+    }
+
+    static Tensor diag(TensorType type) { return new Diag(type).evaluate(); }
+
+    static Tensor random(TensorType type) { return new Random(type).evaluate(); }
+
+    static Tensor range(TensorType type) { return new Range(type).evaluate(); }
 
     // ----------------- Composite tensor functions mapped to primitives here on the fly
 
@@ -203,15 +222,24 @@ public interface Tensor {
     // ----------------- equality
 
     /**
-     * Returns true if the given tensor is mathematically equal to this:
-     * Both are of type Tensor and have the same content.
+     * Returns whether this tensor and the given tensor is mathematically equal:
+     * That they have the same dimension *names* and the same content.
      */
-    @Override
     boolean equals(Object o);
 
-    /** Returns true if the two given tensors are mathematically equivalent, that is whether both have the same content */
+    /** 
+     * Implement here to make this work across implementations.
+     * Implementations must override equals and call this because this is an interface and cannot override equals.
+     */
     static boolean equals(Tensor a, Tensor b) {
-        return a == b || a.cells().equals(b.cells());
+        if (a == b) return true;
+        if ( ! a.type().mathematicallyEquals(b.type())) return false;
+        if ( a.size() != b.size()) return false;
+        for (Iterator<Map.Entry<TensorAddress, Double>> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
+            Map.Entry<TensorAddress, Double> aCell = aIterator.next();
+            if ( ! aCell.getValue().equals(b.get(aCell.getKey()))) return false;
+        }
+        return true;
     }
 
     // ----------------- Factories

@@ -50,9 +50,9 @@ public class MappedTensor implements Tensor {
     public String toString() { return Tensor.toStandardString(this); }
 
     @Override
-    public boolean equals(Object o) {
-        if ( ! (o instanceof Tensor)) return false;
-        return Tensor.equals(this, (Tensor)o);
+    public boolean equals(Object other) {
+        if ( ! ( other instanceof Tensor)) return false;
+        return Tensor.equals(this, ((Tensor)other));
     }
 
     public static class Builder implements Tensor.Builder {

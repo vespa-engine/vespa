@@ -123,6 +123,9 @@ TOKEN :
     <JOIN: "join"> |
     <RENAME: "rename"> |
     <TENSOR: "tensor"> |
+    <RANGE: "range"> |
+    <DIAG: "diag"> |
+    <RANDOM: "random"> |
     <L1_NORMALIZE: "l1_normalize"> |
     <L2_NORMALIZE: "l2_normalize"> |
     <MATMUL: "matmul"> |
@@ -236,7 +239,7 @@ IfNode ifExpression() :
 }
 {
     ( <IF> <LBRACE> ( condition =  expression() )
-      <COMMA> ifTrue = expression() <COMMA> ifFalse = expression() ( <COMMA> trueProbability = number() )? <RBRACE> )
+      <COMMA> ifTrue = expression() <COMMA> ifFalse = expression() ( <COMMA> trueProbability = doubleNumber() )? <RBRACE> )
     {
         return new IfNode(condition, ifTrue, ifFalse, trueProbability);
     }
@@ -352,6 +355,9 @@ ExpressionNode tensorFunction() :
         tensorExpression = tensorJoin() |
         tensorExpression = tensorRename() |
         tensorExpression = tensorGenerate() |
+        tensorExpression = tensorRange() |
+        tensorExpression = tensorDiag() |
+        tensorExpression = tensorRandom() |
         tensorExpression = tensorL1Normalize() |
         tensorExpression = tensorL2Normalize() |
         tensorExpression = tensorMatmul() |
@@ -420,15 +426,41 @@ ExpressionNode tensorRename() :
     { return new TensorFunctionNode(new Rename(TensorFunctionNode.wrapArgument(tensor), fromDimensions, toDimensions)); }
 }
 
-// TODO: Notice that null is parsed below
 ExpressionNode tensorGenerate() :
 {
     TensorType type;
-    LambdaFunctionNode generator;
+    ExpressionNode generator;
 }
 {
-    <TENSOR> <LBRACE> <RBRACE> <LBRACE>
-    { return new TensorFunctionNode(new Generate(null, null)); }
+    <TENSOR> type = tensorTypeArgument() <LBRACE> generator = expression() <RBRACE>
+    { return new TensorFunctionNode(new Generate(type, new GeneratorLambdaFunctionNode(type, generator).asIntegerListToDoubleOperator())); }
+}
+
+ExpressionNode tensorRange() :
+{
+    TensorType type;
+}
+{
+    <RANGE> type = tensorTypeArgument()
+    { return new TensorFunctionNode(new Range(type)); }
+}
+
+ExpressionNode tensorDiag() :
+{
+    TensorType type;
+}
+{
+    <DIAG> type = tensorTypeArgument()
+    { return new TensorFunctionNode(new Diag(type)); }
+}
+
+ExpressionNode tensorRandom() :
+{
+    TensorType type;
+}
+{
+    <RANDOM> type = tensorTypeArgument()
+    { return new TensorFunctionNode(new Random(type)); }
 }
 
 ExpressionNode tensorL1Normalize() :
@@ -507,18 +539,49 @@ Reduce.Aggregator tensorReduceAggregator() :
     { return Reduce.Aggregator.valueOf(token.image); }
 }
 
+TensorType tensorTypeArgument() :
+{
+    TensorType.Builder builder = new TensorType.Builder();
+}
+{
+    <LBRACE> 
+    ( tensorTypeDimension(builder) ) ? 
+    ( <COMMA> tensorTypeDimension(builder) ) *
+    <RBRACE>
+    { return builder.build(); }
+}
+
+// NOTE: Only indexed bound dimensions are parsed currently, as that is what we need
+void tensorTypeDimension(TensorType.Builder builder) :
+{
+    String name;
+    int size;
+}
+{
+    name = identifier() <LSQUARE> size = integerNumber() <RSQUARE> 
+    { builder.indexed(name, size); }
+}
+
 // This is needed not to parse tensor functions but for the "reserved names as literals" workaround cludge
 String tensorFunctionName() :
 {
     Reduce.Aggregator aggregator;
 }
 {
-    ( <F>      { return token.image; } ) |
-    ( <MAP>    { return token.image; } ) |
-    ( <REDUCE> { return token.image; } ) |
-    ( <JOIN>   { return token.image; } ) |
-    ( <RENAME> { return token.image; } ) |
-    ( <TENSOR> { return token.image; } ) |
+    ( <F>            { return token.image; } ) |
+    ( <MAP>          { return token.image; } ) |
+    ( <REDUCE>       { return token.image; } ) |
+    ( <JOIN>         { return token.image; } ) |
+    ( <RENAME>       { return token.image; } ) |
+    ( <TENSOR>       { return token.image; } ) |
+    ( <RANGE>        { return token.image; } ) |
+    ( <DIAG>         { return token.image; } ) |
+    ( <RANDOM>       { return token.image; } ) |
+    ( <L1_NORMALIZE> { return token.image; } ) |
+    ( <L2_NORMALIZE> { return token.image; } ) |
+    ( <MATMUL>       { return token.image; } ) |
+    ( <SOFTMAX>      { return token.image; } ) |
+    ( <XW_PLUS_B>    { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
@@ -574,13 +637,22 @@ List<ExpressionNode> expressionList() :
     { return list; }
 }
 
-double number() :
+double doubleNumber() :
 {
     String sign = "";
 }
 {
     ( <SUB> { sign = "-";} )? ( <FLOAT> | <INTEGER> )
     { return Double.parseDouble(sign + token.image); }
+}
+
+int integerNumber() :
+{
+    String sign = "";
+}
+{
+    ( <SUB> { sign = "-";} )? ( <INTEGER> )
+    { return Integer.parseInt(sign + token.image); }
 }
 
 String identifier() :

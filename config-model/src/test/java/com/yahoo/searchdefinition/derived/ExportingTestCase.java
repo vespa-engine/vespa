@@ -135,7 +135,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     }
 
     @Test
-    public void testTensorField() throws IOException, ParseException {
+    public void testTensor() throws IOException, ParseException {
         assertCorrectDeriving("tensor");
     }
 

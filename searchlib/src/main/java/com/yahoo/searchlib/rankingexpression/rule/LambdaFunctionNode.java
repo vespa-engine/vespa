@@ -22,7 +22,7 @@ public class LambdaFunctionNode extends CompositeNode {
     private final ExpressionNode functionExpression;
     
     public LambdaFunctionNode(List<String> arguments, ExpressionNode functionExpression) {
-        // TODO: Verify that the function only accesses the arguments in mapperVariables
+        // TODO: Verify that the function only accesses the given arguments
         this.arguments = ImmutableList.copyOf(arguments);
         this.functionExpression = functionExpression;
     }

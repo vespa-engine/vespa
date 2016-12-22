@@ -5,6 +5,7 @@ import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -227,17 +228,19 @@ public class EvaluationTestCase {
         // argmin        
         tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
                                "tensor0 != tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
-        
+
         // tensor rename
         tester.assertEvaluates("{ {newX:0,y:0}:3 }", "rename(tensor0, x, newX)", "{ {x:0,y:0}:3.0 }");
         tester.assertEvaluates("{  {x:0,y:0}:3, {x:1,y:0}:5 }", "rename(tensor0, (x, y), (y, x))", "{ {x:0,y:0}:3.0, {x:0,y:1}:5.0 }");
         
-        // tensor generate - TODO
-        // assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0, {x:2,y:2}:1, {x:1,y:2}:0 }", "tensor(x[2],y[2])(x==y)");
-        // range
-        // diag
-        // fill
-        // random
+        // tensor generate
+        tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:0, {x:0,y:1}:1, {x:1,y:1}:0, {x:0,y:2}:0, {x:1,y:2}:1 }", "tensor(x[2],y[3])(x+1==y)");
+        tester.assertEvaluates("{ {y:0,x:0}:0, {y:1,x:0}:0, {y:0,x:1}:1, {y:1,x:1}:0, {y:0,x:2}:0, {y:1,x:2}:1 }", "tensor(y[2],x[3])(y+1==x)");
+        tester.assertEvaluates("{ {x:0,y:0,z:0}:1 }", "tensor(x[1],y[1],z[1])((x==y)*(y==z))");
+        // - generate composites
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:1, {x:2}:2 }", "range(x[3])");
+        tester.assertEvaluates("{ {x:0,y:0,z:0}:1, {x:0,y:0,z:1}:0, {x:0,y:1,z:0}:0, {x:0,y:1,z:1}:0, {x:1,y:0,z:0}:0, {x:1,y:0,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:1, }", "diag(x[2],y[2],z[2])");
+        tester.assertEvaluates("6", "reduce(random(x[2],y[3]), count)");
         
         // composite functions
         tester.assertEvaluates("{ {x:0}:0.25, {x:1}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
@@ -247,6 +250,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0,y:0}:81.0, {x:1,y:0}:88.0 }", "xw_plus_b(tensor0, tensor1, tensor2, x)", "{ {x:0}:15, {x:1}:12 }", "{ {y:0}:3 }", "{ {x:0}:0, {x:1}:7 }");
 
         // expressions combining functions
+        tester.assertEvaluates("tensor(y{}):{{y:6}:0}}", "matmul(tensor0, diag(x[5],y[7]), x)", "tensor(x{},y{}):{{x:4,y:6}:1})");
+        tester.assertEvaluates("tensor(y{}):{{y:6}:10}}", "matmul(tensor0, range(x[5],y[7]), x)", "tensor(x{},y{}):{{x:4,y:6}:1})");
         tester.assertEvaluates(String.valueOf(7.5 + 45 + 1.7),
                                "sum( " +               // model computation:
                                "      tensor0 * tensor1 * tensor2 " + // - feature combinations

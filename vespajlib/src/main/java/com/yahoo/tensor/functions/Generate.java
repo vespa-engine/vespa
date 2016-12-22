@@ -1,6 +1,7 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
@@ -58,9 +59,22 @@ public class Generate extends PrimitiveTensorFunction {
     
     @Override
     public Tensor evaluate(EvaluationContext context) {
-        throw new UnsupportedOperationException("Not implemented"); // TODO
+        Tensor.Builder builder = Tensor.Builder.of(type);
+        IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(dimensionSizes(type));
+        for (int i = 0; i < indexes.size(); i++) {
+            indexes.next();
+            builder.cell(generator.apply(indexes.toList()), indexes.indexesForReading());
+        }
+        return builder.build();
     }
-
+    
+    private int[] dimensionSizes(TensorType type) {
+        int dimensionSizes[] = new int[type.dimensions().size()];
+        for (int i = 0; i < dimensionSizes.length; i++)
+            dimensionSizes[i] = type.dimensions().get(i).size().get();
+        return dimensionSizes;
+    }
+    
     @Override
     public String toString(ToStringContext context) { return type + "(" + generator + ")"; }
 

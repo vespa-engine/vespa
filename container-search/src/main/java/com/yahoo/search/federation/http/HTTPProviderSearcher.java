@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * Implementations must override one of the <code>unmarshal</code> methods to unmarshal the response.
  * </p>
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  * @author bratseth
  */
 public abstract class HTTPProviderSearcher extends HTTPSearcher {
@@ -152,8 +152,7 @@ public abstract class HTTPProviderSearcher extends HTTPSearcher {
         return result;
     }
 
-    private Result statisticsBeforeInspection(Result result,
-            Hit requestMeta, Exception e) {
+    private Result statisticsBeforeInspection(Result result, Hit requestMeta, Exception e) {
         int hitCount = result.getConcreteHitCount();
         if (hitCount == 0) {
             emptyResults.increment();
@@ -164,8 +163,7 @@ public abstract class HTTPProviderSearcher extends HTTPSearcher {
             requestMeta.setField(LOG_HITCOUNT, Integer.valueOf(hitCount));
         }
 
-        return inspectAndReturnFinalResult(result,
-                requestMeta, e);
+        return inspectAndReturnFinalResult(result, requestMeta, e);
     }
 
 

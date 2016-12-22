@@ -129,6 +129,14 @@ public class TensorType {
         return dimensions.equals(((TensorType)other).dimensions);
     }
 
+    /** Returns whether the given type has the same dimension names as this */
+    public boolean mathematicallyEquals(TensorType other) {
+        if (dimensions().size() != other.dimensions().size()) return false;
+        for (int i = 0; i < dimensions().size(); i++)
+            if (!dimensions().get(i).name().equals(other.dimensions().get(i).name())) return false;
+        return true;
+    }
+
     @Override
     public int hashCode() {
         return dimensions.hashCode();

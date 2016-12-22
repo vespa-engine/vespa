@@ -208,9 +208,9 @@ public class Response {
     }
 
     /**
-     * <p>This is a convenience method for creating a Response with status {@link Status#REQUEST_TIMEOUT} and passing
+     * This is a convenience method for creating a Response with status {@link Status#REQUEST_TIMEOUT} and passing
      * that to the given {@link ResponseHandler#handleResponse(Response)}. For trivial implementations of {@link
-     * RequestHandler#handleTimeout(Request, ResponseHandler)}, simply call this method.</p>
+     * RequestHandler#handleTimeout(Request, ResponseHandler)}, simply call this method.
      *
      * @param handler The handler to pass the timeout {@link Response} to.
      */
