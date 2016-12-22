@@ -443,7 +443,7 @@ public class IndexedTensor implements Tensor {
         public boolean equals(Object o) {
             if (o == this) return true;
             if ( ! ( o instanceof Map.Entry)) return false;
-            Map.Entry other = (Map.Entry)o;
+            Map.Entry<?,?> other = (Map.Entry)o;
             if ( ! this.getValue().equals(other.getValue())) return false;
             if ( ! this.getKey().equals(other.getKey())) return false;
             return true;

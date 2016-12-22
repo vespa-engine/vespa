@@ -5,6 +5,7 @@ import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -227,7 +228,7 @@ public class EvaluationTestCase {
         // argmin        
         tester.assertEvaluates("{ {x:0,y:0}:1, {x:1,y:0}:0 }",
                                "tensor0 != tensor1", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:7 }");
-        
+
         // tensor rename
         tester.assertEvaluates("{ {newX:0,y:0}:3 }", "rename(tensor0, x, newX)", "{ {x:0,y:0}:3.0 }");
         tester.assertEvaluates("{  {x:0,y:0}:3, {x:1,y:0}:5 }", "rename(tensor0, (x, y), (y, x))", "{ {x:0,y:0}:3.0, {x:0,y:1}:5.0 }");
@@ -235,11 +236,11 @@ public class EvaluationTestCase {
         // tensor generate
         tester.assertEvaluates("{ {x:0,y:0}:0, {x:1,y:0}:0, {x:0,y:1}:1, {x:1,y:1}:0, {x:0,y:2}:0, {x:1,y:2}:1 }", "tensor(x[2],y[3])(x+1==y)");
         tester.assertEvaluates("{ {y:0,x:0}:0, {y:1,x:0}:0, {y:0,x:1}:1, {y:1,x:1}:0, {y:0,x:2}:0, {y:1,x:2}:1 }", "tensor(y[2],x[3])(y+1==x)");
-        // TODO
-        // range
-        // diag
-        // fill
-        // random
+        tester.assertEvaluates("{ {x:0,y:0,z:0}:1 }", "tensor(x[1],y[1],z[1])((x==y)*(y==z))");
+        // - generate composites
+        tester.assertEvaluates("{ {x:0}:0, {x:1}:1, {x:2}:2 }", "range(x[3])");
+        tester.assertEvaluates("{ {x:0,y:0,z:0}:1, {x:0,y:0,z:1}:0, {x:0,y:1,z:0}:0, {x:0,y:1,z:1}:0, {x:1,y:0,z:0}:0, {x:1,y:0,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:1, }", "diag(x[2],y[2],z[2])");
+        tester.assertEvaluates("6", "reduce(random(x[2],y[3]), count)");
         
         // composite functions
         tester.assertEvaluates("{ {x:0}:0.25, {x:1}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
@@ -262,12 +263,6 @@ public class EvaluationTestCase {
         // tensor result dimensions are given from argument dimensions, not the resulting values
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
         tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");
-    }
-    
-    @Test
-    public void testItz() {
-        EvaluationTester tester = new EvaluationTester();
-        tester.assertEvaluates("{ {x:0}:0.25, {x:1}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
     }
     
     @Test
