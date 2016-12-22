@@ -110,8 +110,8 @@ int Test::Main()
         ASSERT_TRUE(uint64V.is_lock_free());
     }
     {
-        std::atomic<vespamalloc::Atomic::TaggedPtr> taggedPtr;
-        ASSERT_EQUAL(16, sizeof(vespamalloc::Atomic::TaggedPtr));
+        std::atomic<vespamalloc::TaggedPtr> taggedPtr;
+        ASSERT_EQUAL(16, sizeof(vespamalloc::TaggedPtr));
         ASSERT_TRUE(taggedPtr.is_lock_free());
     }
 
