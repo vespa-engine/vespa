@@ -1,0 +1,7 @@
+{
+    "fields": {
+         "album": {
+             "assign": "Thriller"
+         }
+    }
+}
