@@ -62,29 +62,6 @@ public final class ApplicationId implements Comparable<ApplicationId> {
         this.serializedForm = toSerializedForm();
     }
 
-    // TODO: Remove code between lines with ----------- when oldest config model used is 6.49.
-    /* ------------------- */
-    public static final TenantName HOSTED_VESPA_TENANT = TenantName.from("hosted-vespa");
-    // TODO: Remove references to routing application, or rename them to zone
-    // application, once everything (like Chef recipes) refers to the zone
-    // application name.
-    public static final ApplicationName ROUTING_APPLICATION = ApplicationName.from("routing");
-    public static final ApplicationName ZONE_APPLICATION = ApplicationName.from("zone");
-    public static final ApplicationId HOSTED_ZONE_APPLICATION_ID =
-        new ApplicationId.Builder()
-        .tenant(HOSTED_VESPA_TENANT)
-        .applicationName(ROUTING_APPLICATION)
-        .build();
-
-
-    // TODO: Remove this abhorrent layer violation
-    public boolean isHostedVespaRoutingApplication() {
-        return HOSTED_VESPA_TENANT.equals(tenant) &&
-	    (ROUTING_APPLICATION.equals(application) ||
-	     ZONE_APPLICATION.equals(application));
-    }
-    /* ------------------- */
-
     public static ApplicationId from(TenantName tenant, ApplicationName application, InstanceName instanceName) {
         return new ApplicationId(tenant, application, instanceName);
     }

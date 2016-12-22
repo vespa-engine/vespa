@@ -36,18 +36,6 @@ public interface Provisioner {
     void activate(NestedTransaction transaction, ApplicationId application, Collection<HostSpec> hosts);
 
     /**
-     * Notifies provisioner that an application has been removed.
-     *
-     * @param application The {@link ApplicationId} that was removed.
-     * @deprecated use remove(transaction, application) instead
-     */
-    // TODO: Remove when no version older than 6.51 is in use
-    @Deprecated
-    default void removed(ApplicationId application) {
-        throw new IllegalStateException("Unexpected use of deprecated method");
-    }
-
-    /**
      * Transactionally remove this application.
      *
      * @param transaction Transaction with operations to commit together with any operations done within the provisioner.

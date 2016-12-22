@@ -54,15 +54,16 @@ import java.util.logging.Logger;
  */
 //TODO Rename to TenantRepository
 public class Tenants implements ConnectionStateListener, PathChildrenCacheListener {
-
-    private static final Logger log = Logger.getLogger(Tenants.class.getName());
-
+    public static final TenantName HOSTED_VESPA_TENANT = TenantName.from("hosted-vespa");
     private static final TenantName DEFAULT_TENANT = TenantName.defaultName();
     private static final List<TenantName> SYSTEM_TENANT_NAMES = Arrays.asList(
             DEFAULT_TENANT,
-            ApplicationId.HOSTED_VESPA_TENANT);
+            HOSTED_VESPA_TENANT);
+
     private static final Path tenantsPath = Path.fromString("/config/v2/tenants/");
     private static final Path vespaPath = Path.fromString("/vespa");
+
+    private static final Logger log = Logger.getLogger(Tenants.class.getName());
 
     private final Map<TenantName, Tenant> tenants = new LinkedHashMap<>();
     private final GlobalComponentRegistry globalComponentRegistry;

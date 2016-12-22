@@ -13,6 +13,7 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -44,7 +45,7 @@ public class RoutingProducerTest {
         Map<TenantName, Map<ApplicationId, Application>> tMap = new LinkedHashMap<>();
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
-        TenantName routing = TenantName.from(ApplicationId.HOSTED_VESPA_TENANT.value());
+        TenantName routing = TenantName.from(Tenants.HOSTED_VESPA_TENANT.value());
         tMap.put(foo, createTestApplications(foo, deployStateBuilder));
         tMap.put(bar, createTestApplications(bar, deployStateBuilder));
         tMap.put(routing, createTestApplications(routing, deployStateBuilder));
@@ -55,7 +56,7 @@ public class RoutingProducerTest {
         Map<ApplicationId, Application> aMap = new LinkedHashMap<>();
         ApplicationId fooApp = new ApplicationId.Builder().tenant(tenant).applicationName("foo").build();
         ApplicationId barApp = new ApplicationId.Builder().tenant(tenant).applicationName("bar").build();
-        ApplicationId routingApp = new ApplicationId.Builder().tenant(tenant).applicationName(ApplicationId.ROUTING_APPLICATION.value()).build();
+        ApplicationId routingApp = new ApplicationId.Builder().tenant(tenant).applicationName(RoutingProducer.ROUTING_APPLICATION.value()).build();
         aMap.put(fooApp, createApplication(fooApp, deploystateBuilder));
         aMap.put(barApp, createApplication(barApp, deploystateBuilder));
         aMap.put(routingApp, createApplication(routingApp, deploystateBuilder));
