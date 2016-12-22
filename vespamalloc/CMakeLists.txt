@@ -3,7 +3,7 @@ add_compile_options(-fvisibility=hidden)
 add_definitions(-DPARANOID_LEVEL=0)
 
 vespa_define_module(
-    DEPENDS
+    TEST_DEPENDS
     fastos
     vespalib
     vespalog
