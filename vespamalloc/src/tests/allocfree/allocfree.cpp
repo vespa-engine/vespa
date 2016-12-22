@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include "producerconsumer.h"
+#include <vespa/vespalib/testkit/testapp.h>
 #include <map>
+
+#include <vespa/log/log.h>
+LOG_SETUP("allocfree_test");
 
 using vespalib::Consumer;
 using vespalib::Producer;
 using vespalib::ProducerConsumer;
-
-LOG_SETUP("allocfree_test");
 
 TEST_SETUP(Test);
 
