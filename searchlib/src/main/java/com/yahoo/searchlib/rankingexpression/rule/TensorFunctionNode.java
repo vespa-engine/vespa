@@ -46,7 +46,7 @@ public class TensorFunctionNode extends CompositeNode {
     }
 
     @Override
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {   
+    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
         // Serialize as primitive
         return function.toPrimitive().toString(new ExpressionNodeToStringContext(context, path, this));
     }
@@ -105,9 +105,19 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
+        public String toString() {
+            return toString(ExpressionNodeToStringContext.empty);
+        }
+        
+        @Override
         public String toString(ToStringContext c) {
-            ExpressionNodeToStringContext context = (ExpressionNodeToStringContext)c;
-            return expression.toString(context.context, context.path, context.parent);
+            if (c instanceof ExpressionNodeToStringContext) {
+                ExpressionNodeToStringContext context = (ExpressionNodeToStringContext) c;
+                return expression.toString(context.context, context.path, context.parent);
+            }
+            else {
+                return expression.toString();
+            }
         }
 
     }
@@ -119,6 +129,8 @@ public class TensorFunctionNode extends CompositeNode {
         final Deque<String> path;
         final CompositeNode parent;
         
+        public static final ExpressionNodeToStringContext empty = new ExpressionNodeToStringContext(null, null, null);
+
         public ExpressionNodeToStringContext(SerializationContext context, Deque<String> path, CompositeNode parent) {
             this.context = context;
             this.path = path;

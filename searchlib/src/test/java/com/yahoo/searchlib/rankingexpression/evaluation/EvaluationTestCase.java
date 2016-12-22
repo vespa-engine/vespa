@@ -250,6 +250,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0,y:0}:81.0, {x:1,y:0}:88.0 }", "xw_plus_b(tensor0, tensor1, tensor2, x)", "{ {x:0}:15, {x:1}:12 }", "{ {y:0}:3 }", "{ {x:0}:0, {x:1}:7 }");
 
         // expressions combining functions
+        tester.assertEvaluates("tensor(y{}):{{y:6}:0}}", "matmul(tensor0, diag(x[5],y[7]), x)", "tensor(x{},y{}):{{x:4,y:6}:1})");
+        tester.assertEvaluates("tensor(y{}):{{y:6}:10}}", "matmul(tensor0, range(x[5],y[7]), x)", "tensor(x{},y{}):{{x:4,y:6}:1})");
         tester.assertEvaluates(String.valueOf(7.5 + 45 + 1.7),
                                "sum( " +               // model computation:
                                "      tensor0 * tensor1 * tensor2 " + // - feature combinations

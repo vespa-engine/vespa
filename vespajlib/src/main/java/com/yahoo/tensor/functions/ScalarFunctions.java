@@ -102,7 +102,7 @@ public class ScalarFunctions {
         }
 
         @Override
-        public String toString() { return "random()"; }
+        public String toString() { return "random"; }
 
     }
 

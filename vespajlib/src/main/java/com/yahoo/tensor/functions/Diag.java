@@ -34,7 +34,7 @@ public class Diag extends CompositeTensorFunction {
 
     @Override
     public TensorFunction replaceArguments(List<TensorFunction> arguments) {
-        if ( arguments.size() != 1)
+        if ( arguments.size() != 0)
             throw new IllegalArgumentException("Diag must have 0 arguments, got " + arguments.size());
         return this;
     }
