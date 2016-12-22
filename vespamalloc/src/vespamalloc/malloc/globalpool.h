@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespamalloc/malloc/common.h>
-#include <vespamalloc/malloc/allocchunk.h>
-#include <vespamalloc/malloc/datasegment.h>
+#include "common.h"
+#include "allocchunk.h"
+#include "datasegment.h"
 #include <algorithm>
 
 #define USE_STAT2(a) a
@@ -58,13 +58,13 @@ private:
                  _exchangeFree(0),
                  _exactAlloc(0),
                  _return(0),_malloc(0) { }
-        size_t _getAlloc;
-        size_t _getFree;
-        size_t _exchangeAlloc;
-        size_t _exchangeFree;
-        size_t _exactAlloc;
-        size_t _return;
-        size_t _malloc;
+        std::atomic<size_t> _getAlloc;
+        std::atomic<size_t> _getFree;
+        std::atomic<size_t> _exchangeAlloc;
+        std::atomic<size_t> _exchangeFree;
+        std::atomic<size_t> _exactAlloc;
+        std::atomic<size_t> _return;
+        std::atomic<size_t> _malloc;
         bool isUsed()       const {
             // Do not count _getFree.
             return (_getAlloc || _exchangeAlloc || _exchangeFree || _exactAlloc || _return || _malloc);
@@ -73,11 +73,11 @@ private:
 
     Mutex                       _mutex;
     ChunkSList                * _chunkPool;
-    AllocFree                   _scList[NUM_SIZE_CLASSES] VESPALIB_ATOMIC_TAGGEDPTR_ALIGNMENT;
+    AllocFree                   _scList[NUM_SIZE_CLASSES] ATOMIC_TAGGEDPTR_ALIGNMENT;
     DataSegment<MemBlockPtrT> & _dataSegment;
-    size_t                      _getChunks;
+    std::atomic<size_t>         _getChunks;
     size_t                      _getChunksSum;
-    size_t                      _allocChunkList;
+    std::atomic<size_t>         _allocChunkList;
     Stat                        _stat[NUM_SIZE_CLASSES];
     static size_t               _threadCacheLimit __attribute__((visibility("hidden")));
     static size_t               _alwaysReuseLimit __attribute__((visibility("hidden")));

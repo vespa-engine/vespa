@@ -1,9 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespamalloc/malloc/threadproxy.h>
+#include "threadproxy.h"
 #include <dlfcn.h>
-#include <pthread.h>
-#include <cstdio>
-#include <cerrno>
 
 namespace vespamalloc {
 
@@ -34,7 +31,7 @@ typedef int (*pthread_create_function) (pthread_t *thread,
 int linuxthreads_pthread_getattr_np(pthread_t pid, pthread_attr_t *dst);
 
 static void * _G_mallocThreadProxyReturnAddress = NULL;
-static volatile size_t _G_threadCount = 1;  // You always have the main thread.
+static volatile std::atomic<size_t> _G_threadCount(1);  // You always have the main thread.
 
 static void cleanupThread(void * arg)
 {
@@ -42,7 +39,7 @@ static void cleanupThread(void * arg)
     delete ta;
     vespamalloc::_G_myMemP->quitThisThread();
     vespamalloc::Mutex::subThread();
-    vespalib::Atomic::postDec(&_G_threadCount);
+    _G_threadCount.fetch_sub(1);
 }
 
 void * mallocThreadProxy (void * arg)
@@ -79,7 +76,7 @@ VESPA_DLL_EXPORT int local_pthread_create (pthread_t *thread,
 {
     size_t numThreads;
     for (numThreads = _G_threadCount
-        ;(numThreads < vespamalloc::_G_myMemP->getMaxNumThreads()) && ! vespalib::Atomic::cmpSwap(&_G_threadCount, numThreads+1, numThreads)
+        ;(numThreads < vespamalloc::_G_myMemP->getMaxNumThreads()) && ! _G_threadCount.compare_exchange_strong(numThreads, numThreads+1)
         ; numThreads = _G_threadCount) {
     }
     if (numThreads >= vespamalloc::_G_myMemP->getMaxNumThreads()) {

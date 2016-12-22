@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespamalloc/malloc/threadpool.h>
+#include "threadpool.h"
 
 namespace vespamalloc {
 
@@ -41,8 +41,8 @@ private:
     ThreadListT & operator = (const ThreadListT & tl);
     enum {ThreadStackSize=2048*1024};
     volatile bool              _isThreaded;
-    volatile size_t            _threadCount;
-    volatile size_t            _threadCountAccum;
+    std::atomic<size_t>        _threadCount;
+    std::atomic<size_t>        _threadCountAccum;
     ThreadPool                 _threadVector[NUM_THREADS];
     AllocPoolT<MemBlockPtrT> & _allocPool;
     static __thread ThreadPool * _myPool TLS_LINKAGE;

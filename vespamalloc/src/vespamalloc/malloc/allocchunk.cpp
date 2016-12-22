@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespamalloc/malloc/allocchunk.h>
+#include "allocchunk.h"
 
 namespace vespamalloc {
 
@@ -12,9 +12,7 @@ void AFListBase::init()
     _link =  new (_atomicLinkSpace)AtomicLink();
 }
 
-AFListBase::LinkI::~LinkI()
-{
-}
+AFListBase::LinkI::~LinkI() { }
 
 void AFListBase::linkInList(HeadPtr & head, AFListBase * list)
 {

@@ -1,12 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/atomic.h>
-#include <vespa/vespalib/util/optimized.h>
 #include <new>
+#include <atomic>
 #include <vespamalloc/util/osmem.h>
-
-using vespalib::Atomic;
 
 extern "C" void MallocRecurseOnSuspend(bool recurse) __attribute__ ((noinline));
 
@@ -58,13 +55,20 @@ typedef MmapMemory OSMemory;
 
 typedef int SizeClassT;
 
+   
+inline int msbIdx(uint64_t v) {
+    int64_t result;
+    __asm __volatile("bsrq %0,%0" : "=r" (result) : "0" (v));
+    return result;
+}    
+
 template <size_t MinClassSizeC>
 class CommonT
 {
 public:
     enum {MinClassSize = MinClassSizeC};
     static inline SizeClassT sizeClass(size_t sz) {
-        SizeClassT tmp(vespalib::Optimized::msbIdx(sz - 1) - (MinClassSizeC - 1));
+        SizeClassT tmp(msbIdx(sz - 1) - (MinClassSizeC - 1));
         return (sz <= (1 << MinClassSizeC )) ? 0 : tmp;
     }
     static inline size_t classSize(SizeClassT sc) { return (size_t(1) << (sc + MinClassSizeC)); }
@@ -82,14 +86,14 @@ public:
     ~Mutex()           { quit(); }
     void lock();
     void unlock();
-    static void addThread()      { Atomic::postInc(&_threadCount); }
-    static void subThread()      { Atomic::postDec(&_threadCount); }
+    static void addThread()      { _threadCount++; }
+    static void subThread()      { _threadCount--; }
     static void stopRecursion()  { _stopRecursion = true; }
     static void allowRecursion() { _stopRecursion = false; }
     void init();
     void quit();
 private:
-    static uint32_t _threadCount;
+    static std::atomic<uint32_t> _threadCount;
     static bool     _stopRecursion;
     Mutex(const Mutex & org);
     Mutex & operator = (const Mutex & org);
