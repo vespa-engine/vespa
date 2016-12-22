@@ -2,6 +2,7 @@
 package com.yahoo.config.model.test;
 
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.Version;
@@ -241,4 +242,12 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
     }
 
+    @Override
+    public void validateXML(DeployLogger logger) throws IOException {
+        if (failOnValidateXml) {
+            throw new IllegalArgumentException("Error in application package");
+        } else {
+            throw new UnsupportedOperationException("This application package cannot validate XML");
+        }
+    }
 }
