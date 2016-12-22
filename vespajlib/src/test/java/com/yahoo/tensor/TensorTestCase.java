@@ -3,6 +3,7 @@ package com.yahoo.tensor;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.evaluation.VariableTensor;
+import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
@@ -82,6 +83,7 @@ public class TensorTestCase {
         assertEquals(Tensor.from("{ {x:0,y:0,z:0}:1, {x:0,y:1,z:0}:0, {x:1,y:0,z:0}:0, {x:1,y:1,z:0}:0, {x:2,y:0,z:0}:0, {x:2,y:1,z:0}:0, "+
                                  "  {x:0,y:0,z:1}:0, {x:0,y:1,z:1}:0, {x:1,y:0,z:1}:0, {x:1,y:1,z:1}:1, {x:2,y:0,z:1}:0, {x:2,y:1,z:1}:00 }"),
                      Tensor.diag(new TensorType.Builder().indexed("x", 3).indexed("y", 2).indexed("z", 2).build()));
+        assertEquals(Tensor.from("{ {x:1}:0, {x:3}:1, {x:9}:0 }"), Tensor.from("{ {x:1}:1, {x:3}:5, {x:9}:3 }").argmax("x"));
     }
     
     /** Test the same computation made in various ways which are implemented with special-case optimizations */

@@ -131,6 +131,8 @@ TOKEN :
     <MATMUL: "matmul"> |
     <SOFTMAX: "softmax"> |
     <XW_PLUS_B: "xw_plus_b"> |
+    <ARGMAX: "argmax"> |
+    <ARGMIN: "argmin"> |
 
     <AVG: "avg" > |
     <COUNT: "count"> |
@@ -362,7 +364,9 @@ ExpressionNode tensorFunction() :
         tensorExpression = tensorL2Normalize() |
         tensorExpression = tensorMatmul() |
         tensorExpression = tensorSoftmax() |
-        tensorExpression = tensorXwPlusB()
+        tensorExpression = tensorXwPlusB() |
+        tensorExpression = tensorArgmax() |
+        tensorExpression = tensorArgmin()
     )
     { return tensorExpression; }
 }
@@ -521,6 +525,26 @@ ExpressionNode tensorXwPlusB() :
                                                 dimension)); }
 }
 
+ExpressionNode tensorArgmax() :
+{
+    ExpressionNode tensor;
+    String dimension;
+}
+{
+    <ARGMAX> <LBRACE> tensor = expression() <COMMA> dimension = identifier() <RBRACE>
+    { return new TensorFunctionNode(new Argmax(TensorFunctionNode.wrapArgument(tensor), dimension)); }
+}
+
+ExpressionNode tensorArgmin() :
+{
+    ExpressionNode tensor;
+    String dimension;
+}
+{
+    <ARGMIN> <LBRACE> tensor = expression() <COMMA> dimension = identifier() <RBRACE>
+    { return new TensorFunctionNode(new Argmin(TensorFunctionNode.wrapArgument(tensor), dimension)); }
+}
+
 LambdaFunctionNode lambdaFunction() :
 {
     List<String> variables;
@@ -582,6 +606,8 @@ String tensorFunctionName() :
     ( <MATMUL>       { return token.image; } ) |
     ( <SOFTMAX>      { return token.image; } ) |
     ( <XW_PLUS_B>    { return token.image; } ) |
+    ( <ARGMAX>       { return token.image; } ) |
+    ( <ARGMIN>       { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
