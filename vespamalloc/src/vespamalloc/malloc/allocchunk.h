@@ -24,9 +24,8 @@ public:
      * Very early Amd K7/8 CPUs are lacking this and will fail (Illegal Instruction).
      **/
     struct TaggedPtr {
-        TaggedPtr() : _ptr(nullptr), _tag(0) {}
-
-        TaggedPtr(void *h, size_t t) : _ptr(h), _tag(t) {}
+        TaggedPtr() noexcept : _ptr(nullptr), _tag(0) { }
+        TaggedPtr(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
 
         void *_ptr;
         size_t _tag;
@@ -64,41 +63,12 @@ public:
     AFListBase() : _next(NULL) { }
     void setNext(AFListBase * csl)           { _next = csl; }
     static void init();
-    static void enableThreadSupport()   { _link->enableThreadSupport(); }
     static void linkInList(HeadPtr & head, AFListBase * list);
-    static void linkIn(HeadPtr & head, AFListBase * csl, AFListBase * tail) {
-        _link->linkIn(head, csl, tail);
-    }
+    static void linkIn(HeadPtr & head, AFListBase * csl, AFListBase * tail);
 protected:
     AFListBase * getNext()                      { return _next; }
-    static AFListBase * linkOut(HeadPtr & head) { return _link->linkOut(head); }
+    static AFListBase * linkOut(HeadPtr & head);
 private:
-    class LinkI
-    {
-    public:
-        virtual ~LinkI();
-        virtual void enableThreadSupport() { }
-        virtual void linkIn(HeadPtr & head, AFListBase * csl, AFListBase * tail) = 0;
-        virtual AFListBase * linkOut(HeadPtr & head) = 0;
-    };
-    class AtomicLink : public LinkI
-    {
-    private:
-        virtual void linkIn(HeadPtr & head, AFListBase * csl, AFListBase * tail);
-        virtual AFListBase * linkOut(HeadPtr & head);
-    };
-    class LockedLink : public LinkI
-    {
-    public:
-        virtual void enableThreadSupport() { _mutex.init(); }
-    private:
-        virtual void linkIn(HeadPtr & head, AFListBase * csl, AFListBase * tail);
-        virtual AFListBase * linkOut(HeadPtr & head);
-        Mutex _mutex;
-    };
-    static char _atomicLinkSpace[sizeof(AtomicLink)];
-    static char _lockedLinkSpace[sizeof(LockedLink)];
-    static LinkI     *_link;
     AFListBase       *_next;
 };
 
