@@ -3,6 +3,7 @@ search music {
         field artist type string {
             indexing: summary | index
         }
+
         field artistId type string {
             indexing: summary | attribute
         }
@@ -19,13 +20,13 @@ search music {
             indexing: summary
         }
 
-	    field year type int {
-	        indexing: summary | attribute
-	    }
+        field year type int {
+            indexing: summary | attribute
+        }
 
-	    field popularity type int {
-	        indexing: summary | attribute
-	    }
+        field popularity type int {
+            indexing: summary | attribute
+        }
     }
 
     fieldset default {
@@ -33,8 +34,8 @@ search music {
     }
 
     rank-profile song inherits default {
-	  first-phase {
-	    expression:nativeRank(artist,title,album) + if(isNan(attribute(popularity)) == 1, 0,attribute(popularity))
-      }
+        first-phase {
+            expression:nativeRank(artist,title,album) + if(isNan(attribute(popularity)) == 1, 0,attribute(popularity))
+        }
     }
 }
