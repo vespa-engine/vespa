@@ -46,8 +46,8 @@ private:
     {
     public:
         AllocFree() : _full(), _empty() { }
-        typename ChunkSList::HeadPtr _full;
-        typename ChunkSList::HeadPtr _empty;
+        typename ChunkSList::AtomicHeadPtr _full;
+        typename ChunkSList::AtomicHeadPtr _empty;
     };
     class Stat
     {
@@ -73,7 +73,7 @@ private:
 
     Mutex                       _mutex;
     ChunkSList                * _chunkPool;
-    AllocFree                   _scList[NUM_SIZE_CLASSES] ATOMIC_TAGGEDPTR_ALIGNMENT;
+    AllocFree                   _scList[NUM_SIZE_CLASSES];
     DataSegment<MemBlockPtrT> & _dataSegment;
     std::atomic<size_t>         _getChunks;
     size_t                      _getChunksSum;

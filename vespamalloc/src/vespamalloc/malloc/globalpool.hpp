@@ -38,11 +38,11 @@ template <typename MemBlockPtrT>
 typename AllocPoolT<MemBlockPtrT>::ChunkSList *
 AllocPoolT<MemBlockPtrT>::getFree(SizeClassT sc)
 {
-    typename ChunkSList::HeadPtr & empty = _scList[sc]._empty;
+    typename ChunkSList::AtomicHeadPtr & empty = _scList[sc]._empty;
     ChunkSList * csl(NULL);
     while ((csl = ChunkSList::linkOut(empty)) == NULL) {
         Guard sync(_mutex);
-        if (empty._ptr == NULL) {
+        if (empty.load(std::memory_order_relaxed)._ptr == NULL) {
             ChunkSList * ncsl(getChunks(sync, 1));
             if (ncsl) {
                 ChunkSList::linkInList(empty, ncsl);
@@ -61,10 +61,10 @@ typename AllocPoolT<MemBlockPtrT>::ChunkSList *
 AllocPoolT<MemBlockPtrT>::getAlloc(SizeClassT sc)
 {
     ChunkSList * csl(NULL);
-    typename ChunkSList::HeadPtr & full = _scList[sc]._full;
+    typename ChunkSList::AtomicHeadPtr & full = _scList[sc]._full;
     while ((csl = ChunkSList::linkOut(full)) == NULL) {
         Guard sync(_mutex);
-        if (full._ptr == NULL) {
+        if (full.load(std::memory_order_relaxed)._ptr == NULL) {
             ChunkSList * ncsl(malloc(sync, sc));
             if (ncsl) {
                 ChunkSList::linkInList(full, ncsl);
