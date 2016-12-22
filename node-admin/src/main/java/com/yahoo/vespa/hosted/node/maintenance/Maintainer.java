@@ -182,8 +182,6 @@ public class Maintainer {
             ContainerName containerName = new ContainerName(container);
 
             Logger logger = Logger.getLogger(ArchiveApplicationData.class.getName());
-            Maintainer maintainer = new Maintainer();
-
             File yVarDir = environment.pathInNodeAdminFromPathInNode(containerName, "/home/y/var").toFile();
             if (yVarDir.exists()) {
                 logger.info("Recursively deleting " + yVarDir);

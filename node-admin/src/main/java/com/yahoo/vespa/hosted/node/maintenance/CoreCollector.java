@@ -68,8 +68,9 @@ public class CoreCollector {
     }
 
     List<String> readBacktrace(Path coredumpPath, Path binPath, boolean allThreads) throws IOException, InterruptedException {
-        ProcessResult result = maintainer.exec(GDB_PATH + " -n -ex " + (allThreads ? "thread apply all bt" : "bt") +
-                " -batch " + binPath.toString() + " " + coredumpPath.toString());
+        String threads = allThreads ? "thread apply all bt" : "bt";
+        ProcessResult result = maintainer.exec(GDB_PATH, "-n", "-ex", threads, "-batch",
+                binPath.toString(), coredumpPath.toString());
         if (! result.isSuccess()) {
             throw new RuntimeException("Failed to read backtrace " + result);
         }
@@ -79,7 +80,7 @@ public class CoreCollector {
     public Map<String, Object> collect(Path coredumpPath) {
         Map<String, Object> data = new LinkedHashMap<>();
         try {
-            coredumpPath = decompressCoredump(coredumpPath);
+            coredumpPath = compressCoredump(coredumpPath);
             Path binPath = readBinPath(coredumpPath);
 
             data.put("bin_path", binPath.toString()); // Gson can't deal with Path
@@ -94,24 +95,33 @@ public class CoreCollector {
     }
 
 
-    private Path decompressCoredump(Path coredumpPath) throws IOException, InterruptedException {
-        if (! coredumpPath.toString().endsWith(".lz4")) return coredumpPath;
+    /**
+     * This method will either compress or decompress the core dump if the input path is to a decompressed or
+     * compressed core dump, respectively.
+     *
+     * @return Path to the decompressed core dump
+     */
+    private Path compressCoredump(Path coredumpPath) throws IOException, InterruptedException {
+        if (! coredumpPath.toString().endsWith(".lz4")) {
+            maintainer.exec("/home/y/bin64/lz4", coredumpPath.toString(), coredumpPath.toString() + ".lz4");
+            return coredumpPath;
 
-        if (! diskSpaceAvailable(coredumpPath)) {
-            throw new RuntimeException("Not decompressing " + coredumpPath + " due to not enough disk space available");
+        } else {
+            if (!diskSpaceAvailable(coredumpPath)) {
+                throw new RuntimeException("Not decompressing " + coredumpPath + " due to not enough disk space available");
+            }
+
+            Path decompressedPath = Paths.get(coredumpPath.toString().replaceFirst("\\.lz4$", ""));
+            ProcessResult result = maintainer.exec("/home/y/bin64/lz4", "-d", coredumpPath.toString(), decompressedPath.toString());
+            if (!result.isSuccess()) {
+                throw new RuntimeException("Failed to decompress file " + coredumpPath + ": " + result);
+            }
+            return decompressedPath;
         }
-
-        Path decompressedPath = Paths.get(coredumpPath.toString().replaceFirst("\\.lz4$", ""));
-
-        ProcessResult result = maintainer.exec("/home/y/bin64/lz4", "-d", coredumpPath.toString(), decompressedPath.toString());
-        if (! result.isSuccess()) {
-            throw new RuntimeException("Failed to decompress file " + coredumpPath + ": " + result);
-        }
-        return decompressedPath;
     }
 
     /**
-     * Delete the coredump unless:
+     * Delete the core dump unless:
      * - The file is compressed
      * - There is no compressed file (i.e. it was not decompressed in the first place)
      */
