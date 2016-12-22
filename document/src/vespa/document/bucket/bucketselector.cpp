@@ -1,9 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/document/bucket/bucketselector.h>
 
-#include <algorithm>
-#include <vespa/document/bucket/bucketidfactory.h>
+#include "bucketselector.h"
+#include "bucketidfactory.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/idstring.h>
 #include <vespa/document/select/node.h>
@@ -11,6 +9,7 @@
 #include <vespa/document/select/visitor.h>
 #include <vespa/document/select/branch.h>
 #include <vespa/document/select/compare.h>
+#include <algorithm>
 
 namespace document {
 

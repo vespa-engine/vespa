@@ -6,17 +6,19 @@
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
 
+class FastOS_SocketInterface;
+
 namespace vespalib {
 namespace ws {
 
 class Socket
 {
 private:
-    std::unique_ptr<FastOS_Socket> _socket;
+    std::unique_ptr<FastOS_SocketInterface> _socket;
 
 public:
     typedef std::unique_ptr<Socket> UP;
-    Socket(std::unique_ptr<FastOS_Socket> socket);
+    Socket(std::unique_ptr<FastOS_SocketInterface> socket);
     Socket(const vespalib::string &host, int port);
     virtual ~Socket();
     ssize_t read(char *buf, size_t len);

@@ -7,6 +7,8 @@
 #include "simple_buffer.h"
 #include <memory>
 
+class FastOS_SocketInterface;
+
 namespace vbench {
 
 class Socket : public Stream

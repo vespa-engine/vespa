@@ -3,12 +3,11 @@
 
 #include "visitor.h"
 #include "resultset.h"
+#include <memory>
 
-namespace document
-{
+namespace document {
 
-namespace select
-{
+namespace select {
 
 class Node;
 class ValueNode;

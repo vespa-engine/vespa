@@ -2,6 +2,7 @@
 #pragma once
 
 #include "test_kit.h"
+#include <vespa/fastos/app.h>
 
 #undef TEST_MASTER
 #define TEST_MASTER vespalib::TestApp::master
@@ -144,7 +145,6 @@ namespace vespalib {
  *
  * Simple test example:
  * <pre>
- * \#include <vespa/fastos/fastos.h>
  * \#include <vespa/vespalib/testkit/testapp.h>
  *
  * TEST_SETUP(Test)

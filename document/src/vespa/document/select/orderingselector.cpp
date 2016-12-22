@@ -1,15 +1,15 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include "orderingselector.h"
 
-#include <algorithm>
-#include <vespa/document/base/documentid.h>
-#include <vespa/document/base/idstring.h>
+#include "orderingselector.h"
 #include "node.h"
 #include "valuenode.h"
 #include "visitor.h"
 #include "compare.h"
 #include "branch.h"
+
+#include <algorithm>
+#include <vespa/document/base/documentid.h>
+#include <vespa/document/base/idstring.h>
 
 namespace document {
 

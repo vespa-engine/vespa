@@ -1,18 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
 
+#include "weightedsetfieldvalue.h"
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/datatype/arraydatatype.h>
-#include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/util/bytebuffer.h>
-#include <vespa/vespalib/objects/identifiable.h>
+#include <ostream>
 
 using vespalib::Identifiable;
-
-LOG_SETUP(".document.fieldvalue.weightedset");
 
 /// \todo TODO (was warning):  Find a way to search through internal map without duplicating keys to create shared pointers.
 
@@ -216,7 +208,6 @@ WeightedSetFieldValue::onIterateNested(FieldPath::const_iterator start,
                                        FieldPath::const_iterator end_,
                                        IteratorHandler & handler) const
 {
-    LOG(spam, "iterating over WeightedSetFieldValue");
     return _map.iterateNestedImpl(start, end_, handler, *this);
 }
 

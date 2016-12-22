@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/fastos/app.h>
+
 #define TEST_STR(str) #str
 #define TEST_CAT_IMPL(a, b) a ## b
 #define TEST_CAT(a, b) TEST_CAT_IMPL(a, b)

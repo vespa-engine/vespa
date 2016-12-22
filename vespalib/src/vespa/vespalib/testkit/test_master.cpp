@@ -1,7 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "test_master.h"
+#include <vespa/vespalib/util/barrier.h>
 
 namespace vespalib {
 
@@ -35,9 +35,8 @@ TestMaster::threadState(const vespalib::LockGuard &)
     if (_threadState == 0) {
         std::ostringstream threadName;
         threadName << "thread-" << _threadStorage.size();
-        vespalib::LinkedPtr<ThreadState> thread(new ThreadState(threadName.str()));
-        _threadStorage.push_back(thread);
-        _threadState = thread.get();
+        _threadStorage.push_back(std::make_unique<ThreadState>(threadName.str()));
+        _threadState = _threadStorage.back().get();
     }
     return *_threadState;
 }

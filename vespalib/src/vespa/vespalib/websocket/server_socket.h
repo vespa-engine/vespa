@@ -4,6 +4,7 @@
 #pragma once
 
 #include "socket.h"
+#include <vespa/fastos/serversocket.h>
 
 namespace vespalib {
 namespace ws {

@@ -1,6 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "cloningvisitor.h"
 #include "valuenode.h"
 #include "branch.h"
@@ -9,12 +8,9 @@
 #include "invalidconstant.h"
 #include "doctype.h" 
 
+namespace document {
 
-namespace document
-{
-
-namespace select
-{
+namespace select {
 
 const int CloningVisitor::OrPriority;
 const int CloningVisitor::AndPriority;
@@ -40,20 +36,17 @@ const int CloningVisitor::NullValPriority;
 const int CloningVisitor::IdPriority;
 const int CloningVisitor::SearchColPriority;
 
-CloningVisitor::CloningVisitor(void)
+CloningVisitor::CloningVisitor()
     : _node(),
       _valueNode(),
       _constVal(false),
       _priority(-1),
       _fieldNodes(0u),
       _resultSet()
-{
-}
+{ }
 
 
-CloningVisitor::~CloningVisitor(void)
-{
-}
+CloningVisitor::~CloningVisitor() { }
 
 
 void

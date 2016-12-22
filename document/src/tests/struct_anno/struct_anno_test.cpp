@@ -11,8 +11,7 @@
 #include <vespa/document/serialization/vespadocumentserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <sstream>
-#include <vector>
+#include <vespa/fastos/file.h>
 
 using std::ostringstream;
 using std::string;

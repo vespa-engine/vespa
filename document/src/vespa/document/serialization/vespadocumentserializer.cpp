@@ -1,11 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".vespadocumentserializer");
-
 #include "vespadocumentserializer.h"
-
 #include "annotationserializer.h"
 #include "slime_output_to_vector.h"
 #include "util.h"
@@ -132,7 +127,6 @@ void VespaDocumentSerializer::write(const Document &value,
         // _either_ for the header _or_ for the body, never a mixture!
         // This is to avoid horrible breakage whilst ripping out old guts.
         const StructFieldValue::Chunks & chunks = value.getFields().getChunks();
-        LOG(spam, "Writing %zu chunks unchanged", chunks.size());
         if (hasHeader) {
             assert(chunks.size() >= 1);
             doc_serializer.writeUnchanged(chunks[0]);
@@ -357,7 +351,6 @@ void VespaDocumentSerializer::write(const StructFieldValue &value,
     vector<pair<uint32_t, uint32_t> > field_info;
     serializeFields(value, value_stream, field_info, fieldSet);
     if (field_info.empty()) {
-        LOG(debug, "Not writing struct since it has no fields");
         return;
     }
 
