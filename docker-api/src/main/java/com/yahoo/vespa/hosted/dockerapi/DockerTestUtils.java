@@ -27,8 +27,7 @@ public class DockerTestUtils {
             .clientKeyPath( operatingSystem == OS.Mac_OS_X ? prefix + "key.pem" : "")
             .uri(           operatingSystem == OS.Mac_OS_X ? "tcp://192.168.99.100:2376" : "tcp://localhost:2376")
             .connectTimeoutMillis(100)
-            .secondsToWaitBeforeKillingContainer(0)
-            .imageGCEnabled(false));
+            .secondsToWaitBeforeKillingContainer(0));
     private static DockerImpl docker;
 
     public static boolean dockerDaemonIsPresent() {
@@ -53,7 +52,6 @@ public class DockerTestUtils {
             docker = new DockerImpl(
                     dockerConfig,
                     false, /* fallback to 1.23 on errors */
-                    false, /* try setup network */
                     new MetricReceiverWrapper(MetricReceiver.nullImplementation));
             createDockerTestNetworkIfNeeded(docker);
         }
