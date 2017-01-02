@@ -9,8 +9,6 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.TimeoutBudget;
-import com.yahoo.vespa.config.server.session.Session;
-import com.yahoo.vespa.config.server.session.SessionRepo;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -67,8 +65,6 @@ public class SessionHandler extends HttpHandler {
         return new BadRequestException("Session id in request is not a number, request was '" +
                 request.getUri().toString() + "'");
     }
-
-    protected static final Duration DEFAULT_ACTIVATE_TIMEOUT = Duration.ofMinutes(2);
 
     public static TimeoutBudget getTimeoutBudget(HttpRequest request, Duration defaultTimeout) {
         return new TimeoutBudget(Clock.systemUTC(), getRequestTimeout(request, defaultTimeout));

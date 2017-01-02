@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
@@ -10,6 +9,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 
@@ -81,9 +81,8 @@ public class PrepareParamsTest {
     // Create PrepareParams from a request (based on uri and tenant name)
     private static PrepareParams createParams(String uri, TenantName tenantName) {
         return PrepareParams.fromHttpRequest(
-                HttpRequest.createTestRequest(uri,
-                        com.yahoo.jdisc.http.HttpRequest.Method.PUT),
+                HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.PUT),
                 tenantName,
-                new ConfigserverConfig(new ConfigserverConfig.Builder()));
+                Duration.ofSeconds(60));
     }
 }

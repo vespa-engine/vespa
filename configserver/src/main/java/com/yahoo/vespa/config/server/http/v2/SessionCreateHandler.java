@@ -36,7 +36,7 @@ import java.util.concurrent.Executor;
 public class SessionCreateHandler extends SessionHandler {
     private final Tenants tenants;
     private static final String fromPattern = "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*";
-    private final ConfigserverConfig configserverConfig;
+    private final Duration zookeeperBarrierTimeout;
 
     @Inject
     public SessionCreateHandler(Executor executor,
@@ -46,7 +46,7 @@ public class SessionCreateHandler extends SessionHandler {
                                 ApplicationRepository applicationRepository) {
         super(executor, accessLog, applicationRepository);
         this.tenants = tenants;
-        this.configserverConfig = configserverConfig;
+        this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
     }
 
     @Override
@@ -57,7 +57,7 @@ public class SessionCreateHandler extends SessionHandler {
         Tenant tenant = tenants.getTenant(tenantName);
         final SessionCreate sessionCreate = new SessionCreate(tenant.getSessionFactory(), tenant.getLocalSessionRepo(),
                 new SessionCreateResponseV2(tenant, deployLog, deployLog.get()));
-        TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()));
+        TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, zookeeperBarrierTimeout);
         if (request.hasProperty("from")) {
             LocalSession fromSession = getExistingSession(tenant, request);
             return sessionCreate.createFromExisting(request, deployLog, fromSession, tenantName, timeoutBudget);

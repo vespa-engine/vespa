@@ -24,6 +24,7 @@ import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.session.*;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
@@ -41,7 +42,7 @@ public class SessionPrepareHandler extends SessionHandler {
     private static final Logger log = Logger.getLogger(SessionPrepareHandler.class.getName());
 
     private final Tenants tenants;
-    private final ConfigserverConfig configserverConfig;
+    private final Duration zookeeperBarrierTimeout;
 
     @Inject
     public SessionPrepareHandler(Executor executor,
@@ -51,7 +52,7 @@ public class SessionPrepareHandler extends SessionHandler {
                                  ApplicationRepository applicationRepository) {
         super(executor, accessLog, applicationRepository);
         this.tenants = tenants;
-        this.configserverConfig = configserverConfig;
+        this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
     }
 
     @Override
@@ -64,12 +65,12 @@ public class SessionPrepareHandler extends SessionHandler {
         log.log(LogLevel.DEBUG, "session=" + session);
         boolean verbose = request.getBooleanProperty("verbose");
         Slime rawDeployLog = createDeployLog();
-        PrepareParams prepParams = PrepareParams.fromHttpRequest(request, tenantName, configserverConfig);
+        PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
         // An app id currently using only the name
-        ApplicationId appId = prepParams.getApplicationId();
+        ApplicationId appId = prepareParams.getApplicationId();
         DeployLogger logger = createLogger(rawDeployLog, verbose, appId);
         ConfigChangeActions actions = session.prepare(logger, 
-                                                      prepParams, 
+                                                      prepareParams,
                                                       getCurrentActiveApplicationSet(tenant, appId),
                                                       tenant.getPath());
         logConfigChangeActions(actions, logger);
