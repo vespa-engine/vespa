@@ -10,3 +10,5 @@ vespa_add_library(document_util OBJECT
     AFTER
     document_documentconfig
 )
+
+set_source_files_properties(compressor.cpp PROPERTIES COMPILE_FLAGS -DLZ4_DISABLE_DEPRECATE_WARNINGS)
