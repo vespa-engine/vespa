@@ -23,13 +23,13 @@ LZ4Compressor::process(const CompressionConfig& config, const void * inputV, siz
     const char * input(static_cast<const char *>(inputV));
     char * output(static_cast<char *>(outputV));
     int sz(-1);
+    int maxOutputLen = LZ4_compressBound(inputLen);
     if (config.compressionLevel > 6) {
         Alloc state = Alloc::alloc(LZ4_sizeofStateHC());
-        int maxOutputLen = LZ4_compressBound(inputLen);
         sz = LZ4_compress_HC_extStateHC(state.get(), input, output, inputLen, maxOutputLen, config.compressionLevel);
     } else {
         Alloc state = Alloc::alloc(LZ4_sizeofState());
-        sz = LZ4_compress_withState(state.get(), input, output, inputLen);
+        sz = LZ4_compress_fast_extState(state.get(), input, output, inputLen, maxOutputLen, 1);
     }
     if (sz != 0) {
         outputLenV = sz;
