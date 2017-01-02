@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.yahoo.vespa.config.server.http.NotFoundException;
+import com.yahoo.vespa.config.server.NotFoundException;
 
 /**
  * Used during config request handling to route to the right config model

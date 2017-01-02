@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.ContentHandler;
-import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.v2.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -181,7 +180,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty());
     }
 
-    // TODO: Don't use the NotFoundException here
     public LocalSession getLocalSession(Tenant tenant, long sessionId) {
         LocalSession session = tenant.getLocalSessionRepo().getSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
@@ -189,7 +187,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session;
     }
 
-    // TODO: Don't use the NotFoundException here
     public RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
         RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
