@@ -1,16 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
+import com.google.common.io.Files;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.io.IOUtils;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.config.provision.ApplicationId;
@@ -170,4 +174,40 @@ public class SessionHandlerTest {
             return name;
         }
     }
+
+    public static class MockSessionFactory implements SessionFactory {
+        public boolean createCalled = false;
+        public boolean createFromCalled = false;
+        public boolean doThrow = false;
+        public File applicationPackage;
+        public String applicationName;
+
+        @Override
+        public LocalSession createSession(File applicationDirectory, String applicationName, TimeoutBudget timeoutBudget) {
+            createCalled = true;
+            this.applicationName = applicationName;
+            if (doThrow) {
+                throw new RuntimeException("foo");
+            }
+            final File tempDir = Files.createTempDir();
+            try {
+                IOUtils.copyDirectory(applicationDirectory, tempDir);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            this.applicationPackage = tempDir;
+            return new SessionHandlerTest.MockSession(0, FilesApplicationPackage.fromFile(applicationPackage));
+        }
+
+        @Override
+        public LocalSession createSessionFromExisting(LocalSession existingSession, DeployLogger logger, TimeoutBudget timeoutBudget) {
+            if (doThrow) {
+                throw new RuntimeException("foo");
+            }
+            createFromCalled = true;
+            return new SessionHandlerTest.MockSession(existingSession.getSessionId() + 1, FilesApplicationPackage.fromFile(applicationPackage));
+        }
+    }
+
+
 }

@@ -82,7 +82,7 @@ public class SessionHandler extends HttpHandler {
         }
     }
 
-    static DeployHandlerLogger createLogger(Slime deployLog, HttpRequest request, ApplicationId app) {
+    public static DeployHandlerLogger createLogger(Slime deployLog, HttpRequest request, ApplicationId app) {
         return createLogger(deployLog, request.getBooleanProperty("verbose"), app);
     }
 
