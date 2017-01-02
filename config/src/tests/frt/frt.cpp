@@ -568,7 +568,7 @@ TEST_F("require that v3 compressed reponse is correctly initialized", V3RequestF
     const char *payload = "{\"barValue\":\"foobiar\"}";
     int maxSize = LZ4_compressBound(strlen(payload));
     char *output = (char *)malloc(maxSize);
-    int sz = LZ4_compress(payload, output, strlen(payload));
+    int sz = LZ4_compress_default(payload, output, strlen(payload), maxSize);
 
     f1.encodePayload(output, sz, strlen(payload), CompressionType::LZ4);
     std::unique_ptr<FRTConfigResponseV3> response(f1.createResponse());
