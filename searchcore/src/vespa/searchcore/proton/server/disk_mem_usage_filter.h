@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <experimental/filesystem>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <mutex>
@@ -20,7 +20,7 @@ namespace proton {
 class DiskMemUsageFilter : public IResourceWriteFilter,
                            public IDiskMemUsageNotifier {
 public:
-    using space_info = boost::filesystem::space_info;
+    using space_info = std::experimental::filesystem::space_info;
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
 

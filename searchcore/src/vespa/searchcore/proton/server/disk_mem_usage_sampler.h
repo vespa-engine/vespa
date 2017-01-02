@@ -3,7 +3,6 @@
 #pragma once
 
 #include "disk_mem_usage_filter.h"
-#include <boost/filesystem.hpp>
 
 namespace vespalib { class Timer; }
 
@@ -14,7 +13,7 @@ namespace proton {
  */
 class DiskMemUsageSampler {
     DiskMemUsageFilter _filter;
-    boost::filesystem::path _path;
+    std::experimental::filesystem::path _path;
     double _sampleInterval;
     std::unique_ptr<vespalib::Timer> _periodicTimer;
 

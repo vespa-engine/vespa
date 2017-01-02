@@ -5,6 +5,4 @@ vespa_add_executable(searchcore_visibility_handler_test_app TEST
     DEPENDS
     searchcore_server
 )
-vespa_add_target_system_dependency(searchcore_visibility_handler_test_app boost boost_system-mt-d)
-vespa_add_target_system_dependency(searchcore_visibility_handler_test_app boost boost_filesystem-mt-d)
 vespa_add_test(NAME searchcore_visibility_handler_test_app COMMAND searchcore_visibility_handler_test_app)

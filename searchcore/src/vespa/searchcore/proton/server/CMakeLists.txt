@@ -113,6 +113,5 @@ vespa_add_library(searchcore_server STATIC
     searchcore_summaryengine
     searchcore_fconfig
     configdefinitions
+    stdc++fs
 )
-vespa_add_target_system_dependency(searchcore_server boost boost_system-mt-d)
-vespa_add_target_system_dependency(searchcore_server boost boost_filesystem-mt-d)
