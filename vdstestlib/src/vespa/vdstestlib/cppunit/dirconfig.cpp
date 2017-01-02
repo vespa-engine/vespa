@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vdstestlib/cppunit/dirconfig.h>
+#include <vespa/vdstestlib/cppunit/dirconfig.hpp>
 
-#include <fstream>
-#include <vespa/log/log.h>
-#include <sstream>
-#include <atomic>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <boost/lexical_cast.hpp>
+#include <fstream>
+#include <atomic>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".dirconfig");
 
 namespace vdstestlib {
@@ -142,24 +140,6 @@ DirConfig::getConfig(const ConfigName& name, bool createIfNonExisting)
     return it->second;
 }
 
-template<typename T>
-void
-DirConfig::Config::setValue(const ConfigKey& key, const T& value)
-{
-    std::ostringstream ost;
-    ost << value;
-    set(key, ost.str());
-}
-
-template<typename T>
-T
-DirConfig::Config::getValue(const ConfigKey& key, const T& defVal) const
-{
-    const ConfigValue* val(get(key));
-    if (val == 0) return defVal;
-    return boost::lexical_cast<T>(*val);
-}
-
 void
 DirConfig::removeConfig(const ConfigName& name)
 {
@@ -212,5 +192,8 @@ DirConfig::isCacheDirty() const
     }
     return false;
 }
+
+template void DirConfig::Config::setValue(const ConfigKey &, const int &);
+template std::string DirConfig::Config::getValue(const ConfigKey &, const std::string &) const;
 
 } // storage

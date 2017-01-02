@@ -1,11 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <sstream>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+#include <sstream>
 
 namespace storage {
 
@@ -15,11 +14,12 @@ const uint32_t FileStorTestFixture::MSG_WAIT_TIME;
 void
 FileStorTestFixture::setupDisks(uint32_t diskCount)
 {
-    _config.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
+    std::string rootOfRoot = "todo-make-unique-filestorefixture";
+    _config.reset(new vdstestlib::DirConfig(getStandardConfig(true, rootOfRoot)));
 
     _config2.reset(new vdstestlib::DirConfig(*_config));
-    _config2->getConfig("stor-server").set("root_folder", "vdsroot.2");
-    _config2->getConfig("stor-devices").set("root_folder", "vdsroot.2");
+    _config2->getConfig("stor-server").set("root_folder", (rootOfRoot + "-vdsroot.2"));
+    _config2->getConfig("stor-devices").set("root_folder", (rootOfRoot + "-vdsroot.2"));
     _config2->getConfig("stor-server").set("node_index", "1");
 
     _smallConfig.reset(new vdstestlib::DirConfig(*_config));

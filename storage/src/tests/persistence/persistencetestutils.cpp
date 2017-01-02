@@ -17,12 +17,13 @@ namespace {
 
     spi::LoadType defaultLoadType(0, "default");
 
-    vdstestlib::DirConfig initialize(uint32_t numDisks) {
-        system(vespalib::make_string("rm -rf vdsroot").c_str());
+    vdstestlib::DirConfig initialize(uint32_t numDisks, const std::string & rootOfRoot) {
+        vdstestlib::DirConfig config(getStandardConfig(true, rootOfRoot));
+        std::string rootFolder = getRootFolder(config);
+        system(vespalib::make_string("rm -rf %s", rootFolder.c_str()).c_str());
         for (uint32_t i = 0; i < numDisks; i++) {
-            system(vespalib::make_string("mkdir -p vdsroot/disks/d%d", i).c_str());
+            system(vespalib::make_string("mkdir -p %s/disks/d%d", rootFolder.c_str(), i).c_str());
         }
-        vdstestlib::DirConfig config(getStandardConfig(true));
         return config;
     }
 
@@ -38,8 +39,8 @@ namespace {
     };
 }
 
-PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks)
-    : _config(initialize(numDisks)),
+PersistenceTestEnvironment::PersistenceTestEnvironment(DiskCount numDisks, const std::string & rootOfRoot)
+    : _config(initialize(numDisks, rootOfRoot)),
       _messageKeeper(),
       _node(numDisks, NodeIndex(0), _config.getConfigId()),
       _component(_node.getComponentRegister(), "persistence test env"),
@@ -82,7 +83,7 @@ PersistenceTestUtils::dumpBucket(const document::BucketId& bid,
 
 void
 PersistenceTestUtils::setupDisks(uint32_t numDisks) {
-    _env.reset(new PersistenceTestEnvironment(DiskCount(numDisks)));
+    _env.reset(new PersistenceTestEnvironment(DiskCount(numDisks), "todo-make-unique-persistencetestutils"));
 }
 
 std::unique_ptr<PersistenceThread>

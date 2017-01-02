@@ -45,7 +45,12 @@ void addStorageDistributionConfig(vdstestlib::DirConfig& dc)
     }
 }
 
-vdstestlib::DirConfig getStandardConfig(bool storagenode) {
+std::string getRootFolder(vdstestlib::DirConfig & dc) {
+    std::string defaultValue("");
+    return dc.getConfig("stor-server").getValue("root_folder", defaultValue);
+}
+
+vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & rootOfRoot) {
     std::string clusterName("storage");
     vdstestlib::DirConfig dc;
     vdstestlib::DirConfig::Config* config;
@@ -146,7 +151,8 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     config->set("enable_dead_lock_detector_warnings", "false");
     config->set("max_merges_per_node", "25");
     config->set("max_merge_queue_size", "20");
-    vespalib::string rootFolder = (storagenode ? "vdsroot" : "vdsroot.distributor");
+    vespalib::string rootFolder = rootOfRoot + "_";
+    rootFolder += (storagenode ? "vdsroot" : "vdsroot.distributor");
     config->set("root_folder", rootFolder);
     config->set("is_distributor", (storagenode ? "false" : "true"));
     config = &dc.addConfig("stor-devices");

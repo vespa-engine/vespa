@@ -83,8 +83,8 @@ MetricsTest::MetricsTest()
 }
 
 void MetricsTest::setUp() {
-    assert(system("rm -rf vdsroot") == 0);
-    _config.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
+    _config.reset(new vdstestlib::DirConfig(getStandardConfig(true, "metricstest")));
+    assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
     try {
         _node.reset(new TestServiceLayerApp(DiskCount(4), NodeIndex(0),
                     _config->getConfigId()));

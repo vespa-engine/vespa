@@ -176,15 +176,22 @@ CPPUNIT_TEST_SUITE_REGISTRATION(BucketManagerTest);
         CPPUNIT_FAIL(ost.str()); \
     }
 
+std::string getRmDisk(const std::string & rootFolder, int disk) {
+    std::ostringstream os;
+    os << "rm -rf " << rootFolder << "/disks/d" << disk;
+    return os.str();
+}
+
 void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
                                              bool noDelete)
 {
+    vdstestlib::DirConfig config(getStandardConfig(true, "bucketmanagertest"));
+    std::string rootFolder = getRootFolder(config);
     if (!noDelete) {
-        assert(system("rm -rf vdsroot") == 0);
+        assert(system(("rm -rf " + rootFolder).c_str()) == 0);
     }
-    assert(system("mkdir -p vdsroot/disks/d0") == 0);
-    assert(system("mkdir -p vdsroot/disks/d1") == 0);
-    vdstestlib::DirConfig config(getStandardConfig(true));
+    assert(system(getRmDisk(rootFolder, 0).c_str()) == 0);
+    assert(system(getRmDisk(rootFolder, 1).c_str()) == 0);
 
     DocumentTypeRepo::SP repo(new DocumentTypeRepo(
                 *ConfigGetter<DocumenttypesConfig>::getConfig(

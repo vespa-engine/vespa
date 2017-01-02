@@ -1,5 +1,4 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -8,9 +7,6 @@
 #include <vespa/document/fieldvalue/rawfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/select/parser.h>
-#include <fstream>
-#include <memory>
-#include <atomic>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vdslib/container/mutabledocumentlist.h>
 #include <vespa/vdslib/container/operationlist.h>
@@ -35,10 +31,14 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/persistence/filestorage/forwardingmessagesender.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/log/log.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storage/storageserver/statemanager.h>
+#include <vespa/fastos/file.h>
+#include <fstream>
+#include <memory>
+#include <atomic>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".filestormanagertest");
 
 using std::unique_ptr;
@@ -206,11 +206,12 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
     }
 
     void setupDisks(uint32_t diskCount) {
-        config.reset(new vdstestlib::DirConfig(getStandardConfig(true)));
+        std::string rootOfRoot = "filestormanagertest";
+        config.reset(new vdstestlib::DirConfig(getStandardConfig(true, rootOfRoot)));
 
         config2.reset(new vdstestlib::DirConfig(*config));
-        config2->getConfig("stor-server").set("root_folder", "vdsroot.2");
-        config2->getConfig("stor-devices").set("root_folder", "vdsroot.2");
+        config2->getConfig("stor-server").set("root_folder", rootOfRoot + "-vdsroot.2");
+        config2->getConfig("stor-devices").set("root_folder", rootOfRoot + "-vdsroot.2");
         config2->getConfig("stor-server").set("node_index", "1");
 
         smallConfig.reset(new vdstestlib::DirConfig(*config));
@@ -220,10 +221,10 @@ struct FileStorManagerTest : public CppUnit::TestFixture {
         c.set("use_direct_io", "false");
         c.set("maximum_gap_to_read_through", "64");
 
-        assert(system("rm -rf vdsroot") == 0);
-        assert(system("rm -rf vdsroot.2") == 0);
-        assert(system("mkdir -p vdsroot/disks/d0") == 0);
-        assert(system("mkdir -p vdsroot.2/disks/d0") == 0);
+        assert(system(vespalib::make_string("rm -rf %s", getRootFolder(*config).c_str()).c_str()) == 0);
+        assert(system(vespalib::make_string("rm -rf %s", getRootFolder(*config2).c_str()).c_str()) == 0);
+        assert(system(vespalib::make_string("mkdir -p %s/disks/d0", getRootFolder(*config).c_str()).c_str()) == 0);
+        assert(system(vespalib::make_string("mkdir -p %s/disks/d0", getRootFolder(*config2).c_str()).c_str()) == 0);
         try {
             _node.reset(new TestServiceLayerApp(DiskCount(diskCount), NodeIndex(0),
                                                 config->getConfigId()));
