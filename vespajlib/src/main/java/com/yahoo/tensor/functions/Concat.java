@@ -83,7 +83,7 @@ public class Concat extends PrimitiveTensorFunction {
             TensorAddress aAddress = iaSubspace.address();
             for (Iterator<IndexedTensor.SubspaceIterator> ib = b.subspaceIterator(otherADimensions); ib.hasNext();) {
                 IndexedTensor.SubspaceIterator ibSubspace = ib.next();
-                System.out.println("  Producing concatenation along '" + dimension + " starting at b address" + ibSubspace.address());
+                System.out.println("  Producing concatenation along '" + dimension + "' starting at b address " + ibSubspace.address());
                 while (ibSubspace.hasNext()) {
                     java.util.Map.Entry<TensorAddress, Double> bCell = ibSubspace.next(); // TODO: Create Cell convenience subclass for Map.Entry
                     TensorAddress combinedAddress = combineAddresses(aAddress, aToIndexes, bCell.getKey(), bToIndexes,
@@ -135,6 +135,10 @@ public class Concat extends PrimitiveTensorFunction {
             int bSize = b.type().indexOfDimension(currentDimension).map(b::size).orElse(0);
             if (currentDimension.equals(concatDimension))
                 joinedSizes[i] = aSize + bSize;
+            else if (aSize != 0 && bSize != 0 && aSize!=bSize )
+                throw new IllegalArgumentException("Dimension " + currentDimension + " must be of the same size when " +
+                                                   "concatenating " + a.type() + " and " + b.type() + " along dimension " + 
+                                                   concatDimension + ", but was " + aSize + " and " + bSize);
             else
                 joinedSizes[i] = Math.max(aSize, bSize);
         }
