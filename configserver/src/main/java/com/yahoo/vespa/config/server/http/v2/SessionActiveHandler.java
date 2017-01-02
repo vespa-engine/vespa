@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import java.time.Duration;
 import java.util.concurrent.Executor;
 
 import com.google.inject.Inject;
@@ -26,6 +27,8 @@ import com.yahoo.vespa.config.server.http.Utils;
  */
 public class SessionActiveHandler extends SessionHandler {
 
+    private static final Duration DEFAULT_ACTIVATE_TIMEOUT = Duration.ofMinutes(2);
+
     private final Tenants tenants;
     private final Zone zone;
 
@@ -45,7 +48,7 @@ public class SessionActiveHandler extends SessionHandler {
         final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
         Utils.checkThatTenantExists(tenants, tenantName);
         Tenant tenant = tenants.getTenant(tenantName);
-        TimeoutBudget timeoutBudget = getTimeoutBudget(request, SessionHandler.DEFAULT_ACTIVATE_TIMEOUT);
+        TimeoutBudget timeoutBudget = getTimeoutBudget(request, DEFAULT_ACTIVATE_TIMEOUT);
         final Long sessionId = getSessionIdV2(request);
         ApplicationId applicationId = applicationRepository.activate(tenant, sessionId, timeoutBudget,
                                                                      shouldIgnoreLockFailure(request),

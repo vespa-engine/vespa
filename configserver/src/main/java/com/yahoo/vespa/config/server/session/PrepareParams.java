@@ -1,7 +1,6 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
@@ -119,19 +118,15 @@ public final class PrepareParams {
 
     }
 
-    public static PrepareParams fromHttpRequest(HttpRequest request, TenantName tenant, ConfigserverConfig configserverConfig) {
+    public static PrepareParams fromHttpRequest(HttpRequest request, TenantName tenant, Duration barrierTimeout) {
         return new PrepareParams.Builder().ignoreValidationErrors(request.getBooleanProperty(IGNORE_VALIDATION_PARAM_NAME))
                                           .dryRun(request.getBooleanProperty(DRY_RUN_PARAM_NAME))
-                                          .timeoutBudget(SessionHandler.getTimeoutBudget(request, getBarrierTimeout(configserverConfig)))
+                                          .timeoutBudget(SessionHandler.getTimeoutBudget(request, barrierTimeout))
                                           .applicationId(createApplicationId(request, tenant))
                                           .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
                                           .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
                                           .dockerVespaImageVersion(request.getProperty(DOCKER_VESPA_IMAGE_VERSION_PARAM_NAME))
                                           .build();
-    }
-
-    private static Duration getBarrierTimeout(ConfigserverConfig configserverConfig) {
-        return Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
     }
 
     private static ApplicationId createApplicationId(HttpRequest request, TenantName tenant) {
