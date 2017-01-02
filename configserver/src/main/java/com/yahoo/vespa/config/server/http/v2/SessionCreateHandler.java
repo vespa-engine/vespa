@@ -56,7 +56,7 @@ public class SessionCreateHandler extends SessionHandler {
         Utils.checkThatTenantExists(tenants, tenantName);
         Tenant tenant = tenants.getTenant(tenantName);
         final SessionCreate sessionCreate = new SessionCreate(tenant.getSessionFactory(), tenant.getLocalSessionRepo(),
-                new SessionCreateResponseV2(tenant, deployLog, deployLog.get()));
+                new SessionCreateResponse(tenantName, deployLog, deployLog.get()));
         TimeoutBudget timeoutBudget = SessionHandler.getTimeoutBudget(request, zookeeperBarrierTimeout);
         if (request.hasProperty("from")) {
             LocalSession fromSession = getExistingSession(tenant, request);

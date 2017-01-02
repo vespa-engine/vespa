@@ -13,16 +13,19 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
+import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.session.LocalSession;
+import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.RemoteSession;
+import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActionsFormatter;
 import com.yahoo.vespa.config.server.configchange.RestartActionsFormatter;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.session.*;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -69,13 +72,13 @@ public class SessionPrepareHandler extends SessionHandler {
         // An app id currently using only the name
         ApplicationId appId = prepareParams.getApplicationId();
         DeployLogger logger = createLogger(rawDeployLog, verbose, appId);
-        ConfigChangeActions actions = session.prepare(logger, 
+        ConfigChangeActions actions = session.prepare(logger,
                                                       prepareParams,
                                                       getCurrentActiveApplicationSet(tenant, appId),
                                                       tenant.getPath());
         logConfigChangeActions(actions, logger);
         log.log(LogLevel.INFO, Tenants.logPre(appId) + "Session " + sessionId + " prepared successfully. ");
-        return new SessionPrepareResponse(rawDeployLog, tenant, request, session, actions);
+        return new SessionPrepareResponse(rawDeployLog, tenantName, request, sessionId, actions);
     }
 
     private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
@@ -97,7 +100,8 @@ public class SessionPrepareHandler extends SessionHandler {
         RemoteSession session = applicationRepository.getRemoteSession(tenant, getSessionIdV2(request));
         validateThatSessionIsNotActive(session);
         validateThatSessionIsPrepared(session);
-        return new SessionPrepareResponse(createDeployLog(), tenant, request, session, new ConfigChangeActions());
+        long sessionId = getSessionIdV2(request);
+        return new SessionPrepareResponse(createDeployLog(), tenant.getName(), request, sessionId, new ConfigChangeActions());
     }
 
     private void validateThatSessionIsNotActive(Session session) {

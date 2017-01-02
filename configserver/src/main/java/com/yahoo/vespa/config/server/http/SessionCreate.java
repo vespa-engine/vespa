@@ -11,6 +11,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.http.v2.SessionCreateResponse;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.SessionFactory;
@@ -21,7 +22,6 @@ import java.io.IOException;
 /**
  * Creates a session from an application package,
  * or creates a new session from a previous session (with id or the "active" session).
- * Handles /application/v2 requests
  *
  * @author lulf
  * @author hmusum
