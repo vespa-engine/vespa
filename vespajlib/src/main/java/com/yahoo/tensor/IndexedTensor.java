@@ -76,6 +76,11 @@ public class IndexedTensor implements Tensor {
         return new SuperspaceIterator(dimensions, dimensionSizes);
     }
 
+    /** Returns a subspace iterator having the sizes of the dimensions of this tensor */
+    public Iterator<SubspaceIterator> subspaceIterator(Set<String> dimensions) {
+        return subspaceIterator(dimensions, dimensionSizes);
+    }
+
     /** 
      * Returns the value at the given indexes
      * 
@@ -526,7 +531,11 @@ public class IndexedTensor implements Tensor {
      */
     public final class SubspaceIterator implements Iterator<Map.Entry<TensorAddress, Double>> {
 
-        private final Indexes indexes;
+        private final boolean[] dimensionIndexes;
+        private final int[] address;
+        private final int[] dimensionSizes;
+
+        private Indexes indexes;
         private int count = 0;
         
         /** 
@@ -537,6 +546,9 @@ public class IndexedTensor implements Tensor {
          * @param address the address of the first cell of this subspace. 
          */
         private SubspaceIterator(boolean[] dimensionIndexes, int[] address, int[] dimensionSizes) {
+            this.dimensionIndexes = dimensionIndexes;
+            this.address = address;
+            this.dimensionSizes = dimensionSizes;
             this.indexes = Indexes.of(dimensionSizes, dimensionIndexes, address);
         }
         
@@ -545,9 +557,20 @@ public class IndexedTensor implements Tensor {
             return indexes.size();
         }
         
+        /** Returns the address of the cell this currently points to (which may be an invalid position) */
+        public TensorAddress address() { return indexes.toAddress(); }
+        
+        /** Rewind this iterator to the first element */
+        public void reset() { 
+            this.count = 0;
+            this.indexes = Indexes.of(dimensionSizes, dimensionIndexes, address); 
+        }
+        
         @Override
-        public boolean hasNext() { return count < indexes.size(); }            
-
+        public boolean hasNext() {
+            return count < indexes.size(); 
+        }
+        
         @Override
         public Map.Entry<TensorAddress, Double> next() {
             if ( ! hasNext()) throw new NoSuchElementException("No cell at " + indexes);

@@ -68,7 +68,7 @@ public class Join extends PrimitiveTensorFunction {
     public Tensor evaluate(EvaluationContext context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
-        TensorType joinedType = a.type().combineWith(b.type());
+        TensorType joinedType = new TensorType.Builder(a.type(), b.type()).build();
 
         // Choose join algorithm
         if (hasSingleIndexedDimension(a) && hasSingleIndexedDimension(b) && a.type().dimensions().get(0).name().equals(b.type().dimensions().get(0).name()))
@@ -121,15 +121,7 @@ public class Join extends PrimitiveTensorFunction {
         if (subspace.size() == 0 || superspace.size() == 0) // special case empty here to avoid doing it when finding sizes
             return Tensor.Builder.of(joinedType, new int[joinedType.dimensions().size()]).build();
         
-        // Find size of joined tensor
-        int[] joinedSizes = new int[joinedType.dimensions().size()];
-        for (int i = 0; i < joinedSizes.length; i++) {
-            Optional<Integer> subspaceIndex = subspace.type().indexOfDimension(joinedType.dimensions().get(i).name());
-            if (subspaceIndex.isPresent())
-                joinedSizes[i] = Math.min(superspace.size(i), subspace.size(subspaceIndex.get()));
-            else
-                joinedSizes[i] = superspace.size(i);
-        }
+        int[] joinedSizes = joinedSize(joinedType, subspace, superspace);
 
         Tensor.Builder builder = Tensor.Builder.of(joinedType, joinedSizes);
 
@@ -145,6 +137,18 @@ public class Join extends PrimitiveTensorFunction {
         }
         
         return builder.build();
+    }
+    
+    private int[] joinedSize(TensorType joinedType, IndexedTensor subspace, IndexedTensor superspace) {
+        int[] joinedSizes = new int[joinedType.dimensions().size()];
+        for (int i = 0; i < joinedSizes.length; i++) {
+            Optional<Integer> subspaceIndex = subspace.type().indexOfDimension(joinedType.dimensions().get(i).name());
+            if (subspaceIndex.isPresent())
+                joinedSizes[i] = Math.min(superspace.size(i), subspace.size(subspaceIndex.get()));
+            else
+                joinedSizes[i] = superspace.size(i);
+        }
+        return joinedSizes;
     }
 
     private Tensor generalSubspaceJoin(Tensor subspace, Tensor superspace, TensorType joinedType, boolean reversedArgumentOrder) {
