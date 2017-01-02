@@ -55,7 +55,7 @@ DiskMemUsageSampler::sampleUsage()
 void
 DiskMemUsageSampler::sampleDiskUsage()
 {
-    _filter.setDiskStats(boost::filesystem::space(_path));
+    _filter.setDiskStats(std::experimental::filesystem::space(_path));
 }
 
 void

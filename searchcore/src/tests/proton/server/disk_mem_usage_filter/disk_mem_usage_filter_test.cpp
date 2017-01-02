@@ -7,7 +7,7 @@ LOG_SETUP("disk_mem_usage_filter_test");
 
 using proton::DiskMemUsageFilter;
 
-namespace fs = boost::filesystem;
+namespace fs = std::experimental::filesystem;
 
 namespace
 {
