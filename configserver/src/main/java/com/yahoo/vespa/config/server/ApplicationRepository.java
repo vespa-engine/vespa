@@ -24,6 +24,7 @@ import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSession;
+import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.tenant.Rotations;
@@ -31,6 +32,7 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.curator.Curator;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
@@ -239,6 +241,29 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
         return applicationRepo.listApplications();
+    }
+
+    public long createSessionFromExisting(Tenant tenant, DeployLogger logger,
+                                          TimeoutBudget timeoutBudget, ApplicationId applicationId) {
+        LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
+        SessionFactory sessionFactory = tenant.getSessionFactory();
+        LocalSession fromSession = getExistingSession(tenant, applicationId);
+        LocalSession session = sessionFactory.createSessionFromExisting(fromSession, logger, timeoutBudget);
+        localSessionRepo.addSession(session);
+        return session.getSessionId();
+    }
+
+    public long createSession(Tenant tenant, TimeoutBudget timeoutBudget, File applicationDirectory, String applicationName) {
+        LocalSessionRepo localSessionRepo = tenant.getLocalSessionRepo();
+        SessionFactory sessionFactory = tenant.getSessionFactory();
+        LocalSession session = sessionFactory.createSession(applicationDirectory, applicationName, timeoutBudget);
+        localSessionRepo.addSession(session);
+        return session.getSessionId();
+    }
+
+    private LocalSession getExistingSession(Tenant tenant, ApplicationId applicationId) {
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
+        return getLocalSession(tenant, applicationRepo.getSessionIdForApplication(applicationId));
     }
 
 }

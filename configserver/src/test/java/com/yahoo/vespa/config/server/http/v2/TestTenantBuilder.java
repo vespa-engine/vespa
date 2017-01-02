@@ -7,7 +7,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
-import com.yahoo.vespa.config.server.http.SessionCreateHandlerTestBase;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
@@ -35,7 +34,7 @@ public class TestTenantBuilder {
     public TenantBuilder createTenant(TenantName tenantName) {
         MemoryTenantApplications applicationRepo = new MemoryTenantApplications();
         TenantBuilder builder = TenantBuilder.create(componentRegistry, tenantName, Path.createRoot().append(tenantName.value()))
-                .withSessionFactory(new SessionCreateHandlerTestBase.MockSessionFactory())
+                .withSessionFactory(new SessionCreateHandlerTest.MockSessionFactory())
                 .withLocalSessionRepo(new LocalSessionRepo(applicationRepo))
                 .withRemoteSessionRepo(new RemoteSessionRepo())
                 .withApplicationRepo(applicationRepo);

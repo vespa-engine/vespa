@@ -84,7 +84,7 @@ public class SessionPrepareHandlerTest extends SessionPrepareHandlerTestBase {
         TenantApplications applicationRepoDefault = new MemoryTenantApplications();
         LocalSessionRepo localRepoDefault = new LocalSessionRepo(applicationRepoDefault);
         final TenantName tenantName = TenantName.defaultName();
-        addTenant(tenantName, localRepoDefault, new RemoteSessionRepo(), new SessionCreateHandlerTestBase.MockSessionFactory());
+        addTenant(tenantName, localRepoDefault, new RemoteSessionRepo(), new MockSessionFactory());
         addTestTenant();
         final SessionHandler handler = createHandler(builder);
 
@@ -172,13 +172,11 @@ public class SessionPrepareHandlerTest extends SessionPrepareHandlerTestBase {
 
     @Override
     public SessionHandler createHandler(RemoteSessionRepo remoteSessionRepo) {
-        return createHandler(addTenant(tenant, localRepo, remoteSessionRepo,
-                new SessionCreateHandlerTestBase.MockSessionFactory()));
+        return createHandler(addTenant(tenant, localRepo, remoteSessionRepo, new MockSessionFactory()));
     }
 
     private TestTenantBuilder addTestTenant() {
-        return addTenant(tenant, localRepo, new RemoteSessionRepo(),
-                new SessionCreateHandlerTestBase.MockSessionFactory());
+        return addTenant(tenant, localRepo, new RemoteSessionRepo(), new MockSessionFactory());
     }
 
     static SessionHandler createHandler(TestTenantBuilder builder) {

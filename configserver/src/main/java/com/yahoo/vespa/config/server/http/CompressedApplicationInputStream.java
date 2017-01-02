@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.http;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.config.server.http.v2.SessionCreateHandler;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -47,10 +48,10 @@ public class CompressedApplicationInputStream implements AutoCloseable {
     private static ArchiveInputStream getArchiveInputStream(InputStream is, String contentTypeHeader) throws IOException {
         ArchiveInputStream ais;
         switch (contentTypeHeader) {
-            case SessionCreate.APPLICATION_X_GZIP:
+            case SessionCreateHandler.APPLICATION_X_GZIP:
                 ais = new TarArchiveInputStream(new GZIPInputStream(is));
                 break;
-            case SessionCreate.APPLICATION_ZIP:
+            case SessionCreateHandler.APPLICATION_ZIP:
                 ais = new ZipArchiveInputStream(is);
                 break;
             default:

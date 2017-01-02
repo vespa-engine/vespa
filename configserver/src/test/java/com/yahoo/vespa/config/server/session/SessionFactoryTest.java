@@ -9,8 +9,8 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.*;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
-import com.yahoo.vespa.config.server.http.SessionCreate;
 
+import com.yahoo.vespa.config.server.http.v2.SessionCreateHandler;
 import com.yahoo.vespa.config.server.tenant.TestWithTenant;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -76,7 +76,8 @@ public class SessionFactoryTest extends TestWithTenant {
     }
 
     private LocalSession getLocalSession(String appName) throws IOException {
-        CompressedApplicationInputStream app = CompressedApplicationInputStream.createFromCompressedStream(new FileInputStream(CompressedApplicationInputStreamTest.createTarFile()), SessionCreate.APPLICATION_X_GZIP);
+        CompressedApplicationInputStream app = CompressedApplicationInputStream.createFromCompressedStream(
+                new FileInputStream(CompressedApplicationInputStreamTest.createTarFile()), SessionCreateHandler.APPLICATION_X_GZIP);
         return factory.createSession(app.decompress(Files.createTempDir()), appName, TimeoutBudgetTest.day());
     }
 }

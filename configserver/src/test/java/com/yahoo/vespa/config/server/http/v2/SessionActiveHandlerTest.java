@@ -23,6 +23,7 @@ import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -38,7 +39,6 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.http.SessionActiveHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandler;
-import com.yahoo.vespa.config.server.http.SessionCreateHandlerTestBase.MockSessionFactory;
 
 public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
 
@@ -150,7 +150,7 @@ public class SessionActiveHandlerTest extends SessionActiveHandlerTestBase {
 
     @Override
     protected SessionHandler createHandler() throws Exception {
-        final MockSessionFactory sessionFactory = new MockSessionFactory();
+        final SessionFactory sessionFactory = new MockSessionFactory();
         TestTenantBuilder testTenantBuilder = new TestTenantBuilder();
         testTenantBuilder.createTenant(tenant)
                 .withSessionFactory(sessionFactory)
