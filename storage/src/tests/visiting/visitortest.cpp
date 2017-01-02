@@ -186,7 +186,7 @@ void
 VisitorTest::initializeTest(const TestParams& params)
 {
     LOG(debug, "Initializing test");
-    vdstestlib::DirConfig config(getStandardConfig(true));
+    vdstestlib::DirConfig config(getStandardConfig(true, "visitortest"));
     config.getConfig("stor-visitor").set("visitorthreads", "1");
     config.getConfig("stor-visitor").set(
             "iterators_per_bucket",
@@ -198,10 +198,12 @@ VisitorTest::initializeTest(const TestParams& params)
             "visitor_memory_usage_limit",
             std::to_string(params._maxVisitorMemoryUsage));
 
-    system("chmod 755 vdsroot 2>/dev/null");
-    system("rm -rf vdsroot* 2>/dev/null");
-    assert(system("mkdir -p vdsroot/disks/d0") == 0);
-    assert(system("mkdir -p vdsroot/disks/d1") == 0);
+    std::string rootFolder = getRootFolder(config);
+
+    system(vespalib::make_string("chmod 755 %s 2>/dev/null", rootFolder.c_str()).c_str());
+    system(vespalib::make_string("rm -rf %s* 2>/dev/null", rootFolder.c_str()).c_str());
+    assert(system(vespalib::make_string("mkdir -p %s/disks/d0", rootFolder.c_str()).c_str()) == 0);
+    assert(system(vespalib::make_string("mkdir -p %s/disks/d1", rootFolder.c_str()).c_str()) == 0);
 
     try {
         _messageSessionFactory.reset(

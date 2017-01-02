@@ -23,8 +23,7 @@ struct MessageKeeper : public MessageSender {
 };
 
 struct PersistenceTestEnvironment {
-    PersistenceTestEnvironment(
-            DiskCount numDisks);
+    PersistenceTestEnvironment(DiskCount numDisks, const std::string & rootOfRoot);
 
     document::TestDocMan _testDocMan;
     vdstestlib::DirConfig _config;

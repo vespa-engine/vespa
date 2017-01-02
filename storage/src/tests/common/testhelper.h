@@ -40,7 +40,9 @@ void addFileConfig(vdstestlib::DirConfig& dc,
 
 void addStorageDistributionConfig(vdstestlib::DirConfig& dc);
 
-vdstestlib::DirConfig getStandardConfig(bool storagenode);
+vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & rootFolder = "todo-make-unique");
+
+std::string getRootFolder(vdstestlib::DirConfig & dc);
 
 void addSlobrokConfig(vdstestlib::DirConfig& dc,
                       const mbus::Slobrok& slobrok);

@@ -16,8 +16,9 @@
 #include <vespa/vdstestlib/cppunit/dirconfig.h>
 #include <vespa/vdstestlib/cppunit/macros.h>
 #include <vespa/storage/bucketdb/lockablemap.hpp>
-#include <vespa/log/log.h>
+#include <vespa/vdstestlib/cppunit/dirconfig.hpp>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".test.bucketdb.initializing");
 
 namespace storage {

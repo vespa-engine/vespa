@@ -1,15 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/vdstestlib/cppunit/dirconfig.h>
+#include <vespa/vdstestlib/cppunit/dirconfig.hpp>
 
-#include <fstream>
-#include <vespa/log/log.h>
-#include <sstream>
-#include <atomic>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <fstream>
+#include <atomic>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".dirconfig");
 
 namespace vdstestlib {
@@ -194,5 +192,8 @@ DirConfig::isCacheDirty() const
     }
     return false;
 }
+
+template void DirConfig::Config::setValue(const ConfigKey &, const int &);
+template std::string DirConfig::Config::getValue(const ConfigKey &, const std::string &) const;
 
 } // storage

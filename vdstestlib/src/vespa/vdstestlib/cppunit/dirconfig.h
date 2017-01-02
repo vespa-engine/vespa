@@ -17,7 +17,6 @@
  */
 #pragma once
 
-#include <boost/lexical_cast.hpp>
 #include <list>
 #include <map>
 #include <string>
@@ -41,21 +40,11 @@ struct DirConfig {
         void set(const ConfigKey&); // Set valueless key, such as array size
         void set(const ConfigKey&, const ConfigValue&);
         template<typename T>
-        void setValue(const ConfigKey& key, const T& value)
-        {
-            std::ostringstream ost;
-            ost << value;
-            set(key, ost.str());
-        }
+        void setValue(const ConfigKey& key, const T& value);
         void remove(const ConfigKey&);
         const ConfigValue* get(const ConfigKey&) const;
         template<typename T>
-        T getValue(const ConfigKey& key, const T& defVal) const
-        {
-            const ConfigValue* val(get(key));
-            if (val == 0) return defVal;
-            return boost::lexical_cast<T>(*val);
-        }
+        T getValue(const ConfigKey& key, const T& defVal) const;
     };
 
     DirConfig();
