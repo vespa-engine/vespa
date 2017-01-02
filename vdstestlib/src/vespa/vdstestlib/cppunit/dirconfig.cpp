@@ -142,6 +142,24 @@ DirConfig::getConfig(const ConfigName& name, bool createIfNonExisting)
     return it->second;
 }
 
+template<typename T>
+void
+DirConfig::Config::setValue(const ConfigKey& key, const T& value)
+{
+    std::ostringstream ost;
+    ost << value;
+    set(key, ost.str());
+}
+
+template<typename T>
+T
+DirConfig::Config::getValue(const ConfigKey& key, const T& defVal) const
+{
+    const ConfigValue* val(get(key));
+    if (val == 0) return defVal;
+    return boost::lexical_cast<T>(*val);
+}
+
 void
 DirConfig::removeConfig(const ConfigName& name)
 {
