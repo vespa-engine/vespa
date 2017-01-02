@@ -12,6 +12,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeFlavors;
@@ -66,7 +67,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 case PATCH: return handlePATCH(request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
-        } catch (NotFoundException | com.yahoo.vespa.hosted.provision.NotFoundException e) {
+        } catch (NotFoundException | NoSuchNodeException e) {
             return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
