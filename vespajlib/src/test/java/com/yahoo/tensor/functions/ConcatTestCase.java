@@ -38,7 +38,7 @@ public class ConcatTestCase {
     }
 
     @Test
-    public void testUnequalEqualSizesSameDimension() {
+    public void testUnequalSizesSameDimension() {
         Tensor a = Tensor.from("tensor(x[]):{ {x:0}:1, {x:1}:2 }");
         Tensor b = Tensor.from("tensor(x[]):{ {x:0}:4, {x:1}:5, {x:2}:6 }");
         assertEquals(Tensor.from("tensor(x[5]):{ {x:0}:1, {x:1}:2, {x:2}:4, {x:3}:5, {x:4}:6 }"), a.concat(b, "x"));
