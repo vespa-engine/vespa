@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.yahoo.example</groupId>
+  <artifactId>basic-application</artifactId>
+  <packaging>container-plugin</packaging> <!-- Use Vespa packaging -->
+  <version>1.0.1</version>
+
+  <build>
+    <plugins>
+      <plugin> <!-- Build the bundles -->
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
+        <version>6-SNAPSHOT</version>
+        <extensions>true</extensions>
+      </plugin>
+      <plugin> <!-- Zip the application package -->
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>vespa-application-maven-plugin</artifactId>
+        <version>6-SNAPSHOT</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>packageApplication</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency> <!-- Vespa dependencies -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container</artifactId>
+      <version>6-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+</project>
