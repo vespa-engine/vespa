@@ -119,7 +119,7 @@ class HeapAllocator : public MemoryAllocator {
 public:
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const override;
-    size_t extend_inplace(PtrAndSize, size_t) const override { return 0; }
+    size_t resize_inplace(PtrAndSize, size_t) const override { return 0; }
     static PtrAndSize salloc(size_t sz);
     static void sfree(PtrAndSize alloc);
     static MemoryAllocator & getDefault();
@@ -140,7 +140,7 @@ class MMapAllocator : public MemoryAllocator {
 public:
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const override;
-    size_t extend_inplace(PtrAndSize current, size_t newSize) const override;
+    size_t resize_inplace(PtrAndSize current, size_t newSize) const override;
     static size_t sextend_inplace(PtrAndSize current, size_t newSize);
     static PtrAndSize salloc(size_t sz, void * wantedAddress);
     static void sfree(PtrAndSize alloc);
@@ -152,7 +152,7 @@ public:
     AutoAllocator(size_t mmapLimit, size_t alignment) : _mmapLimit(mmapLimit), _alignment(alignment) { }
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const override;
-    size_t extend_inplace(PtrAndSize current, size_t newSize) const override;
+    size_t resize_inplace(PtrAndSize current, size_t newSize) const override;
     static MemoryAllocator & getDefault();
     static MemoryAllocator & getAllocator(size_t mmapLimit, size_t alignment);
 private:
@@ -262,7 +262,7 @@ AlignedHeapAllocator::alloc(size_t sz) const {
 }
 
 size_t
-MMapAllocator::extend_inplace(PtrAndSize current, size_t newSize) const {
+MMapAllocator::resize_inplace(PtrAndSize current, size_t newSize) const {
     return sextend_inplace(current, newSize);
 }
 
@@ -356,7 +356,7 @@ void MMapAllocator::sfree(PtrAndSize alloc)
 }
 
 size_t
-AutoAllocator::extend_inplace(PtrAndSize current, size_t newSize) const {
+AutoAllocator::resize_inplace(PtrAndSize current, size_t newSize) const {
     if (useMMap(current.second) && useMMap(newSize)) {
         newSize = roundUpToHugePages(newSize);
         return MMapAllocator::sextend_inplace(current, newSize);
@@ -395,9 +395,9 @@ Alloc::allocHeap(size_t sz)
 }
 
 bool
-Alloc::extend_inplace(size_t newSize)
+Alloc::resize_inplace(size_t newSize)
 {
-    size_t extendedSize = _allocator->extend_inplace(_alloc, newSize);
+    size_t extendedSize = _allocator->resize_inplace(_alloc, newSize);
     if (extendedSize > newSize) {
         _alloc.second = extendedSize;
         return true;

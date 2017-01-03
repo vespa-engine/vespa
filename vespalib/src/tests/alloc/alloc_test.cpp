@@ -106,7 +106,7 @@ TEST("heap alloc can not be extended") {
    Alloc buf = Alloc::allocHeap(100);
    void * oldPtr = buf.get();
    EXPECT_EQUAL(100, buf.size());
-   EXPECT_FALSE(buf.extend_inplace(101));
+   EXPECT_FALSE(buf.resize_inplace(101));
    EXPECT_EQUAL(oldPtr, buf.get());
    EXPECT_EQUAL(100, buf.size());
 }
@@ -115,7 +115,7 @@ TEST("mmap alloc can be extended") {
    Alloc buf = Alloc::allocMMap(100);
    void * oldPtr = buf.get();
    EXPECT_EQUAL(4096, buf.size());
-   EXPECT_TRUE(buf.extend_inplace(4097));
+   EXPECT_TRUE(buf.resize_inplace(4097));
    EXPECT_EQUAL(oldPtr, buf.get());
    EXPECT_EQUAL(8192, buf.size());
 }
