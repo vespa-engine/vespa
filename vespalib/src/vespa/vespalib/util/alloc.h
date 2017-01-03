@@ -102,7 +102,7 @@ public:
      * Optional alignment is assumed to be <= system page size, since mmap
      * is always used when size is above limit.
      */
-    static Alloc alloc(size_t sz=0, size_t mmapLimit=MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
+    static Alloc alloc(size_t sz=0, size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
 private:
     Alloc(const MemoryAllocator * allocator, size_t sz) : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
     void clear() {

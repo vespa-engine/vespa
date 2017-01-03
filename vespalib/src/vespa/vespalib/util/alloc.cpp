@@ -165,7 +165,14 @@ private:
             ? MMapAllocator::roundUpToHugePages(sz)
             : sz;
     }
-    bool useMMap(size_t sz) const { return (sz >= _mmapLimit); }
+    bool isMMapped(size_t sz) const { return (sz >= _mmapLimit); }
+    bool useMMap(size_t sz) const {
+        if (_mmapLimit >= HUGEPAGE_SIZE) {
+            return (sz + (HUGEPAGE_SIZE >> 1) - 1) >= _mmapLimit;
+        } else {
+            return (sz >= _mmapLimit);
+        }
+    }
     size_t _mmapLimit;
     size_t _alignment;
 };
@@ -179,17 +186,22 @@ struct MMapLimitAndAlignmentHash {
 
 using AutoAllocatorsMap = std::unordered_map<MMapLimitAndAlignment, AutoAllocator::UP, MMapLimitAndAlignmentHash>;
 
+void createAlignedAutoAllocators(AutoAllocatorsMap & map, size_t mmapLimit) {
+    for (size_t alignment : {0,0x200, 0x400, 0x1000}) {
+        MMapLimitAndAlignment key(mmapLimit, alignment);
+        auto result = map.emplace(key, AutoAllocator::UP(new AutoAllocator(mmapLimit, alignment)));
+        (void) result;
+        assert( result.second );
+
+    }
+}
+
 AutoAllocatorsMap createAutoAllocators() {
     AutoAllocatorsMap map;
-    map.reserve(15);
-    for (size_t alignment : {0,0x200, 0x400, 0x1000}) {
-        for (size_t pages : {1,2,4,8,16}) {
-            size_t mmapLimit = pages * MemoryAllocator::HUGEPAGE_SIZE;
-            MMapLimitAndAlignment key(mmapLimit, alignment);
-            auto result = map.emplace(key, AutoAllocator::UP(new AutoAllocator(mmapLimit, alignment)));
-            (void) result;
-            assert( result.second );
-        }
+    map.reserve(3*5);
+    for (size_t pages : {1,2,4,8,16}) {
+        size_t mmapLimit = pages * MemoryAllocator::HUGEPAGE_SIZE;
+        createAlignedAutoAllocators(map, mmapLimit);
     }
     return map;
 }
@@ -382,7 +394,7 @@ void MMapAllocator::sfree(PtrAndSize alloc)
 
 size_t
 AutoAllocator::resize_inplace(PtrAndSize current, size_t newSize) const {
-    if (useMMap(current.second) && useMMap(newSize)) {
+    if (isMMapped(current.second) && useMMap(newSize)) {
         newSize = roundUpToHugePages(newSize);
         return MMapAllocator::sresize_inplace(current, newSize);
     } else {
@@ -406,7 +418,7 @@ AutoAllocator::alloc(size_t sz) const {
 
 void
 AutoAllocator::free(PtrAndSize alloc) const {
-    if (useMMap(alloc.second)) {
+    if (isMMapped(alloc.second)) {
         return MMapAllocator::sfree(alloc);
     } else {
         return HeapAllocator::sfree(alloc);

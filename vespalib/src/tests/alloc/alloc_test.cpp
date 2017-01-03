@@ -111,6 +111,65 @@ TEST("heap alloc can not be extended") {
     EXPECT_EQUAL(100, buf.size());
 }
 
+TEST("auto alloced heap alloc can not be extended") {
+    Alloc buf = Alloc::alloc(100);
+    void * oldPtr = buf.get();
+    EXPECT_EQUAL(100, buf.size());
+    EXPECT_FALSE(buf.resize_inplace(101));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(100, buf.size());
+}
+
+TEST("auto alloced heap alloc can not be extended, even if resize will be mmapped") {
+    Alloc buf = Alloc::alloc(100);
+    void * oldPtr = buf.get();
+    EXPECT_EQUAL(100, buf.size());
+    EXPECT_FALSE(buf.resize_inplace(MemoryAllocator::HUGEPAGE_SIZE*3));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(100, buf.size());
+}
+
+TEST("auto alloced mmap alloc can be extended if room") {
+    static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE*2;
+    Alloc reserved = Alloc::alloc(SZ);
+    Alloc buf = Alloc::alloc(SZ);
+
+    // Normally mmapping starts at the top and grows down in address space.
+    // Then there is no room to extend the last mapping.
+    // So in order to verify this we first mmap a reserved area that we unmap
+    // before we test extension.
+    EXPECT_GREATER(reserved.get(), buf.get());
+    EXPECT_EQUAL(reserved.get(), static_cast<const char *>(buf.get()) + buf.size());
+    {
+        Alloc().swap(reserved);
+    }
+
+    void * oldPtr = buf.get();
+    EXPECT_EQUAL(SZ, buf.size());
+    EXPECT_TRUE(buf.resize_inplace(SZ+1));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL((SZ/2)*3, buf.size());
+}
+
+TEST("auto alloced mmap alloc can not be extended if no room") {
+    static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE*2;
+    Alloc reserved = Alloc::alloc(SZ);
+    Alloc buf = Alloc::alloc(SZ);
+
+    // Normally mmapping starts at the top and grows down in address space.
+    // Then there is no room to extend the last mapping.
+    // So in order to verify this we first mmap a reserved area that we unmap
+    // before we test extension.
+    EXPECT_GREATER(reserved.get(), buf.get());
+    EXPECT_EQUAL(reserved.get(), static_cast<const char *>(buf.get()) + buf.size());
+
+    void * oldPtr = buf.get();
+    EXPECT_EQUAL(SZ, buf.size());
+    EXPECT_FALSE(buf.resize_inplace(SZ+1));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(SZ, buf.size());
+}
+
 TEST("mmap alloc can be extended if room") {
     Alloc reserved = Alloc::allocMMap(100);
     Alloc buf = Alloc::allocMMap(100);
@@ -166,6 +225,38 @@ TEST("mmap alloc can be shrinked") {
     EXPECT_TRUE(buf.resize_inplace(4095));
     EXPECT_EQUAL(oldPtr, buf.get());
     EXPECT_EQUAL(4096, buf.size());
+}
+
+TEST("auto alloced heap alloc can not be shrinked") {
+    Alloc buf = Alloc::alloc(101);
+    void * oldPtr = buf.get();
+    EXPECT_EQUAL(101, buf.size());
+    EXPECT_FALSE(buf.resize_inplace(100));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(101, buf.size());
+}
+
+TEST("auto alloced mmap alloc can be shrinked") {
+    static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE;
+    Alloc buf = Alloc::alloc(SZ + 1);
+    void * oldPtr = buf.get();
+    EXPECT_EQUAL(SZ + MemoryAllocator::HUGEPAGE_SIZE, buf.size());
+    EXPECT_TRUE(buf.resize_inplace(SZ-1));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(SZ, buf.size());
+}
+
+TEST("auto alloced mmap alloc can not be shrinked below HUGEPAGE_SIZE/2 + 1 ") {
+    static constexpr size_t SZ = MemoryAllocator::HUGEPAGE_SIZE;
+    Alloc buf = Alloc::alloc(SZ + 1);
+    void * oldPtr = buf.get();
+    EXPECT_EQUAL(SZ + MemoryAllocator::HUGEPAGE_SIZE, buf.size());
+    EXPECT_TRUE(buf.resize_inplace(SZ/2 + 1));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(SZ, buf.size());
+    EXPECT_FALSE(buf.resize_inplace(SZ/2));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(SZ, buf.size());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
