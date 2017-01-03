@@ -149,7 +149,8 @@ public class Concat extends PrimitiveTensorFunction {
      */
     private TensorAddress combineAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
                                            TensorType concatType, int concatOffset, String concatDimension) {
-        String[] joinedLabels = new String[concatType.dimensions().size()];
+        int[] joinedLabels = new int[concatType.dimensions().size()];
+        Arrays.fill(joinedLabels, -1);
         int concatDimensionIndex = concatType.indexOfDimension(concatDimension).get();
         mapContent(a, joinedLabels, aToIndexes, concatDimensionIndex, concatOffset); // note: This sets a nonsensical value in the concat dimension
         boolean compatible = mapContent(b, joinedLabels, bToIndexes, concatDimensionIndex, concatOffset); // ... which is overwritten by the right value here
@@ -178,15 +179,15 @@ public class Concat extends PrimitiveTensorFunction {
      * @return true if the mapping was successful, false if one of the destination positions was
      *         occupied by a different value
      */
-    private boolean mapContent(TensorAddress from, String[] to, int[] indexMap, int concatDimension, int concatOffset) {
+    private boolean mapContent(TensorAddress from, int[] to, int[] indexMap, int concatDimension, int concatOffset) {
         for (int i = 0; i < from.size(); i++) {
             int toIndex = indexMap[i];
             if (concatDimension == toIndex) {
-                to[toIndex] = String.valueOf(from.intLabel(i) + concatOffset);
+                to[toIndex] = from.intLabel(i) + concatOffset;
             }
             else {
-                if (to[toIndex] != null && !to[toIndex].equals(from.label(i))) return false;
-                to[toIndex] = from.label(i);
+                if (to[toIndex] != -1 && to[toIndex] != from.intLabel(i)) return false;
+                to[toIndex] = from.intLabel(i);
             }
         }
         return true;
