@@ -33,12 +33,12 @@ public class RPCMessageBus extends NetworkMessageBus {
     public RPCMessageBus(MessageBusParams mbusParams, RPCNetworkParams rpcParams, String routingCfgId) {
         this(mbusParams, new RPCNetwork(rpcParams), routingCfgId);
     }
-    
+
     private RPCMessageBus(MessageBusParams mbusParams, RPCNetwork network, String routingCfgId) {
         this(new MessageBus(network, mbusParams), network, routingCfgId);
     }
-    
-    private RPCMessageBus(MessageBus messageBus, RPCNetwork network, String routingCfgId) { 
+
+    private RPCMessageBus(MessageBus messageBus, RPCNetwork network, String routingCfgId) {
         super(network, messageBus);
         configAgent = new ConfigAgent(routingCfgId != null ? routingCfgId : "client", messageBus);
         configAgent.subscribe();

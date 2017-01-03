@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  * messaging semantics of each hop.</p>
  *
  * The responsibilities of a message bus are:
- * <ul> 
+ * <ul>
  *     <li>Assign a route to every send message from its routing table
  *     <li>Deliver every message it <i>accepts</i> to the next hop on its route
  *         <i>or</i> deliver a <i>failure reply</i>.

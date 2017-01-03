@@ -35,7 +35,7 @@ public class LocalNetwork implements Network {
     public LocalNetwork() {
         this(new LocalWire());
     }
-    
+
     public LocalNetwork(LocalWire wire) {
         this.wire = wire;
         this.hostId = wire.newHostId();
