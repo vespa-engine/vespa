@@ -16,7 +16,7 @@ public class RetryPolicyTestCase extends TestCase {
             policy.setBaseDelay(delay);
             for (int j = 0; j < 5; ++j) {
                 assertEquals((int)(j * delay), (int)policy.getRetryDelay(j));
-            }            
+            }
             for (int j = ErrorCode.NONE; j < ErrorCode.ERROR_LIMIT; ++j) {
                 policy.setEnabled(true);
                 if (j < ErrorCode.FATAL_ERROR) {

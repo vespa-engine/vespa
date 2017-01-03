@@ -29,7 +29,7 @@ public class ErrorTestCase {
         assertTrue(new Error(ErrorCode.FATAL_ERROR, "foo").isFatal());
         assertTrue(new Error(ErrorCode.FATAL_ERROR + 1, "foo").isFatal());
     }
-    
+
     @Test
     public void requireThatErrorIsPropagated() throws Exception {
         RoutingTableSpec table = new RoutingTableSpec(SimpleProtocol.NAME);

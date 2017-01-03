@@ -2,7 +2,7 @@
 package com.yahoo.messagebus.routing;
 
 /**
- * When a {@link com.yahoo.messagebus.Reply} containing errors is returned to a {@link com.yahoo.messagebus.MessageBus}, 
+ * When a {@link com.yahoo.messagebus.Reply} containing errors is returned to a {@link com.yahoo.messagebus.MessageBus},
  * an object implementing this interface is consulted on whether or not to resend the corresponding {@link
  * com.yahoo.messagebus.Message}. The policy is passed to the message bus at creation time using the {@link
  * com.yahoo.messagebus.MessageBusParams#setRetryPolicy(RetryPolicy)} method.

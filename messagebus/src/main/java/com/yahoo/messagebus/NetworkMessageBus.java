@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The combination of a messagebus and a network over which it may send data.
- * 
+ *
  * @author bratseth
  */
 public class NetworkMessageBus {
@@ -16,12 +16,12 @@ public class NetworkMessageBus {
     private final MessageBus messageBus;
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
-    
+
     public NetworkMessageBus(Network network, MessageBus messageBus) {
         this.network = network;
         this.messageBus = messageBus;
     }
-    
+
     /** Returns the contained message bus object */
     public MessageBus getMessageBus() { return messageBus; }
 
@@ -30,14 +30,14 @@ public class NetworkMessageBus {
 
     /**
      * Irreversibly destroys the content of this.
-     * 
+     *
      * @return whether this destroyed anything, or if it was already destroyed
      */
     public boolean destroy() {
         if ( destroyed.getAndSet(true)) return false;
-        
+
         getMessageBus().destroy();
         return true;
     }
-    
+
 }
