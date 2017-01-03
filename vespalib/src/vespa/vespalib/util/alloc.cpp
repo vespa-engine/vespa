@@ -1,20 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "alloc.h"
-#include <stdlib.h>
-#include <errno.h>
 #include <sys/mman.h>
-#include <linux/mman.h>
-#include <stdexcept>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/log/log.h>
 #include <map>
 #include <atomic>
 #include <unordered_map>
 #include <vespa/fastos/file.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".vespalib.alloc");
 
 namespace vespalib {
@@ -29,6 +25,11 @@ size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
 size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
 Lock _G_lock;
 std::atomic<size_t> _G_mmapCount(0);
+
+size_t
+roundUp2PageSize(size_t sz) {
+    return (sz + (_G_pageSize - 1)) & ~(_G_pageSize - 1);
+}
 
 struct MMapInfo {
     MMapInfo() :
@@ -141,10 +142,13 @@ public:
     PtrAndSize alloc(size_t sz) const override;
     void free(PtrAndSize alloc) const override;
     size_t resize_inplace(PtrAndSize current, size_t newSize) const override;
-    static size_t sextend_inplace(PtrAndSize current, size_t newSize);
+    static size_t sresize_inplace(PtrAndSize current, size_t newSize);
     static PtrAndSize salloc(size_t sz, void * wantedAddress);
     static void sfree(PtrAndSize alloc);
     static MemoryAllocator & getDefault();
+private:
+    static size_t extend_inplace(PtrAndSize current, size_t newSize);
+    static size_t shrink_inplace(PtrAndSize current, size_t newSize);
 };
 
 class AutoAllocator : public MemoryAllocator {
@@ -263,7 +267,7 @@ AlignedHeapAllocator::alloc(size_t sz) const {
 
 size_t
 MMapAllocator::resize_inplace(PtrAndSize current, size_t newSize) const {
-    return sextend_inplace(current, newSize);
+    return sresize_inplace(current, newSize);
 }
 
 MemoryAllocator::PtrAndSize
@@ -275,7 +279,7 @@ MemoryAllocator::PtrAndSize
 MMapAllocator::salloc(size_t sz, void * wantedAddress)
 {
     void * buf(nullptr);
-    sz = (sz + (_G_pageSize - 1)) & ~(_G_pageSize - 1);
+    sz = roundUp2PageSize(sz);
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
@@ -325,14 +329,33 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
 }
 
 size_t
-MMapAllocator::sextend_inplace(PtrAndSize current, size_t newSize) {
+MMapAllocator::sresize_inplace(PtrAndSize current, size_t newSize) {
+    newSize = roundUp2PageSize(newSize);
+    if (newSize > current.second) {
+        return extend_inplace(current, newSize);
+    } else if (newSize < current.second) {
+        return shrink_inplace(current, newSize);
+    } else {
+        return current.second;
+    }
+}
+
+size_t
+MMapAllocator::extend_inplace(PtrAndSize current, size_t newSize) {
     PtrAndSize got = MMapAllocator::salloc(newSize - current.second, static_cast<char *>(current.first)+current.second);
-    if (current.first == got.first) {
-        return got.second;
+    if ((static_cast<const char *>(current.first) + current.second) == static_cast<const char *>(got.first)) {
+        return current.second + got.second;
     } else {
         MMapAllocator::sfree(got);
         return 0;
     }
+}
+
+size_t
+MMapAllocator::shrink_inplace(PtrAndSize current, size_t newSize) {
+    PtrAndSize toUnmap(static_cast<char *>(current.first)+newSize, current.second - newSize);
+    sfree(toUnmap);
+    return newSize;
 }
 
 void MMapAllocator::free(PtrAndSize alloc) const {
@@ -342,8 +365,10 @@ void MMapAllocator::free(PtrAndSize alloc) const {
 void MMapAllocator::sfree(PtrAndSize alloc)
 {
     if (alloc.first != nullptr) {
-        madvise(alloc.first, alloc.second, MADV_DONTNEED);
-        munmap(alloc.first, alloc.second);
+        int retval = madvise(alloc.first, alloc.second, MADV_DONTNEED);
+        assert(retval == 0);
+        retval = munmap(alloc.first, alloc.second);
+        assert(retval == 0);
         if (alloc.second >= _G_MMapLogLimit) {
             LockGuard guard(_G_lock);
             MMapInfo info = _G_HugeMappings[alloc.first];
@@ -359,7 +384,7 @@ size_t
 AutoAllocator::resize_inplace(PtrAndSize current, size_t newSize) const {
     if (useMMap(current.second) && useMMap(newSize)) {
         newSize = roundUpToHugePages(newSize);
-        return MMapAllocator::sextend_inplace(current, newSize);
+        return MMapAllocator::sresize_inplace(current, newSize);
     } else {
         return 0;
     }
@@ -398,7 +423,7 @@ bool
 Alloc::resize_inplace(size_t newSize)
 {
     size_t extendedSize = _allocator->resize_inplace(_alloc, newSize);
-    if (extendedSize > newSize) {
+    if (extendedSize >= newSize) {
         _alloc.second = extendedSize;
         return true;
     }

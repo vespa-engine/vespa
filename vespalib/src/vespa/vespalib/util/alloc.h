@@ -21,6 +21,15 @@ public:
     virtual ~MemoryAllocator() { }
     virtual PtrAndSize alloc(size_t sz) const = 0;
     virtual void free(PtrAndSize alloc) const = 0;
+    /*
+     * If possible the allocations will be resized. If it was possible it will return the real size,
+     * if not it shall return 0.
+     * Afterwards you have a buffer that can be accessed up to the new size.
+     * The old buffer is unmodified up to the new size.
+     * This is thread safe and at no point will data in the buffer be invalid.
+     * @param newSize The desired new size
+     * @return true if successful.
+     */
     virtual size_t resize_inplace(PtrAndSize current, size_t newSize) const = 0;
     static size_t roundUpToHugePages(size_t sz) {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
@@ -43,6 +52,14 @@ public:
     const void * get() const { return _alloc.first; }
     void * operator -> () { return _alloc.first; }
     const void * operator -> () const { return _alloc.first; }
+    /*
+     * If possible the allocations will be resized. If it was possible it will return true
+     * And you have an area that can be accessed up to the new size.
+     * The old buffer is unmodified up to the new size.
+     * This is thread safe and at no point will data in the buffer be invalid.
+     * @param newSize The desired new size
+     * @return true if successful.
+     */
     bool resize_inplace(size_t newSize);
     Alloc(const Alloc &) = delete;
     Alloc & operator = (const Alloc &) = delete;
