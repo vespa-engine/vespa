@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 // Node state transitions:
-// 1) (new) - > provisioned -> ready -> reserved -> active -> inactive -> dirty -> ready
+// 1) (new) - > provisioned -> dirty -> ready -> reserved -> active -> inactive -> dirty -> ready
 // 2) inactive -> reserved
 // 3) reserved -> dirty
 // 3) * -> failed | parked -> dirty | active | (removed)
@@ -201,7 +201,7 @@ public class NodeRepository extends AbstractComponent {
         }
     }
 
-    /** Sets a list of nodes ready and returns the nodes in the ready state */
+    // Visible for testing purposes
     public List<Node> setReady(List<Node> nodes) {
         for (Node node : nodes)
             if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
@@ -209,6 +209,28 @@ public class NodeRepository extends AbstractComponent {
         try (Mutex lock = lockUnallocated()) {
             return zkClient.writeTo(Node.State.ready, nodes);
         }
+    }
+
+    /**
+     * Set a node ready. The node may be moved to a intermediate state (e.g. dirty) and require a subsequent call to
+     * move to ready.
+     */
+    public Node setReady(Node node) {
+        List<Node.State> legalStates = Arrays.asList(Node.State.provisioned, Node.State.dirty, Node.State.failed, Node.State.parked);
+        if (!legalStates.contains(node.state())) {
+            throw new IllegalArgumentException("Could not set " + node.hostname() + " ready: Not registered as provisioned, " +
+                    "dirty, failed or parked");
+        }
+        if (node.allocation().isPresent()) {
+            throw new IllegalArgumentException("Could not set " + node.hostname() + " ready: Node is allocated and must be " +
+                    "moved to dirty instead");
+        }
+        // Provisioned nodes are moved to dirty. This ensures that any user data is cleaned up and that all packages and
+        // kernel are upgraded.
+        if (node.state() == Node.State.provisioned) {
+            return deallocate(Collections.singletonList(node)).get(0);
+        }
+        return setReady(Collections.singletonList(node)).get(0);
     }
 
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
@@ -275,7 +297,7 @@ public class NodeRepository extends AbstractComponent {
      * Fails this node and returns it in its new state.
      *
      * @return the node in its new state
-     * @throws NotFoundException if the node is not found
+     * @throws NoSuchNodeException if the node is not found
      */
     public Node fail(String hostname) {
         return move(hostname, Node.State.failed);
@@ -285,7 +307,7 @@ public class NodeRepository extends AbstractComponent {
      * Parks this node and returns it in its new state.
      *
      * @return the node in its new state
-     * @throws NotFoundException if the node is not found
+     * @throws NoSuchNodeException if the node is not found
      */
     public Node park(String hostname) {
         return move(hostname, Node.State.parked);
@@ -295,7 +317,7 @@ public class NodeRepository extends AbstractComponent {
      * Moves a previously failed or parked node back to the active state.
      *
      * @return the node in its new state
-     * @throws NotFoundException if the node is not found
+     * @throws NoSuchNodeException if the node is not found
      */
     public Node reactivate(String hostname) {
         return move(hostname, Node.State.active);
@@ -304,7 +326,7 @@ public class NodeRepository extends AbstractComponent {
     public Node move(String hostname, Node.State toState) {
         Optional<Node> node = getNode(hostname);
         if ( ! node.isPresent())
-            throw new NotFoundException("Could not move " + hostname + " to " + toState + ": Node not found");
+            throw new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found");
         try (Mutex lock = lock(node.get())) {
             return zkClient.writeTo(toState, node.get());
         }
