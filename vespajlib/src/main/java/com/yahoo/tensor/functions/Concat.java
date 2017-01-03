@@ -68,9 +68,7 @@ public class Concat extends PrimitiveTensorFunction {
         int aDimensionLength = aIndexed.type().indexOfDimension(dimension).map(aIndexed::size).orElseThrow(RuntimeException::new);
         int[] aToIndexes = mapIndexes(a.type(), concatType);
         int[] bToIndexes = mapIndexes(b.type(), concatType);
-        System.out.println("Concatenating " + a + " to " + b);
         concatenateTo(aIndexed, bIndexed, aDimensionLength, concatType, aToIndexes, bToIndexes, builder);
-        System.out.println("Concatenating " + b + " to " + a);
         concatenateTo(bIndexed, aIndexed, 0, concatType, bToIndexes, aToIndexes, builder);
         return builder.build();
     }
@@ -83,14 +81,12 @@ public class Concat extends PrimitiveTensorFunction {
             TensorAddress aAddress = iaSubspace.address();
             for (Iterator<IndexedTensor.SubspaceIterator> ib = b.subspaceIterator(otherADimensions); ib.hasNext();) {
                 IndexedTensor.SubspaceIterator ibSubspace = ib.next();
-                System.out.println("  Producing concatenation along '" + dimension + "' starting at b address " + ibSubspace.address());
                 while (ibSubspace.hasNext()) {
                     java.util.Map.Entry<TensorAddress, Double> bCell = ibSubspace.next(); // TODO: Create Cell convenience subclass for Map.Entry
                     TensorAddress combinedAddress = combineAddresses(aAddress, aToIndexes, bCell.getKey(), bToIndexes,
                                                                      concatType, offset, dimension);
                     if (combinedAddress == null) continue; // incompatible
 
-                    System.out.println("    Setting " + combinedAddress + " = " +  bCell.getValue());
                     builder.cell(combinedAddress, bCell.getValue());
                 }
                 iaSubspace.reset();
