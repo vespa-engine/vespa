@@ -43,8 +43,7 @@ public class ConcatTestCase {
         Tensor b = Tensor.from("tensor(x[]):{ {x:0}:4, {x:1}:5, {x:2}:6 }");
         assertEquals(Tensor.from("tensor(x[5]):{ {x:0}:1, {x:1}:2, {x:2}:4, {x:3}:5, {x:4}:6 }"), a.concat(b, "x"));
         try {
-            assertEquals(Tensor.from("tensor(x[3],y[2]):{ {x:0,y:0}:1, {x:1,y:0}:2, {x:2,y:0}:3, " +
-                                     "{x:0,y:1}:4, {x:1,y:1}:5, {x:2,y:1}:6  }"), a.concat(b, "y"));
+            a.concat(b, "y");
             fail("Expected exception");
         } catch (IllegalArgumentException expected) {
             // success
