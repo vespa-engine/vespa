@@ -6,8 +6,10 @@ package com.yahoo.vespa.hosted.provision;
  *
  * @author musum
  */
-public class NoSuchNodeException extends RuntimeException {
+public class NotFoundException extends RuntimeException {
 
-    public NoSuchNodeException(String message) { super(message); }
+    public NotFoundException(String message) { super(message); }
+
+    public NotFoundException(String message, Throwable cause) { super(message, cause); }
 
 }
