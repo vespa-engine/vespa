@@ -60,9 +60,9 @@ List globalList[NumBlocks];
 
 class LinkIn : public Consumer {
 public:
-    LinkIn(List::HeadPtr & list, uint32_t maxQueue, bool inverse);
+    LinkIn(List::AtomicHeadPtr & list, uint32_t maxQueue, bool inverse);
 private:
-    List::HeadPtr & _head;
+    List::AtomicHeadPtr & _head;
     virtual void consume(void * p) {
         List * l((List *) p);
         if ( ! ((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) { abort(); }
@@ -70,7 +70,7 @@ private:
     }
 };
 
-LinkIn::LinkIn(List::HeadPtr & list, uint32_t maxQueue, bool inverse) :
+LinkIn::LinkIn(List::AtomicHeadPtr & list, uint32_t maxQueue, bool inverse) :
     Consumer (maxQueue, inverse),
     _head(list)
 {
@@ -80,10 +80,10 @@ LinkIn::LinkIn(List::HeadPtr & list, uint32_t maxQueue, bool inverse) :
 
 class LinkOut : public Producer {
 public:
-    LinkOut(List::HeadPtr & list, uint32_t cnt, LinkIn &target)
+    LinkOut(List::AtomicHeadPtr & list, uint32_t cnt, LinkIn &target)
         : Producer(cnt, target), _head(list) {}
 private:
-    List::HeadPtr & _head;
+    List::AtomicHeadPtr & _head;
     virtual void * produce()       {
         void *p = List::linkOut(_head);
         List *l((List *)p);
@@ -96,10 +96,10 @@ private:
 
 class LinkInOutAndIn : public ProducerConsumer {
 public:
-    LinkInOutAndIn(List::HeadPtr & list, uint32_t cnt, bool inverse)
+    LinkInOutAndIn(List::AtomicHeadPtr & list, uint32_t cnt, bool inverse)
         : ProducerConsumer(cnt, inverse), _head(list) { }
 private:
-    List::HeadPtr & _head;
+    List::AtomicHeadPtr & _head;
     virtual void * produce()       {
         void *p = List::linkOut(_head);
         List *l((List *)p);
@@ -125,10 +125,7 @@ int Test::Main() {
     ASSERT_EQUAL(1024ul, sizeof(List));
 
     FastOS_ThreadPool      pool(128000);
-    List::HeadPtr    sharedList;
-    sharedList._tag = 1;
-    List::init();
-    List::enableThreadSupport();
+    List::AtomicHeadPtr    sharedList(List::HeadPtr(nullptr, 1));
     fprintf(stderr, "Start populating list\n");
     for (size_t i=0; i < NumBlocks; i++) {
         List * l(&globalList[i]);
@@ -143,7 +140,9 @@ int Test::Main() {
     List *n =  List::linkOut(sharedList);
     ASSERT_TRUE(n == NULL);
 
-    sharedList._tag = 1;
+    List::HeadPtr tmp(sharedList.load());
+    tmp._tag = 1;
+    sharedList.store(tmp);
     fprintf(stderr, "Start populating list\n");
     for (size_t i=0; i < NumBlocks; i++) {
         List * l(&globalList[i]);
