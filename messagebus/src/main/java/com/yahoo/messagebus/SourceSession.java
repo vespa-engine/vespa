@@ -176,7 +176,7 @@ public final class SourceSession implements ReplyHandler {
                 try {
                     blockedCount++;
                     while (!closed && !throttlePolicy.canSend(msg, pendingCount)) {
-                        lock.wait(100);
+                        lock.wait(10);
                     }
                 } finally {
                     blockedCount--;
@@ -198,7 +198,7 @@ public final class SourceSession implements ReplyHandler {
                 throttlePolicy.processReply(reply);
             }
             done = (closed && pendingCount == 0);
-            if (blockedCount < 100) {
+            if (blockedCount < 10) {
                 lock.notifyAll();
             } else {
                 lock.notify();
