@@ -92,4 +92,12 @@ public class RestartActions {
     public List<Entry> getEntries() {
         return new ArrayList<>(actions.values());
     }
+
+    public String format() {
+        return new RestartActionsFormatter(this).format();
+    }
+
+    public boolean isEmpty() {
+        return getEntries().isEmpty();
+    }
 }
