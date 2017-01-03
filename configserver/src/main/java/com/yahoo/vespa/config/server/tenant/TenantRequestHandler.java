@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
+import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.application.ApplicationMapper;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
@@ -20,7 +21,6 @@ import com.yahoo.vespa.config.server.application.VersionDoesNotExistException;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 
