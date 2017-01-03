@@ -82,21 +82,16 @@ public class RestApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host11.yahoo.com"), "node11.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/parent2.yahoo.com"), "parent2.json");
 
-        // PUT provisioned node ready moves the node to dirty
+        // PUT nodes ready
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host8.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host8.yahoo.com to dirty\"}");
+                       "{\"message\":\"Moved host8.yahoo.com to ready\"}");
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host8.yahoo.com"),
-                                           "\"state\":\"dirty\"");
-        // calling ready again readies the node
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host8.yahoo.com",
-                                  new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved host8.yahoo.com to ready\"}");
-
+                                           "\"state\":\"ready\"");
         // calling ready again is a noop:
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host8.yahoo.com",
-                        new byte[0], Request.Method.PUT),
-                "{\"message\":\"Nothing done; host8.yahoo.com is already ready\"}");
+                                  new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Nothing done; host8.yahoo.com is already ready\"}");
 
         // PUT a node in failed ...
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host8.yahoo.com",
@@ -255,7 +250,7 @@ public class RestApiTest {
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/" + hostname,
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved foo.yahoo.com to dirty\"}");
+                       "{\"message\":\"Moved foo.yahoo.com to ready\"}");
         Pattern responsePattern = Pattern.compile("\\{\"trustedNodes\":\\[" +
                 "\\{\"hostname\":\"cfg1\",\"ipAddress\":\".+?\"}," +
                 "\\{\"hostname\":\"cfg2\",\"ipAddress\":\".+?\"}," +
