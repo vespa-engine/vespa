@@ -56,57 +56,17 @@ public class TensorType {
     /** Returns true if all dimensions of this are indexed */
     public boolean isIndexed() { return dimensions().stream().allMatch(d -> d.isIndexed()); }
     
-    private static final boolean supportsMixedTypes = false;
-    
-    /** 
-     * Returns a new tensor type which is the combination of the dimensions of both arguments.
-     * If the same dimension is indexed with different size restrictions the largest size will be used.
-     * If it is size restricted in one argument but not the other it will not be size restricted.
-     * If it is indexed in one and mapped in the other it will become mapped.
-     */
-    public TensorType combineWith(TensorType other) {
-        if ( ! supportsMixedTypes) return combineWithAndDisallowMixedTypes(other); // TODO: Support it
-        
-        if (this.equals(other)) return this;
-
-        TensorType.Builder b = new TensorType.Builder();
-        for (Dimension thisDimension : dimensions)
-            b.add(thisDimension);
-        for (Dimension otherDimension : other.dimensions) {
-            Dimension thisDimension = b.dimensions.get(otherDimension.name());
-            b.set(otherDimension.combineWith(Optional.ofNullable(thisDimension)));
-        }
-        return b.build();
-    }
-
-    private TensorType combineWithAndDisallowMixedTypes(TensorType other) {
-        if (this.equals(other)) return this;
-        
-        boolean containsMapped = dimensions().stream().anyMatch(d -> ! d.isIndexed());
-        containsMapped = containsMapped || other.dimensions().stream().anyMatch(d -> ! d.isIndexed());
-
-        TensorType.Builder b = new TensorType.Builder();
-        for (Dimension thisDimension : dimensions) {
-            if (containsMapped)
-                thisDimension = new MappedDimension(thisDimension.name());
-            b.add(thisDimension);
-        }
-        for (Dimension otherDimension : other.dimensions) {
-            if (containsMapped)
-                otherDimension = new MappedDimension(otherDimension.name());
-            Dimension thisDimension = b.dimensions.get(otherDimension.name());
-            b.set(otherDimension.combineWith(Optional.ofNullable(thisDimension)));
-        }
-        return b.build();
-    }
-    
-    
     /** Returns an immutable list of the dimensions of this */
     public List<Dimension> dimensions() { return dimensions; }
     
     /** Returns an immutable set of the names of the dimensions of this */
     public Set<String> dimensionNames() {
         return dimensions.stream().map(Dimension::name).collect(Collectors.toSet());
+    }
+    
+    /** Returns the dimension with this name, or empty if not present */
+    public Optional<Dimension> dimension(String name) {
+        return indexOfDimension(name).map(i -> dimensions.get(i));
     }
 
     /** Returns the 0-base index of this dimension, or empty if it is not present */
@@ -210,6 +170,10 @@ public class TensorType {
             return this.name.compareTo(other.name);
         }
         
+        public static Dimension indexed(String name, int size) {
+            return new IndexedBoundDimension(name, size);
+        }
+        
     }
 
     public static class IndexedBoundDimension extends TensorType.Dimension {
@@ -305,7 +269,51 @@ public class TensorType {
 
         private final Map<String, Dimension> dimensions = new LinkedHashMap<>();
 
-        /** Add a new dimension */
+        /** Creates an empty builder */
+        public Builder() {
+        }
+
+        /** 
+         * Creates a builder containing a combination of the dimensions of the given types 
+         * 
+         * If the same dimension is indexed with different size restrictions the largest size will be used.
+         * If it is size restricted in one argument but not the other it will not be size restricted.
+         * If it is indexed in one and mapped in the other it will become mapped.
+         */
+        public Builder(TensorType ... types) {
+            for (TensorType type : types)
+                addDimensionsOf(type);
+        }
+
+        private static final boolean supportsMixedTypes = false;
+
+        private void addDimensionsOf(TensorType type) {
+            if ( ! supportsMixedTypes) {  // TODO: Support it
+                addDimensionsOfAndDisallowMixedDimensions(type);
+            }
+            else {
+                for (Dimension dimension : type.dimensions)
+                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name()))));
+            }
+        }
+
+        private void addDimensionsOfAndDisallowMixedDimensions(TensorType type) {
+            boolean containsMapped = dimensions.values().stream().anyMatch(d -> ! d.isIndexed());
+            containsMapped = containsMapped || type.dimensions().stream().anyMatch(d -> ! d.isIndexed());
+
+            for (Dimension dimension : type.dimensions) {
+                if (containsMapped)
+                    dimension = new MappedDimension(dimension.name());
+                Dimension existing = dimensions.get(dimension.name());
+                set(dimension.combineWith(Optional.ofNullable(existing)));
+            }
+        }
+
+        /** 
+         * Adds a new dimension to this
+         * 
+         * @throws IllegalArgumentException if the dimension is already present
+         */
         private Builder add(Dimension dimension) {
             Objects.requireNonNull(dimension, "A dimension cannot be null");
             if (dimensions.containsKey(dimension.name()))
@@ -315,27 +323,46 @@ public class TensorType {
             return this;
         }
 
-        /** Add or replace a dimension */
-        private Builder set(Dimension dimension) {
+        /** Adds or replaces a dimension in this */
+        public Builder set(Dimension dimension) {
             Objects.requireNonNull(dimension, "A dimension cannot be null");
             dimensions.put(dimension.name(), dimension);
             return this;
         }
 
-        /** Create a bound indexed dimension */
+        /** 
+         * Adds a bound indexed dimension to this
+         *
+         * @throws IllegalArgumentException if the dimension is already present
+         */
         public Builder indexed(String name, int size) { return add(new IndexedBoundDimension(name, size)); }
 
-        /** Create an unbound indexed dimension */
+        /**
+         * Adds an unbound indexed dimension to this
+         * 
+         * @throws IllegalArgumentException if the dimension is already present
+         */
         public Builder indexed(String name) {
             return add(new IndexedUnboundDimension(name));
         }
 
+        /**
+         * Adds a mapped dimension to this
+         *
+         * @throws IllegalArgumentException if the dimension is already present
+         */
         public Builder mapped(String name) {
             return add(new MappedDimension(name));
         }
 
+        /** Adds the give dimension */
         public Builder dimension(Dimension dimension) {
             return add(dimension);
+        }
+        
+        /** Returns the given dimension, or empty if none is present */
+        public Optional<Dimension> getDimension(String dimension) {
+            return Optional.ofNullable(dimensions.get(dimension));
         }
 
         public Builder dimension(String name, Dimension.Type type) {

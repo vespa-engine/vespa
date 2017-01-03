@@ -1,5 +1,6 @@
-package com.yahoo.tensor;
+package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

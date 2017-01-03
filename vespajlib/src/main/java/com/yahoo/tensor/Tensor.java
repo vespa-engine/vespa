@@ -4,6 +4,7 @@ package com.yahoo.tensor;
 import com.google.common.annotations.Beta;
 import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.Argmin;
+import com.yahoo.tensor.functions.Concat;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Diag;
 import com.yahoo.tensor.functions.Generate;
@@ -109,6 +110,10 @@ public interface Tensor {
     default Tensor rename(String fromDimension, String toDimension) {
         return new Rename(new ConstantTensor(this), Collections.singletonList(fromDimension), 
                                                     Collections.singletonList(toDimension)).evaluate();
+    }
+
+    default Tensor concat(Tensor argument, String dimension) {
+        return new Concat(new ConstantTensor(this), new ConstantTensor(argument), dimension).evaluate();
     }
 
     default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
