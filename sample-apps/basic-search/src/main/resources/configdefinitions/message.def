@@ -1,0 +1,4 @@
+namespace=example
+
+# Explanation of the 'message' config variable
+message string default="Hello, World!"
