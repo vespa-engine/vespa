@@ -116,7 +116,7 @@ TEST("mmap alloc can be extended if room") {
     Alloc buf = Alloc::allocMMap(100);
 
     // Normally mmapping starts at the top and grows down in address space.
-    // The there is no room to extend the last mapping.
+    // Then there is no room to extend the last mapping.
     // So in order to verify this we first mmap a reserved area that we unmap
     // before we test extension.
     EXPECT_GREATER(reserved.get(), buf.get());
@@ -130,6 +130,24 @@ TEST("mmap alloc can be extended if room") {
     EXPECT_TRUE(buf.resize_inplace(4097));
     EXPECT_EQUAL(oldPtr, buf.get());
     EXPECT_EQUAL(8192, buf.size());
+}
+
+TEST("mmap alloc can not be extended if no room") {
+    Alloc reserved = Alloc::allocMMap(100);
+    Alloc buf = Alloc::allocMMap(100);
+
+    // Normally mmapping starts at the top and grows down in address space.
+    // Then there is no room to extend the last mapping.
+    // So in order to verify this we first mmap a reserved area that we unmap
+    // before we test extension.
+    EXPECT_GREATER(reserved.get(), buf.get());
+    EXPECT_EQUAL(reserved.get(), static_cast<const char *>(buf.get()) + buf.size());
+
+    void * oldPtr = buf.get();
+    EXPECT_EQUAL(4096, buf.size());
+    EXPECT_FALSE(buf.resize_inplace(4097));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(4096, buf.size());
 }
 
 TEST("heap alloc can not be shrinked") {
