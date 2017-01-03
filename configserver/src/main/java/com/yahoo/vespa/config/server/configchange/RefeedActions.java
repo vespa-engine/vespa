@@ -88,4 +88,11 @@ public class RefeedActions {
         return new ArrayList<>(actions.values());
     }
 
+    public String format() {
+        return new RefeedActionsFormatter(this).format();
+    }
+
+    public boolean isEmpty() {
+        return getEntries().isEmpty();
+    }
 }

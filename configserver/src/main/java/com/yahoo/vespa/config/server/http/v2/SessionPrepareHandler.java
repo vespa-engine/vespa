@@ -14,6 +14,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
@@ -22,8 +23,6 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
-import com.yahoo.vespa.config.server.configchange.RefeedActionsFormatter;
-import com.yahoo.vespa.config.server.configchange.RestartActionsFormatter;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 
@@ -82,15 +81,17 @@ public class SessionPrepareHandler extends SessionHandler {
     }
 
     private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
-        if ( ! actions.getRestartActions().getEntries().isEmpty()) {
+        RestartActions restartActions = actions.getRestartActions();
+        if ( ! restartActions.isEmpty()) {
             logger.log(Level.WARNING, "Change(s) between active and new application that require restart:\n" +
-                                      new RestartActionsFormatter(actions.getRestartActions()).format());
+                                      restartActions.format());
         }
-        if ( ! actions.getRefeedActions().getEntries().isEmpty()) {
-            boolean allAllowed = actions.getRefeedActions().getEntries().stream().allMatch(RefeedActions.Entry::allowed);
+        RefeedActions refeedActions = actions.getRefeedActions();
+        if ( ! refeedActions.isEmpty()) {
+            boolean allAllowed = refeedActions.getEntries().stream().allMatch(RefeedActions.Entry::allowed);
             logger.log(allAllowed ? Level.INFO : Level.WARNING,
                        "Change(s) between active and new application that may require re-feed:\n" +
-                       new RefeedActionsFormatter(actions.getRefeedActions()).format());
+                       refeedActions.format());
         }
     }
 
