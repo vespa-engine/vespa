@@ -2,11 +2,11 @@
 #pragma once
 
 #include "fast_access_doc_subdb_configurer.h"
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include "storeonlydocsubdb.h"
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
+#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 
 namespace proton {
 

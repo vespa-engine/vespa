@@ -1,14 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "buffer.h"
+#include "fileinfo.h"
+#include "versionserializer.h"
 #include <vespa/memfilepersistence/memfile/memfileiointerface.h>
-#include <vespa/memfilepersistence/mapper/buffer.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/memfilepersistence/mapper/fileinfo.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/memfilepersistence/mapper/versionserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 namespace storage {
@@ -77,11 +77,11 @@ public:
         typedef vespalib::LinkedPtr<SharedBuffer> LP;
         explicit SharedBuffer(size_t totalSize)
             : _buf(vespalib::alloc::Alloc::allocMMap(totalSize)),
+              _totalSize(totalSize),
               _usedSize(0)
-        {
-        }
+        { }
 
-        size_t getSize() const { return _buf.size(); }
+        size_t getSize() const { return _totalSize; }
         size_t getUsedSize() const { return _usedSize; }
         size_t getFreeSize() const { return getSize() - getUsedSize(); }
         bool hasRoomFor(size_t sz, Alignment align = NO_ALIGN) const {
@@ -115,6 +115,7 @@ public:
         }
     private:
         vespalib::alloc::Alloc _buf;
+        size_t _totalSize;
         size_t _usedSize;
     };
 
@@ -123,7 +124,7 @@ public:
         BufferAllocation() : pos(0), size(0) {}
 
         BufferAllocation(const SharedBuffer::LP& b, uint32_t p, uint32_t sz)
-            : buf(b), pos(p), size(sz) {}
+            : buf(b), pos(p), size(sz) { }
 
         /**
          * Get buffer area available to this specific allocation
@@ -157,10 +158,9 @@ public:
         static const size_t DEFAULT_STREAM_ALLOC_SIZE = 5 * 2014;
 
         HeaderChunkEncoder(const document::DocumentId& docId)
-        : _serializedDoc(DEFAULT_STREAM_ALLOC_SIZE),
-          _docId(docId.toString())
-        {
-        }
+            : _serializedDoc(DEFAULT_STREAM_ALLOC_SIZE),
+              _docId(docId.toString())
+        { }
 
         /**
          * Serializes header chunk to buf, which must have at least a size
