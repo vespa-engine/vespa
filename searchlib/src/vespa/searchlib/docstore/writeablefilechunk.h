@@ -3,18 +3,20 @@
 #pragma once
 
 #include <vespa/searchlib/docstore/filechunk.h>
-#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
-#include <vespa/fastos/file.h>
 #include <map>
 #include <deque>
 
-namespace search {
+namespace search
+{
 
-class PendingChunk;
-class ProcessedChunk;
+namespace common
+{
 
-namespace common { class FileHeaderContext; }
+class FileHeaderContext;
+
+}
 
 class WriteableFileChunk : public FileChunk
 {
@@ -46,7 +48,7 @@ public:
 
 public:
     typedef std::unique_ptr<WriteableFileChunk> UP;
-    WriteableFileChunk(vespalib::ThreadExecutor & executor,
+    WriteableFileChunk(vespalib::ThreadStackExecutorBase & executor,
                        FileId fileId, NameId nameId,
                        const vespalib::string & baseName,
                        uint64_t initialSerialNum,
@@ -78,17 +80,57 @@ public:
 
     static uint64_t writeIdxHeader(const common::FileHeaderContext &fileHeaderContext, FastOS_FileInterface & file);
 private:
-    using ProcessedChunkUP = std::unique_ptr<ProcessedChunk>;
-    typedef std::map<uint32_t, ProcessedChunkUP > ProcessedChunkMap;
+    class ProcessedChunk
+    {
+    public:
+        typedef std::unique_ptr<ProcessedChunk> UP;
+        ProcessedChunk(uint32_t chunkId, uint32_t alignment)
+            : _chunkId(chunkId),
+              _payLoad(0),
+              _buf(0ul, alignment)
+        { }
+        void setPayLoad() { _payLoad = _buf.getDataLen(); }
+        uint32_t getPayLoad() const { return _payLoad; }
+        uint32_t getChunkId() const { return _chunkId; }
+        const vespalib::DataBuffer & getBuf() const { return _buf; }
+        vespalib::DataBuffer & getBuf() { return _buf; }
+    private:
+        uint32_t             _chunkId;
+        uint32_t             _payLoad;
+        vespalib::DataBuffer _buf;
+    };
+    typedef std::map<uint32_t, ProcessedChunk::UP> ProcessedChunkMap;
 
-    typedef std::vector<ProcessedChunkUP> ProcessedChunkQ;
+    typedef std::vector<ProcessedChunk::UP> ProcessedChunkQ;
+
+    /*
+     * Information about serialized chunk written to .dat file but not yet
+     * synced.
+     */
+    class PendingChunk
+    {
+        vespalib::nbostream _idx; // Serialized chunk for .idx file
+        uint64_t _lastSerial;
+        uint64_t _dataOffset;
+        uint32_t _dataLen;
+    public:
+        typedef std::shared_ptr<PendingChunk> SP;
+        PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t dataLen);
+        ~PendingChunk(void);
+        vespalib::nbostream & getSerializedIdx(void) { return _idx; }
+        const vespalib::nbostream & getSerializedIdx(void) const { return _idx; }
+        uint64_t getDataOffset(void) const { return _dataOffset; }
+        uint32_t getDataLen(void) const { return _dataLen; }
+        uint32_t getIdxLen(void) const { return _idx.size(); }
+        uint64_t getLastSerial(void) const { return _lastSerial; }
+    };
 
     bool frozen() const override { return _frozen; }
     void waitForChunkFlushedToDisk(uint32_t chunkId) const;
     void waitForAllChunksFlushedToDisk() const;
     void fileWriter(const uint32_t firstChunkId);
     void internalFlush(uint32_t, uint64_t serialNum);
-    void enque(ProcessedChunkUP);
+    void enque(ProcessedChunk::UP);
     int32_t flushLastIfNonEmpty(bool force);
     void restart(const vespalib::MonitorGuard & guard, uint32_t nextChunkId);
     ProcessedChunkQ drainQ();
@@ -119,9 +161,9 @@ private:
     vespalib::Lock    _flushLock;
     FastOS_File       _dataFile;
     FastOS_File       _idxFile;
-    using ChunkMap = std::map<uint32_t, Chunk::UP>;
+    typedef std::map<uint32_t, Chunk::UP> ChunkMap;
     ChunkMap          _chunkMap;
-    using PendingChunks = std::deque<std::shared_ptr<PendingChunk>>;
+    typedef std::deque<PendingChunk::SP> PendingChunks;
     PendingChunks     _pendingChunks;
     uint64_t          _pendingIdx;
     uint64_t          _pendingDat;
@@ -135,7 +177,7 @@ private:
     bool              _writeTaskIsRunning;
     vespalib::Monitor _writeMonitor;
     ProcessedChunkQ   _writeQ;
-    vespalib::ThreadExecutor & _executor;
+    vespalib::ThreadStackExecutorBase & _executor;
     ProcessedChunkMap _orderedChunks;
     BucketDensityComputer _bucketMap;
 };

@@ -3,7 +3,6 @@
 #include "storebybucket.h"
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/data/databuffer.h>
 
 namespace search {
 namespace docstore {
