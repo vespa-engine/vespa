@@ -14,7 +14,9 @@ vespa_add_library(searchlib_docstore OBJECT
     idocumentstore.cpp
     logdatastore.cpp
     logdocumentstore.cpp
+    randreaders.cpp
     storebybucket.cpp
+    summaryexceptions.cpp
     visitcache.cpp
     writeablefilechunk.cpp
     DEPENDS

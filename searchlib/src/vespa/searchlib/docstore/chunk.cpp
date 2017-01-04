@@ -43,6 +43,11 @@ Chunk::hasRoom(size_t len) const
                && ((_lids.size() + 1) <= _lids.capacity()));
 }
 
+size_t
+Chunk::getMaxPackSize(const document::CompressionConfig & compression) const {
+    return _format->getMaxPackSize(compression);
+}
+
 void
 Chunk::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const document::CompressionConfig & compression)
 {
@@ -77,6 +82,8 @@ Chunk::Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc) :
     os >> _lastSerial;
 }
 
+Chunk::~Chunk() { }
+
 vespalib::ConstBufferRef
 Chunk::getLid(uint32_t lid) const
 {
@@ -95,6 +102,21 @@ Chunk::getLid(uint32_t lid) const
         }
     }
     return buf;
+}
+
+size_t
+Chunk::size() const {
+    return getData().size();
+}
+
+const vespalib::nbostream &
+Chunk::getData() const {
+    return _format->getBuffer();
+}
+
+vespalib::nbostream &
+Chunk::getData() {
+    return _format->getBuffer();
 }
 
 Chunk::LidList
