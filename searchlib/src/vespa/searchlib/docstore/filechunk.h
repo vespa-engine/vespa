@@ -2,19 +2,21 @@
 
 #pragma once
 
-#include <vespa/searchlib/docstore/chunk.h>
-#include <vespa/searchlib/docstore/ibucketizer.h>
+#include "chunk.h"
+#include "ibucketizer.h"
+#include "randread.h"
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/vespalib/util/ptrholder.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/generationhandler.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/fastos/file.h>
 
-namespace search
-{
+class FastOS_FileInterface;
+
+namespace vespalib { class DataBuffer; }
+
+namespace search {
 
 class IDataStoreVisitorProgress;
 class DataStoreFileChunkStats;
@@ -103,63 +105,6 @@ public:
     virtual void updateProgress() = 0;
 };
 
-class FileRandRead
-{
-public:
-    typedef std::shared_ptr<FastOS_File> FSP;
-    virtual ~FileRandRead() { }
-    virtual FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) = 0;
-    virtual int64_t getSize(void) = 0;
-};
-
-class DirectIORandRead : public FileRandRead
-{
-public:
-    DirectIORandRead(const vespalib::string & fileName);
-    FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
-    int64_t getSize(void) override;
-private:
-    FastOS_File      _file;
-    size_t           _alignment;
-    size_t           _granularity;
-    size_t           _maxChunkSize;
-};
-
-class MMapRandRead : public FileRandRead
-{
-public:
-    MMapRandRead(const vespalib::string & fileName, int mmapFlags, int fadviseOptions);
-    FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
-    int64_t getSize(void) override;
-    const void * getMapping() { return _file.MemoryMapPtr(0); }
-private:
-    FastOS_File      _file;
-};
-
-class MMapRandReadDynamic : public FileRandRead
-{
-public:
-    MMapRandReadDynamic(const vespalib::string & fileName, int mmapFlags, int fadviseOptions);
-    FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
-    int64_t getSize(void) override;
-private:
-    void reopen();
-    vespalib::string                 _fileName;
-    vespalib::PtrHolder<FastOS_File> _holder;
-    int                              _mmapFlags;
-    int                              _fadviseOptions;
-};
-
-class NormalRandRead : public FileRandRead
-{
-public:
-    NormalRandRead(const vespalib::string & fileName);
-    FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) override;
-    int64_t getSize(void) override;
-private:
-    FastOS_File      _file;
-};
-
 class BucketDensityComputer
 {
 public:
@@ -218,7 +163,7 @@ public:
     private:
         int32_t _id;
     };
-    typedef vespalib::hash_map<uint32_t, vespalib::DataBuffer::UP> LidBufferMap;
+    typedef vespalib::hash_map<uint32_t, std::unique_ptr<vespalib::DataBuffer>> LidBufferMap;
     typedef std::unique_ptr<FileChunk> UP;
     typedef uint32_t SubChunkId;
     FileChunk(FileId fileId, NameId nameId, const vespalib::string & baseName, const TuneFileSummary & tune, const IBucketizer * bucketizer, bool skipCrcOnRead);
@@ -359,14 +304,6 @@ protected:
     uint32_t            _idxHeaderLen;
     uint64_t            _lastPersistedSerialNum;
     fastos::TimeStamp   _modificationTime;
-};
-
-class SummaryException : public vespalib::IoException
-{
-public:
-    SummaryException(const vespalib::stringref &msg,
-                     FastOS_FileInterface & file,
-                     const vespalib::stringref &location);
 };
 
 } // namespace search
