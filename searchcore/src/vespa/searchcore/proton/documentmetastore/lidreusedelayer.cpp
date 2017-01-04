@@ -23,7 +23,7 @@ LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService,
     : _writeService(writeService),
       _documentMetaStore(documentMetaStore),
       _immediateCommit(true),
-      _hasIndexedFields(false),
+      _hasIndexedOrAttributeFields(false),
       _pendingLids()
 {
 }
@@ -31,21 +31,6 @@ LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService,
 
 LidReuseDelayer::~LidReuseDelayer()
 {
-}
-
-
-void
-LidReuseDelayer::performDelayReuseLid(uint32_t lid)
-{
-    assert(_writeService.master().isCurrentThread());
-    _documentMetaStore.removeComplete(lid);
-}
-
-void
-LidReuseDelayer::performDelayReuseLids(const std::vector<uint32_t> lids)
-{
-    assert(_writeService.master().isCurrentThread());
-    _documentMetaStore.removeBatchComplete(lids);
 }
 
 
@@ -59,7 +44,7 @@ LidReuseDelayer::delayReuse(uint32_t lid)
         _pendingLids.push_back(lid);
         return false;
     }
-    if (!_hasIndexedFields) {
+    if (!_hasIndexedOrAttributeFields) {
         _documentMetaStore.removeComplete(lid);
         return false;
     }
@@ -77,7 +62,7 @@ LidReuseDelayer::delayReuse(const std::vector<uint32_t> &lids)
         _pendingLids.insert(_pendingLids.end(), lids.cbegin(), lids.cend());
         return false;
     }
-    if (!_hasIndexedFields) {
+    if (!_hasIndexedOrAttributeFields) {
         _documentMetaStore.removeBatchComplete(lids);
         return false;
     }
@@ -101,10 +86,10 @@ LidReuseDelayer::getImmediateCommit() const
 
 
 void
-LidReuseDelayer::setHasIndexedFields(bool hasIndexedFields)
+LidReuseDelayer::setHasIndexedOrAttributeFields(bool hasIndexedOrAttributeFields)
 {
     assert(_pendingLids.empty());
-    _hasIndexedFields = hasIndexedFields;
+    _hasIndexedOrAttributeFields = hasIndexedOrAttributeFields;
 }
 
 

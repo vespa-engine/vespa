@@ -34,7 +34,7 @@ public:
     virtual bool delayReuse(const std::vector<uint32_t> &lids) = 0;
     virtual void setImmediateCommit(bool immediateCommit) = 0;
     virtual bool getImmediateCommit() const = 0;
-    virtual void setHasIndexedFields(bool hasIndexedFields) = 0;
+    virtual void setHasIndexedOrAttributeFields(bool hasIndexedFields) = 0;
     virtual std::vector<uint32_t> getReuseLids() = 0;
 };
 
