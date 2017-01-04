@@ -2,20 +2,11 @@
 
 #pragma once
 
+#include <vespa/searchlib/docstore/chunkformat.h>
 #include <vespa/searchlib/util/memoryusage.h>
-#include <vespa/vespalib/util/buffer.h>
-#include <vespa/document/util/compressionconfig.h>
-#include <memory>
-#include <vector>
-
-namespace vespalib {
-    class nbostream;
-    class DataBuffer;
-}
+#include <vespa/vespalib/util/memory.h>
 
 namespace search {
-
-class ChunkFormat;
 
 class ChunkMeta {
 public:
@@ -87,31 +78,30 @@ public:
     typedef std::vector<Entry> LidList;
     Chunk(uint32_t id, const Config & config);
     Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc=false);
-    ~Chunk();
     LidMeta append(uint32_t lid, const void * buffer, size_t len);
     ssize_t read(uint32_t lid, vespalib::DataBuffer & buffer) const;
     size_t count() const { return _lids.size(); }
     bool empty() const { return count() == 0; }
-    size_t size() const;
+    size_t size() const { return getData().size(); }
     const LidList & getLids() const { return _lids; }
     LidList getUniqueLids() const;
-    size_t getMaxPackSize(const document::CompressionConfig & compression) const;
+    size_t getMaxPackSize(const document::CompressionConfig & compression) const { return _format->getMaxPackSize(compression); }
     void pack(uint64_t lastSerial, vespalib::DataBuffer & buffer, const document::CompressionConfig & compression);
     uint64_t getLastSerial() const { return _lastSerial; }
     uint32_t getId() const { return _id; }
     bool validSerial() const { return getLastSerial() != static_cast<uint64_t>(-1l); }
     vespalib::ConstBufferRef getLid(uint32_t lid) const;
-    const vespalib::nbostream & getData() const;
+    const vespalib::nbostream & getData() const { return _format->getBuffer(); }
     bool hasRoom(size_t len) const;
     MemoryUsage getMemoryUsage() const;
 private:
-    vespalib::nbostream & getData();
+    vespalib::nbostream & getData() { return _format->getBuffer(); }
 
-    uint32_t                      _id;
-    uint32_t                      _nextOffset;
-    uint64_t                      _lastSerial;
-    std::unique_ptr<ChunkFormat>  _format;
-    LidList                       _lids;
+    uint32_t           _id;
+    uint32_t           _nextOffset;
+    uint64_t           _lastSerial;
+    ChunkFormat::UP    _format;
+    LidList            _lids;
 };
 
 typedef std::vector<ChunkMeta> ChunkMetaV;

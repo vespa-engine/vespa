@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/fastos/fastos.h>
 #include "documentstoreadapter.h"
 #include "summarycompacttarget.h"
 #include "summaryflushtarget.h"
@@ -8,8 +8,6 @@
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/juniper/rpinterface.h>
-#include <vespa/vespalib/util/exceptions.h>
-
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.summarymanager");
 
