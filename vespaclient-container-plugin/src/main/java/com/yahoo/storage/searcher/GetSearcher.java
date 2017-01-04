@@ -98,7 +98,7 @@ public class GetSearcher extends Searcher {
         }
 
         public boolean handleReply(Reply reply, int numPending) {
-            if (reply.getTrace().getLevel() > 0) {
+            if ((reply.getTrace().getLevel() > 0) && log.isLoggable(LogLevel.DEBUG)) {
                 String str = reply.getTrace().toString();
                 log.log(LogLevel.DEBUG, str);
             }
