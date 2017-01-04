@@ -20,7 +20,7 @@ namespace {
 volatile bool _G_hasHugePageFailureJustHappened(false);
 bool _G_SilenceCoreOnOOM(false);
 int  _G_HugeFlags = 0;
-size_t _G_pageSize = getpagesize();
+const size_t _G_pageSize = getpagesize();
 size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
 size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
 Lock _G_lock;
@@ -36,12 +36,12 @@ struct MMapInfo {
         _id(0ul),
         _sz(0ul),
         _stackTrace()
-    {}
+    { }
     MMapInfo(size_t id, size_t sz, const string & stackTrace) :
         _id(id),
         _sz(sz),
         _stackTrace(stackTrace)
-    {}
+    { }
     size_t _id;
     size_t _sz;
     string _stackTrace;
