@@ -12,13 +12,8 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.ApplicationSet;
-import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
-import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.session.RemoteSession;
-import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.Tenants;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -27,7 +22,6 @@ import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,19 +56,16 @@ public class SessionPrepareHandler extends SessionHandler {
         Tenant tenant = getExistingTenant(request);
         TenantName tenantName = tenant.getName();
         long sessionId = getSessionIdV2(request);
-        LocalSession session = applicationRepository.getLocalSession(tenant, getSessionIdV2(request));
-        validateThatSessionIsNotActive(session);
-        log.log(LogLevel.DEBUG, "session=" + session);
-        boolean verbose = request.getBooleanProperty("verbose");
-        Slime rawDeployLog = createDeployLog();
+        applicationRepository.validateThatSessionIsNotActive(tenant, sessionId);
         PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
         // An app id currently using only the name
         ApplicationId appId = prepareParams.getApplicationId();
-        DeployLogger logger = createLogger(rawDeployLog, verbose, appId);
-        ConfigChangeActions actions = session.prepare(logger,
-                                                      prepareParams,
-                                                      getCurrentActiveApplicationSet(tenant, appId),
-                                                      tenant.getPath());
+        Slime rawDeployLog = createDeployLog();
+        DeployLogger logger = createLogger(rawDeployLog, request.getBooleanProperty("verbose"), appId);
+        ConfigChangeActions actions = applicationRepository.prepare(tenant,
+                                                                    sessionId,
+                                                                    logger,
+                                                                    prepareParams);
         logConfigChangeActions(actions, logger);
         log.log(LogLevel.INFO, Tenants.logPre(appId) + "Session " + sessionId + " prepared successfully. ");
         return new SessionPrepareResponse(rawDeployLog, tenantName, request, sessionId, actions);
@@ -98,36 +89,10 @@ public class SessionPrepareHandler extends SessionHandler {
     @Override
     protected HttpResponse handleGET(HttpRequest request) {
         Tenant tenant = getExistingTenant(request);
-        RemoteSession session = applicationRepository.getRemoteSession(tenant, getSessionIdV2(request));
-        validateThatSessionIsNotActive(session);
-        validateThatSessionIsPrepared(session);
         long sessionId = getSessionIdV2(request);
-        return new SessionPrepareResponse(createDeployLog(), tenant.getName(), request, sessionId, new ConfigChangeActions());
-    }
-
-    private void validateThatSessionIsNotActive(Session session) {
-        if (Session.Status.ACTIVATE.equals(session.getStatus()))
-            throw new IllegalStateException("Session is active: " + session.getSessionId());
-    }
-
-    private void validateThatSessionIsPrepared(Session session) {
-        if ( ! Session.Status.PREPARE.equals(session.getStatus()))
-            throw new IllegalStateException("Session not prepared: " + session.getSessionId());
-    }
-
-    private static Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {
-        Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
-        TenantApplications applicationRepo = tenant.getApplicationRepo();
-        try {
-            long currentActiveSessionId = applicationRepo.getSessionIdForApplication(appId);
-            final RemoteSession currentActiveSession = tenant.getRemoteSessionRepo().getSession(currentActiveSessionId);
-            if (currentActiveSession != null) {
-                currentActiveApplicationSet = Optional.ofNullable(currentActiveSession.ensureApplicationLoaded());
-            }
-        } catch (IllegalArgumentException e) {
-            // Do nothing if we have no currently active session
-        }
-        return currentActiveApplicationSet;
+        applicationRepository.validateThatSessionIsNotActive(tenant, sessionId);
+        applicationRepository.validateThatSessionIsPrepared(tenant, sessionId);
+        return new SessionPrepareResponse(createDeployLog(), tenant.getName(), request, sessionId);
     }
 
     private Tenant getExistingTenant(HttpRequest request) {
