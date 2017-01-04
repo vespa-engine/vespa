@@ -2,15 +2,13 @@
 
 #include "writeablefilechunk.h"
 #include "data_store_file_chunk_stats.h"
-#include "summaryexceptions.h"
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/objects/nbostream.h>
-
 #include <vespa/log/log.h>
+
 LOG_SETUP(".search.writeablefilechunk");
 
 using vespalib::makeTask;
@@ -26,57 +24,16 @@ using search::common::FileHeaderContext;
 
 namespace search {
 
-namespace {
+namespace
+{
 
 const uint64_t Alignment = 4096;
 const uint64_t headerAlign = 4096;
 
 }
 
-/*
- * Information about serialized chunk written to .dat file but not yet
- * synced.
- */
-class PendingChunk
-{
-    vespalib::nbostream _idx; // Serialized chunk for .idx file
-    uint64_t _lastSerial;
-    uint64_t _dataOffset;
-    uint32_t _dataLen;
-public:
-    typedef std::shared_ptr<PendingChunk> SP;
-    PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t dataLen);
-    ~PendingChunk(void);
-    vespalib::nbostream & getSerializedIdx(void) { return _idx; }
-    const vespalib::nbostream & getSerializedIdx(void) const { return _idx; }
-    uint64_t getDataOffset(void) const { return _dataOffset; }
-    uint32_t getDataLen(void) const { return _dataLen; }
-    uint32_t getIdxLen(void) const { return _idx.size(); }
-    uint64_t getLastSerial(void) const { return _lastSerial; }
-};
-
-class ProcessedChunk
-{
-public:
-    typedef std::unique_ptr<ProcessedChunk> UP;
-    ProcessedChunk(uint32_t chunkId, uint32_t alignment)
-            : _chunkId(chunkId),
-              _payLoad(0),
-              _buf(0ul, alignment)
-    { }
-    void setPayLoad() { _payLoad = _buf.getDataLen(); }
-    uint32_t getPayLoad() const { return _payLoad; }
-    uint32_t getChunkId() const { return _chunkId; }
-    const vespalib::DataBuffer & getBuf() const { return _buf; }
-    vespalib::DataBuffer & getBuf() { return _buf; }
-private:
-    uint32_t             _chunkId;
-    uint32_t             _payLoad;
-    vespalib::DataBuffer _buf;
-};
-
 WriteableFileChunk::
-WriteableFileChunk(vespalib::ThreadExecutor &executor,
+WriteableFileChunk(vespalib::ThreadStackExecutorBase &executor,
                    FileId fileId, NameId nameId,
                    const vespalib::string &baseName,
                    SerialNum initialSerialNum,
@@ -905,17 +862,26 @@ WriteableFileChunk::getStats() const
 {
     DataStoreFileChunkStats stats = FileChunk::getStats();
     uint64_t serialNum = getSerialNum();
-    return DataStoreFileChunkStats(stats.diskUsage(), stats.diskBloat(), stats.maxBucketSpread(),
-                                   serialNum, stats.lastFlushedSerialNum(), stats.nameId());
+    return DataStoreFileChunkStats(stats.diskUsage(), stats.diskBloat(),
+                                   stats.maxBucketSpread(),
+                                   serialNum,
+                                   stats.lastFlushedSerialNum(),
+                                   stats.nameId());
 };
 
-PendingChunk::PendingChunk(uint64_t lastSerial, uint64_t dataOffset, uint32_t dataLen)
+WriteableFileChunk::PendingChunk::PendingChunk(uint64_t lastSerial,
+                                               uint64_t dataOffset,
+                                               uint32_t dataLen)
     : _idx(),
       _lastSerial(lastSerial),
       _dataOffset(dataOffset),
       _dataLen(dataLen)
-{ }
+{
+}
 
-PendingChunk::~PendingChunk() { }
+WriteableFileChunk::PendingChunk::~PendingChunk(void)
+{
+}
+
 
 } // namespace search

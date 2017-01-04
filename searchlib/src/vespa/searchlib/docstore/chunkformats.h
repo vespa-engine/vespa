@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "chunkformat.h"
+#include <vespa/searchlib/docstore/chunkformat.h>
 
 namespace search {
 
