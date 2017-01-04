@@ -21,6 +21,16 @@ public:
     virtual ~MemoryAllocator() { }
     virtual PtrAndSize alloc(size_t sz) const = 0;
     virtual void free(PtrAndSize alloc) const = 0;
+    /*
+     * If possible the allocations will be resized. If it was possible it will return the real size,
+     * if not it shall return 0.
+     * Afterwards you have a buffer that can be accessed up to the new size.
+     * The old buffer is unmodified up to the new size.
+     * This is thread safe and at no point will data in the buffer be invalid.
+     * @param newSize The desired new size
+     * @return true if successful.
+     */
+    virtual size_t resize_inplace(PtrAndSize current, size_t newSize) const = 0;
     static size_t roundUpToHugePages(size_t sz) {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
     }
@@ -35,13 +45,22 @@ public:
 class Alloc
 {
 private:
-    using PtrAndSize = MemoryAllocator::PtrAndSize;;
+    using PtrAndSize = MemoryAllocator::PtrAndSize;
 public:
     size_t size() const { return _alloc.second; }
     void * get() { return _alloc.first; }
     const void * get() const { return _alloc.first; }
     void * operator -> () { return _alloc.first; }
     const void * operator -> () const { return _alloc.first; }
+    /*
+     * If possible the allocations will be resized. If it was possible it will return true
+     * And you have an area that can be accessed up to the new size.
+     * The old buffer is unmodified up to the new size.
+     * This is thread safe and at no point will data in the buffer be invalid.
+     * @param newSize The desired new size
+     * @return true if successful.
+     */
+    bool resize_inplace(size_t newSize);
     Alloc(const Alloc &) = delete;
     Alloc & operator = (const Alloc &) = delete;
     Alloc(Alloc && rhs) :
@@ -83,7 +102,7 @@ public:
      * Optional alignment is assumed to be <= system page size, since mmap
      * is always used when size is above limit.
      */
-    static Alloc alloc(size_t sz=0, size_t mmapLimit=MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
+    static Alloc alloc(size_t sz=0, size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
 private:
     Alloc(const MemoryAllocator * allocator, size_t sz) : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
     void clear() {
