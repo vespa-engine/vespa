@@ -106,7 +106,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         if (reply.getTrace().getLevel() > 0) {
             String str = reply.getTrace().toString();
             traces.append(str);
-            log.log(LogLevel.DEBUG, str);
+            System.out.println(str);
         }
 
         if (containsFatalErrors(reply.getErrors())) {
