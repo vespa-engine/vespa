@@ -43,12 +43,6 @@ class LidReuseDelayer : public ILidReuseDelayer
     bool _hasIndexedFields;
     std::vector<uint32_t> _pendingLids; // lids waiting for commit
 
-    void
-    performDelayReuseLid(uint32_t lid);
-
-    void
-    performDelayReuseLids(const std::vector<uint32_t> lids);
-
 public:
     LidReuseDelayer(searchcorespi::index::IThreadingService &writeService,
                     IStore &documentMetaStore);
