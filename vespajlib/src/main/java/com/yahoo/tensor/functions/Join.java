@@ -170,12 +170,17 @@ public class Join extends PrimitiveTensorFunction {
                                Iterator<Map.Entry<TensorAddress, Double>> superspace, int superspaceSize,
                                boolean reversedArgumentOrder, Tensor.Builder builder) {
         int joinedLength = Math.min(subspaceSize, superspaceSize);
-        for (int i = 0; i < joinedLength; i++) {
-            Double subvalue = subspace.next();
-            Map.Entry<TensorAddress, Double> supercell = superspace.next();
-            builder.cell(supercell.getKey(),
-                         reversedArgumentOrder ? combinator.applyAsDouble(supercell.getValue(), subvalue)
-                                               : combinator.applyAsDouble(subvalue, supercell.getValue()));
+        if (reversedArgumentOrder) {
+            for (int i = 0; i < joinedLength; i++) {
+                Map.Entry<TensorAddress, Double> supercell = superspace.next();
+                builder.cell(supercell.getKey(), combinator.applyAsDouble(supercell.getValue(), subspace.next()));
+            }
+        }
+        else {
+            for (int i = 0; i < joinedLength; i++) {
+                Map.Entry<TensorAddress, Double> supercell = superspace.next();
+                builder.cell(supercell.getKey(), combinator.applyAsDouble(subspace.next(), supercell.getValue()));
+            }
         }
     }
 
