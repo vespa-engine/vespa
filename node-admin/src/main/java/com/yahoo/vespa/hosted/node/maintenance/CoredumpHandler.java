@@ -11,8 +11,10 @@ import org.apache.http.entity.StringEntity;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.UserPrincipal;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,6 +50,7 @@ public class CoredumpHandler {
     }
 
     public void removeJavaCoredumps(Path javaCoredumpsPath) {
+        if (! javaCoredumpsPath.toFile().isDirectory()) return;
         DeleteOldAppData.deleteFiles(javaCoredumpsPath.toString(), 0, "^java_pid.*\\.hprof$", false);
     }
 
