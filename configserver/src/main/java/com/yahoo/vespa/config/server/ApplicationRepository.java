@@ -14,16 +14,20 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
+import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.v2.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
+import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.SessionFactory;
+import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.tenant.Rotations;
@@ -234,6 +238,48 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ApplicationMetaData getMetadataFromSession(Tenant tenant, long sessionId) {
         return getLocalSession(tenant, sessionId).getMetaData();
     }
+
+    public void validateThatSessionIsNotActive(Tenant tenant, long sessionId) {
+        LocalSession session = getLocalSession(tenant, sessionId);
+        if (Session.Status.ACTIVATE.equals(session.getStatus())) {
+            throw new IllegalStateException("Session is active: " + sessionId);
+        }
+    }
+
+    public void validateThatSessionIsPrepared(Tenant tenant, long sessionId) {
+        LocalSession session = getLocalSession(tenant, sessionId);
+        if (!Session.Status.PREPARE.equals(session.getStatus()))
+            throw new IllegalStateException("Session not prepared: " + sessionId);
+    }
+
+    private Optional<ApplicationSet> getCurrentActiveApplicationSet(Tenant tenant, ApplicationId appId) {
+        Optional<ApplicationSet> currentActiveApplicationSet = Optional.empty();
+        TenantApplications applicationRepo = tenant.getApplicationRepo();
+        try {
+            long currentActiveSessionId = applicationRepo.getSessionIdForApplication(appId);
+            RemoteSession currentActiveSession = getRemoteSession(tenant, currentActiveSessionId);
+            if (currentActiveSession != null) {
+                currentActiveApplicationSet = Optional.ofNullable(currentActiveSession.ensureApplicationLoaded());
+            }
+        } catch (IllegalArgumentException e) {
+            // Do nothing if we have no currently active session
+        }
+        return currentActiveApplicationSet;
+    }
+
+    public ConfigChangeActions prepare(Tenant tenant,
+                                       long sessionId,
+                                       DeployLogger logger,
+                                       PrepareParams params) {
+        LocalSession session = getLocalSession(tenant, sessionId);
+        ApplicationId appId = params.getApplicationId();
+        Optional<ApplicationSet> currentActiveApplicationSet = getCurrentActiveApplicationSet(tenant, appId);
+        return session.prepare(logger,
+                               params,
+                               currentActiveApplicationSet,
+                               tenant.getPath());
+    }
+
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();
