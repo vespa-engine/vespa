@@ -5,6 +5,7 @@
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/fastos/app.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace search;
 

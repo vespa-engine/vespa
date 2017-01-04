@@ -28,7 +28,7 @@ using docstore::StoreByBucket;
 using docstore::BucketCompacter;
 using namespace std::literals;
 
-LogDataStore::LogDataStore(vespalib::ThreadStackExecutorBase &executor,
+LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
                            const vespalib::string &dirName,
                            const Config &config,
                            const GrowStrategy &growStrategy,

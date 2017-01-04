@@ -6,21 +6,15 @@
 #include <vespa/searchlib/docstore/writeablefilechunk.h>
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/document/util/compressionconfig.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 
 #include <set>
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
-
-class FileHeaderContext;
-
-}
+namespace common { class FileHeaderContext; }
 
 
 /**
@@ -114,7 +108,7 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDataStore(vespalib::ThreadStackExecutorBase &executor,
+    LogDataStore(vespalib::ThreadExecutor &executor,
                  const vespalib::string &dirName,
                  const Config & config,
                  const GrowStrategy &growStrategy,
@@ -313,7 +307,7 @@ private:
     FileId                                   _prevActive;
     vespalib::Lock                           _updateLock;
     bool                                     _readOnly;
-    vespalib::ThreadStackExecutorBase       &_executor;
+    vespalib::ThreadExecutor                &_executor;
     SerialNum                                _initFlushSyncToken;
     transactionlog::SyncProxy               &_tlSyncer;
     IBucketizer::SP                          _bucketizer;

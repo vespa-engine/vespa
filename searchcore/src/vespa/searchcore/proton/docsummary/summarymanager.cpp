@@ -124,7 +124,7 @@ getStoreConfig(const ProtonConfig::Summary::Cache & cache)
 
 }
 
-SummaryManager::SummaryManager(vespalib::ThreadStackExecutorBase & executor,
+SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor,
                                const ProtonConfig::Summary & summary,
                                const search::GrowStrategy & growStrategy,
                                const vespalib::string &baseDir,

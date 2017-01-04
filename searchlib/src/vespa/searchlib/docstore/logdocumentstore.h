@@ -47,7 +47,7 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDocumentStore(vespalib::ThreadStackExecutorBase & executor,
+    LogDocumentStore(vespalib::ThreadExecutor & executor,
                      const vespalib::string & baseDir,
                      const Config & config,
                      const GrowStrategy & growStrategy,

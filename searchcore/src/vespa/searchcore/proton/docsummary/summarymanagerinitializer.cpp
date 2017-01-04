@@ -1,12 +1,10 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include "summarymanagerinitializer.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/io/fileutil.h>
 
-namespace proton
-{
+namespace proton {
 
 SummaryManagerInitializer::
 SummaryManagerInitializer(const search::GrowStrategy &grow,
@@ -20,7 +18,7 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
                           const search::common::FileHeaderContext &
                           fileHeaderContext,
                           search::transactionlog::SyncProxy &tlSyncer,
-                          search::IBucketizer::SP bucketizer,
+                          IBucketizerSP bucketizer,
                           std::shared_ptr<SummaryManager::SP> result)
     : proton::initializer::InitializerTask(),
       _grow(grow),
@@ -34,8 +32,7 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
       _tlSyncer(tlSyncer),
       _bucketizer(bucketizer),
       _result(result)
-{
-}
+{ }
 
 
 void

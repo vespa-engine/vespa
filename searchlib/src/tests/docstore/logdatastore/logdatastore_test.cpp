@@ -13,9 +13,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/objects/hexdump.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("datastore_test");
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using document::BucketId;
 using namespace search::docstore;
