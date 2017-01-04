@@ -16,10 +16,6 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
  */
 class SessionPrepareResponse extends SessionResponse {
 
-    public SessionPrepareResponse(Slime deployLog, TenantName tenantName, HttpRequest request, long sessionId) {
-        this(deployLog, tenantName, request, sessionId, new ConfigChangeActions());
-    }
-
     public SessionPrepareResponse(Slime deployLog, TenantName tenantName, HttpRequest request, long sessionId, ConfigChangeActions actions) {
         super(deployLog, deployLog.get());
         String message = "Session " + sessionId + " for tenant '" + tenantName.value() + "' prepared.";
