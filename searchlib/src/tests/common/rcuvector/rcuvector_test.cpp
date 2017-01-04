@@ -5,31 +5,14 @@ LOG_SETUP("rcuvector_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/rcuvector.h>
 
-namespace search {
-namespace attribute {
-
+using namespace search::attribute;
+using search::MemoryUsage;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHolder;
 using vespalib::GenerationHeldBase;
 
-class Test : public vespalib::TestApp {
-private:
-    bool assertUsage(const MemoryUsage & exp, const MemoryUsage & act);
-    void testGenerationHolder();
-    void testBasic();
-    void testResize();
-    void testGenerationHandling();
-    void testMemoryUsage();
-
-    void
-    testShrink();
-    void testSmallExpand();
-public:
-    int Main();
-};
-
 bool
-Test::assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
+assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
 {
     bool retval = true;
     if (!EXPECT_EQUAL(exp.allocatedBytes(), act.allocatedBytes())) retval = false;
@@ -39,8 +22,7 @@ Test::assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
     return retval;
 }
 
-void
-Test::testGenerationHolder()
+TEST("test generation holder")
 {
     typedef std::unique_ptr<int32_t> IntPtr;
     GenerationHolder gh;
@@ -75,8 +57,7 @@ Test::testGenerationHolder()
     EXPECT_EQUAL(0u * sizeof(int32_t), gh.getHeldBytes());
 }
 
-void
-Test::testBasic()
+TEST("test basic")
 {
     { // insert
         RcuVector<int32_t> v(4, 0, 4);
@@ -93,8 +74,7 @@ Test::testBasic()
     }
 }
 
-void
-Test::testResize()
+TEST("test resize")
 {
     { // resize percent
         RcuVector<int32_t> v(2, 50, 0);
@@ -162,8 +142,7 @@ Test::testResize()
     }
 }
 
-void
-Test::testGenerationHandling()
+TEST("test generation handling")
 {
     RcuVector<int32_t> v(2, 0, 2);
     v.push_back(0);
@@ -186,8 +165,7 @@ Test::testGenerationHandling()
     EXPECT_EQUAL(24u, v.getMemoryUsage().allocatedBytesOnHold());
 }
 
-void
-Test::testMemoryUsage()
+TEST("test memory usage")
 {
     RcuVector<int8_t> v(2, 0, 2);
     EXPECT_TRUE(assertUsage(MemoryUsage(2,0,0,0), v.getMemoryUsage()));
@@ -205,9 +183,7 @@ Test::testMemoryUsage()
     EXPECT_TRUE(assertUsage(MemoryUsage(6,5,0,0), v.getMemoryUsage()));
 }
 
-
-void
-Test::testShrink()
+TEST("test shrink")
 {
     GenerationHolder g;
     RcuVectorBase<int8_t> v(g);
@@ -244,8 +220,7 @@ Test::testShrink()
     EXPECT_TRUE(assertUsage(MemoryUsage(2, 2, 0, 0), mu));
 }
 
-void
-Test::testSmallExpand()
+TEST("test small expand")
 {
     GenerationHolder g;
     RcuVectorBase<int8_t> v(1, 50, 0, g);
@@ -261,24 +236,4 @@ Test::testSmallExpand()
     g.trimHoldLists(2);
 }
 
-
-int
-Test::Main()
-{
-    TEST_INIT("rcuvector_test");
-
-    testGenerationHolder();
-    testBasic();
-    testResize();
-    testGenerationHandling();
-    testMemoryUsage();
-    testShrink();
-    testSmallExpand();
-
-    TEST_DONE();
-}
-
-}
-}
-
-TEST_APPHOOK(search::attribute::Test);
+TEST_MAIN() { TEST_RUN_ALL(); }
