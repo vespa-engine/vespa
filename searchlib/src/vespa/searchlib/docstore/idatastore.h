@@ -2,16 +2,14 @@
 
 #pragma once
 
-#include "data_store_file_chunk_stats.h"
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/searchlib/docstore/ibucketizer.h>
 #include <vespa/searchlib/util/memoryusage.h>
+#include "data_store_file_chunk_stats.h"
 #include <vespa/fastos/timestamp.h>
-#include <vector>
 
-namespace vespalib { class DataBuffer; }
 namespace search {
-
-class IBufferVisitor;
 
 class IDataStoreVisitor
 {

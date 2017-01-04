@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <cstdint>
-
 namespace search {
 
 /*
@@ -17,14 +15,17 @@ class DataStoreStorageStats
     uint64_t _lastSerialNum;
     uint64_t _lastFlushedSerialNum;
 public:
-    DataStoreStorageStats(uint64_t diskUsage_in, uint64_t diskBloat_in, double maxBucketSpread_in,
-                          uint64_t lastSerialNum_in, uint64_t lastFlushedSerialNum_in)
+    DataStoreStorageStats(uint64_t diskUsage_in, uint64_t diskBloat_in,
+                          double maxBucketSpread_in,
+                          uint64_t lastSerialNum_in,
+                          uint64_t lastFlushedSerialNum_in)
         : _diskUsage(diskUsage_in),
           _diskBloat(diskBloat_in),
           _maxBucketSpread(maxBucketSpread_in),
           _lastSerialNum(lastSerialNum_in),
           _lastFlushedSerialNum(lastFlushedSerialNum_in)
-    { }
+    {
+    }
     uint64_t diskUsage() const            { return _diskUsage; }
     uint64_t diskBloat() const            { return _diskBloat; }
     double   maxBucketSpread() const      { return _maxBucketSpread; }
