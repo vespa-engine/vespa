@@ -30,8 +30,7 @@ public:
                 DocIdLimit &docIdLimit)
             : _attrWriter(attrWriter),
               _docIdLimit(docIdLimit)
-        {
-        }
+        { }
     };
 
 private:

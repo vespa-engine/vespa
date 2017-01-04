@@ -1,14 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "buffer.h"
+#include "fileinfo.h"
+#include "versionserializer.h"
 #include <vespa/memfilepersistence/memfile/memfileiointerface.h>
-#include <vespa/memfilepersistence/mapper/buffer.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/memfilepersistence/mapper/fileinfo.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/alloc.h>
-#include <vespa/memfilepersistence/mapper/versionserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
 namespace storage {

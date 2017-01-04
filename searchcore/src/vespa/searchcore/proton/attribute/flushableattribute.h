@@ -9,22 +9,15 @@
 #include <vespa/searchcore/proton/common/hw_info.h>
 
 
-namespace search
-{
+namespace search {
 
 class ISequencedTaskExecutor;
 
-namespace common
-{
-
-class FileHeaderContext;
+namespace common { class FileHeaderContext; }
 
 }
 
-}
-
-namespace proton
-{
+namespace proton {
 
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
