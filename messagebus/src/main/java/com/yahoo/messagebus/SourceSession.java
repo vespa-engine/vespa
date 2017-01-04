@@ -26,6 +26,7 @@ public final class SourceSession implements ReplyHandler {
     private final ThrottlePolicy throttlePolicy;
     private volatile double timeout;
     private volatile int pendingCount = 0;
+    private int blockedCount = 0;
     private boolean closed = false;
 
     /**
@@ -172,8 +173,13 @@ public final class SourceSession implements ReplyHandler {
                 return res;
             }
             synchronized (lock) {
-                while (!closed && !throttlePolicy.canSend(msg, pendingCount)) {
-                    lock.wait(100);
+                try {
+                    blockedCount++;
+                    while (!closed && !throttlePolicy.canSend(msg, pendingCount)) {
+                        lock.wait(10);
+                    }
+                } finally {
+                    blockedCount--;
                 }
             }
         }
@@ -192,7 +198,11 @@ public final class SourceSession implements ReplyHandler {
                 throttlePolicy.processReply(reply);
             }
             done = (closed && pendingCount == 0);
-            lock.notifyAll();
+            if (blockedCount < 10) {
+                lock.notifyAll();
+            } else {
+                lock.notify();
+            }
         }
         if (reply.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
             reply.getTrace().trace(TraceLevel.COMPONENT,
