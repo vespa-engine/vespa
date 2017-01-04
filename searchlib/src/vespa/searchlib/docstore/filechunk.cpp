@@ -2,21 +2,20 @@
 
 #include "filechunk.h"
 #include "data_store_file_chunk_stats.h"
-#include <vespa/searchlib/util/filekit.h>
+#include "summaryexceptions.h"
+#include "randreaders.h"
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/searchlib/util/filekit.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.filechunk");
 
 using vespalib::GenericHeader;
-using vespalib::FileHeader;
-using vespalib::IoException;
-using vespalib::getLastErrorString;
 using vespalib::getErrorString;
-
 
 namespace search {
 
@@ -28,15 +27,6 @@ constexpr size_t ENTRY_BIAS_SIZE=8;
 }
 
 using vespalib::make_string;
-
-SummaryException::SummaryException(const vespalib::stringref &msg,
-                                   FastOS_FileInterface &file,
-                                   const vespalib::stringref &location)
-    : IoException(make_string("%s : Failing file = '%s'. Reason given by OS = '%s'",
-                              msg.c_str(), file.GetFileName(), file.getLastErrorString().c_str()),
-                  getErrorType(file.GetLastError()), location)
-{
-}
 
 FileChunk::ChunkInfo::ChunkInfo(uint64_t offset, uint32_t size, uint64_t lastSerial)
     : _lastSerial(lastSerial),
@@ -62,145 +52,6 @@ LidInfo::LidInfo(uint32_t fileId, uint32_t chunkId, uint32_t sz)
                 make_string("LidInfo(fileId=%u, chunkId=%u, size=%u) has invalid chunkId larger than %d",
                             fileId, chunkId, sz, (1 << 22) - 1));
     }
-}
-
-DirectIORandRead::DirectIORandRead(const vespalib::string & fileName)
-    : _file(fileName.c_str()),
-      _alignment(1),
-      _granularity(1),
-      _maxChunkSize(0x100000)
-{
-    _file.EnableDirectIO();
-    if (_file.OpenReadOnly()) {
-        if (!_file.GetDirectIORestrictions(_alignment, _granularity, _maxChunkSize)) {
-            LOG(debug, "Direct IO setup failed for file %s due to %s",
-                       _file.GetFileName(), _file.getLastErrorString().c_str());
-        }
-    } else {
-        throw SummaryException("Failed opening data file", _file, VESPA_STRLOC);
-    }
-}
-
-FileRandRead::FSP
-DirectIORandRead::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
-{
-    size_t padBefore(0);
-    size_t padAfter(0);
-    bool directio = _file.DirectIOPadding(offset, sz, padBefore, padAfter);
-    buffer.clear();
-    buffer.ensureFree(padBefore + sz + padAfter + _alignment - 1);
-    if (directio) {
-        size_t unAligned = (-reinterpret_cast<size_t>(buffer.getFree()) & (_alignment - 1));
-        buffer.moveFreeToData(unAligned);
-        buffer.moveDataToDead(unAligned);
-    }
-    // XXX needs to use pread or file-position-mutex
-    _file.ReadBuf(buffer.getFree(), padBefore + sz + padAfter, offset - padBefore);
-    buffer.moveFreeToData(padBefore + sz);
-    buffer.moveDataToDead(padBefore);
-    return FSP();
-}
-
-
-int64_t
-DirectIORandRead::getSize(void)
-{
-    return _file.GetSize();
-}
-
-
-MMapRandRead::MMapRandRead(const vespalib::string & fileName, int mmapFlags, int fadviseOptions)
-    : _file(fileName.c_str())
-{
-    _file.enableMemoryMap(mmapFlags);
-    _file.setFAdviseOptions(fadviseOptions);
-    if ( ! _file.OpenReadOnly()) {
-        throw SummaryException("Failed opening data file", _file, VESPA_STRLOC);
-    }
-}
-
-
-NormalRandRead::NormalRandRead(const vespalib::string & fileName)
-    : _file(fileName.c_str())
-{
-    if ( ! _file.OpenReadOnly()) {
-        throw SummaryException("Failed opening data file", _file, VESPA_STRLOC);
-    }
-}
-
-FileRandRead::FSP
-MMapRandRead::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
-{
-    const char *ptr = static_cast<const char *>(_file.MemoryMapPtr(offset));
-    vespalib::DataBuffer(ptr, sz).swap(buffer);
-    return FSP();
-}
-
-int64_t
-MMapRandRead::getSize(void)
-{
-    return _file.GetSize();
-}
-
-MMapRandReadDynamic::MMapRandReadDynamic(const vespalib::string &fileName, int mmapFlags, int fadviseOptions)
-    : _fileName(fileName),
-      _mmapFlags(mmapFlags),
-      _fadviseOptions(fadviseOptions)
-{
-    reopen();
-}
-
-void
-MMapRandReadDynamic::reopen()
-{
-    std::unique_ptr<FastOS_File> file(new FastOS_File(_fileName.c_str()));
-    file->enableMemoryMap(_mmapFlags);
-    file->setFAdviseOptions(_fadviseOptions);
-    if (file->OpenReadOnly()) {
-        _holder.set(file.release());
-        _holder.latch();
-    } else {
-        throw SummaryException("Failed opening data file", *file, VESPA_STRLOC);
-    }
-}
-
-FileRandRead::FSP
-MMapRandReadDynamic::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
-{
-    FSP file(_holder.get());
-    const char * data(static_cast<const char *>(file->MemoryMapPtr(offset)));
-    if ((data == NULL) || (file->MemoryMapPtr(offset+sz-1) == NULL)) {
-        // Must check that both start and end of file is mapped in.
-        // Previous reopen could happend during a partial write of this buffer.
-        // This should fix bug 4630695.
-        reopen();
-        file = _holder.get();
-        data = static_cast<const char *>(file->MemoryMapPtr(offset));
-    }
-    vespalib::DataBuffer(data, sz).swap(buffer);
-    return file;
-}
-
-int64_t
-MMapRandReadDynamic::getSize(void)
-{
-    return _holder.get()->GetSize();
-}
-
-FileRandRead::FSP
-NormalRandRead::read(size_t offset, vespalib::DataBuffer & buffer, size_t sz)
-{
-    buffer.clear();
-    buffer.ensureFree(sz);
-    _file.ReadBuf(buffer.getFree(), sz, offset);
-    buffer.moveFreeToData(sz);
-    return FSP();
-}
-
-int64_t
-NormalRandRead::getSize(void)
-{
-    return _file.GetSize();
 }
 
 vespalib::string
@@ -262,13 +113,10 @@ FileChunk::FileChunk(FileId fileId, NameId nameId, const vespalib::string & base
             dataFile.Close();
             throw SummaryException("Failed opening idx file", idxFile, VESPA_STRLOC);
         }
-    } else {
     }
 }
 
-FileChunk::~FileChunk()
-{
-}
+FileChunk::~FileChunk() { }
 
 void
 FileChunk::addNumBuckets(size_t numBucketsInChunk)
