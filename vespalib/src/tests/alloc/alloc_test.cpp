@@ -158,8 +158,6 @@ TEST("auto alloced mmap alloc can not be extended if no room") {
 
     // Normally mmapping starts at the top and grows down in address space.
     // Then there is no room to extend the last mapping.
-    // So in order to verify this we first mmap a reserved area that we unmap
-    // before we test extension.
     EXPECT_GREATER(reserved.get(), buf.get());
     EXPECT_EQUAL(reserved.get(), static_cast<const char *>(buf.get()) + buf.size());
 
@@ -197,8 +195,6 @@ TEST("mmap alloc can not be extended if no room") {
 
     // Normally mmapping starts at the top and grows down in address space.
     // Then there is no room to extend the last mapping.
-    // So in order to verify this we first mmap a reserved area that we unmap
-    // before we test extension.
     EXPECT_GREATER(reserved.get(), buf.get());
     EXPECT_EQUAL(reserved.get(), static_cast<const char *>(buf.get()) + buf.size());
 
@@ -255,6 +251,9 @@ TEST("auto alloced mmap alloc can not be shrinked below HUGEPAGE_SIZE/2 + 1 ") {
     EXPECT_EQUAL(oldPtr, buf.get());
     EXPECT_EQUAL(SZ, buf.size());
     EXPECT_FALSE(buf.resize_inplace(SZ/2));
+    EXPECT_EQUAL(oldPtr, buf.get());
+    EXPECT_EQUAL(SZ, buf.size());
+    EXPECT_TRUE(buf.resize_inplace(SZ));
     EXPECT_EQUAL(oldPtr, buf.get());
     EXPECT_EQUAL(SZ, buf.size());
 }
