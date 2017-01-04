@@ -626,6 +626,8 @@ public class IndexedTensor implements Tensor {
                 return new EmptyIndexes(initialIndexes); // we're told explicitly there are truly no values available
             else if (size == 1)
                 return new SingleValueIndexes(initialIndexes); // with no (iterating) dimensions, we still return one value, not zero
+            else if (iterateDimensions.size() == 1)
+                return new SingleDimensionIndexes(dimensionSizes, iterateDimensions.get(0), initialIndexes, size); // optimization
             else
                 return new MultivalueIndexes(dimensionSizes, iterateDimensions, initialIndexes, size);
         }
@@ -687,9 +689,7 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public int size() {
-            return 0;
-        }
+        public int size() { return 0; }
 
         @Override
         public void next() {}
@@ -703,9 +703,7 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public int size() {
-            return 1;
-        }
+        public int size() { return 1; }
 
         @Override
         public void next() {}
@@ -750,6 +748,43 @@ public class IndexedTensor implements Tensor {
                 iterateDimensionsIndex++;
             }
             indexes[iterateDimensions.get(iterateDimensionsIndex)]++;
+        }
+
+    }
+
+    private final static class SingleDimensionIndexes extends Indexes {
+
+        private final int size;
+
+        private final int[] dimensionSizes;
+
+        private final int iterateDimension;
+
+        private SingleDimensionIndexes(int[] dimensionSizes, int iterateDimension, int[] initialIndexes, int size) {
+            super(initialIndexes);
+            this.dimensionSizes = dimensionSizes;
+            this.iterateDimension = iterateDimension;
+            this.size = size;
+
+            // Initialize to the (virtual) position before the first cell
+            indexes[iterateDimension]--;
+        }
+
+        /** Returns the number of values this will iterate over - i.e the product if the iterating dimension sizes */
+        @Override
+        public int size() {
+            return size;
+        }
+
+        /**
+         * Advances this to the next cell in the standard indexed tensor cell order. 
+         * The first call to this will put it at the first position. 
+         *
+         * @throws RuntimeException if this is called more times than its size
+         */
+        @Override
+        public void next() {
+            indexes[iterateDimension]++;
         }
 
     }
