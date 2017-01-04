@@ -7,8 +7,7 @@
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace proton
-{
+namespace proton {
 
 /*
  * Class representing an initializer task for constructing summary manager
@@ -16,17 +15,18 @@ namespace proton
  */
 class SummaryManagerInitializer : public initializer::InitializerTask
 {
+    using IBucketizerSP = std::shared_ptr<search::IBucketizer>;
     using ProtonConfig = vespa::config::search::core::ProtonConfig;
     const search::GrowStrategy         _grow;
     const vespalib::string             _baseDir;
     const vespalib::string             _subDbName;
     const DocTypeName                  _docTypeName;
-    vespalib::ThreadStackExecutorBase &_summaryExecutor;
+    vespalib::ThreadExecutor          &_summaryExecutor;
     const ProtonConfig::Summary        _protonSummaryCfg;
     const search::TuneFileSummary      _tuneFile;
     const search::common::FileHeaderContext &_fileHeaderContext;
     search::transactionlog::SyncProxy &_tlSyncer;
-    const search::IBucketizer::SP      _bucketizer;
+    const IBucketizerSP                _bucketizer;
     std::shared_ptr<SummaryManager::SP> _result;
 
 public:
@@ -37,16 +37,14 @@ public:
                               const vespalib::string baseDir,
                               const vespalib::string &subDbName,
                               const DocTypeName &docTypeName,
-                              vespalib::ThreadStackExecutorBase &
-                              summaryExecutor,
+                              vespalib::ThreadStackExecutorBase & summaryExecutor,
                               const ProtonConfig::Summary protonSummaryCfg,
                               const search::TuneFileSummary &tuneFile,
-                              const search::common::FileHeaderContext &
-                              fileHeaderContext,
+                              const search::common::FileHeaderContext & fileHeaderContext,
                               search::transactionlog::SyncProxy &tlSyncer,
-                              search::IBucketizer::SP bucketizer,
+                              IBucketizerSP bucketizer,
                               std::shared_ptr<SummaryManager::SP> result);
-    virtual void run() override;
+    void run() override;
 };
 
 } // namespace proton

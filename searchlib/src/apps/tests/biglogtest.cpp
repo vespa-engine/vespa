@@ -1,16 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP("big_logdatastore_test");
-
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/random.h>
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <iostream>
-
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/data/databuffer.h>
 
 using namespace search;
 using search::index::DummyFileHeaderContext;

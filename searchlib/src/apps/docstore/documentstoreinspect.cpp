@@ -1,9 +1,11 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/fastos.h>
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
+#include <vespa/fastos/app.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace search;
 

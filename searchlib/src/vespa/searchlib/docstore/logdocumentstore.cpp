@@ -9,7 +9,7 @@ namespace search
 using vespalib::nbostream;
 using common::FileHeaderContext;
 
-LogDocumentStore::LogDocumentStore(vespalib::ThreadStackExecutorBase & executor,
+LogDocumentStore::LogDocumentStore(vespalib::ThreadExecutor & executor,
                                    const vespalib::string & baseDir,
                                    const Config & config,
                                    const GrowStrategy & growStrategy,

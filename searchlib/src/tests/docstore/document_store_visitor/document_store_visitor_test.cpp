@@ -10,6 +10,7 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_store_visitor_test");

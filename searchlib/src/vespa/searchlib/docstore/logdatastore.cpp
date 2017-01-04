@@ -8,6 +8,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/vespalib/util/exceptions.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -27,7 +28,7 @@ using docstore::StoreByBucket;
 using docstore::BucketCompacter;
 using namespace std::literals;
 
-LogDataStore::LogDataStore(vespalib::ThreadStackExecutorBase &executor,
+LogDataStore::LogDataStore(vespalib::ThreadExecutor &executor,
                            const vespalib::string &dirName,
                            const Config &config,
                            const GrowStrategy &growStrategy,

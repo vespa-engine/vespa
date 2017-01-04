@@ -14,20 +14,15 @@
 #include "fieldcacherepo.h"
 #include "isummarymanager.h"
 
-namespace search
-{
+namespace search {
 
-namespace common
-{
+class IBucketizer;
 
-class FileHeaderContext;
+namespace common { class FileHeaderContext; }
 
 }
 
-}
-
-namespace proton
-{
+namespace proton {
 
 class SummaryManager : public ISummaryManager
 {
@@ -69,15 +64,15 @@ public:
     };
 
 private:
-    vespalib::string                      _baseDir;
-    DocTypeName                        _docTypeName;
-    search::IDocumentStore::SP            _docStore;
-    const search::TuneFileSummary         _tuneFileSummary;
-    uint64_t 				  _currentSerial;
+    vespalib::string               _baseDir;
+    DocTypeName                    _docTypeName;
+    search::IDocumentStore::SP     _docStore;
+    const search::TuneFileSummary  _tuneFileSummary;
+    uint64_t                       _currentSerial;
 
 public:
     typedef std::shared_ptr<SummaryManager> SP;
-    SummaryManager(vespalib::ThreadStackExecutorBase & executor,
+    SummaryManager(vespalib::ThreadExecutor & executor,
                    const vespa::config::search::core::ProtonConfig::Summary & summary,
                    const search::GrowStrategy & growStrategy,
                    const vespalib::string &baseDir,
@@ -85,7 +80,7 @@ public:
                    const search::TuneFileSummary &tuneFileSummary,
                    const search::common::FileHeaderContext &fileHeaderContext,
                    search::transactionlog::SyncProxy &tlSyncer,
-                   const search::IBucketizer::SP & bucketizer);
+                   const std::shared_ptr<search::IBucketizer> & bucketizer);
 
     void putDocument(uint64_t syncToken, const document::Document & doc,
                      search::DocumentIdT lid);
