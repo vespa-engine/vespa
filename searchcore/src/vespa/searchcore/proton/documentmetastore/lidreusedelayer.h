@@ -40,7 +40,7 @@ class LidReuseDelayer : public ILidReuseDelayer
     searchcorespi::index::IThreadingService &_writeService;
     IStore &_documentMetaStore;
     bool _immediateCommit;
-    bool _hasIndexedFields;
+    bool _hasIndexedOrAttributeFields;
     std::vector<uint32_t> _pendingLids; // lids waiting for commit
 
 public:
@@ -51,7 +51,7 @@ public:
     virtual bool delayReuse(const std::vector<uint32_t> &lids) override;
     virtual void setImmediateCommit(bool immediateCommit) override;
     virtual bool getImmediateCommit() const override;
-    virtual void setHasIndexedFields(bool hasIndexedFields) override;
+    virtual void setHasIndexedOrAttributeFields(bool hasIndexedOrAttributeFields) override;
     virtual std::vector<uint32_t> getReuseLids() override;
 };
 

@@ -359,7 +359,7 @@ SearchableDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
      * time, since DocumentDB::applyConfig() calls forceCommit() on the
      * feed view before applying the new config to the sub dbs.
      */
-    _lidReuseDelayer->setHasIndexedFields(config.hasIndexedFields());
+    _lidReuseDelayer->setHasIndexedOrAttributeFields(config.hasIndexedOrAttributeFields());
 }
 
 

@@ -663,7 +663,7 @@ struct SearchableFeedViewFixture : public FixtureBase
            FastAccessFeedView::Context(aw, _docIdLimit),
            SearchableFeedView::Context(iw))
     {
-        runInMaster([&]() { _lidReuseDelayer.setHasIndexedFields(true); });
+        runInMaster([&]() { _lidReuseDelayer.setHasIndexedOrAttributeFields(true); });
     }
     virtual IFeedView &getFeedView() { return fv; }
 };

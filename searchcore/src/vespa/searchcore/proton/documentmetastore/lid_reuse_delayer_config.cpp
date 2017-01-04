@@ -13,7 +13,7 @@ namespace documentmetastore
 
 LidReuseDelayerConfig::LidReuseDelayerConfig()
     : _visibilityDelay(0),
-      _hasIndexedFields(false)
+      _hasIndexedOrAttributeFields(false)
 {
 }
 
@@ -21,7 +21,8 @@ LidReuseDelayerConfig::LidReuseDelayerConfig(const DocumentDBConfig &
                                              configSnapshot)
     : _visibilityDelay(configSnapshot.getMaintenanceConfigSP()->
                        getVisibilityDelay()),
-      _hasIndexedFields(configSnapshot.getSchemaSP()->getNumIndexFields() > 0)
+      _hasIndexedOrAttributeFields(configSnapshot.getSchemaSP()->getNumIndexFields() > 0 ||
+                                   configSnapshot.getSchemaSP()->getNumAttributeFields() > 0)
 {
 }
 

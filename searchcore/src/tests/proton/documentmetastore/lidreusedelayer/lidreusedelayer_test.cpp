@@ -204,9 +204,9 @@ public:
                                     setImmediateCommit(immediateCommit); } );
     }
 
-    void setHasIndexedFields(bool hasIndexedFields) {
+    void setHasIndexedOrAttributeFields(bool hasIndexedOrAttributeFields) {
         runInMaster([&] () { _lidReuseDelayer.
-                                    setHasIndexedFields(hasIndexedFields); } );
+                                    setHasIndexedOrAttributeFields(hasIndexedOrAttributeFields); } );
     }
 
     void commit() {
@@ -235,7 +235,7 @@ public:
 
 TEST_F("require that nothing happens before free list is active", Fixture)
 {
-    f.setHasIndexedFields(true);
+    f.setHasIndexedOrAttributeFields(true);
     EXPECT_FALSE(f.delayReuse(4));
     EXPECT_FALSE(f.delayReuse({ 5, 6}));
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
@@ -246,7 +246,7 @@ TEST_F("require that nothing happens before free list is active", Fixture)
 TEST_F("require that single lid is delayed", Fixture)
 {
     f._store._freeListActive = true;
-    f.setHasIndexedFields(true);
+    f.setHasIndexedOrAttributeFields(true);
     EXPECT_TRUE(f.delayReuse(4));
     f.scheduleDelayReuseLid(4);
     EXPECT_TRUE(f._store.assertWork(1, 0, 1));
@@ -257,7 +257,7 @@ TEST_F("require that single lid is delayed", Fixture)
 TEST_F("require that lid vector is delayed", Fixture)
 {
     f._store._freeListActive = true;
-    f.setHasIndexedFields(true);
+    f.setHasIndexedOrAttributeFields(true);
     EXPECT_TRUE(f.delayReuse({ 5, 6, 7}));
     f.scheduleDelayReuseLids({ 5, 6, 7});
     EXPECT_TRUE(f._store.assertWork(0, 1, 3));
@@ -268,7 +268,7 @@ TEST_F("require that lid vector is delayed", Fixture)
 TEST_F("require that reuse can be batched", Fixture)
 {
     f._store._freeListActive = true;
-    f.setHasIndexedFields(true);
+    f.setHasIndexedOrAttributeFields(true);
     f.setImmediateCommit(false);
     EXPECT_FALSE(f.delayReuse(4));
     EXPECT_FALSE(f.delayReuse({ 5, 6, 7}));
@@ -287,7 +287,7 @@ TEST_F("require that reuse can be batched", Fixture)
 TEST_F("require that single element array is optimized", Fixture)
 {
     f._store._freeListActive = true;
-    f.setHasIndexedFields(true);
+    f.setHasIndexedOrAttributeFields(true);
     f.setImmediateCommit(false);
     EXPECT_FALSE(f.delayReuse({ 4}));
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
@@ -306,7 +306,7 @@ TEST_F("require that single element array is optimized", Fixture)
 TEST_F("require that lids are reused faster with no indexed fields", Fixture)
 {
     f._store._freeListActive = true;
-    f.setHasIndexedFields(false);
+    f.setHasIndexedOrAttributeFields(false);
     EXPECT_FALSE(f.delayReuse(4));
     EXPECT_TRUE(f._store.assertWork(1, 0, 1));
     EXPECT_TRUE(assertThreadObserver(2, 0, f._writeService));
