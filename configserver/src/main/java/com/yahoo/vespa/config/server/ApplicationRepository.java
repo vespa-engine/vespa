@@ -26,8 +26,8 @@ import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.RemoteSession;
-import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.Session;
+import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.ActivateLock;
 import com.yahoo.vespa.config.server.tenant.Rotations;
@@ -239,15 +239,22 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getLocalSession(tenant, sessionId).getMetaData();
     }
 
-    public void validateThatSessionIsNotActive(Tenant tenant, long sessionId) {
+    public void validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
         LocalSession session = getLocalSession(tenant, sessionId);
         if (Session.Status.ACTIVATE.equals(session.getStatus())) {
             throw new IllegalStateException("Session is active: " + sessionId);
         }
     }
 
-    public void validateThatSessionIsPrepared(Tenant tenant, long sessionId) {
-        LocalSession session = getLocalSession(tenant, sessionId);
+    public void validateThatRemoteSessionIsNotActive(Tenant tenant, long sessionId) {
+        RemoteSession session = getRemoteSession(tenant, sessionId);
+        if (Session.Status.ACTIVATE.equals(session.getStatus())) {
+            throw new IllegalStateException("Session is active: " + sessionId);
+        }
+    }
+
+    public void validateThatRemoteSessionIsPrepared(Tenant tenant, long sessionId) {
+        RemoteSession session = getRemoteSession(tenant, sessionId);
         if (!Session.Status.PREPARE.equals(session.getStatus()))
             throw new IllegalStateException("Session not prepared: " + sessionId);
     }
@@ -279,7 +286,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                currentActiveApplicationSet,
                                tenant.getPath());
     }
-
 
     private List<ApplicationId> listApplicationIds(Tenant tenant) {
         TenantApplications applicationRepo = tenant.getApplicationRepo();

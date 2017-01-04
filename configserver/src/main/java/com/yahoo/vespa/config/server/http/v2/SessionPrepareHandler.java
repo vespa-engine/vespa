@@ -56,7 +56,7 @@ public class SessionPrepareHandler extends SessionHandler {
         Tenant tenant = getExistingTenant(request);
         TenantName tenantName = tenant.getName();
         long sessionId = getSessionIdV2(request);
-        applicationRepository.validateThatSessionIsNotActive(tenant, sessionId);
+        applicationRepository.validateThatLocalSessionIsNotActive(tenant, sessionId);
         PrepareParams prepareParams = PrepareParams.fromHttpRequest(request, tenantName, zookeeperBarrierTimeout);
         // An app id currently using only the name
         ApplicationId appId = prepareParams.getApplicationId();
@@ -90,8 +90,8 @@ public class SessionPrepareHandler extends SessionHandler {
     protected HttpResponse handleGET(HttpRequest request) {
         Tenant tenant = getExistingTenant(request);
         long sessionId = getSessionIdV2(request);
-        applicationRepository.validateThatSessionIsNotActive(tenant, sessionId);
-        applicationRepository.validateThatSessionIsPrepared(tenant, sessionId);
+        applicationRepository.validateThatRemoteSessionIsNotActive(tenant, sessionId);
+        applicationRepository.validateThatRemoteSessionIsPrepared(tenant, sessionId);
         return new SessionPrepareResponse(createDeployLog(), tenant.getName(), request, sessionId);
     }
 
