@@ -219,6 +219,7 @@ public class DockerOperationsImpl implements DockerOperations {
                     // TOTAL_MEMORY_MB is used to make any jdisc container think the machine
                     // only has this much physical memory (overrides total memory reported by `free -m`).
                     command.withEnvironment("TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
+                    command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
                 }
             }
 
@@ -240,6 +241,10 @@ public class DockerOperationsImpl implements DockerOperations {
         }
     }
 
+    /**
+     * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
+     * IPv6 gateway in containers connected to more than one docker network
+     */
     private void setupContainerNetworkingWithScript(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
 

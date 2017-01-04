@@ -48,6 +48,7 @@ public class CoredumpHandler {
     }
 
     public void removeJavaCoredumps(Path javaCoredumpsPath) {
+        if (! javaCoredumpsPath.toFile().isDirectory()) return;
         DeleteOldAppData.deleteFiles(javaCoredumpsPath.toString(), 0, "^java_pid.*\\.hprof$", false);
     }
 
