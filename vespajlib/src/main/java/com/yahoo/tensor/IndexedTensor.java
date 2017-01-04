@@ -627,7 +627,7 @@ public class IndexedTensor implements Tensor {
             else if (size == 1)
                 return new SingleValueIndexes(initialIndexes); // with no (iterating) dimensions, we still return one value, not zero
             else if (iterateDimensions.size() == 1)
-                return new SingleDimensionIndexes(dimensionSizes, iterateDimensions.get(0), initialIndexes, size); // optimization
+                return new SingleDimensionIndexes(iterateDimensions.get(0), initialIndexes, size); // optimization
             else
                 return new MultivalueIndexes(dimensionSizes, iterateDimensions, initialIndexes, size);
         }
@@ -652,7 +652,6 @@ public class IndexedTensor implements Tensor {
 
         /** Returns the address of the current position of these indexes */
         private TensorAddress toAddress() {
-            // TODO: We may avoid the array copy by issuing a one-time-use address?
             return TensorAddress.of(indexes);
         }
 
@@ -756,13 +755,10 @@ public class IndexedTensor implements Tensor {
 
         private final int size;
 
-        private final int[] dimensionSizes;
-
         private final int iterateDimension;
 
-        private SingleDimensionIndexes(int[] dimensionSizes, int iterateDimension, int[] initialIndexes, int size) {
+        private SingleDimensionIndexes(int iterateDimension, int[] initialIndexes, int size) {
             super(initialIndexes);
-            this.dimensionSizes = dimensionSizes;
             this.iterateDimension = iterateDimension;
             this.size = size;
 
