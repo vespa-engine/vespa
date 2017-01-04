@@ -3,22 +3,19 @@ package com.yahoo.document.select;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.BucketIdFactory;
-import com.yahoo.document.select.BucketSelector;
+import org.junit.Test;
 
 import java.util.Set;
 import java.util.TreeSet;
 
+import static org.junit.Assert.assertEquals;
+
 /**
- * Date: Sep 6, 2007
- *
- * @author <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
- */
-public class BucketSelectorTestCase extends junit.framework.TestCase {
+  * @author Håkon Humberset
+  */
+public class BucketSelectorTestCase {
 
-    public BucketSelectorTestCase(String name) {
-        super(name);
-    }
-
+    @Test
     public void testExpressions() throws Exception {
         assertBucketCount("id = \"userdoc:ns:123:foobar\"", 1);
         assertBucketCount("id = \"userdoc:ns:123:foo*\"", 0);
@@ -44,15 +41,23 @@ public class BucketSelectorTestCase extends junit.framework.TestCase {
         assertBucket("id.bucket = 0x4000000000003018", new BucketId(16, 12312));
         assertBucket("id.bucket == 0x4000000000000258", new BucketId(16, 600));
 
-        assertBucket("id = \"userdoc:ns:123:foobar\"", new BucketId(0xeafff5320000007bl));
+        assertBucket("id = \"userdoc:ns:123:foobar\"", new BucketId(0xeafff5320000007bL));
         assertBucket("id.user = 123", new BucketId(32, 123));
-        assertBucket("id.group = \"yahoo.com\"", new BucketId(32, 0x035837189a1acd50l));
+        assertBucket("id.group = \"yahoo.com\"", new BucketId(32, 0x035837189a1acd50L));
 
         // Check that overlapping works
         Set<BucketId> expected = new TreeSet<BucketId>();
         expected.add(new BucketId(32, 123));
         expected.add(new BucketId(16, 123));
         assertBuckets("id.user == 123 or id.bucket == 0x400000000000007b", expected);
+    }
+
+    @Test
+    public void parenthesis_enclosed_expressions_inherit_bucket_selectors_from_children() throws Exception {
+        assertBucketCount("(id == \"userdoc:ns:123:foobar\")", 1);
+        assertBucket("(id = \"userdoc:ns:123:foobar\")", new BucketId(0xeafff5320000007bL));
+        assertBucketCount("(id.group = \"yahoo.com\" and (testdoctype1.hstringval == \"Doe\"))", 1);
+        assertBucket("(id.group = \"yahoo.com\" and (testdoctype1 and (id.namespace == 'foo')))", new BucketId(32, 0x035837189a1acd50L));
     }
 
     public void assertBucketCount(String expr, int count) throws Exception {

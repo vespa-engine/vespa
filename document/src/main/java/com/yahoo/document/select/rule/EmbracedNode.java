@@ -29,7 +29,7 @@ public class EmbracedNode implements ExpressionNode {
 
     // Inherit doc from ExpressionNode.
     public BucketSet getBucketSet(BucketIdFactory factory) {
-        return null;
+        return node.getBucketSet(factory);
     }
 
     public Object evaluate(Context context) {
