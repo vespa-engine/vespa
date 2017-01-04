@@ -100,7 +100,7 @@ public class GetSearcher extends Searcher {
         public boolean handleReply(Reply reply, int numPending) {
             if (reply.getTrace().getLevel() > 0) {
                 String str = reply.getTrace().toString();
-                System.out.println(str);
+                log.log(LogLevel.DEBUG, str);
             }
             if (!reply.hasErrors()) {
                 try {

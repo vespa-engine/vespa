@@ -9,6 +9,7 @@ import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.feedapi.SharedSender;
+import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
@@ -105,7 +106,7 @@ public final class FeedResponse extends HttpResponse implements SharedSender.Res
         if (reply.getTrace().getLevel() > 0) {
             String str = reply.getTrace().toString();
             traces.append(str);
-            System.out.println(str);
+            log.log(LogLevel.DEBUG, str);
         }
 
         if (containsFatalErrors(reply.getErrors())) {
