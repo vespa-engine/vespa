@@ -102,7 +102,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        verify(dockerOperations, never()).removeContainer(any(), any(), any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
         verify(orchestrator, never()).suspend(any(String.class));
         verify(dockerOperations, never()).scheduleDownloadOfImage(any(), any());
 
@@ -152,7 +152,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        verify(dockerOperations, never()).removeContainer(any(), any(), any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
         verify(orchestrator, never()).suspend(any(String.class));
         verify(dockerOperations, never()).scheduleDownloadOfImage(any(), any());
 
@@ -196,7 +196,7 @@ public class NodeAgentImplTest {
 
         verify(orchestrator, never()).suspend(any(String.class));
         verify(orchestrator, never()).resume(any(String.class));
-        verify(dockerOperations, never()).removeContainer(any(), any(), any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
 
         final InOrder inOrder = inOrder(dockerOperations);
         inOrder.verify(dockerOperations, times(1)).shouldScheduleDownloadOfImage(eq(newDockerImage));
@@ -261,7 +261,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        verify(dockerOperations, never()).removeContainer(any(), any(), any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
@@ -298,7 +298,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        verify(dockerOperations, never()).removeContainer(any(), any(), any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
         verify(dockerOperations, never()).startContainerIfNeeded(eq(nodeSpec));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository).updateNodeAttributes(
@@ -338,7 +338,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations);
         inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
-        inOrder.verify(dockerOperations, never()).removeContainer(eq(nodeSpec), any(), any());
+        inOrder.verify(dockerOperations, never()).removeContainer(eq(nodeSpec), any());
 
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository).updateNodeAttributes(
@@ -381,7 +381,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
         inOrder.verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
-        inOrder.verify(dockerOperations, times(1)).removeContainer(eq(nodeSpec), any(), any());
+        inOrder.verify(dockerOperations, times(1)).removeContainer(eq(nodeSpec), any());
         inOrder.verify(storageMaintainer, times(1)).archiveNodeData(eq(containerName));
         inOrder.verify(nodeRepository, times(1)).markAsReady(eq(hostName));
 
@@ -437,7 +437,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getContainerNodeSpec(eq(hostName))).thenReturn(Optional.of(nodeSpec));
         when(dockerOperations.shouldScheduleDownloadOfImage(eq(wantedDockerImage))).thenReturn(false);
 
-        verify(dockerOperations, never()).removeContainer(any(), any(), any());
+        verify(dockerOperations, never()).removeContainer(any(), any());
 
         doThrow(new RuntimeException("Failed 1st time"))
                 .doNothing()

@@ -136,7 +136,7 @@ public class CoreCollector {
         return path.toFile().getFreeSpace() > parseTotalMemorySize(memInfo);
     }
 
-    int parseTotalMemorySize(String memInfo) throws IOException {
+    int parseTotalMemorySize(String memInfo) {
         Matcher matcher = TOTAL_MEMORY_PATTERN.matcher(memInfo);
         if (!matcher.find()) throw new RuntimeException("Could not parse meminfo: " + memInfo);
         return Integer.valueOf(matcher.group("totalMem"));

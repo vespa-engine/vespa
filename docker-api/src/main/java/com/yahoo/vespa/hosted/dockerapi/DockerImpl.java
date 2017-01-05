@@ -120,7 +120,7 @@ public class DockerImpl implements Docker {
         return dockerConfigBuilder;
     }
 
-    private void setupDockerNetworkIfNeeded() throws IOException, InterruptedException {
+    private void setupDockerNetworkIfNeeded() throws IOException {
         if (! dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
         // Use IPv6 address if there is a mix of IP4 and IPv6 by taking the longest address.

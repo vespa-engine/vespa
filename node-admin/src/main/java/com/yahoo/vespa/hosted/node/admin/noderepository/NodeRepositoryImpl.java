@@ -126,7 +126,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
 
     @Override
-    public void updateNodeAttributes(final String hostName, final NodeAttributes nodeAttributes) throws IOException {
+    public void updateNodeAttributes(final String hostName, final NodeAttributes nodeAttributes) {
         UpdateNodeAttributesResponse response = requestExecutor.patch(
                 "/nodes/v2/node/" + hostName,
                 port,
@@ -140,7 +140,7 @@ public class NodeRepositoryImpl implements NodeRepository {
     }
     
     @Override
-    public void markAsReady(final String hostName) throws IOException {
+    public void markAsReady(final String hostName) {
         NodeReadyResponse response = requestExecutor.put(
                 "/nodes/v2/state/ready/" + hostName,
                 port,

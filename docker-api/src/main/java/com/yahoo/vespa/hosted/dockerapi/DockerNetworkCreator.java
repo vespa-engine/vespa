@@ -11,10 +11,10 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 
 /**
- * @author valerijf
+ * @author freva
  */
 class DockerNetworkCreator {
-    static InetAddress getDefaultGatewayLinux(boolean ipv6) throws IOException, InterruptedException {
+    static InetAddress getDefaultGatewayLinux(boolean ipv6) throws IOException {
         String command = ipv6 ? "route -A inet6 -n | grep 'UG[ \t]' | awk '{print $2}'" :
                 "route -n | grep 'UG[ \t]' | awk '{print $2}'";
 

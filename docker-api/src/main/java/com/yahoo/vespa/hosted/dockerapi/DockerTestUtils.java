@@ -6,8 +6,6 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Helper class for testing full integration with docker daemon, requires running daemon. To run these tests:
@@ -69,7 +67,7 @@ public class DockerTestUtils {
                 .withName(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).withDriver("bridge").withIpam(ipam).exec();
     }
 
-    public static void buildSimpleHttpServerDockerImage(DockerImpl docker, DockerImage dockerImage) throws IOException, ExecutionException, InterruptedException {
+    public static void buildSimpleHttpServerDockerImage(DockerImpl docker, DockerImage dockerImage) {
         try {
             docker.deleteImage(dockerImage);
         } catch (Exception e) {

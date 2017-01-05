@@ -35,7 +35,7 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) throws IOException {
+    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) {
         synchronized (monitor) {
             return containerNodeSpecs.stream()
                     .filter(containerNodeSpec -> containerNodeSpec.hostname.equals(hostName))
@@ -44,14 +44,14 @@ public class NodeRepoMock implements NodeRepository {
     }
 
     @Override
-    public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) throws IOException {
+    public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) {
         synchronized (monitor) {
             callOrderVerifier.add("updateNodeAttributes with HostName: " + hostName + ", " + nodeAttributes);
         }
     }
 
     @Override
-    public void markAsReady(String hostName) throws IOException {
+    public void markAsReady(String hostName) {
         Optional<ContainerNodeSpec> cns = getContainerNodeSpec(hostName);
 
         synchronized (monitor) {

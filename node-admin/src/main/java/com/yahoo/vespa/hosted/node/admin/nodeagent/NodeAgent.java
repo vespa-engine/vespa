@@ -25,7 +25,7 @@ public interface NodeAgent {
      */
     void unfreeze();
 
-    void stopServices(ContainerName containerName) throws Exception;
+    void stopServices(ContainerName containerName);
 
     /**
      * Make NodeAgent check for work to be done.

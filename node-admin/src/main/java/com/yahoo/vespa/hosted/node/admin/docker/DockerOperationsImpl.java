@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
@@ -307,8 +306,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)
-            throws Exception {
+    public void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {

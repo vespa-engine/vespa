@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.ContainerNodeSpec;
-import com.yahoo.vespa.hosted.node.admin.orchestrator.Orchestrator;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,8 +23,7 @@ public interface DockerOperations {
 
     void scheduleDownloadOfImage(ContainerNodeSpec nodeSpec, Runnable callback);
 
-    void removeContainer(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
-            throws Exception;
+    void removeContainer(ContainerNodeSpec nodeSpec, Container existingContainer);
 
     void executeCommandInContainer(ContainerName containerName, String[] command);
 

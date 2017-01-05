@@ -18,9 +18,8 @@ class ContainerInfoImpl implements Docker.ContainerInfo {
     @Override
     public Optional<Integer> getPid() {
         InspectContainerResponse.ContainerState state = inspectContainerResponse.getState();
-        Integer containerPid = -1;
         if (state.getRunning()) {
-            containerPid = state.getPid();
+            Integer containerPid = state.getPid();
             if (containerPid == null) {
                 throw new RuntimeException("PID of running container " + containerName + " is null");
             }

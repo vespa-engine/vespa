@@ -196,7 +196,7 @@ public class NodeAgentImpl implements NodeAgent {
         containerState = RUNNING;
     }
 
-    private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) throws IOException {
+    private void updateNodeRepoAndMarkNodeAsReady(ContainerNodeSpec nodeSpec) {
         publishStateToNodeRepoIfChanged(
                 nodeSpec.hostname,
                 // Clear current Docker image and vespa version, as nothing is running on this node
@@ -208,7 +208,7 @@ public class NodeAgentImpl implements NodeAgent {
         nodeRepository.markAsReady(nodeSpec.hostname);
     }
 
-    private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) throws IOException {
+    private void updateNodeRepoWithCurrentAttributes(final ContainerNodeSpec nodeSpec) {
         final NodeAttributes nodeAttributes = new NodeAttributes()
                 .withRestartGeneration(nodeSpec.wantedRestartGeneration.orElse(null))
                 // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
@@ -220,7 +220,7 @@ public class NodeAgentImpl implements NodeAgent {
         publishStateToNodeRepoIfChanged(nodeSpec.hostname, nodeAttributes);
     }
 
-    private void publishStateToNodeRepoIfChanged(String hostName, NodeAttributes currentAttributes) throws IOException {
+    private void publishStateToNodeRepoIfChanged(String hostName, NodeAttributes currentAttributes) {
         // TODO: We should only update if the new current values do not match the node repo's current values
         if (!currentAttributes.equals(lastAttributesSet)) {
             logger.info("Publishing new set of attributes to node repo: "
@@ -291,7 +291,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public void stopServices(ContainerName containerName) throws Exception {
+    public void stopServices(ContainerName containerName) {
             logger.info("Stopping services for " + containerName);
             dockerOperations.stopServicesOnNode(containerName);
     }
@@ -329,7 +329,7 @@ public class NodeAgentImpl implements NodeAgent {
                 dockerOperations.trySuspendNode(containerName);
                 stopServices(containerName);
             }
-            dockerOperations.removeContainer(nodeSpec, existingContainer.get(), orchestrator);
+            dockerOperations.removeContainer(nodeSpec, existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
             lastCpuMetric = new CpuUsageReporter();
             vespaVersion = Optional.empty();

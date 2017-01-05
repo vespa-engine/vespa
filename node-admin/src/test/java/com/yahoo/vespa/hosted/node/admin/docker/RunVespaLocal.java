@@ -72,7 +72,7 @@ public class RunVespaLocal {
     /**
      * Starts config server, provisions numNodesToProvision and puts them in ready state
      */
-    void startLocalZoneWithNodes(int numNodesToProvision) throws IOException, InterruptedException, ExecutionException {
+    void startLocalZoneWithNodes(int numNodesToProvision) throws IOException {
         logger.info("Starting config-server");
         LocalZoneUtils.startConfigServerIfNeeded(docker, environmentBuilder.build());
 
