@@ -111,6 +111,7 @@ public class RunVespaLocal {
         String hostname = InetAddress.getByName("172.18.0.1").getHostName();
         logger.info("Provisioning host at " + hostname);
         LocalZoneUtils.provisionHost(hostname);
+        LocalZoneUtils.setState(Node.State.ready, hostname);
 
         logger.info("Starting node-admin");
         LocalZoneUtils.startNodeAdminIfNeeded(docker, environmentBuilder.build(), pathToContainerStorage);
