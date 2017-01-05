@@ -246,7 +246,7 @@ void PredicateBlueprint::fetchPostings(bool) {
     }
 
     PredicateAttribute::MinFeatureHandle mfh = predicate_attribute().getMinFeatureVector();
-    Alloc kv(Alloc::alloc(mfh.second));
+    Alloc kv(Alloc::alloc(mfh.second, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE*4));
     _kVBacking.swap(kv);
     _kV = BitVectorCache::CountVector(static_cast<uint8_t *>(_kVBacking.get()), mfh.second);
     _index.computeCountVector(_cachedFeatures, _kV);
