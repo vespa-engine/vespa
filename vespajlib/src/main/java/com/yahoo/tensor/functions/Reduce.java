@@ -147,7 +147,7 @@ public class Reduce extends PrimitiveTensorFunction {
 
     private Tensor reduceIndexedVector(IndexedTensor argument) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
-        for (int i = 0; i < argument.size(0); i++)
+        for (int i = 0; i < argument.dimensionSizes().size(0); i++)
             valueAggregator.aggregate(argument.get(i));
         return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
     }

@@ -56,8 +56,8 @@ public class IndexedTensorTestCase {
         assertEquals(emptyWithDimensions, emptyWithDimensionsFromString);
 
         IndexedTensor emptyWithDimensionsIndexed = (IndexedTensor)emptyWithDimensions;
-        assertEquals(0, emptyWithDimensionsIndexed.size(0));
-        assertEquals(0, emptyWithDimensionsIndexed.size(1));
+        assertEquals(0, emptyWithDimensionsIndexed.dimensionSizes().size(0));
+        assertEquals(0, emptyWithDimensionsIndexed.dimensionSizes().size(1));
     }
     
     @Test

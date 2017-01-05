@@ -346,7 +346,7 @@ public interface Tensor {
         }
 
         /** Creates a suitable builder for the given type */
-        static Builder of(TensorType type, int[] dimensionSizes) {
+        static Builder of(TensorType type, DimensionSizes dimensionSizes) {
             boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
             if (containsIndexed && containsMapped)

@@ -1,6 +1,7 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
+import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -68,11 +69,11 @@ public class Generate extends PrimitiveTensorFunction {
         return builder.build();
     }
     
-    private int[] dimensionSizes(TensorType type) {
-        int dimensionSizes[] = new int[type.dimensions().size()];
-        for (int i = 0; i < dimensionSizes.length; i++)
-            dimensionSizes[i] = type.dimensions().get(i).size().get();
-        return dimensionSizes;
+    private DimensionSizes dimensionSizes(TensorType type) {
+        DimensionSizes.Builder b = new DimensionSizes.Builder(type.dimensions().size());
+        for (int i = 0; i < b.dimensions(); i++)
+            b.set(i, type.dimensions().get(i).size().get());
+        return b.build();
     }
     
     @Override
