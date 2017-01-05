@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.matcher");
 #include <algorithm>
 #include <string>
 #include "query.h"
@@ -18,6 +14,8 @@ LOG_SETUP(".juniper.matcher");
 #include "result.h"
 #include "juniperparams.h"
 #include "config.h"
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.matcher");
 
 unsigned debug_level = 0;
 

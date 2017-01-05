@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+//
 /* Simple prefix query parser for Juniper for debugging purposes */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.queryparser");
 #include "queryparser.h"
 #include "juniperdebug.h"
 #include <vector>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.queryparser");
+
 #define TOK_NORM_OP    1
 #define TOK_PARAM1_OP  2
 
-namespace juniper
-{
+namespace juniper {
 
 // simple syntax tree
 

@@ -1,9 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
+
 #define _NEED_SUMMARY_CONFIG_IMPL 1
 #include "SummaryConfig.h"
 #include <string>
-#include <sstream>
+#include <cstring>
 
 SummaryConfig* CreateSummaryConfig(const char* highlight_on,
 				   const char* highlight_off,

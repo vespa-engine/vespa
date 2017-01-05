@@ -1,25 +1,20 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.querynode");
 #include "querynode.h"
 #include "queryvisitor.h"
 #include "juniperdebug.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
-
-
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.querynode");
 
 /** Implementation of the internal query data structure used by the matching engine
  *  in Matcher.h
  */
 
-
 QueryExpr::QueryExpr(int weight, int arity) :
     _options(0), _weight(weight), _arity(arity), _parent(NULL), _childno(0)
-{}
+{ }
 
 QueryExpr::QueryExpr(QueryExpr* e) :
     _options(e->_options),
@@ -27,10 +22,9 @@ QueryExpr::QueryExpr(QueryExpr* e) :
     _arity(e->_arity),
     _parent(NULL),
     _childno(0)
-{}
+{ }
 
-QueryExpr::~QueryExpr()
-{}
+QueryExpr::~QueryExpr() { }
 
 
 QueryTerm::QueryTerm(const char* t, int length, int ix, int wgt)

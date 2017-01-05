@@ -4,8 +4,6 @@ vespa_define_module(
     fastos
     fastlib_fast
     vespalog
-    staging_vespalib
-
 
     LIBS
     src/vespa/juniper

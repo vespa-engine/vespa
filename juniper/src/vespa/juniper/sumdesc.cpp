@@ -1,14 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.sumdesc");
 #include "sumdesc.h"
 #include "juniperdebug.h"
-#include <vespa/fastlib/text/unicodeutil.h>
 #include "Matcher.h"
 #include "appender.h"
+#include <vespa/fastlib/text/unicodeutil.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.sumdesc");
 
 /** SummaryDesc: A class of objects describing a query highlight
  *  dynamic summary based on the current state of the provided
@@ -16,6 +15,8 @@ LOG_SETUP(".juniper.sumdesc");
  */
 
 /* a few utilities: */
+
+namespace {
 
 bool wordchar(const unsigned char* s)
 {
@@ -149,6 +150,7 @@ int complete_word(unsigned char* start, ssize_t length,
     return moved;
 }
 
+}
 
 SummaryDesc::highlight_desc::highlight_desc(off_t pos,
         ssize_t len, bool highlight)

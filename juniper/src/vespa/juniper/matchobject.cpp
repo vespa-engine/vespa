@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.matchobject");
 #include "query.h"
 #include "matchobject.h"
 #include "juniperdebug.h"
@@ -14,6 +10,8 @@ LOG_SETUP(".juniper.matchobject");
 #include "querymodifier.h"
 #include "queryhandle.h"
 #include <stack>
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.matchobject");
 
 class traverser : public IQueryExprVisitor
 {

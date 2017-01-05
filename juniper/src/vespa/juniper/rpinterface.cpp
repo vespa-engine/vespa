@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.rpinterface");
 #include "rpinterface.h"
 #include <string>
 #include <vector>
@@ -20,10 +16,12 @@ LOG_SETUP(".juniper.rpinterface");
 #include "querymodifier.h"
 #include <vespa/fastlib/text/normwordfolder.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.rpinterface");
+
 /* Implementation of the interface between Juniper and the content/query provider */
 
-namespace juniper
-{
+namespace juniper {
 
 bool AnalyseCompatible(Config* conf1, Config* conf2)
 {

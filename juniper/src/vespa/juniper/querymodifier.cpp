@@ -1,15 +1,14 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.querymodifier");
+
 #include "juniperdebug.h"
 #include "querymodifier.h"
 #include "foreach_utils.h"
 #include "querynode.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.querymodifier");
 
-namespace juniper
-{
+namespace juniper {
 
 Rewriter::Rewriter(IRewriter* rewriter, bool for_query, bool for_document)
     : _rewriter(rewriter), _for_query(for_query), _for_document(for_document)

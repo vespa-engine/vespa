@@ -190,11 +190,6 @@ private:
     void popcontext(int ctxt);
 };
 
-/** Other utilities exposed for debug purposes
- */
-bool wordchar(const unsigned char* s);
-bool nonwordchar(const unsigned char* s);
-
 /** Actually build / release the textual summary from a description.
  *  These functions is not dependent of any Matcher info.
  */

@@ -1,7 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.result");
+
 #define _NEED_SUMMARY_CONFIG_IMPL 1
 #include "SummaryConfig.h"
 #include "rpinterface.h"
@@ -12,8 +10,10 @@ LOG_SETUP(".juniper.result");
 #include "config.h"
 #include "appender.h"
 
-namespace juniper
-{
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.result");
+
+namespace juniper {
 
 /** Actual implementation of Juniper generated summaries. */
 class SummaryImpl : public Summary
