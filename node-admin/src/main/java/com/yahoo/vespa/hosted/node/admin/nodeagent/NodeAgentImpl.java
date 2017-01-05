@@ -329,7 +329,7 @@ public class NodeAgentImpl implements NodeAgent {
                 dockerOperations.trySuspendNode(containerName);
                 stopServices(containerName);
             }
-            dockerOperations.removeContainer(nodeSpec, existingContainer.get(), orchestrator);
+            dockerOperations.removeContainer(nodeSpec, existingContainer.get());
             metricReceiver.unsetMetricsForContainer(hostname);
             lastCpuMetric = new CpuUsageReporter();
             vespaVersion = Optional.empty();
