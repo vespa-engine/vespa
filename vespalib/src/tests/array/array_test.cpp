@@ -7,22 +7,6 @@
 
 using namespace vespalib;
 
-class Test : public TestApp
-{
-public:
-    int Main();
-private:
-    template <typename T>
-    void testArray(const T & a, const T & b);
-    void testComplicated();
-    void testBeginEnd();
-    void testThatOrganicGrowthIsBy2InNAndReserveResizeAreExact();
-    template<class T>
-    void testBeginEnd(T & v);
-    void testMoveConstructor();
-    void testMoveAssignment();
-};
-
 namespace vespalib {
 
 template <typename T>
@@ -80,10 +64,38 @@ std::ostream & operator << (std::ostream & os, const Clever & clever)
     return os;
 }
 
-int
-Test::Main()
+template <typename T>
+void
+testArray(const T & a, const T & b)
 {
-    TEST_INIT("array_test");
+    Array<T> array;
+
+    ASSERT_EQUAL(sizeof(array), 32u);
+    ASSERT_EQUAL(array.size(), 0u);
+    ASSERT_EQUAL(array.capacity(), 0u);
+    for(size_t i(0); i < 5; i++) {
+        array.push_back(a);
+        array.push_back(b);
+        for (size_t j(0); j <= i; j++) {
+            ASSERT_EQUAL(array[j*2 + 0], a);
+            ASSERT_EQUAL(array[j*2 + 1], b);
+        }
+    }
+    ASSERT_EQUAL(array.size(), 10u);
+    ASSERT_EQUAL(array.capacity(), 16u);
+    for (size_t i(array.size()), m(array.capacity()); i < m; i+=2) {
+        array.push_back(a);
+        array.push_back(b);
+        for (size_t j(0); j <= (i/2); j++) {
+            ASSERT_EQUAL(array[j*2 + 0], a);
+            ASSERT_EQUAL(array[j*2 + 1], b);
+        }
+    }
+    ASSERT_EQUAL(array.size(), array.capacity());
+}
+
+TEST("test basic array functionality")
+{
     testArray<int>(7, 9);
     testArray<vespalib::string>("7", "9");
     const char * longS1 = "more than 48 bytes bytes that are needed to avoid the small string optimisation in vespalib::string";
@@ -105,15 +117,9 @@ Test::Main()
     size_t counter(0);
     testArray(Clever(&counter),  Clever(&counter));
     EXPECT_EQUAL(0ul, counter);
-    testComplicated();
-    testBeginEnd();
-    testThatOrganicGrowthIsBy2InNAndReserveResizeAreExact();
-    testMoveConstructor();
-    testMoveAssignment();
-    TEST_DONE();
 }
 
-void Test::testThatOrganicGrowthIsBy2InNAndReserveResizeAreExact()
+TEST("test that organic growth is by 2 in N and reserve resize are exact")
 {
     Array<char> c(256);
     EXPECT_EQUAL(256u, c.size());
@@ -149,38 +155,9 @@ void Test::testThatOrganicGrowthIsBy2InNAndReserveResizeAreExact()
     EXPECT_EQUAL(2048u, c.capacity());
 }
 
-template <typename T>
-void Test::testArray(const T & a, const T & b)
-{
-    Array<T> array;
-
-    ASSERT_EQUAL(sizeof(array), 32u);
-    ASSERT_EQUAL(array.size(), 0u);
-    ASSERT_EQUAL(array.capacity(), 0u);
-    for(size_t i(0); i < 5; i++) {
-        array.push_back(a);
-        array.push_back(b);
-        for (size_t j(0); j <= i; j++) {
-            ASSERT_EQUAL(array[j*2 + 0], a);
-            ASSERT_EQUAL(array[j*2 + 1], b);
-        }
-    }
-    ASSERT_EQUAL(array.size(), 10u);
-    ASSERT_EQUAL(array.capacity(), 16u);
-    for (size_t i(array.size()), m(array.capacity()); i < m; i+=2) {
-        array.push_back(a);
-        array.push_back(b);
-        for (size_t j(0); j <= (i/2); j++) {
-            ASSERT_EQUAL(array[j*2 + 0], a);
-            ASSERT_EQUAL(array[j*2 + 1], b);
-        }
-    }
-    ASSERT_EQUAL(array.size(), array.capacity());
-}
-
 size_t Clever::_global = 0;
 
-void Test::testComplicated()
+TEST("test complicated")
 {
     volatile size_t counter(0);
     {
@@ -226,7 +203,8 @@ void Test::testComplicated()
 }
 
 template<class T>
-void Test::testBeginEnd(T & v)
+void
+testBeginEnd(T & v)
 {
     EXPECT_EQUAL(0u, v.end() - v.begin());
     EXPECT_EQUAL(0u, v.rend() - v.rbegin());
@@ -288,7 +266,7 @@ void Test::testBeginEnd(T & v)
     EXPECT_EQUAL(3u, v.rend() - v.rbegin());
 }
 
-void Test::testBeginEnd()
+TEST("test begin end")
 {
     std::vector<size_t> v;
     Array<size_t> a;
@@ -296,7 +274,7 @@ void Test::testBeginEnd()
     testBeginEnd(a);
 }
 
-void Test::testMoveConstructor()
+TEST("test move constructor")
 {
     Array<size_t> orig;
     orig.push_back(42);
@@ -318,7 +296,7 @@ void Test::testMoveConstructor()
     }
 }
 
-void Test::testMoveAssignment()
+TEST("test move assignment")
 {
     Array<size_t> orig;
     orig.push_back(44);
@@ -342,4 +320,4 @@ void Test::testMoveAssignment()
     }
 }
 
-TEST_APPHOOK(Test)
+TEST_MAIN() { TEST_RUN_ALL(); }
