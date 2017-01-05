@@ -39,6 +39,7 @@ protected:
     typedef ChangeVectorT< Change > ChangeVector;
     ChangeVector _changes;
 
+    virtual MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
     uint32_t get(DocId doc, vespalib::string * v, uint32_t sz) const override;
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;

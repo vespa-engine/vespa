@@ -537,4 +537,10 @@ StringAttribute::fixupEnumRefCounts(const EnumVector &enumHist)
     fprintf(stderr, "StringAttribute::fixupEnumRefCounts\n");
 }
 
+MemoryUsage
+StringAttribute::getChangeVectorMemoryUsage() const
+{
+    return _changes.getMemoryUsage();
+}
+
 }

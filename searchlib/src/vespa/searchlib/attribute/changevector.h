@@ -7,6 +7,8 @@
 
 namespace search {
 
+class MemoryUsage;
+
 struct ChangeBase {
     enum Type {
         NOOP,
@@ -168,6 +170,7 @@ public:
     void clear();
     const_iterator begin() const { return const_iterator(_v, 0); }
     const_iterator end()   const { return const_iterator(_v, size()); }
+    MemoryUsage getMemoryUsage() const;
 private:
     void linkIn(uint32_t doc, size_t index, size_t last);
     Vector _v;

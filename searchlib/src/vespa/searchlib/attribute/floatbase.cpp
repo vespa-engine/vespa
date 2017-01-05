@@ -90,6 +90,12 @@ FloatingPointAttribute::getString(DocId doc, char * s, size_t sz) const {
     return s;
 }
 
+MemoryUsage
+FloatingPointAttribute::getChangeVectorMemoryUsage() const
+{
+    return _changes.getMemoryUsage();
+}
+
 template class FloatingPointAttributeTemplate<float>;
 template class FloatingPointAttributeTemplate<double>;
 }

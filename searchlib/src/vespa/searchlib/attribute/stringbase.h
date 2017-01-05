@@ -70,6 +70,8 @@ protected:
 
     virtual bool
     onAddDoc(DocId doc);
+
+    virtual MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
     typedef attribute::LoadedStringVectorReal LoadedVectorR;
     virtual void fillPostings(LoadedVector & loaded);

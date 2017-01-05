@@ -87,6 +87,7 @@ SingleValueEnumAttribute<B>::onUpdateStat()
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(this->_enumStore.getMemoryUsage());
     total.merge(this->_enumStore.getTreeMemoryUsage());
+    total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
     this->updateStatistics(_enumIndices.size(), this->_enumStore.getNumUniques(), total.allocatedBytes(),
                      total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());

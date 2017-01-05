@@ -88,6 +88,12 @@ bool IntegerAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
     return retval;
 }
 
+MemoryUsage
+IntegerAttribute::getChangeVectorMemoryUsage() const
+{
+    return _changes.getMemoryUsage();
+}
+
 template class IntegerAttributeTemplate<int8_t>;
 template class IntegerAttributeTemplate<int16_t>;
 template class IntegerAttributeTemplate<int32_t>;

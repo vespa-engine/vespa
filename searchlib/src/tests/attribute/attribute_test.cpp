@@ -1850,11 +1850,13 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
     EXPECT_EQUAL(1u, ia.getCurrentGeneration());
     uint64_t lastAllocated;
     uint64_t lastOnHold;
+    MemoryUsage changeVectorMemoryUsage(attr->getChangeVectorMemoryUsage());
+    size_t changeVectorAllocated = changeVectorMemoryUsage.allocatedBytes();
     if (exactStatus) {
-        EXPECT_EQUAL(2u, ia.getStatus().getAllocated());
+        EXPECT_EQUAL(2u + changeVectorAllocated, ia.getStatus().getAllocated());
         EXPECT_EQUAL(0u, ia.getStatus().getOnHold());
     } else {
-        EXPECT_LESS(0u, ia.getStatus().getAllocated());
+        EXPECT_LESS(0u + changeVectorAllocated, ia.getStatus().getAllocated());
         EXPECT_EQUAL(0u, ia.getStatus().getOnHold());
         lastAllocated = ia.getStatus().getAllocated();
         lastOnHold = ia.getStatus().getOnHold();
@@ -1866,7 +1868,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
         ia.commit(true);
         EXPECT_EQUAL(3u, ia.getCurrentGeneration());
         if (exactStatus) {
-            EXPECT_EQUAL(6u, ia.getStatus().getAllocated());
+            EXPECT_EQUAL(6u + changeVectorAllocated, ia.getStatus().getAllocated());
             EXPECT_EQUAL(2u, ia.getStatus().getOnHold()); // no cleanup due to guard
         } else {
             EXPECT_LESS(lastAllocated, ia.getStatus().getAllocated());
@@ -1882,7 +1884,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
         ia.commit(true);
         EXPECT_EQUAL(4u, ia.getCurrentGeneration());
         if (exactStatus) {
-            EXPECT_EQUAL(4u, ia.getStatus().getAllocated());
+            EXPECT_EQUAL(4u + changeVectorAllocated, ia.getStatus().getAllocated());
             EXPECT_EQUAL(0u, ia.getStatus().getOnHold()); // cleanup at end of addDoc()
         } else {
             EXPECT_GREATER(lastAllocated, ia.getStatus().getAllocated());
@@ -1898,7 +1900,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
         ia.commit();
         EXPECT_EQUAL(6u, ia.getCurrentGeneration());
         if (exactStatus) {
-            EXPECT_EQUAL(10u, ia.getStatus().getAllocated());
+            EXPECT_EQUAL(10u + changeVectorAllocated, ia.getStatus().getAllocated());
             EXPECT_EQUAL(4u, ia.getStatus().getOnHold()); // no cleanup due to guard
         } else {
             EXPECT_LESS(lastAllocated, ia.getStatus().getAllocated());
@@ -1910,7 +1912,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
     ia.commit(true);
     EXPECT_EQUAL(7u, ia.getCurrentGeneration());
     if (exactStatus) {
-        EXPECT_EQUAL(6u, ia.getStatus().getAllocated());
+        EXPECT_EQUAL(6u + changeVectorAllocated, ia.getStatus().getAllocated());
         EXPECT_EQUAL(0u, ia.getStatus().getOnHold()); // cleanup at end of commit()
     } else {
         EXPECT_GREATER(lastAllocated, ia.getStatus().getAllocated());

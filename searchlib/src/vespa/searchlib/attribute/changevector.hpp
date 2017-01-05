@@ -4,6 +4,7 @@
 
 #include "changevector.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/searchlib/util/memoryusage.h>
 
 namespace search {
 
@@ -69,6 +70,15 @@ ChangeVectorT<T>::linkIn(uint32_t doc, size_t first, size_t last)
         }
     }
     _v[_tail].setNext(size());
+}
+
+template <typename T>
+MemoryUsage
+ChangeVectorT<T>::getMemoryUsage() const
+{
+    size_t usedBytes = _v.size() * sizeof(T) + _docs.getMemoryUsed();
+    size_t allocBytes = _v.capacity() * sizeof(T) + _docs.getMemoryConsumption();
+    return MemoryUsage(allocBytes, usedBytes, 0, 0);
 }
 
 } // namespace search

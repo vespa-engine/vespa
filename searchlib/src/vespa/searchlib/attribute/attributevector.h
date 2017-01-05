@@ -710,6 +710,8 @@ public:
     virtual uint64_t getEstimatedSaveByteSize() const;
 
     static bool isEnumerated(const vespalib::GenericHeader &header);
+
+    virtual MemoryUsage getChangeVectorMemoryUsage() const;
 };
 
 }
