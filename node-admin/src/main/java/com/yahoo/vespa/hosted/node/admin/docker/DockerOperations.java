@@ -24,8 +24,7 @@ public interface DockerOperations {
 
     void scheduleDownloadOfImage(ContainerNodeSpec nodeSpec, Runnable callback);
 
-    void removeContainer(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator)
-            throws Exception;
+    void removeContainer(ContainerNodeSpec nodeSpec, Container existingContainer, Orchestrator orchestrator);
 
     void executeCommandInContainer(ContainerName containerName, String[] command);
 

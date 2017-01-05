@@ -76,7 +76,7 @@ public class VespaSSLConfig implements SSLConfig {
     }
 
     public static KeyStore createKeyStore(final String keypem, final String certpem) throws NoSuchAlgorithmException,
-            InvalidKeySpecException, IOException, CertificateException, KeyStoreException {
+            IOException, CertificateException, KeyStoreException {
         PrivateKey privateKey = loadPrivateKey(keypem);
         requireNonNull(privateKey);
         List<Certificate> privateCertificates = loadCertificates(certpem);
@@ -128,8 +128,7 @@ public class VespaSSLConfig implements SSLConfig {
     /**
      * Return private key ("key.pem") from Reader
      */
-    private static PrivateKey loadPrivateKey(final Reader reader) throws IOException, NoSuchAlgorithmException,
-            InvalidKeySpecException {
+    private static PrivateKey loadPrivateKey(final Reader reader) throws IOException, NoSuchAlgorithmException {
         try (PEMParser pemParser = new PEMParser(reader)) {
             Object readObject = pemParser.readObject();
             while (readObject != null) {
@@ -175,8 +174,7 @@ public class VespaSSLConfig implements SSLConfig {
     /**
      * Return KeyPair from "key.pem"
      */
-    private static PrivateKey loadPrivateKey(final String keypem) throws IOException, NoSuchAlgorithmException,
-            InvalidKeySpecException {
+    private static PrivateKey loadPrivateKey(final String keypem) throws IOException, NoSuchAlgorithmException {
         try (StringReader certReader = new StringReader(keypem);
              BufferedReader reader = new BufferedReader(certReader)) {
             return loadPrivateKey(reader);

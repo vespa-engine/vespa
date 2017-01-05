@@ -307,8 +307,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator)
-            throws Exception {
+    public void removeContainer(final ContainerNodeSpec nodeSpec, final Container existingContainer, Orchestrator orchestrator) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, nodeSpec.containerName);
         final ContainerName containerName = existingContainer.name;
         if (existingContainer.isRunning) {

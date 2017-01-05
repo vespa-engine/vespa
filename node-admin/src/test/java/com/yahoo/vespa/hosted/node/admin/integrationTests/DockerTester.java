@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.util.Environment;
 import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Optional;
@@ -68,7 +67,7 @@ public class DockerTester implements AutoCloseable {
         nodeRepositoryMock.addContainerNodeSpec(containerNodeSpec);
     }
 
-    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostname) throws IOException {
+    public Optional<ContainerNodeSpec> getContainerNodeSpec(String hostname) {
         return nodeRepositoryMock.getContainerNodeSpec(hostname);
     }
 

@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -236,15 +235,11 @@ public class NodeAdminImpl implements NodeAdmin {
                 return;
             }
 
-            try {
-                ensureNodeAgentForNodeIsStarted(nodeSpec.get());
-            } catch (IOException e) {
-                logger.warning("Failed to bring container to desired state", e);
-            }
+            ensureNodeAgentForNodeIsStarted(nodeSpec.get());
         });
     }
 
-    private void ensureNodeAgentForNodeIsStarted(final ContainerNodeSpec nodeSpec) throws IOException {
+    private void ensureNodeAgentForNodeIsStarted(final ContainerNodeSpec nodeSpec) {
         if (nodeAgents.containsKey(nodeSpec.hostname)) {
             return;
         }

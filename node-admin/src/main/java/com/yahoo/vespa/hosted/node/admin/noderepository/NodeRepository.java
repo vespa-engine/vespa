@@ -14,9 +14,9 @@ import java.util.Optional;
 public interface NodeRepository {
     List<ContainerNodeSpec> getContainersToRun() throws IOException;
 
-    Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName) throws IOException;
+    Optional<ContainerNodeSpec> getContainerNodeSpec(String hostName);
 
-    void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) throws IOException;
+    void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes);
 
-    void markAsReady(String hostName) throws IOException;
+    void markAsReady(String hostName);
 }

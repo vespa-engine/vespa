@@ -138,7 +138,7 @@ public class DockerImageGarbageCollectionTest {
             return this;
         }
 
-        private void expectUnusedImages(final String... imageIds) throws Exception {
+        private void expectUnusedImages(final String... imageIds) {
             final List<DockerImage> expectedUnusedImages = Arrays.stream(imageIds)
                     .map(DockerImage::new)
                     .collect(Collectors.toList());

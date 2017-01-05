@@ -99,7 +99,7 @@ public class CoredumpHandler {
         return Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
     }
 
-    private Map<String, Object> collectMetadata(Path coredumpPath, Map<String, Object> nodeAttributes) throws IOException, InterruptedException {
+    private Map<String, Object> collectMetadata(Path coredumpPath, Map<String, Object> nodeAttributes) {
         Map<String, Object> metadata = coreCollector.collect(coredumpPath);
         metadata.putAll(nodeAttributes);
 
@@ -112,7 +112,7 @@ public class CoredumpHandler {
         Files.write(metadataPath, gson.toJson(metadata).getBytes());
     }
 
-    void report(Path coredumpDirectory) throws IOException, InterruptedException {
+    void report(Path coredumpDirectory) throws IOException {
         // Use core dump UUID as document ID
         String documentId = coredumpDirectory.getFileName().toString();
         String metadata = new String(Files.readAllBytes(coredumpDirectory.resolve(METADATA_FILE_NAME)));
