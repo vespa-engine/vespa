@@ -13,4 +13,5 @@ vespa_add_executable(configd_config-sentinel_app
     INSTALL sbin
     DEPENDS
     configdefinitions
+    staging_vespalib
 )

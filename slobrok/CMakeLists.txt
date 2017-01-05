@@ -5,6 +5,7 @@ vespa_define_module(
     vespalib
     fnet
     configdefinitions
+    staging_vespalib
 
     LIBS
     src/vespa/slobrok

@@ -1,5 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$
+/*
  *
  * Generic hash functions to ensure the same hash values are used everywhere.
  */
@@ -33,20 +33,9 @@
  *
  */
 
-#include <sys/types.h>
+#include "md5.h"
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-/*
-#include <debugmalloc.h>
-#include <hash.h>
-#include <fileutil.h>
-#include <poolmalloc.h>
-#include <workarounds.h>
-*/
-
-#include <vespa/vespalib/util/md5.h>
+#include <inttypes.h>
 
 /* --- START OF MD5 CODE --- */
 
@@ -70,17 +59,17 @@
 /* MD5 context. */
 typedef struct
 {
-  uint state[4];                                   /* state (ABCD) */
-  uint count[2];        /* number of bits, modulo 2^64 (lsb first) */
+  uint32_t state[4];                                   /* state (ABCD) */
+  uint32_t count[2];        /* number of bits, modulo 2^64 (lsb first) */
   unsigned char buffer[64];                         /* input buffer */
 } MD5_CTX;
 
 static void MD5Init (MD5_CTX *);
-static void MD5Update (MD5_CTX *, const unsigned char *, uint);
+static void MD5Update (MD5_CTX *, const unsigned char *, uint32_t);
 static void MD5Final (unsigned char [16], MD5_CTX *);
-static void MD5Transform (uint [4], const unsigned char [64]);
-static void Encode (unsigned char *, uint *, uint);
-static void Decode (uint *, const unsigned char *, uint);
+static void MD5Transform (uint32_t [4], const unsigned char [64]);
+static void Encode (unsigned char *, uint32_t *, uint32_t);
+static void Decode (uint32_t *, const unsigned char *, uint32_t);
 
 static unsigned char PADDING[64] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -103,22 +92,22 @@ static unsigned char PADDING[64] = {
 Rotation is separate from addition to prevent recomputation.
  */
 #define FF(a, b, c, d, x, s, ac) { \
-    (a) += F ((b), (c), (d)) + (x) + (uint)(ac); \
+    (a) += F ((b), (c), (d)) + (x) + (uint32_t)(ac); \
     (a) = ROTATE_LEFT ((a), (s)); \
     (a) += (b); \
 }
 #define GG(a, b, c, d, x, s, ac) { \
-    (a) += G ((b), (c), (d)) + (x) + (uint)(ac); \
+    (a) += G ((b), (c), (d)) + (x) + (uint32_t)(ac); \
     (a) = ROTATE_LEFT ((a), (s)); \
     (a) += (b); \
 }
 #define HH(a, b, c, d, x, s, ac) { \
-    (a) += H ((b), (c), (d)) + (x) + (uint)(ac); \
+    (a) += H ((b), (c), (d)) + (x) + (uint32_t)(ac); \
     (a) = ROTATE_LEFT ((a), (s)); \
     (a) += (b); \
 }
 #define II(a, b, c, d, x, s, ac) { \
-    (a) += I ((b), (c), (d)) + (x) + (uint)(ac); \
+    (a) += I ((b), (c), (d)) + (x) + (uint32_t)(ac); \
     (a) = ROTATE_LEFT ((a), (s)); \
     (a) += (b); \
 }
@@ -142,18 +131,18 @@ MD5Init (MD5_CTX *context)
   context.
  */
 static void
-MD5Update (MD5_CTX *context, const unsigned char *input, uint inputLen)
+MD5Update (MD5_CTX *context, const unsigned char *input, uint32_t inputLen)
 {
-    uint i, idx, partLen;
+    uint32_t i, idx, partLen;
 
     /* Compute number of bytes mod 64 */
-    idx = (uint)((context->count[0] >> 3) & 0x3F);
+    idx = (uint32_t)((context->count[0] >> 3) & 0x3F);
 
     /* Update number of bits */
-    if ((context->count[0] += ((uint)inputLen << 3)) < ((uint)inputLen << 3)) {
+    if ((context->count[0] += ((uint32_t)inputLen << 3)) < ((uint32_t)inputLen << 3)) {
         context->count[1]++;
     }
-    context->count[1] += ((uint)inputLen >> 29);
+    context->count[1] += ((uint32_t)inputLen >> 29);
 
     partLen = 64 - idx;
 
@@ -182,14 +171,14 @@ static void
 MD5Final (unsigned char digest[16], MD5_CTX *context)
 {
     unsigned char bits[8];
-    uint idx, padLen;
+    uint32_t idx, padLen;
 
     /* Save number of bits */
     Encode (bits, context->count, 8);
 
     /* Pad out to 56 mod 64.
      */
-    idx = (uint)((context->count[0] >> 3) & 0x3f);
+    idx = (uint32_t)((context->count[0] >> 3) & 0x3f);
     padLen = (idx < 56) ? (56 - idx) : (120 - idx);
     MD5Update (context, PADDING, padLen);
 
@@ -206,9 +195,9 @@ MD5Final (unsigned char digest[16], MD5_CTX *context)
 /* MD5 basic transformation. Transforms state based on block.
  */
 static void
-MD5Transform (uint state[4], const unsigned char dblock[64])
+MD5Transform (uint32_t state[4], const unsigned char dblock[64])
 {
-    uint a = state[0], b = state[1], c = state[2], d = state[3], x[16];
+    uint32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
     Decode (x, dblock, 64);
 
@@ -295,9 +284,9 @@ MD5Transform (uint state[4], const unsigned char dblock[64])
 }
 
 static void
-Encode (unsigned char *output, uint *input, uint len)
+Encode (unsigned char *output, uint32_t *input, uint32_t len)
 {
-    uint i, j;
+    uint32_t i, j;
 
     for (i = 0, j = 0; j < len; i++, j += 4) {
         output[j] = (unsigned char)(input[i] & 0xff);
@@ -307,18 +296,18 @@ Encode (unsigned char *output, uint *input, uint len)
     }
 }
 
-/* Decodes input (unsigned char) into output (uint). Assumes len is
+/* Decodes input (unsigned char) into output (uint32_t). Assumes len is
   a multiple of 4.
  */
 
 static void
-Decode (uint *output, const unsigned char *input, uint len)
+Decode (uint32_t *output, const unsigned char *input, uint32_t len)
 {
-    uint i, j;
+    uint32_t i, j;
 
     for (i = 0, j = 0; j < len; i++, j += 4)
-        output[i] = ((uint)input[j]) | (((uint)input[j+1]) << 8) |
-            (((uint)input[j+2]) << 16) | (((uint)input[j+3]) << 24);
+        output[i] = ((uint32_t)input[j]) | (((uint32_t)input[j+1]) << 8) |
+            (((uint32_t)input[j+2]) << 16) | (((uint32_t)input[j+3]) << 24);
 }
 
 
