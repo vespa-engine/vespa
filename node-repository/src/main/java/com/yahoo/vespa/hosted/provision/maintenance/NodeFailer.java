@@ -77,8 +77,9 @@ public class NodeFailer extends Maintainer {
         // Ready nodes
         updateNodeLivenessEventsForReadyNodes();
         for (Node node : readyNodesWhichAreDead( )) {
-            // ready docker containers do not run Vespa, so skip those
-            if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) continue;
+            // ready Docker hosts and nodes do not run Vespa services, so skip those
+            if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER || node.type() == NodeType.host)
+                continue;
             nodeRepository().fail(node.hostname());
         }
         for (Node node : readyNodesWithHardwareFailure())

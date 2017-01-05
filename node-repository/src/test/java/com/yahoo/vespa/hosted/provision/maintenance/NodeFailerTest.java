@@ -168,6 +168,7 @@ public class NodeFailerTest {
         }
         
         List<Node> ready = tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready);
+        List<Node> readyHosts = tester.nodeRepository.getNodes(NodeType.host, Node.State.ready);
 
         // Two ready nodes die and a ready docker node "dies" 
         // (Vespa does not run when in ready state for docker node, so it does not make config requests)
@@ -188,6 +189,11 @@ public class NodeFailerTest {
         assertEquals( 2, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
         assertEquals(ready.get(1), tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready).get(0));
         assertEquals( 3, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
+
+        // Ready Docker hosts do not make config requests
+        tester.allNodesMakeAConfigRequestExcept(readyHosts.get(0), readyHosts.get(1), readyHosts.get(2));
+        tester.failer.run();
+        assertEquals(3, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
     }
 
     @Test
