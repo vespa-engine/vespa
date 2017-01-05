@@ -1,4 +1,4 @@
-// Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.collections.Tuple2;
@@ -58,6 +58,8 @@ final class ReplyMerger {
         }
         if (error == null) {
             error = new EmptyReply();
+            r.swapState(error);
+            return;
         }
         for (int j = 0; j < r.getNumErrors(); ++j) {
             error.addError(r.getError(j));
