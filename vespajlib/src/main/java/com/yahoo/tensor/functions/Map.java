@@ -53,7 +53,7 @@ public class Map extends PrimitiveTensorFunction {
     public Tensor evaluate(EvaluationContext context) {
         Tensor argument = argument().evaluate(context);
         Tensor.Builder builder = Tensor.Builder.of(argument.type());
-        for (Iterator<java.util.Map.Entry<TensorAddress, Double>> i = argument.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
             java.util.Map.Entry<TensorAddress, Double> cell = i.next();
             builder.cell(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
         }

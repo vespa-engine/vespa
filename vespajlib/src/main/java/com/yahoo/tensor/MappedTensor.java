@@ -35,7 +35,7 @@ public class MappedTensor implements Tensor {
     public double get(TensorAddress address) { return cells.getOrDefault(address, Double.NaN); }
 
     @Override
-    public Iterator<Map.Entry<TensorAddress, Double>> cellIterator() { return cells.entrySet().iterator(); }
+    public Iterator<Cell> cellIterator() { return new CellIteratorAdaptor(cells.entrySet().iterator()); }
 
     @Override
     public Iterator<Double> valueIterator() { return cells.values().iterator(); }
@@ -91,4 +91,24 @@ public class MappedTensor implements Tensor {
         }
     
     }
+
+    private static class CellIteratorAdaptor implements Iterator<Cell> {
+
+        private final Iterator<Map.Entry<TensorAddress, Double>> adaptedIterator;
+        
+        private CellIteratorAdaptor(Iterator<Map.Entry<TensorAddress, Double>> adaptedIterator) {
+            this.adaptedIterator = adaptedIterator;
+        }
+        
+        @Override
+        public boolean hasNext() { return adaptedIterator.hasNext(); }
+
+        @Override
+        public Cell next() {
+            Map.Entry<TensorAddress, Double> entry = adaptedIterator.next();
+            return new Cell(entry.getKey(), entry.getValue()); 
+        }
+
+    }
+
 }

@@ -65,7 +65,7 @@ public interface Tensor {
     double get(TensorAddress address);
 
     /** Returns the cell of this in some undefined order */
-    Iterator<Map.Entry<TensorAddress, Double>> cellIterator();
+    Iterator<Cell> cellIterator();
 
     /** Returns the values of this in some undefined order */
     Iterator<Double> valueIterator();
@@ -248,8 +248,8 @@ public interface Tensor {
         if (a == b) return true;
         if ( ! a.type().mathematicallyEquals(b.type())) return false;
         if ( a.size() != b.size()) return false;
-        for (Iterator<Map.Entry<TensorAddress, Double>> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
-            Map.Entry<TensorAddress, Double> aCell = aIterator.next();
+        for (Iterator<Cell> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
+            Cell aCell = aIterator.next();
             if ( ! aCell.getValue().equals(b.get(aCell.getKey()))) return false;
         }
         return true;
@@ -285,7 +285,52 @@ public interface Tensor {
     static Tensor from(String tensorString) {
         return TensorParser.tensorFrom(tensorString, Optional.empty());
     }
-    
+
+    class Cell implements Map.Entry<TensorAddress, Double> {
+
+        private final TensorAddress address;
+        private final Double value;
+
+        Cell(TensorAddress address, Double value) {
+            this.address = address;
+            this.value = value;
+        }
+
+        @Override
+        public TensorAddress getKey() { return address; }
+
+        /** 
+         * Returns the direct index which can be used to locate this cell, or -1 if not available.
+         * This is for optimizations mapping between tensors where this is possible without creating a
+         * TensorAddress.
+         */
+        int getDirectIndex() { return -1; }
+        
+        @Override
+        public Double getValue() { return value; }
+
+        @Override
+        public Double setValue(Double value) {
+            throw new UnsupportedOperationException("A tensor cannot be modified");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! ( o instanceof Map.Entry)) return false;
+            Map.Entry<?,?> other = (Map.Entry)o;
+            if ( ! this.getValue().equals(other.getValue())) return false;
+            if ( ! this.getKey().equals(other.getKey())) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return getKey().hashCode() ^ getValue().hashCode(); // by Map.Entry spec
+        }
+
+    }
+
     interface Builder {
 
         /** Creates a suitable builder for the given type */
@@ -301,7 +346,7 @@ public interface Tensor {
         }
 
         /** Creates a suitable builder for the given type */
-        static Builder of(TensorType type, int[] dimensionSizes) {
+        static Builder of(TensorType type, DimensionSizes dimensionSizes) {
             boolean containsIndexed = type.dimensions().stream().anyMatch(d -> d.isIndexed());
             boolean containsMapped = type.dimensions().stream().anyMatch( d ->  ! d.isIndexed());
             if (containsIndexed && containsMapped)
@@ -324,8 +369,18 @@ public interface Tensor {
         /** Add a cell */
         Builder cell(double value, int ... labels);
 
-        Tensor build();
+        /** 
+         * Add a cell 
+         * 
+         * @param cell a cell providing the location at which to add this cell 
+         * @param value the value to assign to the cell
+         */
+        default Builder cell(Cell cell, double value) {
+            return cell(cell.getKey(), value);
+        }
 
+        Tensor build();
+        
         class CellBuilder {
 
             private final TensorAddress.Builder addressBuilder;

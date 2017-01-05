@@ -40,7 +40,7 @@ class SparseBinaryFormat implements BinaryFormat {
 
     private static void encodeCells(GrowableByteBuffer buffer, Tensor tensor) {
         buffer.putInt1_4Bytes(tensor.size());
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = tensor.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
             encodeAddress(buffer, cell.getKey());
             buffer.putDouble(cell.getValue());

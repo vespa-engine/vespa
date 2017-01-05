@@ -71,7 +71,7 @@ public class Rename extends PrimitiveTensorFunction {
         }
             
         Tensor.Builder builder = Tensor.Builder.of(renamedType);
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = tensor.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
             TensorAddress renamedAddress = rename(cell.getKey(), toIndexes);
             builder.cell(renamedAddress, cell.getValue());

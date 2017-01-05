@@ -15,8 +15,7 @@ import java.util.Set;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
- * in a particular tensor type. As it is just a list of cell labels, it has no independenty meaning without
- * its accompanying type.
+ * in a particular tensor type. By itself it is just a list of cell labels, it's meaning depends on its accompanying type.
  *
  * @author bratseth
  */
@@ -54,7 +53,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public abstract TensorAddress withLabel(int labelIndex, int label);
 
     public final boolean isEmpty() { return size() == 0; }
-    
+
     @Override
     public int compareTo(TensorAddress other) {
         // TODO: Formal issue (only): Ordering with different address sizes
@@ -140,7 +139,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         private final int[] labels;
 
-        private IntTensorAddress(int ... labels) {
+        private IntTensorAddress(int[] labels) {
             this.labels = Arrays.copyOf(labels, labels.length);
         }
 

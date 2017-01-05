@@ -2,13 +2,13 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
+import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -88,10 +88,10 @@ public class Join extends PrimitiveTensorFunction {
     }
     
     private Tensor indexedVectorJoin(IndexedTensor a, IndexedTensor b, TensorType type) {
-        int joinedLength = Math.min(a.size(0), b.size(0));
+        int joinedLength = Math.min(a.dimensionSizes().size(0), b.dimensionSizes().size(0));
         Iterator<Double> aIterator = a.valueIterator();
         Iterator<Double> bIterator = b.valueIterator();
-        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type, new int[] { joinedLength});
+        IndexedTensor.Builder builder = IndexedTensor.Builder.of(type, new DimensionSizes.Builder(1).set(0, joinedLength).build());
         for (int i = 0; i < joinedLength; i++)
             builder.cell(combinator.applyAsDouble(aIterator.next(), bIterator.next()), i);
         return builder.build();
@@ -100,7 +100,7 @@ public class Join extends PrimitiveTensorFunction {
     /** When both tensors have the same dimensions, at most one cell matches a cell in the other tensor */
     private Tensor singleSpaceJoin(Tensor a, Tensor b, TensorType joinedType) {
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = a.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = a.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = i.next();
             double bCellValue = b.get(aCell.getKey());
             if (Double.isNaN(bCellValue)) continue; // no match
@@ -119,11 +119,11 @@ public class Join extends PrimitiveTensorFunction {
 
     private Tensor indexedSubspaceJoin(IndexedTensor subspace, IndexedTensor superspace, TensorType joinedType, boolean reversedArgumentOrder) {
         if (subspace.size() == 0 || superspace.size() == 0) // special case empty here to avoid doing it when finding sizes
-            return Tensor.Builder.of(joinedType, new int[joinedType.dimensions().size()]).build();
+            return Tensor.Builder.of(joinedType, new DimensionSizes.Builder(joinedType.dimensions().size()).build()).build();
         
-        int[] joinedSizes = joinedSize(joinedType, subspace, superspace);
+        DimensionSizes joinedSizes = joinedSize(joinedType, subspace, superspace);
 
-        Tensor.Builder builder = Tensor.Builder.of(joinedType, joinedSizes);
+        IndexedTensor.Builder builder = (IndexedTensor.Builder)Tensor.Builder.of(joinedType, joinedSizes);
 
         // Find dimensions which are only in the supertype
         Set<String> superDimensionNames = new HashSet<>(superspace.type().dimensionNames());
@@ -138,23 +138,40 @@ public class Join extends PrimitiveTensorFunction {
         
         return builder.build();
     }
-    
-    private int[] joinedSize(TensorType joinedType, IndexedTensor subspace, IndexedTensor superspace) {
-        int[] joinedSizes = new int[joinedType.dimensions().size()];
-        for (int i = 0; i < joinedSizes.length; i++) {
+
+    private void joinSubspaces(Iterator<Double> subspace, int subspaceSize,
+                               Iterator<Tensor.Cell> superspace, int superspaceSize,
+                               boolean reversedArgumentOrder, IndexedTensor.Builder builder) {
+        int joinedLength = Math.min(subspaceSize, superspaceSize);
+        if (reversedArgumentOrder) {
+            for (int i = 0; i < joinedLength; i++) {
+                Tensor.Cell supercell = superspace.next();
+                builder.cell(supercell, combinator.applyAsDouble(supercell.getValue(), subspace.next()));
+            }
+        } else {
+            for (int i = 0; i < joinedLength; i++) {
+                Tensor.Cell supercell = superspace.next();
+                builder.cell(supercell, combinator.applyAsDouble(subspace.next(), supercell.getValue()));
+            }
+        }
+    }
+
+    private DimensionSizes joinedSize(TensorType joinedType, IndexedTensor subspace, IndexedTensor superspace) {
+        DimensionSizes.Builder b = new DimensionSizes.Builder(joinedType.dimensions().size());
+        for (int i = 0; i < b.dimensions(); i++) {
             Optional<Integer> subspaceIndex = subspace.type().indexOfDimension(joinedType.dimensions().get(i).name());
             if (subspaceIndex.isPresent())
-                joinedSizes[i] = Math.min(superspace.size(i), subspace.size(subspaceIndex.get()));
+                b.set(i, Math.min(superspace.dimensionSizes().size(i), subspace.dimensionSizes().size(subspaceIndex.get())));
             else
-                joinedSizes[i] = superspace.size(i);
+                b.set(i, superspace.dimensionSizes().size(i));
         }
-        return joinedSizes;
+        return b.build();
     }
 
     private Tensor generalSubspaceJoin(Tensor subspace, Tensor superspace, TensorType joinedType, boolean reversedArgumentOrder) {
         int[] subspaceIndexes = subspaceIndexes(superspace.type(), subspace.type());
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = superspace.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = superspace.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> supercell = i.next();
             TensorAddress subaddress = mapAddressToSubspace(supercell.getKey(), subspaceIndexes);
             double subspaceValue = subspace.get(subaddress);
@@ -164,19 +181,6 @@ public class Join extends PrimitiveTensorFunction {
                                                    : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
         }
         return builder.build();
-    }
-
-    private void joinSubspaces(Iterator<Double> subspace, int subspaceSize, 
-                               Iterator<Map.Entry<TensorAddress, Double>> superspace, int superspaceSize,
-                               boolean reversedArgumentOrder, Tensor.Builder builder) {
-        int joinedLength = Math.min(subspaceSize, superspaceSize);
-        for (int i = 0; i < joinedLength; i++) {
-            Double subvalue = subspace.next();
-            Map.Entry<TensorAddress, Double> supercell = superspace.next();
-            builder.cell(supercell.getKey(),
-                         reversedArgumentOrder ? combinator.applyAsDouble(supercell.getValue(), subvalue)
-                                               : combinator.applyAsDouble(subvalue, supercell.getValue()));
-        }
     }
 
     /** Returns the indexes in the superspace type which should be retained to create the subspace type */
@@ -199,9 +203,9 @@ public class Join extends PrimitiveTensorFunction {
         int[] aToIndexes = mapIndexes(a.type(), joinedType);
         int[] bToIndexes = mapIndexes(b.type(), joinedType);
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
-        for (Iterator<Map.Entry<TensorAddress, Double>> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
+        for (Iterator<Tensor.Cell> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = aIterator.next();
-            for (Iterator<Map.Entry<TensorAddress, Double>> bIterator = b.cellIterator(); bIterator.hasNext(); ) {
+            for (Iterator<Tensor.Cell> bIterator = b.cellIterator(); bIterator.hasNext(); ) {
                 Map.Entry<TensorAddress, Double> bCell = bIterator.next();
                 TensorAddress combinedAddress = combineAddresses(aCell.getKey(), aToIndexes,
                                                                  bCell.getKey(), bToIndexes, joinedType);

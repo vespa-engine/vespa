@@ -56,8 +56,8 @@ public class IndexedTensorTestCase {
         assertEquals(emptyWithDimensions, emptyWithDimensionsFromString);
 
         IndexedTensor emptyWithDimensionsIndexed = (IndexedTensor)emptyWithDimensions;
-        assertEquals(0, emptyWithDimensionsIndexed.size(0));
-        assertEquals(0, emptyWithDimensionsIndexed.size(1));
+        assertEquals(0, emptyWithDimensionsIndexed.dimensionSizes().size(0));
+        assertEquals(0, emptyWithDimensionsIndexed.dimensionSizes().size(1));
     }
     
     @Test
@@ -122,7 +122,7 @@ public class IndexedTensorTestCase {
 
         // Lookup from iterator
         Map<TensorAddress, Double> cellsOfIterator = new HashMap<>();
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = tensor.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
             cellsOfIterator.put(cell.getKey(), cell.getValue());
         }
