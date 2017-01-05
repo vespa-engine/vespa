@@ -109,7 +109,9 @@ public class V3HttpAPITest extends TestOnCiBuildingSystemOnly {
 
     @Test
     public void requireThatBadResponseCodeFails() throws Exception {
-        testServerWithMock(new V3MockParsingRequestHandler(407), true);
+        testServerWithMock(new V3MockParsingRequestHandler(401/*Unauthorized*/), true);
+        testServerWithMock(new V3MockParsingRequestHandler(403/*Forbidden*/), true);
+        testServerWithMock(new V3MockParsingRequestHandler(407/*Proxy Authentication Required*/), true);
     }
 
     @Test
