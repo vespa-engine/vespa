@@ -323,9 +323,9 @@ public interface Tensor {
         
         /** Add a cell */
         Builder cell(double value, int ... labels);
-
+        
         Tensor build();
-
+        
         class CellBuilder {
 
             private final TensorAddress.Builder addressBuilder;

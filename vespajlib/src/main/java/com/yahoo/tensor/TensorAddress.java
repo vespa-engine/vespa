@@ -15,8 +15,7 @@ import java.util.Set;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
- * in a particular tensor type. As it is just a list of cell labels, it has no independenty meaning without
- * its accompanying type.
+ * in a particular tensor type. By itself it is just a list of cell labels, it's meaning depends on its accompanying type.
  *
  * @author bratseth
  */
@@ -31,6 +30,11 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     public static TensorAddress of(int ... labels) {
         return new IntTensorAddress(labels);
+    }
+
+    /** A tensor address which knows its value index (computed from the labels and the size) in some tensor */
+    static TensorAddress withValueIndex(int valueIndex, int[] labels) {
+        return new IntTensorAddress(valueIndex, labels);
     }
 
     /** Returns the number of labels in this */
@@ -54,7 +58,13 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public abstract TensorAddress withLabel(int labelIndex, int label);
 
     public final boolean isEmpty() { return size() == 0; }
-    
+
+    /**
+     * Returns the value index of this address (computed from the labels and the size) in some tensor.
+     * This may be retained as an optimization. It is -1 if not set.
+     */
+    public int valueIndex() { return -1; }
+
     @Override
     public int compareTo(TensorAddress other) {
         // TODO: Formal issue (only): Ordering with different address sizes
@@ -138,9 +148,16 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     private static final class IntTensorAddress extends TensorAddress {
 
+        private final int valueIndex;
+        
         private final int[] labels;
 
-        private IntTensorAddress(int ... labels) {
+        private IntTensorAddress(int[] labels) {
+            this(-1, labels);
+        }
+
+        private IntTensorAddress(int valueIndex, int[] labels) {
+            this.valueIndex = valueIndex;
             this.labels = Arrays.copyOf(labels, labels.length);
         }
 
@@ -164,6 +181,9 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public String toString() {
             return Arrays.toString(labels);
         }
+
+        @Override
+        public int valueIndex() { return valueIndex; }
 
     }
 
