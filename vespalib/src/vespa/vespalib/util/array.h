@@ -106,6 +106,12 @@ public:
     void resize(size_t n);
     void assign(const_iterator begin_, const_iterator end_);
     void reserve(size_t n);
+    /**
+     * Try to unreserve memory from the underlying memory buffer inplace down to the given limit.
+     * The existing memory buffer is unmodified up to the new size (no copying occurs).
+     * Returns true if it was possible to unreserve memory, false if not.
+     */
+    bool try_unreserve(size_t n);
     void push_back(const T & v)             { std::_Construct(push_back(), v); }
     iterator push_back()                    { extend(size()+1); return array(_sz++); }
     iterator push_back_fast()               { return array(_sz++); }

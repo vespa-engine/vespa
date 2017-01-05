@@ -320,4 +320,33 @@ TEST("test move assignment")
     }
 }
 
+struct UnreserveFixture {
+    Array<int> arr;
+    UnreserveFixture() : arr(1025, 7, alloc::Alloc::allocMMap(0))
+    {
+        EXPECT_EQUAL(1025u, arr.size());
+        EXPECT_EQUAL(2048u, arr.capacity());
+    }
+};
+
+TEST_F("require that try_unreserve() fails if wanted capacity >= current capacity", UnreserveFixture)
+{
+    EXPECT_FALSE(f.arr.try_unreserve(2048));
+}
+
+TEST_F("require that try_unreserve() fails if wanted capacity < current size", UnreserveFixture)
+{
+    EXPECT_FALSE(f.arr.try_unreserve(1024));
+}
+
+TEST_F("require that try_unreserve() succeedes if mmap can be shrinked", UnreserveFixture)
+{
+    int *oldPtr = &f.arr[0];
+    f.arr.resize(512);
+    EXPECT_TRUE(f.arr.try_unreserve(1023));
+    EXPECT_EQUAL(1024u, f.arr.capacity());
+    int *newPtr = &f.arr[0];
+    EXPECT_EQUAL(oldPtr, newPtr);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
