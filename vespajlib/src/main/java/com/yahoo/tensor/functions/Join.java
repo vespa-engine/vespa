@@ -100,7 +100,7 @@ public class Join extends PrimitiveTensorFunction {
     /** When both tensors have the same dimensions, at most one cell matches a cell in the other tensor */
     private Tensor singleSpaceJoin(Tensor a, Tensor b, TensorType joinedType) {
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = a.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = a.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = i.next();
             double bCellValue = b.get(aCell.getKey());
             if (Double.isNaN(bCellValue)) continue; // no match
@@ -188,7 +188,7 @@ public class Join extends PrimitiveTensorFunction {
     private Tensor generalSubspaceJoin(Tensor subspace, Tensor superspace, TensorType joinedType, boolean reversedArgumentOrder) {
         int[] subspaceIndexes = subspaceIndexes(superspace.type(), subspace.type());
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = superspace.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = superspace.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> supercell = i.next();
             TensorAddress subaddress = mapAddressToSubspace(supercell.getKey(), subspaceIndexes);
             double subspaceValue = subspace.get(subaddress);
@@ -220,9 +220,9 @@ public class Join extends PrimitiveTensorFunction {
         int[] aToIndexes = mapIndexes(a.type(), joinedType);
         int[] bToIndexes = mapIndexes(b.type(), joinedType);
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
-        for (Iterator<Map.Entry<TensorAddress, Double>> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
+        for (Iterator<Tensor.Cell> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = aIterator.next();
-            for (Iterator<Map.Entry<TensorAddress, Double>> bIterator = b.cellIterator(); bIterator.hasNext(); ) {
+            for (Iterator<Tensor.Cell> bIterator = b.cellIterator(); bIterator.hasNext(); ) {
                 Map.Entry<TensorAddress, Double> bCell = bIterator.next();
                 TensorAddress combinedAddress = combineAddresses(aCell.getKey(), aToIndexes,
                                                                  bCell.getKey(), bToIndexes, joinedType);

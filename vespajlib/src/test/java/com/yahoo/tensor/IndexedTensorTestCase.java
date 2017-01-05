@@ -122,7 +122,7 @@ public class IndexedTensorTestCase {
 
         // Lookup from iterator
         Map<TensorAddress, Double> cellsOfIterator = new HashMap<>();
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = tensor.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
             cellsOfIterator.put(cell.getKey(), cell.getValue());
         }

@@ -48,7 +48,7 @@ public class IndexedTensor implements Tensor {
      * indexes of later dimensions in the dimension type before earlier.
      */
     @Override
-    public Iterator<Map.Entry<TensorAddress, Double>> cellIterator() {
+    public Iterator<Cell> cellIterator() {
         return new CellIterator();
     }
 
@@ -424,7 +424,7 @@ public class IndexedTensor implements Tensor {
 
     }
     
-    private final class CellIterator implements Iterator<Map.Entry<TensorAddress, Double>> {
+    private final class CellIterator implements Iterator<Cell> {
 
         private int count = 0;
         private final Indexes indexes = Indexes.of(dimensionSizes, dimensionSizes, values.length);
@@ -435,7 +435,7 @@ public class IndexedTensor implements Tensor {
         }
 
         @Override
-        public Map.Entry<TensorAddress, Double> next() {
+        public Cell next() {
             if ( ! hasNext()) throw new NoSuchElementException("No cell at " + indexes);
             count++;
             indexes.next();
@@ -444,44 +444,6 @@ public class IndexedTensor implements Tensor {
             return new Cell(address, get(valueIndex));
         }
         
-    }
-
-    private class Cell implements Map.Entry<TensorAddress, Double> {
-
-        private final TensorAddress address;
-        private final Double value;
-
-        private Cell(TensorAddress address, Double value) {
-            this.address = address;
-            this.value = value;
-        }
-
-        @Override
-        public TensorAddress getKey() { return address; }
-
-        @Override
-        public Double getValue() { return value; }
-
-        @Override
-        public Double setValue(Double value) {
-            throw new UnsupportedOperationException("A tensor cannot be modified");
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            if ( ! ( o instanceof Map.Entry)) return false;
-            Map.Entry<?,?> other = (Map.Entry)o;
-            if ( ! this.getValue().equals(other.getValue())) return false;
-            if ( ! this.getKey().equals(other.getKey())) return false;
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return getKey().hashCode() ^ getValue().hashCode(); // by Map.Entry spec
-        }
-
     }
 
     private final class ValueIterator implements Iterator<Double> {
@@ -612,7 +574,7 @@ public class IndexedTensor implements Tensor {
             indexes.next();
             int valueIndex = indexes.toValueIndex();
             TensorAddress address = indexes.toAddress(valueIndex);
-            return new Cell(address, get(valueIndex)); // TODO: Change type to Cell, then change Cell to work with indexes + valueIndex instead of creating an address?
+            return new Cell(address, get(valueIndex)); // TODO: Change type to Cell, then change Cell to work with indexes + valueIndex instead of creating an address
         }
 
     }

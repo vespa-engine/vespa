@@ -112,7 +112,7 @@ public class Reduce extends PrimitiveTensorFunction {
         
         // Reduce cells
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>();
-        for (Iterator<Map.Entry<TensorAddress, Double>> i = argument.cellIterator(); i.hasNext(); ) {
+        for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
             TensorAddress reducedAddress = reduceDimensions(cell.getKey(), argument.type(), reducedType);
             aggregatingCells.putIfAbsent(reducedAddress, ValueAggregator.ofType(aggregator));

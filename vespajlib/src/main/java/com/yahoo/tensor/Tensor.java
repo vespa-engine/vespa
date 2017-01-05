@@ -65,7 +65,7 @@ public interface Tensor {
     double get(TensorAddress address);
 
     /** Returns the cell of this in some undefined order */
-    Iterator<Map.Entry<TensorAddress, Double>> cellIterator();
+    Iterator<Cell> cellIterator();
 
     /** Returns the values of this in some undefined order */
     Iterator<Double> valueIterator();
@@ -248,8 +248,8 @@ public interface Tensor {
         if (a == b) return true;
         if ( ! a.type().mathematicallyEquals(b.type())) return false;
         if ( a.size() != b.size()) return false;
-        for (Iterator<Map.Entry<TensorAddress, Double>> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
-            Map.Entry<TensorAddress, Double> aCell = aIterator.next();
+        for (Iterator<Cell> aIterator = a.cellIterator(); aIterator.hasNext(); ) {
+            Cell aCell = aIterator.next();
             if ( ! aCell.getValue().equals(b.get(aCell.getKey()))) return false;
         }
         return true;
@@ -285,7 +285,45 @@ public interface Tensor {
     static Tensor from(String tensorString) {
         return TensorParser.tensorFrom(tensorString, Optional.empty());
     }
-    
+
+    class Cell implements Map.Entry<TensorAddress, Double> {
+
+        private final TensorAddress address;
+        private final Double value;
+
+        Cell(TensorAddress address, Double value) {
+            this.address = address;
+            this.value = value;
+        }
+
+        @Override
+        public TensorAddress getKey() { return address; }
+
+        @Override
+        public Double getValue() { return value; }
+
+        @Override
+        public Double setValue(Double value) {
+            throw new UnsupportedOperationException("A tensor cannot be modified");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! ( o instanceof Map.Entry)) return false;
+            Map.Entry<?,?> other = (Map.Entry)o;
+            if ( ! this.getValue().equals(other.getValue())) return false;
+            if ( ! this.getKey().equals(other.getKey())) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return getKey().hashCode() ^ getValue().hashCode(); // by Map.Entry spec
+        }
+
+    }
+
     interface Builder {
 
         /** Creates a suitable builder for the given type */
