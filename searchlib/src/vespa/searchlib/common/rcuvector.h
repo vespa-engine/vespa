@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/searchlib/util/memoryusage.h>
 #include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/array.h>
 
 namespace search {
@@ -37,9 +38,10 @@ class RcuVectorBase
                   "Value type must be trivially destructible");
 
 protected:
-    typedef vespalib::Array<T> Array;
-    typedef vespalib::GenerationHandler::generation_t generation_t;
-    typedef vespalib::GenerationHolder GenerationHolder;
+    using Array = vespalib::Array<T>;
+    using Alloc = vespalib::alloc::Alloc;
+    using generation_t = vespalib::GenerationHandler::generation_t;
+    using GenerationHolder = vespalib::GenerationHolder;
     Array              _data;
     size_t             _growPercent;
     size_t             _growDelta;
@@ -61,7 +63,8 @@ protected:
 
 public:
     using ValueType = T;
-    RcuVectorBase(GenerationHolder &genHolder);
+    RcuVectorBase(GenerationHolder &genHolder,
+                  const Alloc &initialAlloc = Alloc::alloc());
 
     /**
      * Construct a new vector with the given initial capacity and grow
@@ -70,9 +73,13 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    RcuVectorBase(size_t initialCapacity, size_t growPercent, size_t growDelta, GenerationHolder &genHolder);
+    RcuVectorBase(size_t initialCapacity, size_t growPercent, size_t growDelta,
+                  GenerationHolder &genHolder,
+                  const Alloc &initialAlloc = Alloc::alloc());
 
-    RcuVectorBase(GrowStrategy growStrategy, GenerationHolder &genHolder);
+    RcuVectorBase(GrowStrategy growStrategy,
+                  GenerationHolder &genHolder,
+                  const Alloc &initialAlloc = Alloc::alloc());
 
     ~RcuVectorBase();
 

@@ -7,6 +7,7 @@ LOG_SETUP("rcuvector_test");
 
 using namespace search::attribute;
 using search::MemoryUsage;
+using vespalib::alloc::Alloc;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHolder;
 using vespalib::GenerationHeldBase;
@@ -183,10 +184,10 @@ TEST("test memory usage")
     EXPECT_TRUE(assertUsage(MemoryUsage(6,5,0,0), v.getMemoryUsage()));
 }
 
-TEST("test shrink")
+TEST("test shrink() with buffer copying")
 {
     GenerationHolder g;
-    RcuVectorBase<int8_t> v(g);
+    RcuVectorBase<int8_t> v(16, 100, 0, g);
     v.push_back(1);
     v.push_back(2);
     v.push_back(3);
@@ -198,7 +199,7 @@ TEST("test shrink")
     mu.incAllocatedBytesOnHold(g.getHeldBytes());
     EXPECT_TRUE(assertUsage(MemoryUsage(16, 4, 0, 0), mu));
     EXPECT_EQUAL(4u, v.size());
-    EXPECT_TRUE(v.capacity() >= 4u);
+    EXPECT_EQUAL(16u, v.capacity());
     EXPECT_EQUAL(1, v[0]);
     EXPECT_EQUAL(2, v[1]);
     EXPECT_EQUAL(3, v[2]);
@@ -207,7 +208,7 @@ TEST("test shrink")
     v.shrink(2);
     g.transferHoldLists(1);
     EXPECT_EQUAL(2u, v.size());
-    EXPECT_EQUAL(2u, v.capacity());
+    EXPECT_EQUAL(4u, v.capacity());
     EXPECT_EQUAL(1, v[0]);
     EXPECT_EQUAL(2, v[1]);
     EXPECT_EQUAL(1, old[0]);
@@ -217,7 +218,47 @@ TEST("test shrink")
     EXPECT_EQUAL(2, v[1]);
     mu = v.getMemoryUsage();
     mu.incAllocatedBytesOnHold(g.getHeldBytes());
-    EXPECT_TRUE(assertUsage(MemoryUsage(2, 2, 0, 0), mu));
+    EXPECT_TRUE(assertUsage(MemoryUsage(4, 2, 0, 0), mu));
+}
+
+struct ShrinkFixture {
+    GenerationHolder g;
+    RcuVectorBase<int> vec;
+    int *oldPtr;
+    ShrinkFixture() : g(), vec(4096, 50, 0, g, Alloc::allocMMap()), oldPtr()
+    {
+        for (size_t i = 0; i < 4000; ++i) {
+            vec.push_back(7);
+        }
+        EXPECT_EQUAL(4000u, vec.size());
+        EXPECT_EQUAL(4096u, vec.capacity());
+        assertEmptyHoldList();
+        oldPtr = &vec[0];
+    }
+    void assertOldEqualNewBuffer() {
+        EXPECT_EQUAL(oldPtr, &vec[0]);
+    }
+    void assertEmptyHoldList() {
+        EXPECT_EQUAL(0u, g.getHeldBytes());
+    }
+};
+
+TEST_F("require that shrink() does not increase allocated memory", ShrinkFixture)
+{
+    f.vec.shrink(2732);
+    EXPECT_EQUAL(2732u, f.vec.size());
+    EXPECT_EQUAL(4096u, f.vec.capacity());
+    TEST_DO(f.assertOldEqualNewBuffer());
+    TEST_DO(f.assertEmptyHoldList());
+}
+
+TEST_F("require that shrink() can shrink mmap allocation", ShrinkFixture)
+{
+    f.vec.shrink(2048);
+    EXPECT_EQUAL(2048, f.vec.size());
+    EXPECT_EQUAL(3072, f.vec.capacity());
+    TEST_DO(f.assertOldEqualNewBuffer());
+    TEST_DO(f.assertEmptyHoldList());
 }
 
 TEST("test small expand")
