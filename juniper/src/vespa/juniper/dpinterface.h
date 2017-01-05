@@ -1,7 +1,9 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
 #pragma once
+
+#include <cstddef>
+#include <cstdio>
 
 /** @file dpinterface.h This file is the main include file for inetgrators of the document
  *    processing/indexing stages of Juniper specific processing. For integrating
@@ -16,8 +18,7 @@
 #define UNIT_SEPARATOR    0x1F
 
 
-namespace juniper
-{
+namespace juniper {
 
 /** class Tokentype Hint as to which type of token this is.
  *  If this information is already aggregated by the caller

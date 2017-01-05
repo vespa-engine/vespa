@@ -1,12 +1,13 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
 #pragma once
+
+#include <cstddef>
+#include <cstdint>
 
 #ifndef JUNIPER_RPIF
 #define JUNIPER_RPIF 1
 #endif
-
 
 /** @file query.h
  *  This file describes describes Juniper's expected interface for
@@ -24,8 +25,7 @@
  *  single string of null or space separated words and is depreciated as of Juniper v.2.0.x
  */
 
-namespace juniper
-{
+namespace juniper {
 
 enum ItemCreator
 {
@@ -48,7 +48,7 @@ struct QueryItem;
 class IQuery
 {
 public:
-    virtual ~IQuery() {}
+    virtual ~IQuery() { }
 
     /** Traverse the query.
      *  This will lead to a prefix depth first traversal of the complete query
@@ -190,9 +190,7 @@ public:
                               const char* keyword, const size_t length = 0,
                               bool prefix = false, bool specialToken = false) = 0;
 
-    virtual ~IQueryVisitor() {};
+    virtual ~IQueryVisitor() { }
 };
 
-
-} // end namespace juniper
-
+}

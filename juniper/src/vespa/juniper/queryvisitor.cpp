@@ -1,9 +1,5 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/* $Id$ */
 
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.queryvisitor");
 #include "query.h"
 #include "juniperdebug.h"
 #include "queryvisitor.h"
@@ -11,6 +7,8 @@ LOG_SETUP(".juniper.queryvisitor");
 #include "queryhandle.h"
 #include "querymodifier.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.queryvisitor");
 
 /* Implementation of the query visit interface between Juniper and the query provider */
 /* Implementation note: insert() must be called for all calls in the tree to

@@ -1,18 +1,18 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/fastos.h>
-#include <vespa/log/log.h>
-LOG_SETUP(".juniper.tokenizer");
-#include <vespa/fastlib/text/wordfolder.h>
+//
 #include "tokenizer.h"
 #include "juniperdebug.h"
+#include <vespa/fastlib/text/wordfolder.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".juniper.tokenizer");
 
 JuniperTokenizer::JuniperTokenizer(Fast_WordFolder* wordfolder,
 				   const char* text, size_t len, ITokenProcessor* successor,
                                    const juniper::SpecialTokenRegistry * registry) :
     _wordfolder(wordfolder), _text(text), _len(len), _successor(successor), _registry(registry),
     _charpos(0), _wordpos(0)
-{
-}
+{ }
 
 
 void JuniperTokenizer::SetText(const char* text, size_t len)
