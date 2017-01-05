@@ -32,11 +32,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return new IntTensorAddress(labels);
     }
 
-    /** A tensor address which knows its value index (computed from the labels and the size) in some tensor */
-    static TensorAddress withValueIndex(int valueIndex, int[] labels) {
-        return new IntTensorAddress(valueIndex, labels);
-    }
-
     /** Returns the number of labels in this */
     public abstract int size();
     
@@ -58,12 +53,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public abstract TensorAddress withLabel(int labelIndex, int label);
 
     public final boolean isEmpty() { return size() == 0; }
-
-    /**
-     * Returns the value index of this address (computed from the labels and the size) in some tensor.
-     * This may be retained as an optimization. It is -1 if not set.
-     */
-    public int valueIndex() { return -1; }
 
     @Override
     public int compareTo(TensorAddress other) {
@@ -148,16 +137,9 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     private static final class IntTensorAddress extends TensorAddress {
 
-        private final int valueIndex;
-        
         private final int[] labels;
 
         private IntTensorAddress(int[] labels) {
-            this(-1, labels);
-        }
-
-        private IntTensorAddress(int valueIndex, int[] labels) {
-            this.valueIndex = valueIndex;
             this.labels = Arrays.copyOf(labels, labels.length);
         }
 
@@ -181,9 +163,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public String toString() {
             return Arrays.toString(labels);
         }
-
-        @Override
-        public int valueIndex() { return valueIndex; }
 
     }
 

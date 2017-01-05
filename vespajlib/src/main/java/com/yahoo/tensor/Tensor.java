@@ -299,6 +299,13 @@ public interface Tensor {
         @Override
         public TensorAddress getKey() { return address; }
 
+        /** 
+         * Returns the direct index which can be used to locate this cell, or -1 if not available.
+         * This is for optimizations mapping between tensors where this is possible without creating a
+         * TensorAddress.
+         */
+        int getDirectIndex() { return -1; }
+        
         @Override
         public Double getValue() { return value; }
 
@@ -361,7 +368,17 @@ public interface Tensor {
         
         /** Add a cell */
         Builder cell(double value, int ... labels);
-        
+
+        /** 
+         * Add a cell 
+         * 
+         * @param cell a cell providing the location at which to add this cell 
+         * @param value the value to assign to the cell
+         */
+        default Builder cell(Cell cell, double value) {
+            return cell(cell.getKey(), value);
+        }
+
         Tensor build();
         
         class CellBuilder {

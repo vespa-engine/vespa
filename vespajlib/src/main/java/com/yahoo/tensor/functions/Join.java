@@ -122,7 +122,6 @@ public class Join extends PrimitiveTensorFunction {
             return Tensor.Builder.of(joinedType, new int[joinedType.dimensions().size()]).build();
         
         int[] joinedSizes = joinedSize(joinedType, subspace, superspace);
-        boolean equalTargetAndSourceSize = superspace.dimensionSizesAre(joinedSizes);
 
         IndexedTensor.Builder builder = (IndexedTensor.Builder)Tensor.Builder.of(joinedType, joinedSizes);
 
@@ -134,41 +133,25 @@ public class Join extends PrimitiveTensorFunction {
             IndexedTensor.SubspaceIterator subspaceInSuper = i.next();
             joinSubspaces(subspace.valueIterator(), subspace.size(),
                           subspaceInSuper, subspaceInSuper.size(),
-                          reversedArgumentOrder, builder, equalTargetAndSourceSize);
+                          reversedArgumentOrder, builder);
         }
         
         return builder.build();
     }
 
     private void joinSubspaces(Iterator<Double> subspace, int subspaceSize,
-                               Iterator<Map.Entry<TensorAddress, Double>> superspace, int superspaceSize,
-                               boolean reversedArgumentOrder, IndexedTensor.Builder builder, boolean equalTargetAndSourceSize) {
+                               Iterator<Tensor.Cell> superspace, int superspaceSize,
+                               boolean reversedArgumentOrder, IndexedTensor.Builder builder) {
         int joinedLength = Math.min(subspaceSize, superspaceSize);
-        // This is inner loop and therefore it is suplicated four times to move checks out of it
-        if (equalTargetAndSourceSize) { // we can write cells without recomputing the address index
-            if (reversedArgumentOrder) {
-                for (int i = 0; i < joinedLength; i++) {
-                    Map.Entry<TensorAddress, Double> supercell = superspace.next();
-                    builder.cellWithInternalIndex(supercell.getKey().valueIndex(), combinator.applyAsDouble(supercell.getValue(), subspace.next()));
-                }
-            } else {
-                for (int i = 0; i < joinedLength; i++) {
-                    Map.Entry<TensorAddress, Double> supercell = superspace.next();
-                    builder.cellWithInternalIndex(supercell.getKey().valueIndex(), combinator.applyAsDouble(subspace.next(), supercell.getValue()));
-                }
+        if (reversedArgumentOrder) {
+            for (int i = 0; i < joinedLength; i++) {
+                Tensor.Cell supercell = superspace.next();
+                builder.cell(supercell, combinator.applyAsDouble(supercell.getValue(), subspace.next()));
             }
-        }
-        else {
-            if (reversedArgumentOrder) {
-                for (int i = 0; i < joinedLength; i++) {
-                    Map.Entry<TensorAddress, Double> supercell = superspace.next();
-                    builder.cell(supercell.getKey(), combinator.applyAsDouble(supercell.getValue(), subspace.next()));
-                }
-            } else {
-                for (int i = 0; i < joinedLength; i++) {
-                    Map.Entry<TensorAddress, Double> supercell = superspace.next();
-                    builder.cell(supercell.getKey(), combinator.applyAsDouble(subspace.next(), supercell.getValue()));
-                }
+        } else {
+            for (int i = 0; i < joinedLength; i++) {
+                Tensor.Cell supercell = superspace.next();
+                builder.cell(supercell, combinator.applyAsDouble(subspace.next(), supercell.getValue()));
             }
         }
     }
