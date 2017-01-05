@@ -843,6 +843,11 @@ AttributeVector::getEstimatedSaveByteSize() const
     return datFileSize + weightFileSize + idxFileSize + udatFileSize;
 }
 
+MemoryUsage
+AttributeVector::getChangeVectorMemoryUsage() const
+{
+    return MemoryUsage(0, 0, 0, 0);
+}
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);
 template bool AttributeVector::update<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &);

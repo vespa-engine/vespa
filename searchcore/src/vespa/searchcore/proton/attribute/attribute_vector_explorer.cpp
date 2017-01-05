@@ -90,6 +90,14 @@ convertMultiValueToSlime(const MultiValueMappingBase &multiValue, Cursor &object
     convertMemoryUsageToSlime(multiValue.getMemoryUsage(), object.setObject("memoryUsage"));
 }
 
+
+void
+convertChangeVectorToSlime(const AttributeVector &v, Cursor &object)
+{
+    MemoryUsage usage = v.getChangeVectorMemoryUsage();
+    convertMemoryUsageToSlime(usage, object);
+}
+
 }
 
 AttributeVectorExplorer::AttributeVectorExplorer(ExclusiveAttributeReadAccessor::UP attribute)
@@ -116,6 +124,7 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
         if (multiValue) {
             convertMultiValueToSlime(*multiValue, object.setObject("multiValue"));
         }
+        convertChangeVectorToSlime(attr, object.setObject("changeVector"));
         object.setLong("committedDocIdLimit", attr.getCommittedDocIdLimit());
         object.setLong("createSerialNum", attr.getCreateSerialNum());
     } else {

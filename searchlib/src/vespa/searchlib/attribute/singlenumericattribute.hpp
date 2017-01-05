@@ -61,6 +61,7 @@ SingleValueNumericAttribute<B>::onUpdateStat()
 {
     MemoryUsage usage = _data.getMemoryUsage();
     usage.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
+    usage.merge(this->getChangeVectorMemoryUsage());
     this->updateStatistics(_data.size(), _data.size(),
                            usage.allocatedBytes(), usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());
 }
