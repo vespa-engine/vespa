@@ -11,14 +11,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
-import static java.lang.System.nanoTime;
-
 /**
  * <p>A session supporting sending new messages.</p>
  *
  * @author <a href="mailto:simon@yahoo-inc.com">Simon Thoresen</a>
  */
-public final class SourceSession implements ReplyHandler {
+public final class SourceSession implements ReplyHandler, Runnable {
 
     private static Logger log = Logger.getLogger(SourceSession.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
@@ -30,8 +28,9 @@ public final class SourceSession implements ReplyHandler {
     private final ThrottlePolicy throttlePolicy;
     private volatile double timeout;
     private volatile int pendingCount = 0;
-    private boolean closed = false;
-    private final Queue<BlockingHandler> blockedQ = new LinkedList<>();
+    private volatile boolean closed = false;
+    private final Queue<BlockedMessage> blockedQ = new LinkedList<>();
+    private final Thread blockedMessageSender;
 
     /**
      * <p>The default constructor requires values for all final member variables
@@ -52,6 +51,9 @@ public final class SourceSession implements ReplyHandler {
         replyHandler = params.getReplyHandler();
         throttlePolicy = params.getThrottlePolicy();
         timeout = params.getTimeout();
+        blockedMessageSender = new Thread(this);
+        blockedMessageSender.setDaemon(true);
+        blockedMessageSender.start();
     }
 
     @Override
@@ -130,10 +132,17 @@ public final class SourceSession implements ReplyHandler {
      * @return The result of <i>initiating</i> sending of this message.
      */
     public Result send(Message msg) {
+
+        return sendInternal(updateTiming(msg));
+    }
+    private Message updateTiming(Message msg) {
         msg.setTimeReceivedNow();
         if (msg.getTimeRemaining() <= 0) {
-            msg.setTimeRemaining((long)(timeout * 1000));
+            msg.setTimeRemaining((long) (timeout * 1000));
         }
+        return msg;
+    }
+    private Result sendInternal(Message msg) {
         synchronized (lock) {
             if (closed) {
                 return new Result(ErrorCode.SEND_QUEUE_CLOSED,
@@ -159,39 +168,69 @@ public final class SourceSession implements ReplyHandler {
         return Result.ACCEPTED;
     }
 
-    static private class BlockingHandler {
+    @Override
+    public void run()  {
+        while (!closed) {
+            sendBlockedMessages();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+    }
 
-        private boolean complete = false;
+    private class BlockedMessage {
         private final Message msg;
-        BlockingHandler(Message msg) {
+        private Result result = null;
+        BlockedMessage(Message msg) {
             this.msg = msg;
         }
 
-        void sendComplete() {
+        private synchronized void notifyFailure(Result result) {
             synchronized (this) {
-                complete = true;
+                this.result = result;
+                notify();
+            }
+        }
+        private void notifySuccess(Result result) {
+            synchronized (this) {
+                this.result = result;
                 notify();
             }
         }
 
         Message getMessage() { return msg; }
-        boolean waitComplete() throws InterruptedException {
 
-            synchronized (this) {
-
-                while( !complete && !msg.isExpired() ) {
-                    wait(msg.getTimeRemainingNow());
+        boolean sendOrExpire() {
+            if (msg.isExpired()) {
+                Error error = new Error(ErrorCode.TIMEOUT, "Timed out in sendQ");
+                notifyFailure(new Result(error));
+                replyHandler.handleReply(new SendTimeoutReply(msg, error));
+            } else {
+                Result res = sendInternal(msg);
+                if ( ! isSendQFull(res) ) {
+                    notifySuccess(res);
+                } else {
+                    return false;
                 }
-                return complete;
             }
+            return true;
+        }
+
+        Result waitComplete() throws InterruptedException {
+            synchronized (this) {
+                this.wait();
+            }
+            return result;
         }
     }
 
-    static public class SendTimeoutReply extends Reply {
+    static class SendTimeoutReply extends Reply {
 
-        SendTimeoutReply(Message msg) {
+        SendTimeoutReply(Message msg, Error error) {
             setMessage(msg);
-            addError(new Error(ErrorCode.TIMEOUT, "Timed out in sendQ"));
+            addError(error);
         }
 
         @Override
@@ -203,6 +242,10 @@ public final class SourceSession implements ReplyHandler {
         public int getType() {
             return 0;
         }
+    }
+
+    static private boolean isSendQFull(Result res) {
+        return ! (res.isAccepted() || res.getError().getCode() != ErrorCode.SEND_QUEUE_FULL);
     }
 
     /**
@@ -217,36 +260,24 @@ public final class SourceSession implements ReplyHandler {
      * @throws InterruptedException Thrown if the calling thread is interrupted.
      */
     public Result sendBlocking(Message msg) throws InterruptedException {
-        while (true) {
-            Result res = send(msg);
-            if (res.isAccepted() || res.getError().getCode() != ErrorCode.SEND_QUEUE_FULL) {
-                return res;
-            }
-            BlockingHandler sendHandler = null;
+        Result res = send(msg);
+        if (isSendQFull(res)) {
+            BlockedMessage blockedMessage = new BlockedMessage(msg);
             synchronized (lock) {
-                if (!closed && !throttlePolicy.canSend(msg, pendingCount)) {
-                    sendHandler = new BlockingHandler(msg);
-                    blockedQ.add(sendHandler);
-                }
+                blockedQ.add(blockedMessage);
             }
-            if ( (sendHandler != null) && !sendHandler.waitComplete() ) {
-                replyHandler.handleReply(new SendTimeoutReply(msg));
-            }
+            res = blockedMessage.waitComplete();
         }
+        return res;
     }
 
-    private void drainQ() {
+    private void sendBlockedMessages() {
         synchronized (lock) {
-            while (!blockedQ.isEmpty() ) {
-                BlockingHandler handler = blockedQ.element();
-                if ( ! handler.getMessage().isExpired() ) {
-                    if (throttlePolicy.canSend(handler.getMessage(), pendingCount)) {
-                        handler.sendComplete();
-                    } else {
-                        return;
-                    }
+            for (boolean success = true; success && !blockedQ.isEmpty(); ) {
+                success = blockedQ.element().sendOrExpire();
+                if (success) {
+                    blockedQ.remove();
                 }
-                blockedQ.remove();
             }
         }
     }
@@ -264,7 +295,7 @@ public final class SourceSession implements ReplyHandler {
                 throttlePolicy.processReply(reply);
             }
             done = (closed && pendingCount == 0);
-            drainQ();
+            sendBlockedMessages();
         }
         if (reply.getTrace().shouldTrace(TraceLevel.COMPONENT)) {
             reply.getTrace().trace(TraceLevel.COMPONENT,
