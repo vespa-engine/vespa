@@ -43,6 +43,5 @@ vespa_define_module(
     src/vespa/vespalib/net
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
-    src/vespa/vespalib/trace
     src/vespa/vespalib/util
 )

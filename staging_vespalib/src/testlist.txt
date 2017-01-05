@@ -23,6 +23,5 @@ tests/shutdownguard
 tests/state_server
 tests/stllike
 tests/timer
-tests/trace
 tests/util/process_memory_stats
 tests/xmlserializable
