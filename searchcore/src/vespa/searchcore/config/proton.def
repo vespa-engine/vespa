@@ -181,7 +181,7 @@ distribution.searchablecopies long default=1 restart
 grow.initial long default=1024 restart
 
 ## Grow factor in percent for any per document tables.
-grow.factor int default=50 restart
+grow.factor int default=20 restart
 
 ## Constant added when growing any per document tables.
 grow.add int default=1 restart

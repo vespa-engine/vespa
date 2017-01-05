@@ -5,31 +5,15 @@ LOG_SETUP("rcuvector_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/common/rcuvector.h>
 
-namespace search {
-namespace attribute {
-
+using namespace search::attribute;
+using search::MemoryUsage;
+using vespalib::alloc::Alloc;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHolder;
 using vespalib::GenerationHeldBase;
 
-class Test : public vespalib::TestApp {
-private:
-    bool assertUsage(const MemoryUsage & exp, const MemoryUsage & act);
-    void testGenerationHolder();
-    void testBasic();
-    void testResize();
-    void testGenerationHandling();
-    void testMemoryUsage();
-
-    void
-    testShrink();
-    void testSmallExpand();
-public:
-    int Main();
-};
-
 bool
-Test::assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
+assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
 {
     bool retval = true;
     if (!EXPECT_EQUAL(exp.allocatedBytes(), act.allocatedBytes())) retval = false;
@@ -39,8 +23,7 @@ Test::assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
     return retval;
 }
 
-void
-Test::testGenerationHolder()
+TEST("test generation holder")
 {
     typedef std::unique_ptr<int32_t> IntPtr;
     GenerationHolder gh;
@@ -75,8 +58,7 @@ Test::testGenerationHolder()
     EXPECT_EQUAL(0u * sizeof(int32_t), gh.getHeldBytes());
 }
 
-void
-Test::testBasic()
+TEST("test basic")
 {
     { // insert
         RcuVector<int32_t> v(4, 0, 4);
@@ -93,8 +75,7 @@ Test::testBasic()
     }
 }
 
-void
-Test::testResize()
+TEST("test resize")
 {
     { // resize percent
         RcuVector<int32_t> v(2, 50, 0);
@@ -162,8 +143,7 @@ Test::testResize()
     }
 }
 
-void
-Test::testGenerationHandling()
+TEST("test generation handling")
 {
     RcuVector<int32_t> v(2, 0, 2);
     v.push_back(0);
@@ -186,8 +166,7 @@ Test::testGenerationHandling()
     EXPECT_EQUAL(24u, v.getMemoryUsage().allocatedBytesOnHold());
 }
 
-void
-Test::testMemoryUsage()
+TEST("test memory usage")
 {
     RcuVector<int8_t> v(2, 0, 2);
     EXPECT_TRUE(assertUsage(MemoryUsage(2,0,0,0), v.getMemoryUsage()));
@@ -205,12 +184,10 @@ Test::testMemoryUsage()
     EXPECT_TRUE(assertUsage(MemoryUsage(6,5,0,0), v.getMemoryUsage()));
 }
 
-
-void
-Test::testShrink()
+TEST("test shrink() with buffer copying")
 {
     GenerationHolder g;
-    RcuVectorBase<int8_t> v(g);
+    RcuVectorBase<int8_t> v(16, 100, 0, g);
     v.push_back(1);
     v.push_back(2);
     v.push_back(3);
@@ -222,7 +199,7 @@ Test::testShrink()
     mu.incAllocatedBytesOnHold(g.getHeldBytes());
     EXPECT_TRUE(assertUsage(MemoryUsage(16, 4, 0, 0), mu));
     EXPECT_EQUAL(4u, v.size());
-    EXPECT_TRUE(v.capacity() >= 4u);
+    EXPECT_EQUAL(16u, v.capacity());
     EXPECT_EQUAL(1, v[0]);
     EXPECT_EQUAL(2, v[1]);
     EXPECT_EQUAL(3, v[2]);
@@ -231,7 +208,7 @@ Test::testShrink()
     v.shrink(2);
     g.transferHoldLists(1);
     EXPECT_EQUAL(2u, v.size());
-    EXPECT_EQUAL(2u, v.capacity());
+    EXPECT_EQUAL(4u, v.capacity());
     EXPECT_EQUAL(1, v[0]);
     EXPECT_EQUAL(2, v[1]);
     EXPECT_EQUAL(1, old[0]);
@@ -241,11 +218,50 @@ Test::testShrink()
     EXPECT_EQUAL(2, v[1]);
     mu = v.getMemoryUsage();
     mu.incAllocatedBytesOnHold(g.getHeldBytes());
-    EXPECT_TRUE(assertUsage(MemoryUsage(2, 2, 0, 0), mu));
+    EXPECT_TRUE(assertUsage(MemoryUsage(4, 2, 0, 0), mu));
 }
 
-void
-Test::testSmallExpand()
+struct ShrinkFixture {
+    GenerationHolder g;
+    RcuVectorBase<int> vec;
+    int *oldPtr;
+    ShrinkFixture() : g(), vec(4096, 50, 0, g, Alloc::allocMMap()), oldPtr()
+    {
+        for (size_t i = 0; i < 4000; ++i) {
+            vec.push_back(7);
+        }
+        EXPECT_EQUAL(4000u, vec.size());
+        EXPECT_EQUAL(4096u, vec.capacity());
+        assertEmptyHoldList();
+        oldPtr = &vec[0];
+    }
+    void assertOldEqualNewBuffer() {
+        EXPECT_EQUAL(oldPtr, &vec[0]);
+    }
+    void assertEmptyHoldList() {
+        EXPECT_EQUAL(0u, g.getHeldBytes());
+    }
+};
+
+TEST_F("require that shrink() does not increase allocated memory", ShrinkFixture)
+{
+    f.vec.shrink(2732);
+    EXPECT_EQUAL(2732u, f.vec.size());
+    EXPECT_EQUAL(4096u, f.vec.capacity());
+    TEST_DO(f.assertOldEqualNewBuffer());
+    TEST_DO(f.assertEmptyHoldList());
+}
+
+TEST_F("require that shrink() can shrink mmap allocation", ShrinkFixture)
+{
+    f.vec.shrink(2048);
+    EXPECT_EQUAL(2048, f.vec.size());
+    EXPECT_EQUAL(3072, f.vec.capacity());
+    TEST_DO(f.assertOldEqualNewBuffer());
+    TEST_DO(f.assertEmptyHoldList());
+}
+
+TEST("test small expand")
 {
     GenerationHolder g;
     RcuVectorBase<int8_t> v(1, 50, 0, g);
@@ -261,24 +277,4 @@ Test::testSmallExpand()
     g.trimHoldLists(2);
 }
 
-
-int
-Test::Main()
-{
-    TEST_INIT("rcuvector_test");
-
-    testGenerationHolder();
-    testBasic();
-    testResize();
-    testGenerationHandling();
-    testMemoryUsage();
-    testShrink();
-    testSmallExpand();
-
-    TEST_DONE();
-}
-
-}
-}
-
-TEST_APPHOOK(search::attribute::Test);
+TEST_MAIN() { TEST_RUN_ALL(); }

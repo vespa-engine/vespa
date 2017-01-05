@@ -94,6 +94,18 @@ void Array<T>::reserve(size_t n) {
 }
 
 template <typename T>
+bool Array<T>::try_unreserve(size_t n)
+{
+    if (n >= capacity()) {
+        return false;
+    }
+    if (n < size()) {
+        return false;
+    }
+    return _array.resize_inplace(n * sizeof(T));
+}
+
+template <typename T>
 void Array<T>::resize(size_t n)
 {
     if (n > capacity()) {
