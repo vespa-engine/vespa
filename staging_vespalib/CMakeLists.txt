@@ -32,7 +32,6 @@ vespa_define_module(
     src/tests/state_server
     src/tests/stllike
     src/tests/timer
-    src/tests/trace
     src/tests/util/process_memory_stats
     src/tests/xmlserializable
 
@@ -43,6 +42,5 @@ vespa_define_module(
     src/vespa/vespalib/net
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
-    src/vespa/vespalib/trace
     src/vespa/vespalib/util
 )

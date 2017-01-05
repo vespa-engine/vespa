@@ -3,7 +3,6 @@ vespa_define_module(
     DEPENDS
     fastos
     vespalib
-    staging_vespalib
     vespalog
     fnet
 

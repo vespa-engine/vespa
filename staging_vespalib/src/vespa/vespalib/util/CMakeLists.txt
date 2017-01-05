@@ -10,7 +10,6 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     jsonstream.cpp
     jsonwriter.cpp
     librarypool.cpp
-    md5.c
     process_memory_stats.cpp
     programoptions.cpp
     programoptions_testutils.cpp

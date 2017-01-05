@@ -1,8 +1,0 @@
-module staging_vespalib
-require module fastos shared library fastos
-require module log shared library vespalog
-require module fastlib shared library fast
-require module vespalib shared library vespalib
-require module fnet shared library fnet
-require module boost
-provide library staging_vespalib

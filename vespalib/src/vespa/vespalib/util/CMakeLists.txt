@@ -25,6 +25,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     host_name.cpp
     joinable.cpp
     left_right_heap.cpp
+    md5.c
     printable.cpp
     priority_queue.cpp
     random.cpp
