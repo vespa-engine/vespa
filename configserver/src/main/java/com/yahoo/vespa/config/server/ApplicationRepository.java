@@ -1,16 +1,16 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.log.LogLevel;
+import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationConvergenceChecker;
@@ -19,8 +19,6 @@ import com.yahoo.vespa.config.server.application.LogServerLogGrabber;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.deploy.Deployment;
-import com.yahoo.vespa.config.server.http.ContentHandler;
-import com.yahoo.vespa.config.server.http.v2.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.LocalSessionRepo;
@@ -60,7 +58,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Curator curator;
     private final LogServerLogGrabber logServerLogGrabber;
     private final ApplicationConvergenceChecker convergeChecker;
-    private final ContentHandler contentHandler = new ContentHandler();
     private final Clock clock;
     private final DeployLogger logger = new SilentDeployLogger();
 
@@ -141,8 +138,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
         transaction.add(tenantApplications.deleteApplication(applicationId));
 
-        if (hostProvisioner.isPresent())
-            hostProvisioner.get().remove(transaction, applicationId);
+        hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
         transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
         transaction.commit();
 
@@ -173,25 +169,24 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getApplication(tenant, applicationId).getApplicationGeneration();
     }
 
-    public HttpResponse getContent(Tenant tenant, ApplicationId applicationId, Zone zone, HttpRequest request) {
-        LocalSession session = getLocalSession(tenant, tenant.getApplicationRepo().getSessionIdForApplication(applicationId));
-        return contentHandler.get(ApplicationContentRequest.create(request, session, applicationId, zone));
-    }
-
     private Application getApplication(Tenant tenant, ApplicationId applicationId) {
-        long sessionId = tenant.getApplicationRepo().getSessionIdForApplication(applicationId);
+        long sessionId = getSessionIdForApplication(tenant, applicationId);
         RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId, 0);
         return session.ensureApplicationLoaded().getForVersionOrLatest(Optional.empty());
     }
 
-    public LocalSession getLocalSession(Tenant tenant, long sessionId) {
+    public long getSessionIdForApplication(Tenant tenant, ApplicationId applicationId) {
+        return tenant.getApplicationRepo().getSessionIdForApplication(applicationId);
+    }
+
+    private LocalSession getLocalSession(Tenant tenant, long sessionId) {
         LocalSession session = tenant.getLocalSessionRepo().getSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
         return session;
     }
 
-    public RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
+    private RemoteSession getRemoteSession(Tenant tenant, long sessionId) {
         RemoteSession session = tenant.getRemoteSessionRepo().getSession(sessionId);
         if (session == null) throw new NotFoundException("Session " + sessionId + " was not found");
 
@@ -199,8 +194,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void restart(ApplicationId applicationId, HostFilter hostFilter) {
-        if (hostProvisioner.isPresent())
-            hostProvisioner.get().restart(applicationId, hostFilter);
+        hostProvisioner.ifPresent(provisioner -> provisioner.restart(applicationId, hostFilter));
     }
 
     public Tenant verifyTenantAndApplication(ApplicationId applicationId) {
@@ -308,6 +302,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         LocalSession session = sessionFactory.createSession(applicationDirectory, applicationName, timeoutBudget);
         localSessionRepo.addSession(session);
         return session.getSessionId();
+    }
+
+    public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, LocalSession.Mode mode) {
+        Tenant tenant = tenants.getTenant(tenantName);
+        return getLocalSession(tenant, sessionId).getApplicationFile(Path.fromString(path), mode);
     }
 
     private LocalSession getExistingSession(Tenant tenant, ApplicationId applicationId) {

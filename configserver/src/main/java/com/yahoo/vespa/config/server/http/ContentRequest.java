@@ -3,10 +3,10 @@ package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.path.Path;
-import com.yahoo.vespa.config.server.session.LocalSession;
 
 import java.io.InputStream;
+
+import static com.yahoo.vespa.config.server.session.LocalSession.Mode;
 
 /**
  * Represents a {@link ContentRequest}, and contains common functionality for content requests for all content handlers.
@@ -24,20 +24,20 @@ public abstract class ContentRequest {
     private final ApplicationFile file;
     private final HttpRequest request;
 
-    protected ContentRequest(HttpRequest request, LocalSession session) {
+    protected ContentRequest(HttpRequest request, long sessionId, String path, ApplicationFile applicationFile) {
         this.request = request;
-        this.sessionId = session.getSessionId();
-        this.path = getContentPath(request);
-        this.file = session.getApplicationFile(Path.fromString(path), getApplicationFileMode(request.getMethod()));
+        this.sessionId = sessionId;
+        this.path = path;
+        this.file = applicationFile;
     }
 
-    private LocalSession.Mode getApplicationFileMode(com.yahoo.jdisc.http.HttpRequest.Method method) {
+    public static Mode getApplicationFileMode(com.yahoo.jdisc.http.HttpRequest.Method method) {
         switch (method) {
             case GET:
             case OPTIONS:
-                return LocalSession.Mode.READ;
+                return Mode.READ;
             default:
-                return LocalSession.Mode.WRITE;
+                return Mode.WRITE;
         }
     }
 
@@ -59,7 +59,6 @@ public abstract class ContentRequest {
     }
 
     protected abstract String getPathPrefix();
-    protected abstract String getContentPath(HttpRequest request);
 
     String getUrlBase(String appendStr) {
         return Utils.getUrlBase(request, getPathPrefix() + appendStr);

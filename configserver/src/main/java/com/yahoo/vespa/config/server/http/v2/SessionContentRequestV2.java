@@ -1,12 +1,12 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.Utils;
-import com.yahoo.vespa.config.server.session.LocalSession;
 
 /**
  * Requests for content and content status (v2)
@@ -15,19 +15,19 @@ import com.yahoo.vespa.config.server.session.LocalSession;
  * @author hmusum
  * @since 5.3
  */
-class SessionContentRequestV2 extends ContentRequest {
+public class SessionContentRequestV2 extends ContentRequest {
     private static final String uriPattern = "http://*/application/v2/tenant/*/session/*/content/*";
     private final TenantName tenantName;
     private final long sessionId;
 
-    private SessionContentRequestV2(HttpRequest request, LocalSession session, TenantName tenantName) {
-        super(request, session);
+    SessionContentRequestV2(HttpRequest request,
+                            long sessionId,
+                            TenantName tenantName,
+                            String path,
+                            ApplicationFile applicationFile) {
+        super(request, sessionId, path, applicationFile);
         this.tenantName = tenantName;
-        this.sessionId = session.getSessionId();
-    }
-
-    static ContentRequest create(HttpRequest request, LocalSession session) {
-        return new SessionContentRequestV2(request, session, Utils.getTenantNameFromSessionRequest(request));
+        this.sessionId = sessionId;
     }
 
     @Override
@@ -35,8 +35,7 @@ class SessionContentRequestV2 extends ContentRequest {
         return "/application/v2/tenant/" + tenantName.value() + "/session/" + sessionId;
     }
 
-    @Override
-    protected String getContentPath(HttpRequest request) {
+    static String getContentPath(HttpRequest request) {
         BindingMatch<?> bm = Utils.getBindingMatch(request, uriPattern);
         return bm.group(4);
     }

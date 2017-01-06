@@ -1,6 +1,7 @@
 // Copyright 2016 Yahoo Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.HostFilter;
@@ -11,6 +12,8 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
+import com.yahoo.vespa.config.server.http.ContentHandler;
+import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -69,7 +72,20 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.nodeConvergenceCheck(tenant, applicationId, getHostFromRequest(request), request.getUri());
         }
         if (isContentRequest(request)) {
-            return applicationRepository.getContent(tenant, applicationId, zone, request);
+            long sessionId = applicationRepository.getSessionIdForApplication(tenant, applicationId);
+            String contentPath = ApplicationContentRequest.getContentPath(request);
+            ApplicationFile applicationFile =
+                    applicationRepository.getApplicationFileFromSession(tenant.getName(),
+                                                                        sessionId,
+                                                                        contentPath,
+                                                                        ContentRequest.getApplicationFileMode(request.getMethod()));
+            ApplicationContentRequest contentRequest = new ApplicationContentRequest(request,
+                                                                                     sessionId,
+                                                                                     applicationId,
+                                                                                     zone,
+                                                                                     contentPath,
+                                                                                     applicationFile);
+            return new ContentHandler().get(contentRequest);
         }
 
         // TODO: Remove this once the config convergence logic is moved to client and is live for all clusters.
