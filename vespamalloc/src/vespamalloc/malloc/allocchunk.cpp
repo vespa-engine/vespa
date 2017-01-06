@@ -17,7 +17,6 @@ void AFListBase::linkIn(AtomicHeadPtr & head, AFListBase * csl, AFListBase * tai
     HeadPtr newHead(csl, oldHead._tag + 1);
     tail->_next = static_cast<AFListBase *>(oldHead._ptr);
     while ( ! head.compare_exchange_weak(oldHead, newHead, std::memory_order_release, std::memory_order_relaxed) ) {
-        oldHead = head.load(std::memory_order_relaxed);
         newHead._tag =  oldHead._tag + 1;
         tail->_next = static_cast<AFListBase *>(oldHead._ptr);
     }
@@ -31,8 +30,7 @@ AFListBase * AFListBase::linkOut(AtomicHeadPtr & head)
         return NULL;
     }
     HeadPtr newHead(csl->_next, oldHead._tag + 1);
-    while ( ! head.compare_exchange_weak(oldHead, newHead, std::memory_order_release, std::memory_order_relaxed) ) {
-        oldHead = head.load(std::memory_order_relaxed);
+    while ( ! head.compare_exchange_weak(oldHead, newHead, std::memory_order_acquire, std::memory_order_relaxed) ) {
         csl = static_cast<AFListBase *>(oldHead._ptr);
         if (csl == NULL) {
             return NULL;
