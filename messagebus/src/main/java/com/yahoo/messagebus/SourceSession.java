@@ -9,7 +9,6 @@ import com.yahoo.text.Utf8String;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 
 /**
