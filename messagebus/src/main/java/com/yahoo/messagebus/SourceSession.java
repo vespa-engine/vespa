@@ -132,7 +132,6 @@ public final class SourceSession implements ReplyHandler, Runnable {
      * @return The result of <i>initiating</i> sending of this message.
      */
     public Result send(Message msg) {
-
         return sendInternal(updateTiming(msg));
     }
     private Message updateTiming(Message msg) {
@@ -254,7 +253,7 @@ public final class SourceSession implements ReplyHandler, Runnable {
     }
 
     static private boolean isSendQFull(Result res) {
-        return ! (res.isAccepted() || res.getError().getCode() != ErrorCode.SEND_QUEUE_FULL);
+        return !res.isAccepted() && (res.getError().getCode() == ErrorCode.SEND_QUEUE_FULL);
     }
 
     /**
